@@ -9,32 +9,32 @@ import android.hardware.SensorManager;
 import android.hardware.SensorListener;
 
 public class WaveActivity extends Activity {
-	
-	
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-    	super.onCreate(savedInstanceState);
- 		GLSurfaceView view = new GLSurfaceView(this);
-   		view.setRenderer(new OpenGLRenderer());
-   		setContentView(view);
+
+	/** Called when the activity is first created. */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		GLSurfaceView view = new GLSurfaceView(this);
+		view.setRenderer(new OpenGLRenderer());
+		setContentView(view);
 
 		// Locate the SensorManager using Activity.getSystemService
 		SensorManager sm;
 		sm = (SensorManager) getSystemService(SENSOR_SERVICE);
 
 		// Register your SensorListener
-		sm.registerListener(sl, SensorManager.SENSOR_ORIENTATION, SensorManager.SENSOR_DELAY_NORMAL);
+		sm.registerListener(sl, SensorManager.SENSOR_ORIENTATION,
+				SensorManager.SENSOR_DELAY_NORMAL);
 
-    }
-
-    @Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.option_menu, menu);
-	    return true;
 	}
-	
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.option_menu, menu);
+		return true;
+	}
+
 	private final SensorListener sl = new SensorListener() {
 		public void onSensorChanged(int sensor, float[] values) {
 			float pitch = values[2];
