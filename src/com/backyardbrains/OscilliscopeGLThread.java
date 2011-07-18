@@ -55,8 +55,11 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	private void cleanupGL() {
-		// TODO Auto-generated method stub
-
+        mEGL.eglMakeCurrent(mGLDisplay, EGL10.EGL_NO_SURFACE,
+                EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+        mEGL.eglDestroySurface(mGLDisplay, mGLSurface);
+        mEGL.eglDestroyContext(mGLDisplay, mGLContext);
+        mEGL.eglTerminate(mGLDisplay);
 	}
 
 	private void initGL() {
