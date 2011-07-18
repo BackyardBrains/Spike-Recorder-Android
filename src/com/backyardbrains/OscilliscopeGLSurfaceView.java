@@ -38,6 +38,8 @@ class OscilliscopeGLSurfaceView extends SurfaceView implements
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		mGLThread = null;
+        if (mGLThread != null) {
+            mGLThread.requestStop();
+        }
 	}
 }

@@ -53,7 +53,7 @@ public class MicListener extends Thread {
 		try {
 			join();
 		} catch (InterruptedException e) {
-			Log.e("BYB", "MicLIstener thread couldn't rejoin!", e);
+			Log.e("BYB", "Mic Listener Thread couldn't rejoin!", e);
 		}
 	}
 

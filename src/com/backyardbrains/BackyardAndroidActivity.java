@@ -15,6 +15,7 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
 		setContentView(R.layout.backyard_main);
 
 		// Create custom surface
@@ -30,5 +31,15 @@ public class BackyardAndroidActivity extends Activity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
 	}
 }
