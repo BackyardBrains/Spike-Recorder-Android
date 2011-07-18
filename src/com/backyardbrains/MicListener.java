@@ -7,14 +7,16 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
+import android.view.SurfaceView;
 
 public class MicListener extends Thread {
-	private boolean stopped = false;
+	private boolean mDone = false;
+	private SurfaceView parent;
 
-	private MicListener() {
+	private MicListener(SurfaceView view) {
+		parent = view;
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-		start();
 	}
 
 	@Override
@@ -35,9 +37,7 @@ public class MicListener extends Thread {
 
 			recorder.startRecording();
 
-			// ... loop
-
-			while (!stopped) {
+			while (!mDone) {
 				short[] buffer = buffers[ix++ % buffers.length];
 
 				N = recorder.read(buffer, 0, buffer.length);
@@ -47,12 +47,17 @@ public class MicListener extends Thread {
 		} catch (Throwable x) {
 			Log.w("MicListener", "Error reading voice audio", x);
 		} finally {
-			close();
+			requestStop();
 		}
 	}
 
-	private void close() {
-		stopped = true;
+	private void requestStop() {
+		mDone = true;
+		try {
+			join();
+		} catch (InterruptedException e) {
+			Log.e("BYB", "Mic Listener Thread couldn't rejoin!", e);
+		}
 	}
 
 }
