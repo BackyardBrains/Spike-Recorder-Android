@@ -1,11 +1,8 @@
 package com.backyardbrains;
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.widget.FrameLayout;
 
 public class BackyardAndroidActivity extends Activity {
@@ -29,36 +26,13 @@ public class BackyardAndroidActivity extends Activity {
 		return true;
 	}
 
-	private class OscilliscopeGLSurfaceView extends SurfaceView implements
-			SurfaceHolder.Callback {
+	@Override
+	protected void onResume() {
+		super.onResume();
+	}
 
-		SurfaceHolder mAndroidHolder;
-		private OscilliscopeGLThread mGLThread;
-
-		OscilliscopeGLSurfaceView(Context context) {
-			super(context);
-			mAndroidHolder = getHolder();
-			mAndroidHolder.addCallback(this);
-			mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-		}
-
-		@Override
-		public void surfaceChanged(SurfaceHolder holder, int format, int width,
-				int height) {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void surfaceCreated(SurfaceHolder holder) {
-			mGLThread = new OscilliscopeGLThread(this);
-			mGLThread.start();
-		}
-
-		@Override
-		public void surfaceDestroyed(SurfaceHolder holder) {
-			// TODO Auto-generated method stub
-
-		}
+	@Override
+	protected void onPause() {
+		super.onPause();
 	}
 }
