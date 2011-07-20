@@ -11,10 +11,8 @@ import android.view.SurfaceView;
 
 public class MicListener extends Thread {
 	private boolean mDone = false;
-	private SurfaceView parent;
 
-	MicListener(SurfaceView view) {
-		parent = view;
+	MicListener() {
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
