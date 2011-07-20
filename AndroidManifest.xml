@@ -5,7 +5,7 @@
       android:versionName="1.0">
     <uses-sdk android:minSdkVersion="7" />
 
-    <application android:icon="@drawable/ic_launcher_byb" android:label="@string/app_name">
+    <application android:icon="@drawable/ic_launcher_byb" android:label="@string/app_name" android:name=".BackyardBrainsApplication">
         <activity android:name=".BackyardAndroidActivity"
                   android:label="@string/app_name">
             <intent-filter>
@@ -13,6 +13,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".AudioService"></service>
 
     </application>
 </manifest>

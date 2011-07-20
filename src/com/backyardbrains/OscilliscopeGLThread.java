@@ -31,7 +31,6 @@ public class OscilliscopeGLThread extends Thread {
 	public void run() {
 		initEGL();
 		initGL();
-		
 		GLU.gluLookAt(mGL, 0, 0, 5f, 0, 0, 0, 0, 1, 0f);
 		mGL.glColor4f(0f, 1f, 0f, 1f);
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
