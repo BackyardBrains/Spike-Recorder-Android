@@ -1,6 +1,5 @@
 package com.backyardbrains;
 
-import android.R.bool;
 import android.app.Application;
 
 public class BackyardBrainsApplication extends Application {
@@ -24,6 +23,15 @@ public class BackyardBrainsApplication extends Application {
 	public void setServiceRunning(boolean serviceRunning) {
 		this.audioRunning = serviceRunning;
 	}
+	
+	public void startAudioService() {
+		// TODO Auto-generated method stub
+
+	}
+	public void stopAudioService() {
+		// TODO Auto-generated method stub
+
+	}
 
 	/* (non-Javadoc)
 	 * @see android.app.Application#onCreate()
@@ -40,6 +48,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
+		this.audio = null;
 	}
 	
 	
