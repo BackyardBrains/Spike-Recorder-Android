@@ -32,13 +32,13 @@ public class AudioService extends Service {
 	 */
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
 		this.running = false;
+		this.app.setServiceRunning(this.running);
 		this.mic.interrupt();
 
 		this.mic= null;
-		this.app.setServiceRunning(false);
 		Log.d(TAG, "Update thread cleaned up");
+		super.onDestroy();
 	}
 
 	/* (non-Javadoc)
@@ -48,8 +48,8 @@ public class AudioService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		super.onStartCommand(intent, flags, startId);
 		this.running = true;
+		this.app.setServiceRunning(this.running);
 		this.mic.start();
-		this.app.setServiceRunning(true);
 		Log.d(TAG, "Mic thread started");
 		return START_STICKY;
 	}
@@ -61,7 +61,7 @@ public class AudioService extends Service {
 			i = audioData.get();
 			msg = msg + i.toString();
 			}
-		Log.d(TAG, "Got audio data" + msg);
+		Log.i(TAG, "Got audio data: " + msg);
 	}
 
 	@Override
