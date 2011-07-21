@@ -55,9 +55,15 @@ public class AudioService extends Service {
 	}
 
 	public void receivedAudioData(ByteBuffer audioData) {
-		Log.d(TAG, "Got audio data" + audioData.toString());
+		String msg = "";
+		Byte i;
+		while (audioData.hasRemaining()) {
+			i = audioData.get();
+			msg = msg + i.toString();
+			}
+		Log.d(TAG, "Got audio data" + msg);
 	}
-	
+
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub
