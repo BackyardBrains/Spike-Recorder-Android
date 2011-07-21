@@ -1,13 +1,12 @@
 package com.backyardbrains;
 
 import android.app.Application;
+import android.content.Intent;
 
 public class BackyardBrainsApplication extends Application {
-	private final static
-	String TAG = "BYBAPP";
-	
-	private boolean audioRunning;
+	private final static String TAG = "BYBAPP";
 
+	private boolean audioRunning;
 	private AudioService audio;
 
 	/**
@@ -18,22 +17,26 @@ public class BackyardBrainsApplication extends Application {
 	}
 
 	/**
-	 * @param serviceRunning the serviceRunning to set
+	 * @param serviceRunning
+	 *            the serviceRunning to set
 	 */
 	public void setServiceRunning(boolean serviceRunning) {
 		this.audioRunning = serviceRunning;
 	}
-	
+
 	public void startAudioService() {
-		// TODO Auto-generated method stub
-
+		// spin up service
+		if (!this.audioRunning && !this.audio.running)
+			startService(new Intent(this, AudioService.class));
 	}
+
 	public void stopAudioService() {
-		// TODO Auto-generated method stub
-
+		stopService(new Intent(this, AudioService.class));
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Application#onCreate()
 	 */
 	@Override
@@ -42,7 +45,9 @@ public class BackyardBrainsApplication extends Application {
 		this.audio = new AudioService();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Application#onTerminate()
 	 */
 	@Override
@@ -50,6 +55,5 @@ public class BackyardBrainsApplication extends Application {
 		super.onTerminate();
 		this.audio = null;
 	}
-	
-	
+
 }

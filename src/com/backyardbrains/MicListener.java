@@ -15,6 +15,7 @@ public class MicListener extends Thread {
 	private static final int sampleRate = 44100;
 	private boolean mDone = false;
 	private AudioService service;
+	private AudioRecord recorder;
 
 	MicListener(AudioService service) {
 		this.service = service;
@@ -24,7 +25,7 @@ public class MicListener extends Thread {
 
 	@Override
 	public void run() {
-		AudioRecord recorder = null;
+		recorder = null;
 		int buffersize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		ByteBuffer audioInfo = ByteBuffer.allocateDirect(buffersize);
 		audioInfo.order(ByteOrder.nativeOrder());

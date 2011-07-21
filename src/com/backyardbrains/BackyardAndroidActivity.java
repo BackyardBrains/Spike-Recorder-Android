@@ -11,7 +11,9 @@ public class BackyardAndroidActivity extends Activity {
 	private OscilliscopeGLSurfaceView mAndroidSurface;
 	private BackyardBrainsApplication application;
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Activity#onCreate(android.os.Bundle)
 	 */
 	@Override
@@ -22,8 +24,7 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		this.application = (BackyardBrainsApplication) getApplication();
-		// spin up service
-		startService(new Intent(this, AudioService.class));
+		this.application.startAudioService();
 
 		// Create custom surface
 		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
@@ -31,7 +32,9 @@ public class BackyardAndroidActivity extends Activity {
 		mainscreenGLLayout.addView(mAndroidSurface);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
 	 */
 	@Override
@@ -43,10 +46,12 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		this.application.startAudioService();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		this.application.stopAudioService();
 	}
 }
