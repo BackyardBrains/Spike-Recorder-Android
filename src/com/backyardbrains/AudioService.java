@@ -1,5 +1,7 @@
 package com.backyardbrains;
 
+import java.nio.ByteBuffer;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -21,7 +23,7 @@ public class AudioService extends Service {
 	public void onCreate() {
 		// TODO Auto-generated method stub
 		super.onCreate();
-		this.mic = new MicListener();
+		this.mic = new MicListener(this);
 		this.app = (BackyardBrainsApplication) getApplication();
 	}
 
@@ -52,6 +54,10 @@ public class AudioService extends Service {
 		return START_STICKY;
 	}
 
+	public void receivedAudioData(ByteBuffer audioData) {
+		Log.d(TAG, "Got audio data" + audioData.toString());
+	}
+	
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub

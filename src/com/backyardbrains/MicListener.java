@@ -3,16 +3,21 @@
  */
 package com.backyardbrains;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
-import android.view.SurfaceView;
 
 public class MicListener extends Thread {
+	private static final int sampleRate = 44100;
 	private boolean mDone = false;
+	private AudioService service;
 
-	MicListener() {
+	MicListener(AudioService service) {
+		this.service = service;
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
@@ -20,27 +25,29 @@ public class MicListener extends Thread {
 	@Override
 	public void run() {
 		AudioRecord recorder = null;
-		short[][] buffers = new short[256][160];
-		int ix = 0;
-
+		int buffersize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		ByteBuffer audioInfo = ByteBuffer.allocateDirect(buffersize);
+		audioInfo.order(ByteOrder.nativeOrder());
 		try {
-
-			int N = AudioRecord
-					.getMinBufferSize(441000, AudioFormat.CHANNEL_IN_MONO,
-							AudioFormat.ENCODING_PCM_16BIT);
-
-			recorder = new AudioRecord(AudioSource.MIC, 441000,
+			recorder = new AudioRecord(AudioSource.DEFAULT, sampleRate,
 					AudioFormat.CHANNEL_IN_MONO,
-					AudioFormat.ENCODING_PCM_16BIT, N * 10);
+					AudioFormat.ENCODING_PCM_16BIT, buffersize);
 
+			if(recorder.getState() == AudioRecord.STATE_INITIALIZED) {
+				//throw new RuntimeException();
+			}
+			
 			recorder.startRecording();
 
-			while (!mDone) {
-				short[] buffer = buffers[ix++ % buffers.length];
-				N = recorder.read(buffer, 0, buffer.length);
+			while (recorder.read(audioInfo, audioInfo.limit()) > 0 && !mDone) {
+				audioInfo.position(0);
+				service.receivedAudioData(audioInfo);
 			}
-		} catch (Throwable x) {
-			Log.w("MicListener", "Error reading voice audio", x);
+		recorder.stop();
+		recorder.release();
+
+		} catch (Throwable e) {
+			Log.e("MicListener", "Could not open audio souce", e);
 		} finally {
 			requestStop();
 		}
