@@ -1,7 +1,6 @@
 package com.backyardbrains;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.widget.FrameLayout;
@@ -24,7 +23,7 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		this.application = (BackyardBrainsApplication) getApplication();
-		this.application.startAudioService();
+		//this.application.startAudioService();
 
 		// Create custom surface
 		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
