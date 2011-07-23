@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.backyardbrains;
 
 import java.nio.ByteBuffer;

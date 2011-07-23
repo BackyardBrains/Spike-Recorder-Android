@@ -56,10 +56,11 @@ public class AudioService extends Service {
 
 	public void receivedAudioData(ByteBuffer audioData) {
 		String msg = "";
-		Byte i;
+		Byte i, i2;
 		while (audioData.hasRemaining()) {
 			i = audioData.get();
-			msg = msg + i.toString();
+			i2 = audioData.get();
+			msg = msg + ((Integer)(i<<8 | i2 )).toString() + " ";
 			}
 		Log.i(TAG, "Got audio data: " + msg);
 	}
