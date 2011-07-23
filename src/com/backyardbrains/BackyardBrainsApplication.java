@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Intent;
 
 public class BackyardBrainsApplication extends Application {
-	private final static String TAG = "BYBAPP";
+	//private final static String TAG = "BYBAPP";
 
 	private boolean audioRunning;
 	private AudioService audio;
@@ -32,6 +32,7 @@ public class BackyardBrainsApplication extends Application {
 
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
+		//this.audio.stopSelf();
 	}
 
 	/*

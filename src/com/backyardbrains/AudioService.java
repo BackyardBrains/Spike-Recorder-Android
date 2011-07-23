@@ -34,7 +34,7 @@ public class AudioService extends Service {
 	public void onDestroy() {
 		this.running = false;
 		this.app.setServiceRunning(this.running);
-		this.mic.interrupt();
+		this.mic.requestStop();
 
 		this.mic= null;
 		Log.d(TAG, "Update thread cleaned up");
