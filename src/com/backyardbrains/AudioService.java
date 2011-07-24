@@ -4,30 +4,43 @@ import java.nio.ByteBuffer;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class AudioService extends Service {
-	static final String TAG = "BYBAudioService";
-	
-	public boolean running;
+public class AudioService extends Service implements RecievesAudio {
 
+	static final String TAG = "BYBAudioService";
+	public boolean running;
 	private MicListener mic;
 
-	private BackyardBrainsApplication app;
+	private final IBinder mBinder = new AudioServiceBinder();
 
-	/* (non-Javadoc)
+	public class AudioServiceBinder extends Binder {
+		AudioService getService() {
+			return AudioService.this;
+		}
+	}
+
+	private BackyardBrainsApplication app;
+	private Thread micThread;
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Service#onCreate()
 	 */
 	@Override
 	public void onCreate() {
 		// TODO Auto-generated method stub
 		super.onCreate();
-		this.mic = new MicListener(this);
+		this.mic = new MicListener();
 		this.app = (BackyardBrainsApplication) getApplication();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Service#onDestroy()
 	 */
 	@Override
@@ -36,39 +49,46 @@ public class AudioService extends Service {
 		this.app.setServiceRunning(this.running);
 		this.mic.requestStop();
 
-		this.mic= null;
+		this.mic = null;
 		Log.d(TAG, "Update thread cleaned up");
 		super.onDestroy();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
 	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		super.onStartCommand(intent, flags, startId);
-		this.running = true;
-		this.app.setServiceRunning(this.running);
-		this.mic.start();
-		Log.d(TAG, "Mic thread started");
+		running = true;
+		app.setServiceRunning(this.running);
+		micThread = new Thread() {
+			public void run() {
+				mic.start(AudioService.this);
+				Log.d(TAG, "Mic thread started");
+			}
+		};
+		micThread.start();
 		return START_STICKY;
 	}
 
-	public void receivedAudioData(ByteBuffer audioData) {
+	@Override
+	public void receiveAudio(ByteBuffer audioData) {
 		String msg = "";
 		Byte i, i2;
 		while (audioData.hasRemaining()) {
 			i = audioData.get();
 			i2 = audioData.get();
-			msg = msg + ((Integer)(i<<8 | i2 )).toString() + " ";
-			}
+			msg = msg + ((Integer) (i << 8 | i2)).toString() + " ";
+		}
 		Log.i(TAG, "Got audio data: " + msg);
 	}
 
 	@Override
 	public IBinder onBind(Intent arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		return mBinder;
 	}
 
 }

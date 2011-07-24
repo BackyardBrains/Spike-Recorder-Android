@@ -32,7 +32,7 @@ public class BackyardBrainsApplication extends Application {
 
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
-		//this.audio.stopSelf();
+		this.audio.stopSelf();
 	}
 
 	/*

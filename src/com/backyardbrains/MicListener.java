@@ -8,56 +8,67 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
-public class MicListener extends Thread {
+public class MicListener {
+	private static final String TAG = "BYBMicListener";
+	
 	private static final int sampleRate = 44100;
 	private boolean mDone = false;
-	private AudioService service;
 	private AudioRecord recorder;
+	private ByteBuffer audioInfo;
+	private int buffersize;
 
-	MicListener(AudioService service) {
-		this.service = service;
+	MicListener() {
+		buffersize = AudioRecord.getMinBufferSize(sampleRate,
+				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		audioInfo = ByteBuffer.allocateDirect(2*buffersize);
+		audioInfo.order(ByteOrder.nativeOrder());
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+		recorder = newRecorder();
+		if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
+			throw new RuntimeException();
+		}
 	}
 
-	@Override
-	public void run() {
-		recorder = null;
-		int buffersize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		ByteBuffer audioInfo = ByteBuffer.allocateDirect(buffersize);
-		audioInfo.order(ByteOrder.nativeOrder());
-		try {
-			recorder = new AudioRecord(AudioSource.DEFAULT, sampleRate,
-					AudioFormat.CHANNEL_IN_MONO,
-					AudioFormat.ENCODING_PCM_16BIT, buffersize);
+	/**
+	 * @return the audioInfo
+	 */
+	public ByteBuffer getAudioInfo() {
+		return audioInfo;
+	}
 
-			if(recorder.getState() == AudioRecord.STATE_INITIALIZED) {
-				//throw new RuntimeException();
+	public void start(RecievesAudio service) {
+		recorder = null;
+		try {
+			recorder = newRecorder();
+
+			if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
+				throw new RuntimeException(recorder.toString());
 			}
-			
+
 			recorder.startRecording();
 
 			while (recorder.read(audioInfo, audioInfo.limit()) > 0 && !mDone) {
 				audioInfo.position(0);
-				service.receivedAudioData(audioInfo);
+				service.receiveAudio(audioInfo);
 			}
-		recorder.stop();
-		recorder.release();
+			recorder.stop();
+			recorder.release();
 
 		} catch (Throwable e) {
-			Log.e("MicListener", "Could not open audio souce", e);
+			Log.e(TAG, "Could not open audio souce", e);
 		} finally {
 			requestStop();
 		}
 	}
 
-	public void requestStop() {
-		mDone = true;
-		try {
-			join();
-		} catch (InterruptedException e) {
-			Log.e("BYB", "Mic Listener Thread couldn't rejoin!", e);
-		}
+	private AudioRecord newRecorder() {
+		return new AudioRecord(AudioSource.DEFAULT, sampleRate,
+				AudioFormat.CHANNEL_IN_MONO,
+				AudioFormat.ENCODING_PCM_16BIT, audioInfo.capacity());
 	}
 
+	public void requestStop() {
+		mDone = true;
+	}
 }
