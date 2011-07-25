@@ -44,6 +44,7 @@ public class BackyardBrainsApplication extends Application {
 	public void onCreate() {
 		super.onCreate();
 		this.audio = new AudioService();
+		startAudioService();
 	}
 
 	/*
@@ -54,6 +55,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
+		stopAudioService();
 		this.audio = null;
 	}
 

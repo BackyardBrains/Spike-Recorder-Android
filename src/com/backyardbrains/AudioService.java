@@ -74,6 +74,10 @@ public class AudioService extends Service implements RecievesAudio {
 		return START_STICKY;
 	}
 
+	public ByteBuffer getAudioFromMicListener() {
+		return mic.getAudioInfo();
+	}
+	
 	@Override
 	public void receiveAudio(ByteBuffer audioData) {
 		String msg = "";

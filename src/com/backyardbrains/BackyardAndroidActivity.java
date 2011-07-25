@@ -1,14 +1,44 @@
 package com.backyardbrains;
 
+import java.nio.ByteBuffer;
+
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.Menu;
 import android.widget.FrameLayout;
 
+import com.backyardbrains.AudioService.AudioServiceBinder;
+
 public class BackyardAndroidActivity extends Activity {
 
+    private AudioService mAudioService;
+	private boolean mAudioServiceIsBound;
 	private OscilliscopeGLSurfaceView mAndroidSurface;
 	private BackyardBrainsApplication application;
+
+	/** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+
+		@Override
+        public void onServiceConnected(ComponentName className,
+                IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            AudioServiceBinder binder = (AudioServiceBinder) service;
+            mAudioService = binder.getService();
+            mAudioServiceIsBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mAudioServiceIsBound = false;
+        }
+    };
 
 	/*
 	 * (non-Javadoc)
@@ -23,12 +53,16 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		this.application = (BackyardBrainsApplication) getApplication();
-		//this.application.startAudioService();
+		this.application.startAudioService();
 
 		// Create custom surface
 		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
+	}
+	
+	public ByteBuffer getAudioFromService() {
+		return mAudioService.getAudioFromMicListener();
 	}
 
 	/*
@@ -45,12 +79,28 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		this.application.startAudioService();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		this.application.stopAudioService();
 	}
+	
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // Bind to LocalService
+        Intent intent = new Intent(this, AudioService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Unbind from the service
+        if (mAudioServiceIsBound) {
+            unbindService(mConnection);
+            mAudioServiceIsBound = false;
+        }
+    }
 }
