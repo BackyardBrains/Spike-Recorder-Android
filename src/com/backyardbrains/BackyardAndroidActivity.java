@@ -56,9 +56,9 @@ public class BackyardAndroidActivity extends Activity {
 		this.application.startAudioService();
 
 		// Create custom surface
-		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
-		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
-		mainscreenGLLayout.addView(mAndroidSurface);
+		//mAndroidSurface = new OscilliscopeGLSurfaceView(this);
+		//FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
+		//mainscreenGLLayout.addView(mAndroidSurface);
 	}
 	
 	public ByteBuffer getAudioFromService() {
@@ -79,11 +79,13 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		startService(new Intent(this, AudioService.class));
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		stopService(new Intent(this, AudioService.class));
 	}
 	
     @Override

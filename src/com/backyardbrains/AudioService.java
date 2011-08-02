@@ -80,14 +80,7 @@ public class AudioService extends Service implements RecievesAudio {
 	
 	@Override
 	public void receiveAudio(ByteBuffer audioData) {
-		String msg = "";
-		Byte i, i2;
-		while (audioData.hasRemaining()) {
-			i = audioData.get();
-			i2 = audioData.get();
-			msg = msg + ((Integer) (i << 8 | i2)).toString() + " ";
-		}
-		Log.i(TAG, "Got audio data: " + msg);
+		Log.i(TAG, "Got audio data");
 	}
 
 	@Override
