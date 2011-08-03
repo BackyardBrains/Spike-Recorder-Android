@@ -6,14 +6,14 @@ import android.content.Intent;
 public class BackyardBrainsApplication extends Application {
 	//private final static String TAG = "BYBAPP";
 
-	private boolean audioRunning;
+	private boolean serviceRunning;
 	private AudioService audio;
 
 	/**
 	 * @return the serviceRunning
 	 */
 	public boolean isServiceRunning() {
-		return audioRunning;
+		return serviceRunning;
 	}
 
 	/**
@@ -21,18 +21,17 @@ public class BackyardBrainsApplication extends Application {
 	 *            the serviceRunning to set
 	 */
 	public void setServiceRunning(boolean serviceRunning) {
-		this.audioRunning = serviceRunning;
+		this.serviceRunning = serviceRunning;
 	}
 
 	public void startAudioService() {
 		// spin up service
-		if (!this.audioRunning && !this.audio.running)
+		if (!this.serviceRunning)
 			startService(new Intent(this, AudioService.class));
 	}
 
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
-		this.audio.stopSelf();
 	}
 
 	/*
