@@ -32,7 +32,6 @@ public class AudioService extends Service implements RecievesAudio {
 	 */
 	@Override
 	public void onCreate() {
-		// TODO Auto-generated method stub
 		super.onCreate();
 		this.mic = new MicListener();
 		this.app = (BackyardBrainsApplication) getApplication();
@@ -45,12 +44,8 @@ public class AudioService extends Service implements RecievesAudio {
 	 */
 	@Override
 	public void onDestroy() {
-		this.running = false;
-		this.app.setServiceRunning(this.running);
-		this.mic.requestStop();
-
-		this.mic = null;
-		Log.d(TAG, "Update thread cleaned up");
+		this.app.setServiceRunning(false);
+		turnOffMicThread();
 		super.onDestroy();
 	}
 
@@ -62,16 +57,25 @@ public class AudioService extends Service implements RecievesAudio {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		super.onStartCommand(intent, flags, startId);
-		running = true;
-		app.setServiceRunning(this.running);
+		turnOnMicThread();
+		app.setServiceRunning(true);
+		return START_STICKY;
+	}
+
+	public void turnOnMicThread() {
 		micThread = new Thread() {
 			public void run() {
 				mic.start(AudioService.this);
-				Log.d(TAG, "Mic thread started");
 			}
 		};
 		micThread.start();
-		return START_STICKY;
+		Log.d(TAG, "Mic thread started");
+	}
+	
+	public void turnOffMicThread() {
+		Log.d(TAG, "Mic Thread Shut Off");
+		this.mic.requestStop();
+		this.mic = null;
 	}
 
 	public ByteBuffer getAudioFromMicListener() {
