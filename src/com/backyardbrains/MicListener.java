@@ -20,14 +20,10 @@ public class MicListener {
 	MicListener() {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		audioInfo = ByteBuffer.allocateDirect(buffersize);
+		audioInfo = ByteBuffer.allocateDirect(buffersize*2);
 		audioInfo.order(ByteOrder.nativeOrder());
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-		recorder = newRecorder();
-		if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
-			throw new RuntimeException();
-		}
 	}
 
 	/**
@@ -49,7 +45,7 @@ public class MicListener {
 			recorder.startRecording();
 
 			int limit = audioInfo.limit();
-			while (recorder.read(audioInfo, limit) > 0 && !mDone) {
+			while (recorder.read(audioInfo, limit/2) > 0 && !mDone) {
 				audioInfo.position(0);
 				service.receiveAudio(audioInfo);
 			}
