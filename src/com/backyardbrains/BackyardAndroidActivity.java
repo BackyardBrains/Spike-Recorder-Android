@@ -79,13 +79,11 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startService(new Intent(this, AudioService.class));
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		stopService(new Intent(this, AudioService.class));
 	}
 	
     @Override
