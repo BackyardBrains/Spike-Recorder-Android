@@ -48,10 +48,10 @@ public class MicListener {
 
 			recorder.startRecording();
 
-			while (recorder.read(audioInfo, audioInfo.limit() / 8) > 0 && !mDone) {
+			int limit = audioInfo.limit();
+			while (recorder.read(audioInfo, limit) > 0 && !mDone) {
 				audioInfo.position(0);
 				service.receiveAudio(audioInfo);
-				System.out.println("filled buffer");
 			}
 
 			recorder.stop();
