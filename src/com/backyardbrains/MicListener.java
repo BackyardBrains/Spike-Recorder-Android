@@ -8,13 +8,14 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
-public class MicListener {
+public class MicListener extends Thread {
 	private static final String TAG = "BYBMicListener";
 
 	private static final int sampleRate = 44100;
 	private boolean mDone = false;
 	private AudioRecord recorder;
 	private ByteBuffer audioInfo;
+	private RecievesAudio service;
 	private int buffersize;
 
 	MicListener() {
@@ -33,16 +34,28 @@ public class MicListener {
 		return audioInfo;
 	}
 
-	public void start(RecievesAudio service) {
+	public void start(RecievesAudio svc) {
+		service = svc;
+		if (service != null) {
+			Log.d(TAG, "Service interface successfully bound from Thread");
+		} else {
+			throw new RuntimeException(TAG + ": No interface could be bound");
+		}
+		super.start();
+	}
+
+	public void run() {
+		Log.d(TAG, "Thread Launched");
 		recorder = null;
 		try {
 			recorder = newRecorder();
-
 			if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
 				throw new RuntimeException(recorder.toString());
 			}
+			Log.d(TAG, "Recorder Created");
 
 			recorder.startRecording();
+			Log.d(TAG, "Recorder Started");
 
 			int limit = audioInfo.limit();
 			while (recorder.read(audioInfo, limit / 2) > 0 && !mDone) {
@@ -50,8 +63,11 @@ public class MicListener {
 				service.receiveAudio(audioInfo);
 			}
 
-			recorder.stop();
-			recorder.release();
+			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+				recorder.stop();
+				recorder.release();
+				Log.d(TAG, "Recorder Released");
+			}
 
 		} catch (Throwable e) {
 			Log.e(TAG, "Could not open audio souce", e);
@@ -68,5 +84,13 @@ public class MicListener {
 
 	public void requestStop() {
 		mDone = true;
+		if (recorder != null) {
+			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+				recorder.stop();
+				recorder.release();
+			}
+			recorder = null;
+		}
+		Log.d(TAG, "Thread cleaned up");
 	}
 }

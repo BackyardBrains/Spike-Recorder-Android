@@ -15,7 +15,6 @@ public class AudioService extends Service implements RecievesAudio {
 
 	static final String TAG = "BYBAudioService";
 	public boolean running;
-	private MicListener mic;
 
 	private final IBinder mBinder = new AudioServiceBinder();
 
@@ -26,7 +25,7 @@ public class AudioService extends Service implements RecievesAudio {
 	}
 
 	private BackyardBrainsApplication app;
-	private Thread micThread;
+	private MicListener micThread;
 
 	private int NOTIFICATION = R.string.mic_thread_running;
 	private NotificationManager mNM;
@@ -39,7 +38,7 @@ public class AudioService extends Service implements RecievesAudio {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		this.mic = new MicListener();
+		// this.mic = new MicListener();
 		this.app = (BackyardBrainsApplication) getApplication();
 	}
 
@@ -69,15 +68,16 @@ public class AudioService extends Service implements RecievesAudio {
 	}
 
 	public void turnOnMicThread() {
-		micThread = new Thread() {
-			public void run() {
-				mic.start(AudioService.this);
-			}
-		};
-		micThread.start();
-		Log.d(TAG, "Mic thread started");
+		micThread = new MicListener();
+		// {
+		// public void run() {
+		// mic.start(AudioService.this);
+		// }
+		// };
+		micThread.start(AudioService.this);
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		showNotification();
+		Log.d(TAG, "Mic thread started");
 	}
 
 	private void showNotification() {
@@ -91,14 +91,16 @@ public class AudioService extends Service implements RecievesAudio {
 	}
 
 	public void turnOffMicThread() {
-		Log.d(TAG, "Mic Thread Shut Off");
-		this.mic.requestStop();
-		this.mic = null;
+		if (micThread != null) {
+			micThread.requestStop();
+			micThread = null;
+		}
 		mNM.cancel(NOTIFICATION);
+		Log.d(TAG, "Mic Thread Shut Off");
 	}
 
 	public ByteBuffer getAudioFromMicListener() {
-		return mic.getAudioInfo();
+		return micThread.getAudioInfo();
 	}
 
 	@Override
