@@ -51,14 +51,14 @@ public class BackyardAndroidActivity extends Activity {
 		setContentView(R.layout.backyard_main);
 
 		// get application
-		this.application = (BackyardBrainsApplication) getApplication();
-		this.application.startAudioService();
+		application = (BackyardBrainsApplication) getApplication();
+		application.setRunningActivity(this);
+		application.startAudioService();
 
 		// Create custom surface
-		// mAndroidSurface = new OscilliscopeGLSurfaceView(this);
-		// FrameLayout mainscreenGLLayout = (FrameLayout)
-		// findViewById(R.id.glContainer);
-		// mainscreenGLLayout.addView(mAndroidSurface);
+		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
+		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
+		mainscreenGLLayout.addView(mAndroidSurface);
 	}
 
 	public ByteBuffer getAudioFromService() {
@@ -102,5 +102,10 @@ public class BackyardAndroidActivity extends Activity {
 			unbindService(mConnection);
 			mAudioServiceIsBound = false;
 		}
+	}
+
+	public void setCurrentAudio(ByteBuffer audioData) {
+		mAndroidSurface.getGLThread().setAudioBuffer(audioData);
+
 	}
 }

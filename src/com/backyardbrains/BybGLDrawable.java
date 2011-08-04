@@ -7,7 +7,10 @@ import java.util.Random;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.util.Log;
+
 class BybGLDrawable {
+	private static final String TAG = "BYBGLShape";
 
 	/**
 	 * 
@@ -26,6 +29,7 @@ class BybGLDrawable {
 			0, -0.75f, 0, 0, -0.5f, 0, 0, -0.25f, 0, 0, 0f, 0, 0, 0.25f, 0, 0,
 			0.5f, 0, 0, 0.75f, 0, 0, 1f, 0, 0, 1.25f, 0, 0, 1.5f, 0, 0, 1.75f,
 			0, 0, 2f, 0, 0, 2.25f, 0, 0, 2.5f, 0, 0, 2.75f, 0, 0, 3f, 0, 0 };
+	private ByteBuffer mBufferToDraw;
 
 	FloatBuffer getFloatBufferFromFloatArray(float array[]) {
 		ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
@@ -57,5 +61,10 @@ class BybGLDrawable {
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl_obj.glVertexPointer(3, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, vertices.length / 3);
+	}
+
+	public void setBufferToDraw(ByteBuffer audioBuffer) {
+		mBufferToDraw = audioBuffer;
+		Log.i(TAG, "Got audio data");
 	}
 }

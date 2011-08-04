@@ -8,6 +8,22 @@ public class BackyardBrainsApplication extends Application {
 
 	private boolean serviceRunning;
 	private AudioService audio;
+	private BackyardAndroidActivity runningActivity;
+
+	/**
+	 * @return the runningActivity
+	 */
+	public BackyardAndroidActivity getRunningActivity() {
+		return runningActivity;
+	}
+
+	/**
+	 * @param runningActivity
+	 *            the runningActivity to set
+	 */
+	public void setRunningActivity(BackyardAndroidActivity runningActivity) {
+		this.runningActivity = runningActivity;
+	}
 
 	/**
 	 * @return the serviceRunning
@@ -42,7 +58,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		this.audio = new AudioService();
+		audio = new AudioService();
 		startAudioService();
 	}
 
@@ -55,7 +71,7 @@ public class BackyardBrainsApplication extends Application {
 	public void onTerminate() {
 		super.onTerminate();
 		stopAudioService();
-		this.audio = null;
+		audio = null;
 	}
-	
+
 }

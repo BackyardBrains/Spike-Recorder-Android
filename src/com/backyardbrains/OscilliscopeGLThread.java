@@ -1,5 +1,7 @@
 package com.backyardbrains;
 
+import java.nio.ByteBuffer;
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -22,6 +24,22 @@ public class OscilliscopeGLThread extends Thread {
 	private EGLSurface mGLSurface;
 	private EGLContext mGLContext;
 	private GL10 mGL;
+	private ByteBuffer audioBuffer;
+
+	/**
+	 * @return the audioBuffer
+	 */
+	public ByteBuffer getAudioBuffer() {
+		return audioBuffer;
+	}
+
+	/**
+	 * @param audioBuffer
+	 *            the audioBuffer to set
+	 */
+	public void setAudioBuffer(ByteBuffer audioBuffer) {
+		this.audioBuffer = audioBuffer;
+	}
 
 	OscilliscopeGLThread(SurfaceView view) {
 		parent = view;
@@ -35,8 +53,10 @@ public class OscilliscopeGLThread extends Thread {
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
 		while (!mDone) {
 			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-			// mGL.glRotatef(1f, 0, 0, 1f);
+
+			waveform_shape.setBufferToDraw(audioBuffer);
 			waveform_shape.draw(mGL);
+
 			mEGL.eglSwapBuffers(mGLDisplay, mGLSurface);
 		}
 	}

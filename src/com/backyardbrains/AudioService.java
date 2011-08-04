@@ -38,7 +38,6 @@ public class AudioService extends Service implements RecievesAudio {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		// this.mic = new MicListener();
 		app = (BackyardBrainsApplication) getApplication();
 	}
 
@@ -100,7 +99,7 @@ public class AudioService extends Service implements RecievesAudio {
 
 	@Override
 	public void receiveAudio(ByteBuffer audioData) {
-		Log.i(TAG, "Got audio data");
+		app.getRunningActivity().setCurrentAudio(audioData);
 	}
 
 	@Override

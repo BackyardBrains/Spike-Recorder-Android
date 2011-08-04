@@ -17,6 +17,13 @@ class OscilliscopeGLSurfaceView extends SurfaceView implements
 	SurfaceHolder mAndroidHolder;
 	private OscilliscopeGLThread mGLThread;
 
+	/**
+	 * @return the mGLThread
+	 */
+	public OscilliscopeGLThread getGLThread() {
+		return mGLThread;
+	}
+
 	OscilliscopeGLSurfaceView(Context context) {
 		super(context);
 		mAndroidHolder = getHolder();
