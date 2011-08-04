@@ -39,7 +39,7 @@ public class AudioService extends Service implements RecievesAudio {
 	public void onCreate() {
 		super.onCreate();
 		// this.mic = new MicListener();
-		this.app = (BackyardBrainsApplication) getApplication();
+		app = (BackyardBrainsApplication) getApplication();
 	}
 
 	/*
@@ -49,7 +49,7 @@ public class AudioService extends Service implements RecievesAudio {
 	 */
 	@Override
 	public void onDestroy() {
-		this.app.setServiceRunning(false);
+		app.setServiceRunning(false);
 		turnOffMicThread();
 		super.onDestroy();
 	}
@@ -69,11 +69,6 @@ public class AudioService extends Service implements RecievesAudio {
 
 	public void turnOnMicThread() {
 		micThread = new MicListener();
-		// {
-		// public void run() {
-		// mic.start(AudioService.this);
-		// }
-		// };
 		micThread.start(AudioService.this);
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		showNotification();
