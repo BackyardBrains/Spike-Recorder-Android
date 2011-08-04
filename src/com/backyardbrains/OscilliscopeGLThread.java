@@ -1,6 +1,5 @@
 package com.backyardbrains;
 
-
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -36,7 +35,7 @@ public class OscilliscopeGLThread extends Thread {
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
 		while (!mDone) {
 			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-			//mGL.glRotatef(1f, 0, 0, 1f);
+			// mGL.glRotatef(1f, 0, 0, 1f);
 			waveform_shape.draw(mGL);
 			mEGL.eglSwapBuffers(mGLDisplay, mGLSurface);
 		}
@@ -54,27 +53,27 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	private void cleanupGL() {
-        mEGL.eglMakeCurrent(mGLDisplay, EGL10.EGL_NO_SURFACE,
-                EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
-        mEGL.eglDestroySurface(mGLDisplay, mGLSurface);
-        mEGL.eglDestroyContext(mGLDisplay, mGLContext);
-        mEGL.eglTerminate(mGLDisplay);
+		mEGL.eglMakeCurrent(mGLDisplay, EGL10.EGL_NO_SURFACE,
+				EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
+		mEGL.eglDestroySurface(mGLDisplay, mGLSurface);
+		mEGL.eglDestroyContext(mGLDisplay, mGLContext);
+		mEGL.eglTerminate(mGLDisplay);
 	}
 
 	private void initGL() {
 		// set viewport
 		int width = parent.getWidth();
 		int height = parent.getHeight();
-		mGL.glViewport(0,0,width,height);
-		
+		mGL.glViewport(0, 0, width, height);
+
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
 		// carry-over from GLUT
-		GLU.gluPerspective(mGL, 45f, (float)width/height, 1f, 30f);
-		
+		GLU.gluPerspective(mGL, 45f, (float) width / height, 1f, 30f);
+
 		// Blackout, then we're ready to draw! \o/
 		mGL.glClearColor(0f, 0f, 0f, 1.0f);
-		
+
 	}
 
 	private void initEGL() {
@@ -111,12 +110,12 @@ public class OscilliscopeGLThread extends Thread {
 		 */
 		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig,
 				parent.getHolder(), null);
-		mGLContext = mEGL.eglCreateContext(mGLDisplay, mGLConfig, EGL10.EGL_NO_CONTEXT, null);
+		mGLContext = mEGL.eglCreateContext(mGLDisplay, mGLConfig,
+				EGL10.EGL_NO_CONTEXT, null);
 		mEGL.eglMakeCurrent(mGLDisplay, mGLSurface, mGLSurface, mGLContext);
-		mGL = (GL10) GLDebugHelper.wrap(
-				mGLContext.getGL(),
+		mGL = (GL10) GLDebugHelper.wrap(mGLContext.getGL(),
 				GLDebugHelper.CONFIG_CHECK_GL_ERROR
-				| GLDebugHelper.CONFIG_CHECK_THREAD, null);
+						| GLDebugHelper.CONFIG_CHECK_THREAD, null);
 
 	}
 }

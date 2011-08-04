@@ -16,29 +16,28 @@ import com.backyardbrains.AudioService.AudioServiceBinder;
 
 public class BackyardAndroidActivity extends Activity {
 
-    private AudioService mAudioService;
+	private AudioService mAudioService;
 	private boolean mAudioServiceIsBound;
 	private OscilliscopeGLSurfaceView mAndroidSurface;
 	private BackyardBrainsApplication application;
 
 	/** Defines callbacks for service binding, passed to bindService() */
-    private ServiceConnection mConnection = new ServiceConnection() {
-
+	private ServiceConnection mConnection = new ServiceConnection() {
 
 		@Override
-        public void onServiceConnected(ComponentName className,
-                IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            AudioServiceBinder binder = (AudioServiceBinder) service;
-            mAudioService = binder.getService();
-            mAudioServiceIsBound = true;
-        }
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get
+			// LocalService instance
+			AudioServiceBinder binder = (AudioServiceBinder) service;
+			mAudioService = binder.getService();
+			mAudioServiceIsBound = true;
+		}
 
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mAudioServiceIsBound = false;
-        }
-    };
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			mAudioServiceIsBound = false;
+		}
+	};
 
 	/*
 	 * (non-Javadoc)
@@ -56,11 +55,12 @@ public class BackyardAndroidActivity extends Activity {
 		this.application.startAudioService();
 
 		// Create custom surface
-		//mAndroidSurface = new OscilliscopeGLSurfaceView(this);
-		//FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
-		//mainscreenGLLayout.addView(mAndroidSurface);
+		// mAndroidSurface = new OscilliscopeGLSurfaceView(this);
+		// FrameLayout mainscreenGLLayout = (FrameLayout)
+		// findViewById(R.id.glContainer);
+		// mainscreenGLLayout.addView(mAndroidSurface);
 	}
-	
+
 	public ByteBuffer getAudioFromService() {
 		return mAudioService.getAudioFromMicListener();
 	}
@@ -85,22 +85,22 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onPause() {
 		super.onPause();
 	}
-	
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Bind to LocalService
-        Intent intent = new Intent(this, AudioService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // Unbind from the service
-        if (mAudioServiceIsBound) {
-            unbindService(mConnection);
-            mAudioServiceIsBound = false;
-        }
-    }
+	@Override
+	protected void onStart() {
+		super.onStart();
+		// Bind to LocalService
+		Intent intent = new Intent(this, AudioService.class);
+		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		// Unbind from the service
+		if (mAudioServiceIsBound) {
+			unbindService(mConnection);
+			mAudioServiceIsBound = false;
+		}
+	}
 }

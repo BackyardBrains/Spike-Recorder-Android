@@ -5,10 +5,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 /**
- * OscilliscopeGLSurfaceView is a custom SurfaceView that implements
- * callbacks for its own holder, and manages its own GL drawing thread.
+ * OscilliscopeGLSurfaceView is a custom SurfaceView that implements callbacks
+ * for its own holder, and manages its own GL drawing thread.
+ * 
  * @author nate
- *
+ * 
  */
 class OscilliscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
@@ -38,8 +39,8 @@ class OscilliscopeGLSurfaceView extends SurfaceView implements
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mGLThread != null) {
-            mGLThread.requestStop();
-        }
+		if (mGLThread != null) {
+			mGLThread.requestStop();
+		}
 	}
 }

@@ -111,4 +111,11 @@ public class AudioService extends Service implements RecievesAudio {
 		return mBinder;
 	}
 
+	@Override
+	public boolean onUnbind(Intent intent) {
+		turnOffMicThread();
+		stopSelf();
+		return super.onUnbind(intent);
+	}
+
 }

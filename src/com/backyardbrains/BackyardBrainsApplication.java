@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Intent;
 
 public class BackyardBrainsApplication extends Application {
-	//private final static String TAG = "BYBAPP";
+	// private final static String TAG = "BYBAPP";
 
 	private boolean serviceRunning;
 	private AudioService audio;
