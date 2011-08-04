@@ -5,5 +5,6 @@
     <string name="waveview">View/Record</string>
     <string name="threshold">Threshold</string>
     <string name="stimulation">Configure Stimulation</string>
+    <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
 
 </resources>
