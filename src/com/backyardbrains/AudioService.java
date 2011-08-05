@@ -99,7 +99,12 @@ public class AudioService extends Service implements RecievesAudio {
 
 	@Override
 	public void receiveAudio(ByteBuffer audioData) {
-		app.getRunningActivity().setCurrentAudio(audioData);
+		BackyardAndroidActivity l_activity = app.getRunningActivity();
+		if (l_activity != null && audioData != null) {
+			l_activity.setCurrentAudio(audioData);
+		} else {
+			Log.e(TAG, "Prevented NPE while trying to push audio to GL thread.");
+		}
 	}
 
 	@Override

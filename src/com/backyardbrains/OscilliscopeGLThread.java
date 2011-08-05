@@ -25,6 +25,7 @@ public class OscilliscopeGLThread extends Thread {
 	private EGLContext mGLContext;
 	private GL10 mGL;
 	private ByteBuffer audioBuffer;
+	public float x_width = 100f;
 
 	/**
 	 * @return the audioBuffer
@@ -48,7 +49,9 @@ public class OscilliscopeGLThread extends Thread {
 	public void run() {
 		initEGL();
 		initGL();
-		GLU.gluLookAt(mGL, 0, 0, 5f, 0, 0, 0, 0, 1, 0f);
+		float leftside = 25;
+		float height = 27;
+		GLU.gluLookAt(mGL, leftside, 0, height, leftside, 0, 0, 0, 1, 0f);
 		mGL.glColor4f(0f, 1f, 0f, 1f);
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
 		while (!mDone) {

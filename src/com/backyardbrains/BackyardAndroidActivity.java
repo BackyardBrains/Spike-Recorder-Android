@@ -105,7 +105,9 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	public void setCurrentAudio(ByteBuffer audioData) {
-		mAndroidSurface.getGLThread().setAudioBuffer(audioData);
+		OscilliscopeGLThread l_thread = mAndroidSurface.getGLThread();
+		if (l_thread != null)
+			l_thread.setAudioBuffer(audioData);
 
 	}
 }

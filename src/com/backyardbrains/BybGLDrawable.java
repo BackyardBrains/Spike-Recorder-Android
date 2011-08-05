@@ -3,6 +3,7 @@ package com.backyardbrains;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.Random;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -11,6 +12,8 @@ import android.util.Log;
 
 class BybGLDrawable {
 	private static final String TAG = "BYBGLShape";
+
+	private final float Y_SCALING = .001f;
 
 	/**
 	 * 
@@ -24,12 +27,7 @@ class BybGLDrawable {
 		parent = oscilliscopeGLThread;
 	}
 
-	private float[] vertices = { -3f, 0, 0, -2.75f, 0, 0, -2.5f, 0, 0, -2.25f,
-			0, 0, -2f, 0, 0, -1.75f, 0, 0, -1.5f, 0, 0, -1.25f, 0, 0, -1f, 0,
-			0, -0.75f, 0, 0, -0.5f, 0, 0, -0.25f, 0, 0, 0f, 0, 0, 0.25f, 0, 0,
-			0.5f, 0, 0, 0.75f, 0, 0, 1f, 0, 0, 1.25f, 0, 0, 1.5f, 0, 0, 1.75f,
-			0, 0, 2f, 0, 0, 2.25f, 0, 0, 2.5f, 0, 0, 2.75f, 0, 0, 3f, 0, 0 };
-	private ByteBuffer mBufferToDraw;
+	private short[] mBufferToDraw;
 
 	FloatBuffer getFloatBufferFromFloatArray(float array[]) {
 		ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
@@ -56,15 +54,43 @@ class BybGLDrawable {
 	}
 
 	public void draw(GL10 gl_obj) {
-		vertices = transform(vertices);
-		FloatBuffer mVertexBuffer = getFloatBufferFromFloatArray(vertices);
+		// vertices = transform(vertices);
+		// FloatBuffer mVertexBuffer = getFloatBufferFromFloatArray(vertices);
+		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl_obj.glVertexPointer(3, GL10.GL_FLOAT, 0, mVertexBuffer);
-		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, vertices.length / 3);
+		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 3);
+	}
+
+	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+		if (shortArrayToDraw == null) {
+			Log.w(TAG, "Drawing fake line with null data");
+			float[] array = { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f,
+					0.0f };
+			return getFloatBufferFromFloatArray(array);
+		}
+		Log.d(TAG, "Received buffer to draw");
+
+		float[] arr = new float[shortArrayToDraw.length * 3]; // array to fill
+		int j = 0; // index of arr
+		float interval = parent.x_width / shortArrayToDraw.length;
+		for (int i = 0; i < shortArrayToDraw.length; i++) {
+			arr[j++] = i * interval;
+			arr[j++] = shortArrayToDraw[i] * Y_SCALING;
+			arr[j++] = 0f;
+		}
+		return getFloatBufferFromFloatArray(arr);
 	}
 
 	public void setBufferToDraw(ByteBuffer audioBuffer) {
-		mBufferToDraw = audioBuffer;
-		Log.i(TAG, "Got audio data");
+		if (audioBuffer != null) {
+			audioBuffer.clear();
+			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
+			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
+					mBufferToDraw.length);
+			Log.i(TAG, "Got audio data");
+		} else {
+			Log.w(TAG, "Received null audioBuffer");
+		}
 	}
 }
