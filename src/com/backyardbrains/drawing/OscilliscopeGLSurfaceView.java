@@ -11,7 +11,7 @@ import android.view.SurfaceView;
  * @author nate
  * 
  */
-class OscilliscopeGLSurfaceView extends SurfaceView implements
+public class OscilliscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
 	SurfaceHolder mAndroidHolder;
@@ -24,7 +24,7 @@ class OscilliscopeGLSurfaceView extends SurfaceView implements
 		return mGLThread;
 	}
 
-	OscilliscopeGLSurfaceView(Context context) {
+	public OscilliscopeGLSurfaceView(Context context) {
 		super(context);
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
