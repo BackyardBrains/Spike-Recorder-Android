@@ -2,8 +2,6 @@ package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
 
-import android.app.Service;
-
 /**
  * A simple interface to attach to services which allows a callback into
  * android's built-in classes from an unrelated thread
