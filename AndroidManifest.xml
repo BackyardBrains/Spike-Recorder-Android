@@ -14,6 +14,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".audio.AudioService"></service>
+        <service android:name="com.backyardbrains.audio.AudioService"></service>
         </application>
 </manifest>

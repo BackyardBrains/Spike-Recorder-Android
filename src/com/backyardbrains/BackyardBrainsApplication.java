@@ -9,7 +9,6 @@ public class BackyardBrainsApplication extends Application {
 	// private final static String TAG = "BYBAPP";
 
 	private boolean serviceRunning;
-	private AudioService audio;
 	private BackyardAndroidActivity runningActivity;
 
 	/**
@@ -60,7 +59,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		audio = new AudioService();
+		new AudioService();
 		startAudioService();
 	}
 
@@ -73,7 +72,6 @@ public class BackyardBrainsApplication extends Application {
 	public void onTerminate() {
 		super.onTerminate();
 		stopAudioService();
-		audio = null;
 	}
 
 }
