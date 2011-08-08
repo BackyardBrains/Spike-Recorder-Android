@@ -1,4 +1,4 @@
-package com.backyardbrains;
+package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.view.SurfaceHolder;

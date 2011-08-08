@@ -14,6 +14,8 @@ import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
+import com.backyardbrains.drawing.OscilliscopeGLSurfaceView;
+import com.backyardbrains.drawing.OscilliscopeGLThread;
 
 public class BackyardAndroidActivity extends Activity {
 
