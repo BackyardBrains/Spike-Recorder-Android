@@ -1,6 +1,10 @@
-package com.backyardbrains;
+package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+
+import com.backyardbrains.BackyardAndroidActivity;
+import com.backyardbrains.BackyardBrainsApplication;
+import com.backyardbrains.R;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -19,7 +23,7 @@ public class AudioService extends Service implements RecievesAudio {
 	private final IBinder mBinder = new AudioServiceBinder();
 
 	public class AudioServiceBinder extends Binder {
-		AudioService getService() {
+		public AudioService getService() {
 			return AudioService.this;
 		}
 	}

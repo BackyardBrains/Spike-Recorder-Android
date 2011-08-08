@@ -1,4 +1,4 @@
-package com.backyardbrains;
+package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
 
