@@ -23,6 +23,7 @@ import com.backyardbrains.drawing.OscilliscopeGLThread;
  * oscilloscope view for use with the spikerbox
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
+ * @version 1
  * 
  */
 public class BackyardAndroidActivity extends Activity {
