@@ -38,21 +38,6 @@ class BybGLDrawable {
 		return buf;
 	}
 
-	public float[] transform(float array[]) {
-		Random derp = new Random();
-		for (int i = 0; i < array.length - 3; i++) {
-			// ys
-			if ((i + 2) % 3 == 0) {
-				// copy y from next element
-				array[i] = array[i + 3];
-			}
-			// randomize last y
-		}
-		array[array.length - 2] = derp.nextFloat() * (float) derp.nextInt() % 3
-				- 1;
-		return array;
-	}
-
 	public void draw(GL10 gl_obj) {
 		// vertices = transform(vertices);
 		// FloatBuffer mVertexBuffer = getFloatBufferFromFloatArray(vertices);
