@@ -15,22 +15,51 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+/**
+ * Manages a thread which monitors default audio input and pushes raw audio data
+ * to bound activities.
+ * 
+ * @author Nathan Dotz <nate@backyardbrains.com>
+ * @version 1
+ * 
+ */
 public class AudioService extends Service implements RecievesAudio {
 
+	/**
+	 * Tag for logging
+	 */
 	static final String TAG = "BYBAudioService";
+
+	/**
+	 * Indicator of whether the service is properly running
+	 */
 	public boolean running;
 
-	private final IBinder mBinder = new AudioServiceBinder();
-
+	/**
+	 * Provides a reference to {@link AudioService} to all bound clients.
+	 *
+	 */
 	public class AudioServiceBinder extends Binder {
 		public AudioService getService() {
 			return AudioService.this;
 		}
 	}
+	private final IBinder mBinder = new AudioServiceBinder();
 
+	/**
+	 * Reference to instantiating {@link BackyardBrainsApplication}
+	 */
 	private BackyardBrainsApplication app;
+
+	/**
+	 * {@link MicListener} the service uses to listen to default audio device
+	 * 
+	 */
 	private MicListener micThread;
 
+	/**
+	 * Unique id to turn on-and-off service notification
+	 */
 	private int NOTIFICATION = R.string.mic_thread_running;
 	private NotificationManager mNM;
 
