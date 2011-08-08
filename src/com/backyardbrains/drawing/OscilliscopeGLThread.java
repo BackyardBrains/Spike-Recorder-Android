@@ -14,38 +14,69 @@ import android.opengl.GLU;
 import android.util.Log;
 import android.view.SurfaceView;
 
+/**
+ * A {@link Thread} which manages continuous drawing of a {@link BybGLDrawable}
+ * onto a {@link OscilliscopeGLSurfaceView}
+ * 
+ * @author Nathan Dotz <nate@backyardbrains.com>
+ * @version 1
+ * 
+ */
 public class OscilliscopeGLThread extends Thread {
 
+	/**
+	 * reference to parent {@link OscilliscopeGLSurfaceView}
+	 */
 	SurfaceView parent;
-	private boolean mDone = false; // signal whether thread is finished
+
+	/**
+	 * Is thread done processing yet? Used at requestStop
+	 */
+	private boolean mDone = false;
+
+	/**
+	 * Necessary GL detritus.
+	 */
 	private EGL10 mEGL;
 	private EGLDisplay mGLDisplay;
 	private EGLConfig mGLConfig;
 	private EGLSurface mGLSurface;
 	private EGLContext mGLContext;
 	private GL10 mGL;
+
+	/**
+	 * storage for {@link ByteBuffer} to be transfered to {@link BybGLDrawable}
+	 */
 	private ByteBuffer audioBuffer;
 	public float x_width = 100f;
 
 	/**
-	 * @return the audioBuffer
-	 */
-	public ByteBuffer getAudioBuffer() {
-		return audioBuffer;
-	}
-
-	/**
+	 * Called by the instantiating activity, this sets to {@link ByteBuffer} to
+	 * be sent down to the {@link BybGLDrawable} on the new call to
+	 * {@link BybGLDrawable#draw(GL10)}
+	 * 
 	 * @param audioBuffer
-	 *            the audioBuffer to set
+	 * 
 	 */
 	public void setAudioBuffer(ByteBuffer audioBuffer) {
 		this.audioBuffer = audioBuffer;
 	}
 
+	/**
+	 * @param view
+	 *            reference to the parent view
+	 */
 	OscilliscopeGLThread(SurfaceView view) {
 		parent = view;
 	}
 
+	/**
+	 * Initialize GL bits, set up the GL area so that we're lookin at it
+	 * properly, create a new {@link BybGLDrawable}, then commence drawing on it
+	 * like the dickens.
+	 * 
+	 * @see java.lang.Thread#run()
+	 */
 	public void run() {
 		initEGL();
 		initGL();
@@ -64,6 +95,11 @@ public class OscilliscopeGLThread extends Thread {
 		}
 	}
 
+	/**
+	 * Properly clean up GL stuff when exiting
+	 * 
+	 * @see OscilliscopeGLThread#cleanupGL()
+	 */
 	public void requestStop() {
 		mDone = true;
 		try {
@@ -72,9 +108,12 @@ public class OscilliscopeGLThread extends Thread {
 			Log.e("BYB", "GL Thread couldn't rejoin!", e);
 		}
 		cleanupGL();
-
 	}
 
+	/**
+	 * called by {@link OscilliscopeGLThread#requestStop()} to make sure the GL native interface isn't leaving
+	 * behind turds.
+	 */
 	private void cleanupGL() {
 		mEGL.eglMakeCurrent(mGLDisplay, EGL10.EGL_NO_SURFACE,
 				EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_CONTEXT);
@@ -83,6 +122,10 @@ public class OscilliscopeGLThread extends Thread {
 		mEGL.eglTerminate(mGLDisplay);
 	}
 
+	/**
+	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
+	 * GL Viewport and sets defaults.
+	 */
 	private void initGL() {
 		// set viewport
 		int width = parent.getWidth();
@@ -99,6 +142,10 @@ public class OscilliscopeGLThread extends Thread {
 
 	}
 
+	/**
+	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
+	 * surface we need to draw on. Mostly boilerplate. No Touchy.
+	 */
 	private void initEGL() {
 		/**
 		 * Get EGL object, display object, and initialize
