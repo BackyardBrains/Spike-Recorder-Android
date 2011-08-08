@@ -37,13 +37,14 @@ public class AudioService extends Service implements RecievesAudio {
 
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
-	 *
+	 * 
 	 */
 	public class AudioServiceBinder extends Binder {
 		public AudioService getService() {
 			return AudioService.this;
 		}
 	}
+
 	private final IBinder mBinder = new AudioServiceBinder();
 
 	/**
@@ -63,8 +64,8 @@ public class AudioService extends Service implements RecievesAudio {
 	private int NOTIFICATION = R.string.mic_thread_running;
 	private NotificationManager mNM;
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Create service and grab reference to {@link BackyardBrainsApplication}
 	 * 
 	 * @see android.app.Service#onCreate()
 	 */
@@ -74,8 +75,8 @@ public class AudioService extends Service implements RecievesAudio {
 		app = (BackyardBrainsApplication) getApplication();
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Tell application we're no longer running, then kill {@link MicListener}
 	 * 
 	 * @see android.app.Service#onDestroy()
 	 */
@@ -86,8 +87,9 @@ public class AudioService extends Service implements RecievesAudio {
 		super.onDestroy();
 	}
 
-	/*
-	 * (non-Javadoc)
+	/**
+	 * Do standard {@link Service#onStartCommand(Intent, int, int)}, then turn
+	 * on {@link MicListener} and let app know we're running.
 	 * 
 	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
 	 */
@@ -99,6 +101,10 @@ public class AudioService extends Service implements RecievesAudio {
 		return START_STICKY;
 	}
 
+	/**
+	 * Instantiate {@link MicListener} thread, tell it to start, and put up the
+	 * notification via {@link AudioService#showNotification()}
+	 */
 	public void turnOnMicThread() {
 		micThread = new MicListener();
 		micThread.start(AudioService.this);
@@ -107,6 +113,12 @@ public class AudioService extends Service implements RecievesAudio {
 		Log.d(TAG, "Mic thread started");
 	}
 
+	/**
+	 * Put up a notification that this service is running.
+	 * 
+	 * @see android.app.Notification
+	 * @see NotificationManager#notify()
+	 */
 	private void showNotification() {
 		CharSequence text = getText(R.string.mic_thread_running);
 		Notification not = new Notification(R.drawable.ic_launcher_byb, text,
@@ -117,6 +129,9 @@ public class AudioService extends Service implements RecievesAudio {
 		mNM.notify(NOTIFICATION, not);
 	}
 
+	/**
+	 * Clean up {@link MicListener} resources and remove notification
+	 */
 	public void turnOffMicThread() {
 		if (micThread != null) {
 			micThread.requestStop();
@@ -126,25 +141,51 @@ public class AudioService extends Service implements RecievesAudio {
 		Log.d(TAG, "Mic Thread Shut Off");
 	}
 
+	/**
+	 * Called by bound activities (for now, just {@link BackyardAndroidActivity}
+	 * ) to get audio data to hand off to a drawing surface
+	 * 
+	 * @return {@link ByteBuffer} of audio data from {@link MicListener}
+	 */
 	public ByteBuffer getAudioFromMicListener() {
 		return micThread.getAudioInfo();
 	}
 
+	/**
+	 * Get a copy of the necessary activity, and push the received data out to
+	 * said activity
+	 * 
+	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(java.nio.ByteBuffer)
+	 */
 	@Override
 	public void receiveAudio(ByteBuffer audioData) {
 		BackyardAndroidActivity l_activity = app.getRunningActivity();
 		if (l_activity != null && audioData != null) {
 			l_activity.setCurrentAudio(audioData);
 		} else {
-			Log.e(TAG, "Prevented NPE while trying to push audio to GL thread.");
+			Log
+					.e(TAG,
+							"Prevented NPE while trying to push audio to GL thread.");
 		}
 	}
 
+	/**
+	 * return a binding pointer for activities to reference this object
+	 * 
+	 * @see android.app.Service#onBind(android.content.Intent)
+	 * @return binding reference to this object
+	 */
 	@Override
 	public IBinder onBind(Intent arg0) {
 		return mBinder;
 	}
 
+	/**
+	 * make sure we clean up. shuts down {@link MicListener} thread and assures
+	 * someone has told us to stop (in this case, ourselves)
+	 * 
+	 * @see android.app.Service#onUnbind(android.content.Intent)
+	 */
 	@Override
 	public boolean onUnbind(Intent intent) {
 		turnOffMicThread();
