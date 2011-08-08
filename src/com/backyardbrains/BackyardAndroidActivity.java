@@ -12,7 +12,8 @@ import android.os.IBinder;
 import android.view.Menu;
 import android.widget.FrameLayout;
 
-import com.backyardbrains.AudioService.AudioServiceBinder;
+import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 
 public class BackyardAndroidActivity extends Activity {
 
