@@ -5,15 +5,9 @@
 	android:orientation="vertical"
 	android:weightSum="1">
 	
-	<TextView android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:text="@string/hello"
-		android:textSize="24sp"
-		android:gravity="center" />
-
 	<FrameLayout android:id="@+id/glContainer"
-		android:layout_height="wrap_content"
-		android:layout_width="wrap_content">
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent">
 	</FrameLayout>
 
 </LinearLayout>

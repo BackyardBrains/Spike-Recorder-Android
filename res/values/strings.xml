@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="hello">Welcome to Backyard Brains!</string>
     <string name="app_name">BackyardBrains</string>
     <string name="waveview">View/Record</string>
     <string name="threshold">Threshold</string>
