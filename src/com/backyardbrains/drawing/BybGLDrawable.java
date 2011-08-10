@@ -112,7 +112,8 @@ class BybGLDrawable {
 	 * data from the recording device and converts it into an array of 16-bit
 	 * shorts, to later be processed by the drawing functions.
 	 * 
-	 * @param audioBuffer {@link ByteBuffer} to be drawn
+	 * @param audioBuffer
+	 *            {@link ByteBuffer} to be drawn
 	 */
 	public void setBufferToDraw(ByteBuffer audioBuffer) {
 		if (audioBuffer != null) {
