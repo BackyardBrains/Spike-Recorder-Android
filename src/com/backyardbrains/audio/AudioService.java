@@ -148,6 +148,7 @@ public class AudioService extends Service implements RecievesAudio {
 	 * ) to get audio data to hand off to a drawing surface
 	 * 
 	 * @return {@link ByteBuffer} of audio data from {@link MicListener}
+	 * @deprecated
 	 */
 	public ByteBuffer getAudioFromMicListener() {
 		return micThread.getAudioInfo();

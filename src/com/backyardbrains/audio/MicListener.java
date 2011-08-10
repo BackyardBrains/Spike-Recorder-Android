@@ -71,6 +71,7 @@ public class MicListener extends Thread {
 	 * {@link ByteBuffer}
 	 * 
 	 * @return the audioInfo
+	 * @deprecated
 	 */
 	public ByteBuffer getAudioInfo() {
 		return audioInfo;
