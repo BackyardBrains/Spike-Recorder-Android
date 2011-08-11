@@ -124,6 +124,7 @@ class BybGLDrawable {
 					mBufferToDraw.length);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 			Log.i(TAG, "Got audio data. Buffer length: " + audioBuffer.capacity());
 =======
 			Log.i(TAG, "Got audio data: " + audioBuffer.asShortBuffer().capacity());
@@ -132,6 +133,10 @@ class BybGLDrawable {
 			Log.i(TAG, "Got audio data: "
 					+ audioBuffer.asShortBuffer().capacity());
 >>>>>>> Unfinished move to 2D rendering
+=======
+			Log.i(TAG, "Got audio data: "
+					+ audioBuffer.asShortBuffer().capacity());
+>>>>>>> 5cac3d825ce0eadc95ef452a90af67db719d0ae9
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
