@@ -111,8 +111,8 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	/**
-	 * called by {@link OscilliscopeGLThread#requestStop()} to make sure the GL native interface isn't leaving
-	 * behind turds.
+	 * called by {@link OscilliscopeGLThread#requestStop()} to make sure the GL
+	 * native interface isn't leaving behind turds.
 	 */
 	private void cleanupGL() {
 		mEGL.eglMakeCurrent(mGLDisplay, EGL10.EGL_NO_SURFACE,

@@ -85,7 +85,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		//new AudioService();
+		// new AudioService();
 		startAudioService();
 	}
 

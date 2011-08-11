@@ -136,11 +136,11 @@ public class AudioService extends Service implements RecievesAudio {
 		if (micThread != null) {
 			micThread.requestStop();
 			micThread = null;
+			Log.d(TAG, "Mic Thread Shut Off");
 		}
 		if (mNM != null) {
 			mNM.cancel(NOTIFICATION);
 		}
-		Log.d(TAG, "Mic Thread Shut Off");
 	}
 
 	/**
@@ -148,6 +148,7 @@ public class AudioService extends Service implements RecievesAudio {
 	 * ) to get audio data to hand off to a drawing surface
 	 * 
 	 * @return {@link ByteBuffer} of audio data from {@link MicListener}
+	 * @deprecated
 	 */
 	public ByteBuffer getAudioFromMicListener() {
 		return micThread.getAudioInfo();
@@ -165,9 +166,7 @@ public class AudioService extends Service implements RecievesAudio {
 		if (l_activity != null && audioData != null) {
 			l_activity.setCurrentAudio(audioData);
 		} else {
-			Log
-					.e(TAG,
-							"Prevented NPE while trying to push audio to GL thread.");
+			Log.e(TAG, "Prevented NPE while trying to push audio to GL thread.");
 		}
 	}
 

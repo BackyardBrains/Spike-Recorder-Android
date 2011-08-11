@@ -73,8 +73,8 @@ class BybGLDrawable {
 		// FloatBuffer mVertexBuffer = getFloatBufferFromFloatArray(vertices);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		gl_obj.glVertexPointer(3, GL10.GL_FLOAT, 0, mVertexBuffer);
-		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 3);
+		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
+		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 	}
 
 	/**
@@ -90,19 +90,17 @@ class BybGLDrawable {
 	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		if (shortArrayToDraw == null) {
 			Log.w(TAG, "Drawing fake line with null data");
-			float[] array = { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f,
-					0.0f };
+			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f};
 			return getFloatBufferFromFloatArray(array);
 		}
 		// Log.d(TAG, "Received buffer to draw");
 
-		float[] arr = new float[shortArrayToDraw.length * 3]; // array to fill
+		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
 		int j = 0; // index of arr
 		float interval = parent.x_width / shortArrayToDraw.length;
 		for (int i = 0; i < shortArrayToDraw.length; i++) {
 			arr[j++] = i * interval;
 			arr[j++] = shortArrayToDraw[i] * Y_SCALING;
-			arr[j++] = 0f;
 		}
 		return getFloatBufferFromFloatArray(arr);
 	}
@@ -121,7 +119,11 @@ class BybGLDrawable {
 			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
+<<<<<<< HEAD
 			Log.i(TAG, "Got audio data. Buffer length: " + audioBuffer.capacity());
+=======
+			Log.i(TAG, "Got audio data: " + audioBuffer.asShortBuffer().capacity());
+>>>>>>> 0250b9b629e5469017363d6d32cfae4bf6d53a9e
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
