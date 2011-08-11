@@ -94,7 +94,7 @@ class BybGLDrawable {
 					0.0f };
 			return getFloatBufferFromFloatArray(array);
 		}
-		Log.d(TAG, "Received buffer to draw");
+		// Log.d(TAG, "Received buffer to draw");
 
 		float[] arr = new float[shortArrayToDraw.length * 3]; // array to fill
 		int j = 0; // index of arr
@@ -112,7 +112,8 @@ class BybGLDrawable {
 	 * data from the recording device and converts it into an array of 16-bit
 	 * shorts, to later be processed by the drawing functions.
 	 * 
-	 * @param audioBuffer {@link ByteBuffer} to be drawn
+	 * @param audioBuffer
+	 *            {@link ByteBuffer} to be drawn
 	 */
 	public void setBufferToDraw(ByteBuffer audioBuffer) {
 		if (audioBuffer != null) {
@@ -120,7 +121,7 @@ class BybGLDrawable {
 			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
-			Log.i(TAG, "Got audio data");
+			Log.i(TAG, "Got audio data. Buffer length: " + audioBuffer.capacity());
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
