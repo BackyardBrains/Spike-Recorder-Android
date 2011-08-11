@@ -24,7 +24,7 @@ class BybGLDrawable {
 	/**
 	 * Scaling in Y domain to be used when drawing on a GL surface
 	 */
-	private final float Y_SCALING = .001f;
+	private final float Y_SCALING = 1f;
 
 	/**
 	 * Reference to the parent thread responsible for maintaining this object.
@@ -69,10 +69,13 @@ class BybGLDrawable {
 	 * @param gl_obj
 	 */
 	public void draw(GL10 gl_obj) {
-		// vertices = transform(vertices);
-		// FloatBuffer mVertexBuffer = getFloatBufferFromFloatArray(vertices);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
+		// gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
+		// gl_obj.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		// gl_obj.glClear(GL10.GL_COLOR_BUFFER_BIT);
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		gl_obj.glLineWidthx(1);
+		gl_obj.glColor4f(0f, 1f, 0f, 1f);
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 	}
@@ -90,7 +93,7 @@ class BybGLDrawable {
 	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		if (shortArrayToDraw == null) {
 			Log.w(TAG, "Drawing fake line with null data");
-			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f};
+			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
 			return getFloatBufferFromFloatArray(array);
 		}
 		// Log.d(TAG, "Received buffer to draw");
@@ -120,10 +123,15 @@ class BybGLDrawable {
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
 <<<<<<< HEAD
+<<<<<<< HEAD
 			Log.i(TAG, "Got audio data. Buffer length: " + audioBuffer.capacity());
 =======
 			Log.i(TAG, "Got audio data: " + audioBuffer.asShortBuffer().capacity());
 >>>>>>> 0250b9b629e5469017363d6d32cfae4bf6d53a9e
+=======
+			Log.i(TAG, "Got audio data: "
+					+ audioBuffer.asShortBuffer().capacity());
+>>>>>>> Unfinished move to 2D rendering
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}

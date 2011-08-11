@@ -10,7 +10,6 @@ import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.opengl.GLDebugHelper;
-import android.opengl.GLU;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -48,7 +47,7 @@ public class OscilliscopeGLThread extends Thread {
 	 * storage for {@link ByteBuffer} to be transfered to {@link BybGLDrawable}
 	 */
 	private ByteBuffer audioBuffer;
-	public float x_width = 100f;
+	public float x_width = 100;
 
 	/**
 	 * Called by the instantiating activity, this sets to {@link ByteBuffer} to
@@ -80,10 +79,6 @@ public class OscilliscopeGLThread extends Thread {
 	public void run() {
 		initEGL();
 		initGL();
-		float leftside = 25;
-		float height = 27;
-		GLU.gluLookAt(mGL, leftside, 0, height, leftside, 0, 0, 0, 1, 0f);
-		mGL.glColor4f(0f, 1f, 0f, 1f);
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
 		while (!mDone) {
 			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
@@ -134,8 +129,8 @@ public class OscilliscopeGLThread extends Thread {
 
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
-		// carry-over from GLUT
-		GLU.gluPerspective(mGL, 45f, (float) width / height, 1f, 30f);
+		mGL.glOrthof(-100, 0, -5000f, 5000f, -1f, 1f);
+		mGL.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
 		mGL.glClearColor(0f, 0f, 0f, 1.0f);
