@@ -136,11 +136,11 @@ public class AudioService extends Service implements RecievesAudio {
 		if (micThread != null) {
 			micThread.requestStop();
 			micThread = null;
+			Log.d(TAG, "Mic Thread Shut Off");
 		}
 		if (mNM != null) {
 			mNM.cancel(NOTIFICATION);
 		}
-		Log.d(TAG, "Mic Thread Shut Off");
 	}
 
 	/**
