@@ -22,6 +22,47 @@ import android.view.SurfaceView;
  * 
  */
 public class OscilliscopeGLThread extends Thread {
+	
+	private float xBegin = -100f;
+	private float xEnd = 0f;
+
+	private float yMin = -5000000f;
+	private float yMax = 5000000f;
+	
+	public float getyMin() {
+		return yMin;
+	}
+
+	public void setyMin(float yMin) {
+		this.yMin = yMin;
+	}
+
+	public float getyMax() {
+		return yMax;
+	}
+
+	public void setyMax(float yMax) {
+		this.yMax = yMax;
+	}
+
+	private float yBegin = -5000f;
+	private float yEnd = 5000f;
+
+	public float getyBegin() {
+		return yBegin;
+	}
+
+	public void setyBegin(float yBegin) {
+		this.yBegin = yBegin;
+	}
+
+	public float getyEnd() {
+		return yEnd;
+	}
+
+	public void setyEnd(float yEnd) {
+		this.yEnd = yEnd;
+	}
 
 	/**
 	 * reference to parent {@link OscilliscopeGLSurfaceView}
@@ -78,7 +119,6 @@ public class OscilliscopeGLThread extends Thread {
 	 */
 	public void run() {
 		initEGL();
-		initGL();
 		BybGLDrawable waveform_shape = new BybGLDrawable(this);
 		while (!mDone) {
 			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
@@ -121,7 +161,7 @@ public class OscilliscopeGLThread extends Thread {
 	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
 	 * GL Viewport and sets defaults.
 	 */
-	private void initGL() {
+	void initGL() {
 		// set viewport
 		int width = parent.getWidth();
 		int height = parent.getHeight();
@@ -129,12 +169,12 @@ public class OscilliscopeGLThread extends Thread {
 
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
-		mGL.glOrthof(-100, 0, -5000f, 5000f, -1f, 1f);
+		mGL.glOrthof(xBegin, xEnd, yBegin, yEnd, -1f, 1f);
 		mGL.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
 		mGL.glClearColor(0f, 0f, 0f, 1.0f);
-
+		
 	}
 
 	/**
@@ -173,8 +213,8 @@ public class OscilliscopeGLThread extends Thread {
 		 * Finally, get a GL Surface to draw on, a context, blit them together,
 		 * and populate the GL object.
 		 */
-		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig,
-				parent.getHolder(), null);
+		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig, parent
+				.getHolder(), null);
 		mGLContext = mEGL.eglCreateContext(mGLDisplay, mGLConfig,
 				EGL10.EGL_NO_CONTEXT, null);
 		mEGL.eglMakeCurrent(mGLDisplay, mGLSurface, mGLSurface, mGLContext);
