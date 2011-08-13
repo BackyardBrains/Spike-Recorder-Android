@@ -71,14 +71,12 @@ class BybGLDrawable {
 	public void draw(GL10 gl_obj) {
 		parent.initGL();
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
-		// gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
-		// gl_obj.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		// gl_obj.glClear(GL10.GL_COLOR_BUFFER_BIT);
+
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl_obj.glLineWidth(1f);
 		gl_obj.glColor4f(0f, 1f, 0f, 1f);
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
-		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit()/2);
+		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
 	}
 

@@ -23,8 +23,8 @@ import android.view.SurfaceView;
  */
 public class OscilliscopeGLThread extends Thread {
 	
-	private float xBegin = -100f;
-	private float xEnd = 0f;
+	private float xBegin = 00f;
+	private float xEnd = 4000f;;
 
 	private float yMin = -5000000f;
 	private float yMax = 5000000f;
