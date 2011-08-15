@@ -119,11 +119,7 @@ class BybGLDrawable {
 			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
-<<<<<<< HEAD
 			Log.i(TAG, "Got audio data. Buffer length: " + audioBuffer.capacity());
-=======
-			Log.i(TAG, "Got audio data: " + audioBuffer.asShortBuffer().capacity());
->>>>>>> 0250b9b629e5469017363d6d32cfae4bf6d53a9e
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
