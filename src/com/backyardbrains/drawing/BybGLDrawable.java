@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.os.SystemClock;
 import android.util.Log;
 
 /**
@@ -47,6 +48,13 @@ class BybGLDrawable {
 	private short[] mBufferToDraw;
 
 	/**
+	 * Figure out when the first buffer was drawn, so we can scale after 100ms
+	 */
+	private long firstBufferDrawn = 0;
+
+	private boolean autoScaled;
+
+	/**
 	 * Takes an array of floats and returns a buffer representing the same
 	 * floats
 	 * 
@@ -64,13 +72,22 @@ class BybGLDrawable {
 	}
 
 	/**
-	 * Draw this object on the provided {@link GL10} object.
+	 * Draw this object on the provided {@link GL10} object. In addition, check
+	 * to see if the frame has been autoscaled yet. If not, do so exactly once,
+	 * and only after 100ms have passed.
 	 * 
 	 * @param gl_obj
 	 */
 	public void draw(GL10 gl_obj) {
 		parent.initGL();
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
+
+		if (!autoScaled
+				&& firstBufferDrawn != 0
+				&& (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
+			autoSetFrame(mBufferToDraw);
+			autoScaled = true;
+		}
 
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl_obj.glLineWidth(1f);
@@ -80,37 +97,14 @@ class BybGLDrawable {
 
 	}
 
-	/**
-	 * Convert the local buffer-to-draw data over to a {@link FloatBuffer}
-	 * structure suitable for feeding to
-	 * {@link GL10#glDrawArrays(int, int, int)}
-	 * 
-	 * @param shortArrayToDraw
-	 *            containing raw audio data
-	 * @return {@link FloatBuffer} ready to be fed to
-	 *         {@link GL10#glDrawArrays(int, int, int)}
-	 */
-	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+	private void autoSetFrame(short[] arrayToScaleTo) {
 		float theMax = 0;
 		float theMin = 0;
-		if (shortArrayToDraw == null) {
-			Log.w(TAG, "Drawing fake line with null data");
-			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
-			return getFloatBufferFromFloatArray(array);
-		}
-		// Log.d(TAG, "Received buffer to draw");
-
-		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
-		int j = 0; // index of arr
-		// float interval = parent.x_width / shortArrayToDraw.length;
-		float interval = 1;
-		for (int i = 0; i < shortArrayToDraw.length; i++) {
-			arr[j++] = i * interval;
-			if (theMax < shortArrayToDraw[i])
-				theMax = shortArrayToDraw[i];
-			if (theMin > shortArrayToDraw[i])
-				theMin = shortArrayToDraw[i];
-			arr[j++] = shortArrayToDraw[i] * Y_SCALING;
+		for (int i = 0; i < arrayToScaleTo.length; i++) {
+			if (theMax < arrayToScaleTo[i])
+				theMax = arrayToScaleTo[i];
+			if (theMin > arrayToScaleTo[i])
+				theMin = arrayToScaleTo[i];
 		}
 
 		float newyMax;
@@ -126,6 +120,39 @@ class BybGLDrawable {
 				parent.setyEnd(newyMax);
 			}
 
+		}
+
+	}
+
+	/**
+	 * Convert the local buffer-to-draw data over to a {@link FloatBuffer}
+	 * structure suitable for feeding to
+	 * {@link GL10#glDrawArrays(int, int, int)}
+	 * 
+	 * @param shortArrayToDraw
+	 *            containing raw audio data
+	 * @return {@link FloatBuffer} ready to be fed to
+	 *         {@link GL10#glDrawArrays(int, int, int)}
+	 */
+	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+		if (shortArrayToDraw == null) {
+			Log.w(TAG, "Drawing fake line with null data");
+			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
+			return getFloatBufferFromFloatArray(array);
+		}
+		// Log.d(TAG, "Received buffer to draw");
+
+		if (firstBufferDrawn == 0) {
+			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
+		}
+
+		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
+		int j = 0; // index of arr
+		// float interval = parent.x_width / shortArrayToDraw.length;
+		float interval = 1;
+		for (int i = 0; i < shortArrayToDraw.length; i++) {
+			arr[j++] = i * interval;
+			arr[j++] = shortArrayToDraw[i] * Y_SCALING;
 		}
 
 		return getFloatBufferFromFloatArray(arr);
@@ -145,7 +172,8 @@ class BybGLDrawable {
 			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
-			Log.i(TAG, "Got audio data: " + audioBuffer.asShortBuffer().capacity());
+			Log.i(TAG, "Got audio data: "
+					+ audioBuffer.asShortBuffer().capacity());
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
