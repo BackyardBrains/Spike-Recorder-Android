@@ -101,6 +101,13 @@ class BybGLDrawable {
 
 	}
 
+	/**
+	 * Called exactly once, ~100 ms after each time the activity gets attention
+	 * from the screen. Takes a min/max metric of the current buffer and scales
+	 * the GL surface to the appropriate size.
+	 * 
+	 * @param arrayToScaleTo
+	 */
 	private void autoSetFrame(short[] arrayToScaleTo) {
 		float theMax = 0;
 		float theMin = 0;
