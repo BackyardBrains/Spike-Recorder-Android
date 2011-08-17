@@ -23,7 +23,11 @@ class BybGLDrawable {
 	private static final String TAG = "BYBGLShape";
 
 	/**
-	 * Scaling in Y domain to be used when drawing on a GL surface
+	 * Scaling in Y domain to be used when drawing on a GL surface. This should
+	 * no be done by changing the scaling on the GL window in the Y domain, as
+	 * opposed to scaling an actual value in the buffer.
+	 * 
+	 * @deprecated
 	 */
 	private final float Y_SCALING = 1f;
 
@@ -152,7 +156,7 @@ class BybGLDrawable {
 		float interval = 1;
 		for (int i = 0; i < shortArrayToDraw.length; i++) {
 			arr[j++] = i * interval;
-			arr[j++] = shortArrayToDraw[i] * Y_SCALING;
+			arr[j++] = shortArrayToDraw[i];
 		}
 
 		return getFloatBufferFromFloatArray(arr);
