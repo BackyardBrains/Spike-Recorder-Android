@@ -26,6 +26,22 @@ public class OscilliscopeGLThread extends Thread {
 	private float xBegin = 00f;
 	private float xEnd = 4000f;;
 
+	public float getxBegin() {
+		return xBegin;
+	}
+
+	public void setxBegin(float xBegin) {
+		this.yBegin = xBegin;
+	}
+
+	public float getxEnd() {
+		return xEnd;
+	}
+
+	public void setxEnd(float xEnd) {
+		this.xEnd = xEnd;
+	}
+
 	private float yMin = -5000000f;
 	private float yMax = 5000000f;
 	
@@ -89,6 +105,8 @@ public class OscilliscopeGLThread extends Thread {
 	 */
 	private ByteBuffer audioBuffer;
 	public float x_width = 100;
+	public int numVerticalGridLines = 9;
+	int numHorizontalGridLines = 6;
 
 	/**
 	 * Called by the instantiating activity, this sets to {@link ByteBuffer} to
