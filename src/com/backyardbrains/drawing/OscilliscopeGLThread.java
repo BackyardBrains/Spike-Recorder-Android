@@ -9,7 +9,13 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.R;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLDebugHelper;
+import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -193,6 +199,21 @@ public class OscilliscopeGLThread extends Thread {
 		// Blackout, then we're ready to draw! \o/
 		mGL.glClearColor(0f, 0f, 0f, 1.0f);
 		
+		drawTickmarks(mGL);
+		
+	}
+	
+	private void drawTickmarks(GL10 glObj) {
+		glObj.glBindTexture(GL10.GL_TEXTURE_2D, 0);
+		Context context = parent.getContext();
+		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(), R.drawable.tickmarks);
+
+        glObj.glBindTexture(GL10.GL_TEXTURE_2D, 0);
+        glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+        glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+        GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bmp, 0);
+        bmp.recycle();
+
 	}
 
 	/**
