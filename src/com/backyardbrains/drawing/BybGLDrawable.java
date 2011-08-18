@@ -104,6 +104,7 @@ class BybGLDrawable {
 	}
 
 	private void drawGridLines(GL10 gl_obj) {
+		// @TODO make this line up with wave center line
 		int numHorizontalGridLines = parent.numHorizontalGridLines;
 		int numVerticalGridLines = parent.numVerticalGridLines;
 		float[] gridVertexArray = new float[4 * (parent.numHorizontalGridLines + numVerticalGridLines)];
