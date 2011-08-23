@@ -1,7 +1,6 @@
 package com.backyardbrains.drawing;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -65,14 +64,12 @@ class BybGLDrawable {
 	 * @param array
 	 *            to be converted
 	 * @return converted array as FloatBuffer
+	 * @deprecated Use
+	 *             {@link com.backyardbrains.drawing.OscilliscopeGLThread#getFloatBufferFromFloatArray(float[])}
+	 *             instead
 	 */
 	FloatBuffer getFloatBufferFromFloatArray(float array[]) {
-		ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
-		temp.order(ByteOrder.nativeOrder());
-		FloatBuffer buf = temp.asFloatBuffer();
-		buf.put(array);
-		buf.position(0);
-		return buf;
+		return parent.getFloatBufferFromFloatArray(array);
 	}
 
 	/**
@@ -133,7 +130,8 @@ class BybGLDrawable {
 		}
 		gl_obj.glColor4f(.5f, .5f, .5f, .5f);
 		gl_obj.glLineWidth(1f);
-		FloatBuffer glVertexBuffer = getFloatBufferFromFloatArray(gridVertexArray);
+		FloatBuffer glVertexBuffer = parent
+				.getFloatBufferFromFloatArray(gridVertexArray);
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, glVertexBuffer);
 
 		gl_obj.glDrawArrays(GL10.GL_LINES, 0,
@@ -189,7 +187,7 @@ class BybGLDrawable {
 		if (shortArrayToDraw == null) {
 			Log.w(TAG, "Drawing fake line with null data");
 			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
-			return getFloatBufferFromFloatArray(array);
+			return parent.getFloatBufferFromFloatArray(array);
 		}
 		// Log.d(TAG, "Received buffer to draw");
 
@@ -206,7 +204,7 @@ class BybGLDrawable {
 			arr[j++] = shortArrayToDraw[i];
 		}
 
-		return getFloatBufferFromFloatArray(arr);
+		return parent.getFloatBufferFromFloatArray(arr);
 	}
 
 	/**
@@ -220,13 +218,14 @@ class BybGLDrawable {
 	public void setBufferToDraw(ByteBuffer audioBuffer) {
 		if (audioBuffer != null) {
 			audioBuffer.clear();
-			mBufferToDraw = new short[audioBuffer.asShortBuffer().capacity()];
+			int bufferCapacity = audioBuffer.asShortBuffer().capacity();
+			mBufferToDraw = new short[bufferCapacity];
 			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
 					mBufferToDraw.length);
 			// parent.setxBegin(0);
 			parent.setxEnd(mBufferToDraw.length / 2);
 			Log.i(TAG, "Got audio data: "
-					+ audioBuffer.asShortBuffer().capacity());
+					+ bufferCapacity + " samples, or " + bufferCapacity/44100.0f*1000 + "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
