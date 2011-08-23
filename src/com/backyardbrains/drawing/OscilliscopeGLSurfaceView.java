@@ -43,8 +43,7 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		// @TODO Auto-generated method stub
-
+		mGLThread.rescaleWaveform();
 	}
 
 	/**

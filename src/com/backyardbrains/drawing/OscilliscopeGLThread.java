@@ -1,6 +1,8 @@
 package com.backyardbrains.drawing;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -9,8 +11,13 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.R;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLDebugHelper;
-import android.opengl.GLU;
+import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -23,6 +30,63 @@ import android.view.SurfaceView;
  * 
  */
 public class OscilliscopeGLThread extends Thread {
+
+	private float xBegin = 00f;
+	private float xEnd = 4000f;;
+
+	public float getxBegin() {
+		return xBegin;
+	}
+
+	public void setxBegin(float xBegin) {
+		this.yBegin = xBegin;
+	}
+
+	public float getxEnd() {
+		return xEnd;
+	}
+
+	public void setxEnd(float xEnd) {
+		this.xEnd = xEnd;
+	}
+
+	private float yMin = -5000000f;
+	private float yMax = 5000000f;
+
+	public float getyMin() {
+		return yMin;
+	}
+
+	public void setyMin(float yMin) {
+		this.yMin = yMin;
+	}
+
+	public float getyMax() {
+		return yMax;
+	}
+
+	public void setyMax(float yMax) {
+		this.yMax = yMax;
+	}
+
+	private float yBegin = -5000f;
+	private float yEnd = 5000f;
+
+	public float getyBegin() {
+		return yBegin;
+	}
+
+	public void setyBegin(float yBegin) {
+		this.yBegin = yBegin;
+	}
+
+	public float getyEnd() {
+		return yEnd;
+	}
+
+	public void setyEnd(float yEnd) {
+		this.yEnd = yEnd;
+	}
 
 	/**
 	 * reference to parent {@link OscilliscopeGLSurfaceView}
@@ -48,7 +112,11 @@ public class OscilliscopeGLThread extends Thread {
 	 * storage for {@link ByteBuffer} to be transfered to {@link BybGLDrawable}
 	 */
 	private ByteBuffer audioBuffer;
-	public float x_width = 100f;
+	public float x_width = 100;
+	public int numVerticalGridLines = 9;
+	int numHorizontalGridLines = 6;
+	private static final String TAG = "BYBOsciliscopeGlThread";
+	private BybGLDrawable waveformShape;
 
 	/**
 	 * Called by the instantiating activity, this sets to {@link ByteBuffer} to
@@ -79,17 +147,12 @@ public class OscilliscopeGLThread extends Thread {
 	 */
 	public void run() {
 		initEGL();
-		initGL();
-		float leftside = 25;
-		float height = 27;
-		GLU.gluLookAt(mGL, leftside, 0, height, leftside, 0, 0, 0, 1, 0f);
-		mGL.glColor4f(0f, 1f, 0f, 1f);
-		BybGLDrawable waveform_shape = new BybGLDrawable(this);
+		waveformShape = new BybGLDrawable(this);
 		while (!mDone) {
 			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 
-			waveform_shape.setBufferToDraw(audioBuffer);
-			waveform_shape.draw(mGL);
+			waveformShape.setBufferToDraw(audioBuffer);
+			waveformShape.draw(mGL);
 
 			mEGL.eglSwapBuffers(mGLDisplay, mGLSurface);
 		}
@@ -105,7 +168,7 @@ public class OscilliscopeGLThread extends Thread {
 		try {
 			join();
 		} catch (InterruptedException e) {
-			Log.e("BYB", "GL Thread couldn't rejoin!", e);
+			Log.e(TAG, "GL Thread couldn't rejoin!", e);
 		}
 		cleanupGL();
 	}
@@ -126,19 +189,80 @@ public class OscilliscopeGLThread extends Thread {
 	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
 	 * GL Viewport and sets defaults.
 	 */
-	private void initGL() {
+	void initGL() {
 		// set viewport
 		int width = parent.getWidth();
 		int height = parent.getHeight();
 		mGL.glViewport(0, 0, width, height);
 
+		mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
-		// carry-over from GLUT
-		GLU.gluPerspective(mGL, 45f, (float) width / height, 1f, 30f);
+		mGL.glOrthof(xBegin, xEnd, yBegin, yEnd, -1f, 1f);
+		mGL.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
-		mGL.glClearColor(0f, 0f, 0f, 1.0f);
+		// mGL.glEnable(GL10.GL_TEXTURE_2D);
+		mGL.glClearColor(0f, 0f, 0f, 0.5f);
+		mGL.glClearDepthf(1.0f);
+		mGL.glEnable(GL10.GL_DEPTH_TEST);
+		mGL.glDepthFunc(GL10.GL_LEQUAL);
+
+		mGL.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+		drawTickmarks(mGL);
+		
+		
+
+	}
+
+	private void drawTickmarks(GL10 glObj) {
+		float height = Math.abs(yBegin - yEnd);
+		float width_scale = 16.0f / parent.getWidth();
+		float width = Math.abs(xBegin - xEnd) * width_scale;
+		int[] textures = new int[1];
+
+		float[] vertices = { 0f, -height / 2f, 0f, width, -height / 2f, 0f, 0f,
+				height / 2f, 0f, width, height / 2f, 0f };
+
+		float[] texture = { 0f, -height / 2f, 0f, height / 2f, width,
+				-height / 2f, width, height / 2f };
+
+		Context context = parent.getContext();
+		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),
+				R.drawable.tickmarks);
+		
+		glObj.glEnable(GL10.GL_BLEND);
+        glObj.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
+
+		glObj.glGenTextures(1, textures, 0);
+		glObj.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
+
+		glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER,
+				GL10.GL_NEAREST);
+		glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER,
+				GL10.GL_LINEAR);
+		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bmp, 0);
+		bmp.recycle();
+
+		glObj.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
+		// Point to our buffers
+		glObj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		glObj.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+
+		// Set the face rotation
+		glObj.glFrontFace(GL10.GL_CW);
+
+		// Point to our vertex buffer
+		glObj.glVertexPointer(3, GL10.GL_FLOAT, 0,
+				getFloatBufferFromFloatArray(vertices));
+		glObj.glTexCoordPointer(2, GL10.GL_FLOAT, 0,
+				getFloatBufferFromFloatArray(texture));
+
+		// Draw the vertices as triangle strip
+		glObj.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, vertices.length / 3);
+		// Disable the client state before leaving
+		glObj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+		glObj.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 
 	}
 
@@ -178,8 +302,8 @@ public class OscilliscopeGLThread extends Thread {
 		 * Finally, get a GL Surface to draw on, a context, blit them together,
 		 * and populate the GL object.
 		 */
-		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig,
-				parent.getHolder(), null);
+		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig, parent
+				.getHolder(), null);
 		mGLContext = mEGL.eglCreateContext(mGLDisplay, mGLConfig,
 				EGL10.EGL_NO_CONTEXT, null);
 		mEGL.eglMakeCurrent(mGLDisplay, mGLSurface, mGLSurface, mGLContext);
@@ -187,5 +311,27 @@ public class OscilliscopeGLThread extends Thread {
 				GLDebugHelper.CONFIG_CHECK_GL_ERROR
 						| GLDebugHelper.CONFIG_CHECK_THREAD, null);
 
+	}
+
+	/**
+	 * Takes an array of floats and returns a buffer representing the same
+	 * floats
+	 * 
+	 * @param array
+	 *            to be converted
+	 * @return converted array as FloatBuffer
+	 */
+	FloatBuffer getFloatBufferFromFloatArray(float[] array) {
+		ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
+		temp.order(ByteOrder.nativeOrder());
+		FloatBuffer buf = temp.asFloatBuffer();
+		buf.put(array);
+		buf.position(0);
+		return buf;
+	}
+
+	public void rescaleWaveform() {
+		if (waveformShape != null)
+			waveformShape.forceRescale();
 	}
 }
