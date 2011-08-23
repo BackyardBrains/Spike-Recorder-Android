@@ -57,6 +57,8 @@ class BybGLDrawable {
 
 	private boolean autoScaled;
 
+	private boolean mShouldDrawGridlines = false;
+
 	/**
 	 * Takes an array of floats and returns a buffer representing the same
 	 * floats
@@ -96,7 +98,8 @@ class BybGLDrawable {
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
-		drawGridLines(gl_obj);
+		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+		if (mShouldDrawGridlines) drawGridLines(gl_obj);
 
 	}
 
