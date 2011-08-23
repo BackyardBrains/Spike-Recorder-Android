@@ -91,6 +91,8 @@ class BybGLDrawable {
 			autoSetFrame(mBufferToDraw);
 			autoScaled = true;
 		}
+		gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
+		gl_obj.glLoadIdentity();
 
 		gl_obj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl_obj.glLineWidth(1f);
@@ -99,7 +101,8 @@ class BybGLDrawable {
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		if (mShouldDrawGridlines) drawGridLines(gl_obj);
+		if (mShouldDrawGridlines)
+			drawGridLines(gl_obj);
 
 	}
 
@@ -167,12 +170,14 @@ class BybGLDrawable {
 			} else {
 				newyMax = Math.abs(theMin) * 1.5f;
 			}
-			if (-newyMax > parent.getyMin() && -newyMax < 200) {
+			if (-newyMax > parent.getyMin()) {
+				Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
 				parent.setyBegin(-newyMax);
 				parent.setyEnd(newyMax);
 			}
 
 		}
+		parent.setxEnd(arrayToScaleTo.length);
 
 	}
 
@@ -209,6 +214,10 @@ class BybGLDrawable {
 
 		return parent.getFloatBufferFromFloatArray(arr);
 	}
+	
+	public void forceRescale() {
+		autoScaled = false;
+	}
 
 	/**
 	 * Called from the parent thread, this takes a {@link ByteBuffer} of audio
@@ -227,8 +236,8 @@ class BybGLDrawable {
 					mBufferToDraw.length);
 			// parent.setxBegin(0);
 			parent.setxEnd(mBufferToDraw.length / 2);
-			Log.i(TAG, "Got audio data: "
-					+ bufferCapacity + " samples, or " + bufferCapacity/44100.0f*1000 + "ms");
+			Log.i(TAG, "Got audio data: " + bufferCapacity + " samples, or "
+					+ bufferCapacity / 44100.0f * 1000 + "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
