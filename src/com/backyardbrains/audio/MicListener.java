@@ -60,6 +60,7 @@ public class MicListener extends Thread {
 	MicListener() {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		Log.d(TAG, "Found buffer size of :" + buffersize);
 		audioInfo = ByteBuffer.allocateDirect(buffersize * 2);
 		audioInfo.order(ByteOrder.nativeOrder());
 		android.os.Process
