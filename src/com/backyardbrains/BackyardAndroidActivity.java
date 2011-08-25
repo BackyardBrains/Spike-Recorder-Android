@@ -10,6 +10,8 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Menu;
+import android.view.MotionEvent;
+import android.view.View.OnTouchListener;
 import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
@@ -93,8 +95,7 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
-		setContentView(R.layout.backyard_main);
+		//setContentView(R.layout.backyard_main);
 
 		// get application
 		application = (BackyardBrainsApplication) getApplication();
@@ -103,8 +104,9 @@ public class BackyardAndroidActivity extends Activity {
 
 		// Create custom surface
 		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
-		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
-		mainscreenGLLayout.addView(mAndroidSurface);
+		// FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
+		// mainscreenGLLayout.addView(mAndroidSurface);
+		setContentView(mAndroidSurface);
 	}
 
 	/**
@@ -173,6 +175,12 @@ public class BackyardAndroidActivity extends Activity {
 			unbindService(mConnection);
 			mAudioServiceIsBound = false;
 		}
+	}
+	
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		mAndroidSurface.onTouchEvent(event);
+		return super.onTouchEvent(event);
 	}
 
 	/**

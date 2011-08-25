@@ -1,6 +1,10 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -14,6 +18,8 @@ import android.view.SurfaceView;
 public class OscilliscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
+	private static final String TAG = "OsciliscopeGLSurfaceView";
+
 	/**
 	 * SurfaceView's SurfaceHolder, to catch callbacks
 	 */
@@ -24,6 +30,7 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	 */
 	private OscilliscopeGLThread mGLThread;
 
+	private ScaleGestureDetector mScaleDetector;
 	/**
 	 * Used by instantiating activity to reach down in to drawing thread
 	 * 
@@ -34,10 +41,39 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	public OscilliscopeGLSurfaceView(Context context) {
-		super(context);
+		this(context, null, 0);
+	}
+	
+	public OscilliscopeGLSurfaceView(Context context, AttributeSet attrs) {
+		this(context, attrs, 0);
+	}
+	
+	public OscilliscopeGLSurfaceView(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
+
+		mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+	}
+
+	private class ScaleListener extends
+			ScaleGestureDetector.SimpleOnScaleGestureListener {
+		@Override
+		public boolean onScale(ScaleGestureDetector detector) {
+			float mScaleFactor = mGLThread.getmScaleFactor();
+			mScaleFactor *= detector.getScaleFactor()/10.f;
+			
+			mGLThread.setmScaleFactor(mScaleFactor);
+			return super.onScale(detector);
+		}
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		Log.d(TAG, "Receiving touch event");
+		mScaleDetector.onTouchEvent(event);
+		return super.onTouchEvent(event);
 	}
 
 	@Override
