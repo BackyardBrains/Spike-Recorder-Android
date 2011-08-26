@@ -22,15 +22,6 @@ class BybGLDrawable {
 	private static final String TAG = "BYBGLShape";
 
 	/**
-	 * Scaling in Y domain to be used when drawing on a GL surface. This should
-	 * no be done by changing the scaling on the GL window in the Y domain, as
-	 * opposed to scaling an actual value in the buffer.
-	 * 
-	 * @deprecated
-	 */
-	private final float Y_SCALING = 1f;
-
-	/**
 	 * Reference to the parent thread responsible for maintaining this object.
 	 */
 	private final OscilliscopeGLThread parent;
