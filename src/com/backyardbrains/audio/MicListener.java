@@ -45,7 +45,7 @@ public class MicListener extends Thread {
 	/**
 	 * placeholder for a service that implements {@link RecievesAudio}
 	 */
-	private RecievesAudio service;
+	private ReceivesAudio service;
 	/**
 	 * buffer size appropriate for this device (set in
 	 * {@link MicListener#MicListener()}
@@ -88,7 +88,7 @@ public class MicListener extends Thread {
 	 * @param svc
 	 *            the service that implements the {@link RecievesAudio}
 	 */
-	public void start(RecievesAudio svc) {
+	public void start(ReceivesAudio svc) {
 		service = svc;
 		if (service != null) {
 			Log.d(TAG, "Service interface successfully bound from Thread");

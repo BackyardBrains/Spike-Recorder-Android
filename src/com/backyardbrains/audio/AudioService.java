@@ -23,7 +23,7 @@ import android.util.Log;
  * @version 1
  * 
  */
-public class AudioService extends Service implements RecievesAudio {
+public class AudioService extends Service implements ReceivesAudio {
 
 	/**
 	 * Tag for logging

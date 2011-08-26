@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * @author Nathan Dotz <nate@backyardbrains.com>
  * 
  */
-public interface RecievesAudio {
+public interface ReceivesAudio {
 	/**
 	 * Called by a thread to pass audio {@link ByteBuffer} into a service. The
 	 * service should then do as it sees fit with the data.
