@@ -38,7 +38,7 @@ public class BackyardAndroidActivity extends Activity {
 	 */
 	private boolean mAudioServiceIsBound;
 	/**
-	 * Reference to the {@link OscilliscopeGLSurfaceView} to draw in this
+	 * Reference to the {@link OscilloscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
 	private OscilloscopeGLSurfaceView mAndroidSurface;
@@ -54,7 +54,7 @@ public class BackyardAndroidActivity extends Activity {
 		 * Sets a reference in this activity to the {@link AudioService}, which
 		 * allows for {@link ByteBuffer}s full of audio information to be passed
 		 * from the {@link AudioService} down into the local
-		 * {@link OscilliscopeGLSurfaceView}
+		 * {@link OscilloscopeGLSurfaceView}
 		 * 
 		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
 		 *      android.os.IBinder)
@@ -183,7 +183,7 @@ public class BackyardAndroidActivity extends Activity {
 
 	/**
 	 * Called by {@link AudioService#receiveAudio(ByteBuffer)} to push current
-	 * sample buffer into our {@link OscilliscopeGLThread} for drawing
+	 * sample buffer into our {@link OscilloscopeGLThread} for drawing
 	 * 
 	 * @param audioData
 	 */

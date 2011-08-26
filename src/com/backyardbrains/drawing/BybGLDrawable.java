@@ -58,7 +58,7 @@ class BybGLDrawable {
 	 *            to be converted
 	 * @return converted array as FloatBuffer
 	 * @deprecated Use
-	 *             {@link com.backyardbrains.drawing.OscilliscopeGLThread#getFloatBufferFromFloatArray(float[])}
+	 *             {@link com.backyardbrains.drawing.OscilloscopeGLThread#getFloatBufferFromFloatArray(float[])}
 	 *             instead
 	 */
 	FloatBuffer getFloatBufferFromFloatArray(float array[]) {

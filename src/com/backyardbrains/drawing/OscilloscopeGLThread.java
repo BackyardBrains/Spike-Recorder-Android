@@ -23,7 +23,7 @@ import android.view.SurfaceView;
 
 /**
  * A {@link Thread} which manages continuous drawing of a {@link BybGLDrawable}
- * onto a {@link OscilliscopeGLSurfaceView}
+ * onto a {@link OscilloscopeGLSurfaceView}
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
  * @version 1
@@ -89,7 +89,7 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	/**
-	 * reference to parent {@link OscilliscopeGLSurfaceView}
+	 * reference to parent {@link OscilloscopeGLSurfaceView}
 	 */
 	SurfaceView parent;
 

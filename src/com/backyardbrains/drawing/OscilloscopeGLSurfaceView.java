@@ -9,7 +9,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 /**
- * OscilliscopeGLSurfaceView is a custom SurfaceView that implements callbacks
+ * OscilloscopeGLSurfaceView is a custom SurfaceView that implements callbacks
  * for its own holder, and manages its own GL drawing thread.
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
@@ -26,7 +26,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	SurfaceHolder mAndroidHolder;
 
 	/**
-	 * The {@link OscilliscopeGLThread} we'll be instantiating.
+	 * The {@link OscilloscopeGLThread} we'll be instantiating.
 	 */
 	private OscilloscopeGLThread mGLThread;
 
