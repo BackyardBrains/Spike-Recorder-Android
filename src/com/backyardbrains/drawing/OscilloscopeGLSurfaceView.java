@@ -15,7 +15,7 @@ import android.view.SurfaceView;
  * @author Nathan Dotz <nate@backyardbrains.com>
  * 
  */
-public class OscilliscopeGLSurfaceView extends SurfaceView implements
+public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
 	private static final String TAG = "OsciliscopeGLSurfaceView";
@@ -28,7 +28,7 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	/**
 	 * The {@link OscilliscopeGLThread} we'll be instantiating.
 	 */
-	private OscilliscopeGLThread mGLThread;
+	private OscilloscopeGLThread mGLThread;
 
 	private ScaleGestureDetector mScaleDetector;
 	/**
@@ -36,19 +36,19 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	 * 
 	 * @return the mGLThread
 	 */
-	public OscilliscopeGLThread getGLThread() {
+	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
 	}
 
-	public OscilliscopeGLSurfaceView(Context context) {
+	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
 	}
 	
-	public OscilliscopeGLSurfaceView(Context context, AttributeSet attrs) {
+	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
 	
-	public OscilliscopeGLSurfaceView(Context context, AttributeSet attrs, int defStyle) {
+	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
@@ -89,7 +89,7 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		mGLThread = new OscilliscopeGLThread(this);
+		mGLThread = new OscilloscopeGLThread(this);
 		mGLThread.start();
 	}
 

@@ -24,7 +24,7 @@ class BybGLDrawable {
 	/**
 	 * Reference to the parent thread responsible for maintaining this object.
 	 */
-	private final OscilliscopeGLThread parent;
+	private final OscilloscopeGLThread parent;
 
 	/**
 	 * Construct a drawable object, storing a reference to the parent thread.
@@ -32,7 +32,7 @@ class BybGLDrawable {
 	 * @param oscilliscopeGLThread
 	 *            the thread responsible for this object.
 	 */
-	BybGLDrawable(OscilliscopeGLThread oscilliscopeGLThread) {
+	BybGLDrawable(OscilloscopeGLThread oscilliscopeGLThread) {
 		parent = oscilliscopeGLThread;
 	}
 

@@ -29,7 +29,7 @@ import android.view.SurfaceView;
  * @version 1
  * 
  */
-public class OscilliscopeGLThread extends Thread {
+public class OscilloscopeGLThread extends Thread {
 
 	private float xBegin = 00f;
 	private float xEnd = 4000f;;
@@ -146,7 +146,7 @@ public class OscilliscopeGLThread extends Thread {
 	 * @param view
 	 *            reference to the parent view
 	 */
-	OscilliscopeGLThread(SurfaceView view) {
+	OscilloscopeGLThread(SurfaceView view) {
 		parent = view;
 	}
 
@@ -173,7 +173,7 @@ public class OscilliscopeGLThread extends Thread {
 	/**
 	 * Properly clean up GL stuff when exiting
 	 * 
-	 * @see OscilliscopeGLThread#cleanupGL()
+	 * @see OscilloscopeGLThread#cleanupGL()
 	 */
 	public void requestStop() {
 		mDone = true;
@@ -186,7 +186,7 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	/**
-	 * called by {@link OscilliscopeGLThread#requestStop()} to make sure the GL
+	 * called by {@link OscilloscopeGLThread#requestStop()} to make sure the GL
 	 * native interface isn't leaving behind turds.
 	 */
 	private void cleanupGL() {
@@ -198,7 +198,7 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	/**
-	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
+	 * Convenience function for {@link OscilloscopeGLThread#run()}. Builds basic
 	 * GL Viewport and sets defaults.
 	 */
 	void initGL() {
@@ -279,7 +279,7 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	/**
-	 * Convenience function for {@link OscilliscopeGLThread#run()}. Builds basic
+	 * Convenience function for {@link OscilloscopeGLThread#run()}. Builds basic
 	 * surface we need to draw on. Mostly boilerplate. No Touchy.
 	 */
 	private void initEGL() {

@@ -11,14 +11,12 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Menu;
 import android.view.MotionEvent;
-import android.view.View.OnTouchListener;
-import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
-import com.backyardbrains.drawing.OscilliscopeGLSurfaceView;
-import com.backyardbrains.drawing.OscilliscopeGLThread;
+import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
+import com.backyardbrains.drawing.OscilloscopeGLThread;
 
 /**
  * Primary activity of the Backyard Brains app. By default shows the continuous
@@ -43,7 +41,7 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link OscilliscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
-	private OscilliscopeGLSurfaceView mAndroidSurface;
+	private OscilloscopeGLSurfaceView mAndroidSurface;
 	/**
 	 * Reference to the {@link BackyardBrainsApplication} for message passing
 	 */
@@ -103,7 +101,7 @@ public class BackyardAndroidActivity extends Activity {
 		application.startAudioService();
 
 		// Create custom surface
-		mAndroidSurface = new OscilliscopeGLSurfaceView(this);
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 		// FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		// mainscreenGLLayout.addView(mAndroidSurface);
 		setContentView(mAndroidSurface);
@@ -190,7 +188,7 @@ public class BackyardAndroidActivity extends Activity {
 	 * @param audioData
 	 */
 	public void setCurrentAudio(ByteBuffer audioData) {
-		OscilliscopeGLThread l_thread = mAndroidSurface.getGLThread();
+		OscilloscopeGLThread l_thread = mAndroidSurface.getGLThread();
 		if (l_thread != null)
 			l_thread.setAudioBuffer(audioData);
 
