@@ -62,7 +62,8 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 		@Override
 		public boolean onScale(ScaleGestureDetector detector) {
 			float mScaleFactor = mGLThread.getmScaleFactor();
-			mScaleFactor *= detector.getScaleFactor()/10.f;
+			mScaleFactor *= detector.getScaleFactor();
+			Log.d(TAG, "Receiving touch event - scale factor is now "+ mScaleFactor);
 			
 			mGLThread.setmScaleFactor(mScaleFactor);
 			return super.onScale(detector);
@@ -71,7 +72,6 @@ public class OscilliscopeGLSurfaceView extends SurfaceView implements
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		Log.d(TAG, "Receiving touch event");
 		mScaleDetector.onTouchEvent(event);
 		return super.onTouchEvent(event);
 	}

@@ -124,7 +124,6 @@ public class OscilliscopeGLThread extends Thread {
 	}
 
 	public void setmScaleFactor(float mScaleFactor) {
-		Log.d(TAG, "Setting scale factor to "+mScaleFactor);
 		// Don't let the object get too small or too large.
 		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
 		
@@ -211,7 +210,7 @@ public class OscilliscopeGLThread extends Thread {
 		mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
-		mGL.glOrthof(xBegin, xEnd, yBegin * mScaleFactor, yEnd * mScaleFactor, -1f, 1f);
+		mGL.glOrthof(xBegin, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor, -1f, 1f);
 		mGL.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
