@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Menu;
 import android.view.MotionEvent;
+import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
@@ -93,7 +94,7 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//setContentView(R.layout.backyard_main);
+		setContentView(R.layout.backyard_main);
 
 		// get application
 		application = (BackyardBrainsApplication) getApplication();
@@ -102,9 +103,9 @@ public class BackyardAndroidActivity extends Activity {
 
 		// Create custom surface
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
-		// FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
-		// mainscreenGLLayout.addView(mAndroidSurface);
-		setContentView(mAndroidSurface);
+		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
+		mainscreenGLLayout.addView(mAndroidSurface);
+		//setContentView(mAndroidSurface);
 	}
 
 	/**
