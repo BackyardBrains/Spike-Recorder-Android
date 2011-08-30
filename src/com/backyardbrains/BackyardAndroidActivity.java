@@ -79,6 +79,7 @@ public class BackyardAndroidActivity extends Activity {
 		@Override
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioServiceIsBound = false;
+			mAudioService = null;
 		}
 	};
 
