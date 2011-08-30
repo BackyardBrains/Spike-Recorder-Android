@@ -91,6 +91,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public void surfaceCreated(SurfaceHolder holder) {
 		mGLThread = new OscilloscopeGLThread(this);
 		mGLThread.start();
+		setKeepScreenOn(true);
 	}
 
 	/**
@@ -103,5 +104,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		if (mGLThread != null) {
 			mGLThread.requestStop();
 		}
+		setKeepScreenOn(false);
 	}
 }
