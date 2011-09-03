@@ -162,6 +162,6 @@ public class MicListener extends Thread {
 			}
 			recorder = null;
 		}
-		Log.d(TAG, "Thread cleaned up");
+		// @TODO - figure out why joining here causes service to not stop.
 	}
 }
