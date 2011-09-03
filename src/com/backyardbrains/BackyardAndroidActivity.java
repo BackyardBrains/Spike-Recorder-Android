@@ -114,6 +114,7 @@ public class BackyardAndroidActivity extends Activity {
 	 *         {@link AudioService}e
 	 * @deprecated
 	 */
+	@Deprecated
 	public ByteBuffer getAudioFromService() {
 		return mAudioService.getAudioFromMicListener();
 	}

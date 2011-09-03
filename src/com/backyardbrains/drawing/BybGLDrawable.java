@@ -61,6 +61,7 @@ class BybGLDrawable {
 	 *             {@link com.backyardbrains.drawing.OscilloscopeGLThread#getFloatBufferFromFloatArray(float[])}
 	 *             instead
 	 */
+	@Deprecated
 	FloatBuffer getFloatBufferFromFloatArray(float array[]) {
 		return parent.getFloatBufferFromFloatArray(array);
 	}

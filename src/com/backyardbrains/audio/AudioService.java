@@ -150,6 +150,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * @return {@link ByteBuffer} of audio data from {@link MicListener}
 	 * @deprecated
 	 */
+	@Deprecated
 	public ByteBuffer getAudioFromMicListener() {
 		return micThread.getAudioInfo();
 	}

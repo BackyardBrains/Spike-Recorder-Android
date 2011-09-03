@@ -74,6 +74,7 @@ public class MicListener extends Thread {
 	 * @return the audioInfo
 	 * @deprecated
 	 */
+	@Deprecated
 	public ByteBuffer getAudioInfo() {
 		return audioInfo;
 	}
@@ -106,6 +107,7 @@ public class MicListener extends Thread {
 	 * 
 	 * @see java.lang.Thread#run()
 	 */
+	@Override
 	public void run() {
 		Log.d(TAG, "Thread Launched");
 		recorder = null;

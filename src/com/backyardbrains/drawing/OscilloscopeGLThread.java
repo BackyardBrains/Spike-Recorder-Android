@@ -157,6 +157,7 @@ public class OscilloscopeGLThread extends Thread {
 	 * 
 	 * @see java.lang.Thread#run()
 	 */
+	@Override
 	public void run() {
 		initEGL();
 		waveformShape = new BybGLDrawable(this);
