@@ -177,12 +177,12 @@ public class OscilloscopeGLThread extends Thread {
 	 */
 	public void requestStop() {
 		mDone = true;
+		cleanupGL();
 		try {
 			join();
 		} catch (InterruptedException e) {
 			Log.e(TAG, "GL Thread couldn't rejoin!", e);
 		}
-		cleanupGL();
 	}
 
 	/**
