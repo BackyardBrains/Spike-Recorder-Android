@@ -11,13 +11,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
-import com.backyardbrains.R;
-
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.opengl.GLDebugHelper;
-import android.opengl.GLUtils;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -126,7 +120,7 @@ public class OscilloscopeGLThread extends Thread {
 	public void setmScaleFactor(float mScaleFactor) {
 		// Don't let the object get too small or too large.
 		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
-		
+
 		this.mScaleFactor = mScaleFactor;
 	}
 
@@ -211,7 +205,8 @@ public class OscilloscopeGLThread extends Thread {
 		mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
-		mGL.glOrthof(xBegin, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor, -1f, 1f);
+		mGL.glOrthof(xBegin, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor,
+				-1f, 1f);
 		mGL.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
@@ -222,60 +217,6 @@ public class OscilloscopeGLThread extends Thread {
 		mGL.glDepthFunc(GL10.GL_LEQUAL);
 
 		mGL.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-		drawTickmarks(mGL);
-		
-		
-
-	}
-
-	private void drawTickmarks(GL10 glObj) {
-		float height = Math.abs(yBegin - yEnd);
-		float width_scale = 16.0f / parent.getWidth();
-		float width = Math.abs(xBegin - xEnd) * width_scale;
-		int[] textures = new int[1];
-
-		float[] vertices = { 0f, -height / 2f, 0f, width, -height / 2f, 0f, 0f,
-				height / 2f, 0f, width, height / 2f, 0f };
-
-		float[] texture = { 0f, -height / 2f, 0f, height / 2f, width,
-				-height / 2f, width, height / 2f };
-
-		Context context = parent.getContext();
-		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),
-				R.drawable.tickmarks);
-		
-		glObj.glEnable(GL10.GL_BLEND);
-        glObj.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
-
-		glObj.glGenTextures(1, textures, 0);
-		glObj.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
-
-		glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER,
-				GL10.GL_NEAREST);
-		glObj.glTexParameterx(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER,
-				GL10.GL_LINEAR);
-		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bmp, 0);
-		bmp.recycle();
-
-		glObj.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
-		// Point to our buffers
-		glObj.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		glObj.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
-
-		// Set the face rotation
-		glObj.glFrontFace(GL10.GL_CW);
-
-		// Point to our vertex buffer
-		glObj.glVertexPointer(3, GL10.GL_FLOAT, 0,
-				getFloatBufferFromFloatArray(vertices));
-		glObj.glTexCoordPointer(2, GL10.GL_FLOAT, 0,
-				getFloatBufferFromFloatArray(texture));
-
-		// Draw the vertices as triangle strip
-		glObj.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, vertices.length / 3);
-		// Disable the client state before leaving
-		glObj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		glObj.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 
 	}
 
