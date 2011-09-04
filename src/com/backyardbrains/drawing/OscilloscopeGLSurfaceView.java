@@ -31,6 +31,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private OscilloscopeGLThread mGLThread;
 
 	private ScaleGestureDetector mScaleDetector;
+
 	/**
 	 * Used by instantiating activity to reach down in to drawing thread
 	 * 
@@ -43,12 +44,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
 	}
-	
+
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
-	
-	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs, int defStyle) {
+
+	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
+			int defStyle) {
 		super(context, attrs, defStyle);
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
@@ -62,9 +64,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		@Override
 		public boolean onScale(ScaleGestureDetector detector) {
 			float mScaleFactor = mGLThread.getmScaleFactor();
-			mScaleFactor *= detector.getScaleFactor() * 0.8;
-			Log.d(TAG, "Receiving touch event - scale factor is now "+ mScaleFactor);
-			
+			float scaleModifier = detector.getScaleFactor();
+			scaleModifier = Math.max(0.95f, Math.min(scaleModifier, 1.05f));
+			mScaleFactor *= scaleModifier;
+
+			Log.d(TAG, "Receiving touch event with scale factor of "
+					+ scaleModifier + "- scale factor is now " + mScaleFactor);
+
 			synchronized (mGLThread) {
 				mGLThread.setmScaleFactor(mScaleFactor);
 			}
