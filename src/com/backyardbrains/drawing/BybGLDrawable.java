@@ -19,7 +19,7 @@ class BybGLDrawable {
 	/**
 	 * Tag for use in LogCat
 	 */
-	private static final String TAG = "BYBGLShape";
+	private static final String TAG = "BYBGLDrawable";
 
 	/**
 	 * Reference to the parent thread responsible for maintaining this object.
