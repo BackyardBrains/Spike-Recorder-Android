@@ -68,18 +68,6 @@ public class MicListener extends Thread {
 	}
 
 	/**
-	 * Called by {@link AudioService#getAudioFromMicListener()} to pull up
-	 * {@link ByteBuffer}
-	 * 
-	 * @return the audioInfo
-	 * @deprecated
-	 */
-	@Deprecated
-	public ByteBuffer getAudioInfo() {
-		return audioInfo;
-	}
-
-	/**
 	 * An alternate to {@link Thread#start()}, which allows us to provide a
 	 * service which implements {@link RecievesAudio} then start the thread as
 	 * normal. This allows for {@link MicListener#run()} to poll the

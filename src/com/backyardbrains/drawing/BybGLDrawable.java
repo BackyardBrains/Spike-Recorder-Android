@@ -51,22 +51,6 @@ class BybGLDrawable {
 	private boolean mShouldDrawGridlines = false;
 
 	/**
-	 * Takes an array of floats and returns a buffer representing the same
-	 * floats
-	 * 
-	 * @param array
-	 *            to be converted
-	 * @return converted array as FloatBuffer
-	 * @deprecated Use
-	 *             {@link com.backyardbrains.drawing.OscilloscopeGLThread#getFloatBufferFromFloatArray(float[])}
-	 *             instead
-	 */
-	@Deprecated
-	FloatBuffer getFloatBufferFromFloatArray(float array[]) {
-		return parent.getFloatBufferFromFloatArray(array);
-	}
-
-	/**
 	 * Draw this object on the provided {@link GL10} object. In addition, check
 	 * to see if the frame has been autoscaled yet. If not, do so exactly once,
 	 * and only after 100ms have passed.
@@ -229,7 +213,7 @@ class BybGLDrawable {
 					mBufferToDraw.length);
 			// parent.setxBegin(0);
 			parent.setxEnd(mBufferToDraw.length / 2);
-			Log.i(TAG, "Got audio data: " + bufferCapacity + " samples, or "
+			Log.v(TAG, "Got audio data: " + bufferCapacity + " samples, or "
 					+ bufferCapacity / 44100.0f * 1000 + "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");

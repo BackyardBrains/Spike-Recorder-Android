@@ -144,18 +144,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	}
 
 	/**
-	 * Called by bound activities (for now, just {@link BackyardAndroidActivity}
-	 * ) to get audio data to hand off to a drawing surface
-	 * 
-	 * @return {@link ByteBuffer} of audio data from {@link MicListener}
-	 * @deprecated
-	 */
-	@Deprecated
-	public ByteBuffer getAudioFromMicListener() {
-		return micThread.getAudioInfo();
-	}
-
-	/**
 	 * Get a copy of the necessary activity, and push the received data out to
 	 * said activity
 	 * 

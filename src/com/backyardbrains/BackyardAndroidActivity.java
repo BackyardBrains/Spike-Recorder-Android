@@ -30,11 +30,6 @@ import com.backyardbrains.drawing.OscilloscopeGLThread;
 public class BackyardAndroidActivity extends Activity {
 
 	/**
-	 * Reference to the {@link AudioService} which polls the default audio
-	 * device
-	 */
-	private AudioService mAudioService;
-	/**
 	 * Is the {@link AudioService} currently bound to this activity?
 	 */
 	private boolean mAudioServiceIsBound;
@@ -65,7 +60,7 @@ public class BackyardAndroidActivity extends Activity {
 			// We've bound to LocalService, cast the IBinder and get
 			// LocalService instance
 			AudioServiceBinder binder = (AudioServiceBinder) service;
-			mAudioService = binder.getService();
+			binder.getService();
 			mAudioServiceIsBound = true;
 		}
 
@@ -79,7 +74,6 @@ public class BackyardAndroidActivity extends Activity {
 		@Override
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioServiceIsBound = false;
-			mAudioService = null;
 		}
 	};
 
@@ -107,16 +101,6 @@ public class BackyardAndroidActivity extends Activity {
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
 		//setContentView(mAndroidSurface);
-	}
-
-	/**
-	 * @return {@link ByteBuffer} of current received data from
-	 *         {@link AudioService}e
-	 * @deprecated
-	 */
-	@Deprecated
-	public ByteBuffer getAudioFromService() {
-		return mAudioService.getAudioFromMicListener();
 	}
 
 	/**
