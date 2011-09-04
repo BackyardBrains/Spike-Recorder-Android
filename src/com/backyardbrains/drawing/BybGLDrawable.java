@@ -147,6 +147,7 @@ class BybGLDrawable {
 	private void autoSetFrame(short[] arrayToScaleTo) {
 		float theMax = 0;
 		float theMin = 0;
+		
 		for (int i = 0; i < arrayToScaleTo.length; i++) {
 			if (theMax < arrayToScaleTo[i])
 				theMax = arrayToScaleTo[i];
