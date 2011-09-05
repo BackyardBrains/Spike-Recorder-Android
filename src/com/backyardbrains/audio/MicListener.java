@@ -52,6 +52,16 @@ public class MicListener extends Thread {
 	 */
 	private int buffersize;
 
+	private int bufferLengthDivisor = 4;
+
+	public int getBufferLengthDivisor() {
+		return bufferLengthDivisor;
+	}
+
+	public void setBufferLengthDivisor(int bufferLengthDivisor) {
+		this.bufferLengthDivisor = bufferLengthDivisor;
+	}
+
 	/**
 	 * Find the appropriate buffer size for working on this device and allocate
 	 * space for the audioInfo {@link ByteBuffer} based on that size, then tell
@@ -110,9 +120,17 @@ public class MicListener extends Thread {
 			Log.d(TAG, "Recorder Started");
 
 			int limit = audioInfo.limit();
-			while (recorder.read(audioInfo, limit / 2) > 0 && !mDone) {
+			while (recorder.read(audioInfo, limit / bufferLengthDivisor) > 0 && !mDone) {
 				audioInfo.position(0);
-				service.receiveAudio(audioInfo);
+				
+				byte[] dst = new byte[limit/bufferLengthDivisor];
+				audioInfo.get(dst, 0, limit/bufferLengthDivisor);
+				ByteBuffer sndBuffer = ByteBuffer.allocateDirect(dst.length);
+				sndBuffer.order(ByteOrder.nativeOrder());
+				sndBuffer.put(dst);
+				sndBuffer.position(0);
+				
+				service.receiveAudio(sndBuffer);
 			}
 
 			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -137,7 +155,7 @@ public class MicListener extends Thread {
 	private AudioRecord newRecorder() {
 		return new AudioRecord(AudioSource.DEFAULT, sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
-				buffersize*2);
+				buffersize);
 	}
 
 	/**
