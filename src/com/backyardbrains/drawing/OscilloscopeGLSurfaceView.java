@@ -55,7 +55,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-
+		
+		setKeepScreenOn(true);
 		mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 	}
 
