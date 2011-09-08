@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
@@ -42,6 +43,9 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link BackyardBrainsApplication} for message passing
 	 */
 	private BackyardBrainsApplication application;
+	
+	private AudioService mAudioService;
+
 
 	/** Defines callbacks for service binding, passed to bindService() */
 	private ServiceConnection mConnection = new ServiceConnection() {
@@ -60,7 +64,7 @@ public class BackyardAndroidActivity extends Activity {
 			// We've bound to LocalService, cast the IBinder and get
 			// LocalService instance
 			AudioServiceBinder binder = (AudioServiceBinder) service;
-			binder.getService();
+			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
 		}
 
@@ -112,6 +116,21 @@ public class BackyardAndroidActivity extends Activity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// TODO Auto-generated method stub
+	    switch (item.getItemId()) {
+	    case R.id.expandX:
+	    	mAudioService.increaseBufferLengthDivisor();
+	        return true;
+	    case R.id.shrinkX:
+	        mAudioService.decreaseBufferLengthDivisor();
+	        return true;
+	    default:
+	        return super.onOptionsItemSelected(item);
+	    }
 	}
 
 	/*

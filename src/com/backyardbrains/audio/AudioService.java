@@ -57,6 +57,22 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * 
 	 */
 	private MicListener micThread;
+	
+	public void increaseBufferLengthDivisor() {
+		int newBufferLengthDivisor = micThread.getBufferLengthDivisor()*2;
+		Log.d(TAG, "Increasing buffer length divisor to " + newBufferLengthDivisor);
+		synchronized (micThread) {
+			micThread.setBufferLengthDivisor(newBufferLengthDivisor);
+		}
+	}
+
+	public void decreaseBufferLengthDivisor() {
+		int newBufferLengthDivisor = micThread.getBufferLengthDivisor()/2;
+		Log.d(TAG, "Increasing buffer length divisor to " + newBufferLengthDivisor);
+		synchronized (micThread) {
+			micThread.setBufferLengthDivisor(newBufferLengthDivisor);
+		}
+	}
 
 	/**
 	 * Unique id to turn on-and-off service notification

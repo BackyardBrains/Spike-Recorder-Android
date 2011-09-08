@@ -59,7 +59,10 @@ public class MicListener extends Thread {
 	}
 
 	public void setBufferLengthDivisor(int bufferLengthDivisor) {
-		this.bufferLengthDivisor = bufferLengthDivisor;
+		if (bufferLengthDivisor >= 1) {
+			this.bufferLengthDivisor = bufferLengthDivisor;
+		}
+		Log.d(TAG, "Set buffer length divisor to "+this.bufferLengthDivisor);
 	}
 
 	/**
@@ -119,18 +122,12 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			Log.d(TAG, "Recorder Started");
 
-			int limit = audioInfo.limit();
-			while (recorder.read(audioInfo, limit / bufferLengthDivisor) > 0 && !mDone) {
+			while (dynamicBufferRead()) {
 				audioInfo.position(0);
-				
-				byte[] dst = new byte[limit/bufferLengthDivisor];
-				audioInfo.get(dst, 0, limit/bufferLengthDivisor);
-				ByteBuffer sndBuffer = ByteBuffer.allocateDirect(dst.length);
-				sndBuffer.order(ByteOrder.nativeOrder());
-				sndBuffer.put(dst);
-				sndBuffer.position(0);
-				
-				service.receiveAudio(sndBuffer);
+				ByteBuffer sndBuffer = convertToSmallerByteBuffer(audioInfo);
+				synchronized(service) {
+					service.receiveAudio(sndBuffer);
+				}
 			}
 
 			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -144,6 +141,26 @@ public class MicListener extends Thread {
 		} finally {
 			requestStop();
 		}
+	}
+
+	private ByteBuffer convertToSmallerByteBuffer(ByteBuffer audioInfo) {
+		int localBufferLengthDivisor = 0;
+		synchronized(this) {
+			localBufferLengthDivisor = getBufferLengthDivisor();
+		}
+		int newByteBufferLength = audioInfo.capacity()/localBufferLengthDivisor;
+		byte[] dst = new byte [newByteBufferLength];
+		audioInfo.get(dst, 0, newByteBufferLength);
+		ByteBuffer sndBuffer = ByteBuffer.allocateDirect(dst.length);
+		sndBuffer.order(ByteOrder.nativeOrder());
+		sndBuffer.put(dst);
+		sndBuffer.position(0);
+		return sndBuffer;
+	}
+
+	private boolean dynamicBufferRead() {
+		int readAmount = recorder.read(audioInfo, audioInfo.limit()/ getBufferLengthDivisor());
+		return !mDone && readAmount > 0;
 	}
 
 	/**
