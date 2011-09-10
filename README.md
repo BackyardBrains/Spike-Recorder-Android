@@ -23,8 +23,11 @@ To Do for version 1.0
 
 * Recording of data to phone.
 
-* Playback of the recorded data (would be nice to see and hear).
-
 * Email of recorded files to users
 
+To Do for version 1.1
+---------------------
+
 * Add a "heard a spike" page to grow the neuro-converts by N.
+
+* Playback of the recorded data (would be nice to see and hear).
