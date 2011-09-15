@@ -1,14 +1,7 @@
 package com.backyardbrains;
 
-import java.nio.ByteBuffer;
-
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -16,9 +9,7 @@ import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
-import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
-import com.backyardbrains.drawing.OscilloscopeGLThread;
 
 /**
  * Primary activity of the Backyard Brains app. By default shows the continuous
@@ -31,10 +22,6 @@ import com.backyardbrains.drawing.OscilloscopeGLThread;
 public class BackyardAndroidActivity extends Activity {
 
 	/**
-	 * Is the {@link AudioService} currently bound to this activity?
-	 */
-	private boolean mAudioServiceIsBound;
-	/**
 	 * Reference to the {@link OscilloscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
@@ -43,43 +30,6 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link BackyardBrainsApplication} for message passing
 	 */
 	private BackyardBrainsApplication application;
-	
-	private AudioService mAudioService;
-
-
-	/** Defines callbacks for service binding, passed to bindService() */
-	private ServiceConnection mConnection = new ServiceConnection() {
-
-		/**
-		 * Sets a reference in this activity to the {@link AudioService}, which
-		 * allows for {@link ByteBuffer}s full of audio information to be passed
-		 * from the {@link AudioService} down into the local
-		 * {@link OscilloscopeGLSurfaceView}
-		 * 
-		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
-		 *      android.os.IBinder)
-		 */
-		@Override
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// We've bound to LocalService, cast the IBinder and get
-			// LocalService instance
-			AudioServiceBinder binder = (AudioServiceBinder) service;
-			mAudioService = binder.getService();
-			mAudioServiceIsBound = true;
-		}
-
-		/**
-		 * Clean up bindings
-		 * 
-		 * @TODO null out mAudioService
-		 * 
-		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
-		 */
-		@Override
-		public void onServiceDisconnected(ComponentName arg0) {
-			mAudioServiceIsBound = false;
-		}
-	};
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -104,7 +54,7 @@ public class BackyardAndroidActivity extends Activity {
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
-		//setContentView(mAndroidSurface);
+		// setContentView(mAndroidSurface);
 	}
 
 	/**
@@ -117,20 +67,20 @@ public class BackyardAndroidActivity extends Activity {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
-	    switch (item.getItemId()) {
-	    case R.id.expandX:
-	    	mAudioService.increaseBufferLengthDivisor();
-	        return true;
-	    case R.id.shrinkX:
-	        mAudioService.decreaseBufferLengthDivisor();
-	        return true;
-	    default:
-	        return super.onOptionsItemSelected(item);
-	    }
+		switch (item.getItemId()) {
+		case R.id.expandX:
+			// @TODO change X dim size here
+			return true;
+		case R.id.shrinkX:
+			// @TODO change X dim size here
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	/*
@@ -161,9 +111,7 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		// Bind to LocalService
-		Intent intent = new Intent(this, AudioService.class);
-		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		// Bind to LocalService has been moved to OpenGLThread
 	}
 
 	/**
@@ -174,29 +122,13 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		// Unbind from the service
-		if (mAudioServiceIsBound) {
-			unbindService(mConnection);
-			mAudioServiceIsBound = false;
-		}
+		// Unbind from the service has been moved to OpenGLThread
 	}
-	
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mAndroidSurface.onTouchEvent(event);
 		return super.onTouchEvent(event);
 	}
 
-	/**
-	 * Called by {@link AudioService#receiveAudio(ByteBuffer)} to push current
-	 * sample buffer into our {@link OscilloscopeGLThread} for drawing
-	 * 
-	 * @param audioData
-	 */
-	public void setCurrentAudio(ByteBuffer audioData) {
-		OscilloscopeGLThread l_thread = mAndroidSurface.getGLThread();
-		if (l_thread != null)
-			l_thread.setAudioBuffer(audioData);
-
-	}
 }

@@ -204,17 +204,11 @@ class BybGLDrawable {
 	 * @param audioBuffer
 	 *            {@link ByteBuffer} to be drawn
 	 */
-	public void setBufferToDraw(ByteBuffer audioBuffer) {
+	public void setBufferToDraw(short[] audioBuffer) {
 		if (audioBuffer != null) {
-			audioBuffer.clear();
-			int bufferCapacity = audioBuffer.asShortBuffer().capacity();
-			mBufferToDraw = new short[bufferCapacity];
-			audioBuffer.asShortBuffer().get(mBufferToDraw, 0,
-					mBufferToDraw.length);
-			// parent.setxBegin(0);
-			parent.setxEnd(mBufferToDraw.length / 2);
-			Log.v(TAG, "Got audio data: " + bufferCapacity + " samples, or "
-					+ bufferCapacity / 44100.0f * 1000 + "ms");
+			mBufferToDraw = audioBuffer;
+			Log.v(TAG, "Got audio data: " + mBufferToDraw.length + " samples, or "
+					+ mBufferToDraw.length / 44100.0f * 1000 + "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}

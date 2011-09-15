@@ -14,7 +14,7 @@ public interface ReceivesAudio {
 	 * Called by a thread to pass audio {@link ByteBuffer} into a service. The
 	 * service should then do as it sees fit with the data.
 	 * 
-	 * @param audioData
+	 * @param audioInfo
 	 */
-	public void receiveAudio(ByteBuffer audioData);
+	public void receiveAudio(byte[] audioInfo);
 }

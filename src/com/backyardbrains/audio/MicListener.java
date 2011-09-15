@@ -1,7 +1,6 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -41,7 +40,7 @@ public class MicListener extends Thread {
 	 * {@link MicListener#MicListener()} and used while polling
 	 * {@link AudioRecord} in {@link MicListener#run()}
 	 */
-	private ByteBuffer audioInfo;
+	private byte[] audioInfo;
 	/**
 	 * placeholder for a service that implements {@link RecievesAudio}
 	 */
@@ -52,19 +51,6 @@ public class MicListener extends Thread {
 	 */
 	private int buffersize;
 
-	private int bufferLengthDivisor = 4;
-
-	public int getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	public void setBufferLengthDivisor(int bufferLengthDivisor) {
-		if (bufferLengthDivisor >= 1) {
-			this.bufferLengthDivisor = bufferLengthDivisor;
-		}
-		Log.d(TAG, "Set buffer length divisor to "+this.bufferLengthDivisor);
-	}
-
 	/**
 	 * Find the appropriate buffer size for working on this device and allocate
 	 * space for the audioInfo {@link ByteBuffer} based on that size, then tell
@@ -74,8 +60,7 @@ public class MicListener extends Thread {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		Log.d(TAG, "Found buffer size of :" + buffersize);
-		audioInfo = ByteBuffer.allocateDirect(buffersize);
-		audioInfo.order(ByteOrder.nativeOrder());
+		audioInfo = new byte [buffersize * 2]; // double-buffered
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
@@ -122,11 +107,9 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			Log.d(TAG, "Recorder Started");
 
-			while (dynamicBufferRead()) {
-				audioInfo.position(0);
-				ByteBuffer sndBuffer = convertToSmallerByteBuffer(audioInfo);
+			while (!mDone && recorder.read(audioInfo, 0, audioInfo.length) > 0) {
 				synchronized(service) {
-					service.receiveAudio(sndBuffer);
+					service.receiveAudio(audioInfo);
 				}
 			}
 
@@ -141,26 +124,6 @@ public class MicListener extends Thread {
 		} finally {
 			requestStop();
 		}
-	}
-
-	private ByteBuffer convertToSmallerByteBuffer(ByteBuffer audioInfo) {
-		int localBufferLengthDivisor = 0;
-		synchronized(this) {
-			localBufferLengthDivisor = getBufferLengthDivisor();
-		}
-		int newByteBufferLength = audioInfo.capacity()/localBufferLengthDivisor;
-		byte[] dst = new byte [newByteBufferLength];
-		audioInfo.get(dst, 0, newByteBufferLength);
-		ByteBuffer sndBuffer = ByteBuffer.allocateDirect(dst.length);
-		sndBuffer.order(ByteOrder.nativeOrder());
-		sndBuffer.put(dst);
-		sndBuffer.position(0);
-		return sndBuffer;
-	}
-
-	private boolean dynamicBufferRead() {
-		int readAmount = recorder.read(audioInfo, audioInfo.limit()/ getBufferLengthDivisor());
-		return !mDone && readAmount > 0;
 	}
 
 	/**

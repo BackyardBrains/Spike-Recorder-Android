@@ -3,6 +3,7 @@ package com.backyardbrains.drawing;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -11,9 +12,17 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.opengl.GLDebugHelper;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.SurfaceView;
+
+import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 
 /**
  * A {@link Thread} which manages continuous drawing of a {@link BybGLDrawable}
@@ -124,6 +133,9 @@ public class OscilloscopeGLThread extends Thread {
 		this.mScaleFactor = mScaleFactor;
 	}
 
+	private AudioService mAudioService;
+	private boolean mAudioServiceIsBound;
+
 	/**
 	 * Called by the instantiating activity, this sets to {@link ByteBuffer} to
 	 * be sent down to the {@link BybGLDrawable} on the new call to
@@ -144,6 +156,39 @@ public class OscilloscopeGLThread extends Thread {
 		parent = view;
 	}
 
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		/**
+		 * Sets a reference in this activity to the {@link AudioService}, which
+		 * allows for {@link ByteBuffer}s full of audio information to be passed
+		 * from the {@link AudioService} down into the local
+		 * {@link OscilloscopeGLSurfaceView}
+		 * 
+		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+		 *      android.os.IBinder)
+		 */
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get
+			// LocalService instance
+			AudioServiceBinder binder = (AudioServiceBinder) service;
+			mAudioService = binder.getService();
+			mAudioServiceIsBound = true;
+		}
+
+		/**
+		 * Clean up bindings
+		 * 
+		 * @TODO null out mAudioService
+		 * 
+		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
+		 */
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			mAudioServiceIsBound = false;
+		}
+	};
+
 	/**
 	 * Initialize GL bits, set up the GL area so that we're lookin at it
 	 * properly, create a new {@link BybGLDrawable}, then commence drawing on it
@@ -155,14 +200,29 @@ public class OscilloscopeGLThread extends Thread {
 	public void run() {
 		initEGL();
 		waveformShape = new BybGLDrawable(this);
+
+		Intent intent = new Intent(parent.getContext(), AudioService.class);
+		parent.getContext().getApplicationContext()
+				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 		while (!mDone) {
-			mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+			// grab current audio from audioservice
+			if (mAudioServiceIsBound) {
+				byte[] audioInfo = mAudioService.getCurrentAudioInfo();
+				ByteBuffer tmp = ByteBuffer.wrap(audioInfo);
+				ShortBuffer tmp2 = tmp.asShortBuffer();
+				short[] mBufferToDraw = new short[tmp2.capacity()];
+				tmp2.get(mBufferToDraw, 0, mBufferToDraw.length);
+				setxEnd(mBufferToDraw.length/2);
+				
+				mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 
-			waveformShape.setBufferToDraw(audioBuffer);
-			waveformShape.draw(mGL);
+				waveformShape.setBufferToDraw(mBufferToDraw);
+				waveformShape.draw(mGL);
 
-			mEGL.eglSwapBuffers(mGLDisplay, mGLSurface);
+				mEGL.eglSwapBuffers(mGLDisplay, mGLSurface);
+			}
 		}
+		parent.getContext().getApplicationContext().unbindService(mConnection);
 	}
 
 	/**
@@ -256,8 +316,8 @@ public class OscilloscopeGLThread extends Thread {
 		 * Finally, get a GL Surface to draw on, a context, blit them together,
 		 * and populate the GL object.
 		 */
-		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig, parent
-				.getHolder(), null);
+		mGLSurface = mEGL.eglCreateWindowSurface(mGLDisplay, mGLConfig,
+				parent.getHolder(), null);
 		mGLContext = mEGL.eglCreateContext(mGLDisplay, mGLConfig,
 				EGL10.EGL_NO_CONTEXT, null);
 		mEGL.eglMakeCurrent(mGLDisplay, mGLSurface, mGLSurface, mGLContext);

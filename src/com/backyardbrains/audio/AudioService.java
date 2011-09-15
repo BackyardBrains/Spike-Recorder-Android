@@ -1,11 +1,5 @@
 package com.backyardbrains.audio;
 
-import java.nio.ByteBuffer;
-
-import com.backyardbrains.BackyardAndroidActivity;
-import com.backyardbrains.BackyardBrainsApplication;
-import com.backyardbrains.R;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -14,6 +8,10 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+
+import com.backyardbrains.BackyardAndroidActivity;
+import com.backyardbrains.BackyardBrainsApplication;
+import com.backyardbrains.R;
 
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data
@@ -58,27 +56,20 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	private MicListener micThread;
 	
-	public void increaseBufferLengthDivisor() {
-		int newBufferLengthDivisor = micThread.getBufferLengthDivisor()*2;
-		Log.d(TAG, "Increasing buffer length divisor to " + newBufferLengthDivisor);
-		synchronized (micThread) {
-			micThread.setBufferLengthDivisor(newBufferLengthDivisor);
-		}
-	}
-
-	public void decreaseBufferLengthDivisor() {
-		int newBufferLengthDivisor = micThread.getBufferLengthDivisor()/2;
-		Log.d(TAG, "Increasing buffer length divisor to " + newBufferLengthDivisor);
-		synchronized (micThread) {
-			micThread.setBufferLengthDivisor(newBufferLengthDivisor);
-		}
-	}
-
 	/**
 	 * Unique id to turn on-and-off service notification
 	 */
 	private int NOTIFICATION = R.string.mic_thread_running;
 	private NotificationManager mNM;
+
+	private byte[] currentAudioInfo;
+
+	/**
+	 * @return the currentAudioInfo
+	 */
+	public byte[] getCurrentAudioInfo() {
+		return currentAudioInfo;
+	}
 
 	/**
 	 * Create service and grab reference to {@link BackyardBrainsApplication}
@@ -163,16 +154,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * Get a copy of the necessary activity, and push the received data out to
 	 * said activity
 	 * 
-	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(java.nio.ByteBuffer)
+	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
 	 */
 	@Override
-	public void receiveAudio(ByteBuffer audioData) {
-		BackyardAndroidActivity l_activity = app.getRunningActivity();
-		if (l_activity != null && audioData != null) {
-			l_activity.setCurrentAudio(audioData);
-		} else {
-			Log.e(TAG, "Prevented NPE while trying to push audio to GL thread.");
-		}
+	public void receiveAudio(byte[] audioInfo) {
+		this.currentAudioInfo = audioInfo;
+		
 	}
 
 	/**
