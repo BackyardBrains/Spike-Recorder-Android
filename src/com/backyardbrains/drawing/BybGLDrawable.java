@@ -58,7 +58,6 @@ class BybGLDrawable {
 	 * @param gl_obj
 	 */
 	public void draw(GL10 gl_obj) {
-		parent.initGL();
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 
 		if (!autoScaled
@@ -131,7 +130,7 @@ class BybGLDrawable {
 	private void autoSetFrame(short[] arrayToScaleTo) {
 		float theMax = 0;
 		float theMin = 0;
-		
+
 		for (int i = 0; i < arrayToScaleTo.length; i++) {
 			if (theMax < arrayToScaleTo[i])
 				theMax = arrayToScaleTo[i];
@@ -148,7 +147,8 @@ class BybGLDrawable {
 				newyMax = Math.abs(theMin) * 1.5f;
 			}
 			if (-newyMax > parent.getyMin()) {
-				Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
+				Log.d(TAG, "Scaling window to " + -newyMax + " < y < "
+						+ newyMax);
 				parent.setyBegin(-newyMax);
 				parent.setyEnd(newyMax);
 			}
@@ -191,7 +191,7 @@ class BybGLDrawable {
 
 		return parent.getFloatBufferFromFloatArray(arr);
 	}
-	
+
 	public void forceRescale() {
 		autoScaled = false;
 	}
@@ -207,8 +207,9 @@ class BybGLDrawable {
 	public void setBufferToDraw(short[] audioBuffer) {
 		if (audioBuffer != null) {
 			mBufferToDraw = audioBuffer;
-			Log.v(TAG, "Got audio data: " + mBufferToDraw.length + " samples, or "
-					+ mBufferToDraw.length / 44100.0f * 1000 + "ms");
+			Log.v(TAG, "Got audio data: " + mBufferToDraw.length
+					+ " samples, or " + mBufferToDraw.length / 44100.0f * 1000
+					+ "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}

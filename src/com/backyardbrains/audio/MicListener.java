@@ -60,7 +60,7 @@ public class MicListener extends Thread {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		Log.d(TAG, "Found buffer size of :" + buffersize);
-		audioInfo = new byte [buffersize * 2]; // double-buffered
+		audioInfo = new byte[buffersize * 2]; // double-buffered
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
@@ -108,7 +108,7 @@ public class MicListener extends Thread {
 			Log.d(TAG, "Recorder Started");
 
 			while (!mDone && recorder.read(audioInfo, 0, audioInfo.length) > 0) {
-				synchronized(service) {
+				synchronized (service) {
 					service.receiveAudio(audioInfo);
 				}
 			}

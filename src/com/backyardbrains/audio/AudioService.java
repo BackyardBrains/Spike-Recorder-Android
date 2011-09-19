@@ -55,7 +55,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * 
 	 */
 	private MicListener micThread;
-	
+
 	/**
 	 * Unique id to turn on-and-off service notification
 	 */
@@ -159,7 +159,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void receiveAudio(byte[] audioInfo) {
 		this.currentAudioInfo = audioInfo;
-		
+
 	}
 
 	/**
