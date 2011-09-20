@@ -1,6 +1,7 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -40,7 +41,7 @@ public class MicListener extends Thread {
 	 * {@link MicListener#MicListener()} and used while polling
 	 * {@link AudioRecord} in {@link MicListener#run()}
 	 */
-	private byte[] audioInfo;
+	private ByteBuffer audioInfo;
 	/**
 	 * placeholder for a service that implements {@link RecievesAudio}
 	 */
@@ -60,7 +61,8 @@ public class MicListener extends Thread {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		Log.d(TAG, "Found buffer size of :" + buffersize);
-		audioInfo = new byte[buffersize * 2]; // double-buffered
+		audioInfo = ByteBuffer.allocateDirect(buffersize);
+		audioInfo.order(ByteOrder.nativeOrder());
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
@@ -107,10 +109,12 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			Log.d(TAG, "Recorder Started");
 
-			while (!mDone && recorder.read(audioInfo, 0, audioInfo.length) > 0) {
+			while (!mDone && recorder.read(audioInfo, audioInfo.limit()) > 0) {
+				audioInfo.position(0);
 				synchronized (service) {
 					service.receiveAudio(audioInfo);
 				}
+				audioInfo.clear();
 			}
 
 			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {

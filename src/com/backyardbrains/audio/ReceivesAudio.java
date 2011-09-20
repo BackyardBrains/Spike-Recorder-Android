@@ -16,5 +16,5 @@ public interface ReceivesAudio {
 	 * 
 	 * @param audioInfo
 	 */
-	public void receiveAudio(byte[] audioInfo);
+	public void receiveAudio(ByteBuffer audioInfo);
 }

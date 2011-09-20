@@ -3,8 +3,6 @@ package com.backyardbrains.drawing;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -178,17 +176,16 @@ public class OscilloscopeGLThread extends Thread {
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
-				byte[] audioInfo = null;
+				ByteBuffer audioInfo = null;
 				synchronized (this) {
 					audioInfo = mAudioService.getCurrentAudioInfo();
 				}
 				if (audioInfo != null) {
-					Log.v(TAG, "Got byte array: " + audioInfo[0] + ", "
-							+ audioInfo[0] + ", ");
-					ByteBuffer tmp = ByteBuffer.wrap(audioInfo);
-					ShortBuffer tmp2 = tmp.asShortBuffer();
-					short[] mBufferToDraw = new short[tmp2.capacity()];
-					tmp2.get(mBufferToDraw, 0, mBufferToDraw.length);
+					audioInfo.clear();
+					int bufferCapacity = audioInfo.asShortBuffer().capacity();
+					short [] mBufferToDraw = new short[bufferCapacity];
+					audioInfo.asShortBuffer().get(mBufferToDraw, 0,
+							mBufferToDraw.length);
 					setxEnd(mBufferToDraw.length / 2);
 
 					glman.glClear();

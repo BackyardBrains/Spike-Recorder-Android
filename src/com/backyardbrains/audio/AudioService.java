@@ -1,5 +1,7 @@
 package com.backyardbrains.audio;
 
+import java.nio.ByteBuffer;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -62,12 +64,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	private int NOTIFICATION = R.string.mic_thread_running;
 	private NotificationManager mNM;
 
-	private byte[] currentAudioInfo;
+	private ByteBuffer currentAudioInfo;
 
 	/**
 	 * @return the currentAudioInfo
 	 */
-	public byte[] getCurrentAudioInfo() {
+	public ByteBuffer getCurrentAudioInfo() {
 		return currentAudioInfo;
 	}
 
@@ -157,7 +159,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
 	 */
 	@Override
-	public void receiveAudio(byte[] audioInfo) {
+	public void receiveAudio(ByteBuffer audioInfo) {
 		this.currentAudioInfo = audioInfo;
 
 	}
