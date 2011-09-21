@@ -115,6 +115,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * notification via {@link AudioService#showNotification()}
 	 */
 	public void turnOnMicThread() {
+		micThread = null;
 		micThread = new MicListener();
 		micThread.start(AudioService.this);
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -183,8 +184,8 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public boolean onUnbind(Intent intent) {
-		turnOffMicThread();
-		stopSelf();
+		//turnOffMicThread();
+		//stopSelf();
 		return super.onUnbind(intent);
 	}
 

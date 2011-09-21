@@ -110,8 +110,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		if (mGLThread != null) {
-			mGLThread.requestStop();
+		synchronized (mGLThread) {
+			if (mGLThread != null) {
+				mGLThread.requestStop();
+			}	
 		}
 		setKeepScreenOn(false);
 	}

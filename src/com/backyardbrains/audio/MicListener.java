@@ -117,17 +117,28 @@ public class MicListener extends Thread {
 				audioInfo.clear();
 			}
 
-			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-				recorder.stop();
-				recorder.release();
-				Log.d(TAG, "Recorder Released");
-			}
+			/*
+			 * if (recorder!= null && recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED) {
+			 *	stopRecorder();
+			 *}
+			 */
 
 		} catch (Throwable e) {
 			Log.e(TAG, "Could not open audio souce", e);
 		} finally {
 			requestStop();
 		}
+	}
+
+	private void stopRecorder() {
+		try {
+			recorder.stop();
+			recorder.release();
+		} catch (IllegalStateException e) {
+			Log.w(TAG, "Caught Illegal State Exception: " + e.getMessage());
+		}
+		recorder = null;
+		Log.d(TAG, "Recorder Released");
 	}
 
 	/**
@@ -149,8 +160,7 @@ public class MicListener extends Thread {
 		mDone = true;
 		if (recorder != null) {
 			if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-				recorder.stop();
-				recorder.release();
+				stopRecorder();
 			}
 			recorder = null;
 		}
