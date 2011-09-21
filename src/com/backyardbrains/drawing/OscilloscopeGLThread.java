@@ -154,6 +154,7 @@ public class OscilloscopeGLThread extends Thread {
 		@Override
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioServiceIsBound = false;
+			mAudioService = null;
 		}
 	};
 	private GlSurfaceManager glman;
