@@ -126,7 +126,7 @@ public class MicListener extends Thread {
 		} catch (Throwable e) {
 			Log.e(TAG, "Could not open audio souce", e);
 		} finally {
-			requestStop();
+			if (!mDone) requestStop();
 		}
 	}
 
@@ -135,7 +135,7 @@ public class MicListener extends Thread {
 			recorder.stop();
 			recorder.release();
 		} catch (IllegalStateException e) {
-			Log.w(TAG, "Caught Illegal State Exception: " + e.getMessage());
+			Log.w(TAG, "Caught Illegal State Exception: " + e.toString());
 		}
 		recorder = null;
 		Log.d(TAG, "Recorder Released");

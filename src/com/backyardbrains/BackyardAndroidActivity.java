@@ -47,8 +47,7 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		application = (BackyardBrainsApplication) getApplication();
-		application.setRunningActivity(this);
-		// application.startAudioService();
+		application.startAudioService();
 
 		// Create custom surface
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
@@ -123,7 +122,7 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStop() {
 		super.onStop();
 		// Unbind from the service has been moved to OpenGLThread
-		// application.stopAudioService();
+		application.stopAudioService();
 	}
 
 	@Override

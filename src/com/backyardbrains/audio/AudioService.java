@@ -66,6 +66,8 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	private ByteBuffer currentAudioInfo;
 
+	private int mBindingsCount;
+
 	/**
 	 * @return the currentAudioInfo
 	 */
@@ -173,6 +175,8 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public IBinder onBind(Intent arg0) {
+		mBindingsCount++;
+		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		return mBinder;
 	}
 
@@ -185,7 +189,11 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public boolean onUnbind(Intent intent) {
 		//turnOffMicThread();
-		//stopSelf();
+		mBindingsCount--;
+		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
+		if (mBindingsCount < 1) {
+			stopSelf();
+		}
 		return super.onUnbind(intent);
 	}
 

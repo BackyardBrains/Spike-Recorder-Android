@@ -200,6 +200,7 @@ public class OscilloscopeGLThread extends Thread {
 			glman.swapBuffers();
 		}
 		parent.getContext().getApplicationContext().unbindService(mConnection);
+		mConnection = null;
 	}
 
 	/**

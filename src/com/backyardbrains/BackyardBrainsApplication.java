@@ -18,32 +18,6 @@ public class BackyardBrainsApplication extends Application {
 	 * Is the {@link AudioService} running?
 	 */
 	private boolean serviceRunning;
-	/**
-	 * A reference to the running {@link BackyardAndroidActivity}
-	 */
-	private BackyardAndroidActivity runningActivity;
-
-	/**
-	 * Used by {@link AudioService} to reference the foreground activity
-	 * 
-	 * @return the runningActivity
-	 */
-	public BackyardAndroidActivity getRunningActivity() {
-		return runningActivity;
-	}
-
-	/**
-	 * Used by {@link BackyardAndroidActivity} to tell the application it's in
-	 * the foreground so that
-	 * {@link AudioService#receiveAudio(java.nio.ByteBuffer)} can retrieve it
-	 * via {@link BackyardBrainsApplication#getRunningActivity()}
-	 * 
-	 * @param runningActivity
-	 *            the runningActivity to set
-	 */
-	public void setRunningActivity(BackyardAndroidActivity runningActivity) {
-		this.runningActivity = runningActivity;
-	}
 
 	/**
 	 * @return the serviceRunning
@@ -86,7 +60,7 @@ public class BackyardBrainsApplication extends Application {
 	public void onCreate() {
 		super.onCreate();
 		// new AudioService();
-		startAudioService();
+		//startAudioService();
 	}
 
 	/**
@@ -97,7 +71,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
-		stopAudioService();
+		if(this.serviceRunning) stopAudioService();
 	}
 
 }
