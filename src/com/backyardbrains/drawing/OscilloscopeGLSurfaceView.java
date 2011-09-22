@@ -1,12 +1,14 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.TextView;
 
 /**
  * OscilloscopeGLSurfaceView is a custom SurfaceView that implements callbacks
@@ -55,9 +57,16 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-
+		
 		setKeepScreenOn(true);
 		mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+	}
+	
+	public void setMsText(Float ms) {
+		Intent i = new Intent();
+		i.setAction("BYBUpdateMillisecondsReciever");
+		i.putExtra("millisecondsDisplayedString", ms.toString() + " ms");
+		getContext().sendBroadcast(i);
 	}
 
 	private class ScaleListener extends

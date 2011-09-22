@@ -1,11 +1,14 @@
 package com.backyardbrains;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
@@ -30,6 +33,7 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link BackyardBrainsApplication} for message passing
 	 */
 	private BackyardBrainsApplication application;
+	private TextView msView;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -49,11 +53,24 @@ public class BackyardAndroidActivity extends Activity {
 		application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
 
+		msView = (TextView) findViewById(R.id.millisecondsView);
+
 		// Create custom surface
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
-		// setContentView(mAndroidSurface);
+
+		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
+		UpdateMillisecondsReciever upmillirec = new UpdateMillisecondsReciever();
+		registerReceiver(upmillirec, intentFilter);
+	}
+
+	private class UpdateMillisecondsReciever extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			msView.setText(intent.getStringExtra("millisecondsDisplayedString"));
+		};
 	}
 
 	/**
@@ -131,4 +148,7 @@ public class BackyardAndroidActivity extends Activity {
 		return super.onTouchEvent(event);
 	}
 
+	public void setDisplayedMilliseconds(Float ms) {
+		msView.setText(ms.toString());
+	}
 }

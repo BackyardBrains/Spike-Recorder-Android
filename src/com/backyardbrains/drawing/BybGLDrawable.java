@@ -207,9 +207,9 @@ class BybGLDrawable {
 	public void setBufferToDraw(short[] audioBuffer) {
 		if (audioBuffer != null) {
 			mBufferToDraw = audioBuffer;
-			Log.v(TAG, "Got audio data: " + mBufferToDraw.length
-					+ " samples, or " + mBufferToDraw.length / 44100.0f * 1000
-					+ "ms");
+//			Log.v(TAG, "Got audio data: " + mBufferToDraw.length
+//					+ " samples, or " + mBufferToDraw.length / 44100.0f * 1000
+//					+ "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}

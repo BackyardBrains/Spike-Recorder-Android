@@ -3,6 +3,7 @@ package com.backyardbrains.drawing;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -174,22 +175,36 @@ public class OscilloscopeGLThread extends Thread {
 		Intent intent = new Intent(parent.getContext(), AudioService.class);
 		parent.getContext().getApplicationContext()
 				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
+				
+				// Reset our Audio buffer
 				ByteBuffer audioInfo = null;
+				
+				// Read new mic data
 				synchronized (this) {
 					audioInfo = mAudioService.getCurrentAudioInfo();
 				}
+
 				if (audioInfo != null) {
 					audioInfo.clear();
+					
+					// Convert audioInfo to a short[] named mBufferToDraw
 					int bufferCapacity = audioInfo.asShortBuffer().capacity();
 					short [] mBufferToDraw = new short[bufferCapacity];
 					audioInfo.asShortBuffer().get(mBufferToDraw, 0,
 							mBufferToDraw.length);
+					
+					// scale the right side to the number of data points we have
 					setxEnd(mBufferToDraw.length / 2);
 
 					glman.glClear();
+					
+					synchronized (parent) {
+						((OscilloscopeGLSurfaceView) parent).setMsText(mBufferToDraw.length / 44100.0f * 1000);
+					}
 					waveformShape.setBufferToDraw(mBufferToDraw);
 					glman.initGL(xBegin, xEnd, yBegin / mScaleFactor, yEnd
 							/ mScaleFactor);
