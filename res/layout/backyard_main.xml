@@ -14,14 +14,22 @@
 		android:scaleType="fitXY"
 		android:src="@drawable/tickmarks"
 		></ImageView>
-	<TextView
+	<TextView android:id="@+id/millisecondsView"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:id="@+id/millisecondsView"
 		android:layout_alignParentBottom="true"
 		android:layout_centerHorizontal="true"
 		android:layout_marginBottom="20dp"
 		android:text="0 ms"
 		></TextView>
+	<ImageView android:id="@+id/msLineView"
+		android:layout_marginBottom="10dp"
+		android:layout_height="wrap_content"
+		android:layout_width="100sp"
+		android:src="@drawable/msline"
+		android:layout_above="@+id/millisecondsView"
+		android:layout_centerHorizontal="true"
+		android:scaleType="fitXY"
+	></ImageView>
 
 </RelativeLayout>
