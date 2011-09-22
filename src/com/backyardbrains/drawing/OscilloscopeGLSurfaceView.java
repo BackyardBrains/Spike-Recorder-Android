@@ -1,5 +1,7 @@
 package com.backyardbrains.drawing;
 
+import java.text.DecimalFormat;
+
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
@@ -8,7 +10,6 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.TextView;
 
 /**
  * OscilloscopeGLSurfaceView is a custom SurfaceView that implements callbacks
@@ -65,7 +66,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public void setMsText(Float ms) {
 		Intent i = new Intent();
 		i.setAction("BYBUpdateMillisecondsReciever");
-		i.putExtra("millisecondsDisplayedString", ms.toString() + " ms");
+		String msString = new DecimalFormat("#.#").format(ms);
+		i.putExtra("millisecondsDisplayedString", msString + " ms");
 		getContext().sendBroadcast(i);
 	}
 
