@@ -31,5 +31,25 @@
 		android:layout_centerHorizontal="true"
 		android:scaleType="fitXY"
 	></ImageView>
+	<ImageView android:id="@+id/recordButtonBackground"
+		android:layout_height="wrap_content"
+		android:src="@drawable/rounded_button_background"
+		android:layout_width="wrap_content"
+		android:layout_alignParentTop="true"
+		android:layout_alignParentRight="true"
+	></ImageView>
+	<LinearLayout
+	    android:id="@+id/buttonHolderLayout"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content" android:layout_alignParentRight="true" android:layout_alignLeft="@+id/recordButtonBackground">
+		<ImageButton android:background="#0000" android:layout_height="match_parent" android:id="@+id/fileButton" android:src="@drawable/file_button" android:padding="5sp" android:layout_weight="1" android:layout_width="match_parent"></ImageButton>
+	    <ImageButton android:id="@+id/recordButton"
+    		android:src="@drawable/record_button"
+    		android:layout_alignParentTop="true"
+    		android:layout_alignParentRight="true"
+    		android:background="#0000"
+    		android:padding="5sp"
+    	android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1"></ImageButton>
+	</LinearLayout>
 
 </RelativeLayout>
