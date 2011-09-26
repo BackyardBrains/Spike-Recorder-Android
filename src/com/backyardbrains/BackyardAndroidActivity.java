@@ -89,10 +89,10 @@ public class BackyardAndroidActivity extends Activity {
 		// TODO Auto-generated method stub
 		switch (item.getItemId()) {
 		case R.id.expandX:
-			// @TODO change X dim size here
+			mAndroidSurface.growXdimension();
 			return true;
 		case R.id.shrinkX:
-			// @TODO change X dim size here
+			mAndroidSurface.shrinkXdimension();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);

@@ -3,6 +3,7 @@ package com.backyardbrains.drawing;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -159,6 +160,24 @@ public class OscilloscopeGLThread extends Thread {
 		}
 	};
 	private GlSurfaceManager glman;
+	private int bufferLengthDivisor;
+
+	/**
+	 * @return the bufferLengthDivisor
+	 */
+	public int getBufferLengthDivisor() {
+		return bufferLengthDivisor;
+	}
+
+	/**
+	 * @param bufferLengthDivisor
+	 *            the bufferLengthDivisor to set
+	 */
+	public void setBufferLengthDivisor(int bufferLengthDivisor) {
+		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 16) {
+			this.bufferLengthDivisor = bufferLengthDivisor;
+		}
+	}
 
 	/**
 	 * Initialize GL bits, set up the GL area so that we're lookin at it
@@ -176,13 +195,14 @@ public class OscilloscopeGLThread extends Thread {
 		parent.getContext().getApplicationContext()
 				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
+		bufferLengthDivisor = 1;
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
-				
+
 				// Reset our Audio buffer
 				ByteBuffer audioInfo = null;
-				
+
 				// Read new mic data
 				synchronized (this) {
 					audioInfo = mAudioService.getCurrentAudioInfo();
@@ -190,29 +210,50 @@ public class OscilloscopeGLThread extends Thread {
 
 				if (audioInfo != null) {
 					audioInfo.clear();
-					
-					// Convert audioInfo to a short[] named mBufferToDraw
-					int bufferCapacity = audioInfo.asShortBuffer().capacity();
-					short [] mBufferToDraw = new short[bufferCapacity];
-					audioInfo.asShortBuffer().get(mBufferToDraw, 0,
-							mBufferToDraw.length);
-					
-					// scale the right side to the number of data points we have
-					setxEnd(mBufferToDraw.length / 2);
 
-					glman.glClear();
-					
-					synchronized (parent) {
-						((OscilloscopeGLSurfaceView) parent).setMsText(mBufferToDraw.length / 44100.0f * 1000);
+					// Convert audioInfo to a short[] named mBufferToDraw
+					ShortBuffer audioInfoasShortBuffer = audioInfo
+							.asShortBuffer();
+					int bufferCapacity = audioInfoasShortBuffer.capacity();
+
+					int samplesToSend = bufferCapacity / bufferLengthDivisor;
+					for (int i = 0; i < bufferCapacity; i += samplesToSend) {
+
+						short[] mBufferToDraw = new short[samplesToSend];
+						long currentTime = System.currentTimeMillis();
+						float millisecondsInThisBuffer = mBufferToDraw.length / 44100.0f * 1000;
+
+						Log.d(TAG, "Eating samples " + i + " through "
+								+ (i + mBufferToDraw.length));
+						audioInfoasShortBuffer.get(mBufferToDraw, 0,
+								mBufferToDraw.length);
+						// scale the right side to the number of data points we have
+						setxEnd(mBufferToDraw.length / 2);
+						glman.glClear();
+
+						synchronized (parent) {
+							((OscilloscopeGLSurfaceView) parent)
+									.setMsText(millisecondsInThisBuffer);
+						}
+						waveformShape.setBufferToDraw(mBufferToDraw);
+						glman.initGL(xBegin, xEnd, yBegin / mScaleFactor, yEnd
+								/ mScaleFactor);
+						waveformShape.draw(glman.getmGL());
+						glman.swapBuffers();
+						long newTime = System.currentTimeMillis();
+						while (newTime - currentTime < millisecondsInThisBuffer) {
+							try {
+								Thread.sleep(1);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							newTime = System.currentTimeMillis();
+						}
 					}
-					waveformShape.setBufferToDraw(mBufferToDraw);
-					glman.initGL(xBegin, xEnd, yBegin / mScaleFactor, yEnd
-							/ mScaleFactor);
-					waveformShape.draw(glman.getmGL());
 				}
 
 			}
-			glman.swapBuffers();
 		}
 		parent.getContext().getApplicationContext().unbindService(mConnection);
 		mConnection = null;

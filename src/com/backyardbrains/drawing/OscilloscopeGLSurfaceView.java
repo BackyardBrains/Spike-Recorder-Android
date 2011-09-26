@@ -71,6 +71,14 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		getContext().sendBroadcast(i);
 	}
 
+	public void shrinkXdimension() {
+		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()*2);
+	}
+	
+	public void growXdimension() {
+		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()/2);
+	}
+
 	private class ScaleListener extends
 			ScaleGestureDetector.SimpleOnScaleGestureListener {
 		@Override
