@@ -7,7 +7,10 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.backyardbrains.audio.AudioService;
@@ -34,6 +37,7 @@ public class BackyardAndroidActivity extends Activity {
 	 */
 	private BackyardBrainsApplication application;
 	private TextView msView;
+	private ImageButton mRecordButton;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -60,9 +64,20 @@ public class BackyardAndroidActivity extends Activity {
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
 
+		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
+		mRecordButton.setOnClickListener(
+				new OnClickListener() {
+					@Override public void onClick(View v) { toggleRecording(); }
+				});
+		
 		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
 		UpdateMillisecondsReciever upmillirec = new UpdateMillisecondsReciever();
 		registerReceiver(upmillirec, intentFilter);
+	}
+
+	protected void toggleRecording() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
