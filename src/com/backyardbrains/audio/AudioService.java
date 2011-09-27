@@ -68,6 +68,8 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	private int mBindingsCount;
 
+	private RecordingSaver mRecordingSaverInstance;
+
 	/**
 	 * @return the currentAudioInfo
 	 */
@@ -164,6 +166,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		this.currentAudioInfo = audioInfo;
+		if (mRecordingSaverInstance != null) {
+			mRecordingSaverInstance.receiveAudio(audioInfo);
+		}
 
 	}
 
