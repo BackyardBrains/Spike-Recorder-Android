@@ -39,6 +39,7 @@ public class BackyardAndroidActivity extends Activity {
 	private BackyardBrainsApplication application;
 	private TextView msView;
 	private ImageButton mRecordButton;
+	private UpdateMillisecondsReciever upmillirec;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -75,7 +76,7 @@ public class BackyardAndroidActivity extends Activity {
 
 		IntentFilter intentFilter = new IntentFilter(
 				"BYBUpdateMillisecondsReciever");
-		UpdateMillisecondsReciever upmillirec = new UpdateMillisecondsReciever();
+		upmillirec = new UpdateMillisecondsReciever();
 		registerReceiver(upmillirec, intentFilter);
 	}
 
@@ -174,6 +175,7 @@ public class BackyardAndroidActivity extends Activity {
 	
 	@Override
 	public void onDestroy() {
-		//unregisterReceiver(receiver)
+		unregisterReceiver(upmillirec);
+		super.onDestroy();
 	};
 }

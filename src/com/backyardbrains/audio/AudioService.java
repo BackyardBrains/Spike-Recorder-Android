@@ -72,6 +72,8 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	private RecordingSaver mRecordingSaverInstance;
 
+	private ToggleRecordingListener toggleRecorder;
+
 	/**
 	 * @return the currentAudioInfo
 	 */
@@ -115,7 +117,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		app.setServiceRunning(true);
 
 		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
-		ToggleRecordingListener toggleRecorder = new ToggleRecordingListener();
+		toggleRecorder = new ToggleRecordingListener();
 		registerReceiver(toggleRecorder, intentFilter);
 
 		return START_STICKY;
@@ -235,6 +237,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		if (mBindingsCount < 1) {
 			stopSelf();
+			unregisterReceiver(toggleRecorder);
 		}
 		return super.onUnbind(intent);
 	}
