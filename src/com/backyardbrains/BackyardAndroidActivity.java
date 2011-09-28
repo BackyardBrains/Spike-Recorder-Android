@@ -72,11 +72,6 @@ public class BackyardAndroidActivity extends Activity {
 				toggleRecording();
 			}
 		});
-
-		IntentFilter intentFilter = new IntentFilter(
-				"BYBUpdateMillisecondsReciever");
-		upmillirec = new UpdateMillisecondsReciever();
-		registerReceiver(upmillirec, intentFilter);
 	}
 
 	protected void toggleRecording() {
@@ -148,6 +143,11 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStart() {
 		super.onStart();
 		// Bind to LocalService has been moved to OpenGLThread
+		IntentFilter intentFilter = new IntentFilter(
+				"BYBUpdateMillisecondsReciever");
+		upmillirec = new UpdateMillisecondsReciever();
+		registerReceiver(upmillirec, intentFilter);
+
 		application.startAudioService();
 	}
 
@@ -161,6 +161,7 @@ public class BackyardAndroidActivity extends Activity {
 		super.onStop();
 		// Unbind from the service has been moved to OpenGLThread
 		application.stopAudioService();
+		unregisterReceiver(upmillirec);
 	}
 
 	@Override
@@ -175,7 +176,6 @@ public class BackyardAndroidActivity extends Activity {
 	
 	@Override
 	public void onDestroy() {
-		unregisterReceiver(upmillirec);
 		super.onDestroy();
 	};
 }
