@@ -57,7 +57,6 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		application = (BackyardBrainsApplication) getApplication();
-		application.startAudioService();
 
 		msView = (TextView) findViewById(R.id.millisecondsView);
 
@@ -149,6 +148,7 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStart() {
 		super.onStart();
 		// Bind to LocalService has been moved to OpenGLThread
+		application.startAudioService();
 	}
 
 	/**
