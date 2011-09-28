@@ -6,7 +6,9 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -111,6 +113,11 @@ public class AudioService extends Service implements ReceivesAudio {
 		super.onStartCommand(intent, flags, startId);
 		turnOnMicThread();
 		app.setServiceRunning(true);
+
+		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
+		ToggleRecordingListener toggleRecorder = new ToggleRecordingListener();
+		registerReceiver(toggleRecorder, intentFilter);
+
 		return START_STICKY;
 	}
 
@@ -172,6 +179,36 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	}
 
+	private class ToggleRecordingListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			if (!startRecording()) {
+				stopRecording();
+			}
+		};
+	}
+
+	public boolean startRecording() {
+		if (mRecordingSaverInstance != null) {
+			return false;
+		}
+		Long theTime = (Long) System.currentTimeMillis();
+		mRecordingSaverInstance = new RecordingSaver(theTime.toString());
+		return true;
+	}
+
+	public boolean stopRecording() {
+		if (mRecordingSaverInstance == null) {
+			throw new IllegalStateException(
+					"Tried to stop recording on a non-existant object");
+		}
+
+		mRecordingSaverInstance.finishRecording();
+		mRecordingSaverInstance = null;
+		return true;
+	}
+
 	/**
 	 * return a binding pointer for activities to reference this object
 	 * 
@@ -193,7 +230,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public boolean onUnbind(Intent intent) {
-		//turnOffMicThread();
+		// turnOffMicThread();
 		mBindingsCount--;
 		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		if (mBindingsCount < 1) {

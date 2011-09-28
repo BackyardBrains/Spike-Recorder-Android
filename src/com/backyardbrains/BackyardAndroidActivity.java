@@ -2,6 +2,7 @@ package com.backyardbrains;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.Menu;
@@ -65,19 +66,23 @@ public class BackyardAndroidActivity extends Activity {
 		mainscreenGLLayout.addView(mAndroidSurface);
 
 		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
-		mRecordButton.setOnClickListener(
-				new OnClickListener() {
-					@Override public void onClick(View v) { toggleRecording(); }
-				});
-		
-		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
+		mRecordButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				toggleRecording();
+			}
+		});
+
+		IntentFilter intentFilter = new IntentFilter(
+				"BYBUpdateMillisecondsReciever");
 		UpdateMillisecondsReciever upmillirec = new UpdateMillisecondsReciever();
 		registerReceiver(upmillirec, intentFilter);
 	}
 
 	protected void toggleRecording() {
-		// TODO Auto-generated method stub
-		
+		Intent i = new Intent();
+		i.setAction("BYBToggleRecording");
+		getBaseContext().sendBroadcast(i);
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
@@ -166,4 +171,9 @@ public class BackyardAndroidActivity extends Activity {
 	public void setDisplayedMilliseconds(Float ms) {
 		msView.setText(ms.toString());
 	}
+	
+	@Override
+	public void onDestroy() {
+		//unregisterReceiver(receiver)
+	};
 }

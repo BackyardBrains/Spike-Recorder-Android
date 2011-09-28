@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 import android.os.Environment;
 
@@ -30,7 +31,7 @@ public class RecordingSaver implements ReceivesAudio {
 		try {
 			mFileToRecordTo.createNewFile();
 		} catch (IOException e) {
-			throw new IllegalStateException("Cannot create file: " + mFileToRecordTo.toString());
+			throw new IllegalStateException("Cannot create file: " + mFileToRecordTo.toString() + " with error " + e.getMessage());
 		}
 		
 		try {
@@ -44,13 +45,21 @@ public class RecordingSaver implements ReceivesAudio {
 
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
-		for (Short s : audioInfo.asShortBuffer().array()) {
+		ShortBuffer sb = audioInfo.asShortBuffer();
+		while(sb.hasRemaining()) {
 			try {
-				dataOutputStreamInstance.writeShort(s);
+				dataOutputStreamInstance.writeShort(sb.get());
 			} catch (IOException e) {
 				throw new IllegalStateException("Could not write bytes out to file");
 			}
 		}
-		// TODO do stuff
+	}
+	
+	public void finishRecording() {
+		try {
+			bufferedStream.close();
+		} catch (IOException e) {
+			throw new IllegalStateException("Cannot close buffered writer.");
+		}
 	}
 }
