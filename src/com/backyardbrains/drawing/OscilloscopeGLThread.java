@@ -29,18 +29,6 @@ public class OscilloscopeGLThread extends Thread {
 	private float xBegin = 00f;
 	private float xEnd = 4000f;
 
-	public float getxBegin() {
-		return xBegin;
-	}
-
-	public void setxBegin(float xBegin) {
-		this.yBegin = xBegin;
-	}
-
-	public float getxEnd() {
-		return xEnd;
-	}
-
 	public void setxEnd(float xEnd) {
 		this.xEnd = xEnd;
 	}
@@ -52,31 +40,11 @@ public class OscilloscopeGLThread extends Thread {
 		return yMin;
 	}
 
-	public void setyMin(float yMin) {
-		this.yMin = yMin;
-	}
-
-	public float getyMax() {
-		return yMax;
-	}
-
-	public void setyMax(float yMax) {
-		this.yMax = yMax;
-	}
-
 	private float yBegin = -5000f;
 	private float yEnd = 5000f;
 
-	public float getyBegin() {
-		return yBegin;
-	}
-
 	public void setyBegin(float yBegin) {
 		this.yBegin = yBegin;
-	}
-
-	public float getyEnd() {
-		return yEnd;
 	}
 
 	public void setyEnd(float yEnd) {
@@ -92,14 +60,6 @@ public class OscilloscopeGLThread extends Thread {
 	 * Is thread done processing yet? Used at requestStop
 	 */
 	private boolean mDone = false;
-
-	/**
-	 * Necessary GL detritus.
-	 */
-
-	public float x_width = 100;
-	public int numVerticalGridLines = 9;
-	int numHorizontalGridLines = 6;
 	private static final String TAG = "BYBOsciliscopeGlThread";
 	private BybGLDrawable waveformShape;
 	private float mScaleFactor = 1.f;
@@ -192,8 +152,8 @@ public class OscilloscopeGLThread extends Thread {
 		waveformShape = new BybGLDrawable(this);
 
 		Intent intent = new Intent(parent.getContext(), AudioService.class);
-		parent.getContext().getApplicationContext()
-				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		parent.getContext().getApplicationContext().bindService(intent,
+				mConnection, Context.BIND_AUTO_CREATE);
 
 		bufferLengthDivisor = 1;
 		while (!mDone) {
@@ -227,7 +187,8 @@ public class OscilloscopeGLThread extends Thread {
 								+ (i + mBufferToDraw.length));
 						audioInfoasShortBuffer.get(mBufferToDraw, 0,
 								mBufferToDraw.length);
-						// scale the right side to the number of data points we have
+						// scale the right side to the number of data points we
+						// have
 						setxEnd(mBufferToDraw.length / 2);
 						glman.glClear();
 
