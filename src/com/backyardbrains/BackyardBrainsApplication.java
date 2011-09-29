@@ -52,18 +52,6 @@ public class BackyardBrainsApplication extends Application {
 	}
 
 	/**
-	 * When we start, spin up the {@link AudioService}
-	 * 
-	 * @see android.app.Application#onCreate()
-	 */
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		// new AudioService();
-		//startAudioService();
-	}
-
-	/**
 	 * Make sure we stop the {@link AudioService} when we exit
 	 * 
 	 * @see android.app.Application#onTerminate()
