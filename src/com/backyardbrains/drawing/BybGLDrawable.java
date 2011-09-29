@@ -48,8 +48,6 @@ class BybGLDrawable {
 
 	private boolean autoScaled;
 
-	private boolean mShouldDrawGridlines = false;
-
 	/**
 	 * Draw this object on the provided {@link GL10} object. In addition, check
 	 * to see if the frame has been autoscaled yet. If not, do so exactly once,
@@ -76,48 +74,6 @@ class BybGLDrawable {
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		if (mShouldDrawGridlines)
-			drawGridLines(gl_obj);
-
-	}
-
-	private void drawGridLines(GL10 gl_obj) {
-		// @TODO make this line up with wave center line
-		int numHorizontalGridLines = parent.numHorizontalGridLines;
-		int numVerticalGridLines = parent.numVerticalGridLines;
-		float[] gridVertexArray = new float[4 * (parent.numHorizontalGridLines + numVerticalGridLines)];
-		for (int i = 0; i < numHorizontalGridLines; ++i) {
-			// Fill in the horizontal grid lines
-			float horzval = (float) (parent.getyBegin() + (i + 1.0)
-					* (parent.getyEnd() - parent.getyBegin())
-					/ (numHorizontalGridLines + 1.0));
-			gridVertexArray[i * 4] = parent.getxBegin();
-			gridVertexArray[i * 4 + 1] = horzval;
-			gridVertexArray[i * 4 + 2] = parent.getxEnd();
-			gridVertexArray[i * 4 + 3] = horzval;
-		}
-
-		int idx;
-		for (int i = 0; i < numVerticalGridLines; ++i) {
-			// Now the vertical lines
-			float vertval = (float) (parent.getxBegin() + (i + 1.0)
-					* (parent.getxEnd() - parent.getxBegin())
-					/ (numVerticalGridLines + 1.0));
-			idx = numHorizontalGridLines * 4;
-			gridVertexArray[idx + i * 4] = vertval;
-			gridVertexArray[idx + i * 4 + 1] = parent.getyBegin();
-			gridVertexArray[idx + i * 4 + 2] = vertval;
-			gridVertexArray[idx + i * 4 + 3] = parent.getyEnd();
-		}
-		gl_obj.glColor4f(.5f, .5f, .5f, .5f);
-		gl_obj.glLineWidth(1f);
-		FloatBuffer glVertexBuffer = parent
-				.getFloatBufferFromFloatArray(gridVertexArray);
-		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, glVertexBuffer);
-
-		gl_obj.glDrawArrays(GL10.GL_LINES, 0,
-				2 * (numHorizontalGridLines + numVerticalGridLines));
-
 	}
 
 	/**
