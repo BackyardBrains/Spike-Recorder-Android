@@ -50,11 +50,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	private final IBinder mBinder = new AudioServiceBinder();
 
 	/**
-	 * Reference to instantiating {@link BackyardBrainsApplication}
-	 */
-	private BackyardBrainsApplication app;
-
-	/**
 	 * {@link MicListener} the service uses to listen to default audio device
 	 * 
 	 */
@@ -89,14 +84,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		app = (BackyardBrainsApplication) getApplication();
 
 		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
 		toggleRecorder = new ToggleRecordingListener();
 		registerReceiver(toggleRecorder, intentFilter);
 
 		turnOnMicThread();
-		app.setServiceRunning(true);
 	}
 
 	/**
@@ -106,7 +99,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public void onDestroy() {
-		app.setServiceRunning(false);
 		unregisterReceiver(toggleRecorder);
 		turnOffMicThread();
 		super.onDestroy();

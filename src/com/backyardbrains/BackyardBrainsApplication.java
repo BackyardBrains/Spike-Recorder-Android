@@ -40,8 +40,10 @@ public class BackyardBrainsApplication extends Application {
 	 */
 	public void startAudioService() {
 		// spin up service
-		if (!this.serviceRunning)
+		if (!this.serviceRunning) {
 			startService(new Intent(this, AudioService.class));
+			serviceRunning = true;
+		}
 	}
 
 	/**
@@ -49,6 +51,7 @@ public class BackyardBrainsApplication extends Application {
 	 */
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
+		serviceRunning = false;
 	}
 
 	/**
