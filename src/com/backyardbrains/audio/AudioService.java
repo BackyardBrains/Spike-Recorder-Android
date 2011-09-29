@@ -95,6 +95,8 @@ public class AudioService extends Service implements ReceivesAudio {
 		toggleRecorder = new ToggleRecordingListener();
 		registerReceiver(toggleRecorder, intentFilter);
 
+		turnOnMicThread();
+		app.setServiceRunning(true);
 	}
 
 	/**
@@ -108,21 +110,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		unregisterReceiver(toggleRecorder);
 		turnOffMicThread();
 		super.onDestroy();
-	}
-
-	/**
-	 * Do standard {@link Service#onStartCommand(Intent, int, int)}, then turn
-	 * on {@link MicListener} and let app know we're running.
-	 * 
-	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
-	 */
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		super.onStartCommand(intent, flags, startId);
-		turnOnMicThread();
-		app.setServiceRunning(true);
-
-		return START_STICKY;
 	}
 
 	/**
