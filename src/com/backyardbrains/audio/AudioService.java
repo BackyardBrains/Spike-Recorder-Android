@@ -90,6 +90,11 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void onCreate() {
 		super.onCreate();
 		app = (BackyardBrainsApplication) getApplication();
+
+		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
+		toggleRecorder = new ToggleRecordingListener();
+		registerReceiver(toggleRecorder, intentFilter);
+
 	}
 
 	/**
@@ -100,6 +105,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void onDestroy() {
 		app.setServiceRunning(false);
+		unregisterReceiver(toggleRecorder);
 		turnOffMicThread();
 		super.onDestroy();
 	}
@@ -115,10 +121,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		super.onStartCommand(intent, flags, startId);
 		turnOnMicThread();
 		app.setServiceRunning(true);
-
-		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
-		toggleRecorder = new ToggleRecordingListener();
-		registerReceiver(toggleRecorder, intentFilter);
 
 		return START_STICKY;
 	}
@@ -236,8 +238,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		mBindingsCount--;
 		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		if (mBindingsCount < 1) {
-			stopSelf();
-			unregisterReceiver(toggleRecorder);
+			// stopSelf();
 		}
 		return super.onUnbind(intent);
 	}
