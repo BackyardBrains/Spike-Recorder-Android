@@ -37,13 +37,15 @@
 		android:layout_width="wrap_content"
 		android:layout_alignParentTop="true"
 		android:layout_alignParentRight="true"
+		android:visibility="gone"
 	></ImageView>
 	<LinearLayout
 	    android:id="@+id/buttonHolderLayout"
 	    android:layout_width="wrap_content"
 	    android:layout_height="wrap_content"
 	    android:layout_alignParentRight="true"
-	    android:layout_alignLeft="@+id/recordButtonBackground">
+	    android:layout_alignLeft="@+id/recordButtonBackground"
+	    android:visibility="gone">
 		<ImageButton android:id="@+id/fileButton"
 			android:background="#0000"
 			android:layout_height="match_parent"
