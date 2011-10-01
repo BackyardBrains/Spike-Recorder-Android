@@ -60,5 +60,14 @@
     		android:padding="5sp"
     	android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1"></ImageButton>
 	</LinearLayout>
+	<TextView
+		android:id="@+id/TapToStopRecordingTextView"
+		android:text="@string/tap_to_stop_recording"
+		android:background="#ffff0000"
+		android:textAppearance="@android:style/TextAppearance.Large"
+		android:layout_width="match_parent"
+		android:layout_height="50sp"
+		android:gravity="center"
+		android:visibility="gone"></TextView>
 
 </RelativeLayout>

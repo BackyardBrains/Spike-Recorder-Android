@@ -10,6 +10,9 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -40,6 +43,8 @@ public class BackyardAndroidActivity extends Activity {
 	private TextView msView;
 	private ImageButton mRecordButton;
 	private UpdateMillisecondsReciever upmillirec;
+	private boolean isRecording = false;
+	private View tapToStopRecView;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -66,18 +71,66 @@ public class BackyardAndroidActivity extends Activity {
 		mainscreenGLLayout.addView(mAndroidSurface);
 
 		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
-		mRecordButton.setOnClickListener(new OnClickListener() {
+		OnClickListener toggleRecListener = new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				toggleRecording();
 			}
-		});
+		};
+		mRecordButton.setOnClickListener(toggleRecListener);
+
+		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
+		tapToStopRecView.setOnClickListener(toggleRecListener);
+	}
+
+	private class ShowRecordingAnimation implements Runnable {
+
+		private Activity activity;
+		private boolean recording;
+
+		public ShowRecordingAnimation(Activity a, Boolean b) {
+			this.activity = a;
+			this.recording = b;
+		}
+		
+		@Override
+		public void run() {
+			Animation a = null;
+			if (this.recording == false) {
+				a = new TranslateAnimation(
+						Animation.RELATIVE_TO_SELF, 0,
+						Animation.RELATIVE_TO_SELF, 0,
+						Animation.RELATIVE_TO_SELF, -1,
+						Animation.RELATIVE_TO_SELF, 0);
+			} else {
+				a = new TranslateAnimation(
+						Animation.RELATIVE_TO_SELF, 0,
+						Animation.RELATIVE_TO_SELF, 0,
+						Animation.RELATIVE_TO_SELF, 0,
+						Animation.RELATIVE_TO_SELF, -1);
+			}
+			a.setDuration(500);
+			a.setStartOffset(100);
+			a.setInterpolator(AnimationUtils.loadInterpolator(this.activity,
+					android.R.anim.anticipate_overshoot_interpolator));
+			tapToStopRecView.startAnimation(a);
+		}
+
 	}
 
 	protected void toggleRecording() {
+		ShowRecordingAnimation anim = new ShowRecordingAnimation(this, isRecording);
+		new Thread(anim).start();
 		Intent i = new Intent();
 		i.setAction("BYBToggleRecording");
 		getBaseContext().sendBroadcast(i);
+		if (isRecording == false) {
+			tapToStopRecView.setVisibility(View.VISIBLE);
+		} else {
+			tapToStopRecView.setVisibility(View.GONE);
+			mAndroidSurface = new OscilloscopeGLSurfaceView(getApplicationContext());
+		}
+		isRecording = !isRecording;
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
@@ -173,7 +226,7 @@ public class BackyardAndroidActivity extends Activity {
 	public void setDisplayedMilliseconds(Float ms) {
 		msView.setText(ms.toString());
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
