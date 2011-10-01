@@ -113,14 +113,16 @@ public class BackyardAndroidActivity extends Activity {
 			a.setStartOffset(100);
 			a.setInterpolator(AnimationUtils.loadInterpolator(this.activity,
 					android.R.anim.anticipate_overshoot_interpolator));
-			tapToStopRecView.startAnimation(a);
+			View stopRecView = findViewById(R.id.TapToStopRecordingTextView);
+			stopRecView.startAnimation(a);
 		}
 
 	}
 
 	protected void toggleRecording() {
 		ShowRecordingAnimation anim = new ShowRecordingAnimation(this, isRecording);
-		new Thread(anim).start();
+		//new Thread(anim).start();
+		anim.run();
 		Intent i = new Intent();
 		i.setAction("BYBToggleRecording");
 		getBaseContext().sendBroadcast(i);
@@ -128,9 +130,10 @@ public class BackyardAndroidActivity extends Activity {
 			tapToStopRecView.setVisibility(View.VISIBLE);
 		} else {
 			tapToStopRecView.setVisibility(View.GONE);
-			mAndroidSurface = new OscilloscopeGLSurfaceView(getApplicationContext());
 		}
 		isRecording = !isRecording;
+		mAndroidSurface = null;
+		mAndroidSurface = new OscilloscopeGLSurfaceView(getApplicationContext());
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
