@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -33,7 +32,9 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	private OscilloscopeGLThread mGLThread;
 
-	private ScaleGestureDetector mScaleDetector;
+	private float startDistanceX;
+
+	private float startDistanceY;
 
 	/**
 	 * Used by instantiating activity to reach down in to drawing thread
@@ -58,8 +59,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-		
-		mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 	}
 	
 	public void setMsText(Float ms) {
@@ -71,35 +70,43 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	public void shrinkXdimension() {
-		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()*2);
+		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()+1);
 	}
 	
 	public void growXdimension() {
-		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()/2);
-	}
-
-	private class ScaleListener extends
-			ScaleGestureDetector.SimpleOnScaleGestureListener {
-		@Override
-		public boolean onScale(ScaleGestureDetector detector) {
-			float mScaleFactor = mGLThread.getmScaleFactor();
-			float scaleModifier = detector.getScaleFactor();
-			scaleModifier = Math.max(0.95f, Math.min(scaleModifier, 1.05f));
-			mScaleFactor *= scaleModifier;
-
-			Log.d(TAG, "Receiving touch event with scale factor of "
-					+ scaleModifier + "- scale factor is now " + mScaleFactor);
-
-			synchronized (mGLThread) {
-				mGLThread.setmScaleFactor(mScaleFactor);
-			}
-			return super.onScale(detector);
-		}
+		mGLThread.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor()-1);
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		mScaleDetector.onTouchEvent(event);
+		
+		switch (event.getAction() & MotionEvent.ACTION_MASK) {
+		case MotionEvent.ACTION_POINTER_DOWN:
+			startDistanceX = event.getX(0) - event.getX(1);
+			startDistanceY = event.getY(0) - event.getY(1);
+			break;
+		
+		case MotionEvent.ACTION_MOVE:
+			float distanceX = event.getX(0) - event.getX(1);
+			float distanceY = event.getY(0) - event.getY(1);
+			if (distanceX > 10f && distanceY > 10f) { // de-bounce weird anomalies
+				float scaleX = distanceX / startDistanceX;
+				float scaleY = distanceY / startDistanceY;
+				Log.d(TAG, "New X distance is " + distanceX + " -- New X scale is " + scaleX);
+				Log.d(TAG, "New Y distance is " + distanceY + " -- New Y scale is " + scaleY);
+				synchronized (mGLThread) {
+					float mScaleFactor = mGLThread.getmScaleFactor();
+					scaleY = Math.max(0.95f, Math.min(scaleY, 1.05f));
+					mScaleFactor *= scaleY;
+					float mBufferLengtDivisor = mGLThread.getBufferLengthDivisor();
+					mBufferLengtDivisor *= 1.0/scaleX;
+					Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor);
+					mGLThread.setmScaleFactor(mScaleFactor);
+					mGLThread.setBufferLengthDivisor(mBufferLengtDivisor);
+				}
+			}
+		}
+		
 		return super.onTouchEvent(event);
 	}
 

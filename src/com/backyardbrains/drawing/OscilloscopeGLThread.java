@@ -120,12 +120,12 @@ public class OscilloscopeGLThread extends Thread {
 		}
 	};
 	private GlSurfaceManager glman;
-	private int bufferLengthDivisor;
+	private float bufferLengthDivisor;
 
 	/**
 	 * @return the bufferLengthDivisor
 	 */
-	public int getBufferLengthDivisor() {
+	public float getBufferLengthDivisor() {
 		return bufferLengthDivisor;
 	}
 
@@ -133,7 +133,7 @@ public class OscilloscopeGLThread extends Thread {
 	 * @param bufferLengthDivisor
 	 *            the bufferLengthDivisor to set
 	 */
-	public void setBufferLengthDivisor(int bufferLengthDivisor) {
+	public void setBufferLengthDivisor(float bufferLengthDivisor) {
 		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 16) {
 			this.bufferLengthDivisor = bufferLengthDivisor;
 		}
@@ -176,15 +176,14 @@ public class OscilloscopeGLThread extends Thread {
 							.asShortBuffer();
 					int bufferCapacity = audioInfoasShortBuffer.capacity();
 
-					int samplesToSend = bufferCapacity / bufferLengthDivisor;
-					for (int i = 0; i < bufferCapacity; i += samplesToSend) {
+					int samplesToSend = bufferCapacity / (int) bufferLengthDivisor;
+					for (int i = 0; i+samplesToSend <= bufferCapacity; i += samplesToSend) {
 
 						short[] mBufferToDraw = new short[samplesToSend];
 						long currentTime = System.currentTimeMillis();
 						float millisecondsInThisBuffer = mBufferToDraw.length / 44100.0f * 1000;
 
-						Log.d(TAG, "Eating samples " + i + " through "
-								+ (i + mBufferToDraw.length));
+						//Log.d(TAG, "Eating samples " + i + " through " + (i + mBufferToDraw.length));
 						audioInfoasShortBuffer.get(mBufferToDraw, 0,
 								mBufferToDraw.length);
 						// scale the right side to the number of data points we
@@ -206,7 +205,6 @@ public class OscilloscopeGLThread extends Thread {
 							try {
 								Thread.sleep(1);
 							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 							newTime = System.currentTimeMillis();
