@@ -135,11 +135,19 @@ public class RecordingSaver implements ReceivesAudio {
 		header[43] = (byte) ((subchunk2size >> 24) & 0xff);
 		out.write(header, 0, 44);
 
-		byte[] buffer = new byte[(int) mFileToRecordTo2.length()];
-		in.read(buffer);
-		out.write(buffer);
+//		byte[] buffer = new byte[(int) mFileToRecordTo2.length()];
+//		in.read(buffer);
+//		out.write(buffer);
 
-
+		byte tempA;
+		byte tempB;
+		long counter = 0;
+		while (counter < mFileToRecordTo2.length() && in.available() > 0) {
+			tempA = (byte) in.read();
+			tempB = (byte) in.read();
+			out.write(tempB);
+			out.write(tempA);
+		}
 		in.close();
 		out.close();
 	}
