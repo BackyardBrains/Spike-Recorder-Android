@@ -5,9 +5,11 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
@@ -120,7 +122,7 @@ public class OscilloscopeGLThread extends Thread {
 		}
 	};
 	private GlSurfaceManager glman;
-	private float bufferLengthDivisor;
+	private float bufferLengthDivisor = 1;
 
 	/**
 	 * @return the bufferLengthDivisor
@@ -139,6 +141,20 @@ public class OscilloscopeGLThread extends Thread {
 		}
 	}
 
+	
+	private class ScaleChangeReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			float scaleY = intent.getFloatExtra("scaleY", 1);
+			scaleY = Math.max(0.95f, Math.min(scaleY, 1.05f));
+			setmScaleFactor(mScaleFactor * scaleY);
+			float scaleX = intent.getFloatExtra("scaleX", 1);
+			setBufferLengthDivisor((float) (bufferLengthDivisor * 1/scaleX));
+			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor + " - bufferLengthDivisor to " + bufferLengthDivisor);
+		};
+	}
+	
 	/**
 	 * Initialize GL bits, set up the GL area so that we're lookin at it
 	 * properly, create a new {@link BybGLDrawable}, then commence drawing on it
@@ -155,6 +171,8 @@ public class OscilloscopeGLThread extends Thread {
 		parent.getContext().getApplicationContext().bindService(intent,
 				mConnection, Context.BIND_AUTO_CREATE);
 
+		ScaleChangeReceiver scaleChangeReceiver = new ScaleChangeReceiver();
+		parent.getContext().registerReceiver(scaleChangeReceiver, new IntentFilter("BYBScaleChange"));
 		bufferLengthDivisor = 1;
 		while (!mDone) {
 			// grab current audio from audioservice
@@ -215,6 +233,7 @@ public class OscilloscopeGLThread extends Thread {
 			}
 		}
 		parent.getContext().getApplicationContext().unbindService(mConnection);
+		parent.getContext().unregisterReceiver(scaleChangeReceiver);
 		mConnection = null;
 	}
 

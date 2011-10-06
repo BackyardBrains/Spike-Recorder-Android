@@ -94,16 +94,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				float scaleY = distanceY / startDistanceY;
 				Log.d(TAG, "New X distance is " + distanceX + " -- New X scale is " + scaleX);
 				Log.d(TAG, "New Y distance is " + distanceY + " -- New Y scale is " + scaleY);
-				synchronized (mGLThread) {
-					float mScaleFactor = mGLThread.getmScaleFactor();
-					scaleY = Math.max(0.95f, Math.min(scaleY, 1.05f));
-					mScaleFactor *= scaleY;
-					float mBufferLengtDivisor = mGLThread.getBufferLengthDivisor();
-					mBufferLengtDivisor *= 1.0/scaleX;
-					Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor);
-					mGLThread.setmScaleFactor(mScaleFactor);
-					mGLThread.setBufferLengthDivisor(mBufferLengtDivisor);
-				}
+				Intent i = new Intent ();
+				i.setAction("BYBScaleChange");
+				i.putExtra("scaleX", scaleX);
+				i.putExtra("scaleY", scaleY);
+				getContext().sendBroadcast(i);
 			}
 		}
 		
