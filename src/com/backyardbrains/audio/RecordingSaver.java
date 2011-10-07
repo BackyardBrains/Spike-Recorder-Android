@@ -26,9 +26,10 @@ public class RecordingSaver implements ReceivesAudio {
 	}
 
 	private void initializeAndCreateFile(String filename) {
-		mFileToRecordTo = new File(Environment.getExternalStorageDirectory()
-				.getAbsolutePath()
-				+ "/" + filename);
+		
+		File BybDirectory = createBybDirectory();
+		
+		mFileToRecordTo = new File(BybDirectory, filename);
 
 		if (mFileToRecordTo == null) {
 			throw new IllegalStateException("File to record to is null");
@@ -50,6 +51,12 @@ public class RecordingSaver implements ReceivesAudio {
 		}
 		dataOutputStreamInstance = new DataOutputStream(bufferedStream);
 
+	}
+
+	private File createBybDirectory() {
+		File BybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
+		BybDirectory.mkdirs();
+		return BybDirectory;
 	}
 
 	@Override
