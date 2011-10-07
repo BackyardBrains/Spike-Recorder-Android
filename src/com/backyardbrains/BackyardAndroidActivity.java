@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Environment;
+import android.text.InputFilter.LengthFilter;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -16,6 +18,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
@@ -120,6 +123,12 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	protected void toggleRecording() {
+		
+		if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageDirectory())) {
+			Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG).show();
+			return;
+		}
+		
 		ShowRecordingAnimation anim = new ShowRecordingAnimation(this, isRecording);
 		//new Thread(anim).start();
 		anim.run();
