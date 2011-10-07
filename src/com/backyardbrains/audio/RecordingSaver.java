@@ -27,7 +27,8 @@ public class RecordingSaver implements ReceivesAudio {
 
 	private void initializeAndCreateFile(String filename) {
 		mFileToRecordTo = new File(Environment.getExternalStorageDirectory()
-				.getAbsolutePath() + "/" + filename);
+				.getAbsolutePath()
+				+ "/" + filename);
 
 		if (mFileToRecordTo == null) {
 			throw new IllegalStateException("File to record to is null");
@@ -68,8 +69,7 @@ public class RecordingSaver implements ReceivesAudio {
 		try {
 			bufferedStream.close();
 			// @TODO - turn this into an AsyncTask call.
-			//convertToWave(mFileToRecordTo);
-			//mFileToRecordTo.delete();
+			new ConvertToWavefile().execute(mFileToRecordTo);
 		} catch (IOException e) {
 			throw new IllegalStateException("Cannot close buffered writer.");
 		}
@@ -161,15 +161,18 @@ public class RecordingSaver implements ReceivesAudio {
 
 		@Override
 		protected String doInBackground(File... params) {
+			StringBuilder s = new StringBuilder();
 			for (File f : params) {
 				try {
 					convertToWave(f);
+					s.append(" - " + f.getName());
+					f.delete();
 				} catch (IOException e) {
-					Log.e(TAG, "Couldn't write file: "+ f.getAbsolutePath());
+					Log.e(TAG, "Couldn't write file: " + f.getAbsolutePath());
 					e.printStackTrace();
 				}
 			}
-			return null;
+			return "Finished writing file tos SD Card" + s.toString();
 		}
 
 	}
