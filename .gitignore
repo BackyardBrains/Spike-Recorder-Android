@@ -3,4 +3,4 @@ gen/
 .project
 .classpath
 .settings/
-.keystore
+byb.keystore
