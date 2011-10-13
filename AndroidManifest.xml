@@ -16,6 +16,7 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
+		<activity android:name=".FileListActivity"></activity>
 		<service android:name="com.backyardbrains.audio.AudioService"></service>
 	</application>
 </manifest>
