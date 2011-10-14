@@ -1,9 +1,15 @@
 package com.backyardbrains;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import android.app.Activity;
 import android.app.ListActivity;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -11,29 +17,58 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class FileListActivity extends ListActivity {
 	
+	private File bybDirectory;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.file_list);
 		
-		File BybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
-		File[] files = BybDirectory.listFiles();
-		//String[] files = new String[] {"My files.wav", "Derp_dehurr.mp3"};
-		
+		bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
+		File[] files = bybDirectory.listFiles();
+	
 		ListAdapter adapter = new FileListAdapter(this, R.layout.file_list_row_layout, files);
-		//ListAdapter adapter = new ArrayAdapter<String>(this, R.layout.file_list_row_layout, R.id.filename, files);
 		setListAdapter(adapter);
-		
-		BybDirectory = null;
+	}
+	
+	private void emailFile(File f) {
+		Intent sendIntent = new Intent(Intent.ACTION_SEND);
+		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
+		sendIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse ("file://"+f.getAbsolutePath()));
+		sendIntent.setType("audio/wav");
+		startActivity(Intent.createChooser(sendIntent, "Email file")); 
+	}
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		File f = (File) this.getListAdapter().getItem(position);
+		/*
+		 MediaPlayer mp = new MediaPlayer();
+		try {
+			mp.setDataSource(o.getAbsolutePath());
+			mp.prepare();
+			mp.start();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		*/
+		emailFile(f);
+		super.onListItemClick(l, v, position, id);
 	}
 
 	static class FileListViewHolder {
 		public TextView filenameView;
 		public TextView filesizeView;
+		public TextView filedateView;
 	}
 		
 	private class FileListAdapter extends ArrayAdapter<File> {
@@ -59,15 +94,14 @@ public class FileListActivity extends ListActivity {
 				holder = new FileListViewHolder();
 				holder.filenameView = (TextView) rowView.findViewById(R.id.filename);
 				holder.filesizeView = (TextView) rowView.findViewById(R.id.filesize);
+				holder.filedateView = (TextView) rowView.findViewById(R.id.file_date);
 				rowView.setTag(holder);
 			} else {
 				holder = (FileListViewHolder) rowView.getTag();
 			}
 			holder.filenameView.setText(mFiles[position].getName());
-			
-			
-			
 			holder.filesizeView.setText(getWaveLengthString(mFiles[position].length()));
+			holder.filedateView.setText(new SimpleDateFormat("MMM d, yyyy HH:mm a").format(new Date(mFiles[position].lastModified())));
 			return rowView;
 		}
 
@@ -84,6 +118,12 @@ public class FileListActivity extends ListActivity {
 			}
 		}
 		
+	}
+	
+	@Override
+	protected void onDestroy() {
+		bybDirectory = null;
+		super.onDestroy();
 	}
 
 }
