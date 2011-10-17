@@ -1,7 +1,7 @@
+![](https://raw.github.com/BackyardBrains/Backyard-Brains-Android-App/master/bugdroid.png)
 Backyard Brains
 ===============
 _By Backyard Brains, Inc._
-
 ![](https://raw.github.com/BackyardBrains/Backyard-Brains-Android-App/master/screenie.png)
 
 Description
