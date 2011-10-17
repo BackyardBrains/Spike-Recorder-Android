@@ -1,4 +1,3 @@
-![](https://raw.github.com/BackyardBrains/Backyard-Brains-Android-App/master/bugdroid.png)
 Backyard Brains
 ===============
 _By Backyard Brains, Inc._
@@ -14,20 +13,35 @@ Our first Android release includes both long continuous and threshold views, and
 
 Note: The application normally picks up input through your Android's built-in microphone. If you want to plug directly into your SpikerBox, or any audio device, you need a custom male-to-male headphone cable (a normal one won't work), available from our website. It has to do with routing an output channel to an input channel.  We also have instructions if you want to build one yourself.
 
+![](https://raw.github.com/BackyardBrains/Backyard-Brains-Android-App/master/bugdroid.png)
+
+Released 0.9
+------------
+* Wave View of Spiker Box
+
+* Auto detecting of headphone vs. built-in microphone 
+
+
 To Do for version 1.0
 ---------------------
 
-* Add thresholding of spikes.
+* Recording of data to phone (done!).
 
-* Averaging spike waveforms together (reduces noise inherent in spikes)
+* Email of recorded files to users (done!).
 
-* Recording of data to phone.
+* Add ability to rename files.
 
-* Email of recorded files to users
+* Playback of data via speaker only (done!). 
+
+* UI improvements to File Menu: File Icon, Drop Down Arrow, Pop-up menu List: Email, Play, Rename, Delete.  
 
 To Do for version 1.1
 ---------------------
 
+* Add thresholding of spikes. 
+
+* Averaging spike waveforms together (reduces noise inherent in spikes).
+
 * Add a "heard a spike" page to grow the neuro-converts by N.
 
-* Playback of the recorded data (would be nice to see and hear).
+* Playback of the recorded data via application.
