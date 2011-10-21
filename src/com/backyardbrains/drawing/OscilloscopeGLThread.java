@@ -146,20 +146,10 @@ public class OscilloscopeGLThread extends Thread {
 		@Override
 		public void onReceive(android.content.Context context,
 				android.content.Intent intent) {
-			float scaleY = intent.getFloatExtra("scaleY", 1);
-			if (scaleY > 1.25) {
-				scaleY = Math.min(scaleY - 0.25f, 1.025f);
-			} else if (scaleY < 0.75) {
-				scaleY = Math.max(scaleY + 0.25f, 0.975f);				
-			}
-			setmScaleFactor(mScaleFactor * scaleY);
-			float scaleX = intent.getFloatExtra("scaleX", 1);
-			if (scaleX > 1.2) { 
-				setBufferLengthDivisor((float) (bufferLengthDivisor + 0.2));
-			} else if (scaleX < 0.8) {
-				setBufferLengthDivisor((float) (bufferLengthDivisor - 0.2));
-			}
-			// setBufferLengthDivisor((float) (bufferLengthDivisor * scaleX));
+			mScaleFactor = intent.getFloatExtra("newScaleFactor", 1);
+
+			bufferLengthDivisor = intent.getFloatExtra("newBufferLengthDivisor", 1);
+
 			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor + " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
 	}
