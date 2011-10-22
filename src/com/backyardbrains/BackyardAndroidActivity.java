@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -67,7 +68,12 @@ public class BackyardAndroidActivity extends Activity {
 		msView = (TextView) findViewById(R.id.millisecondsView);
 
 		// Create custom surface
+		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
+		if (oldConfig != null) {
+			mAndroidSurface.setScaleFactor(oldConfig.first);
+			mAndroidSurface.setBufferLengthDivisor(oldConfig.second);
+		}
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
 
@@ -79,19 +85,25 @@ public class BackyardAndroidActivity extends Activity {
 			}
 		};
 		mRecordButton.setOnClickListener(toggleRecListener);
-		
+
 		mFileButton = (ImageButton) findViewById(R.id.fileButton);
 		mFileButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                Intent i = new Intent(view.getContext(), FileListActivity.class);
-                startActivityForResult(i, 0);
-            }
+			public void onClick(View view) {
+				Intent i = new Intent(view.getContext(), FileListActivity.class);
+				startActivityForResult(i, 0);
+			}
 
-        });
+		});
 		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(toggleRecListener);
 	}
-
+	
+	@Override
+	public Object onRetainNonConfigurationInstance() {
+		Pair<Float, Float> p = new Pair<Float, Float>(mAndroidSurface.getScaleFactor(), mAndroidSurface.getBufferLengthDivisor());
+		return p;
+	}
+	
 	private class ShowRecordingAnimation implements Runnable {
 
 		private Activity activity;
@@ -101,19 +113,17 @@ public class BackyardAndroidActivity extends Activity {
 			this.activity = a;
 			this.recording = b;
 		}
-		
+
 		@Override
 		public void run() {
 			Animation a = null;
 			if (this.recording == false) {
-				a = new TranslateAnimation(
-						Animation.RELATIVE_TO_SELF, 0,
+				a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, -1,
 						Animation.RELATIVE_TO_SELF, 0);
 			} else {
-				a = new TranslateAnimation(
-						Animation.RELATIVE_TO_SELF, 0,
+				a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, -1);
@@ -129,16 +139,18 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	protected void toggleRecording() {
-		
+
 		/*
-		if (!Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageDirectory())) {
-		 
-			Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG).show();
-			return;
-		}
-		*/
-		
-		ShowRecordingAnimation anim = new ShowRecordingAnimation(this, isRecording);
+		 * if (!Environment.MEDIA_MOUNTED.equals(Environment.
+		 * getExternalStorageDirectory())) {
+		 * 
+		 * Toast.makeText(getApplicationContext(),
+		 * "No SD Card is available. Recording is disabled",
+		 * Toast.LENGTH_LONG).show(); return; }
+		 */
+
+		ShowRecordingAnimation anim = new ShowRecordingAnimation(this,
+				isRecording);
 		anim.run();
 		Intent i = new Intent();
 		i.setAction("BYBToggleRecording");
