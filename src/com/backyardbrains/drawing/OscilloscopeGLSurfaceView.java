@@ -150,6 +150,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
+		mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+		mGLThread.setmScaleFactor(scaleFactor);
 		mGLThread.rescaleWaveform();
 	}
 

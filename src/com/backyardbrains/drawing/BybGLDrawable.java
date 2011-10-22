@@ -98,9 +98,9 @@ class BybGLDrawable {
 		if (theMax != 0 && theMin != 0) {
 
 			if (Math.abs(theMax) >= Math.abs(theMin)) {
-				newyMax = Math.abs(theMax) * 1.5f;
+				newyMax = Math.abs(theMax) * 2f;
 			} else {
-				newyMax = Math.abs(theMin) * 1.5f;
+				newyMax = Math.abs(theMin) * 2f;
 			}
 			if (-newyMax > parent.getyMin()) {
 				Log.d(TAG, "Scaling window to " + -newyMax + " < y < "

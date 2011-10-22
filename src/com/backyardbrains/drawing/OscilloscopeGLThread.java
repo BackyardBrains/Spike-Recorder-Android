@@ -141,19 +141,20 @@ public class OscilloscopeGLThread extends Thread {
 		}
 	}
 
-	
 	private class ScaleChangeReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context,
 				android.content.Intent intent) {
 			mScaleFactor = intent.getFloatExtra("newScaleFactor", 1);
 
-			bufferLengthDivisor = intent.getFloatExtra("newBufferLengthDivisor", 1);
+			bufferLengthDivisor = intent.getFloatExtra(
+					"newBufferLengthDivisor", 1);
 
-			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor + " - bufferLengthDivisor to " + bufferLengthDivisor);
+			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
+					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
 	}
-	
+
 	/**
 	 * Initialize GL bits, set up the GL area so that we're lookin at it
 	 * properly, create a new {@link BybGLDrawable}, then commence drawing on it
@@ -166,12 +167,14 @@ public class OscilloscopeGLThread extends Thread {
 		glman = new GlSurfaceManager(parent);
 		waveformShape = new BybGLDrawable(this);
 
-		Intent intent = new Intent(parent.getContext(), AudioService.class);
-		parent.getContext().getApplicationContext().bindService(intent,
-				mConnection, Context.BIND_AUTO_CREATE);
+		final Intent intent = new Intent(parent.getContext(),
+				AudioService.class);
+		parent.getContext().getApplicationContext()
+				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
-		ScaleChangeReceiver scaleChangeReceiver = new ScaleChangeReceiver();
-		parent.getContext().registerReceiver(scaleChangeReceiver, new IntentFilter("BYBScaleChange"));
+		final ScaleChangeReceiver scaleChangeReceiver = new ScaleChangeReceiver();
+		parent.getContext().registerReceiver(scaleChangeReceiver,
+				new IntentFilter("BYBScaleChange"));
 		bufferLengthDivisor = 1;
 		while (!mDone) {
 			// grab current audio from audioservice
@@ -189,18 +192,20 @@ public class OscilloscopeGLThread extends Thread {
 					audioInfo.clear();
 
 					// Convert audioInfo to a short[] named mBufferToDraw
-					ShortBuffer audioInfoasShortBuffer = audioInfo
+					final ShortBuffer audioInfoasShortBuffer = audioInfo
 							.asShortBuffer();
-					int bufferCapacity = audioInfoasShortBuffer.capacity();
+					final int bufferCapacity = audioInfoasShortBuffer
+							.capacity();
 
-					int samplesToSend = bufferCapacity / (int) bufferLengthDivisor;
-					for (int i = 0; i+samplesToSend <= bufferCapacity; i += samplesToSend) {
+					final int samplesToSend = bufferCapacity
+							/ (int) bufferLengthDivisor;
 
-						short[] mBufferToDraw = new short[samplesToSend];
-						long currentTime = System.currentTimeMillis();
-						float millisecondsInThisBuffer = mBufferToDraw.length / 44100.0f * 1000;
+					for (int i = 0; i + samplesToSend <= bufferCapacity; i += samplesToSend) {
 
-						//Log.d(TAG, "Eating samples " + i + " through " + (i + mBufferToDraw.length));
+						final short[] mBufferToDraw = new short[samplesToSend];
+						final long currentTime = System.currentTimeMillis();
+						final float millisecondsInThisBuffer = mBufferToDraw.length / 44100.0f * 1000;
+
 						audioInfoasShortBuffer.get(mBufferToDraw, 0,
 								mBufferToDraw.length);
 						// scale the right side to the number of data points we
