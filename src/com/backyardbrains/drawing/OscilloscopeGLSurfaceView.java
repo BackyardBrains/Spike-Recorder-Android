@@ -163,9 +163,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		mGLThread = new OscilloscopeGLThread(this);
-		mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
-		mGLThread.setmScaleFactor(scaleFactor);
-		mGLThread.start();
+		synchronized (mGLThread) {
+			mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+			mGLThread.setmScaleFactor(scaleFactor);
+			Log.d(TAG, "Started GL thread with scale of " + scaleFactor + " and bufferLengthDivisor of " + bufferLengthDivisor);
+			mGLThread.start();
+		}
 		setKeepScreenOn(true);
 	}
 

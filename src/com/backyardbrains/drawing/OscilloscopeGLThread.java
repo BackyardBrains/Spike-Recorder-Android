@@ -175,7 +175,6 @@ public class OscilloscopeGLThread extends Thread {
 		final ScaleChangeReceiver scaleChangeReceiver = new ScaleChangeReceiver();
 		parent.getContext().registerReceiver(scaleChangeReceiver,
 				new IntentFilter("BYBScaleChange"));
-		bufferLengthDivisor = 1;
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
