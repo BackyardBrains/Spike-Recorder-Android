@@ -72,7 +72,7 @@ public class OscilloscopeGLThread extends Thread {
 
 	public void setmScaleFactor(float mScaleFactor) {
 		// Don't let the object get too small or too large.
-		mScaleFactor = Math.max(0.01f, Math.min(mScaleFactor, 3.0f));
+		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
 
 		this.mScaleFactor = mScaleFactor;
 	}
@@ -147,9 +147,9 @@ public class OscilloscopeGLThread extends Thread {
 				android.content.Intent intent) {
 			mScaleFactor = intent.getFloatExtra("newScaleFactor", 1);
 
-			bufferLengthDivisor = intent.getFloatExtra(
+			float localBufferLengthDivisor = intent.getFloatExtra(
 					"newBufferLengthDivisor", 1);
-
+			setBufferLengthDivisor(localBufferLengthDivisor);
 			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
 					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
@@ -224,7 +224,7 @@ public class OscilloscopeGLThread extends Thread {
 						long newTime = System.currentTimeMillis();
 						while (newTime - currentTime < millisecondsInThisBuffer) {
 							try {
-								Thread.sleep(1);
+								Thread.sleep(5);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}

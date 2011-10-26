@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,6 +18,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.MicListener;
@@ -97,13 +99,15 @@ public class BackyardAndroidActivity extends Activity {
 		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(toggleRecListener);
 	}
-	
+
 	@Override
 	public Object onRetainNonConfigurationInstance() {
-		Pair<Float, Float> p = new Pair<Float, Float>(mAndroidSurface.getScaleFactor(), mAndroidSurface.getBufferLengthDivisor());
+		Pair<Float, Float> p = new Pair<Float, Float>(
+				mAndroidSurface.getScaleFactor(),
+				mAndroidSurface.getBufferLengthDivisor());
 		return p;
 	}
-	
+
 	private class ShowRecordingAnimation implements Runnable {
 
 		private Activity activity;
@@ -140,14 +144,14 @@ public class BackyardAndroidActivity extends Activity {
 
 	protected void toggleRecording() {
 
-		/*
-		 * if (!Environment.MEDIA_MOUNTED.equals(Environment.
-		 * getExternalStorageDirectory())) {
-		 * 
-		 * Toast.makeText(getApplicationContext(),
-		 * "No SD Card is available. Recording is disabled",
-		 * Toast.LENGTH_LONG).show(); return; }
-		 */
+		if (!Environment.MEDIA_MOUNTED.equals(Environment
+				.getExternalStorageDirectory())) {
+
+			Toast.makeText(getApplicationContext(),
+					"No SD Card is available. Recording is disabled",
+					Toast.LENGTH_LONG).show();
+			return;
+		}
 
 		ShowRecordingAnimation anim = new ShowRecordingAnimation(this,
 				isRecording);
