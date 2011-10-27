@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.BackyardBrainsApplication;
@@ -177,19 +178,27 @@ public class AudioService extends Service implements ReceivesAudio {
 			return false;
 		}
 		Long theTime = (Long) System.currentTimeMillis();
-		mRecordingSaverInstance = new RecordingSaver(theTime.toString());
+		try {
+			mRecordingSaverInstance = new RecordingSaver(theTime.toString());
+		} catch (IllegalStateException e) {
+			Toast.makeText(getApplicationContext(),
+					"No SD Card is available. Recording is disabled",
+					Toast.LENGTH_LONG).show();
+		}
 		return true;
 	}
 
 	public boolean stopRecording() {
-		if (mRecordingSaverInstance == null) {
-			throw new IllegalStateException(
-					"Tried to stop recording on a non-existant object");
+//		if (mRecordingSaverInstance == null) {
+//			throw new IllegalStateException(
+//					"Tried to stop recording on a non-existant object");
+//		}
+		if (mRecordingSaverInstance != null) {
+			mRecordingSaverInstance.finishRecording();
+			mRecordingSaverInstance = null;
+			return true;
 		}
-
-		mRecordingSaverInstance.finishRecording();
-		mRecordingSaverInstance = null;
-		return true;
+		return false;
 	}
 
 	/**

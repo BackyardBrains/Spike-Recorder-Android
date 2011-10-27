@@ -120,8 +120,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			//float mScaleFactor = mGLThread.getmScaleFactor();
 			//float scaleModifier = detector.getScaleFactor();
 			final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
-			final float scaleModifierX = Math.max(0.95f, Math.min(scaleModifier.first, 1.05f));
-			final float scaleModifierY = Math.max(0.95f, Math.min(scaleModifier.second, 1.05f));
+			final float scaleModifierX = Math.max(0.98f, Math.min(scaleModifier.first, 1.02f));
+			final float scaleModifierY = Math.max(0.98f, Math.min(scaleModifier.second, 1.02f));
 			bufferLengthDivisor *= scaleModifierX;
 			scaleFactor *= scaleModifierY;
 

@@ -144,29 +144,28 @@ public class BackyardAndroidActivity extends Activity {
 
 	protected void toggleRecording() {
 
-		if (!Environment.MEDIA_MOUNTED.equals(Environment
-				.getExternalStorageDirectory())) {
-
+		try {
+			ShowRecordingAnimation anim = new ShowRecordingAnimation(this,
+					isRecording);
+			anim.run();
+			Intent i = new Intent();
+			i.setAction("BYBToggleRecording");
+			getBaseContext().sendBroadcast(i);
+			if (isRecording == false) {
+				tapToStopRecView.setVisibility(View.VISIBLE);
+			} else {
+				tapToStopRecView.setVisibility(View.GONE);
+			}
+			isRecording = !isRecording;
+			mAndroidSurface = null;
+			mAndroidSurface = new OscilloscopeGLSurfaceView(
+					getApplicationContext());
+		} catch (RuntimeException e) {
 			Toast.makeText(getApplicationContext(),
 					"No SD Card is available. Recording is disabled",
 					Toast.LENGTH_LONG).show();
-			return;
-		}
 
-		ShowRecordingAnimation anim = new ShowRecordingAnimation(this,
-				isRecording);
-		anim.run();
-		Intent i = new Intent();
-		i.setAction("BYBToggleRecording");
-		getBaseContext().sendBroadcast(i);
-		if (isRecording == false) {
-			tapToStopRecView.setVisibility(View.VISIBLE);
-		} else {
-			tapToStopRecView.setVisibility(View.GONE);
 		}
-		isRecording = !isRecording;
-		mAndroidSurface = null;
-		mAndroidSurface = new OscilloscopeGLSurfaceView(getApplicationContext());
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
