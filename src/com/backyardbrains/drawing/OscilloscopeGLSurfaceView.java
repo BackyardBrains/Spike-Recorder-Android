@@ -36,10 +36,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	private OscilloscopeGLThread mGLThread;
 
-	private float startDistanceX;
-
-	private float startDistanceY;
-
 	private float bufferLengthDivisor = 8;
 
 	public float getBufferLengthDivisor() {
