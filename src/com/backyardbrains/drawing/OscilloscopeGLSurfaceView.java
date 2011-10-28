@@ -144,48 +144,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-
-		/*
-		switch (event.getAction() & MotionEvent.ACTION_MASK) {
-		case MotionEvent.ACTION_POINTER_DOWN:
-			startDistanceX = event.getX(0) - event.getX(1);
-			startDistanceY = event.getY(0) - event.getY(1);
-			break;
-
-		case MotionEvent.ACTION_MOVE:
-			float distanceX = event.getX(0) - event.getX(1);
-			float distanceY = event.getY(0) - event.getY(1);
-			if (distanceX > 10f && distanceY > 10f) { // de-bounce weird
-														// anomalies
-				float scaleX = distanceX / startDistanceX;
-				float scaleY = distanceY / startDistanceY;
-				Log.d(TAG, "New X distance is " + distanceX
-						+ " -- New X scale is " + scaleX);
-				Log.d(TAG, "New Y distance is " + distanceY
-						+ " -- New Y scale is " + scaleY);
-
-				if (scaleY > 1.25) {
-					scaleY = Math.min(scaleY - 0.25f, 1.025f);
-				} else if (scaleY < 0.75) {
-					scaleY = Math.max(scaleY + 0.25f, 0.975f);
-				}
-				scaleFactor *= scaleY;
-				scaleFactor = Math.max(0.01f, Math.min(scaleFactor, 3.0f));
-
-				if (scaleX > 1.2 && bufferLengthDivisor <= 15.8) {
-					bufferLengthDivisor = (bufferLengthDivisor + 0.2f);
-				} else if (scaleX < 0.8 && bufferLengthDivisor >= 1.2) {
-					bufferLengthDivisor = (bufferLengthDivisor - 0.2f);
-				}
-
-				Intent i = new Intent();
-				i.setAction("BYBScaleChange");
-				i.putExtra("newBufferLengthDivisor", bufferLengthDivisor);
-				i.putExtra("newScaleFactor", scaleFactor);
-				getContext().sendBroadcast(i);
-			}
-		}
-		*/
 		mScaleDetector.onTouchEvent(event);
 		return super.onTouchEvent(event);
 	}
