@@ -70,6 +70,7 @@ public class BackyardAndroidActivity extends Activity {
 		msView = (TextView) findViewById(R.id.millisecondsView);
 
 		// Create custom surface
+		@SuppressWarnings("unchecked")
 		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 		if (oldConfig != null) {
