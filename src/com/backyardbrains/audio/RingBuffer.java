@@ -1,4 +1,7 @@
 package com.backyardbrains.audio;
+
+import java.nio.ByteBuffer;
+
 public class RingBuffer {
 	private Byte[] buffer;
 	private int beginning;
@@ -37,6 +40,12 @@ public class RingBuffer {
 			beginning = end = 0;
 		}
 		buffer[end] = b;
+	}
+
+	public void add(ByteBuffer buffer) {
+		while (buffer.hasRemaining()) {
+			addEnd(buffer.get());
+		}
 	}
 	
 	/**
