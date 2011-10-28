@@ -136,7 +136,7 @@ public class OscilloscopeGLThread extends Thread {
 	 *            the bufferLengthDivisor to set
 	 */
 	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 16) {
+		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 64) {
 			this.bufferLengthDivisor = bufferLengthDivisor;
 		}
 	}
@@ -183,8 +183,9 @@ public class OscilloscopeGLThread extends Thread {
 				ByteBuffer audioInfo = null;
 
 				// Read new mic data
-				synchronized (this) {
-					audioInfo = mAudioService.getCurrentAudioInfo();
+				synchronized (mAudioService) {
+					//audioInfo = mAudioService.getCurrentAudioInfo();
+					audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
 				}
 
 				if (audioInfo != null) {
@@ -196,41 +197,23 @@ public class OscilloscopeGLThread extends Thread {
 					final int bufferCapacity = audioInfoasShortBuffer
 							.capacity();
 
-					final int samplesToSend = bufferCapacity
-							/ (int) bufferLengthDivisor;
+					final short[] mBufferToDraw = new short[bufferCapacity];
+					int samplesToShow = Math.round(bufferCapacity / bufferLengthDivisor);
+					final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
 
-					for (int i = 0; i + samplesToSend <= bufferCapacity; i += samplesToSend) {
+					audioInfoasShortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
+					// scale the right side to the number of data points we have
+					setxEnd(mBufferToDraw.length);
+					glman.glClear();
 
-						final short[] mBufferToDraw = new short[samplesToSend];
-						final long currentTime = System.currentTimeMillis();
-						final float millisecondsInThisBuffer = mBufferToDraw.length / 44100.0f * 1000;
-
-						audioInfoasShortBuffer.get(mBufferToDraw, 0,
-								mBufferToDraw.length);
-						// scale the right side to the number of data points we
-						// have
-						setxEnd(mBufferToDraw.length / 2);
-						glman.glClear();
-
-						synchronized (parent) {
-							((OscilloscopeGLSurfaceView) parent)
-									.setMsText(millisecondsInThisBuffer);
-						}
-						waveformShape.setBufferToDraw(mBufferToDraw);
-						glman.initGL(xBegin, xEnd, yBegin / mScaleFactor, yEnd
-								/ mScaleFactor);
-						waveformShape.draw(glman.getmGL());
-						glman.swapBuffers();
-						long newTime = System.currentTimeMillis();
-						while (newTime - currentTime < millisecondsInThisBuffer) {
-							try {
-								Thread.sleep(5);
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-							newTime = System.currentTimeMillis();
-						}
+					synchronized (parent) {
+						((OscilloscopeGLSurfaceView) parent).setMsText(millisecondsInThisWindow);
 					}
+					
+					waveformShape.setBufferToDraw(mBufferToDraw);
+					glman.initGL(xEnd-samplesToShow, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor);
+					waveformShape.draw(glman.getmGL());
+					glman.swapBuffers();
 				}
 
 			}
