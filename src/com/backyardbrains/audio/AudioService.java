@@ -97,6 +97,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerReceiver(toggleRecorder, intentFilter);
 
 		audioBuffer = new RingBuffer(131072);
+		audioBuffer.zeroFill();
 		
 		turnOnMicThread();
 	}
