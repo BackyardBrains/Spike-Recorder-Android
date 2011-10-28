@@ -40,7 +40,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private float startDistanceY;
 
-	private float bufferLengthDivisor = 1;
+	private float bufferLengthDivisor = 8;
 
 	public float getBufferLengthDivisor() {
 		return bufferLengthDivisor;
