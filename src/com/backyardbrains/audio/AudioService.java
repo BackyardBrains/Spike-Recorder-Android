@@ -64,6 +64,8 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	private ByteBuffer currentAudioInfo;
 
+	private RingBuffer audioBuffer;
+	
 	private int mBindingsCount;
 
 	private RecordingSaver mRecordingSaverInstance;
@@ -77,6 +79,10 @@ public class AudioService extends Service implements ReceivesAudio {
 		return currentAudioInfo;
 	}
 
+	public Byte[] getAudioBuffer() {
+		return audioBuffer.getArray();
+	}
+	
 	/**
 	 * Create service and grab reference to {@link BackyardBrainsApplication}
 	 * 
@@ -90,6 +96,8 @@ public class AudioService extends Service implements ReceivesAudio {
 		toggleRecorder = new ToggleRecordingListener();
 		registerReceiver(toggleRecorder, intentFilter);
 
+		audioBuffer = new RingBuffer(131072);
+		
 		turnOnMicThread();
 	}
 
@@ -157,6 +165,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		this.currentAudioInfo = audioInfo;
+		audioBuffer.add(audioInfo);
 		if (mRecordingSaverInstance != null) {
 			mRecordingSaverInstance.receiveAudio(audioInfo);
 		}
