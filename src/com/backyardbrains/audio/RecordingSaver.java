@@ -79,7 +79,6 @@ public class RecordingSaver implements ReceivesAudio {
 	public void finishRecording() {
 		try {
 			bufferedStream.close();
-			// @TODO - turn this into an AsyncTask call.
 			new ConvertToWavefile().execute(mFileToRecordTo);
 		} catch (IOException e) {
 			throw new IllegalStateException("Cannot close buffered writer.");

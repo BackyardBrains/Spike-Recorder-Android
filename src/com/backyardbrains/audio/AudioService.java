@@ -65,7 +65,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private ByteBuffer currentAudioInfo;
 
 	private RingBuffer audioBuffer;
-	
+
 	private int mBindingsCount;
 
 	private RecordingSaver mRecordingSaverInstance;
@@ -82,7 +82,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	public byte[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
-	
+
 	/**
 	 * Create service and grab reference to {@link BackyardBrainsApplication}
 	 * 
@@ -98,7 +98,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
-		
+
 		turnOnMicThread();
 	}
 
@@ -168,6 +168,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		this.currentAudioInfo = audioInfo;
 		audioBuffer.add(audioInfo);
 		if (mRecordingSaverInstance != null) {
+			audioInfo.clear();
 			mRecordingSaverInstance.receiveAudio(audioInfo);
 		}
 
@@ -178,7 +179,9 @@ public class AudioService extends Service implements ReceivesAudio {
 		public void onReceive(android.content.Context context,
 				android.content.Intent intent) {
 			if (!startRecording()) {
-				stopRecording();
+				if (!stopRecording()) {
+					Log.w(TAG, "There was an error recording properly");
+				}
 			}
 		};
 	}
