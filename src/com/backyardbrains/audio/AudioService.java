@@ -189,10 +189,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	}
 
 	public boolean stopRecording() {
-//		if (mRecordingSaverInstance == null) {
-//			throw new IllegalStateException(
-//					"Tried to stop recording on a non-existant object");
-//		}
 		if (mRecordingSaverInstance != null) {
 			mRecordingSaverInstance.finishRecording();
 			mRecordingSaverInstance = null;
