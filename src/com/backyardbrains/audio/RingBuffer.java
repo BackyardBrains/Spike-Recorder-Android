@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 public class RingBuffer {
 	private byte[] buffer;
 	private int beginning;
+
 	/**
 	 * @return the beginning
 	 */
@@ -47,20 +48,30 @@ public class RingBuffer {
 			addEnd(buffer.get());
 		}
 	}
-	
+
 	/**
 	 * return an order-adjusted version of the whole buffer
+	 * 
 	 * @return
 	 */
 	public byte[] getArray() {
 		if (beginning == 0) {
-			byte[] returnArray = new byte[end+1];
+			byte[] returnArray = new byte[end + 1];
 			System.arraycopy(buffer, 0, returnArray, 0, returnArray.length);
 			return returnArray;
 		}
 		byte[] returnArray = new byte[buffer.length];
-		System.arraycopy(buffer, beginning, returnArray, 0, buffer.length-beginning);
-		System.arraycopy(buffer, 0, returnArray, buffer.length-beginning, end+1);
+		System.arraycopy(buffer, beginning, returnArray, 0, buffer.length
+				- beginning);
+		System.arraycopy(buffer, 0, returnArray, buffer.length - beginning,
+				end + 1);
 		return returnArray;
+	}
+
+	public void zeroFill() {
+		for (int i = 0; i < buffer.length; i++) {
+			buffer[i] = 0;
+		}
+
 	}
 }
