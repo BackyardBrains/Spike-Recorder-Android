@@ -45,7 +45,9 @@ public class RingBuffer {
 
 	public void add(ByteBuffer buffer) {
 		while (buffer.hasRemaining()) {
+			byte swp = buffer.get();
 			addEnd(buffer.get());
+			addEnd(swp);
 		}
 	}
 
@@ -70,8 +72,8 @@ public class RingBuffer {
 
 	public void zeroFill() {
 		for (int i = 0; i < buffer.length; i++) {
-			buffer[i] = 0;
+			addEnd((byte) 0);
 		}
-
+		
 	}
 }
