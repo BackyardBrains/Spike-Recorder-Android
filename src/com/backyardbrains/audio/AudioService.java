@@ -79,7 +79,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		return currentAudioInfo;
 	}
 
-	public Byte[] getAudioBuffer() {
+	public byte[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
 	

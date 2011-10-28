@@ -3,7 +3,7 @@ package com.backyardbrains.audio;
 import java.nio.ByteBuffer;
 
 public class RingBuffer {
-	private Byte[] buffer;
+	private byte[] buffer;
 	private int beginning;
 	/**
 	 * @return the beginning
@@ -22,11 +22,11 @@ public class RingBuffer {
 	private int end;
 
 	public RingBuffer(int size) {
-		buffer = new Byte[size];
+		buffer = new byte[size];
 		beginning = end = -1;
 	}
 
-	public void addEnd(Byte b) {
+	public void addEnd(byte b) {
 		if (end >= 0) {
 			// not empty!
 			++end;
@@ -52,13 +52,13 @@ public class RingBuffer {
 	 * return an order-adjusted version of the whole buffer
 	 * @return
 	 */
-	public Byte[] getArray() {
+	public byte[] getArray() {
 		if (beginning == 0) {
-			Byte[] returnArray = new Byte[end+1];
+			byte[] returnArray = new byte[end+1];
 			System.arraycopy(buffer, 0, returnArray, 0, returnArray.length);
 			return returnArray;
 		}
-		Byte[] returnArray = new Byte[buffer.length];
+		byte[] returnArray = new byte[buffer.length];
 		System.arraycopy(buffer, beginning, returnArray, 0, buffer.length-beginning);
 		System.arraycopy(buffer, 0, returnArray, buffer.length-beginning, end+1);
 		return returnArray;
