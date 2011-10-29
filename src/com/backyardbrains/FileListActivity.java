@@ -7,6 +7,7 @@ import java.util.Date;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,10 +15,12 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -33,13 +36,18 @@ public class FileListActivity extends ListActivity {
 
 		bybDirectory = new File(Environment.getExternalStorageDirectory()
 				+ "/BackyardBrains/");
+		rescanFiles();
+	}
+
+	void rescanFiles() {
+		
 		File[] files = bybDirectory.listFiles();
 
 		ListAdapter adapter = new FileListAdapter(this,
 				R.layout.file_list_row_layout, files);
 		setListAdapter(adapter);
 	}
-
+	
 	private void emailFile(File f) {
 		Intent sendIntent = new Intent(Intent.ACTION_SEND);
 		sendIntent
@@ -65,28 +73,75 @@ public class FileListActivity extends ListActivity {
 		}
 	}
 
+	protected void deleteFile(final File f) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Delete File");
+		builder.setMessage("Are you sure you want to delete "+f.getName()+"?");
+		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				if(!f.delete()) {
+					throw new IllegalStateException("Could not delete " + f.getName());
+				}
+				rescanFiles();
+			}
+		});
+		builder.setNegativeButton("Cancel", null);
+		builder.create().show();
+	}
+
+	protected void renameFile(final File f) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Rename File");
+		builder.setMessage("Please enter the new name for your file.");
+		final EditText e = new EditText(this);
+		e.setText(f.getName());
+		builder.setView(e);
+
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				String filename = e.getText().toString();
+				File newFile = new File(f.getParent(), filename + ".wav");
+				if(!f.renameTo(newFile)) {
+					throw new IllegalStateException("Could not rename file to " + newFile.getAbsolutePath());
+				}
+				rescanFiles();
+			}
+		});
+		builder.setNegativeButton("Cancel", null);
+		builder.create().show();
+	}
+
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		final File f = (File) this.getListAdapter().getItem(position);
-		
-		final CharSequence [] actions = {"Email this file", "Play this file" };
-		
+
+		final CharSequence[] actions = { "Email this file", "Play this file",
+				"Rename this file", "Delete this file" };
+
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle("Choose an action");
 		builder.setCancelable(true);
 		builder.setItems(actions, new DialogInterface.OnClickListener() {
-			
+
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				if (actions[which] == "Email this file") {
+				switch (which) {
+				case 0:
 					emailFile(f);
-				}
-				else if (actions[which] == "Play this file") {
+					break;
+				case 1:
 					playAudioFile(f);
+					break;
+				case 2:
+					renameFile(f);
+					break;
+				case 3:
+					deleteFile(f);
+					break;
 				}
 			}
 		});
-		//builder.setIcon(R.drawable.icon);
+		// builder.setIcon(R.drawable.icon);
 		AlertDialog d = builder.create();
 		d.show();
 		super.onListItemClick(l, v, position, id);
