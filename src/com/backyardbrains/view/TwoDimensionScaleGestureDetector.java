@@ -484,7 +484,9 @@ public class TwoDimensionScaleGestureDetector {
         	mScaleFactorY = newSpan.second / oldSpan.second;
             //mScaleFactor = getCurrentSpan() / getPreviousSpan();
         }
-        return new Pair<Float, Float>(mScaleFactorX, mScaleFactorY);
+        if (mScaleFactorX >= 0 && mScaleFactorY >=0)
+	        return new Pair<Float, Float>(mScaleFactorX, mScaleFactorY);
+        else throw new IllegalStateException();
     }
     
     /**
