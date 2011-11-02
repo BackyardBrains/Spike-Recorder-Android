@@ -55,7 +55,7 @@ public class OscilloscopeGLThread extends Thread {
 	/**
 	 * reference to parent {@link OscilloscopeGLSurfaceView}
 	 */
-	SurfaceView parent;
+	OscilloscopeGLSurfaceView parent;
 
 	/**
 	 * Is thread done processing yet? Used at requestStop
@@ -83,7 +83,7 @@ public class OscilloscopeGLThread extends Thread {
 	 * @param view
 	 *            reference to the parent view
 	 */
-	OscilloscopeGLThread(SurfaceView view) {
+	OscilloscopeGLThread(OscilloscopeGLSurfaceView view) {
 		parent = view;
 	}
 
@@ -207,6 +207,8 @@ public class OscilloscopeGLThread extends Thread {
 
 					synchronized (parent) {
 						((OscilloscopeGLSurfaceView) parent).setMsText(millisecondsInThisWindow);
+						float yPerDiv = (float) ((yEnd/mScaleFactor - yBegin/mScaleFactor)/(4.0f*24.5));
+						((OscilloscopeGLSurfaceView) parent).setmVText(yPerDiv);
 					}
 					
 					waveformShape.setBufferToDraw(mBufferToDraw);

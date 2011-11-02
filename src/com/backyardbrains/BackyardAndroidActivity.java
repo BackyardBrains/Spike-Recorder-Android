@@ -48,6 +48,9 @@ public class BackyardAndroidActivity extends Activity {
 	private boolean isRecording = false;
 	private View tapToStopRecView;
 	private View mFileButton;
+	private TextView mVView;
+	private BroadcastReceiver upmillivolt;
+	private SetMillivoltViewSizeReceiver milliVoltSize;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -67,7 +70,8 @@ public class BackyardAndroidActivity extends Activity {
 		application = (BackyardBrainsApplication) getApplication();
 
 		msView = (TextView) findViewById(R.id.millisecondsView);
-
+		mVView = (TextView) findViewById(R.id.mVLabelView);
+		
 		// Create custom surface
 		@SuppressWarnings("unchecked")
 		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
@@ -78,7 +82,7 @@ public class BackyardAndroidActivity extends Activity {
 		}
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
-
+		
 		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
 		OnClickListener toggleRecListener = new OnClickListener() {
 			@Override
@@ -98,6 +102,7 @@ public class BackyardAndroidActivity extends Activity {
 		});
 		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(toggleRecListener);
+		
 	}
 
 	@Override
@@ -176,6 +181,22 @@ public class BackyardAndroidActivity extends Activity {
 		};
 	}
 
+	private class UpdateMillivoltReciever extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			mVView.setText(intent.getStringExtra("millivoltsDisplayedString"));
+		};
+	}
+
+	private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			mVView.setHeight(intent.getIntExtra("millivoltsViewNewSize", mVView.getHeight()));
+		};
+	}
+
 	/**
 	 * inflate menu to switch between continuous and threshold modes
 	 * 
@@ -236,7 +257,18 @@ public class BackyardAndroidActivity extends Activity {
 		upmillirec = new UpdateMillisecondsReciever();
 		registerReceiver(upmillirec, intentFilter);
 
+		IntentFilter intentFilterVolts = new IntentFilter(
+				"BYBUpdateMillivoltReciever");
+		upmillivolt = new UpdateMillivoltReciever();
+		registerReceiver(upmillivolt, intentFilterVolts);
+
+		IntentFilter intentFilterVoltSize = new IntentFilter(
+				"BYBMillivoltsViewSize");
+		milliVoltSize = new SetMillivoltViewSizeReceiver();
+		registerReceiver(milliVoltSize, intentFilterVoltSize);
+
 		application.startAudioService();
+		
 	}
 
 	/**
@@ -250,6 +282,8 @@ public class BackyardAndroidActivity extends Activity {
 		// Unbind from the service has been moved to OpenGLThread
 		application.stopAudioService();
 		unregisterReceiver(upmillirec);
+		unregisterReceiver(upmillivolt);
+		unregisterReceiver(milliVoltSize);
 	}
 
 	@Override

@@ -1,73 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent" android:layout_height="fill_parent">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
 
-	<FrameLayout android:id="@+id/glContainer"
-		android:layout_height="fill_parent"
-		android:layout_width="wrap_content">
-	</FrameLayout>
-	<ImageView android:id="@+id/tickmarkImageView"
-		android:layout_height="fill_parent"
-		android:layout_width="wrap_content"
-		android:layout_alignTop="@id/glContainer"
-		android:layout_alignBottom="@id/glContainer"
-		android:scaleType="fitXY"
-		android:src="@drawable/tickmarks"
-		></ImageView>
-	<TextView android:id="@+id/millisecondsView"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_alignParentBottom="true"
-		android:layout_centerHorizontal="true"
-		android:layout_marginBottom="20dp"
-		android:text="0 ms"
-		></TextView>
-	<ImageView android:id="@+id/msLineView"
-		android:layout_marginBottom="10dp"
-		android:layout_height="wrap_content"
-		android:layout_width="100sp"
-		android:src="@drawable/msline"
-		android:layout_above="@+id/millisecondsView"
-		android:layout_centerHorizontal="true"
-		android:scaleType="fitXY"
-	></ImageView>
-	<ImageView android:id="@+id/recordButtonBackground"
-		android:layout_height="wrap_content"
-		android:src="@drawable/rounded_button_background"
-		android:layout_width="wrap_content"
-		android:layout_alignParentTop="true"
-		android:layout_alignParentRight="true"
-	></ImageView>
-	<LinearLayout
-	    android:id="@+id/buttonHolderLayout"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentRight="true"
-	    android:layout_alignLeft="@+id/recordButtonBackground">
-		<ImageButton android:id="@+id/fileButton"
-			android:background="#0000"
-			android:layout_height="match_parent"
-			android:src="@drawable/file_button"
-			android:padding="5sp"
-			android:layout_weight="1"
-			android:layout_width="match_parent">
-		</ImageButton>
-	    <ImageButton android:id="@+id/recordButton"
-    		android:src="@drawable/record_button"
-    		android:layout_alignParentTop="true"
-    		android:layout_alignParentRight="true"
-    		android:background="#0000"
-    		android:padding="5sp"
-    	android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1"></ImageButton>
-	</LinearLayout>
-	<TextView
-		android:id="@+id/TapToStopRecordingTextView"
-		android:text="@string/tap_to_stop_recording"
-		android:background="#ffff0000"
-		android:textAppearance="@android:style/TextAppearance.Large"
-		android:layout_width="match_parent"
-		android:layout_height="50sp"
-		android:gravity="center"
-		android:visibility="gone"></TextView>
+    <FrameLayout
+        android:id="@+id/glContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent" >
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/tickmarkImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignBottom="@id/glContainer"
+        android:layout_alignTop="@id/glContainer"
+        android:scaleType="fitXY"
+        android:src="@drawable/tickmarks" >
+    </ImageView>
+
+    <TextView
+        android:id="@+id/millisecondsView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20sp"
+        android:text="0 ms" >
+    </TextView>
+
+    <ImageView
+        android:id="@+id/msLineView"
+        android:layout_width="100sp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/millisecondsView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/msline" >
+    </ImageView>
+
+    <ImageView
+        android:id="@+id/recordButtonBackground"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/rounded_button_background" >
+    </ImageView>
+
+    <LinearLayout
+        android:id="@+id/buttonHolderLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/recordButtonBackground"
+        android:layout_alignParentRight="true" >
+
+        <ImageButton
+            android:id="@+id/fileButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:padding="5sp"
+            android:src="@drawable/file_button" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/recordButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:padding="5sp"
+            android:src="@drawable/record_button" >
+        </ImageButton>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/TapToStopRecordingTextView"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:background="#ffff0000"
+        android:gravity="center"
+        android:text="@string/tap_to_stop_recording"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:visibility="gone" >
+    </TextView>
+
+    <TextView
+        android:id="@+id/mVLabelView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical"
+        android:text="0 ms" />
 
 </RelativeLayout>

@@ -99,6 +99,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		getContext().sendBroadcast(i);
 	}
 
+	public void setmVText(Float ms) {
+		Intent i = new Intent();
+		i.setAction("BYBUpdateMillivoltReciever");
+		String msString = new DecimalFormat("#.#").format(ms);
+		i.putExtra("millivoltsDisplayedString", msString + " mV");
+		getContext().sendBroadcast(i);
+	}
 	public void shrinkXdimension() {
 		mGLThread
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
@@ -150,6 +157,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 		mGLThread.setmScaleFactor(scaleFactor);
 		mGLThread.rescaleWaveform();
+		Intent i = new Intent();
+		i.setAction("BYBMillivoltsViewSize");
+		i.putExtra("millivoltsViewNewSize", height/2);
+		getContext().sendBroadcast(i);
 	}
 
 	/**
