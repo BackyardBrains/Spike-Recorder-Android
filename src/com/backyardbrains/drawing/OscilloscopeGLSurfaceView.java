@@ -122,13 +122,16 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
 			//float mScaleFactor = mGLThread.getmScaleFactor();
 			//float scaleModifier = detector.getScaleFactor();
-			final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
-			final float scaleModifierX = Math.max(0.99f, Math.min(scaleModifier.first, 1.01f));
-			final float scaleModifierY = Math.max(0.98f, Math.min(scaleModifier.second, 1.02f));
-			bufferLengthDivisor *= scaleModifierX;
-			scaleFactor *= scaleModifierY;
-
-			Log.d(TAG, "Receiving touch event. scale factor is now " + scaleFactor + "and buffer divisor is " + bufferLengthDivisor);
+			try {
+				final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
+				final float scaleModifierX = Math.max(0.99f, Math.min(scaleModifier.first, 1.01f));
+				final float scaleModifierY = Math.max(0.98f, Math.min(scaleModifier.second, 1.02f));
+				bufferLengthDivisor *= scaleModifierX;
+				scaleFactor *= scaleModifierY;
+				Log.d(TAG, "Receiving touch event. scale factor is now " + scaleFactor + "and buffer divisor is " + bufferLengthDivisor);
+			} catch (IllegalStateException e) {
+				Log.e(TAG, "Got invalid values back from Scale listener!");
+			}
 			/*
 			synchronized (mGLThread) {
 				mGLThread.setmScaleFactor(scaleFactor);
