@@ -144,7 +144,7 @@ public class OscilloscopeGLThread extends Thread {
 		@Override
 		public void onReceive(android.content.Context context,
 				android.content.Intent intent) {
-			mScaleFactor = intent.getFloatExtra("newScaleFactor", 1);
+			setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
 
 			float localBufferLengthDivisor = intent.getFloatExtra(
 					"newBufferLengthDivisor", 1);
