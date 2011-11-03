@@ -50,6 +50,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private TwoDimensionScaleGestureDetector mScaleDetector;
 
+	private boolean triggerView;
+
 	public float getScaleFactor() {
 		return scaleFactor;
 	}
@@ -81,7 +83,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
-		mScaleDetector = new TwoDimensionScaleGestureDetector(context, new ScaleListener());
+		mScaleDetector = new TwoDimensionScaleGestureDetector(context,
+				new ScaleListener());
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, float scaleFactor,
@@ -106,6 +109,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		i.putExtra("millivoltsDisplayedString", msString + " mV");
 		getContext().sendBroadcast(i);
 	}
+
 	public void shrinkXdimension() {
 		mGLThread
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
@@ -116,28 +120,31 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
 	}
 
-	private class ScaleListener extends
-			Simple2DOnScaleGestureListener {
+	private class ScaleListener extends Simple2DOnScaleGestureListener {
 		@Override
 		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-			//float mScaleFactor = mGLThread.getmScaleFactor();
-			//float scaleModifier = detector.getScaleFactor();
+			// float mScaleFactor = mGLThread.getmScaleFactor();
+			// float scaleModifier = detector.getScaleFactor();
 			try {
-				final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
-				final float scaleModifierX = Math.max(0.99f, Math.min(scaleModifier.first, 1.01f));
-				final float scaleModifierY = Math.max(0.98f, Math.min(scaleModifier.second, 1.02f));
+				final Pair<Float, Float> scaleModifier = detector
+						.getScaleFactor();
+				final float scaleModifierX = Math.max(0.99f,
+						Math.min(scaleModifier.first, 1.01f));
+				final float scaleModifierY = Math.max(0.98f,
+						Math.min(scaleModifier.second, 1.02f));
 				bufferLengthDivisor *= scaleModifierX;
 				scaleFactor *= scaleModifierY;
-				Log.d(TAG, "Receiving touch event. scale factor is now " + scaleFactor + "and buffer divisor is " + bufferLengthDivisor);
+				Log.d(TAG, "Receiving touch event. scale factor is now "
+						+ scaleFactor + "and buffer divisor is "
+						+ bufferLengthDivisor);
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
 			/*
-			synchronized (mGLThread) {
-				mGLThread.setmScaleFactor(scaleFactor);
-				mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
-			}
-			*/
+			 * synchronized (mGLThread) {
+			 * mGLThread.setmScaleFactor(scaleFactor);
+			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor); }
+			 */
 			Intent i = new Intent();
 			i.setAction("BYBScaleChange");
 			i.putExtra("newBufferLengthDivisor", bufferLengthDivisor);
@@ -162,7 +169,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mGLThread.rescaleWaveform();
 		Intent i = new Intent();
 		i.setAction("BYBMillivoltsViewSize");
-		i.putExtra("millivoltsViewNewSize", height/2);
+		i.putExtra("millivoltsViewNewSize", height / 2);
 		getContext().sendBroadcast(i);
 	}
 
@@ -173,7 +180,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		mGLThread = new OscilloscopeGLThread(this);
+		if (triggerView) {
+			mGLThread = new TriggerViewThread(this);
+		} else {
+			mGLThread = new OscilloscopeGLThread(this);
+		}
 		synchronized (mGLThread) {
 			mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 			mGLThread.setmScaleFactor(scaleFactor);
@@ -197,5 +208,15 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			}
 		}
 		setKeepScreenOn(false);
+	}
+
+	public void setContinuousViewMode() {
+		// TODO Auto-generated method stub
+		triggerView = false;
+	}
+
+	public void setTriggerViewMode() {
+		// TODO Auto-generated method stub
+		triggerView = true;
 	}
 }
