@@ -212,6 +212,10 @@ public class BackyardAndroidActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// TODO Auto-generated method stub
 		switch (item.getItemId()) {
+		case R.id.waveview:
+			mAndroidSurface.setContinuousViewMode();
+		case R.id.threshold:
+			mAndroidSurface.setTriggerViewMode();
 		case R.id.expandX:
 			mAndroidSurface.growXdimension();
 			return true;
