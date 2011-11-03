@@ -214,8 +214,10 @@ public class BackyardAndroidActivity extends Activity {
 		switch (item.getItemId()) {
 		case R.id.waveview:
 			mAndroidSurface.setContinuousViewMode();
+			return true;
 		case R.id.threshold:
 			mAndroidSurface.setTriggerViewMode();
+			return true;
 		case R.id.expandX:
 			mAndroidSurface.growXdimension();
 			return true;
