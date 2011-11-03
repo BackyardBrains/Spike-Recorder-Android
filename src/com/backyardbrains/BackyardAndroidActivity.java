@@ -51,6 +51,7 @@ public class BackyardAndroidActivity extends Activity {
 	private TextView mVView;
 	private BroadcastReceiver upmillivolt;
 	private SetMillivoltViewSizeReceiver milliVoltSize;
+	private View recordingBackground;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -83,6 +84,13 @@ public class BackyardAndroidActivity extends Activity {
 		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 		mainscreenGLLayout.addView(mAndroidSurface);
 		
+		setUpRecordingButtons();
+		
+	}
+
+	private void setUpRecordingButtons() {
+		recordingBackground = findViewById(R.id.recordButtonBackground);
+		
 		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
 		OnClickListener toggleRecListener = new OnClickListener() {
 			@Override
@@ -102,7 +110,30 @@ public class BackyardAndroidActivity extends Activity {
 		});
 		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(toggleRecListener);
-		
+	}
+	
+	private void showRecordingButtons() {
+		if(mFileButton != null) {
+			mFileButton.setVisibility(View.VISIBLE);
+		}
+		if(mRecordButton != null) {
+			mRecordButton.setVisibility(View.VISIBLE);
+		}
+		if(recordingBackground != null) {
+			mRecordButton.setVisibility(View.VISIBLE);
+		}
+	}
+
+	private void hideRecordingButtons() {
+		if(mFileButton != null) {
+			mFileButton.setVisibility(View.GONE);
+		}
+		if(mRecordButton != null) {
+			mRecordButton.setVisibility(View.GONE);
+		}
+		if(recordingBackground != null) {
+			mRecordButton.setVisibility(View.GONE);
+		}
 	}
 
 	@Override
