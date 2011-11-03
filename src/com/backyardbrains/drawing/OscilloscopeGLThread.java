@@ -216,7 +216,11 @@ public class OscilloscopeGLThread extends Thread {
 					waveformShape.draw(glman.getmGL());
 					glman.swapBuffers();
 				}
-
+				try {
+					sleep(5);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		parent.getContext().getApplicationContext().unbindService(mConnection);
