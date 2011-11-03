@@ -211,12 +211,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	public void setContinuousViewMode() {
-		// TODO Auto-generated method stub
 		triggerView = false;
+		invalidate();
 	}
 
 	public void setTriggerViewMode() {
-		// TODO Auto-generated method stub
 		triggerView = true;
+		invalidate();
 	}
 }
