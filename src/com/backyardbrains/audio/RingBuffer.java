@@ -44,8 +44,9 @@ public class RingBuffer {
 	}
 
 	public void add(ByteBuffer buffer) {
+		byte swp;
 		while (buffer.hasRemaining()) {
-			byte swp = buffer.get();
+			swp = buffer.get();
 			addEnd(buffer.get());
 			addEnd(swp);
 		}
@@ -74,6 +75,6 @@ public class RingBuffer {
 		for (int i = 0; i < buffer.length; i++) {
 			addEnd((byte) 0);
 		}
-		
+
 	}
 }
