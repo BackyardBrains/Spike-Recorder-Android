@@ -485,6 +485,8 @@ public class TwoDimensionScaleGestureDetector {
 	 * @return The current scaling factor.
 	 */
 	public Pair<Float, Float> getScaleFactor() {
+		float returnScaleFactorX = 1;
+		float returnScaleFactorY = 1;
 		if (mScaleFactorX == -1 && mScaleFactorY == -1) {
 
 			Pair<Float, Float> oldSpan = getPreviousSpan();
@@ -492,17 +494,22 @@ public class TwoDimensionScaleGestureDetector {
 
 			mScaleFactorX = newSpan.first / oldSpan.first;
 			mScaleFactorY = newSpan.second / oldSpan.second;
-			if(Math.abs(newSpan.first - oldSpan.first) < 50) {
-				mScaleFactorX = 1;
+			
+			if(Math.abs(newSpan.first - oldSpan.first) < 35) {
+				returnScaleFactorX = 1;
+			} else {
+				returnScaleFactorX = mScaleFactorX;
 			}
 			
-			if(Math.abs(newSpan.second - oldSpan.second) < 50) {
-				mScaleFactorY = 1;
+			if(Math.abs(newSpan.second - oldSpan.second) < 35) {
+				returnScaleFactorY = 1;
+			} else {
+				returnScaleFactorY = mScaleFactorY;
 			}
 			// mScaleFactor = getCurrentSpan() / getPreviousSpan();
 		}
 		if (mScaleFactorX >= 0 && mScaleFactorY >= 0)
-			return new Pair<Float, Float>(mScaleFactorX, mScaleFactorY);
+			return new Pair<Float, Float>(returnScaleFactorX, returnScaleFactorY);
 		else
 			throw new IllegalStateException();
 	}
