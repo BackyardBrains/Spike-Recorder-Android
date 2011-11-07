@@ -4,8 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,28 +31,6 @@ public class RecordingSaver implements ReceivesAudio {
 
 		bybDirectory = createBybDirectory();
 
-		/*
-		mFileToRecordTo = new File(bybDirectory, filename);
-
-		if (mFileToRecordTo == null) {
-			throw new IllegalStateException("File to record to is null");
-		}
-
-		try {
-			mFileToRecordTo.createNewFile();
-		} catch (IOException e) {
-			throw new IllegalStateException("Cannot create file: "
-					+ mFileToRecordTo.toString() + " with error "
-					+ e.getMessage());
-		}
-
-		try {
-			bufferedStream = new BufferedOutputStream(new FileOutputStream(
-					mFileToRecordTo));
-		} catch (FileNotFoundException e) {
-			throw new IllegalStateException("Cannot open file for writing", e);
-		}
-		*/
 		mFileToRecordTo = new ByteArrayOutputStream();
 		try {
 			bufferedStream = new BufferedOutputStream(mFileToRecordTo);
@@ -97,10 +73,9 @@ public class RecordingSaver implements ReceivesAudio {
 	private class ConvertToWavefile extends AsyncTask<ByteArrayOutputStream, Void, String> {
 
 		private String convertToWave(ByteArrayOutputStream mFileToRecordToByteArrayOutputStream) throws IOException {
-			//FileInputStream in = new FileInputStream(mFileToRecordTo2);
 			byte[] mFileToRecordTo2 = mFileToRecordToByteArrayOutputStream.toByteArray();
 			File outputFile = new File(bybDirectory, new SimpleDateFormat(
-					"d_MMM_yyyy_HH_mm_a").format(new Date(System
+					"d_MMM_yyyy_HH_mm_s_a").format(new Date(System
 					.currentTimeMillis()))
 					+ ".wav");
 			FileOutputStream out = new FileOutputStream(outputFile);
@@ -130,18 +105,6 @@ public class RecordingSaver implements ReceivesAudio {
 			datastream.writeBytes("data");
 			datastream.writeInt(Integer.reverseBytes((int) subchunk2size));
 
-			byte tempA;
-			byte tempB;
-			long counter = 0;
-			/*
-			while (counter < mFileToRecordTo2.length() && in.available() > 0) {
-				tempA = (byte) in.read();
-				tempB = (byte) in.read();
-				datastream.write(tempB);
-				datastream.write(tempA);
-			}
-			in.close();
-			*/
 			datastream.write(mFileToRecordTo2);
 			out.close();
 			datastream.close();
@@ -163,6 +126,7 @@ public class RecordingSaver implements ReceivesAudio {
 					f = null;
 				}
 			}
+			Log.d(getClass().getCanonicalName(), "Finished writing out "+s.toString());
 			return "Finished writing file to SD Card" + s.toString();
 		}
 

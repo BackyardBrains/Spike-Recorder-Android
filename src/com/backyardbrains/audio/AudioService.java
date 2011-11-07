@@ -169,7 +169,11 @@ public class AudioService extends Service implements ReceivesAudio {
 		audioBuffer.add(audioInfo);
 		if (mRecordingSaverInstance != null) {
 			audioInfo.clear();
-			mRecordingSaverInstance.receiveAudio(audioInfo);
+			try {
+				mRecordingSaverInstance.receiveAudio(audioInfo);
+			} catch (IllegalStateException e) {
+				Log.w(getClass().getCanonicalName(), "Ignoring bytes received while not synced: " + e.getMessage());
+			}
 		}
 
 	}
