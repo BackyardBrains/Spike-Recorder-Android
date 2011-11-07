@@ -1,6 +1,7 @@
 package com.backyardbrains.audio;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,7 +20,7 @@ import android.util.Log;
 public class RecordingSaver implements ReceivesAudio {
 
 	public static final String TAG = "RecordingSaver";
-	private File mFileToRecordTo;
+	private ByteArrayOutputStream mFileToRecordTo;
 	private BufferedOutputStream bufferedStream;
 	private DataOutputStream dataOutputStreamInstance;
 	private File bybDirectory;
@@ -32,6 +33,7 @@ public class RecordingSaver implements ReceivesAudio {
 
 		bybDirectory = createBybDirectory();
 
+		/*
 		mFileToRecordTo = new File(bybDirectory, filename);
 
 		if (mFileToRecordTo == null) {
@@ -52,6 +54,13 @@ public class RecordingSaver implements ReceivesAudio {
 		} catch (FileNotFoundException e) {
 			throw new IllegalStateException("Cannot open file for writing", e);
 		}
+		*/
+		mFileToRecordTo = new ByteArrayOutputStream();
+		try {
+			bufferedStream = new BufferedOutputStream(mFileToRecordTo);
+		} catch (Exception e) {
+			throw new IllegalStateException("Cannot open file for writing", e);
+		}
 		dataOutputStreamInstance = new DataOutputStream(bufferedStream);
 
 	}
@@ -68,7 +77,7 @@ public class RecordingSaver implements ReceivesAudio {
 		ShortBuffer sb = audioInfo.asShortBuffer();
 		while (sb.hasRemaining()) {
 			try {
-				dataOutputStreamInstance.writeShort(sb.get());
+				dataOutputStreamInstance.writeShort(Short.reverseBytes(sb.get()));
 			} catch (IOException e) {
 				throw new IllegalStateException(
 						"Could not write bytes out to file");
@@ -85,10 +94,11 @@ public class RecordingSaver implements ReceivesAudio {
 		}
 	}
 
-	private class ConvertToWavefile extends AsyncTask<File, Void, String> {
+	private class ConvertToWavefile extends AsyncTask<ByteArrayOutputStream, Void, String> {
 
-		private void convertToWave(File mFileToRecordTo2) throws IOException {
-			FileInputStream in = new FileInputStream(mFileToRecordTo2);
+		private String convertToWave(ByteArrayOutputStream mFileToRecordToByteArrayOutputStream) throws IOException {
+			//FileInputStream in = new FileInputStream(mFileToRecordTo2);
+			byte[] mFileToRecordTo2 = mFileToRecordToByteArrayOutputStream.toByteArray();
 			File outputFile = new File(bybDirectory, new SimpleDateFormat(
 					"d_MMM_yyyy_HH_mm_a").format(new Date(System
 					.currentTimeMillis()))
@@ -100,7 +110,7 @@ public class RecordingSaver implements ReceivesAudio {
 			int mChannels = 1;
 			int mBitsPerSample = 16;
 
-			long subchunk2size = mFileToRecordTo2.length() / 2 // # of samples
+			long subchunk2size = mFileToRecordTo2.length / 2 // # of samples
 					* mChannels * (mBitsPerSample / 2);
 
 			long chunksize = subchunk2size + 36;
@@ -123,6 +133,7 @@ public class RecordingSaver implements ReceivesAudio {
 			byte tempA;
 			byte tempB;
 			long counter = 0;
+			/*
 			while (counter < mFileToRecordTo2.length() && in.available() > 0) {
 				tempA = (byte) in.read();
 				tempB = (byte) in.read();
@@ -130,26 +141,29 @@ public class RecordingSaver implements ReceivesAudio {
 				datastream.write(tempA);
 			}
 			in.close();
+			*/
+			datastream.write(mFileToRecordTo2);
 			out.close();
 			datastream.close();
+			return outputFile.getName();
 		}
 
 		@Override
-		protected String doInBackground(File... params) {
+		protected String doInBackground(ByteArrayOutputStream... params) {
 			StringBuilder s = new StringBuilder();
-			for (File f : params) {
+			for (ByteArrayOutputStream f : params) {
 				try {
-					convertToWave(f);
-					s.append(" - " + f.getName());
-					f.delete();
-					f = null;
+					String writtenFile = convertToWave(f);
+					s.append(" - " + writtenFile);
+					//f.delete();
+					//f = null;
 				} catch (IOException e) {
-					Log.e(TAG, "Couldn't write file: " + f.getAbsolutePath());
+					Log.e(TAG, "Couldn't write wav file ");
 					e.printStackTrace();
 					f = null;
 				}
 			}
-			return "Finished writing file tos SD Card" + s.toString();
+			return "Finished writing file to SD Card" + s.toString();
 		}
 
 	}
