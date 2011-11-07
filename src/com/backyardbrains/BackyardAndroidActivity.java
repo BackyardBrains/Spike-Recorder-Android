@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
@@ -76,7 +78,7 @@ public class BackyardAndroidActivity extends Activity {
 		// Create custom surface
 		@SuppressWarnings("unchecked")
 		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
+		reassignSurfaceView();
 		if (oldConfig != null) {
 			mAndroidSurface.setScaleFactor(oldConfig.first);
 			mAndroidSurface.setBufferLengthDivisor(oldConfig.second);
@@ -143,6 +145,11 @@ public class BackyardAndroidActivity extends Activity {
 				mAndroidSurface.getBufferLengthDivisor());
 		return p;
 	}
+	
+	void reassignSurfaceView() {
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
+		Log.d(getClass().getCanonicalName(), "Reassigning OscilloscopeGLSurfaceView");
+	}
 
 	private class ShowRecordingAnimation implements Runnable {
 
@@ -168,8 +175,7 @@ public class BackyardAndroidActivity extends Activity {
 						Animation.RELATIVE_TO_SELF, 0,
 						Animation.RELATIVE_TO_SELF, -1);
 			}
-			a.setDuration(500);
-			a.setStartOffset(100);
+			a.setDuration(250);
 			a.setInterpolator(AnimationUtils.loadInterpolator(this.activity,
 					android.R.anim.anticipate_overshoot_interpolator));
 			View stopRecView = findViewById(R.id.TapToStopRecordingTextView);
@@ -193,9 +199,6 @@ public class BackyardAndroidActivity extends Activity {
 				tapToStopRecView.setVisibility(View.GONE);
 			}
 			isRecording = !isRecording;
-			mAndroidSurface = null;
-			mAndroidSurface = new OscilloscopeGLSurfaceView(
-					getApplicationContext());
 		} catch (RuntimeException e) {
 			Toast.makeText(getApplicationContext(),
 					"No SD Card is available. Recording is disabled",
