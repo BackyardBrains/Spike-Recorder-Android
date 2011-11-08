@@ -17,18 +17,18 @@ Note: The application normally picks up input through your Android's built-in mi
 
 Version 0.9 [Released: Oct 1, 2011]
 -----------------------------------
-* Base Application with Menus
-* Wave View of Spiker Box
-* Auto detecting of headphone vs. built-in microphone 
+* <del>Base Application with Menus</del>
+* <del>Wave View of Spiker Box</del>
+* <del>Auto detecting of headphone vs. built-in microphone</del> 
 
 To Do for version 1.0
 ---------------------
 
-* Recording of data to phone (done!).
-* Email of recorded files to users (done!).
-* Add ability to rename files.
-* Playback of data via speaker only (done!). 
-* UI improvements to File Menu: File Icon, Drop Down Arrow, Pop-up menu List: Email, Play, Rename, Delete.  
+* <del>Recording of data to phone</del>.
+* <del>Email of recorded files to users</del>.
+* <del>Add ability to rename files</del>.
+* <del>Playback of data via speaker only</del>. 
+* <del>UI improvements to File Menu: File Icon, Drop Down Arrow, Pop-up menu List: Email, Play, Rename, Delete.</del>
 
 To Do for version 1.1
 ---------------------
