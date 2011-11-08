@@ -13,7 +13,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.SurfaceView;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
@@ -35,7 +34,6 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	private float yMin = -5000000f;
-	private float yMax = 5000000f;
 
 	public float getyMin() {
 		return yMin;
