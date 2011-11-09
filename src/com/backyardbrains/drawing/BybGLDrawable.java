@@ -56,6 +56,7 @@ class BybGLDrawable {
 	 * @param gl_obj
 	 */
 	public void draw(GL10 gl_obj) {
+		
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 
 		if (!autoScaled
@@ -64,6 +65,9 @@ class BybGLDrawable {
 			autoSetFrame(mBufferToDraw);
 			autoScaled = true;
 		}
+		
+		drawThresholdLine(gl_obj);
+		
 		gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
 		gl_obj.glLoadIdentity();
 
@@ -74,6 +78,22 @@ class BybGLDrawable {
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+	}
+
+	public void drawThresholdLine(GL10 gl_obj) {
+		if (parent.drawThresholdLine) {
+			short thresholdValue = 500;
+			short[] thresholdLine = new short[4];
+			thresholdLine[0] = 0;
+			thresholdLine[2] = (short) parent.getxEnd();
+			thresholdLine[1] = thresholdValue;
+			thresholdLine[3] = thresholdValue;
+			gl_obj.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+			gl_obj.glLineWidth(1.0f);
+			gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0,
+					getWaveformBuffer(thresholdLine));
+			gl_obj.glDrawArrays(GL10.GL_LINES, 0, thresholdLine.length / 2);
+		}
 	}
 
 	/**
@@ -163,9 +183,6 @@ class BybGLDrawable {
 	public void setBufferToDraw(short[] audioBuffer) {
 		if (audioBuffer != null) {
 			mBufferToDraw = audioBuffer;
-//			Log.v(TAG, "Got audio data: " + mBufferToDraw.length
-//					+ " samples, or " + mBufferToDraw.length / 44100.0f * 1000
-//					+ "ms");
 		} else {
 			Log.w(TAG, "Received null audioBuffer");
 		}
