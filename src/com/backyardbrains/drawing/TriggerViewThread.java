@@ -6,4 +6,5 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		super(view);
 	}
 
+	public final boolean drawThreshholdLine = true;
 }
