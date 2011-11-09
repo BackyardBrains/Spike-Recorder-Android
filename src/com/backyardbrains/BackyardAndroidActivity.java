@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
@@ -54,6 +53,7 @@ public class BackyardAndroidActivity extends Activity {
 	private BroadcastReceiver upmillivolt;
 	private SetMillivoltViewSizeReceiver milliVoltSize;
 	private View recordingBackground;
+	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -231,6 +231,18 @@ public class BackyardAndroidActivity extends Activity {
 		};
 	}
 
+	private class ShowRecordingButtonsReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			boolean yesno = intent.getBooleanExtra("showRecordingButton", true);
+			if (yesno) {
+				showRecordingButtons();
+			} else {
+				hideRecordingButtons();
+			}
+		};
+	}
 	/**
 	 * inflate menu to switch between continuous and threshold modes
 	 * 
@@ -307,6 +319,11 @@ public class BackyardAndroidActivity extends Activity {
 		milliVoltSize = new SetMillivoltViewSizeReceiver();
 		registerReceiver(milliVoltSize, intentFilterVoltSize);
 
+		IntentFilter intentFilterRecordingButtons = new IntentFilter(
+				"BYBShowRecordingButtons");
+		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
+		registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+
 		application.startAudioService();
 		
 	}
@@ -324,6 +341,7 @@ public class BackyardAndroidActivity extends Activity {
 		unregisterReceiver(upmillirec);
 		unregisterReceiver(upmillivolt);
 		unregisterReceiver(milliVoltSize);
+		unregisterReceiver(showRecordingButtonsReceiver);
 	}
 
 	@Override
