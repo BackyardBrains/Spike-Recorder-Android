@@ -72,6 +72,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
 	}
+	
+	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
+		this(context, null, 0);
+		triggerView = isTriggerMode;
+		Log.d(TAG, "Starting surface with triggerView set to " + triggerView);
+	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
@@ -185,6 +191,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	private void resetDrawingThread() {
+		Log.d(TAG, "resetting drawing thread with triggerView set to "+ triggerView);
 		if (triggerView) {
 			mGLThread = new TriggerViewThread(this);
 		} else {
