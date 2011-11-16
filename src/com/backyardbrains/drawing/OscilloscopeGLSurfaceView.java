@@ -180,6 +180,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		resetDrawingThread();
+		setKeepScreenOn(true);
+	}
+
+	private void resetDrawingThread() {
 		if (triggerView) {
 			mGLThread = new TriggerViewThread(this);
 		} else {
@@ -192,7 +197,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 					+ " and bufferLengthDivisor of " + bufferLengthDivisor);
 			mGLThread.start();
 		}
-		setKeepScreenOn(true);
 	}
 
 	/**
