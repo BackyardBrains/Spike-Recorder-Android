@@ -26,8 +26,10 @@ import com.backyardbrains.audio.AudioService.AudioServiceBinder;
  * 
  */
 public class OscilloscopeGLThread extends Thread {
-	
-	public final boolean drawThresholdLine = false;
+
+	public boolean isDrawThresholdLine() {
+		return false;
+	}
 
 	private float xEnd = 4000f;
 

@@ -11,5 +11,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		Log.d(TAG , "Creating TriggerViewThread");
 	}
 
-	public final boolean drawThresholdLine = true;
+	public boolean isDrawThresholdLine() {
+		return true;
+	}
 }
