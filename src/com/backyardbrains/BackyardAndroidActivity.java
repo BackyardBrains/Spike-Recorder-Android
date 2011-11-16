@@ -54,6 +54,7 @@ public class BackyardAndroidActivity extends Activity {
 	private SetMillivoltViewSizeReceiver milliVoltSize;
 	private View recordingBackground;
 	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
+	private FrameLayout mainscreenGLLayout;
 
 	/**
 	 * Create the surface we'll use to draw on, grab an instance of the
@@ -74,18 +75,18 @@ public class BackyardAndroidActivity extends Activity {
 
 		msView = (TextView) findViewById(R.id.millisecondsView);
 		mVView = (TextView) findViewById(R.id.mVLabelView);
+
+		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
+
 		
 		// Create custom surface
 		@SuppressWarnings("unchecked")
 		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
-		reassignSurfaceView();
+		reassignSurfaceView(false);
 		if (oldConfig != null) {
 			mAndroidSurface.setScaleFactor(oldConfig.first);
 			mAndroidSurface.setBufferLengthDivisor(oldConfig.second);
-		}
-		FrameLayout mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
-		mainscreenGLLayout.addView(mAndroidSurface);
-		
+		}		
 		setUpRecordingButtons();
 		
 	}
@@ -146,9 +147,12 @@ public class BackyardAndroidActivity extends Activity {
 		return p;
 	}
 	
-	void reassignSurfaceView() {
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
-		Log.d(getClass().getCanonicalName(), "Reassigning OscilloscopeGLSurfaceView");
+	void reassignSurfaceView(boolean isTriggerView) {
+		mAndroidSurface = null;
+		mainscreenGLLayout.removeAllViews();
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
+		mainscreenGLLayout.addView(mAndroidSurface);
+		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
 
 	private class ShowRecordingAnimation implements Runnable {
@@ -259,10 +263,12 @@ public class BackyardAndroidActivity extends Activity {
 		// TODO Auto-generated method stub
 		switch (item.getItemId()) {
 		case R.id.waveview:
-			mAndroidSurface.setContinuousViewMode();
+			// mAndroidSurface.setContinuousViewMode();
+			reassignSurfaceView(false);
 			return true;
 		case R.id.threshold:
-			mAndroidSurface.setTriggerViewMode();
+			// mAndroidSurface.setTriggerViewMode();
+			reassignSurfaceView(true);
 			return true;
 		case R.id.expandX:
 			mAndroidSurface.growXdimension();
