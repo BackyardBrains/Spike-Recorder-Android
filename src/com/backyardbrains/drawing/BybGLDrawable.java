@@ -59,14 +59,16 @@ class BybGLDrawable {
 		
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 
+		if (firstBufferDrawn == 0) {
+			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
+		}
+
 		if (!autoScaled
 				&& firstBufferDrawn != 0
 				&& (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
 			autoSetFrame(mBufferToDraw);
 			autoScaled = true;
 		}
-		
-		drawThresholdLine(gl_obj);
 		
 		gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
 		gl_obj.glLoadIdentity();
@@ -77,11 +79,13 @@ class BybGLDrawable {
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 
+		drawThresholdLine(gl_obj);
+
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
 
 	public void drawThresholdLine(GL10 gl_obj) {
-		if (parent.drawThresholdLine) {
+		if (parent.isDrawThresholdLine()) {
 			short thresholdValue = 500;
 			short[] thresholdLine = new short[4];
 			thresholdLine[0] = 0;
@@ -151,10 +155,6 @@ class BybGLDrawable {
 			return parent.getFloatBufferFromFloatArray(array);
 		}
 		// Log.d(TAG, "Received buffer to draw");
-
-		if (firstBufferDrawn == 0) {
-			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
-		}
 
 		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
 		int j = 0; // index of arr
