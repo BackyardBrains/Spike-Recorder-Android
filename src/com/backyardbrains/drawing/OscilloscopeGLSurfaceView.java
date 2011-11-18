@@ -191,13 +191,19 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	private void resetDrawingThread() {
-		Log.d(TAG, "resetting drawing thread with triggerView set to "+ triggerView);
+		Log.d(TAG, "Resetting drawing thread with triggerView set to "+ triggerView);
+		boolean didWeAlreadyAutoscale = false;
+		if (mGLThread != null) {
+			Log.d(TAG, "We have already had a GL Thread, so let's reset its scaling");
+			didWeAlreadyAutoscale = mGLThread.isAutoScaled();
+		}
 		if (triggerView) {
 			mGLThread = new TriggerViewThread(this);
 		} else {
 			mGLThread = new OscilloscopeGLThread(this);
 		}
-		synchronized (mGLThread) {
+		synchronized (this) {
+			mGLThread.setAutoScaled(didWeAlreadyAutoscale);
 			mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 			mGLThread.setmScaleFactor(scaleFactor);
 			Log.d(TAG, "Started GL thread with scale of " + scaleFactor
