@@ -96,6 +96,16 @@ public class OscilloscopeGLThread extends Thread {
 		parent = view;
 	}
 
+	private boolean autoScaled;
+
+	public boolean isAutoScaled() {
+		return autoScaled;
+	}
+
+	public void setAutoScaled(boolean autoScaled) {
+		this.autoScaled = autoScaled;
+	}
+
 	private ServiceConnection mConnection = new ServiceConnection() {
 
 		/**

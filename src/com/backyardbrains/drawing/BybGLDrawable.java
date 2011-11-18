@@ -46,8 +46,6 @@ class BybGLDrawable {
 	 */
 	private long firstBufferDrawn = 0;
 
-	private boolean autoScaled;
-
 	/**
 	 * Draw this object on the provided {@link GL10} object. In addition, check
 	 * to see if the frame has been autoscaled yet. If not, do so exactly once,
@@ -63,11 +61,11 @@ class BybGLDrawable {
 			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
 		}
 
-		if (!autoScaled
+		if (!parent.isAutoScaled()
 				&& firstBufferDrawn != 0
 				&& (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
 			autoSetFrame(mBufferToDraw);
-			autoScaled = true;
+			parent.setAutoScaled(true);
 		}
 		
 		gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
@@ -86,7 +84,7 @@ class BybGLDrawable {
 
 	public void drawThresholdLine(GL10 gl_obj) {
 		if (parent.isDrawThresholdLine()) {
-			short thresholdValue = 500;
+			short thresholdValue = (short) (-parent.getyMin()/2);
 			short[] thresholdLine = new short[4];
 			thresholdLine[0] = 0;
 			thresholdLine[2] = (short) parent.getxEnd();
@@ -169,7 +167,7 @@ class BybGLDrawable {
 	}
 
 	public void forceRescale() {
-		autoScaled = false;
+		parent.setAutoScaled(false);
 	}
 
 	/**
