@@ -20,8 +20,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.MicListener;
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
 
 /**
@@ -312,6 +310,6 @@ public class BackyardAndroidActivity extends Activity {
 			} else {
 				hideRecordingButtons();
 			}
+		}	
 		};
-	}	
 }
