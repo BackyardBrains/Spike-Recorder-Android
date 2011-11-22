@@ -2,6 +2,7 @@ package com.backyardbrains.drawing;
 
 import java.text.DecimalFormat;
 
+import com.backyardbrains.BybConfigHolder;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
 
@@ -52,6 +53,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private boolean triggerView;
 
+	private boolean didWeAlreadyAutoscale;
+
 	public float getScaleFactor() {
 		return scaleFactor;
 	}
@@ -77,6 +80,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this(context, null, 0);
 		triggerView = isTriggerMode;
 		Log.d(TAG, "Starting surface with triggerView set to " + triggerView);
+	}
+	
+	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch, boolean isTriggerMode) {
+		this(context, isTriggerMode);
+		scaleFactor = bch.configScaleFactor;
+		bufferLengthDivisor = bch.configBufferLengthDivisor;
+		didWeAlreadyAutoscale = bch.configAlreadyAutoScaled;
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs) {
@@ -189,13 +199,30 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		resetDrawingThread();
 		setKeepScreenOn(true);
 	}
+	
+	public boolean haveThread() {
+		return mGLThread != null;
+	}
+
+	public boolean isAutoScaled() {
+		if (haveThread()) {
+			didWeAlreadyAutoscale = mGLThread.isAutoScaled();
+			return didWeAlreadyAutoscale;
+		} else return didWeAlreadyAutoscale;
+	}
+	
+	public void setAutoScaled(boolean autoScaled) {
+		didWeAlreadyAutoscale = autoScaled;
+		if(haveThread()) {
+			mGLThread.setAutoScaled(autoScaled);
+		}
+	}
 
 	private void resetDrawingThread() {
 		Log.d(TAG, "Resetting drawing thread with triggerView set to "+ triggerView);
-		boolean didWeAlreadyAutoscale = false;
-		if (mGLThread != null) {
+		if (haveThread()) {
 			Log.d(TAG, "We have already had a GL Thread, so let's reset its scaling");
-			didWeAlreadyAutoscale = mGLThread.isAutoScaled();
+			isAutoScaled();
 		}
 		if (triggerView) {
 			mGLThread = new TriggerViewThread(this);
@@ -220,20 +247,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		synchronized (mGLThread) {
-			if (mGLThread != null) {
+			if (haveThread()) {
 				mGLThread.requestStop();
 			}
 		}
 		setKeepScreenOn(false);
 	}
 
-	public void setContinuousViewMode() {
-		triggerView = false;
-		invalidate();
-	}
-
-	public void setTriggerViewMode() {
-		triggerView = true;
-		invalidate();
-	}
 }
