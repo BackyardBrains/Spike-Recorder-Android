@@ -67,23 +67,29 @@ public class BackyardAndroidActivity extends Activity {
 
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
-		@SuppressWarnings("unchecked")
-		Pair<Float, Float> oldConfig = (Pair<Float, Float>) getLastNonConfigurationInstance();
+		BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
 		reassignSurfaceView(false);
 		if (oldConfig != null) {
-			mAndroidSurface.setScaleFactor(oldConfig.first);
-			mAndroidSurface.setBufferLengthDivisor(oldConfig.second);
+			mAndroidSurface.setScaleFactor(oldConfig.configScaleFactor);
+			mAndroidSurface.setBufferLengthDivisor(oldConfig.configBufferLengthDivisor);
+			Log.d("BYBAndroidActivity", "Setting surface AutoScaled to " + oldConfig.configAlreadyAutoScaled);
+			mAndroidSurface.setAutoScaled(oldConfig.configAlreadyAutoScaled);
 		}		
 		setUpRecordingButtons();
 		
 	}
+	
+	public BybConfigHolder collectConfigFromSurface () {
+		BybConfigHolder bch = new BybConfigHolder();
+		bch.configScaleFactor = mAndroidSurface.getScaleFactor();
+		bch.configBufferLengthDivisor = mAndroidSurface.getBufferLengthDivisor();
+		bch.configAlreadyAutoScaled = mAndroidSurface.isAutoScaled();
+		return bch;
+	}
 
 	@Override
-	public Object onRetainNonConfigurationInstance() {
-		Pair<Float, Float> p = new Pair<Float, Float>(
-				mAndroidSurface.getScaleFactor(),
-				mAndroidSurface.getBufferLengthDivisor());
-		return p;
+	public BybConfigHolder onRetainNonConfigurationInstance() {
+		return collectConfigFromSurface();
 	}
 
 	@Override
@@ -209,9 +215,15 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	void reassignSurfaceView(boolean isTriggerView) {
+		BybConfigHolder bch = null; 
+		if(mAndroidSurface != null) bch = collectConfigFromSurface();
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
+		if (bch != null) {
+			mAndroidSurface = new OscilloscopeGLSurfaceView(this, bch, isTriggerView);
+		} else {
+			mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
+		}
 		mainscreenGLLayout.addView(mAndroidSurface);
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
