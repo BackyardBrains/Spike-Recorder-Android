@@ -5,6 +5,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import javax.microedition.khronos.opengles.GL10;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -233,6 +235,22 @@ public class OscilloscopeGLThread extends Thread {
 					waveformShape.setBufferToDraw(mBufferToDraw);
 					glman.initGL(xEnd-samplesToShow, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor);
 					waveformShape.draw(glman.getmGL());
+					
+					if (isDrawThresholdLine()) {
+						float thresholdValue = (yEnd/2/mScaleFactor);
+						float [] thresholdLine = new float[4];
+						thresholdLine[0] = 0;
+						thresholdLine[2] = getxEnd();
+						thresholdLine[1] = thresholdValue;
+						thresholdLine[3] = thresholdValue;
+						FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
+						glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
+						glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+						glman.getmGL().glLineWidth(1.0f);
+						glman.getmGL().glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
+						glman.getmGL().glDrawArrays(GL10.GL_LINES, 0, 4);
+						glman.getmGL().glDisableClientState(GL10.GL_VERTEX_ARRAY);
+					}
 					glman.swapBuffers();
 				}
 				try {

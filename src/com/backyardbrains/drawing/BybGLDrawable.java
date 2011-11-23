@@ -76,25 +76,12 @@ class BybGLDrawable {
 		gl_obj.glColor4f(0f, 1f, 0f, 1f);
 		gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl_obj.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
-
-		drawThresholdLine(gl_obj);
-
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
 
 	public void drawThresholdLine(GL10 gl_obj) {
 		if (parent.isDrawThresholdLine()) {
-			short thresholdValue = (short) (-parent.getyMin()/2);
-			short[] thresholdLine = new short[4];
-			thresholdLine[0] = 0;
-			thresholdLine[2] = (short) parent.getxEnd();
-			thresholdLine[1] = thresholdValue;
-			thresholdLine[3] = thresholdValue;
-			gl_obj.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-			gl_obj.glLineWidth(1.0f);
-			gl_obj.glVertexPointer(2, GL10.GL_FLOAT, 0,
-					getWaveformBuffer(thresholdLine));
-			gl_obj.glDrawArrays(GL10.GL_LINES, 0, thresholdLine.length / 2);
+
 		}
 	}
 
