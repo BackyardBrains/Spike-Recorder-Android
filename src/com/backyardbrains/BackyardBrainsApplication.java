@@ -12,32 +12,16 @@ import android.content.Intent;
  * @version 1
  */
 public class BackyardBrainsApplication extends Application {
-	// private final static String TAG = "BYBAPP";
-
-	/**
-	 * Is the {@link AudioService} running?
-	 */
 	private boolean serviceRunning;
 
-	/**
-	 * @return the serviceRunning
-	 */
 	public boolean isServiceRunning() {
 		return serviceRunning;
 	}
 
-	/**
-	 * have the service set whether or not it's polling mic data
-	 * 
-	 * @param serviceRunning
-	 */
 	public void setServiceRunning(boolean serviceRunning) {
 		this.serviceRunning = serviceRunning;
 	}
 
-	/**
-	 * If {@link AudioService} has not told us it's running, tell it to start
-	 */
 	public void startAudioService() {
 		// spin up service
 		if (!this.serviceRunning) {
@@ -46,9 +30,6 @@ public class BackyardBrainsApplication extends Application {
 		}
 	}
 
-	/**
-	 * signal {@link AudioService} to stop
-	 */
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
 		serviceRunning = false;
@@ -56,8 +37,6 @@ public class BackyardBrainsApplication extends Application {
 
 	/**
 	 * Make sure we stop the {@link AudioService} when we exit
-	 * 
-	 * @see android.app.Application#onTerminate()
 	 */
 	@Override
 	public void onTerminate() {
