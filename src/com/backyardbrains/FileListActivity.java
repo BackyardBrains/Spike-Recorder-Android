@@ -37,6 +37,11 @@ public class FileListActivity extends ListActivity {
 		rescanFiles();
 	}
 
+	@Override
+	protected void onDestroy() {
+		bybDirectory = null;
+		super.onDestroy();
+	}
 	void rescanFiles() {
 		
 		File[] files = bybDirectory.listFiles();
@@ -46,6 +51,42 @@ public class FileListActivity extends ListActivity {
 		setListAdapter(adapter);
 	}
 	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		final File f = (File) this.getListAdapter().getItem(position);
+
+		final CharSequence[] actions = { "Email this file", "Play this file",
+				"Rename this file", "Delete this file" };
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Choose an action");
+		builder.setCancelable(true);
+		builder.setItems(actions, new DialogInterface.OnClickListener() {
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				switch (which) {
+				case 0:
+					emailFile(f);
+					break;
+				case 1:
+					playAudioFile(f);
+					break;
+				case 2:
+					renameFile(f);
+					break;
+				case 3:
+					deleteFile(f);
+					break;
+				}
+			}
+		});
+		// builder.setIcon(R.drawable.icon);
+		AlertDialog d = builder.create();
+		d.show();
+		super.onListItemClick(l, v, position, id);
+	}
+
 	private void emailFile(File f) {
 		Intent sendIntent = new Intent(Intent.ACTION_SEND);
 		sendIntent
@@ -109,42 +150,6 @@ public class FileListActivity extends ListActivity {
 		builder.create().show();
 	}
 
-	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
-		final File f = (File) this.getListAdapter().getItem(position);
-
-		final CharSequence[] actions = { "Email this file", "Play this file",
-				"Rename this file", "Delete this file" };
-
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle("Choose an action");
-		builder.setCancelable(true);
-		builder.setItems(actions, new DialogInterface.OnClickListener() {
-
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				switch (which) {
-				case 0:
-					emailFile(f);
-					break;
-				case 1:
-					playAudioFile(f);
-					break;
-				case 2:
-					renameFile(f);
-					break;
-				case 3:
-					deleteFile(f);
-					break;
-				}
-			}
-		});
-		// builder.setIcon(R.drawable.icon);
-		AlertDialog d = builder.create();
-		d.show();
-		super.onListItemClick(l, v, position, id);
-	}
-
 	static class FileListViewHolder {
 		public TextView filenameView;
 		public TextView filesizeView;
@@ -205,12 +210,6 @@ public class FileListActivity extends ListActivity {
 			}
 		}
 
-	}
-
-	@Override
-	protected void onDestroy() {
-		bybDirectory = null;
-		super.onDestroy();
 	}
 
 }
