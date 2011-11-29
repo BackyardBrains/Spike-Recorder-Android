@@ -17,8 +17,8 @@ import android.util.Log;
 
 public class RecordingSaver implements ReceivesAudio {
 
-	public static final String TAG = "RecordingSaver";
-	private ByteArrayOutputStream mFileToRecordTo;
+	public static final String TAG = RecordingSaver.class.getCanonicalName();
+	private ByteArrayOutputStream mArrayToRecordTo;
 	private BufferedOutputStream bufferedStream;
 	private DataOutputStream dataOutputStreamInstance;
 	private File bybDirectory;
@@ -27,13 +27,20 @@ public class RecordingSaver implements ReceivesAudio {
 		initializeAndCreateFile(filename);
 	}
 
+	/**
+	 * Create a the BackyardBrains directory on the sdcard if it doesn't exist,
+	 * then set up a file output stream in that directory which we'll use to
+	 * write to later
+	 * 
+	 * @param filename
+	 */
 	private void initializeAndCreateFile(String filename) {
 
 		bybDirectory = createBybDirectory();
 
-		mFileToRecordTo = new ByteArrayOutputStream();
+		mArrayToRecordTo = new ByteArrayOutputStream();
 		try {
-			bufferedStream = new BufferedOutputStream(mFileToRecordTo);
+			bufferedStream = new BufferedOutputStream(mArrayToRecordTo);
 		} catch (Exception e) {
 			throw new IllegalStateException("Cannot open file for writing", e);
 		}
@@ -41,6 +48,11 @@ public class RecordingSaver implements ReceivesAudio {
 
 	}
 
+	/**
+	 * Create our directory on the SD card
+	 * 
+	 * @return the File instance of our directory
+	 */
 	private File createBybDirectory() {
 		File BybDirectory = new File(Environment.getExternalStorageDirectory()
 				+ "/BackyardBrains/");
@@ -48,12 +60,18 @@ public class RecordingSaver implements ReceivesAudio {
 		return BybDirectory;
 	}
 
+	/**
+	 * Our data comes in big-endian, but we need to write 16-bit PCM in
+	 * little-endian, so we'll loop through the buffer, reversing bytes as we
+	 * spit out to the our data output stream.
+	 */
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		ShortBuffer sb = audioInfo.asShortBuffer();
 		while (sb.hasRemaining()) {
 			try {
-				dataOutputStreamInstance.writeShort(Short.reverseBytes(sb.get()));
+				dataOutputStreamInstance
+						.writeShort(Short.reverseBytes(sb.get()));
 			} catch (IOException e) {
 				throw new IllegalStateException(
 						"Could not write bytes out to file");
@@ -61,19 +79,34 @@ public class RecordingSaver implements ReceivesAudio {
 		}
 	}
 
+	/**
+	 * close the stream that our data is being sent to, then convert the array
+	 * we've been caching to in RAM to a wave file after it's done writing PCM
+	 * to the disk.
+	 */
 	public void finishRecording() {
 		try {
 			bufferedStream.close();
-			new ConvertToWavefile().execute(mFileToRecordTo);
+			new ConvertToWavefile().execute(mArrayToRecordTo);
 		} catch (IOException e) {
 			throw new IllegalStateException("Cannot close buffered writer.");
 		}
 	}
 
-	private class ConvertToWavefile extends AsyncTask<ByteArrayOutputStream, Void, String> {
+	private class ConvertToWavefile extends
+			AsyncTask<ByteArrayOutputStream, Void, String> {
 
-		private String convertToWave(ByteArrayOutputStream mFileToRecordToByteArrayOutputStream) throws IOException {
-			byte[] mFileToRecordTo2 = mFileToRecordToByteArrayOutputStream.toByteArray();
+		/**
+		 * Takes a ByteArrayOutputStream provided to our execute() method, and
+		 * add a PCM WAVE header and write it out to the disk.
+		 * 
+		 * @param byteData
+		 * @return
+		 * @throws IOException
+		 */
+		private String convertToWave(ByteArrayOutputStream byteData)
+				throws IOException {
+			byte[] mFileToRecordTo2 = byteData.toByteArray();
 			File outputFile = new File(bybDirectory, new SimpleDateFormat(
 					"d_MMM_yyyy_HH_mm_s_a").format(new Date(System
 					.currentTimeMillis()))
@@ -111,6 +144,10 @@ public class RecordingSaver implements ReceivesAudio {
 			return outputFile.getName();
 		}
 
+		/**
+		 * Whip through the list of ByteArrays (currently only the one) and
+		 * convert each to proper WAV formats
+		 */
 		@Override
 		protected String doInBackground(ByteArrayOutputStream... params) {
 			StringBuilder s = new StringBuilder();
@@ -118,15 +155,16 @@ public class RecordingSaver implements ReceivesAudio {
 				try {
 					String writtenFile = convertToWave(f);
 					s.append(" - " + writtenFile);
-					//f.delete();
-					//f = null;
+					// f.delete();
+					// f = null;
 				} catch (IOException e) {
 					Log.e(TAG, "Couldn't write wav file ");
 					e.printStackTrace();
 					f = null;
 				}
 			}
-			Log.d(getClass().getCanonicalName(), "Finished writing out "+s.toString());
+			Log.d(getClass().getCanonicalName(),
+					"Finished writing out " + s.toString());
 			return "Finished writing file to SD Card" + s.toString();
 		}
 
