@@ -17,39 +17,16 @@ import android.util.Log;
  * 
  */
 public class MicListener extends Thread {
-	/**
-	 * Tag to use when logging
-	 */
-	private static final String TAG = "BYBMicListener";
+	private static final String TAG = MicListener.class.getCanonicalName();
 
 	/**
-	 * Set sample rate
-	 * 
 	 * @TODO turn this into a list of sample rates to loop over
 	 */
 	private static final int sampleRate = 44100;
-	/**
-	 * see if we're finished yet
-	 */
 	private boolean mDone = false;
-	/**
-	 * @see android.media.AudioRecord
-	 */
 	private AudioRecord recorder;
-	/**
-	 * Buffer to store raw microphone/input data in. allocated in
-	 * {@link MicListener#MicListener()} and used while polling
-	 * {@link AudioRecord} in {@link MicListener#run()}
-	 */
 	private ByteBuffer audioInfo;
-	/**
-	 * placeholder for a service that implements {@link RecievesAudio}
-	 */
 	private ReceivesAudio service;
-	/**
-	 * buffer size appropriate for this device (set in
-	 * {@link MicListener#MicListener()}
-	 */
 	private int buffersize;
 
 	/**
@@ -58,13 +35,17 @@ public class MicListener extends Thread {
 	 * Android we'll be using high-priority audio-processing.
 	 */
 	MicListener() {
-		buffersize = AudioRecord.getMinBufferSize(sampleRate,
-				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		Log.d(TAG, "Found buffer size of :" + buffersize);
+		setBufferSize();
 		audioInfo = ByteBuffer.allocateDirect(buffersize);
 		audioInfo.order(ByteOrder.nativeOrder());
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+	}
+
+	private void setBufferSize() {
+		buffersize = AudioRecord.getMinBufferSize(sampleRate,
+				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		Log.d(TAG, "Found buffer size of :" + buffersize);
 	}
 
 	/**
@@ -74,13 +55,15 @@ public class MicListener extends Thread {
 	 * implementing interface with new data from {@link AudioRecord} as it
 	 * becomes available.
 	 * 
+	 * @see com.backyardbrains.audio.AudioService#turnOnMicThread()
 	 * @param svc
 	 *            the service that implements the {@link RecievesAudio}
 	 */
 	public void start(ReceivesAudio svc) {
 		service = svc;
 		if (service != null) {
-			Log.d(TAG, "Service interface successfully bound from Thread");
+			Log.d(TAG,
+					"Service interface successfully bound from MicListener Thread");
 		} else {
 			throw new RuntimeException(TAG + ": No interface could be bound");
 		}
@@ -116,17 +99,11 @@ public class MicListener extends Thread {
 				}
 				audioInfo.clear();
 			}
-
-			/*
-			 * if (recorder!= null && recorder.getRecordingState() != AudioRecord.RECORDSTATE_STOPPED) {
-			 *	stopRecorder();
-			 *}
-			 */
-
 		} catch (Throwable e) {
 			Log.e(TAG, "Could not open audio souce", e);
 		} finally {
-			if (!mDone) requestStop();
+			if (!mDone)
+				requestStop();
 		}
 	}
 
