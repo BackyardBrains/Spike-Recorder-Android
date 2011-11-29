@@ -15,7 +15,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.backyardbrains.BackyardAndroidActivity;
-import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.R;
 
 /**
@@ -71,9 +70,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void onCreate() {
 		super.onCreate();
 
-		IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
-		toggleRecorder = new ToggleRecordingListener();
-		registerReceiver(toggleRecorder, intentFilter);
+		registerRecordingToggleReceiver(true);
 
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
@@ -88,7 +85,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public void onDestroy() {
-		unregisterReceiver(toggleRecorder);
+		registerRecordingToggleReceiver(false);
 		turnOffMicThread();
 		super.onDestroy();
 	}
@@ -122,7 +119,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		micThread = new MicListener();
 		micThread.start(AudioService.this);
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		showNotification();
+		showNotification(true);
 		Log.d(TAG, "Mic thread started");
 	}
 
@@ -135,25 +132,46 @@ public class AudioService extends Service implements ReceivesAudio {
 			micThread = null;
 			Log.d(TAG, "Mic Thread Shut Off");
 		}
-		if (mNM != null) {
-			mNM.cancel(NOTIFICATION);
+		showNotification(false);
+	}
+
+	/**
+	 * Toggle our receiver. If true, register a receiver for intents with the
+	 * action "BYBToggleRecording", otherwise, unregister the same receiver.
+	 * 
+	 * @param reg register if true, unregister otherwise.
+	 */
+	private void registerRecordingToggleReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
+			toggleRecorder = new ToggleRecordingListener();
+			registerReceiver(toggleRecorder, intentFilter);
+		} else {
+			unregisterReceiver(toggleRecorder);
 		}
 	}
 
 	/**
-	 * Put up a notification that this service is running.
+	 * Toggle a notification that this service is running.
 	 * 
+	 * @param show show if true, hide otherwise.
 	 * @see android.app.Notification
 	 * @see NotificationManager#notify()
 	 */
-	private void showNotification() {
-		CharSequence text = getText(R.string.mic_thread_running);
-		Notification not = new Notification(R.drawable.ic_launcher_byb, text,
-				System.currentTimeMillis());
-		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				new Intent(this, BackyardAndroidActivity.class), 0);
-		not.setLatestEventInfo(this, "Backyard Brains", text, contentIntent);
-		mNM.notify(NOTIFICATION, not);
+	private void showNotification(boolean show) {
+		if (show) {
+			CharSequence text = getText(R.string.mic_thread_running);
+			Notification not = new Notification(R.drawable.ic_launcher_byb,
+					text, System.currentTimeMillis());
+			PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+					new Intent(this, BackyardAndroidActivity.class), 0);
+			not.setLatestEventInfo(this, "Backyard Brains", text, contentIntent);
+			mNM.notify(NOTIFICATION, not);
+		} else {
+			if (mNM != null) {
+				mNM.cancel(NOTIFICATION);
+			}
+		}
 	}
 
 	/**
