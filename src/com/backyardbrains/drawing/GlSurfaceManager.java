@@ -19,9 +19,6 @@ public class GlSurfaceManager {
 	private EGLContext mGLContext;
 	private GL10 mGL;
 
-	/**
-	 * @return the mGL
-	 */
 	public GL10 getmGL() {
 		return mGL;
 	}
@@ -29,7 +26,6 @@ public class GlSurfaceManager {
 	private SurfaceView parent;
 
 	public GlSurfaceManager(SurfaceView parent) {
-		// TODO Auto-generated constructor stub
 		this.parent = parent;
 		initEGL();
 	}
@@ -42,10 +38,10 @@ public class GlSurfaceManager {
 	 * Convenience function for {@link OscilloscopeGLThread#run()}. Builds basic
 	 * GL Viewport and sets defaults.
 	 * 
-	 * @param g
-	 * @param
-	 * @param xEnd
 	 * @param xBegin
+	 * @param xEnd
+	 * @param scaledYBegin
+	 * @param scaledYEnd
 	 */
 	void initGL(float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 		// set viewport
