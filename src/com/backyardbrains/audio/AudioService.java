@@ -27,20 +27,12 @@ import com.backyardbrains.R;
  * 
  */
 public class AudioService extends Service implements ReceivesAudio {
-
-	/**
-	 * Tag for logging
-	 */
-	static final String TAG = "BYBAudioService";
-
-	/**
-	 * Indicator of whether the service is properly running
-	 */
+	static final String TAG = AudioService.class.getCanonicalName();
+	private int NOTIFICATION = R.string.mic_thread_running;
 	public boolean running;
 
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
-	 * 
 	 */
 	public class AudioServiceBinder extends Binder {
 		public AudioService getService() {
@@ -48,43 +40,30 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 
-	private final IBinder mBinder = new AudioServiceBinder();
-
-	/**
-	 * {@link MicListener} the service uses to listen to default audio device
-	 * 
-	 */
-	private MicListener micThread;
-
-	/**
-	 * Unique id to turn on-and-off service notification
-	 */
-	private int NOTIFICATION = R.string.mic_thread_running;
-	private NotificationManager mNM;
-
-	private ByteBuffer currentAudioInfo;
-
-	private RingBuffer audioBuffer;
-
-	private int mBindingsCount;
-
-	private RecordingSaver mRecordingSaverInstance;
-
 	private ToggleRecordingListener toggleRecorder;
 
-	/**
-	 * @return the currentAudioInfo
-	 */
-	public ByteBuffer getCurrentAudioInfo() {
-		return currentAudioInfo;
-	}
+	private final IBinder mBinder = new AudioServiceBinder();
+	private int mBindingsCount;
 
+	private MicListener micThread;
+	private RingBuffer audioBuffer;
+	private RecordingSaver mRecordingSaverInstance;
+
+	private NotificationManager mNM;
+
+	/**
+	 * return a byte array with in the appropriate order representing the last
+	 * 1.5 seconds of audio or so
+	 * 
+	 * @return a ordinate-corrected version of the audio buffer
+	 */
 	public byte[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
 
 	/**
-	 * Create service and grab reference to {@link BackyardBrainsApplication}
+	 * Register a receiver for toggling recording funcionality, then instantiate
+	 * our ringbuffer and turn on mic thread
 	 * 
 	 * @see android.app.Service#onCreate()
 	 */
@@ -103,7 +82,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	}
 
 	/**
-	 * Tell application we're no longer running, then kill {@link MicListener}
+	 * unregister our recording listener, then kill {@link MicListener}
 	 * 
 	 * @see android.app.Service#onDestroy()
 	 */
@@ -112,6 +91,26 @@ public class AudioService extends Service implements ReceivesAudio {
 		unregisterReceiver(toggleRecorder);
 		turnOffMicThread();
 		super.onDestroy();
+	}
+
+	/**
+	 * return a binding pointer for GL threads to reference this object
+	 * 
+	 * @see android.app.Service#onBind(android.content.Intent)
+	 * @return binding reference to this object
+	 */
+	@Override
+	public IBinder onBind(Intent arg0) {
+		mBindingsCount++;
+		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
+		return mBinder;
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		mBindingsCount--;
+		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
+		return super.onUnbind(intent);
 	}
 
 	/**
@@ -125,6 +124,20 @@ public class AudioService extends Service implements ReceivesAudio {
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		showNotification();
 		Log.d(TAG, "Mic thread started");
+	}
+
+	/**
+	 * Clean up {@link MicListener} resources and remove notification
+	 */
+	public void turnOffMicThread() {
+		if (micThread != null) {
+			micThread.requestStop();
+			micThread = null;
+			Log.d(TAG, "Mic Thread Shut Off");
+		}
+		if (mNM != null) {
+			mNM.cancel(NOTIFICATION);
+		}
 	}
 
 	/**
@@ -144,35 +157,22 @@ public class AudioService extends Service implements ReceivesAudio {
 	}
 
 	/**
-	 * Clean up {@link MicListener} resources and remove notification
-	 */
-	public void turnOffMicThread() {
-		if (micThread != null) {
-			micThread.requestStop();
-			micThread = null;
-			Log.d(TAG, "Mic Thread Shut Off");
-		}
-		if (mNM != null) {
-			mNM.cancel(NOTIFICATION);
-		}
-	}
-
-	/**
-	 * Get a copy of the necessary activity, and push the received data out to
-	 * said activity
+	 * On receiving audio, add it to the RingBuffer. If we're recording, also
+	 * dispatch it to the RecordingSaver instance.
 	 * 
 	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
 	 */
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
-		this.currentAudioInfo = audioInfo;
 		audioBuffer.add(audioInfo);
 		if (mRecordingSaverInstance != null) {
 			audioInfo.clear();
 			try {
 				mRecordingSaverInstance.receiveAudio(audioInfo);
 			} catch (IllegalStateException e) {
-				Log.w(getClass().getCanonicalName(), "Ignoring bytes received while not synced: " + e.getMessage());
+				Log.w(getClass().getCanonicalName(),
+						"Ignoring bytes received while not synced: "
+								+ e.getMessage());
 			}
 		}
 
@@ -212,36 +212,6 @@ public class AudioService extends Service implements ReceivesAudio {
 			return true;
 		}
 		return false;
-	}
-
-	/**
-	 * return a binding pointer for activities to reference this object
-	 * 
-	 * @see android.app.Service#onBind(android.content.Intent)
-	 * @return binding reference to this object
-	 */
-	@Override
-	public IBinder onBind(Intent arg0) {
-		mBindingsCount++;
-		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
-		return mBinder;
-	}
-
-	/**
-	 * make sure we clean up. shuts down {@link MicListener} thread and assures
-	 * someone has told us to stop (in this case, ourselves)
-	 * 
-	 * @see android.app.Service#onUnbind(android.content.Intent)
-	 */
-	@Override
-	public boolean onUnbind(Intent intent) {
-		// turnOffMicThread();
-		mBindingsCount--;
-		Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
-		if (mBindingsCount < 1) {
-			// stopSelf();
-		}
-		return super.onUnbind(intent);
 	}
 
 }
