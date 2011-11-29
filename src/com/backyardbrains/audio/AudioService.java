@@ -166,28 +166,25 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void receiveAudio(ByteBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
 		if (mRecordingSaverInstance != null) {
-			audioInfo.clear();
-			try {
-				mRecordingSaverInstance.receiveAudio(audioInfo);
-			} catch (IllegalStateException e) {
-				Log.w(getClass().getCanonicalName(),
-						"Ignoring bytes received while not synced: "
-								+ e.getMessage());
-			}
+			recordAudio(audioInfo);
 		}
 
 	}
 
-	private class ToggleRecordingListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			if (!startRecording()) {
-				if (!stopRecording()) {
-					Log.w(TAG, "There was an error recording properly");
-				}
-			}
-		};
+	/**
+	 * dispatch audio to the active RecordingSaver instance
+	 * 
+	 * @param audioInfo
+	 */
+	private void recordAudio(ByteBuffer audioInfo) {
+		audioInfo.clear();
+		try {
+			mRecordingSaverInstance.receiveAudio(audioInfo);
+		} catch (IllegalStateException e) {
+			Log.w(getClass().getCanonicalName(),
+					"Ignoring bytes received while not synced: "
+							+ e.getMessage());
+		}
 	}
 
 	public boolean startRecording() {
@@ -212,6 +209,18 @@ public class AudioService extends Service implements ReceivesAudio {
 			return true;
 		}
 		return false;
+	}
+
+	private class ToggleRecordingListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			if (!startRecording()) {
+				if (!stopRecording()) {
+					Log.w(TAG, "There was an error recording properly");
+				}
+			}
+		};
 	}
 
 }
