@@ -16,19 +16,10 @@ import android.util.Log;
  * 
  */
 class BybGLDrawable {
-	/**
-	 * Tag for use in LogCat
-	 */
-	private static final String TAG = "BYBGLDrawable";
-
-	/**
-	 * Reference to the parent thread responsible for maintaining this object.
-	 */
+	private static final String TAG = BybGLDrawable.class.getCanonicalName();
 	private final OscilloscopeGLThread parent;
 
 	/**
-	 * Construct a drawable object, storing a reference to the parent thread.
-	 * 
 	 * @param oscilliscopeGLThread
 	 *            the thread responsible for this object.
 	 */
@@ -36,14 +27,7 @@ class BybGLDrawable {
 		parent = oscilliscopeGLThread;
 	}
 
-	/**
-	 * The array of 16-bit numbers that represents the data to be drawn
-	 */
 	private short[] mBufferToDraw;
-
-	/**
-	 * Figure out when the first buffer was drawn, so we can scale after 100ms
-	 */
 	private long firstBufferDrawn = 0;
 
 	/**
@@ -57,16 +41,8 @@ class BybGLDrawable {
 		
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraw);
 
-		if (firstBufferDrawn == 0) {
-			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
-		}
-
-		if (!parent.isAutoScaled()
-				&& firstBufferDrawn != 0
-				&& (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
-			autoSetFrame(mBufferToDraw);
-			parent.setAutoScaled(true);
-		}
+		firstBufferDrawnCheck();
+		autoScaleCheck();
 		
 		gl_obj.glMatrixMode(GL10.GL_MODELVIEW);
 		gl_obj.glLoadIdentity();
@@ -79,9 +55,18 @@ class BybGLDrawable {
 		gl_obj.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
 
-	public void drawThresholdLine(GL10 gl_obj) {
-		if (parent.isDrawThresholdLine()) {
+	private void autoScaleCheck() {
+		if (!parent.isAutoScaled()
+				&& firstBufferDrawn != 0
+				&& (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
+			autoSetFrame(mBufferToDraw);
+			parent.setAutoScaled(true);
+		}
+	}
 
+	private void firstBufferDrawnCheck() {
+		if (firstBufferDrawn == 0) {
+			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
 		}
 	}
 
@@ -139,11 +124,9 @@ class BybGLDrawable {
 			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
 			return parent.getFloatBufferFromFloatArray(array);
 		}
-		// Log.d(TAG, "Received buffer to draw");
 
 		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
 		int j = 0; // index of arr
-		// float interval = parent.x_width / shortArrayToDraw.length;
 		float interval = 1;
 		for (int i = 0; i < shortArrayToDraw.length; i++) {
 			arr[j++] = i * interval;
