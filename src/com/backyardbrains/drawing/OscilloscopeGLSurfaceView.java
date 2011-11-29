@@ -27,33 +27,14 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private static final String TAG = "OsciliscopeGLSurfaceView";
 
-	/**
-	 * SurfaceView's SurfaceHolder, to catch callbacks
-	 */
+	private TwoDimensionScaleGestureDetector mScaleDetector;
 	SurfaceHolder mAndroidHolder;
-
-	/**
-	 * The {@link OscilloscopeGLThread} we'll be instantiating.
-	 */
 	private OscilloscopeGLThread mGLThread;
 
-	private float bufferLengthDivisor = 8;
-
-	public float getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		this.bufferLengthDivisor = bufferLengthDivisor;
-	}
-
-	private float scaleFactor = 1;
-
-	private TwoDimensionScaleGestureDetector mScaleDetector;
-
 	private boolean triggerView;
-
 	private boolean didWeAlreadyAutoscale;
+	private float scaleFactor = 1;
+	private float bufferLengthDivisor = 8;
 
 	public float getScaleFactor() {
 		return scaleFactor;
@@ -63,11 +44,14 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this.scaleFactor = scaleFactor;
 	}
 
-	/**
-	 * Used by instantiating activity to reach down in to drawing thread
-	 * 
-	 * @return the mGLThread
-	 */
+	public float getBufferLengthDivisor() {
+		return bufferLengthDivisor;
+	}
+
+	public void setBufferLengthDivisor(float bufferLengthDivisor) {
+		this.bufferLengthDivisor = bufferLengthDivisor;
+	}
+
 	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
 	}
@@ -110,67 +94,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this.bufferLengthDivisor = bufferLengthDivisor;
 	}
 
-	public void setMsText(Float ms) {
-		Intent i = new Intent();
-		i.setAction("BYBUpdateMillisecondsReciever");
-		String msString = new DecimalFormat("#.#").format(ms);
-		i.putExtra("millisecondsDisplayedString", msString + " ms");
-		getContext().sendBroadcast(i);
-	}
-
-	public void setmVText(Float ms) {
-		Intent i = new Intent();
-		i.setAction("BYBUpdateMillivoltReciever");
-		String msString = new DecimalFormat("#.#").format(ms);
-		i.putExtra("millivoltsDisplayedString", msString + " mV");
-		getContext().sendBroadcast(i);
-	}
-
-	public void shrinkXdimension() {
-		mGLThread
-				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
-	}
-
-	public void growXdimension() {
-		mGLThread
-				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
-	}
-
-	private class ScaleListener extends Simple2DOnScaleGestureListener {
-		@Override
-		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-			// float mScaleFactor = mGLThread.getmScaleFactor();
-			// float scaleModifier = detector.getScaleFactor();
-			try {
-				final Pair<Float, Float> scaleModifier = detector
-						.getScaleFactor();
-				final float scaleModifierX = Math.max(0.95f,
-						Math.min(scaleModifier.first, 1.05f));
-				final float scaleModifierY = Math.max(0.95f,
-						Math.min(scaleModifier.second, 1.05f));
-				bufferLengthDivisor *= scaleModifierX;
-				scaleFactor *= scaleModifierY;
-				Log.d(TAG, "Receiving touch event. scale factor is now "
-						+ scaleFactor + "and buffer divisor is "
-						+ bufferLengthDivisor);
-			} catch (IllegalStateException e) {
-				Log.e(TAG, "Got invalid values back from Scale listener!");
-			}
-			/*
-			 * synchronized (mGLThread) {
-			 * mGLThread.setmScaleFactor(scaleFactor);
-			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor); }
-			 */
-			Intent i = new Intent();
-			i.setAction("BYBScaleChange");
-			i.putExtra("newBufferLengthDivisor", bufferLengthDivisor);
-			i.putExtra("newScaleFactor", scaleFactor);
-			getContext().sendBroadcast(i);
-
-			return super.onScale(detector);
-		}
-	}
-
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleDetector.onTouchEvent(event);
@@ -200,6 +123,21 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		setKeepScreenOn(true);
 	}
 	
+	/**
+	 * Require cleanup of GL resources before exiting.
+	 * 
+	 * @see android.view.SurfaceHolder.Callback#surfaceDestroyed(android.view.SurfaceHolder)
+	 */
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		synchronized (mGLThread) {
+			if (haveThread()) {
+				mGLThread.requestStop();
+			}
+		}
+		setKeepScreenOn(false);
+	}
+
 	public boolean haveThread() {
 		return mGLThread != null;
 	}
@@ -239,19 +177,65 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		}
 	}
 
-	/**
-	 * Require cleanup of GL resources before exiting.
-	 * 
-	 * @see android.view.SurfaceHolder.Callback#surfaceDestroyed(android.view.SurfaceHolder)
-	 */
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		synchronized (mGLThread) {
-			if (haveThread()) {
-				mGLThread.requestStop();
+	public void setMsText(Float ms) {
+		String msString = new DecimalFormat("#.#").format(ms);
+		broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString", msString + " ms");
+	}
+
+	public void setmVText(Float ms) {
+		String msString = new DecimalFormat("#.#").format(ms);
+		broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
+	}
+
+	private void broadcastTextUpdate(String action, String name, String data) {
+		Intent i = new Intent();
+		i.setAction(action);
+		i.putExtra(name, data);
+		getContext().sendBroadcast(i);
+	}
+	
+	public void shrinkXdimension() {
+		mGLThread
+				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
+	}
+
+	public void growXdimension() {
+		mGLThread
+				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
+	}
+
+	private class ScaleListener extends Simple2DOnScaleGestureListener {
+		@Override
+		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
+			// float mScaleFactor = mGLThread.getmScaleFactor();
+			// float scaleModifier = detector.getScaleFactor();
+			try {
+				final Pair<Float, Float> scaleModifier = detector
+						.getScaleFactor();
+				final float scaleModifierX = Math.max(0.95f,
+						Math.min(scaleModifier.first, 1.05f));
+				final float scaleModifierY = Math.max(0.95f,
+						Math.min(scaleModifier.second, 1.05f));
+				bufferLengthDivisor *= scaleModifierX;
+				scaleFactor *= scaleModifierY;
+				Log.d(TAG, "Receiving touch event. scale factor is now "
+						+ scaleFactor + "and buffer divisor is "
+						+ bufferLengthDivisor);
+			} catch (IllegalStateException e) {
+				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
+			broadcastScaleChange();
+
+			return super.onScale(detector);
 		}
-		setKeepScreenOn(false);
+
+		private void broadcastScaleChange() {
+			Intent i = new Intent();
+			i.setAction("BYBScaleChange");
+			i.putExtra("newBufferLengthDivisor", bufferLengthDivisor);
+			i.putExtra("newScaleFactor", scaleFactor);
+			getContext().sendBroadcast(i);
+		}
 	}
 
 }
