@@ -87,30 +87,21 @@ public class OscilloscopeGLThread extends Thread {
 					final int bufferCapacity = audioInfoasShortBuffer
 							.capacity();
 
-					final short[] mBufferToDraw = new short[bufferCapacity];
+					final short[] mBufferToDraw = convertToShortArray(
+							audioInfoasShortBuffer, bufferCapacity);
+					// scale the right side to the number of data points we have
+					setxEnd(mBufferToDraw.length);
 					int samplesToShow = Math.round(bufferCapacity
 							/ bufferLengthDivisor);
 
-					audioInfoasShortBuffer.get(mBufferToDraw, 0,
-							mBufferToDraw.length);
-					// scale the right side to the number of data points we have
-					setxEnd(mBufferToDraw.length);
-					glman.glClear();
-
 					synchronized (parent) {
-						final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
-						((OscilloscopeGLSurfaceView) parent)
-								.setMsText(millisecondsInThisWindow);
-						float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin
-								/ mScaleFactor) / (4.0f * 24.5));
-						((OscilloscopeGLSurfaceView) parent).setmVText(yPerDiv);
+						setLabels(samplesToShow);
 					}
 
+					glman.glClear();
 					waveformShape.setBufferToDraw(mBufferToDraw);
-					glman.initGL(xEnd - samplesToShow, xEnd, yBegin
-							/ mScaleFactor, yEnd / mScaleFactor);
+					setGlWindow(samplesToShow);
 					waveformShape.draw(glman.getmGL());
-
 					if (isDrawThresholdLine()) {
 						drawThresholdLine();
 					}
@@ -126,6 +117,28 @@ public class OscilloscopeGLThread extends Thread {
 		bindAudioService(false);
 		registerScaleChangeReceiver(false);
 		mConnection = null;
+	}
+
+	private void setGlWindow(int samplesToShow) {
+		glman.initGL(xEnd - samplesToShow, xEnd, yBegin
+				/ mScaleFactor, yEnd / mScaleFactor);
+	}
+
+	private short[] convertToShortArray(
+			final ShortBuffer audioInfoasShortBuffer, final int bufferCapacity) {
+		final short[] mBufferToDraw = new short[bufferCapacity];
+		audioInfoasShortBuffer.get(mBufferToDraw, 0,
+				mBufferToDraw.length);
+		return mBufferToDraw;
+	}
+
+	private void setLabels(int samplesToShow) {
+		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
+		((OscilloscopeGLSurfaceView) parent)
+				.setMsText(millisecondsInThisWindow);
+		float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin
+				/ mScaleFactor) / (4.0f * 24.5));
+		((OscilloscopeGLSurfaceView) parent).setmVText(yPerDiv);
 	}
 
 	private void drawThresholdLine() {
