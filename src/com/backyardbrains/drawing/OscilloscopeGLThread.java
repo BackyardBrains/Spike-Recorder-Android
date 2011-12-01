@@ -31,26 +31,15 @@ public class OscilloscopeGLThread extends Thread {
 	private static final String TAG = OscilloscopeGLThread.class.getCanonicalName();
 
 	private boolean mDone = false;
+	private BybGLDrawable waveformShape;
+	private float mScaleFactor = 1.f;
 	private float xEnd = 4000f;
 	private float yMin = -5000000f;
 	private float yBegin = -5000f;
 	private float yEnd = 5000f;
+	private boolean autoScaled;
 
 	OscilloscopeGLSurfaceView parent;
-
-	private BybGLDrawable waveformShape;
-	private float mScaleFactor = 1.f;
-
-	public float getmScaleFactor() {
-		return mScaleFactor;
-	}
-
-	public void setmScaleFactor(float mScaleFactor) {
-		// Don't let the object get too small or too large.
-		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
-
-		this.mScaleFactor = mScaleFactor;
-	}
 
 	private AudioService mAudioService;
 	private boolean mAudioServiceIsBound;
@@ -63,68 +52,8 @@ public class OscilloscopeGLThread extends Thread {
 		parent = view;
 	}
 
-	private boolean autoScaled;
-
-	public boolean isAutoScaled() {
-		return autoScaled;
-	}
-
-	public void setAutoScaled(boolean autoScaled) {
-		this.autoScaled = autoScaled;
-	}
-
-	private ServiceConnection mConnection = new ServiceConnection() {
-
-		/**
-		 * Sets a reference in this activity to the {@link AudioService}, which
-		 * allows for {@link ByteBuffer}s full of audio information to be passed
-		 * from the {@link AudioService} down into the local
-		 * {@link OscilloscopeGLSurfaceView}
-		 * 
-		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
-		 *      android.os.IBinder)
-		 */
-		@Override
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// We've bound to LocalService, cast the IBinder and get
-			// LocalService instance
-			AudioServiceBinder binder = (AudioServiceBinder) service;
-			mAudioService = binder.getService();
-			mAudioServiceIsBound = true;
-		}
-
-		/**
-		 * Clean up bindings
-		 * 
-		 * @TODO null out mAudioService
-		 * 
-		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
-		 */
-		@Override
-		public void onServiceDisconnected(ComponentName arg0) {
-			mAudioServiceIsBound = false;
-			mAudioService = null;
-		}
-	};
 	private GlSurfaceManager glman;
 	private float bufferLengthDivisor = 1;
-
-	/**
-	 * @return the bufferLengthDivisor
-	 */
-	public float getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	/**
-	 * @param bufferLengthDivisor
-	 *            the bufferLengthDivisor to set
-	 */
-	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 64) {
-			this.bufferLengthDivisor = bufferLengthDivisor;
-		}
-	}
 
 	private class ScaleChangeReceiver extends BroadcastReceiver {
 		@Override
@@ -291,4 +220,66 @@ public class OscilloscopeGLThread extends Thread {
 		this.yEnd = yEnd;
 	}
 
+	public float getmScaleFactor() {
+		return mScaleFactor;
+	}
+
+	public void setmScaleFactor(float mScaleFactor) {
+		// Don't let the object get too small or too large.
+		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
+
+		this.mScaleFactor = mScaleFactor;
+	}
+
+	public float getBufferLengthDivisor() {
+		return bufferLengthDivisor;
+	}
+
+	public void setBufferLengthDivisor(float bufferLengthDivisor) {
+		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 64) {
+			this.bufferLengthDivisor = bufferLengthDivisor;
+		}
+	}
+
+	public boolean isAutoScaled() {
+		return autoScaled;
+	}
+
+	public void setAutoScaled(boolean autoScaled) {
+		this.autoScaled = autoScaled;
+	}
+
+	private ServiceConnection mConnection = new ServiceConnection() {
+
+		/**
+		 * Sets a reference in this activity to the {@link AudioService}, which
+		 * allows for {@link ByteBuffer}s full of audio information to be passed
+		 * from the {@link AudioService} down into the local
+		 * {@link OscilloscopeGLSurfaceView}
+		 * 
+		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+		 *      android.os.IBinder)
+		 */
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get
+			// LocalService instance
+			AudioServiceBinder binder = (AudioServiceBinder) service;
+			mAudioService = binder.getService();
+			mAudioServiceIsBound = true;
+		}
+
+		/**
+		 * Clean up bindings
+		 * 
+		 * @TODO null out mAudioService
+		 * 
+		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
+		 */
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			mAudioServiceIsBound = false;
+			mAudioService = null;
+		}
+	};
 }
