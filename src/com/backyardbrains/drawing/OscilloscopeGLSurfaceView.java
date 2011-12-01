@@ -25,7 +25,7 @@ import android.view.SurfaceView;
 public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
-	private static final String TAG = "OsciliscopeGLSurfaceView";
+	private static final String TAG = OscilloscopeGLSurfaceView.class.getCanonicalName();
 
 	private TwoDimensionScaleGestureDetector mScaleDetector;
 	SurfaceHolder mAndroidHolder;
@@ -122,7 +122,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		resetDrawingThread();
 		setKeepScreenOn(true);
 	}
-	
+
 	/**
 	 * Require cleanup of GL resources before exiting.
 	 * 
