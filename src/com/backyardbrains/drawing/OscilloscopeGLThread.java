@@ -33,6 +33,7 @@ public class OscilloscopeGLThread extends Thread {
 	private boolean mDone = false;
 	private BybGLDrawable waveformShape;
 	private float mScaleFactor = 1.f;
+	private float bufferLengthDivisor = 1;
 	private float xEnd = 4000f;
 	private float yMin = -5000000f;
 	private float yBegin = -5000f;
@@ -40,33 +41,13 @@ public class OscilloscopeGLThread extends Thread {
 	private boolean autoScaled;
 
 	OscilloscopeGLSurfaceView parent;
+	private GlSurfaceManager glman;
 
 	private AudioService mAudioService;
 	private boolean mAudioServiceIsBound;
 
-	/**
-	 * @param view
-	 *            reference to the parent view
-	 */
 	OscilloscopeGLThread(OscilloscopeGLSurfaceView view) {
 		parent = view;
-	}
-
-	private GlSurfaceManager glman;
-	private float bufferLengthDivisor = 1;
-
-	private class ScaleChangeReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
-
-			float localBufferLengthDivisor = intent.getFloatExtra(
-					"newBufferLengthDivisor", 1);
-			setBufferLengthDivisor(localBufferLengthDivisor);
-			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
-					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
-		};
 	}
 
 	/**
@@ -195,6 +176,10 @@ public class OscilloscopeGLThread extends Thread {
 		if (waveformShape != null)
 			waveformShape.forceRescale();
 	}
+	
+	/*
+	 ****************** Getters and setters and detritus *****************
+	 */
 
 	public boolean isDrawThresholdLine() {
 		return false;
@@ -272,8 +257,6 @@ public class OscilloscopeGLThread extends Thread {
 		/**
 		 * Clean up bindings
 		 * 
-		 * @TODO null out mAudioService
-		 * 
 		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
 		 */
 		@Override
@@ -282,4 +265,19 @@ public class OscilloscopeGLThread extends Thread {
 			mAudioService = null;
 		}
 	};
+
+	private class ScaleChangeReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
+
+			float localBufferLengthDivisor = intent.getFloatExtra(
+					"newBufferLengthDivisor", 1);
+			setBufferLengthDivisor(localBufferLengthDivisor);
+			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
+					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
+		};
+	}
+
 }
