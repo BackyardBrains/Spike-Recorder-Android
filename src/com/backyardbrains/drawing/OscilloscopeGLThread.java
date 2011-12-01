@@ -120,25 +120,28 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	private void setGlWindow(int samplesToShow) {
-		glman.initGL(xEnd - samplesToShow, xEnd, yBegin
-				/ mScaleFactor, yEnd / mScaleFactor);
+		glman.initGL(xEnd - samplesToShow, xEnd, yBegin / mScaleFactor, yEnd
+				/ mScaleFactor);
 	}
 
 	private short[] convertToShortArray(
 			final ShortBuffer audioInfoasShortBuffer, final int bufferCapacity) {
 		final short[] mBufferToDraw = new short[bufferCapacity];
-		audioInfoasShortBuffer.get(mBufferToDraw, 0,
-				mBufferToDraw.length);
+		audioInfoasShortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
 		return mBufferToDraw;
 	}
 
+	/**
+	 * Set the labels that are hovering over the surface in the main activity
+	 * for how many millivolts/milliseconds we're displaying
+	 * 
+	 * @param samplesToShow
+	 */
 	private void setLabels(int samplesToShow) {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
-		((OscilloscopeGLSurfaceView) parent)
-				.setMsText(millisecondsInThisWindow);
-		float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin
-				/ mScaleFactor) / (4.0f * 24.5));
-		((OscilloscopeGLSurfaceView) parent).setmVText(yPerDiv);
+		parent.setMsText(millisecondsInThisWindow);
+		float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin / mScaleFactor) / (4.0f * 24.5));
+		parent.setmVText(yPerDiv);
 	}
 
 	private void drawThresholdLine() {
