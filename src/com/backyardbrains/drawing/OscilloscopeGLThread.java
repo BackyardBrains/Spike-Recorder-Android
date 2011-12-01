@@ -28,7 +28,8 @@ import com.backyardbrains.audio.AudioService.AudioServiceBinder;
  * 
  */
 public class OscilloscopeGLThread extends Thread {
-	private static final String TAG = OscilloscopeGLThread.class.getCanonicalName();
+	private static final String TAG = OscilloscopeGLThread.class
+			.getCanonicalName();
 
 	private boolean mDone = false;
 	private BybGLDrawable waveformShape;
@@ -62,14 +63,8 @@ public class OscilloscopeGLThread extends Thread {
 		glman = new GlSurfaceManager(parent);
 		waveformShape = new BybGLDrawable(this);
 
-		final Intent intent = new Intent(parent.getContext(),
-				AudioService.class);
-		parent.getContext().getApplicationContext()
-				.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
-		final ScaleChangeReceiver scaleChangeReceiver = new ScaleChangeReceiver();
-		parent.getContext().registerReceiver(scaleChangeReceiver,
-				new IntentFilter("BYBScaleChange"));
+		bindAudioService(true);
+		registerScaleChangeReceiver(true);
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
@@ -79,7 +74,7 @@ public class OscilloscopeGLThread extends Thread {
 
 				// Read new mic data
 				synchronized (mAudioService) {
-					//audioInfo = mAudioService.getCurrentAudioInfo();
+					// audioInfo = mAudioService.getCurrentAudioInfo();
 					audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
 				}
 
@@ -93,38 +88,31 @@ public class OscilloscopeGLThread extends Thread {
 							.capacity();
 
 					final short[] mBufferToDraw = new short[bufferCapacity];
-					int samplesToShow = Math.round(bufferCapacity / bufferLengthDivisor);
-					final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
+					int samplesToShow = Math.round(bufferCapacity
+							/ bufferLengthDivisor);
 
-					audioInfoasShortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
+					audioInfoasShortBuffer.get(mBufferToDraw, 0,
+							mBufferToDraw.length);
 					// scale the right side to the number of data points we have
 					setxEnd(mBufferToDraw.length);
 					glman.glClear();
 
 					synchronized (parent) {
-						((OscilloscopeGLSurfaceView) parent).setMsText(millisecondsInThisWindow);
-						float yPerDiv = (float) ((yEnd/mScaleFactor - yBegin/mScaleFactor)/(4.0f*24.5));
+						final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
+						((OscilloscopeGLSurfaceView) parent)
+								.setMsText(millisecondsInThisWindow);
+						float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin
+								/ mScaleFactor) / (4.0f * 24.5));
 						((OscilloscopeGLSurfaceView) parent).setmVText(yPerDiv);
 					}
-					
+
 					waveformShape.setBufferToDraw(mBufferToDraw);
-					glman.initGL(xEnd-samplesToShow, xEnd, yBegin / mScaleFactor, yEnd / mScaleFactor);
+					glman.initGL(xEnd - samplesToShow, xEnd, yBegin
+							/ mScaleFactor, yEnd / mScaleFactor);
 					waveformShape.draw(glman.getmGL());
-					
+
 					if (isDrawThresholdLine()) {
-						float thresholdValue = (yEnd/2/mScaleFactor);
-						float [] thresholdLine = new float[4];
-						thresholdLine[0] = 0;
-						thresholdLine[2] = getxEnd();
-						thresholdLine[1] = thresholdValue;
-						thresholdLine[3] = thresholdValue;
-						FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
-						glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
-						glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-						glman.getmGL().glLineWidth(1.0f);
-						glman.getmGL().glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
-						glman.getmGL().glDrawArrays(GL10.GL_LINES, 0, 4);
-						glman.getmGL().glDisableClientState(GL10.GL_VERTEX_ARRAY);
+						drawThresholdLine();
 					}
 					glman.swapBuffers();
 				}
@@ -135,9 +123,49 @@ public class OscilloscopeGLThread extends Thread {
 				}
 			}
 		}
-		parent.getContext().getApplicationContext().unbindService(mConnection);
-		parent.getContext().unregisterReceiver(scaleChangeReceiver);
+		bindAudioService(false);
+		registerScaleChangeReceiver(false);
 		mConnection = null;
+	}
+
+	private void drawThresholdLine() {
+		float thresholdValue = (yEnd / 2 / mScaleFactor);
+		float[] thresholdLine = new float[4];
+		thresholdLine[0] = 0;
+		thresholdLine[2] = getxEnd();
+		thresholdLine[1] = thresholdValue;
+		thresholdLine[3] = thresholdValue;
+		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
+		glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+		glman.getmGL().glLineWidth(1.0f);
+		glman.getmGL().glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
+		glman.getmGL().glDrawArrays(GL10.GL_LINES, 0, 4);
+		glman.getmGL().glDisableClientState(GL10.GL_VERTEX_ARRAY);
+	}
+
+	private void registerScaleChangeReceiver(boolean on) {
+		if (on) {
+			scaleChangeReceiver = new ScaleChangeReceiver();
+			parent.getContext().registerReceiver(scaleChangeReceiver,
+					new IntentFilter("BYBScaleChange"));
+		} else {
+
+			parent.getContext().unregisterReceiver(scaleChangeReceiver);
+		}
+
+	}
+
+	private void bindAudioService(boolean on) {
+		if (on) {
+			final Intent intent = new Intent(parent.getContext(),
+					AudioService.class);
+			parent.getContext().getApplicationContext()
+					.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		} else {
+			parent.getContext().getApplicationContext()
+					.unbindService(mConnection);
+		}
 	}
 
 	/**
@@ -176,9 +204,9 @@ public class OscilloscopeGLThread extends Thread {
 		if (waveformShape != null)
 			waveformShape.forceRescale();
 	}
-	
+
 	/*
-	 ****************** Getters and setters and detritus *****************
+	 * ***************** Getters and setters and detritus *****************
 	 */
 
 	public boolean isDrawThresholdLine() {
@@ -265,6 +293,8 @@ public class OscilloscopeGLThread extends Thread {
 			mAudioService = null;
 		}
 	};
+
+	private ScaleChangeReceiver scaleChangeReceiver;
 
 	private class ScaleChangeReceiver extends BroadcastReceiver {
 		@Override
