@@ -5,8 +5,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-import javax.microedition.khronos.opengles.GL10;
-
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -31,21 +29,21 @@ public class OscilloscopeGLThread extends Thread {
 	private static final String TAG = OscilloscopeGLThread.class
 			.getCanonicalName();
 
-	private boolean mDone = false;
-	private BybGLDrawable waveformShape;
-	private float mScaleFactor = 1.f;
-	private float bufferLengthDivisor = 1;
+	protected boolean mDone = false;
+	protected BybGLDrawable waveformShape;
+	protected float mScaleFactor = 1.f;
+	protected float bufferLengthDivisor = 1;
 	private float xEnd = 4000f;
 	private float yMin = -5000000f;
 	private float yBegin = -5000f;
-	private float yEnd = 5000f;
+	protected float yEnd = 5000f;
 	private boolean autoScaled;
 
 	OscilloscopeGLSurfaceView parent;
-	private GlSurfaceManager glman;
+	protected GlSurfaceManager glman;
 
-	private AudioService mAudioService;
-	private boolean mAudioServiceIsBound;
+	protected AudioService mAudioService;
+	protected boolean mAudioServiceIsBound;
 
 	OscilloscopeGLThread(OscilloscopeGLSurfaceView view) {
 		parent = view;
@@ -60,8 +58,7 @@ public class OscilloscopeGLThread extends Thread {
 	 */
 	@Override
 	public void run() {
-		glman = new GlSurfaceManager(parent);
-		waveformShape = new BybGLDrawable(this);
+		setupSurfaceAndDrawable();
 
 		bindAudioService(true);
 		registerScaleChangeReceiver(true);
@@ -101,9 +98,6 @@ public class OscilloscopeGLThread extends Thread {
 					waveformShape.setBufferToDraw(mBufferToDraw);
 					setGlWindow(samplesToShow);
 					waveformShape.draw(glman.getmGL());
-					if (isDrawThresholdLine()) {
-						drawThresholdLine();
-					}
 					glman.swapBuffers();
 				}
 				try {
@@ -118,12 +112,17 @@ public class OscilloscopeGLThread extends Thread {
 		mConnection = null;
 	}
 
-	private void setGlWindow(final int samplesToShow) {
+	protected void setupSurfaceAndDrawable() {
+		glman = new GlSurfaceManager(parent);
+		waveformShape = new BybGLDrawable(this);
+	}
+
+	protected void setGlWindow(final int samplesToShow) {
 		glman.initGL(xEnd - samplesToShow, xEnd, yBegin / mScaleFactor, yEnd
 				/ mScaleFactor);
 	}
 
-	private short[] convertToShortArray(final ShortBuffer shortBuffer,
+	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
 			final int bufferCapacity) {
 		final short[] mBufferToDraw = new short[bufferCapacity];
 		shortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
@@ -136,30 +135,14 @@ public class OscilloscopeGLThread extends Thread {
 	 * 
 	 * @param samplesToShow
 	 */
-	private void setLabels(int samplesToShow) {
+	protected void setLabels(int samplesToShow) {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
 		parent.setMsText(millisecondsInThisWindow);
 		float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin / mScaleFactor) / (4.0f * 24.5));
 		parent.setmVText(yPerDiv);
 	}
 
-	private void drawThresholdLine() {
-		float thresholdValue = (yEnd / 2 / mScaleFactor);
-		float[] thresholdLine = new float[4];
-		thresholdLine[0] = 0;
-		thresholdLine[2] = getxEnd();
-		thresholdLine[1] = thresholdValue;
-		thresholdLine[3] = thresholdValue;
-		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
-		glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-		glman.getmGL().glLineWidth(1.0f);
-		glman.getmGL().glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
-		glman.getmGL().glDrawArrays(GL10.GL_LINES, 0, 4);
-		glman.getmGL().glDisableClientState(GL10.GL_VERTEX_ARRAY);
-	}
-
-	private void registerScaleChangeReceiver(boolean on) {
+	protected void registerScaleChangeReceiver(boolean on) {
 		if (on) {
 			scaleChangeReceiver = new ScaleChangeReceiver();
 			parent.getContext().registerReceiver(scaleChangeReceiver,
@@ -171,7 +154,7 @@ public class OscilloscopeGLThread extends Thread {
 
 	}
 
-	private void bindAudioService(boolean on) {
+	protected void bindAudioService(boolean on) {
 		if (on) {
 			final Intent intent = new Intent(parent.getContext(),
 					AudioService.class);
@@ -277,7 +260,7 @@ public class OscilloscopeGLThread extends Thread {
 		this.autoScaled = autoScaled;
 	}
 
-	private ServiceConnection mConnection = new ServiceConnection() {
+	protected ServiceConnection mConnection = new ServiceConnection() {
 
 		/**
 		 * Sets a reference in this activity to the {@link AudioService}, which
