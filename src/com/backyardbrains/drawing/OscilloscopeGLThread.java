@@ -28,51 +28,16 @@ import com.backyardbrains.audio.AudioService.AudioServiceBinder;
  * 
  */
 public class OscilloscopeGLThread extends Thread {
+	private static final String TAG = OscilloscopeGLThread.class.getCanonicalName();
 
-	public boolean isDrawThresholdLine() {
-		return false;
-	}
-
+	private boolean mDone = false;
 	private float xEnd = 4000f;
-
-	/**
-	 * @return the xEnd
-	 */
-	public float getxEnd() {
-		return xEnd;
-	}
-
-	public void setxEnd(float xEnd) {
-		this.xEnd = xEnd;
-	}
-
 	private float yMin = -5000000f;
-
-	public float getyMin() {
-		return yMin;
-	}
-
 	private float yBegin = -5000f;
 	private float yEnd = 5000f;
 
-	public void setyBegin(float yBegin) {
-		this.yBegin = yBegin;
-	}
-
-	public void setyEnd(float yEnd) {
-		this.yEnd = yEnd;
-	}
-
-	/**
-	 * reference to parent {@link OscilloscopeGLSurfaceView}
-	 */
 	OscilloscopeGLSurfaceView parent;
 
-	/**
-	 * Is thread done processing yet? Used at requestStop
-	 */
-	private boolean mDone = false;
-	private static final String TAG = "BYBOsciliscopeGlThread";
 	private BybGLDrawable waveformShape;
 	private float mScaleFactor = 1.f;
 
@@ -301,4 +266,29 @@ public class OscilloscopeGLThread extends Thread {
 		if (waveformShape != null)
 			waveformShape.forceRescale();
 	}
+
+	public boolean isDrawThresholdLine() {
+		return false;
+	}
+
+	public float getxEnd() {
+		return xEnd;
+	}
+
+	public void setxEnd(float xEnd) {
+		this.xEnd = xEnd;
+	}
+
+	public float getyMin() {
+		return yMin;
+	}
+
+	public void setyBegin(float yBegin) {
+		this.yBegin = yBegin;
+	}
+
+	public void setyEnd(float yEnd) {
+		this.yEnd = yEnd;
+	}
+
 }
