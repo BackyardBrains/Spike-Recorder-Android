@@ -119,12 +119,6 @@ class BybGLDrawable {
 	 *         {@link GL10#glDrawArrays(int, int, int)}
 	 */
 	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-		if (shortArrayToDraw == null) {
-			Log.w(TAG, "Drawing fake line with null data");
-			float[] array = { 0.0f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f };
-			return parent.getFloatBufferFromFloatArray(array);
-		}
-
 		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
 		int j = 0; // index of arr
 		float interval = 1;
@@ -132,7 +126,6 @@ class BybGLDrawable {
 			arr[j++] = i * interval;
 			arr[j++] = shortArrayToDraw[i];
 		}
-
 		return parent.getFloatBufferFromFloatArray(arr);
 	}
 
