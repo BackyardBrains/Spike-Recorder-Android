@@ -74,7 +74,6 @@ public class OscilloscopeGLThread extends Thread {
 
 				// Read new mic data
 				synchronized (mAudioService) {
-					// audioInfo = mAudioService.getCurrentAudioInfo();
 					audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
 				}
 
@@ -119,15 +118,15 @@ public class OscilloscopeGLThread extends Thread {
 		mConnection = null;
 	}
 
-	private void setGlWindow(int samplesToShow) {
+	private void setGlWindow(final int samplesToShow) {
 		glman.initGL(xEnd - samplesToShow, xEnd, yBegin / mScaleFactor, yEnd
 				/ mScaleFactor);
 	}
 
-	private short[] convertToShortArray(
-			final ShortBuffer audioInfoasShortBuffer, final int bufferCapacity) {
+	private short[] convertToShortArray(final ShortBuffer shortBuffer,
+			final int bufferCapacity) {
 		final short[] mBufferToDraw = new short[bufferCapacity];
-		audioInfoasShortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
+		shortBuffer.get(mBufferToDraw, 0, mBufferToDraw.length);
 		return mBufferToDraw;
 	}
 
