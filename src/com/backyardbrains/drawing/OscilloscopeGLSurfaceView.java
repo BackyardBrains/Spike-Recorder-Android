@@ -36,26 +36,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private float scaleFactor = 1;
 	private float bufferLengthDivisor = 8;
 
-	public float getScaleFactor() {
-		return scaleFactor;
-	}
-
-	public void setScaleFactor(float scaleFactor) {
-		this.scaleFactor = scaleFactor;
-	}
-
-	public float getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		this.bufferLengthDivisor = bufferLengthDivisor;
-	}
-
-	public OscilloscopeGLThread getGLThread() {
-		return mGLThread;
-	}
-
 	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
 	}
@@ -106,10 +86,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 		mGLThread.setmScaleFactor(scaleFactor);
 		mGLThread.rescaleWaveform();
-		Intent i = new Intent();
-		i.setAction("BYBMillivoltsViewSize");
-		i.putExtra("millivoltsViewNewSize", height / 2);
-		getContext().sendBroadcast(i);
+		setMillivoltLabelPosition(height);
 	}
 
 	/**
@@ -177,6 +154,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		}
 	}
 
+	private void broadcastTextUpdate(String action, String name, String data) {
+		Intent i = new Intent();
+		i.setAction(action);
+		i.putExtra(name, data);
+		getContext().sendBroadcast(i);
+	}
+	
 	public void setMsText(Float ms) {
 		String msString = new DecimalFormat("#.#").format(ms);
 		broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString", msString + " ms");
@@ -187,13 +171,13 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
 	}
 
-	private void broadcastTextUpdate(String action, String name, String data) {
+	private void setMillivoltLabelPosition(int height) {
 		Intent i = new Intent();
-		i.setAction(action);
-		i.putExtra(name, data);
+		i.setAction("BYBMillivoltsViewSize");
+		i.putExtra("millivoltsViewNewSize", height / 2);
 		getContext().sendBroadcast(i);
 	}
-	
+
 	public void shrinkXdimension() {
 		mGLThread
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
@@ -202,6 +186,26 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public void growXdimension() {
 		mGLThread
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
+	}
+	
+	public float getScaleFactor() {
+		return scaleFactor;
+	}
+
+	public void setScaleFactor(float scaleFactor) {
+		this.scaleFactor = scaleFactor;
+	}
+
+	public float getBufferLengthDivisor() {
+		return bufferLengthDivisor;
+	}
+
+	public void setBufferLengthDivisor(float bufferLengthDivisor) {
+		this.bufferLengthDivisor = bufferLengthDivisor;
+	}
+
+	public OscilloscopeGLThread getGLThread() {
+		return mGLThread;
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
