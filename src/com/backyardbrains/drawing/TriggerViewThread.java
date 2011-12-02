@@ -11,6 +11,7 @@ import android.util.Log;
 public class TriggerViewThread extends OscilloscopeGLThread {
 
 	private static final String TAG = Class.class.getCanonicalName();
+	private float thresholdValue;
 
 	TriggerViewThread(OscilloscopeGLSurfaceView view) {
 		super(view);
@@ -34,6 +35,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 		bindAudioService(true);
 		registerScaleChangeReceiver(true);
+		thresholdValue = (yEnd / 2 / mScaleFactor);
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
@@ -88,7 +90,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 	
 	protected void drawThresholdLine() {
-		float thresholdValue = (yEnd / 2 / mScaleFactor);
 		float[] thresholdLine = new float[4];
 		thresholdLine[0] = 0;
 		thresholdLine[2] = getxEnd();
