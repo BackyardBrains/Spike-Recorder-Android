@@ -35,7 +35,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 		bindAudioService(true);
 		registerScaleChangeReceiver(true);
-		thresholdValue = (yEnd / 2 / mScaleFactor);
+		setThresholdValue();
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound) {
@@ -73,6 +73,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 					setGlWindow(samplesToShow);
 					waveformShape.draw(glman.getmGL());
 					if (isDrawThresholdLine()) {
+						setThresholdValue();
 						drawThresholdLine();
 					}
 					glman.swapBuffers();
@@ -88,13 +89,18 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		registerScaleChangeReceiver(false);
 		mConnection = null;
 	}
+
+	private void setThresholdValue() {
+		thresholdValue = (yEnd / 2 / mScaleFactor);
+		float yPerDiv = thresholdValue /  24.5f;
+		parent.setmVText(yPerDiv);
+		Log.d(TAG, "ThresholdValue is "+thresholdValue);
+	}
 	
 	protected void drawThresholdLine() {
-		float[] thresholdLine = new float[4];
-		thresholdLine[0] = 0;
-		thresholdLine[2] = getxEnd();
-		thresholdLine[1] = thresholdValue;
-		thresholdLine[3] = thresholdValue;
+		float[] thresholdLine = new float[] {
+			0, thresholdValue, getxEnd(), thresholdValue
+		};
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
