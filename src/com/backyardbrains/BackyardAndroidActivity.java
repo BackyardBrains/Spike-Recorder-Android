@@ -197,7 +197,7 @@ public class BackyardAndroidActivity extends Activity {
 			mRecordButton.setVisibility(View.VISIBLE);
 		}
 		if(recordingBackground != null) {
-			mRecordButton.setVisibility(View.VISIBLE);
+			recordingBackground.setVisibility(View.VISIBLE);
 		}
 	}
 
@@ -209,7 +209,7 @@ public class BackyardAndroidActivity extends Activity {
 			mRecordButton.setVisibility(View.GONE);
 		}
 		if(recordingBackground != null) {
-			mRecordButton.setVisibility(View.GONE);
+			recordingBackground.setVisibility(View.GONE);
 		}
 	}
 
@@ -224,6 +224,11 @@ public class BackyardAndroidActivity extends Activity {
 			mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
 		}
 		mainscreenGLLayout.addView(mAndroidSurface);
+		if (isTriggerView) {
+			hideRecordingButtons();
+		} else {
+			showRecordingButtons();
+		}
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
 
