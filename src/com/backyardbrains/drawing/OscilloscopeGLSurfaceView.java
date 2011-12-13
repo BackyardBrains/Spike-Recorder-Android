@@ -2,10 +2,6 @@ package com.backyardbrains.drawing;
 
 import java.text.DecimalFormat;
 
-import com.backyardbrains.BybConfigHolder;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
-
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
@@ -14,6 +10,10 @@ import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import com.backyardbrains.BybConfigHolder;
+import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
+import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
 
 /**
  * OscilloscopeGLSurfaceView is a custom SurfaceView that implements callbacks
@@ -25,7 +25,8 @@ import android.view.SurfaceView;
 public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		SurfaceHolder.Callback {
 
-	private static final String TAG = OscilloscopeGLSurfaceView.class.getCanonicalName();
+	private static final String TAG = OscilloscopeGLSurfaceView.class
+			.getCanonicalName();
 
 	private TwoDimensionScaleGestureDetector mScaleDetector;
 	SurfaceHolder mAndroidHolder;
@@ -36,17 +37,20 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private float scaleFactor = 1;
 	private float bufferLengthDivisor = 8;
 
+	private float initialThresholdTouch = -1;
+
 	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
 	}
-	
+
 	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
 		this(context, null, 0);
 		triggerView = isTriggerMode;
 		Log.d(TAG, "Starting surface with triggerView set to " + triggerView);
 	}
-	
-	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch, boolean isTriggerMode) {
+
+	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch,
+			boolean isTriggerMode) {
 		this(context, isTriggerMode);
 		scaleFactor = bch.configScaleFactor;
 		bufferLengthDivisor = bch.configBufferLengthDivisor;
@@ -77,6 +81,36 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleDetector.onTouchEvent(event);
+		final int action = event.getAction();
+		if (triggerView) {
+			switch (action & MotionEvent.ACTION_MASK) {
+			case MotionEvent.ACTION_DOWN: {
+				if (Math.abs(event.getY() - mGLThread.getThresholdYValue()) < 10) {
+					initialThresholdTouch = event.getY();
+				}
+				break;
+			}
+			case MotionEvent.ACTION_MOVE: {
+				if (!mScaleDetector.isInProgress()
+						&& initialThresholdTouch != -1) {
+
+					final float y = event.getY();
+					Log.d(TAG, "Dragging threshold bar");
+					getContext().sendBroadcast(
+							new Intent("BYBThresholdChange").putExtra(
+									"deltathreshold", y));
+
+				}
+				break;
+			}
+			case MotionEvent.ACTION_POINTER_UP:
+			case MotionEvent.ACTION_UP: {
+				initialThresholdTouch = -1;
+				break;
+			}
+			}
+
+		}
 		return super.onTouchEvent(event);
 	}
 
@@ -123,20 +157,23 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		if (haveThread()) {
 			didWeAlreadyAutoscale = mGLThread.isAutoScaled();
 			return didWeAlreadyAutoscale;
-		} else return didWeAlreadyAutoscale;
+		} else
+			return didWeAlreadyAutoscale;
 	}
-	
+
 	public void setAutoScaled(boolean autoScaled) {
 		didWeAlreadyAutoscale = autoScaled;
-		if(haveThread()) {
+		if (haveThread()) {
 			mGLThread.setAutoScaled(autoScaled);
 		}
 	}
 
 	private void resetDrawingThread() {
-		Log.d(TAG, "Resetting drawing thread with triggerView set to "+ triggerView);
+		Log.d(TAG, "Resetting drawing thread with triggerView set to "
+				+ triggerView);
 		if (haveThread()) {
-			Log.d(TAG, "We have already had a GL Thread, so let's reset its scaling");
+			Log.d(TAG,
+					"We have already had a GL Thread, so let's reset its scaling");
 			isAutoScaled();
 		}
 		if (triggerView) {
@@ -160,15 +197,17 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		i.putExtra(name, data);
 		getContext().sendBroadcast(i);
 	}
-	
+
 	public void setMsText(Float ms) {
 		String msString = new DecimalFormat("#.#").format(ms);
-		broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString", msString + " ms");
+		broadcastTextUpdate("BYBUpdateMillisecondsReciever",
+				"millisecondsDisplayedString", msString + " ms");
 	}
 
 	public void setmVText(Float ms) {
 		String msString = new DecimalFormat("#.#").format(ms);
-		broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
+		broadcastTextUpdate("BYBUpdateMillivoltReciever",
+				"millivoltsDisplayedString", msString + " mV");
 	}
 
 	private void setMillivoltLabelPosition(int height) {
@@ -187,7 +226,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mGLThread
 				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
 	}
-	
+
 	public float getScaleFactor() {
 		return scaleFactor;
 	}
