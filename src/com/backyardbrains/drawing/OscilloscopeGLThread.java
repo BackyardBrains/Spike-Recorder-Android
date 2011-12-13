@@ -138,8 +138,10 @@ public class OscilloscopeGLThread extends Thread {
 	protected void setLabels(int samplesToShow) {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
 		parent.setMsText(millisecondsInThisWindow);
-		float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin / mScaleFactor) / (4.0f * 24.5));
-		parent.setmVText(yPerDiv);
+		if (!isDrawThresholdLine()) {
+			float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin / mScaleFactor) / (4.0f * 24.5));
+			parent.setmVText(yPerDiv);
+		}
 	}
 
 	protected void registerScaleChangeReceiver(boolean on) {
@@ -306,6 +308,16 @@ public class OscilloscopeGLThread extends Thread {
 			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
 					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
+	}
+
+	public float getThresholdYValue() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public void adjustThresholdValue(float dy) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
