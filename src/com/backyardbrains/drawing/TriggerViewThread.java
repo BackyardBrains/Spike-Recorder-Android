@@ -1,12 +1,11 @@
 package com.backyardbrains.drawing;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
 import android.content.BroadcastReceiver;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
@@ -34,52 +33,45 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	@Override
 	public void run() {
 		setupSurfaceAndDrawable();
-
+		mAudioService = null;
 		bindAudioService(true);
 		registerScaleChangeReceiver(true);
 		registerThresholdChangeReceiver(true);
+		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
+		parent.getContext().sendBroadcast(i);
 		setDefaultThresholdValue();
 		while (!mDone) {
 			// grab current audio from audioservice
-			if (mAudioServiceIsBound) {
+			if (mAudioServiceIsBound && mAudioService != null) {
 
 				// Reset our Audio buffer
-				ByteBuffer audioInfo = null;
-
+				short[] mBufferToDraw = null;
 				// Read new mic data
 				synchronized (mAudioService) {
-					audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
+					mBufferToDraw = mAudioService.getTriggerBuffer();
+				}
+				
+				if (mBufferToDraw == null || mBufferToDraw.length <= 0) {
+					continue;
+				}
+				Log.d(TAG, "bufferLength is " +mBufferToDraw.length);
+				// scale the right side to the number of data points we have
+				setxEnd(mBufferToDraw.length);
+				int samplesToShow = Math.round(mBufferToDraw.length
+						/ bufferLengthDivisor);
+
+				synchronized (parent) {
+					setLabels(samplesToShow);
 				}
 
-				if (audioInfo != null) {
-					audioInfo.clear();
-
-					// Convert audioInfo to a short[] named mBufferToDraw
-					final ShortBuffer audioInfoasShortBuffer = audioInfo
-							.asShortBuffer();
-					final int bufferCapacity = audioInfoasShortBuffer
-							.capacity();
-
-					final short[] mBufferToDraw = convertToShortArray(
-							audioInfoasShortBuffer, bufferCapacity);
-					// scale the right side to the number of data points we have
-					setxEnd(mBufferToDraw.length);
-					int samplesToShow = Math.round(bufferCapacity
-							/ bufferLengthDivisor);
-
-					synchronized (parent) {
-						setLabels(samplesToShow);
-					}
-
-					glman.glClear();
-					waveformShape.setBufferToDraw(mBufferToDraw);
-					setGlWindow(samplesToShow);
-					waveformShape.draw(glman.getmGL());
-					if (isDrawThresholdLine()) {
-						drawThresholdLine();
-					}
-					glman.swapBuffers();
+				glman.glClear();
+				waveformShape.setBufferToDraw(mBufferToDraw);
+				setGlWindow(0);
+				waveformShape.draw(glman.getmGL());
+				if (isDrawThresholdLine()) {
+					drawThresholdLine();
 				}
+				glman.swapBuffers();
 				try {
 					sleep(5);
 				} catch (InterruptedException e) {
@@ -87,6 +79,8 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				}
 			}
 		}
+		i = new Intent("BYBToggleTrigger").putExtra("triggerMode", false);
+		parent.getContext().sendBroadcast(i);
 		bindAudioService(false);
 		registerScaleChangeReceiver(false);
 		registerThresholdChangeReceiver(false);
@@ -117,10 +111,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	protected void drawThresholdLine() {
-		// Log.d(TAG, "ThresholdValue is "+thresholdValue +
-		// " - drew threshold line at " +
-		// glHeightToPixelHeight(thresholdValue));
-
 		float[] thresholdLine = new float[] { 0, getThresholdValue(),
 				getxEnd(), getThresholdValue() };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
@@ -137,7 +127,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	public float getThresholdYValue() {
-		return parent.getHeight()/2 - thresholdPixelHeight;
+		return parent.getHeight() / 2 - thresholdPixelHeight;
 	}
 
 	public void adjustThresholdValue(float dy) {

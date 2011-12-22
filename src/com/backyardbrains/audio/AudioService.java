@@ -49,6 +49,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	private RecordingSaver mRecordingSaverInstance;
 
 	private NotificationManager mNM;
+	private TriggerAverager triggerAverager;
+	private boolean triggerMode;
+	private ToggleTriggerListener toggleTrigger;
 
 	/**
 	 * return a byte array with in the appropriate order representing the last
@@ -58,6 +61,10 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	public byte[] getAudioBuffer() {
 		return audioBuffer.getArray();
+	}
+	
+	public short[] getTriggerBuffer() {
+		return triggerAverager.getAveragedSamples();
 	}
 
 	/**
@@ -74,8 +81,18 @@ public class AudioService extends Service implements ReceivesAudio {
 
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
+		
+		registerTriggerToggleReceiver(true);
+		triggerAverager = new TriggerAverager(50);
+		triggerMode = false;
 
 		turnOnMicThread();
+	}
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		// TODO Auto-generated method stub
+		return super.onStartCommand(intent, Service.START_STICKY, startId);
 	}
 
 	/**
@@ -86,6 +103,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void onDestroy() {
 		registerRecordingToggleReceiver(false);
+		registerTriggerToggleReceiver(false);
 		turnOffMicThread();
 		super.onDestroy();
 	}
@@ -151,6 +169,16 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 
+	private void registerTriggerToggleReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBToggleTrigger");
+			toggleTrigger = new ToggleTriggerListener();
+			registerReceiver(toggleTrigger, intentFilter);
+		} else {
+			unregisterReceiver(toggleTrigger);
+		}
+	}
+
 	/**
 	 * Toggle a notification that this service is running.
 	 * 
@@ -183,6 +211,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
+		if(triggerMode) {
+			triggerAverager.push(audioInfo);
+		}
 		if (mRecordingSaverInstance != null) {
 			recordAudio(audioInfo);
 		}
@@ -241,4 +272,14 @@ public class AudioService extends Service implements ReceivesAudio {
 		};
 	}
 
+	private class ToggleTriggerListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			triggerMode = intent.getBooleanExtra("triggerMode", false);
+			Log.d(TAG, "Switched triggerMode to "+triggerMode);
+		};
+		
+	}
 }

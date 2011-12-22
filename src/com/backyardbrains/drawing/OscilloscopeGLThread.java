@@ -64,7 +64,7 @@ public class OscilloscopeGLThread extends Thread {
 		registerScaleChangeReceiver(true);
 		while (!mDone) {
 			// grab current audio from audioservice
-			if (mAudioServiceIsBound) {
+			if (mAudioServiceIsBound && mAudioService != null) {
 
 				// Reset our Audio buffer
 				ByteBuffer audioInfo = null;
@@ -158,11 +158,13 @@ public class OscilloscopeGLThread extends Thread {
 
 	protected void bindAudioService(boolean on) {
 		if (on) {
-			final Intent intent = new Intent(parent.getContext(),
+			Log.d(TAG, "Binding audio service.");
+			Intent intent = new Intent(parent.getContext(),
 					AudioService.class);
 			parent.getContext().getApplicationContext()
 					.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 		} else {
+			Log.d(TAG, "UnBinding audio service.");
 			parent.getContext().getApplicationContext()
 					.unbindService(mConnection);
 		}

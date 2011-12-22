@@ -52,6 +52,7 @@ public class BackyardAndroidActivity extends Activity {
 	private View recordingBackground;
 	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
 	private FrameLayout mainscreenGLLayout;
+	private boolean triggerMode;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -103,11 +104,13 @@ public class BackyardAndroidActivity extends Activity {
 		switch (item.getItemId()) {
 		case R.id.waveview:
 			// mAndroidSurface.setContinuousViewMode();
-			reassignSurfaceView(false);
+			triggerMode = false;
+			reassignSurfaceView(triggerMode);
 			return true;
 		case R.id.threshold:
 			// mAndroidSurface.setTriggerViewMode();
-			reassignSurfaceView(true);
+			triggerMode = true;
+			reassignSurfaceView(triggerMode);
 			return true;
 		case R.id.expandX:
 			mAndroidSurface.growXdimension();
