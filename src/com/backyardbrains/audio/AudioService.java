@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -33,7 +34,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
 	 */
-	public class AudioServiceBinder extends Binder {
+public class AudioServiceBinder extends Binder {
 		public AudioService getService() {
 			return AudioService.this;
 		}
@@ -212,6 +213,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void receiveAudio(ByteBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
 		if(triggerMode) {
+//			Log.d(TAG, "Pushing audio to triggerAverager, length: "+audioInfo.capacity());
 			triggerAverager.push(audioInfo);
 		}
 		if (mRecordingSaverInstance != null) {
@@ -258,6 +260,10 @@ public class AudioService extends Service implements ReceivesAudio {
 			return true;
 		}
 		return false;
+	}
+	
+	public Handler getTriggerHandler() {
+		return triggerAverager.getHandler();
 	}
 
 	private class ToggleRecordingListener extends BroadcastReceiver {
