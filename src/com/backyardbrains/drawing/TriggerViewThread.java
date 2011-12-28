@@ -9,9 +9,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
+
 public class TriggerViewThread extends OscilloscopeGLThread {
 
-	private static final String TAG = Class.class.getCanonicalName();
+	private static final String TAG = TriggerViewThread.class.getCanonicalName();
 	private float thresholdPixelHeight;
 
 	TriggerViewThread(OscilloscopeGLSurfaceView view) {
@@ -52,9 +54,10 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				}
 				
 				if (mBufferToDraw == null || mBufferToDraw.length <= 0) {
+					//Log.d(TAG, "Skipping due to empty buffer");
 					continue;
 				}
-				Log.d(TAG, "bufferLength is " +mBufferToDraw.length);
+				//Log.d(TAG, "bufferLength is " +mBufferToDraw.length);
 				// scale the right side to the number of data points we have
 				setxEnd(mBufferToDraw.length);
 				int samplesToShow = Math.round(mBufferToDraw.length
@@ -66,7 +69,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 				glman.glClear();
 				waveformShape.setBufferToDraw(mBufferToDraw);
-				setGlWindow(0);
+				setGlWindow((int) (mBufferToDraw.length/bufferLengthDivisor));
 				waveformShape.draw(glman.getmGL());
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
@@ -98,7 +101,15 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	private void setmVText() {
-		float yPerDiv = pixelHeightToGlHeight(thresholdPixelHeight) / 24.5f;
+		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
+		final float yPerDiv = glHeight / 24.5f;
+		if (mAudioService != null && mAudioServiceIsBound) {
+			mAudioService.getTriggerHandler().post(new Runnable() {
+				@Override public void run() {
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
+				}
+			});
+		}
 		parent.setmVText(yPerDiv);
 	}
 
@@ -141,7 +152,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			parent.getContext().registerReceiver(thChangeReceiver,
 					new IntentFilter("BYBThresholdChange"));
 		} else {
-
 			parent.getContext().unregisterReceiver(thChangeReceiver);
 		}
 
