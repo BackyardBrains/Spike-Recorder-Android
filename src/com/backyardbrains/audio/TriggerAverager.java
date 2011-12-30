@@ -70,7 +70,7 @@ public class TriggerAverager {
 	
 	public class TriggerHandler extends Handler {
 		public void setThreshold(float y) {
-			Log.d(TAG, "Got new triggerValue of "+y);
+			//Log.d(TAG, "Got new triggerValue of "+y);
 			triggerValue = (int) y;
 		}
 	}

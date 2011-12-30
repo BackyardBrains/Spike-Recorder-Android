@@ -69,7 +69,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 				glman.glClear();
 				waveformShape.setBufferToDraw(mBufferToDraw);
-				setGlWindow((int) (mBufferToDraw.length/bufferLengthDivisor));
+				setGlWindow(samplesToShow);
 				waveformShape.draw(glman.getmGL());
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
@@ -106,7 +106,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		if (mAudioService != null && mAudioServiceIsBound) {
 			mAudioService.getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*4);
 				}
 			});
 		}
