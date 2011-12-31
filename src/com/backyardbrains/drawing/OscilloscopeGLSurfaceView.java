@@ -95,7 +95,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 						&& initialThresholdTouch != -1) {
 
 					final float y = event.getY();
-					Log.d(TAG, "Dragging threshold bar");
 					getContext().sendBroadcast(
 							new Intent("BYBThresholdChange").putExtra(
 									"deltathreshold", y));
