@@ -34,6 +34,8 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	 */
 	@Override
 	public void run() {
+		final int defaultSampleWidth = 4410;
+		
 		setupSurfaceAndDrawable();
 		mAudioService = null;
 		bindAudioService(true);
@@ -42,6 +44,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
 		parent.getContext().sendBroadcast(i);
 		setDefaultThresholdValue();
+		setTriggerWidth((int) (defaultSampleWidth/bufferLengthDivisor));
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound && mAudioService != null) {
@@ -54,14 +57,13 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				}
 				
 				if (mBufferToDraw == null || mBufferToDraw.length <= 0) {
-					//Log.d(TAG, "Skipping due to empty buffer");
 					continue;
 				}
-				//Log.d(TAG, "bufferLength is " +mBufferToDraw.length);
-				// scale the right side to the number of data points we have
+
 				setxEnd(mBufferToDraw.length);
-				int samplesToShow = Math.round(mBufferToDraw.length
-						/ bufferLengthDivisor);
+				int samplesToShow = Math.round(mBufferToDraw.length);
+				
+				setTriggerWidth(samplesToShow);
 
 				synchronized (parent) {
 					setLabels(samplesToShow);
@@ -90,7 +92,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		mConnection = null;
 	}
 
-	protected void setLabels(int samplesToShow) {
+	protected void setLabels(final int samplesToShow) {
 		setmVText();
 		super.setLabels(samplesToShow);
 	}
@@ -99,6 +101,16 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		thresholdPixelHeight = glHeightToPixelHeight(yEnd / 2 / mScaleFactor);
 		setmVText();
 	}
+	
+	private void setTriggerWidth(final int samplesToShow) {
+		if (mAudioService != null && mAudioServiceIsBound) {
+			mAudioService.getTriggerHandler().post(new Runnable() {
+				@Override public void run() {
+					((TriggerHandler)mAudioService.getTriggerHandler()).setSampleWidth(samplesToShow);
+				}
+			});
+		}
+	}
 
 	private void setmVText() {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
@@ -106,7 +118,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		if (mAudioService != null && mAudioServiceIsBound) {
 			mAudioService.getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*4);
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*8);
 				}
 			});
 		}
