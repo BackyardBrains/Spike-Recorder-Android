@@ -193,10 +193,10 @@ public class OscilloscopeGLThread extends Thread {
 	 *            to be converted
 	 * @return converted array as FloatBuffer
 	 */
-	FloatBuffer getFloatBufferFromFloatArray(float[] array) {
-		ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
+	FloatBuffer getFloatBufferFromFloatArray(final float[] array) {
+		final ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
 		temp.order(ByteOrder.nativeOrder());
-		FloatBuffer buf = temp.asFloatBuffer();
+		final FloatBuffer buf = temp.asFloatBuffer();
 		buf.put(array);
 		buf.position(0);
 		return buf;
@@ -307,8 +307,7 @@ public class OscilloscopeGLThread extends Thread {
 			float localBufferLengthDivisor = intent.getFloatExtra(
 					"newBufferLengthDivisor", 1);
 			setBufferLengthDivisor(localBufferLengthDivisor);
-			Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor
-					+ " - bufferLengthDivisor to " + bufferLengthDivisor);
+			//Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor + " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
 	}
 
