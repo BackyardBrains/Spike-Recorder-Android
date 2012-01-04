@@ -32,22 +32,22 @@ public class TriggerAverager {
 
 		short[] incomingAsArray = new short [sb.capacity()];
 		sb.get(incomingAsArray, 0, incomingAsArray.length);
-
-		if (averagedSamples == null) {
-			averagedSamples = incomingAsArray;
-			sampleBuffersInAverage.add(incomingAsArray);
-			return;
-		}
-
-		while (sampleBuffersInAverage.size() >= maxsize) {
-			sampleBuffersInAverage.remove(0);
-		}
 		
-		for (short s : incomingAsArray) {
-			if (s > triggerValue || s < -triggerValue) {
+		// Scan for triggers 
+
+		
+		for (int i = 0; i<incomingAsArray.length; i++) {
+			short s = incomingAsArray[i];
+			if (s > triggerValue) {
+				incomingAsArray = findCenterAndWrap(incomingAsArray, i);
+				pushToSampleBuffers(incomingAsArray);
 				sampleBuffersInAverage.add(incomingAsArray);
 				break;
 			}
+		}
+		
+		if (averagedSamples == null) {
+			return;
 		}
 		
 		for(int i = 0; i < averagedSamples.length; i++) {
@@ -58,6 +58,63 @@ public class TriggerAverager {
 			curAvg /= sampleBuffersInAverage.size();
 			averagedSamples[i] = curAvg.shortValue();
 		}
+	}
+
+	private short[] findCenterAndWrap(short[] incomingAsArray, int index) {
+		boolean isPositive = incomingAsArray[index] > 0;
+		int centerIndex = -1;
+		// Now find where the spike crosses back down across zero
+		for (int i = index; i < incomingAsArray.length; i++) {
+			if (isPositive && incomingAsArray[i] < 0) {
+				centerIndex = i; break;
+			}
+			/*
+			if (!isPositive && incomingAsArray[i] > 0) {
+				centerIndex = i; break;
+			}
+			*/
+		}
+		int middleOfArray = incomingAsArray.length / 2;
+		if (centerIndex == -1) {
+			return null;
+		}
+		// create a new array to copy the adjusted samples into
+		short [] sampleChunk = new short[incomingAsArray.length];
+		int sampleChunkPosition = 0;
+		if(centerIndex > middleOfArray) {
+			int samplesToMove = centerIndex - middleOfArray;
+			for (int i = 0; i<incomingAsArray.length-samplesToMove; i++) {
+				sampleChunk[sampleChunkPosition++] = incomingAsArray[i+samplesToMove];
+			}
+			for (int i = 0; i<samplesToMove; i++) {
+				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
+			}
+		} else {
+			// it's near beginning, wrap from end on to front
+			int samplesToMove = middleOfArray - centerIndex;
+			for (int i = samplesToMove - 1; i<incomingAsArray.length; i++) {
+				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
+			}
+			for (int i = 0; i<samplesToMove -1; i++) {
+				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
+			}
+			
+		}
+		return sampleChunk;
+	}
+
+	private void pushToSampleBuffers(short[] incomingAsArray) {
+		if (averagedSamples == null) {
+			averagedSamples = incomingAsArray;
+			sampleBuffersInAverage.add(incomingAsArray);
+			return;
+		}
+
+		while (sampleBuffersInAverage.size() >= maxsize) {
+			sampleBuffersInAverage.remove(0);
+		}
+		
+		sampleBuffersInAverage.add(incomingAsArray);
 	}
 	
 	public Handler getHandler() {

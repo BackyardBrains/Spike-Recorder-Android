@@ -35,7 +35,7 @@ public class OscilloscopeGLThread extends Thread {
 	protected float bufferLengthDivisor = 1;
 	private float xEnd = 4000f;
 	private float yMin = -5000000f;
-	private float yBegin = -5000f;
+	protected float yBegin = -5000f;
 	protected float yEnd = 5000f;
 	private boolean autoScaled;
 
