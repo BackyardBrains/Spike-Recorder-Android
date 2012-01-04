@@ -19,7 +19,7 @@ public class TriggerAverager {
 	
 	public TriggerAverager(int size) {
 		sampleBuffersInAverage = new ArrayList<short[]>();
-		maxsize = 50;
+		maxsize = 10;
 		averagedSamples = null;
 		handler = new TriggerHandler();
 	}
@@ -41,8 +41,6 @@ public class TriggerAverager {
 			if (s > triggerValue) {
 				incomingAsArray = findCenterAndWrap(incomingAsArray, i);
 				pushToSampleBuffers(incomingAsArray);
-				sampleBuffersInAverage.add(incomingAsArray);
-				break;
 			}
 		}
 		
@@ -61,7 +59,7 @@ public class TriggerAverager {
 	}
 
 	private short[] findCenterAndWrap(short[] incomingAsArray, int index) {
-		boolean isPositive = incomingAsArray[index] > 0;
+		final boolean isPositive = incomingAsArray[index] > 0;
 		int centerIndex = -1;
 		// Now find where the spike crosses back down across zero
 		for (int i = index; i < incomingAsArray.length; i++) {
@@ -74,15 +72,15 @@ public class TriggerAverager {
 			}
 			*/
 		}
-		int middleOfArray = incomingAsArray.length / 2;
+		final int middleOfArray = incomingAsArray.length / 2;
 		if (centerIndex == -1) {
-			return null;
+			return incomingAsArray;
 		}
 		// create a new array to copy the adjusted samples into
 		short [] sampleChunk = new short[incomingAsArray.length];
 		int sampleChunkPosition = 0;
 		if(centerIndex > middleOfArray) {
-			int samplesToMove = centerIndex - middleOfArray;
+			final int samplesToMove = centerIndex - middleOfArray;
 			for (int i = 0; i<incomingAsArray.length-samplesToMove; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i+samplesToMove];
 			}
@@ -91,8 +89,8 @@ public class TriggerAverager {
 			}
 		} else {
 			// it's near beginning, wrap from end on to front
-			int samplesToMove = middleOfArray - centerIndex;
-			for (int i = samplesToMove - 1; i<incomingAsArray.length; i++) {
+			final int samplesToMove = middleOfArray - centerIndex;
+			for (int i = samplesToMove; i<incomingAsArray.length; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
 			}
 			for (int i = 0; i<samplesToMove -1; i++) {
