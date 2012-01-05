@@ -124,7 +124,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		if (mAudioService != null && mAudioServiceIsBound) {
 			mAudioService.getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*8);
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*5/2);
 				}
 			});
 		}
