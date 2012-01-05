@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.LinearGradient;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -16,6 +17,8 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,6 +56,9 @@ public class BackyardAndroidActivity extends Activity {
 	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
 	private FrameLayout mainscreenGLLayout;
 	private boolean triggerMode;
+	private LinearLayout triggerViewSampleChanger;
+	private SeekBar samplesSeekBar;
+	private TextView numberOfSamplesLabel;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -76,6 +82,7 @@ public class BackyardAndroidActivity extends Activity {
 			mAndroidSurface.setAutoScaled(oldConfig.configAlreadyAutoScaled);
 		}		
 		setUpRecordingButtons();
+		setUpSampleSlider();
 		
 	}
 	
@@ -216,6 +223,48 @@ public class BackyardAndroidActivity extends Activity {
 		}
 	}
 
+	private void setUpSampleSlider() {
+		// @TODO left off here
+		triggerViewSampleChanger = (LinearLayout) findViewById(R.id.triggerViewSampleChangerLayout);
+		
+		samplesSeekBar = (SeekBar) findViewById(R.id.samplesSeekBar);
+		
+		numberOfSamplesLabel = (TextView) findViewById(R.id.numberOfSamplesAveraged);
+		OnClickListener toggleSeekbarListener = new OnClickListener() {
+			@Override public void onClick(View v) {
+				toggleSeekbar();
+			}
+		};
+		numberOfSamplesLabel.setOnClickListener(toggleSeekbarListener);
+	}
+	protected void toggleSeekbar() {
+		if (samplesSeekBar.getVisibility() == View.VISIBLE) {
+			samplesSeekBar.setVisibility(View.INVISIBLE);
+		} else {
+			samplesSeekBar.setVisibility(View.VISIBLE);
+		}
+	}
+
+	private void showSampleSliderBox() {
+		if (triggerViewSampleChanger != null) {
+			triggerViewSampleChanger.setVisibility(View.VISIBLE);
+		}
+		if (numberOfSamplesLabel != null) {
+			numberOfSamplesLabel.setVisibility(View.VISIBLE);
+		}
+
+	}
+
+	private void hideSampleSliderBox() {
+		if (triggerViewSampleChanger != null) {
+			triggerViewSampleChanger.setVisibility(View.GONE);
+		}
+		if (numberOfSamplesLabel != null) {
+			numberOfSamplesLabel.setVisibility(View.GONE);
+		}
+		
+	};
+
 	void reassignSurfaceView(boolean isTriggerView) {
 		BybConfigHolder bch = null; 
 		if(mAndroidSurface != null) bch = collectConfigFromSurface();
@@ -229,8 +278,10 @@ public class BackyardAndroidActivity extends Activity {
 		mainscreenGLLayout.addView(mAndroidSurface);
 		if (isTriggerView) {
 			hideRecordingButtons();
+			showSampleSliderBox();
 		} else {
 			showRecordingButtons();
+			hideSampleSliderBox();
 		}
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
@@ -330,5 +381,5 @@ public class BackyardAndroidActivity extends Activity {
 				hideRecordingButtons();
 			}
 		}	
-		};
+		}
 }
