@@ -101,7 +101,7 @@
     
 	<LinearLayout 
 	    android:id="@+id/triggerViewSampleChangerLayout"
-        android:layout_width="match_parent"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_toRightOf="@+id/tickmarkImageView"
@@ -109,13 +109,20 @@
 	    
 	    <SeekBar
 	        android:id="@+id/samplesSeekBar"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content" />
+	        android:layout_weight="1"
+	        android:layout_margin="5sp"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:visibility="invisible"/>
 	    
 	    <TextView 
 	        android:id="@+id/numberOfSamplesAveraged"
 	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content" />
+	        android:layout_height="wrap_content"
+	        android:layout_margin="5sp"
+	        android:textColor="#00ff00"
+	   		android:textSize="14sp"
+	        android:text="10 x" />
 	    
 	</LinearLayout>
 
