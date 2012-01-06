@@ -5,11 +5,11 @@ import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
 import android.os.Handler;
-import android.util.Log;
+//import android.util.Log;
 
 public class TriggerAverager {
 
-	private static final String TAG = TriggerAverager.class.getCanonicalName();
+	//private static final String TAG = TriggerAverager.class.getCanonicalName();
 	private int maxsize;
 	private short[] averagedSamples;
 	private ArrayList<short[]> sampleBuffersInAverage;
