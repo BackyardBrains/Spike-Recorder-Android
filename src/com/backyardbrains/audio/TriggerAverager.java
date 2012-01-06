@@ -19,7 +19,7 @@ public class TriggerAverager {
 	
 	public TriggerAverager(int size) {
 		sampleBuffersInAverage = new ArrayList<short[]>();
-		maxsize = 10;
+		setMaxsize(10);
 		averagedSamples = null;
 		handler = new TriggerHandler();
 	}
@@ -108,21 +108,29 @@ public class TriggerAverager {
 			return;
 		}
 
-		while (sampleBuffersInAverage.size() >= maxsize) {
+		while (sampleBuffersInAverage.size() >= getMaxsize()) {
 			sampleBuffersInAverage.remove(0);
 		}
 		
 		sampleBuffersInAverage.add(incomingAsArray);
 	}
 	
-	public Handler getHandler() {
-		return handler;
-	}
-	
 	public short[] getAveragedSamples() {
 		return averagedSamples;
 	}
 	
+	public int getMaxsize() {
+		return maxsize;
+	}
+
+	public void setMaxsize(int maxsize) {
+		this.maxsize = maxsize;
+	}
+
+	public Handler getHandler() {
+		return handler;
+	}
+
 	public class TriggerHandler extends Handler {
 		public void setThreshold(float y) {
 			//Log.d(TAG, "Got new triggerValue of "+y);
