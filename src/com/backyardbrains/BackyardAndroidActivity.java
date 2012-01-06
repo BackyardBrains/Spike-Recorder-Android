@@ -237,6 +237,7 @@ public class BackyardAndroidActivity extends Activity {
 		
 		samplesSeekBar = (SeekBar) findViewById(R.id.samplesSeekBar);
 		samplesSeekBar.setMax(49);
+		samplesSeekBar.setProgress(9);
 		samplesSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
 			
 			@Override public void onStopTrackingTouch(SeekBar seekBar) { 
