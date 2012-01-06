@@ -105,19 +105,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				/ mScaleFactor);
 	}
 
-	
-	/*
-	private void setTriggerWidth(final int samplesToShow) {
-		if (mAudioService != null && mAudioServiceIsBound) {
-			mAudioService.getTriggerHandler().post(new Runnable() {
-				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setSampleWidth(samplesToShow);
-				}
-			});
-		}
-	}
-	*/
-
 	private void setmVText() {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
 		final float yPerDiv = glHeight / 24.5f;
