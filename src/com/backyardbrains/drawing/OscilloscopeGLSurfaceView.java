@@ -259,10 +259,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				final float scaleModifierY = Math.max(0.95f,
 						Math.min(scaleModifier.second, 1.05f));
 				bufferLengthDivisor *= scaleModifierX;
-				scaleFactor *= scaleModifierY;
+				scaleFactor = scaleModifierY;
+				/*
 				Log.d(TAG, "Receiving touch event. scale factor is now "
 						+ scaleFactor + "and buffer divisor is "
 						+ bufferLengthDivisor);
+				*/
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
