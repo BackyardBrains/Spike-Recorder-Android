@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.LinearGradient;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -19,6 +18,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -226,9 +226,7 @@ public class BackyardAndroidActivity extends Activity {
 	private void setUpSampleSlider() {
 		// @TODO left off here
 		triggerViewSampleChanger = (LinearLayout) findViewById(R.id.triggerViewSampleChangerLayout);
-		
-		samplesSeekBar = (SeekBar) findViewById(R.id.samplesSeekBar);
-		
+	
 		numberOfSamplesLabel = (TextView) findViewById(R.id.numberOfSamplesAveraged);
 		OnClickListener toggleSeekbarListener = new OnClickListener() {
 			@Override public void onClick(View v) {
@@ -236,6 +234,27 @@ public class BackyardAndroidActivity extends Activity {
 			}
 		};
 		numberOfSamplesLabel.setOnClickListener(toggleSeekbarListener);
+		
+		samplesSeekBar = (SeekBar) findViewById(R.id.samplesSeekBar);
+		samplesSeekBar.setMax(49);
+		samplesSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+			
+			@Override public void onStopTrackingTouch(SeekBar seekBar) { 
+			}
+			
+			@Override public void onStartTrackingTouch(SeekBar seekBar) {
+			}
+			
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress,
+					boolean fromUser) {
+				if (!fromUser) return;
+				Intent i = new Intent("setSampleSize").putExtra("newSampleSize", progress+1);
+				sendBroadcast(i);
+				numberOfSamplesLabel.setText((progress+1)+" x");
+			}
+		});
+	
 	}
 	protected void toggleSeekbar() {
 		if (samplesSeekBar.getVisibility() == View.VISIBLE) {
