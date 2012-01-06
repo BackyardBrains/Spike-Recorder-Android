@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
@@ -53,6 +54,7 @@ public class AudioServiceBinder extends Binder {
 	private TriggerAverager triggerAverager;
 	private boolean triggerMode;
 	private ToggleTriggerListener toggleTrigger;
+	private SetSampleSizeListener sampleSizeListener;
 
 	/**
 	 * return a byte array with in the appropriate order representing the last
@@ -87,6 +89,8 @@ public class AudioServiceBinder extends Binder {
 		triggerAverager = new TriggerAverager(50);
 		triggerMode = false;
 
+		registerSetSampleSizeReceiver(true);
+		
 		turnOnMicThread();
 	}
 	
@@ -105,6 +109,7 @@ public class AudioServiceBinder extends Binder {
 	public void onDestroy() {
 		registerRecordingToggleReceiver(false);
 		registerTriggerToggleReceiver(false);
+		registerSetSampleSizeReceiver(false);
 		turnOffMicThread();
 		super.onDestroy();
 	}
@@ -180,6 +185,15 @@ public class AudioServiceBinder extends Binder {
 		}
 	}
 
+	private void registerSetSampleSizeReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("setSampleSize");
+			sampleSizeListener = new SetSampleSizeListener();
+			registerReceiver(sampleSizeListener, intentFilter);
+		} else {
+			unregisterReceiver(sampleSizeListener);
+		}
+	}
 	/**
 	 * Toggle a notification that this service is running.
 	 * 
@@ -286,6 +300,16 @@ public class AudioServiceBinder extends Binder {
 			triggerMode = intent.getBooleanExtra("triggerMode", false);
 			Log.d(TAG, "Switched triggerMode to "+triggerMode);
 		};
+		
+	}
+	
+	private class SetSampleSizeListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			triggerAverager.setMaxsize(intent.getIntExtra("newSampleSize", 1));
+			Log.d(TAG, "Set triggeraverager sample size to "+triggerAverager.getMaxsize()); 
+		}
 		
 	}
 }
