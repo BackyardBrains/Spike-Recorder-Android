@@ -31,7 +31,7 @@ public class OscilloscopeGLThread extends Thread {
 
 	protected boolean mDone = false;
 	protected BybGLDrawable waveformShape;
-	protected float zoomMultiplier = 1.f;
+	//protected float zoomMultiplier = 1.f;
 	protected float bufferLengthDivisor = 1;
 	private float xEnd = 4000f;
 	private float yMin = -5000000f;
@@ -118,8 +118,7 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	protected void setGlWindow(final int samplesToShow) {
-		glman.initGL(xEnd - samplesToShow, xEnd, yBegin * zoomMultiplier, yEnd
-				* zoomMultiplier);
+		glman.initGL(xEnd - samplesToShow, xEnd, yBegin, yEnd);
 	}
 
 	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
@@ -139,7 +138,7 @@ public class OscilloscopeGLThread extends Thread {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
 		parent.setMsText(millisecondsInThisWindow);
 		if (!isDrawThresholdLine()) {
-			float yPerDiv = (float) ((yEnd * zoomMultiplier - yBegin * zoomMultiplier) / (4.0f * 24.5));
+			float yPerDiv = (float) (yEnd - yBegin) / (4.0f * 24.5f);
 			parent.setmVText(yPerDiv);
 		}
 	}
@@ -235,15 +234,19 @@ public class OscilloscopeGLThread extends Thread {
 		this.yEnd = yEnd;
 	}
 
-	public float getmScaleFactor() {
-		return zoomMultiplier;
-	}
+//	public float getmScaleFactor() {
+//		return zoomMultiplier;
+//	}
 
 	public void setmScaleFactor(float mScaleFactor) {
 		// Don't let the object get too small or too large.
-		mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
+		mScaleFactor = Math.max(0.98f, Math.min(mScaleFactor, 1.02f));
 
-		this.zoomMultiplier = mScaleFactor;
+		if (yBegin * mScaleFactor > Short.MIN_VALUE * 2)
+			yBegin = yBegin * mScaleFactor;
+		if (yEnd * mScaleFactor < Short.MAX_VALUE * 2)
+			yEnd = yEnd * mScaleFactor;
+		//this.zoomMultiplier = mScaleFactor;
 	}
 
 	public float getBufferLengthDivisor() {
