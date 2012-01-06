@@ -510,8 +510,11 @@ public class TwoDimensionScaleGestureDetector {
 		}
 		if (mScaleFactorX >= 0 && mScaleFactorY >= 0)
 			return new Pair<Float, Float>(returnScaleFactorX, returnScaleFactorY);
-		else
-			throw new IllegalStateException();
+		else {
+			//throw new IllegalStateException();
+			reset();
+			return new Pair<Float,Float>(mScaleFactorX, mScaleFactorY);
+		}
 	}
 
 	/**
