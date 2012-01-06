@@ -102,13 +102,13 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	private void setDefaultThresholdValue() {
-		thresholdPixelHeight = glHeightToPixelHeight(yEnd / 2 * mScaleFactor);
+		thresholdPixelHeight = glHeightToPixelHeight(yEnd / 2 * zoomMultiplier);
 		setmVText();
 	}
 
 	protected void setGlWindow(final int samplesToShow, int centeredAt) {
-		glman.initGL(centeredAt - samplesToShow/2, centeredAt + samplesToShow/2, yBegin * mScaleFactor, yEnd
-				* mScaleFactor);
+		glman.initGL(centeredAt - samplesToShow/2, centeredAt + samplesToShow/2, yBegin * zoomMultiplier, yEnd
+				* zoomMultiplier);
 	}
 
 	private void setmVText() {
@@ -125,11 +125,11 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	private float glHeightToPixelHeight(float glHeight) {
-		return (glHeight / (yEnd * mScaleFactor * 2)) * parent.getHeight();
+		return (glHeight / (yEnd * zoomMultiplier * 2)) * parent.getHeight();
 	}
 
 	private float pixelHeightToGlHeight(float pxHeight) {
-		return pxHeight / parent.getHeight() * (yEnd * mScaleFactor * 2);
+		return pxHeight / parent.getHeight() * (yEnd * zoomMultiplier * 2);
 	}
 
 	protected void drawThresholdLine() {
