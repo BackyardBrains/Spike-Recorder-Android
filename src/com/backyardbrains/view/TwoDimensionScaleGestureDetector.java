@@ -493,7 +493,7 @@ public class TwoDimensionScaleGestureDetector {
 			Pair<Float, Float> newSpan = getCurrentSpan();
 
 			mScaleFactorX = newSpan.first / oldSpan.first;
-			mScaleFactorY = newSpan.second / oldSpan.second;
+			mScaleFactorY = oldSpan.second / newSpan.second;
 			
 			if(Math.abs(newSpan.first - oldSpan.first) < 35) {
 				returnScaleFactorX = 1;

@@ -118,8 +118,8 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	protected void setGlWindow(final int samplesToShow) {
-		glman.initGL(xEnd - samplesToShow, xEnd, yBegin / mScaleFactor, yEnd
-				/ mScaleFactor);
+		glman.initGL(xEnd - samplesToShow, xEnd, yBegin * mScaleFactor, yEnd
+				* mScaleFactor);
 	}
 
 	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
@@ -139,7 +139,7 @@ public class OscilloscopeGLThread extends Thread {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
 		parent.setMsText(millisecondsInThisWindow);
 		if (!isDrawThresholdLine()) {
-			float yPerDiv = (float) ((yEnd / mScaleFactor - yBegin / mScaleFactor) / (4.0f * 24.5));
+			float yPerDiv = (float) ((yEnd * mScaleFactor - yBegin * mScaleFactor) / (4.0f * 24.5));
 			parent.setmVText(yPerDiv);
 		}
 	}
@@ -307,7 +307,6 @@ public class OscilloscopeGLThread extends Thread {
 			float localBufferLengthDivisor = intent.getFloatExtra(
 					"newBufferLengthDivisor", 1);
 			setBufferLengthDivisor(localBufferLengthDivisor);
-			//Log.d(TAG, "Setting ScaleFactor to " + mScaleFactor + " - bufferLengthDivisor to " + bufferLengthDivisor);
 		};
 	}
 
