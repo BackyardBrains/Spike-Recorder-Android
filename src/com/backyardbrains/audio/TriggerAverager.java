@@ -5,11 +5,11 @@ import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
 import android.os.Handler;
-//import android.util.Log;
+import android.util.Log;
 
 public class TriggerAverager {
 
-	//private static final String TAG = TriggerAverager.class.getCanonicalName();
+	private static final String TAG = TriggerAverager.class.getCanonicalName();
 	private int maxsize;
 	private short[] averagedSamples;
 	private ArrayList<short[]> sampleBuffersInAverage;
@@ -60,27 +60,24 @@ public class TriggerAverager {
 
 	private short[] findCenterAndWrap(short[] incomingAsArray, int index) {
 		final boolean isPositive = incomingAsArray[index] > 0;
-		int centerIndex = -1;
 		// Now find where the spike crosses back down across zero
+		/*
 		for (int i = index; i < incomingAsArray.length; i++) {
 			if (isPositive && incomingAsArray[i] < 0) {
 				centerIndex = i; break;
 			}
-			/*
 			if (!isPositive && incomingAsArray[i] > 0) {
 				centerIndex = i; break;
 			}
-			*/
 		}
+		*/
 		final int middleOfArray = incomingAsArray.length / 2;
-		if (centerIndex == -1) {
-			return incomingAsArray;
-		}
 		// create a new array to copy the adjusted samples into
 		short [] sampleChunk = new short[incomingAsArray.length];
 		int sampleChunkPosition = 0;
-		if(centerIndex > middleOfArray) {
-			final int samplesToMove = centerIndex - middleOfArray;
+		if(index > middleOfArray) {
+			Log.d(TAG, "Wrapping from end onto beginning");
+			final int samplesToMove = index - middleOfArray;
 			for (int i = 0; i<incomingAsArray.length-samplesToMove; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i+samplesToMove];
 			}
@@ -89,7 +86,9 @@ public class TriggerAverager {
 			}
 		} else {
 			// it's near beginning, wrap from end on to front
-			final int samplesToMove = middleOfArray - centerIndex;
+			// @TODO Error for bug 39 is here.
+			Log.d(TAG, "Wrapping from beginning onto end");
+			final int samplesToMove = middleOfArray - index;
 			for (int i = samplesToMove; i<incomingAsArray.length; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
 			}
