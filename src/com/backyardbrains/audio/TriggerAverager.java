@@ -38,8 +38,9 @@ public class TriggerAverager {
 		
 		for (int i = 0; i<incomingAsArray.length; i++) {
 			short s = incomingAsArray[i];
+
 			if (s > triggerValue) {
-				incomingAsArray = findCenterAndWrap(incomingAsArray, i);
+				incomingAsArray = wrapToCenter(incomingAsArray, i);
 				pushToSampleBuffers(incomingAsArray);
 			}
 		}
@@ -58,19 +59,7 @@ public class TriggerAverager {
 		}
 	}
 
-	private short[] findCenterAndWrap(short[] incomingAsArray, int index) {
-		final boolean isPositive = incomingAsArray[index] > 0;
-		// Now find where the spike crosses back down across zero
-		/*
-		for (int i = index; i < incomingAsArray.length; i++) {
-			if (isPositive && incomingAsArray[i] < 0) {
-				centerIndex = i; break;
-			}
-			if (!isPositive && incomingAsArray[i] > 0) {
-				centerIndex = i; break;
-			}
-		}
-		*/
+	private short[] wrapToCenter(short[] incomingAsArray, int index) {
 		final int middleOfArray = incomingAsArray.length / 2;
 		// create a new array to copy the adjusted samples into
 		short [] sampleChunk = new short[incomingAsArray.length];
