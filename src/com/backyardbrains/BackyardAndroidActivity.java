@@ -119,12 +119,6 @@ public class BackyardAndroidActivity extends Activity {
 			triggerMode = true;
 			reassignSurfaceView(triggerMode);
 			return true;
-		case R.id.expandX:
-			mAndroidSurface.growXdimension();
-			return true;
-		case R.id.shrinkX:
-			mAndroidSurface.shrinkXdimension();
-			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}

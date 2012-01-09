@@ -216,16 +216,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		getContext().sendBroadcast(i);
 	}
 
-	public void shrinkXdimension() {
-		mGLThread
-				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() + 1);
-	}
-
-	public void growXdimension() {
-		mGLThread
-				.setBufferLengthDivisor(mGLThread.getBufferLengthDivisor() - 1);
-	}
-
 	public float getScaleFactor() {
 		return scaleFactor;
 	}

@@ -13,10 +13,4 @@
 	<item android:id="@+id/threshold" android:title="@string/threshold"
 		android:icon="@android:drawable/ic_menu_preferences">
 	</item>
-	<item android:id="@+id/expandX" android:title="Expand X dimension"
-		android:icon="@android:drawable/ic_menu_zoom">
-	</item>
-	<item android:id="@+id/shrinkX" android:title="Shrink X dimension"
-		android:icon="@android:drawable/ic_menu_zoom">
-	</item>
 </menu>
