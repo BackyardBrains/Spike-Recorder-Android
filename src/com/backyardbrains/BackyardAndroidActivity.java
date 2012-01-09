@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -16,6 +17,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -59,6 +61,7 @@ public class BackyardAndroidActivity extends Activity {
 	private LinearLayout triggerViewSampleChanger;
 	private SeekBar samplesSeekBar;
 	private TextView numberOfSamplesLabel;
+	private ImageView msLineView;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -67,9 +70,6 @@ public class BackyardAndroidActivity extends Activity {
 
 		// get application
 		application = (BackyardBrainsApplication) getApplication();
-
-		msView = (TextView) findViewById(R.id.millisecondsView);
-		mVView = (TextView) findViewById(R.id.mVLabelView);
 
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
@@ -81,9 +81,17 @@ public class BackyardAndroidActivity extends Activity {
 			Log.d("BYBAndroidActivity", "Setting surface AutoScaled to " + oldConfig.configAlreadyAutoScaled);
 			mAndroidSurface.setAutoScaled(oldConfig.configAlreadyAutoScaled);
 		}		
+
+		setupLabels();
 		setUpRecordingButtons();
 		setUpSampleSlider();
 		
+	}
+
+	private void setupLabels() {
+		msView = (TextView) findViewById(R.id.millisecondsView);
+		mVView = (TextView) findViewById(R.id.mVLabelView);
+		msLineView = (ImageView) findViewById(R.id.msLineView);
 	}
 	
 	public BybConfigHolder collectConfigFromSurface () {
@@ -251,6 +259,7 @@ public class BackyardAndroidActivity extends Activity {
 		});
 	
 	}
+
 	protected void toggleSeekbar() {
 		if (samplesSeekBar.getVisibility() == View.VISIBLE) {
 			samplesSeekBar.setVisibility(View.INVISIBLE);
