@@ -39,7 +39,7 @@ public class TriggerAverager {
 		for (int i = 0; i<incomingAsArray.length; i++) {
 			short s = incomingAsArray[i];
 
-			if (s > triggerValue) {
+			if ((triggerValue >= 0 && s > triggerValue) || (triggerValue < 0 && s < triggerValue)) {
 				incomingAsArray = wrapToCenter(incomingAsArray, i);
 				pushToSampleBuffers(incomingAsArray);
 			}
