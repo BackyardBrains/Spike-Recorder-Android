@@ -85,7 +85,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		if (triggerView) {
 			switch (action & MotionEvent.ACTION_MASK) {
 			case MotionEvent.ACTION_DOWN: {
-				if (Math.abs(event.getY() - mGLThread.getThresholdYValue()) < 10) {
+				if (Math.abs(event.getY() - mGLThread.getThresholdYValue()) < 30) {
 					initialThresholdTouch = event.getY();
 				}
 				break;
