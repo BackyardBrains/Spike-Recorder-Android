@@ -86,13 +86,12 @@ public class TriggerAverager {
 			}
 		} else {
 			// it's near beginning, wrap from end on to front
-			// @TODO Error for bug 39 is here.
 			Log.d(TAG, "Wrapping from beginning onto end");
 			final int samplesToMove = middleOfArray - index;
-			for (int i = samplesToMove; i<incomingAsArray.length; i++) {
+			for (int i = incomingAsArray.length - samplesToMove - 1; i < incomingAsArray.length; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
 			}
-			for (int i = 0; i<samplesToMove -1; i++) {
+			for (int i = 0; i<incomingAsArray.length - samplesToMove -1; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
 			}
 			
