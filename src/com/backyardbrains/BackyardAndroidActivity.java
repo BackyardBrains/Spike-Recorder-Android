@@ -4,7 +4,8 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Rect;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -19,6 +20,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
@@ -91,7 +94,25 @@ public class BackyardAndroidActivity extends Activity {
 	private void setupLabels() {
 		msView = (TextView) findViewById(R.id.millisecondsView);
 		mVView = (TextView) findViewById(R.id.mVLabelView);
-		msLineView = (ImageView) findViewById(R.id.msLineView);
+		// sLineView = (ImageView) findViewById(R.id.msLineView);
+		setupMsLineView();
+	}
+
+	private void setupMsLineView() {
+		msLineView = new ImageView(this);
+		Bitmap bmp = BitmapFactory.decodeResource(getResources(),
+				R.drawable.msline);
+		int width = getWindowManager().getDefaultDisplay().getWidth() / 3;
+		int height = 10;
+		Bitmap resizedbitmap = Bitmap.createScaledBitmap(bmp, width, height,
+				true);
+		msLineView.setImageBitmap(resizedbitmap);
+		
+		LayoutParams rl = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
+		rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
+		RelativeLayout parentLayout = (RelativeLayout) findViewById(R.id.parentLayout);
+		parentLayout.addView(msLineView, rl);
 	}
 	
 	public BybConfigHolder collectConfigFromSurface () {

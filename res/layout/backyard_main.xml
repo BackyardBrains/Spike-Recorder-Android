@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/parentLayout"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
@@ -29,16 +30,16 @@
         android:text="0 ms" >
     </TextView>
 
-    <ImageView
-        android:id="@+id/msLineView"
-        android:layout_width="100sp"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/millisecondsView"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="10dp"
-        android:scaleType="fitXY"
-        android:src="@drawable/msline" >
-    </ImageView>
+<!--     <ImageView -->
+<!--         android:id="@+id/msLineView" -->
+<!--         android:layout_width="100sp" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:layout_above="@+id/millisecondsView" -->
+<!--         android:layout_centerHorizontal="true" -->
+<!--         android:layout_marginBottom="10dp" -->
+<!--         android:scaleType="fitXY" -->
+<!--         android:src="@drawable/msline" > -->
+<!--     </ImageView> -->
 
     <ImageView
         android:id="@+id/recordButtonBackground"
