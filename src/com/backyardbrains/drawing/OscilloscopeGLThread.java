@@ -135,7 +135,7 @@ public class OscilloscopeGLThread extends Thread {
 	 * @param samplesToShow
 	 */
 	protected void setLabels(int samplesToShow) {
-		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000;
+		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
 		parent.setMsText(millisecondsInThisWindow);
 		if (!isDrawThresholdLine()) {
 			float yPerDiv = (float) (yEnd - yBegin) / (4.0f * 24.5f);

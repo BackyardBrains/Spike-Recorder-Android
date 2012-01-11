@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -19,6 +20,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
@@ -103,12 +105,15 @@ public class BackyardAndroidActivity extends Activity {
 		Bitmap bmp = BitmapFactory.decodeResource(getResources(),
 				R.drawable.msline);
 		int width = getWindowManager().getDefaultDisplay().getWidth() / 3;
-		int height = 10;
+		int height = 2;
 		Bitmap resizedbitmap = Bitmap.createScaledBitmap(bmp, width, height,
-				true);
+				false);
 		msLineView.setImageBitmap(resizedbitmap);
+		msLineView.setBackgroundColor(Color.BLACK);
+		msLineView.setScaleType(ScaleType.CENTER);
 		
 		LayoutParams rl = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+		rl.setMargins(0, 0, 0, 20);
 		rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
 		rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
 		RelativeLayout parentLayout = (RelativeLayout) findViewById(R.id.parentLayout);
