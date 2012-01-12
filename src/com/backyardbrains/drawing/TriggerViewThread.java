@@ -112,7 +112,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 	private void setmVText() {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
-		final float yPerDiv = glHeight / 24.5f;
+		final float yPerDiv = glHeight / 4 / 24.5f / 1000;
 		if (mAudioService != null && mAudioServiceIsBound) {
 			mAudioService.getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
