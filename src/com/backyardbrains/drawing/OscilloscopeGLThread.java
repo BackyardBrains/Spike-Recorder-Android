@@ -100,11 +100,13 @@ public class OscilloscopeGLThread extends Thread {
 					waveformShape.draw(glman.getmGL());
 					glman.swapBuffers();
 				}
+				/*
 				try {
 					sleep(5);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				*/
 			}
 		}
 		bindAudioService(false);
@@ -138,7 +140,7 @@ public class OscilloscopeGLThread extends Thread {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
 		parent.setMsText(millisecondsInThisWindow);
 		if (!isDrawThresholdLine()) {
-			float yPerDiv = (float) (yEnd - yBegin) / 4.0f / 8 / 24.5f;
+			float yPerDiv = (float) (yEnd - yBegin) / 4.0f / 24.5f /1000;
 			parent.setmVText(yPerDiv);
 		}
 	}
