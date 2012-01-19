@@ -4,3 +4,4 @@ gen/
 .classpath
 .settings/
 byb.keystore
+*.apk
