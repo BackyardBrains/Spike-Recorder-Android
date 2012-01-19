@@ -204,7 +204,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	public void setmVText(Float ms) {
-		String msString = new DecimalFormat("#.#").format(ms);
+		String msString = new DecimalFormat("#.##").format(ms);
 		broadcastTextUpdate("BYBUpdateMillivoltReciever",
 				"millivoltsDisplayedString", msString + " mV");
 	}
