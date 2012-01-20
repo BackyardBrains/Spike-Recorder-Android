@@ -7,6 +7,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources.Theme;
 import android.util.Log;
 
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
@@ -50,15 +51,15 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			if (mAudioServiceIsBound && mAudioService != null) {
 
 				// Reset our Audio buffer
-				short[] mBufferToDraw = null;
+				mBufferToDraws = null;
 				// Read new mic data
 				synchronized (mAudioService) {
-					mBufferToDraw = mAudioService.getTriggerBuffer();
+					mBufferToDraws = mAudioService.getTriggerBuffer();
 				}
 				
-				if (mBufferToDraw == null || mBufferToDraw.length <= 0) {
+				if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
 					glman.glClear();
-					setGlWindow((int) getxEnd());
+					setGlWindow(xEnd, xEnd*2);
 					if (isDrawThresholdLine()) {
 						drawThresholdLine();
 					}
@@ -66,16 +67,18 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 					continue;
 				}
 
+				/*
 				setxEnd(mBufferToDraw.length);
 				int samplesToShow = Math.round(mBufferToDraw.length / bufferLengthDivisor);
+				*/
 				
 				synchronized (parent) {
-					setLabels(samplesToShow);
+					setLabels(xEnd);
 				}
 
 				glman.glClear();
-				waveformShape.setBufferToDraw(mBufferToDraw);
-				setGlWindow(samplesToShow, mBufferToDraw.length/2);
+				waveformShape.setBufferToDraw(mBufferToDraws);
+				setGlWindow(xEnd, mBufferToDraws.length);
 				waveformShape.draw(glman.getmGL());
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
@@ -106,8 +109,8 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		setmVText();
 	}
 
-	protected void setGlWindow(final int samplesToShow, int centeredAt) {
-		glman.initGL(centeredAt - samplesToShow/2, centeredAt + samplesToShow/2, yBegin, yEnd);
+	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
+		glman.initGL(lengthOfSampleSet/2 - samplesToShow/2, lengthOfSampleSet/2 + samplesToShow/2, yBegin, yEnd);
 	}
 
 	private void setmVText() {
@@ -132,8 +135,9 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	protected void drawThresholdLine() {
+		final float thresholdLineLength = (mBufferToDraws == null) ? xEnd : mBufferToDraws.length;
 		float[] thresholdLine = new float[] { 0, getThresholdValue(),
-				getxEnd(), getThresholdValue() };
+				thresholdLineLength, getThresholdValue() };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);

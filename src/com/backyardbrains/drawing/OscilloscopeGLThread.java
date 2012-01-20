@@ -33,11 +33,13 @@ public class OscilloscopeGLThread extends Thread {
 	protected BybGLDrawable waveformShape;
 	//protected float zoomMultiplier = 1.f;
 	protected float bufferLengthDivisor = 1;
-	private float xEnd = 4000f;
+	protected int xEnd = 4000;
 	private float yMin = -5000000f;
 	protected float yBegin = -5000f;
 	protected float yEnd = 5000f;
 	private boolean autoScaled;
+
+	protected short[] mBufferToDraws;
 
 	OscilloscopeGLSurfaceView parent;
 	protected GlSurfaceManager glman;
@@ -83,20 +85,20 @@ public class OscilloscopeGLThread extends Thread {
 					final int bufferCapacity = audioInfoasShortBuffer
 							.capacity();
 
-					final short[] mBufferToDraw = convertToShortArray(
+					mBufferToDraws = convertToShortArray(
 							audioInfoasShortBuffer, bufferCapacity);
 					// scale the right side to the number of data points we have
-					setxEnd(mBufferToDraw.length);
-					int samplesToShow = Math.round(bufferCapacity
-							/ bufferLengthDivisor);
-
-					synchronized (parent) {
-						setLabels(samplesToShow);
+					if (mBufferToDraws.length < xEnd) {
+						setxEnd(mBufferToDraws.length);
 					}
 
-					glman.glClear();
-					waveformShape.setBufferToDraw(mBufferToDraw);
-					setGlWindow(samplesToShow);
+					synchronized (parent) {
+						setLabels(xEnd);
+					}
+
+					// glman.glClear();
+					waveformShape.setBufferToDraw(mBufferToDraws);
+					setGlWindow(xEnd, mBufferToDraws.length);
 					waveformShape.draw(glman.getmGL());
 					glman.swapBuffers();
 				}
@@ -119,8 +121,8 @@ public class OscilloscopeGLThread extends Thread {
 		waveformShape = new BybGLDrawable(this);
 	}
 
-	protected void setGlWindow(final int samplesToShow) {
-		glman.initGL(xEnd - samplesToShow, xEnd, yBegin, yEnd);
+	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
+		glman.initGL(lengthOfSampleSet - xEnd, lengthOfSampleSet, yBegin, yEnd);
 	}
 
 	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
@@ -216,11 +218,12 @@ public class OscilloscopeGLThread extends Thread {
 		return false;
 	}
 
-	public float getxEnd() {
+	public int getxEnd() {
 		return xEnd;
 	}
 
-	public void setxEnd(float xEnd) {
+	public void setxEnd(int xEnd) {
+		if (xEnd < 16 || mBufferToDraws == null || xEnd > mBufferToDraws.length) return;
 		this.xEnd = xEnd;
 	}
 
