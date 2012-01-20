@@ -7,7 +7,6 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources.Theme;
 import android.util.Log;
 
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
