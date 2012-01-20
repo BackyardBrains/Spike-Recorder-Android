@@ -35,7 +35,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private boolean triggerView;
 	private boolean didWeAlreadyAutoscale;
 	private float scaleFactor = 1;
-	private float bufferLengthDivisor = 8;
 
 	private float initialThresholdTouch = -1;
 
@@ -53,7 +52,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			boolean isTriggerMode) {
 		this(context, isTriggerMode);
 		scaleFactor = bch.configScaleFactor;
-		bufferLengthDivisor = bch.configBufferLengthDivisor;
+		/*
+		 * @TODO no longer restores X on orientation change
+		 * bufferLengthDivisor = bch.configBufferLengthDivisor;
+		 */
 		didWeAlreadyAutoscale = bch.configAlreadyAutoScaled;
 	}
 
@@ -75,7 +77,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			float bufferLengthDivisor) {
 		this(context);
 		this.scaleFactor = scaleFactor;
-		this.bufferLengthDivisor = bufferLengthDivisor;
+		/*
+		 * @TODO doesn't preserve X distance on orientation change
+		 * this.bufferLengthDivisor = bufferLengthDivisor;
+		 */
 	}
 
 	@Override
@@ -116,7 +121,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+		/*
+		 * @TODO fix this to restore buffer length on orientation change
+		 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+		 */
 		mGLThread.setmScaleFactor(scaleFactor);
 		mGLThread.rescaleWaveform();
 		setMillivoltLabelPosition(height);
@@ -182,10 +190,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		}
 		synchronized (this) {
 			mGLThread.setAutoScaled(didWeAlreadyAutoscale);
-			mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+			/* @TODO fix this to reset X distance on orientation change
+			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
+			 */
 			mGLThread.setmScaleFactor(scaleFactor);
 			Log.d(TAG, "Started GL thread with scale of " + scaleFactor
-					+ " and bufferLengthDivisor of " + bufferLengthDivisor);
+					+ " and X distance of " + mGLThread.getxEnd());
 			mGLThread.start();
 		}
 	}
@@ -224,14 +234,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this.scaleFactor = scaleFactor;
 	}
 
-	public float getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		this.bufferLengthDivisor = bufferLengthDivisor;
-	}
-
 	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
 	}
@@ -257,10 +259,9 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				final float scaleModifierX = Math.max(0.9f,
 						Math.min(scaleModifier.first, 1.1f));
 				*/
+				mGLThread.setxEnd((int) (xSizeAtBeginning/scaleModifier.first));
 				final float scaleModifierY = Math.max(0.9f,
 						Math.min(scaleModifier.second, 1.1f));
-				// bufferLengthDivisor *= scaleModifierX;
-				mGLThread.setxEnd((int) (xSizeAtBeginning/scaleModifier.first));
 				scaleFactor = scaleModifierY;
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
@@ -278,7 +279,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		private void broadcastScaleChange() {
 			Intent i = new Intent();
 			i.setAction("BYBScaleChange");
-			i.putExtra("newBufferLengthDivisor", bufferLengthDivisor);
 			i.putExtra("newScaleFactor", scaleFactor);
 			getContext().sendBroadcast(i);
 		}

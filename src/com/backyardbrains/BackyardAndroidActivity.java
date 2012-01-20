@@ -82,7 +82,10 @@ public class BackyardAndroidActivity extends Activity {
 		reassignSurfaceView(false);
 		if (oldConfig != null) {
 			mAndroidSurface.setScaleFactor(oldConfig.configScaleFactor);
-			mAndroidSurface.setBufferLengthDivisor(oldConfig.configBufferLengthDivisor);
+			/*
+			 * @TODO no longer persists X distance on orientation change
+			 * mAndroidSurface.setBufferLengthDivisor(oldConfig.configBufferLengthDivisor);
+			 */
 			Log.d("BYBAndroidActivity", "Setting surface AutoScaled to " + oldConfig.configAlreadyAutoScaled);
 			mAndroidSurface.setAutoScaled(oldConfig.configAlreadyAutoScaled);
 		}		
@@ -123,7 +126,10 @@ public class BackyardAndroidActivity extends Activity {
 	public BybConfigHolder collectConfigFromSurface () {
 		BybConfigHolder bch = new BybConfigHolder();
 		bch.configScaleFactor = mAndroidSurface.getScaleFactor();
-		bch.configBufferLengthDivisor = mAndroidSurface.getBufferLengthDivisor();
+		/*
+		 * @TODO No longer persists X length on orientation change
+		 * bch.configBufferLengthDivisor = mAndroidSurface.getBufferLengthDivisor();
+		 */
 		bch.configAlreadyAutoScaled = mAndroidSurface.isAutoScaled();
 		return bch;
 	}

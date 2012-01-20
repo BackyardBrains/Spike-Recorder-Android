@@ -254,16 +254,6 @@ public class OscilloscopeGLThread extends Thread {
 		//this.zoomMultiplier = mScaleFactor;
 	}
 
-	public float getBufferLengthDivisor() {
-		return bufferLengthDivisor;
-	}
-
-	public void setBufferLengthDivisor(float bufferLengthDivisor) {
-		if (bufferLengthDivisor >= 1 && bufferLengthDivisor <= 64) {
-			this.bufferLengthDivisor = bufferLengthDivisor;
-		}
-	}
-
 	public boolean isAutoScaled() {
 		return autoScaled;
 	}
@@ -312,9 +302,11 @@ public class OscilloscopeGLThread extends Thread {
 				android.content.Intent intent) {
 			setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
 
+			/*
 			float localBufferLengthDivisor = intent.getFloatExtra(
 					"newBufferLengthDivisor", 1);
 			setBufferLengthDivisor(localBufferLengthDivisor);
+			*/
 		};
 	}
 
