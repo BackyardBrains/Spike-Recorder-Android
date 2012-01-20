@@ -104,7 +104,7 @@ class BybGLDrawable {
 			}
 
 		}
-		parent.setxEnd(arrayToScaleTo.length);
+		// parent.setxEnd(arrayToScaleTo.length);
 
 	}
 
