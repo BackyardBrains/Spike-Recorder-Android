@@ -237,18 +237,30 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
+		
+		int xSizeAtBeginning = -1;
+		// int ySizeAtBeginning = -1;
+		
+		@Override
+		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
+			xSizeAtBeginning = mGLThread.getxEnd();
+			return super.onScaleBegin(detector);
+		}
+		
 		@Override
 		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-			// float mScaleFactor = mGLThread.getmScaleFactor();
-			// float scaleModifier = detector.getScaleFactor();
+			
 			try {
 				final Pair<Float, Float> scaleModifier = detector
 						.getScaleFactor();
+				/*
 				final float scaleModifierX = Math.max(0.9f,
 						Math.min(scaleModifier.first, 1.1f));
+				*/
 				final float scaleModifierY = Math.max(0.9f,
 						Math.min(scaleModifier.second, 1.1f));
-				bufferLengthDivisor *= scaleModifierX;
+				// bufferLengthDivisor *= scaleModifierX;
+				mGLThread.setxEnd((int) (xSizeAtBeginning/scaleModifier.first));
 				scaleFactor = scaleModifierY;
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
@@ -256,6 +268,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			broadcastScaleChange();
 
 			return super.onScale(detector);
+		}
+		
+		@Override
+		public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
+			super.onScaleEnd(detector);
 		}
 
 		private void broadcastScaleChange() {
