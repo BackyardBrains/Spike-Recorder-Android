@@ -49,7 +49,7 @@ public class GlSurfaceManager {
 		int height = parent.getHeight();
 		mGL.glViewport(0, 0, width, height);
 
-		mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+		glClear();
 		mGL.glMatrixMode(GL10.GL_PROJECTION);
 		mGL.glLoadIdentity();
 		mGL.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
