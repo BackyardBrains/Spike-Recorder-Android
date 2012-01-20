@@ -65,7 +65,7 @@ public class TriggerAverager {
 		short [] sampleChunk = new short[incomingAsArray.length];
 		int sampleChunkPosition = 0;
 		if(index > middleOfArray) {
-			Log.d(TAG, "Wrapping from end onto beginning");
+			// Log.d(TAG, "Wrapping from end onto beginning");
 			final int samplesToMove = index - middleOfArray;
 			for (int i = 0; i<incomingAsArray.length-samplesToMove; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i+samplesToMove];
@@ -75,7 +75,7 @@ public class TriggerAverager {
 			}
 		} else {
 			// it's near beginning, wrap from end on to front
-			Log.d(TAG, "Wrapping from beginning onto end");
+			// Log.d(TAG, "Wrapping from beginning onto end");
 			final int samplesToMove = middleOfArray - index;
 			for (int i = incomingAsArray.length - samplesToMove - 1; i < incomingAsArray.length; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
