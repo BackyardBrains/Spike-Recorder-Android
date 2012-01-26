@@ -99,8 +99,8 @@ class BybGLDrawable {
 			if (-newyMax > parent.getyMin()) {
 				Log.d(TAG, "Scaling window to " + -newyMax + " < y < "
 						+ newyMax);
-				parent.setyBegin(-newyMax);
-				parent.setyEnd(newyMax);
+				parent.setyBegin((int) -newyMax);
+				parent.setyEnd((int) newyMax);
 			}
 
 		}

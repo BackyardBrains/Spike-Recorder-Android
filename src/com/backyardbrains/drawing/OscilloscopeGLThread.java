@@ -28,6 +28,7 @@ import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 public class OscilloscopeGLThread extends Thread {
 	private static final String TAG = OscilloscopeGLThread.class
 			.getCanonicalName();
+	public static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 3 / 2);
 
 	protected boolean mDone = false;
 	protected BybGLDrawable waveformShape;
@@ -35,8 +36,8 @@ public class OscilloscopeGLThread extends Thread {
 	protected float bufferLengthDivisor = 1;
 	protected int xEnd = 4000;
 	private float yMin = -5000000f;
-	protected float yBegin = -5000f;
-	protected float yEnd = 5000f;
+	protected int yBegin = -5000;
+	protected int yEnd = 5000;
 	private boolean autoScaled;
 
 	protected short[] mBufferToDraws;
@@ -231,27 +232,22 @@ public class OscilloscopeGLThread extends Thread {
 		return yMin;
 	}
 
-	public void setyBegin(float yBegin) {
+	public void setyBegin(int yBegin) {
+		if (yBegin < -PCM_MAXIMUM_VALUE || yBegin > -400) return;
 		this.yBegin = yBegin;
 	}
 
-	public void setyEnd(float yEnd) {
-		this.yEnd = yEnd;
+	public int getyBegin() {
+		return yBegin;
 	}
 
-//	public float getmScaleFactor() {
-//		return zoomMultiplier;
-//	}
+	public int getyEnd() {
+		return yEnd;
+	}
 
-	public void setmScaleFactor(float mScaleFactor) {
-		// Don't let the object get too small or too large.
-		mScaleFactor = Math.max(0.98f, Math.min(mScaleFactor, 1.02f));
-
-		if (yBegin * mScaleFactor > Short.MIN_VALUE * 2)
-			yBegin = yBegin * mScaleFactor;
-		if (yEnd * mScaleFactor < Short.MAX_VALUE * 2)
-			yEnd = yEnd * mScaleFactor;
-		//this.zoomMultiplier = mScaleFactor;
+	public void setyEnd(int yEnd) {
+		if (yEnd > PCM_MAXIMUM_VALUE || yEnd < 400) return;
+		this.yEnd = yEnd;
 	}
 
 	public boolean isAutoScaled() {
@@ -300,7 +296,7 @@ public class OscilloscopeGLThread extends Thread {
 		@Override
 		public void onReceive(android.content.Context context,
 				android.content.Intent intent) {
-			setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
+			//setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
 
 			/*
 			float localBufferLengthDivisor = intent.getFloatExtra(

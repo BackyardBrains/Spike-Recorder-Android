@@ -125,7 +125,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		 * @TODO fix this to restore buffer length on orientation change
 		 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 		 */
-		mGLThread.setmScaleFactor(scaleFactor);
 		mGLThread.rescaleWaveform();
 		setMillivoltLabelPosition(height);
 	}
@@ -193,7 +192,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			/* @TODO fix this to reset X distance on orientation change
 			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 			 */
-			mGLThread.setmScaleFactor(scaleFactor);
 			Log.d(TAG, "Started GL thread with scale of " + scaleFactor
 					+ " and X distance of " + mGLThread.getxEnd());
 			mGLThread.start();
@@ -241,11 +239,12 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
 		
 		int xSizeAtBeginning = -1;
-		// int ySizeAtBeginning = -1;
+		int ySizeAtBeginning = -1;
 		
 		@Override
 		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
 			xSizeAtBeginning = mGLThread.getxEnd();
+			ySizeAtBeginning = mGLThread.getyEnd() - mGLThread.getyBegin();
 			return super.onScaleBegin(detector);
 		}
 		
@@ -255,32 +254,22 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			try {
 				final Pair<Float, Float> scaleModifier = detector
 						.getScaleFactor();
-				/*
-				final float scaleModifierX = Math.max(0.9f,
-						Math.min(scaleModifier.first, 1.1f));
-				*/
-				mGLThread.setxEnd((int) (xSizeAtBeginning/scaleModifier.first));
-				final float scaleModifierY = Math.max(0.9f,
-						Math.min(scaleModifier.second, 1.1f));
-				scaleFactor = scaleModifierY;
+				int newXsize = (int) (xSizeAtBeginning/scaleModifier.first);
+				mGLThread.setxEnd(newXsize);
+				
+				int newYsize = (int) (ySizeAtBeginning*scaleModifier.second);
+				
+				mGLThread.setyBegin(-(newYsize/2));
+				mGLThread.setyEnd(newYsize/2);
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
-			broadcastScaleChange();
-
 			return super.onScale(detector);
 		}
 		
 		@Override
 		public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
 			super.onScaleEnd(detector);
-		}
-
-		private void broadcastScaleChange() {
-			Intent i = new Intent();
-			i.setAction("BYBScaleChange");
-			i.putExtra("newScaleFactor", scaleFactor);
-			getContext().sendBroadcast(i);
 		}
 	}
 
