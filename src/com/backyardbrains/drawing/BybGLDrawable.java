@@ -96,7 +96,7 @@ class BybGLDrawable {
 			} else {
 				newyMax = Math.abs(theMin) * 2f;
 			}
-			if (-newyMax > parent.getyMin()) {
+			if (-newyMax > parent.getMinimumDetectedPCMValue()) {
 				Log.d(TAG, "Scaling window to " + -newyMax + " < y < "
 						+ newyMax);
 				parent.setyBegin((int) -newyMax);

@@ -35,7 +35,7 @@ public class OscilloscopeGLThread extends Thread {
 	//protected float zoomMultiplier = 1.f;
 	protected float bufferLengthDivisor = 1;
 	protected int xEnd = 4000;
-	private float yMin = -5000000f;
+	private float minimumDetectedPCMValue = -5000000f;
 	protected int yBegin = -5000;
 	protected int yEnd = 5000;
 	private boolean autoScaled;
@@ -228,8 +228,8 @@ public class OscilloscopeGLThread extends Thread {
 		this.xEnd = xEnd;
 	}
 
-	public float getyMin() {
-		return yMin;
+	public float getMinimumDetectedPCMValue() {
+		return minimumDetectedPCMValue;
 	}
 
 	public void setyBegin(int yBegin) {
