@@ -36,8 +36,8 @@ public class OscilloscopeGLThread extends Thread {
 	protected float bufferLengthDivisor = 1;
 	protected int xEnd = 4000;
 	private float minimumDetectedPCMValue = -5000000f;
-	protected int yBegin = -5000;
-	protected int yEnd = 5000;
+	private int yBegin = -5000;
+	private int yEnd = 5000;
 	private boolean autoScaled;
 
 	protected short[] mBufferToDraws;
@@ -232,20 +232,21 @@ public class OscilloscopeGLThread extends Thread {
 		return minimumDetectedPCMValue;
 	}
 
-	public void setyBegin(int yBegin) {
+	private void setyBegin(int yBegin) {
 		if (yBegin < -PCM_MAXIMUM_VALUE || yBegin > -400) return;
 		this.yBegin = yBegin;
 	}
 
-	public int getyBegin() {
-		return yBegin;
+	public int getGlWindowVerticalSize() {
+		return yEnd - yBegin;
+	}
+	
+	public void setGlWindowVerticalSize(int yValue) {
+		setyBegin(-yValue/2);
+		setyEnd(yValue/2);
 	}
 
-	public int getyEnd() {
-		return yEnd;
-	}
-
-	public void setyEnd(int yEnd) {
+	private void setyEnd(int yEnd) {
 		if (yEnd > PCM_MAXIMUM_VALUE || yEnd < 400) return;
 		this.yEnd = yEnd;
 	}

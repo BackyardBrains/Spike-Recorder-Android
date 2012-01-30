@@ -78,8 +78,8 @@ class BybGLDrawable {
 	 * @param arrayToScaleTo
 	 */
 	private void autoSetFrame(short[] arrayToScaleTo) {
-		float theMax = 0;
-		float theMin = 0;
+		int theMax = 0;
+		int theMin = 0;
 
 		for (int i = 0; i < arrayToScaleTo.length; i++) {
 			if (theMax < arrayToScaleTo[i])
@@ -88,19 +88,18 @@ class BybGLDrawable {
 				theMin = arrayToScaleTo[i];
 		}
 
-		float newyMax;
+		int newyMax;
 		if (theMax != 0 && theMin != 0) {
 
 			if (Math.abs(theMax) >= Math.abs(theMin)) {
-				newyMax = Math.abs(theMax) * 2f;
+				newyMax = Math.abs(theMax) * 2;
 			} else {
-				newyMax = Math.abs(theMin) * 2f;
+				newyMax = Math.abs(theMin) * 2;
 			}
 			if (-newyMax > parent.getMinimumDetectedPCMValue()) {
 				Log.d(TAG, "Scaling window to " + -newyMax + " < y < "
 						+ newyMax);
-				parent.setyBegin((int) -newyMax);
-				parent.setyEnd((int) newyMax);
+				parent.setGlWindowVerticalSize(newyMax*2);
 			}
 
 		}

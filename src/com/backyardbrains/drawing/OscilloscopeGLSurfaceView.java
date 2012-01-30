@@ -244,7 +244,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		@Override
 		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
 			xSizeAtBeginning = mGLThread.getxEnd();
-			ySizeAtBeginning = mGLThread.getyEnd() - mGLThread.getyBegin();
+			ySizeAtBeginning = mGLThread.getGlWindowVerticalSize();
 			return super.onScaleBegin(detector);
 		}
 		
@@ -259,8 +259,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				
 				int newYsize = (int) (ySizeAtBeginning*scaleModifier.second);
 				
-				mGLThread.setyBegin(-(newYsize/2));
-				mGLThread.setyEnd(newYsize/2);
+				mGLThread.setGlWindowVerticalSize(newYsize);
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
