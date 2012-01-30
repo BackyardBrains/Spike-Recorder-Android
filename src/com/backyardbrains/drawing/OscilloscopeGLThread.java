@@ -32,8 +32,6 @@ public class OscilloscopeGLThread extends Thread {
 
 	protected boolean mDone = false;
 	protected BybGLDrawable waveformShape;
-	//protected float zoomMultiplier = 1.f;
-	protected float bufferLengthDivisor = 1;
 	protected int xEnd = 4000;
 	private float minimumDetectedPCMValue = -5000000f;
 	private int yBegin = -5000;
