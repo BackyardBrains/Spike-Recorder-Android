@@ -5,11 +5,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
@@ -34,8 +32,6 @@ public class OscilloscopeGLThread extends Thread {
 	protected BybGLDrawable waveformShape;
 	protected int glWindowHorizontalSize = 4000;
 	private float minimumDetectedPCMValue = -5000000f;
-	private int yBegin = -5000;
-	private int yEnd = 5000;
 	private int glWindowVerticalSize = 10000;
 	private boolean autoScaled;
 
@@ -95,7 +91,6 @@ public class OscilloscopeGLThread extends Thread {
 						setLabels(glWindowHorizontalSize);
 					}
 
-					// glman.glClear();
 					waveformShape.setBufferToDraw(mBufferToDraws);
 					setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 					waveformShape.draw(glman.getmGL());
