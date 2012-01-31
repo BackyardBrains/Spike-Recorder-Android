@@ -74,7 +74,7 @@ public class OscilloscopeGLThread extends Thread {
 			postDrawingHandler();
 			glman.swapBuffers();
 			try {
-				sleep(20);
+				sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
