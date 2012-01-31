@@ -63,7 +63,6 @@ public class OscilloscopeGLThread extends Thread {
 		setupSurfaceAndDrawable();
 
 		bindAudioService(true);
-		registerScaleChangeReceiver(true);
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound && mAudioService != null) {
@@ -112,7 +111,6 @@ public class OscilloscopeGLThread extends Thread {
 			}
 		}
 		bindAudioService(false);
-		registerScaleChangeReceiver(false);
 		mConnection = null;
 	}
 
@@ -145,18 +143,6 @@ public class OscilloscopeGLThread extends Thread {
 			float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f /1000;
 			parent.setmVText(yPerDiv);
 		}
-	}
-
-	protected void registerScaleChangeReceiver(boolean on) {
-		if (on) {
-			scaleChangeReceiver = new ScaleChangeReceiver();
-			parent.getContext().registerReceiver(scaleChangeReceiver,
-					new IntentFilter("BYBScaleChange"));
-		} else {
-
-			parent.getContext().unregisterReceiver(scaleChangeReceiver);
-		}
-
 	}
 
 	protected void bindAudioService(boolean on) {
@@ -281,22 +267,6 @@ public class OscilloscopeGLThread extends Thread {
 			mAudioService = null;
 		}
 	};
-
-	private ScaleChangeReceiver scaleChangeReceiver;
-
-	private class ScaleChangeReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			//setmScaleFactor(intent.getFloatExtra("newScaleFactor", 1));
-
-			/*
-			float localBufferLengthDivisor = intent.getFloatExtra(
-					"newBufferLengthDivisor", 1);
-			setBufferLengthDivisor(localBufferLengthDivisor);
-			*/
-		};
-	}
 
 	public float getThresholdYValue() {
 		// TODO Auto-generated method stub

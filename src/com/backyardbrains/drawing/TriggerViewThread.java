@@ -39,7 +39,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		setupSurfaceAndDrawable();
 		mAudioService = null;
 		bindAudioService(true);
-		registerScaleChangeReceiver(true);
 		registerThresholdChangeReceiver(true);
 		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
 		parent.getContext().sendBroadcast(i);
@@ -93,7 +92,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		i = new Intent("BYBToggleTrigger").putExtra("triggerMode", false);
 		parent.getContext().sendBroadcast(i);
 		bindAudioService(false);
-		registerScaleChangeReceiver(false);
 		registerThresholdChangeReceiver(false);
 		mConnection = null;
 	}
