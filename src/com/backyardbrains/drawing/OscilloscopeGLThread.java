@@ -63,8 +63,7 @@ public class OscilloscopeGLThread extends Thread {
 			// grab current audio from audioservice
 			if (!isServiceReady()) continue;
 
-			// Reset our Audio buffer
-			ByteBuffer audioInfo = null;
+			audioInfo = null;
 
 			// Read new mic data
 			synchronized (mAudioService) {
@@ -258,6 +257,7 @@ public class OscilloscopeGLThread extends Thread {
 			mAudioService = null;
 		}
 	};
+	private ByteBuffer audioInfo;
 
 	public float getThresholdYValue() {
 		// TODO Auto-generated method stub
