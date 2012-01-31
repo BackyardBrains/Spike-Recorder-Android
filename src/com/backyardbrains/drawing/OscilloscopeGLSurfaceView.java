@@ -38,10 +38,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private float initialThresholdTouch = -1;
 
-	public OscilloscopeGLSurfaceView(Context context) {
-		this(context, null, 0);
-	}
-
 	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
 		this(context, null, 0);
 		triggerView = isTriggerMode;
@@ -53,14 +49,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this(context, isTriggerMode);
 		scaleFactor = bch.configScaleFactor;
 		/*
-		 * @TODO no longer restores X on orientation change
-		 * bufferLengthDivisor = bch.configBufferLengthDivisor;
+		 * @TODO no longer restores X on orientation change bufferLengthDivisor
+		 * = bch.configBufferLengthDivisor;
 		 */
 		didWeAlreadyAutoscale = bch.configAlreadyAutoScaled;
-	}
-
-	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
@@ -71,16 +63,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
 		mScaleDetector = new TwoDimensionScaleGestureDetector(context,
 				new ScaleListener());
-	}
-
-	public OscilloscopeGLSurfaceView(Context context, float scaleFactor,
-			float bufferLengthDivisor) {
-		this(context);
-		this.scaleFactor = scaleFactor;
-		/*
-		 * @TODO doesn't preserve X distance on orientation change
-		 * this.bufferLengthDivisor = bufferLengthDivisor;
-		 */
 	}
 
 	@Override
@@ -189,11 +171,14 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		}
 		synchronized (this) {
 			mGLThread.setAutoScaled(didWeAlreadyAutoscale);
-			/* @TODO fix this to reset X distance on orientation change
+			/*
+			 * @TODO fix this to reset X distance on orientation change
 			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 			 */
-			Log.d(TAG, "Started GL thread with scale of " + scaleFactor
-					+ " and X distance of " + mGLThread.getGlWindowHorizontalSize());
+			Log.d(TAG,
+					"Started GL thread with scale of " + scaleFactor
+							+ " and X distance of "
+							+ mGLThread.getGlWindowHorizontalSize());
 			mGLThread.start();
 		}
 	}
@@ -224,48 +209,40 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		getContext().sendBroadcast(i);
 	}
 
-	public float getScaleFactor() {
-		return scaleFactor;
-	}
-
-	public void setScaleFactor(float scaleFactor) {
-		this.scaleFactor = scaleFactor;
-	}
-
 	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
-		
+
 		int xSizeAtBeginning = -1;
 		int ySizeAtBeginning = -1;
-		
+
 		@Override
 		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
 			xSizeAtBeginning = mGLThread.getGlWindowHorizontalSize();
 			ySizeAtBeginning = mGLThread.getGlWindowVerticalSize();
 			return super.onScaleBegin(detector);
 		}
-		
+
 		@Override
 		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-			
+
 			try {
 				final Pair<Float, Float> scaleModifier = detector
 						.getScaleFactor();
-				int newXsize = (int) (xSizeAtBeginning/scaleModifier.first);
+				int newXsize = (int) (xSizeAtBeginning / scaleModifier.first);
 				mGLThread.setGlWindowHorizontalSize(newXsize);
-				
-				int newYsize = (int) (ySizeAtBeginning*scaleModifier.second);
-				
+
+				int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
+
 				mGLThread.setGlWindowVerticalSize(newYsize);
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			}
 			return super.onScale(detector);
 		}
-		
+
 		@Override
 		public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
 			super.onScaleEnd(detector);
