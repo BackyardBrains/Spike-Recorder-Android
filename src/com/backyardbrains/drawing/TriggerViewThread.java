@@ -34,16 +34,13 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	 */
 	@Override
 	public void run() {
-//		final int defaultSampleWidth = 4410;
 		
 		setupSurfaceAndDrawable();
 		mAudioService = null;
 		bindAudioService(true);
 		registerThresholdChangeReceiver(true);
-		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
-		parent.getContext().sendBroadcast(i);
+		broadcastToggleTrigger();
 		setDefaultThresholdValue();
-//		setTriggerWidth((int) (defaultSampleWidth/bufferLengthDivisor));
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (mAudioServiceIsBound && mAudioService != null) {
@@ -65,11 +62,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 					continue;
 				}
 
-				/*
-				setxEnd(mBufferToDraw.length);
-				int samplesToShow = Math.round(mBufferToDraw.length / bufferLengthDivisor);
-				*/
-				
 				synchronized (parent) {
 					setLabels(glWindowHorizontalSize);
 				}
@@ -89,11 +81,15 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				}
 			}
 		}
-		i = new Intent("BYBToggleTrigger").putExtra("triggerMode", false);
-		parent.getContext().sendBroadcast(i);
+		broadcastToggleTrigger();
 		bindAudioService(false);
 		registerThresholdChangeReceiver(false);
 		mConnection = null;
+	}
+
+	private void broadcastToggleTrigger() {
+		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
+		parent.getContext().sendBroadcast(i);
 	}
 
 	protected void setLabels(final int samplesToShow) {
