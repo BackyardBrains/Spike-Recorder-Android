@@ -57,7 +57,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				
 				if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
 					glman.glClear();
-					setGlWindow(xEnd, xEnd*2);
+					setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize*2);
 					if (isDrawThresholdLine()) {
 						drawThresholdLine();
 					}
@@ -71,12 +71,12 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				*/
 				
 				synchronized (parent) {
-					setLabels(xEnd);
+					setLabels(glWindowHorizontalSize);
 				}
 
 				glman.glClear();
 				waveformShape.setBufferToDraw(mBufferToDraws);
-				setGlWindow(xEnd, mBufferToDraws.length);
+				setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 				waveformShape.draw(glman.getmGL());
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
@@ -133,7 +133,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	protected void drawThresholdLine() {
-		final float thresholdLineLength = (mBufferToDraws == null) ? xEnd : mBufferToDraws.length;
+		final float thresholdLineLength = (mBufferToDraws == null) ? glWindowHorizontalSize : mBufferToDraws.length;
 		float[] thresholdLine = new float[] { 0, getThresholdValue(),
 				thresholdLineLength, getThresholdValue() };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);

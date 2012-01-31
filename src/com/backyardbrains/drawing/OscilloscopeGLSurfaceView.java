@@ -193,7 +193,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
 			 */
 			Log.d(TAG, "Started GL thread with scale of " + scaleFactor
-					+ " and X distance of " + mGLThread.getxEnd());
+					+ " and X distance of " + mGLThread.getGlWindowHorizontalSize());
 			mGLThread.start();
 		}
 	}
@@ -243,7 +243,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		
 		@Override
 		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
-			xSizeAtBeginning = mGLThread.getxEnd();
+			xSizeAtBeginning = mGLThread.getGlWindowHorizontalSize();
 			ySizeAtBeginning = mGLThread.getGlWindowVerticalSize();
 			return super.onScaleBegin(detector);
 		}
@@ -255,7 +255,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				final Pair<Float, Float> scaleModifier = detector
 						.getScaleFactor();
 				int newXsize = (int) (xSizeAtBeginning/scaleModifier.first);
-				mGLThread.setxEnd(newXsize);
+				mGLThread.setGlWindowHorizontalSize(newXsize);
 				
 				int newYsize = (int) (ySizeAtBeginning*scaleModifier.second);
 				

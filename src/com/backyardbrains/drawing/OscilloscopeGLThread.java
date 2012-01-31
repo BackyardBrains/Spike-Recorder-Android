@@ -32,7 +32,7 @@ public class OscilloscopeGLThread extends Thread {
 
 	protected boolean mDone = false;
 	protected BybGLDrawable waveformShape;
-	protected int xEnd = 4000;
+	protected int glWindowHorizontalSize = 4000;
 	private float minimumDetectedPCMValue = -5000000f;
 	private int yBegin = -5000;
 	private int yEnd = 5000;
@@ -87,17 +87,17 @@ public class OscilloscopeGLThread extends Thread {
 					mBufferToDraws = convertToShortArray(
 							audioInfoasShortBuffer, bufferCapacity);
 					// scale the right side to the number of data points we have
-					if (mBufferToDraws.length < xEnd) {
-						setxEnd(mBufferToDraws.length);
+					if (mBufferToDraws.length < glWindowHorizontalSize) {
+						setGlWindowHorizontalSize(mBufferToDraws.length);
 					}
 
 					synchronized (parent) {
-						setLabels(xEnd);
+						setLabels(glWindowHorizontalSize);
 					}
 
 					// glman.glClear();
 					waveformShape.setBufferToDraw(mBufferToDraws);
-					setGlWindow(xEnd, mBufferToDraws.length);
+					setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 					waveformShape.draw(glman.getmGL());
 					glman.swapBuffers();
 				}
@@ -120,7 +120,7 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
-		glman.initGL(lengthOfSampleSet - xEnd, lengthOfSampleSet, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
+		glman.initGL(lengthOfSampleSet - glWindowHorizontalSize, lengthOfSampleSet, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
 	}
 
 	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
@@ -204,13 +204,13 @@ public class OscilloscopeGLThread extends Thread {
 		return false;
 	}
 
-	public int getxEnd() {
-		return xEnd;
+	public int getGlWindowHorizontalSize() {
+		return glWindowHorizontalSize;
 	}
 
-	public void setxEnd(int xEnd) {
-		if (xEnd < 16 || mBufferToDraws == null || xEnd > mBufferToDraws.length) return;
-		this.xEnd = xEnd;
+	public void setGlWindowHorizontalSize (final int newSize) {
+		if (newSize < 16 || mBufferToDraws == null || newSize > mBufferToDraws.length) return;
+		this.glWindowHorizontalSize = newSize;
 	}
 
 	public float getMinimumDetectedPCMValue() {
