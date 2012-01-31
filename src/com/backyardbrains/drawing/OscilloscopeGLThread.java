@@ -61,52 +61,48 @@ public class OscilloscopeGLThread extends Thread {
 		bindAudioService(true);
 		while (!mDone) {
 			// grab current audio from audioservice
-			if (mAudioServiceIsBound && mAudioService != null) {
+			if (!isServiceReady()) continue;
 
-				// Reset our Audio buffer
-				ByteBuffer audioInfo = null;
+			// Reset our Audio buffer
+			ByteBuffer audioInfo = null;
 
-				// Read new mic data
-				synchronized (mAudioService) {
-					audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
+			// Read new mic data
+			synchronized (mAudioService) {
+				audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
+			}
+
+			if (audioInfo != null) {
+				audioInfo.clear();
+
+				// Convert audioInfo to a short[] named mBufferToDraw
+				final ShortBuffer audioInfoasShortBuffer = audioInfo
+						.asShortBuffer();
+				final int bufferCapacity = audioInfoasShortBuffer
+						.capacity();
+
+				mBufferToDraws = convertToShortArray(
+						audioInfoasShortBuffer, bufferCapacity);
+				// scale the right side to the number of data points we have
+				if (mBufferToDraws.length < glWindowHorizontalSize) {
+					setGlWindowHorizontalSize(mBufferToDraws.length);
 				}
 
-				if (audioInfo != null) {
-					audioInfo.clear();
-
-					// Convert audioInfo to a short[] named mBufferToDraw
-					final ShortBuffer audioInfoasShortBuffer = audioInfo
-							.asShortBuffer();
-					final int bufferCapacity = audioInfoasShortBuffer
-							.capacity();
-
-					mBufferToDraws = convertToShortArray(
-							audioInfoasShortBuffer, bufferCapacity);
-					// scale the right side to the number of data points we have
-					if (mBufferToDraws.length < glWindowHorizontalSize) {
-						setGlWindowHorizontalSize(mBufferToDraws.length);
-					}
-
-					synchronized (parent) {
-						setLabels(glWindowHorizontalSize);
-					}
-
-					waveformShape.setBufferToDraw(mBufferToDraws);
-					setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
-					waveformShape.draw(glman.getmGL());
-					glman.swapBuffers();
+				synchronized (parent) {
+					setLabels(glWindowHorizontalSize);
 				}
-				/*
-				try {
-					sleep(5);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				*/
+
+				waveformShape.setBufferToDraw(mBufferToDraws);
+				setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
+				waveformShape.draw(glman.getmGL());
+				glman.swapBuffers();
 			}
 		}
 		bindAudioService(false);
 		mConnection = null;
+	}
+
+	protected boolean isServiceReady() {
+		return mAudioServiceIsBound && mAudioService != null;
 	}
 
 	protected void setupSurfaceAndDrawable() {

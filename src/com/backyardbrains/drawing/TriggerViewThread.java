@@ -43,42 +43,41 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		setDefaultThresholdValue();
 		while (!mDone) {
 			// grab current audio from audioservice
-			if (mAudioServiceIsBound && mAudioService != null) {
-
-				// Reset our Audio buffer
-				mBufferToDraws = null;
-				// Read new mic data
-				synchronized (mAudioService) {
-					mBufferToDraws = mAudioService.getTriggerBuffer();
-				}
-				
-				if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
-					glman.glClear();
-					setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize*2);
-					if (isDrawThresholdLine()) {
-						drawThresholdLine();
-					}
-					glman.swapBuffers();
-					continue;
-				}
-
-				synchronized (parent) {
-					setLabels(glWindowHorizontalSize);
-				}
-
+			if (!isServiceReady()) continue;
+		
+			// Reset our Audio buffer
+			mBufferToDraws = null;
+			// Read new mic data
+			synchronized (mAudioService) {
+				mBufferToDraws = mAudioService.getTriggerBuffer();
+			}
+			
+			if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
 				glman.glClear();
-				waveformShape.setBufferToDraw(mBufferToDraws);
-				setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
-				waveformShape.draw(glman.getmGL());
+				setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize*2);
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
 				}
 				glman.swapBuffers();
-				try {
-					sleep(20);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				continue;
+			}
+
+			synchronized (parent) {
+				setLabels(glWindowHorizontalSize);
+			}
+
+			glman.glClear();
+			waveformShape.setBufferToDraw(mBufferToDraws);
+			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
+			waveformShape.draw(glman.getmGL());
+			if (isDrawThresholdLine()) {
+				drawThresholdLine();
+			}
+			glman.swapBuffers();
+			try {
+				sleep(20);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 		broadcastToggleTrigger();
