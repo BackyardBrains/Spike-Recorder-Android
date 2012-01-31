@@ -96,7 +96,6 @@ public class AudioServiceBinder extends Binder {
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// TODO Auto-generated method stub
 		return super.onStartCommand(intent, Service.START_STICKY, startId);
 	}
 

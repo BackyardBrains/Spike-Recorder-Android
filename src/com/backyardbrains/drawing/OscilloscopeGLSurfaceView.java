@@ -47,12 +47,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch,
 			boolean isTriggerMode) {
 		this(context, isTriggerMode);
-		scaleFactor = bch.configScaleFactor;
-		/*
-		 * @TODO no longer restores X on orientation change bufferLengthDivisor
-		 * = bch.configBufferLengthDivisor;
-		 */
-		didWeAlreadyAutoscale = bch.configAlreadyAutoScaled;
+		this.setConfig(bch);
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
@@ -211,6 +206,18 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
+	}
+	
+	public BybConfigHolder getConfig() {
+		return new BybConfigHolder(mGLThread.isAutoScaled(),
+				mGLThread.getGlWindowHorizontalSize(),
+				mGLThread.getGlWindowVerticalSize());
+	}
+	
+	public void setConfig (BybConfigHolder bch) {
+		mGLThread.setAutoScaled(bch.configAlreadyAutoScaled);
+		mGLThread.setGlWindowHorizontalSize(bch.xSize);
+		mGLThread.setGlWindowVerticalSize(bch.ySize);
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {

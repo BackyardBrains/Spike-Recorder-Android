@@ -1,7 +1,14 @@
 package com.backyardbrains;
 
 public class BybConfigHolder {
-	public float configScaleFactor = 0;
-	public float configBufferLengthDivisor = 0;
+	public BybConfigHolder(boolean autoScaled, int glWindowHorizontalSize,
+			int glWindowVerticalSize) {
+		configAlreadyAutoScaled = autoScaled;
+		xSize = glWindowHorizontalSize;
+		ySize = glWindowVerticalSize;
+	}
+	
+	public int xSize = 0;
+	public int ySize = 0;
 	public boolean configAlreadyAutoScaled = false;
-}		
+}

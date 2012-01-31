@@ -81,13 +81,7 @@ public class BackyardAndroidActivity extends Activity {
 		BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
 		reassignSurfaceView(false);
 		if (oldConfig != null) {
-			mAndroidSurface.setScaleFactor(oldConfig.configScaleFactor);
-			/*
-			 * @TODO no longer persists X distance on orientation change
-			 * mAndroidSurface.setBufferLengthDivisor(oldConfig.configBufferLengthDivisor);
-			 */
-			Log.d("BYBAndroidActivity", "Setting surface AutoScaled to " + oldConfig.configAlreadyAutoScaled);
-			mAndroidSurface.setAutoScaled(oldConfig.configAlreadyAutoScaled);
+			mAndroidSurface.setConfig(oldConfig);
 		}		
 
 		setupLabels();
@@ -124,14 +118,7 @@ public class BackyardAndroidActivity extends Activity {
 	}
 	
 	public BybConfigHolder collectConfigFromSurface () {
-		BybConfigHolder bch = new BybConfigHolder();
-		bch.configScaleFactor = mAndroidSurface.getScaleFactor();
-		/*
-		 * @TODO No longer persists X length on orientation change
-		 * bch.configBufferLengthDivisor = mAndroidSurface.getBufferLengthDivisor();
-		 */
-		bch.configAlreadyAutoScaled = mAndroidSurface.isAutoScaled();
-		return bch;
+		return mAndroidSurface.getConfig();
 	}
 
 	@Override
@@ -322,7 +309,8 @@ public class BackyardAndroidActivity extends Activity {
 
 	void reassignSurfaceView(boolean isTriggerView) {
 		BybConfigHolder bch = null; 
-		if(mAndroidSurface != null) bch = collectConfigFromSurface();
+		if(mAndroidSurface != null)
+			bch = collectConfigFromSurface();
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
 		if (bch != null) {
