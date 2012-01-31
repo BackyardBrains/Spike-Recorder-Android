@@ -36,6 +36,7 @@ public class OscilloscopeGLThread extends Thread {
 	private float minimumDetectedPCMValue = -5000000f;
 	private int yBegin = -5000;
 	private int yEnd = 5000;
+	private int glWindowVerticalSize = 10000;
 	private boolean autoScaled;
 
 	protected short[] mBufferToDraws;
@@ -121,7 +122,7 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
-		glman.initGL(lengthOfSampleSet - xEnd, lengthOfSampleSet, yBegin, yEnd);
+		glman.initGL(lengthOfSampleSet - xEnd, lengthOfSampleSet, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
 	}
 
 	protected short[] convertToShortArray(final ShortBuffer shortBuffer,
@@ -141,7 +142,7 @@ public class OscilloscopeGLThread extends Thread {
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
 		parent.setMsText(millisecondsInThisWindow);
 		if (!isDrawThresholdLine()) {
-			float yPerDiv = (float) (yEnd - yBegin) / 4.0f / 24.5f /1000;
+			float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f /1000;
 			parent.setmVText(yPerDiv);
 		}
 	}
@@ -230,23 +231,15 @@ public class OscilloscopeGLThread extends Thread {
 		return minimumDetectedPCMValue;
 	}
 
-	private void setyBegin(int yBegin) {
-		if (yBegin < -PCM_MAXIMUM_VALUE || yBegin > -400) return;
-		this.yBegin = yBegin;
-	}
-
 	public int getGlWindowVerticalSize() {
-		return yEnd - yBegin;
+		return glWindowVerticalSize;
 	}
 	
-	public void setGlWindowVerticalSize(int yValue) {
-		setyBegin(-yValue/2);
-		setyEnd(yValue/2);
-	}
-
-	private void setyEnd(int yEnd) {
-		if (yEnd > PCM_MAXIMUM_VALUE || yEnd < 400) return;
-		this.yEnd = yEnd;
+	public void setGlWindowVerticalSize(int y) {
+		if (y < 800 || y > PCM_MAXIMUM_VALUE * 2)
+			return;
+		
+		glWindowVerticalSize = y;
 	}
 
 	public boolean isAutoScaled() {
