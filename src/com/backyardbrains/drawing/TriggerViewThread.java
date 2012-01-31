@@ -54,7 +54,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			
 			if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
 				glman.glClear();
-				setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize*2);
+				setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize);
 				if (isDrawThresholdLine()) {
 					drawThresholdLine();
 				}

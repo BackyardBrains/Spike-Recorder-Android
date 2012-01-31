@@ -62,7 +62,7 @@ public class AudioServiceBinder extends Binder {
 	 * 
 	 * @return a ordinate-corrected version of the audio buffer
 	 */
-	public byte[] getAudioBuffer() {
+	public short[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
 	

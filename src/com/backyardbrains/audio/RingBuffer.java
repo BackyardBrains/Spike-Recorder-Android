@@ -1,9 +1,10 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 public class RingBuffer {
-	private byte[] buffer;
+	private short[] buffer;
 	private int beginning;
 
 	/**
@@ -23,11 +24,11 @@ public class RingBuffer {
 	private int end;
 
 	public RingBuffer(int size) {
-		buffer = new byte[size];
+		buffer = new short[size];
 		beginning = end = -1;
 	}
 
-	public void addEnd(byte b) {
+	public void addEnd(short r) {
 		if (end >= 0) {
 			// not empty!
 			++end;
@@ -40,15 +41,22 @@ public class RingBuffer {
 		} else {
 			beginning = end = 0;
 		}
-		buffer[end] = b;
+		buffer[end] = r;
 	}
 
-	public void add(ByteBuffer buffer) {
+	public void add(ByteBuffer incoming) {
+		/*
 		byte swp;
 		while (buffer.hasRemaining()) {
 			swp = buffer.get();
 			addEnd(buffer.get());
 			addEnd(swp);
+		}
+		*/
+		incoming.clear();
+		ShortBuffer sb = incoming.asShortBuffer();
+		while (sb.hasRemaining()) {
+			addEnd(sb.get());
 		}
 	}
 
@@ -57,13 +65,13 @@ public class RingBuffer {
 	 * 
 	 * @return
 	 */
-	public byte[] getArray() {
+	public short[] getArray() {
 		if (beginning == 0) {
-			byte[] returnArray = new byte[end + 1];
+			short[] returnArray = new short[end + 1];
 			System.arraycopy(buffer, 0, returnArray, 0, returnArray.length);
 			return returnArray;
 		}
-		byte[] returnArray = new byte[buffer.length];
+		short[] returnArray = new short[buffer.length];
 		System.arraycopy(buffer, beginning, returnArray, 0, buffer.length
 				- beginning);
 		System.arraycopy(buffer, 0, returnArray, buffer.length - beginning,
@@ -73,7 +81,7 @@ public class RingBuffer {
 
 	public void zeroFill() {
 		for (int i = 0; i < buffer.length; i++) {
-			addEnd((byte) 0);
+			addEnd((short) 0);
 		}
 
 	}
