@@ -188,7 +188,10 @@ public class OscilloscopeGLThread extends Thread {
 	}
 
 	public void setGlWindowHorizontalSize (final int newSize) {
-		if (newSize < 16 || mBufferToDraws == null || newSize > mBufferToDraws.length) return;
+		int maxlength = 0;
+		if (mBufferToDraws != null)
+			maxlength = mBufferToDraws.length;
+		if (newSize < 16 || (maxlength > 0 && newSize > maxlength)) return;
 		this.glWindowHorizontalSize = newSize;
 	}
 

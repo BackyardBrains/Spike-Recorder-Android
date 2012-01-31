@@ -61,7 +61,10 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				glman.swapBuffers();
 				continue;
 			}
-
+			
+			if (mBufferToDraws.length < glWindowHorizontalSize)
+				glWindowHorizontalSize = mBufferToDraws.length;
+			
 			synchronized (parent) {
 				setLabels(glWindowHorizontalSize);
 			}

@@ -81,7 +81,7 @@ public class BackyardAndroidActivity extends Activity {
 		BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
 		reassignSurfaceView(false);
 		if (oldConfig != null) {
-			mAndroidSurface.setConfig(oldConfig);
+			mAndroidSurface.prepareConfig(oldConfig);
 		}		
 
 		setupLabels();
@@ -245,7 +245,6 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	private void setUpSampleSlider() {
-		// @TODO left off here
 		triggerViewSampleChanger = (LinearLayout) findViewById(R.id.triggerViewSampleChangerLayout);
 	
 		numberOfSamplesLabel = (TextView) findViewById(R.id.numberOfSamplesAveraged);

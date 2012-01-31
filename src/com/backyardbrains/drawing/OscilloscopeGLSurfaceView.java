@@ -33,10 +33,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private OscilloscopeGLThread mGLThread;
 
 	private boolean triggerView;
-	private boolean didWeAlreadyAutoscale;
-	private float scaleFactor = 1;
 
 	private float initialThresholdTouch = -1;
+
+	private BybConfigHolder configToUse;
 
 	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
 		this(context, null, 0);
@@ -47,7 +47,8 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch,
 			boolean isTriggerMode) {
 		this(context, isTriggerMode);
-		this.setConfig(bch);
+		configToUse = bch;
+		//this.setConfig(bch);
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
@@ -90,7 +91,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 				break;
 			}
 			}
-
 		}
 		return super.onTouchEvent(event);
 	}
@@ -138,14 +138,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	public boolean isAutoScaled() {
 		if (haveThread()) {
-			didWeAlreadyAutoscale = mGLThread.isAutoScaled();
-			return didWeAlreadyAutoscale;
-		} else
-			return didWeAlreadyAutoscale;
+			return mGLThread.isAutoScaled();
+		} else return false;
 	}
 
 	public void setAutoScaled(boolean autoScaled) {
-		didWeAlreadyAutoscale = autoScaled;
 		if (haveThread()) {
 			mGLThread.setAutoScaled(autoScaled);
 		}
@@ -165,15 +162,10 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			mGLThread = new OscilloscopeGLThread(this);
 		}
 		synchronized (this) {
-			mGLThread.setAutoScaled(didWeAlreadyAutoscale);
-			/*
-			 * @TODO fix this to reset X distance on orientation change
-			 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
-			 */
-			Log.d(TAG,
-					"Started GL thread with scale of " + scaleFactor
-							+ " and X distance of "
-							+ mGLThread.getGlWindowHorizontalSize());
+			if (configToUse != null) {
+				this.setConfig(configToUse);
+				configToUse = null;
+			}
 			mGLThread.start();
 		}
 	}
@@ -209,15 +201,22 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 	
 	public BybConfigHolder getConfig() {
+		Log.d(TAG, "pickeling with: " + mGLThread.isAutoScaled() +", " +mGLThread.getGlWindowHorizontalSize() + ", " + mGLThread.getGlWindowVerticalSize());
 		return new BybConfigHolder(mGLThread.isAutoScaled(),
 				mGLThread.getGlWindowHorizontalSize(),
 				mGLThread.getGlWindowVerticalSize());
 	}
 	
+	public void prepareConfig (BybConfigHolder bch) {
+		configToUse = bch;
+	}
+	
 	public void setConfig (BybConfigHolder bch) {
-		mGLThread.setAutoScaled(bch.configAlreadyAutoScaled);
-		mGLThread.setGlWindowHorizontalSize(bch.xSize);
-		mGLThread.setGlWindowVerticalSize(bch.ySize);
+		if (mGLThread != null) {
+			mGLThread.setAutoScaled(bch.configAlreadyAutoScaled);
+			mGLThread.setGlWindowHorizontalSize(bch.xSize);
+			mGLThread.setGlWindowVerticalSize(bch.ySize);
+		}
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
