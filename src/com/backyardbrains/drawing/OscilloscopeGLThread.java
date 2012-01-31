@@ -84,6 +84,11 @@ public class OscilloscopeGLThread extends Thread {
 			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 			waveformShape.draw(glman.getmGL());
 			glman.swapBuffers();
+			try {
+				sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		bindAudioService(false);
 		mConnection = null;

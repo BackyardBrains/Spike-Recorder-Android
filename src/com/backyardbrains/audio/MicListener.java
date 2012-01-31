@@ -92,9 +92,9 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			Log.d(TAG, "Recorder Started");
 			
-			while (!mDone && recorder.read(audioInfo, audioInfo.limit()/4) > 0) {
+			while (!mDone && recorder.read(audioInfo, audioInfo.limit()/8) > 0) {
 				audioInfo.clear();
-				byte[] swapper = new byte[audioInfo.limit()/4];
+				byte[] swapper = new byte[audioInfo.limit()/8];
 				audioInfo.get(swapper);
 				ByteBuffer derp = ByteBuffer.wrap(swapper);
 				derp.order(ByteOrder.nativeOrder());
