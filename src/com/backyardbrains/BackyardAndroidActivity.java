@@ -78,11 +78,11 @@ public class BackyardAndroidActivity extends Activity {
 
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
-		BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
+		//BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
 		reassignSurfaceView(false);
-		if (oldConfig != null) {
-			mAndroidSurface.prepareConfig(oldConfig);
-		}		
+		//if (oldConfig != null) {
+		//	mAndroidSurface.prepareConfig(oldConfig);
+		//}		
 
 		setupLabels();
 		setUpRecordingButtons();

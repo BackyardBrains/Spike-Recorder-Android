@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Pair;
@@ -11,6 +12,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.BybConfigHolder;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
@@ -36,7 +38,9 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private float initialThresholdTouch = -1;
 
-	private BybConfigHolder configToUse;
+	//private BybConfigHolder configToUse;
+
+	private SharedPreferences settings;
 
 	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
 		this(context, null, 0);
@@ -47,13 +51,14 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch,
 			boolean isTriggerMode) {
 		this(context, isTriggerMode);
-		configToUse = bch;
+		//configToUse = bch;
 		//this.setConfig(bch);
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
 			int defStyle) {
 		super(context, attrs, defStyle);
+		settings = ((BackyardAndroidActivity) context).getPreferences(BackyardAndroidActivity.MODE_PRIVATE);
 		mAndroidHolder = getHolder();
 		mAndroidHolder.addCallback(this);
 		mAndroidHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
@@ -115,6 +120,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public void surfaceCreated(SurfaceHolder holder) {
 		resetDrawingThread();
 		setKeepScreenOn(true);
+		readSettings();
 	}
 
 	/**
@@ -124,6 +130,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		saveSettings();
 		synchronized (mGLThread) {
 			if (haveThread()) {
 				mGLThread.requestStop();
@@ -162,10 +169,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			mGLThread = new OscilloscopeGLThread(this);
 		}
 		synchronized (this) {
-			if (configToUse != null) {
-				this.setConfig(configToUse);
-				configToUse = null;
-			}
 			mGLThread.start();
 		}
 	}
@@ -208,7 +211,7 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	}
 	
 	public void prepareConfig (BybConfigHolder bch) {
-		configToUse = bch;
+		//configToUse = bch;
 	}
 	
 	public void setConfig (BybConfigHolder bch) {
@@ -217,6 +220,31 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 			mGLThread.setGlWindowHorizontalSize(bch.xSize);
 			mGLThread.setGlWindowVerticalSize(bch.ySize);
 		}
+	}
+	
+	private void readSettings() {
+		if (mGLThread.isDrawThresholdLine()) {
+			mGLThread.setGlWindowHorizontalSize(settings.getInt("triggerGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize()));
+			mGLThread.setGlWindowVerticalSize(settings.getInt("triggerGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize()));
+		} else {
+			mGLThread.setGlWindowHorizontalSize(settings.getInt("continuousGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize()));
+			mGLThread.setGlWindowVerticalSize(settings.getInt("continuousGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize()));
+		}
+	}
+
+	private void saveSettings() {
+		final SharedPreferences.Editor editor = settings.edit();
+		Boolean triggerMode = mGLThread.isDrawThresholdLine();
+		editor.putBoolean("triggerMode", triggerMode);
+		if (triggerMode) {
+			editor.putInt("triggerGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize());
+			editor.putInt("triggerGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize());
+		} else {
+			editor.putInt("continuousGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize());
+			editor.putInt("continuousGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize());
+		}
+		editor.commit();
+		
 	}
 
 	private class ScaleListener extends Simple2DOnScaleGestureListener {
