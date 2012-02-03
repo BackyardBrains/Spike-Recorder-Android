@@ -37,8 +37,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	private float initialThresholdTouch = -1;
 
-	//private BybConfigHolder configToUse;
-
 	private SharedPreferences settings;
 
 	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {

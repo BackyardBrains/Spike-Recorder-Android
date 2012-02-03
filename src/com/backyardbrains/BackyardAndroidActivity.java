@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -67,6 +68,7 @@ public class BackyardAndroidActivity extends Activity {
 	private SeekBar samplesSeekBar;
 	private TextView numberOfSamplesLabel;
 	private ImageView msLineView;
+	private SharedPreferences settings;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -78,11 +80,10 @@ public class BackyardAndroidActivity extends Activity {
 
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
-		//BybConfigHolder oldConfig = (BybConfigHolder) getLastNonConfigurationInstance();
-		reassignSurfaceView(false);
-		//if (oldConfig != null) {
-		//	mAndroidSurface.prepareConfig(oldConfig);
-		//}		
+		settings = getPreferences(MODE_PRIVATE);
+		triggerMode = settings.getBoolean("triggerMode", false);
+		
+		reassignSurfaceView(triggerMode);
 
 		setupLabels();
 		setUpRecordingButtons();
@@ -93,7 +94,6 @@ public class BackyardAndroidActivity extends Activity {
 	private void setupLabels() {
 		msView = (TextView) findViewById(R.id.millisecondsView);
 		mVView = (TextView) findViewById(R.id.mVLabelView);
-		// sLineView = (ImageView) findViewById(R.id.msLineView);
 		setupMsLineView();
 	}
 
@@ -125,16 +125,20 @@ public class BackyardAndroidActivity extends Activity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// TODO Auto-generated method stub
+		SharedPreferences.Editor editor = settings.edit();
 		switch (item.getItemId()) {
 		case R.id.waveview:
 			// mAndroidSurface.setContinuousViewMode();
 			triggerMode = false;
+			editor.putBoolean("triggerMode", triggerMode);
+			editor.commit();
 			reassignSurfaceView(triggerMode);
 			return true;
 		case R.id.threshold:
 			// mAndroidSurface.setTriggerViewMode();
 			triggerMode = true;
+			editor.putBoolean("triggerMode", triggerMode);
+			editor.commit();
 			reassignSurfaceView(triggerMode);
 			return true;
 		default:
