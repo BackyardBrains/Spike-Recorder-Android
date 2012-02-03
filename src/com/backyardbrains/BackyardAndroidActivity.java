@@ -83,11 +83,11 @@ public class BackyardAndroidActivity extends Activity {
 		settings = getPreferences(MODE_PRIVATE);
 		triggerMode = settings.getBoolean("triggerMode", false);
 		
-		reassignSurfaceView(triggerMode);
-
 		setupLabels();
 		setUpRecordingButtons();
 		setUpSampleSlider();
+
+		reassignSurfaceView(triggerMode);
 		
 	}
 
@@ -128,14 +128,12 @@ public class BackyardAndroidActivity extends Activity {
 		SharedPreferences.Editor editor = settings.edit();
 		switch (item.getItemId()) {
 		case R.id.waveview:
-			// mAndroidSurface.setContinuousViewMode();
 			triggerMode = false;
 			editor.putBoolean("triggerMode", triggerMode);
 			editor.commit();
 			reassignSurfaceView(triggerMode);
 			return true;
 		case R.id.threshold:
-			// mAndroidSurface.setTriggerViewMode();
 			triggerMode = true;
 			editor.putBoolean("triggerMode", triggerMode);
 			editor.commit();
