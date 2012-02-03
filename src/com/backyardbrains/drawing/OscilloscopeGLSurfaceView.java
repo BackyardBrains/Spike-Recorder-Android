@@ -13,7 +13,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.backyardbrains.BackyardAndroidActivity;
-import com.backyardbrains.BybConfigHolder;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
 
@@ -46,13 +45,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		this(context, null, 0);
 		triggerView = isTriggerMode;
 		Log.d(TAG, "Starting surface with triggerView set to " + triggerView);
-	}
-
-	public OscilloscopeGLSurfaceView(Context context, BybConfigHolder bch,
-			boolean isTriggerMode) {
-		this(context, isTriggerMode);
-		//configToUse = bch;
-		//this.setConfig(bch);
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
@@ -201,25 +193,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 
 	public OscilloscopeGLThread getGLThread() {
 		return mGLThread;
-	}
-	
-	public BybConfigHolder getConfig() {
-		Log.d(TAG, "pickeling with: " + mGLThread.isAutoScaled() +", " +mGLThread.getGlWindowHorizontalSize() + ", " + mGLThread.getGlWindowVerticalSize());
-		return new BybConfigHolder(mGLThread.isAutoScaled(),
-				mGLThread.getGlWindowHorizontalSize(),
-				mGLThread.getGlWindowVerticalSize());
-	}
-	
-	public void prepareConfig (BybConfigHolder bch) {
-		//configToUse = bch;
-	}
-	
-	public void setConfig (BybConfigHolder bch) {
-		if (mGLThread != null) {
-			mGLThread.setAutoScaled(bch.configAlreadyAutoScaled);
-			mGLThread.setGlWindowHorizontalSize(bch.xSize);
-			mGLThread.setGlWindowVerticalSize(bch.ySize);
-		}
 	}
 	
 	private void readSettings() {

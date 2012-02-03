@@ -116,15 +116,6 @@ public class BackyardAndroidActivity extends Activity {
 		RelativeLayout parentLayout = (RelativeLayout) findViewById(R.id.parentLayout);
 		parentLayout.addView(msLineView, rl);
 	}
-	
-	public BybConfigHolder collectConfigFromSurface () {
-		return mAndroidSurface.getConfig();
-	}
-
-	@Override
-	public BybConfigHolder onRetainNonConfigurationInstance() {
-		return collectConfigFromSurface();
-	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -307,16 +298,9 @@ public class BackyardAndroidActivity extends Activity {
 	};
 
 	void reassignSurfaceView(boolean isTriggerView) {
-		BybConfigHolder bch = null; 
-		if(mAndroidSurface != null)
-			bch = collectConfigFromSurface();
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
-		if (bch != null) {
-			mAndroidSurface = new OscilloscopeGLSurfaceView(this, bch, isTriggerView);
-		} else {
-			mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
-		}
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
 		mainscreenGLLayout.addView(mAndroidSurface);
 		if (isTriggerView) {
 			hideRecordingButtons();
