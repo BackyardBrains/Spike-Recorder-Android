@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -171,7 +172,7 @@ public class BackyardAndroidActivity extends Activity {
 		application.startAudioService();
 		
 	}
-
+	
 	@Override
 	protected void onStop() {
 		super.onStop();
@@ -181,6 +182,9 @@ public class BackyardAndroidActivity extends Activity {
 		unregisterReceiver(upmillivolt);
 		unregisterReceiver(milliVoltSize);
 		unregisterReceiver(showRecordingButtonsReceiver);
+		Editor editor = settings.edit();
+		editor.putBoolean("triggerMode", false);
+		editor.commit();
 	}
 
 	@Override
