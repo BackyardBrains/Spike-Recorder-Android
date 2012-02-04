@@ -155,7 +155,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	public float getThresholdYValue() {
-		return parent.getHeight() / 2 - thresholdPixelHeight;
+		return thresholdPixelHeight;
 	}
 
 	public void adjustThresholdValue(float dy) {
