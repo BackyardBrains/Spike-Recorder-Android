@@ -115,25 +115,32 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		if (mAudioService != null && mAudioServiceIsBound) {
 			mAudioService.getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight*5/2);
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
 				}
 			});
 		}
 		parent.setmVText(yPerDiv);
 	}
+	
+	long map(long x, long in_min, long in_max, long out_min, long out_max)
+	{
+	  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+	}
 
 	private float glHeightToPixelHeight(float glHeight) {
-		return (glHeight / getGlWindowVerticalSize()) * parent.getHeight();
+		//return (glHeight / getGlWindowVerticalSize()) * parent.getHeight();
+		return map((long) glHeight, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2, parent.getHeight(), 0);
 	}
 
 	private float pixelHeightToGlHeight(float pxHeight) {
-		return pxHeight / parent.getHeight() * getGlWindowVerticalSize();
+		return map((long) pxHeight, parent.getHeight(), 0, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
+		//return pxHeight / parent.getHeight() * getGlWindowVerticalSize();
 	}
 
 	protected void drawThresholdLine() {
 		final float thresholdLineLength = (mBufferToDraws == null) ? glWindowHorizontalSize : mBufferToDraws.length;
-		float[] thresholdLine = new float[] { 0, getThresholdValue(),
-				thresholdLineLength, getThresholdValue() };
+		float[] thresholdLine = new float[] { -thresholdLineLength*2, getThresholdValue(),
+				thresholdLineLength*2, getThresholdValue() };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		glman.getmGL().glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		glman.getmGL().glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
@@ -153,7 +160,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 	public void adjustThresholdValue(float dy) {
 		//if (dy < parent.getHeight() / 2)
-			thresholdPixelHeight = parent.getHeight() / 2 - dy;
+			thresholdPixelHeight = dy;
 	}
 
 	protected void registerThresholdChangeReceiver(boolean on) {
