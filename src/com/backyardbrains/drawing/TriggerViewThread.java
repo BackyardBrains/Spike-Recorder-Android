@@ -45,20 +45,11 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			// grab current audio from audioservice
 			if (!isServiceReady()) continue;
 		
-			// Reset our Audio buffer
-			mBufferToDraws = null;
 			// Read new mic data
-			synchronized (mAudioService) {
-				mBufferToDraws = mAudioService.getTriggerBuffer();
-			}
+			mBufferToDraws = getCurrentAudio();
 			
-			if (mBufferToDraws == null || mBufferToDraws.length <= 0) {
-				glman.glClear();
-				setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize);
-				if (isDrawThresholdLine()) {
-					drawThresholdLine();
-				}
-				glman.swapBuffers();
+			if (!isValidAudioBuffer()) {
+				drawBlankThresholdWindow();
 				continue;
 			}
 			
@@ -73,9 +64,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			waveformShape.setBufferToDraw(mBufferToDraws);
 			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 			waveformShape.draw(glman.getmGL());
-			if (isDrawThresholdLine()) {
-				drawThresholdLine();
-			}
+			drawThresholdLine();
 			glman.swapBuffers();
 			try {
 				sleep(20);
@@ -87,6 +76,13 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		bindAudioService(false);
 		registerThresholdChangeReceiver(false);
 		mConnection = null;
+	}
+
+	private void drawBlankThresholdWindow() {
+		glman.glClear();
+		setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize);
+		drawThresholdLine();
+		glman.swapBuffers();
 	}
 
 	private void broadcastToggleTrigger() {

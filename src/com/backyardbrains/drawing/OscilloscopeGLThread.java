@@ -64,12 +64,9 @@ public class OscilloscopeGLThread extends Thread {
 			if (!isServiceReady()) continue;
 
 			// Read new mic data
-			synchronized (mAudioService) {
-				//audioInfo = ByteBuffer.wrap(mAudioService.getAudioBuffer());
-				mBufferToDraws = mAudioService.getAudioBuffer();
-			}
+			mBufferToDraws = getCurrentAudio();
 
-			if (mBufferToDraws == null || mBufferToDraws.length <= 0) continue;
+			if (!isValidAudioBuffer()) continue;
 
 			// scale the right side to the number of data points we have
 			if (mBufferToDraws.length < glWindowHorizontalSize) {
@@ -87,6 +84,19 @@ public class OscilloscopeGLThread extends Thread {
 		}
 		bindAudioService(false);
 		mConnection = null;
+	}
+	
+	protected short[] getCurrentAudio () {
+		synchronized (mAudioService) {
+			if (isDrawThresholdLine())
+				return mAudioService.getTriggerBuffer();
+			else
+				return mAudioService.getAudioBuffer();
+		}
+	}
+
+	protected boolean isValidAudioBuffer() {
+		return mBufferToDraws != null && mBufferToDraws.length > 0;
 	}
 
 	protected boolean isServiceReady() {
