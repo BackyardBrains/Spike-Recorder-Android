@@ -56,9 +56,8 @@ public class OscilloscopeGLThread extends Thread {
 	 */
 	@Override
 	public void run() {
-		setupSurfaceAndDrawable();
-
 		bindAudioService(true);
+		setupSurfaceAndDrawable();
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (!isServiceReady()) continue;
@@ -66,7 +65,10 @@ public class OscilloscopeGLThread extends Thread {
 			// Read new mic data
 			mBufferToDraws = getCurrentAudio();
 
-			if (!isValidAudioBuffer()) continue;
+			if (!isValidAudioBuffer()) {
+				noValidBufferFallback();
+				continue;
+			}
 
 			// scale the right side to the number of data points we have
 			if (mBufferToDraws.length < glWindowHorizontalSize) {
@@ -86,6 +88,11 @@ public class OscilloscopeGLThread extends Thread {
 		mConnection = null;
 	}
 	
+	protected void noValidBufferFallback() {
+		// this is a stub for derivative classes to override
+		// and should contain the default activity for 
+	}
+
 	protected short[] getCurrentAudio () {
 		synchronized (mAudioService) {
 			if (isDrawThresholdLine())

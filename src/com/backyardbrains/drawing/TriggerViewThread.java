@@ -34,13 +34,11 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	 */
 	@Override
 	public void run() {
-		
-		setupSurfaceAndDrawable();
-		mAudioService = null;
-		bindAudioService(true);
 		registerThresholdChangeReceiver(true);
 		broadcastToggleTrigger();
 		setDefaultThresholdValue();
+		bindAudioService(true);
+		setupSurfaceAndDrawable();
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (!isServiceReady()) continue;
@@ -49,13 +47,15 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 			mBufferToDraws = getCurrentAudio();
 			
 			if (!isValidAudioBuffer()) {
-				drawBlankThresholdWindow();
+				noValidBufferFallback();
 				continue;
 			}
 			
-			if (mBufferToDraws.length < glWindowHorizontalSize)
-				glWindowHorizontalSize = mBufferToDraws.length;
-			
+			// scale the right side to the number of data points we have
+			if (mBufferToDraws.length < glWindowHorizontalSize) {
+				setGlWindowHorizontalSize(mBufferToDraws.length);
+			}
+
 			synchronized (parent) {
 				setLabels(glWindowHorizontalSize);
 			}
@@ -76,6 +76,12 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		bindAudioService(false);
 		registerThresholdChangeReceiver(false);
 		mConnection = null;
+	}
+	
+	@Override
+	protected void noValidBufferFallback() {
+		drawBlankThresholdWindow();
+		super.noValidBufferFallback();
 	}
 
 	private void drawBlankThresholdWindow() {
