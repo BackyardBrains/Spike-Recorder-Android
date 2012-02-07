@@ -188,6 +188,15 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	@Override
+	protected void onDestroy() {
+		// TODO Auto-generated method stub
+		Editor editor = settings.edit();
+		editor.putBoolean("triggerMode", false);
+		editor.commit();
+		super.onDestroy();
+	}
+	
+	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mAndroidSurface.onTouchEvent(event);
 		return super.onTouchEvent(event);
