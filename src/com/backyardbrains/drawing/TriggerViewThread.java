@@ -72,10 +72,10 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 				e.printStackTrace();
 			}
 		}
-		broadcastToggleTrigger();
 		bindAudioService(false);
-		registerThresholdChangeReceiver(false);
 		mConnection = null;
+		broadcastToggleTrigger();
+		registerThresholdChangeReceiver(false);
 	}
 	
 	@Override
