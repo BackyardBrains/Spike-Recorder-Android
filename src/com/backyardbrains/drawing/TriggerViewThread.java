@@ -37,43 +37,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		registerThresholdChangeReceiver(true);
 		broadcastToggleTrigger();
 		setDefaultThresholdValue();
-		bindAudioService(true);
-		setupSurfaceAndDrawable();
-		while (!mDone) {
-			// grab current audio from audioservice
-			if (!isServiceReady()) continue;
-		
-			// Read new mic data
-			mBufferToDraws = getCurrentAudio();
-			
-			if (!isValidAudioBuffer()) {
-				noValidBufferFallback();
-				continue;
-			}
-			
-			// scale the right side to the number of data points we have
-			if (mBufferToDraws.length < glWindowHorizontalSize) {
-				setGlWindowHorizontalSize(mBufferToDraws.length);
-			}
-
-			synchronized (parent) {
-				setLabels(glWindowHorizontalSize);
-			}
-
-			glman.glClear();
-			waveformShape.setBufferToDraw(mBufferToDraws);
-			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
-			waveformShape.draw(glman.getmGL());
-			drawThresholdLine();
-			glman.swapBuffers();
-			try {
-				sleep(20);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		bindAudioService(false);
-		mConnection = null;
+		super.run();
 		broadcastToggleTrigger();
 		registerThresholdChangeReceiver(false);
 	}

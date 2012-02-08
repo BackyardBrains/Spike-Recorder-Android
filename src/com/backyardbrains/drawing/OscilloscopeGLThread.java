@@ -79,10 +79,17 @@ public class OscilloscopeGLThread extends Thread {
 				setLabels(glWindowHorizontalSize);
 			}
 
+			glman.glClear();
 			waveformShape.setBufferToDraw(mBufferToDraws);
 			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
 			waveformShape.draw(glman.getmGL());
+			if (isDrawThresholdLine()) drawThresholdLine();
 			glman.swapBuffers();
+			try {
+				sleep(20);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		bindAudioService(false);
 		mConnection = null;
@@ -274,7 +281,10 @@ public class OscilloscopeGLThread extends Thread {
 
 	public void adjustThresholdValue(float dy) {
 		// TODO Auto-generated method stub
-		
+	}
+
+	protected void drawThresholdLine () {
+		// stub
 	}
 
 }
