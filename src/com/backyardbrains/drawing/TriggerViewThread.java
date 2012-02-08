@@ -25,27 +25,37 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		return true;
 	}
 
-	/**
-	 * Initialize GL bits, set up the GL area so that we're lookin at it
-	 * properly, create a new {@link BybGLDrawable}, then commence drawing on it
-	 * like the dickens.
-	 * 
-	 * @see java.lang.Thread#run()
-	 */
 	@Override
-	public void run() {
+	protected void postRunLoopHandler() {
+		super.postRunLoopHandler();
+		broadcastToggleTrigger();
+		registerThresholdChangeReceiver(false);
+	}
+
+	@Override
+	protected void preRunLoopHandler() {
 		registerThresholdChangeReceiver(true);
 		broadcastToggleTrigger();
 		setDefaultThresholdValue();
-		super.run();
-		broadcastToggleTrigger();
-		registerThresholdChangeReceiver(false);
+		super.preRunLoopHandler();
 	}
 	
 	@Override
 	protected void noValidBufferFallback() {
 		drawBlankThresholdWindow();
 		super.noValidBufferFallback();
+	}
+	
+	@Override
+	protected void postDrawingHandler() {
+		drawThresholdLine();
+	}
+	
+	@Override
+	protected void getCurrentAudio() {
+		synchronized (mAudioService) {
+			mBufferToDraws = mAudioService.getTriggerBuffer();
+		}
 	}
 
 	private void drawBlankThresholdWindow() {

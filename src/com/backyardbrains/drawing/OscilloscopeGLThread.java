@@ -56,34 +56,21 @@ public class OscilloscopeGLThread extends Thread {
 	 */
 	@Override
 	public void run() {
-		bindAudioService(true);
-		setupSurfaceAndDrawable();
+		preRunLoopHandler();
 		while (!mDone) {
 			// grab current audio from audioservice
 			if (!isServiceReady()) continue;
 
-			// Read new mic data
-			mBufferToDraws = getCurrentAudio();
+			getCurrentAudio();
 
 			if (!isValidAudioBuffer()) {
 				noValidBufferFallback();
 				continue;
 			}
 
-			// scale the right side to the number of data points we have
-			if (mBufferToDraws.length < glWindowHorizontalSize) {
-				setGlWindowHorizontalSize(mBufferToDraws.length);
-			}
-
-			synchronized (parent) {
-				setLabels(glWindowHorizontalSize);
-			}
-
+			preDrawingHandler();
 			glman.glClear();
-			waveformShape.setBufferToDraw(mBufferToDraws);
-			setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
-			waveformShape.draw(glman.getmGL());
-			if (isDrawThresholdLine()) drawThresholdLine();
+			drawingHandler();
 			glman.swapBuffers();
 			try {
 				sleep(20);
@@ -91,8 +78,38 @@ public class OscilloscopeGLThread extends Thread {
 				e.printStackTrace();
 			}
 		}
+		postRunLoopHandler();
+	}
+
+	protected void postRunLoopHandler() {
 		bindAudioService(false);
 		mConnection = null;
+	}
+
+	protected void preRunLoopHandler() {
+		bindAudioService(true);
+		setupSurfaceAndDrawable();
+	}
+	
+	protected void postDrawingHandler() {
+		// stub
+	}
+
+	private void drawingHandler() {
+		waveformShape.setBufferToDraw(mBufferToDraws);
+		setGlWindow(glWindowHorizontalSize, mBufferToDraws.length);
+		waveformShape.draw(glman.getmGL());
+	}
+
+	protected void preDrawingHandler() {
+		// scale the right side to the number of data points we have
+		if (mBufferToDraws.length < glWindowHorizontalSize) {
+			setGlWindowHorizontalSize(mBufferToDraws.length);
+		}
+
+		synchronized (parent) {
+			setLabels(glWindowHorizontalSize);
+		}
 	}
 	
 	protected void noValidBufferFallback() {
@@ -100,12 +117,9 @@ public class OscilloscopeGLThread extends Thread {
 		// and should contain the default activity for 
 	}
 
-	protected short[] getCurrentAudio () {
+	protected void getCurrentAudio () {
 		synchronized (mAudioService) {
-			if (isDrawThresholdLine())
-				return mAudioService.getTriggerBuffer();
-			else
-				return mAudioService.getAudioBuffer();
+			mBufferToDraws = mAudioService.getAudioBuffer();
 		}
 	}
 
