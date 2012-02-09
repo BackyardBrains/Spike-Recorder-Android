@@ -71,6 +71,7 @@ public class OscilloscopeGLThread extends Thread {
 			preDrawingHandler();
 			glman.glClear();
 			drawingHandler();
+			postDrawingHandler();
 			glman.swapBuffers();
 			try {
 				sleep(20);
