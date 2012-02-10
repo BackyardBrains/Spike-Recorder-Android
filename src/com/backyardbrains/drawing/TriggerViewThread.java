@@ -42,7 +42,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	
 	@Override
 	protected void noValidBufferFallback() {
-		drawBlankThresholdWindow();
+		mBufferToDraws = new short[4000];
 		super.noValidBufferFallback();
 	}
 	
@@ -56,13 +56,6 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		synchronized (mAudioService) {
 			mBufferToDraws = mAudioService.getTriggerBuffer();
 		}
-	}
-
-	private void drawBlankThresholdWindow() {
-		glman.glClear();
-		setGlWindow(glWindowHorizontalSize, glWindowHorizontalSize);
-		drawThresholdLine();
-		glman.swapBuffers();
 	}
 
 	private void broadcastToggleTrigger() {
