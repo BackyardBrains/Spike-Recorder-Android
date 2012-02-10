@@ -155,12 +155,14 @@ public class OscilloscopeGLThread extends Thread {
 	 * @param samplesToShow
 	 */
 	protected void setLabels(int samplesToShow) {
+		setmVText();
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
 		parent.setMsText(millisecondsInThisWindow);
-		if (!isDrawThresholdLine()) {
+	}
+	
+	protected void setmVText() {
 			float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f /1000;
 			parent.setmVText(yPerDiv);
-		}
 	}
 
 	protected void bindAudioService(boolean on) {
@@ -292,14 +294,6 @@ public class OscilloscopeGLThread extends Thread {
 	public float getThresholdYValue() {
 		// TODO Auto-generated method stub
 		return 0;
-	}
-
-	public void adjustThresholdValue(float dy) {
-		// TODO Auto-generated method stub
-	}
-
-	protected void drawThresholdLine () {
-		// stub
 	}
 
 }

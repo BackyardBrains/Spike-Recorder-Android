@@ -28,14 +28,14 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	@Override
 	protected void postRunLoopHandler() {
 		super.postRunLoopHandler();
-		broadcastToggleTrigger();
+		broadcastToggleTrigger(false);
 		registerThresholdChangeReceiver(false);
 	}
 
 	@Override
 	protected void preRunLoopHandler() {
 		registerThresholdChangeReceiver(true);
-		broadcastToggleTrigger();
+		broadcastToggleTrigger(true);
 		setDefaultThresholdValue();
 		super.preRunLoopHandler();
 	}
@@ -58,19 +58,13 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		}
 	}
 
-	private void broadcastToggleTrigger() {
-		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", true);
+	private void broadcastToggleTrigger(boolean b) {
+		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", b);
 		parent.getContext().sendBroadcast(i);
-	}
-
-	protected void setLabels(final int samplesToShow) {
-		setmVText();
-		super.setLabels(samplesToShow);
 	}
 
 	private void setDefaultThresholdValue() {
 		thresholdPixelHeight = glHeightToPixelHeight(getGlWindowVerticalSize()/4);
-		setmVText();
 	}
 
 	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
@@ -78,7 +72,8 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		glman.initGL(lengthOfSampleSet/2 - samplesToShow/2, lengthOfSampleSet/2 + samplesToShow/2, -size/2, size/2);
 	}
 
-	private void setmVText() {
+	@Override
+	protected void setmVText () {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
 		final float yPerDiv = glHeight / 4 / 24.5f / 1000;
 		if (mAudioService != null && mAudioServiceIsBound) {
@@ -91,19 +86,17 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 		parent.setmVText(yPerDiv);
 	}
 	
-	long map(long x, long in_min, long in_max, long out_min, long out_max)
+	int map(float glHeight, int in_min, int in_max, int out_min, int out_max)
 	{
-	  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+	  return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 	}
 
 	private float glHeightToPixelHeight(float glHeight) {
-		//return (glHeight / getGlWindowVerticalSize()) * parent.getHeight();
-		return map((long) glHeight, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2, parent.getHeight(), 0);
+		return map(glHeight, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2, parent.getHeight(), 0);
 	}
 
 	private float pixelHeightToGlHeight(float pxHeight) {
-		return map((long) pxHeight, parent.getHeight(), 0, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
-		//return pxHeight / parent.getHeight() * getGlWindowVerticalSize();
+		return map(pxHeight, parent.getHeight(), 0, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
 	}
 
 	protected void drawThresholdLine() {
@@ -128,8 +121,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	public void adjustThresholdValue(float dy) {
-		//if (dy < parent.getHeight() / 2)
-			thresholdPixelHeight = dy;
+		thresholdPixelHeight = dy;
 	}
 
 	protected void registerThresholdChangeReceiver(boolean on) {
