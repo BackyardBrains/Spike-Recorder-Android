@@ -1,7 +1,9 @@
 package com.backyardbrains.view;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -26,7 +28,67 @@ import com.backyardbrains.R;
 
 public class UIFactory {
 	
-	public static void setupMsLineView(BackyardAndroidActivity context, RelativeLayout viewToAddTo) {
+	private TextView msView;
+	private TextView mVView;
+	private UpdateMillisecondsReciever upmillirec;
+	private SetMillivoltViewSizeReceiver milliVoltSize;
+	private UpdateMillivoltReciever upmillivolt;
+	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
+	
+	private static UIFactory instance = null;
+	protected UIFactory() {}; // singleton like whoa.
+	
+	
+	public static UIFactory getUi() {
+		if (instance == null) {
+			instance = new UIFactory();
+		}
+		return instance;
+	}
+
+	public void registerReceivers(
+			BackyardAndroidActivity context) {
+		
+		IntentFilter intentFilter = new IntentFilter(
+				"BYBUpdateMillisecondsReciever");
+		upmillirec = new UpdateMillisecondsReciever();
+		context.registerReceiver(upmillirec, intentFilter);
+
+		IntentFilter intentFilterVolts = new IntentFilter(
+				"BYBUpdateMillivoltReciever");
+		upmillivolt = new UpdateMillivoltReciever();
+		context.registerReceiver(upmillivolt, intentFilterVolts);
+
+		IntentFilter intentFilterVoltSize = new IntentFilter(
+				"BYBMillivoltsViewSize");
+		milliVoltSize = new SetMillivoltViewSizeReceiver();
+		context.registerReceiver(milliVoltSize, intentFilterVoltSize);
+		
+		IntentFilter intentFilterRecordingButtons = new IntentFilter(
+				"BYBShowRecordingButtons");
+		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
+		context.registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+
+	}
+
+
+	public void unregisterReceivers(BackyardAndroidActivity context) {
+		context.unregisterReceiver(upmillirec);
+		context.unregisterReceiver(upmillivolt);
+		context.unregisterReceiver(milliVoltSize);
+		context.unregisterReceiver(showRecordingButtonsReceiver);
+	}
+	
+	public void setupLabels(BackyardAndroidActivity context) {
+		msView = (TextView) context.findViewById(R.id.millisecondsView);
+		mVView = (TextView) context.findViewById(R.id.mVLabelView);
+	}
+	
+	public void setDisplayedMilliseconds(Float ms) {
+		msView.setText(ms.toString());
+	}
+	
+	public static void setupMsLineView(BackyardAndroidActivity context) {
 		ImageView msLineView = new ImageView(context);
 		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),
 				R.drawable.msline);
@@ -43,7 +105,8 @@ public class UIFactory {
 		rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
 		rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
 		
-		viewToAddTo.addView(msLineView, rl);
+		RelativeLayout parentLayout = (RelativeLayout) context.findViewById(R.id.parentLayout);
+		parentLayout.addView(msLineView, rl);
 	}
 
 	public static void setupRecordingButtons(final BackyardAndroidActivity context) {
@@ -130,7 +193,7 @@ public class UIFactory {
 		final TextView numberOfSamplesLabel = (TextView) context.findViewById(R.id.numberOfSamplesAveraged);
 		OnClickListener toggleSeekbarListener = new OnClickListener() {
 			@Override public void onClick(View v) {
-				context.toggleSeekbar();
+				toggleSeekbar(context);
 			}
 		};
 		numberOfSamplesLabel.setOnClickListener(toggleSeekbarListener);
@@ -187,6 +250,43 @@ public class UIFactory {
 			numberOfSamplesLabel.setVisibility(View.GONE);
 		}
 	}
+
+	private class UpdateMillisecondsReciever extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			msView.setText(intent.getStringExtra("millisecondsDisplayedString"));
+		};
+	}
+
+	private class UpdateMillivoltReciever extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			mVView.setText(intent.getStringExtra("millivoltsDisplayedString"));
+		};
+	}
+
+	private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			mVView.setHeight(intent.getIntExtra("millivoltsViewNewSize", mVView.getHeight()));
+		};
+	}
+	
+	private class ShowRecordingButtonsReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context,
+				android.content.Intent intent) {
+			boolean yesno = intent.getBooleanExtra("showRecordingButton", true);
+			if (yesno) {
+				showRecordingButtons((BackyardAndroidActivity) context);
+			} else {
+				hideRecordingButtons((BackyardAndroidActivity) context);
+			}
+		}	
+		}
 	
 	private class ShowRecordingAnimation implements Runnable {
 

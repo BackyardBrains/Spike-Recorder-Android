@@ -1,8 +1,6 @@
 package com.backyardbrains;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
@@ -11,8 +9,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
 import com.backyardbrains.view.UIFactory;
@@ -36,17 +32,7 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link BackyardBrainsApplication} for message passing
 	 */
 	private BackyardBrainsApplication application;
-	private TextView msView;
-	//private ImageButton mRecordButton;
-	private UpdateMillisecondsReciever upmillirec;
 	private boolean isRecording = false;
-	//private View tapToStopRecView;
-	//private View mFileButton;
-	private TextView mVView;
-	private BroadcastReceiver upmillivolt;
-	private SetMillivoltViewSizeReceiver milliVoltSize;
-	//private View recordingBackground;
-	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
 	private FrameLayout mainscreenGLLayout;
 	private boolean triggerMode;
 	private SharedPreferences settings;
@@ -64,23 +50,13 @@ public class BackyardAndroidActivity extends Activity {
 		settings = getPreferences(MODE_PRIVATE);
 		triggerMode = settings.getBoolean("triggerMode", false);
 		
-		setupLabels();
-		setUpRecordingButtons();
-		setUpSampleSlider();
+		UIFactory.getUi().setupLabels(this);
+		UIFactory.setupMsLineView(this);
+		UIFactory.setupRecordingButtons(this);
+		UIFactory.setupSampleSlider(this);
 
 		reassignSurfaceView(triggerMode);
 		
-	}
-
-	private void setupLabels() {
-		msView = (TextView) findViewById(R.id.millisecondsView);
-		mVView = (TextView) findViewById(R.id.mVLabelView);
-		setupMsLineView();
-	}
-
-	private void setupMsLineView() {
-		RelativeLayout parentLayout = (RelativeLayout) findViewById(R.id.parentLayout);
-		UIFactory.setupMsLineView(this, parentLayout);
 	}
 
 	@Override
@@ -114,42 +90,29 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStart() {
 		super.onStart();
 		// Bind to LocalService has been moved to OpenGLThread
-		IntentFilter intentFilter = new IntentFilter(
-				"BYBUpdateMillisecondsReciever");
-		upmillirec = new UpdateMillisecondsReciever();
-		registerReceiver(upmillirec, intentFilter);
-
-		IntentFilter intentFilterVolts = new IntentFilter(
-				"BYBUpdateMillivoltReciever");
-		upmillivolt = new UpdateMillivoltReciever();
-		registerReceiver(upmillivolt, intentFilterVolts);
-
-		IntentFilter intentFilterVoltSize = new IntentFilter(
-				"BYBMillivoltsViewSize");
-		milliVoltSize = new SetMillivoltViewSizeReceiver();
-		registerReceiver(milliVoltSize, intentFilterVoltSize);
-
-		IntentFilter intentFilterRecordingButtons = new IntentFilter(
-				"BYBShowRecordingButtons");
-		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
-		registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+		registerReceivers();
 
 		application.startAudioService();
 		
 	}
 	
+	private void registerReceivers() {
+		UIFactory.getUi().registerReceivers(this);
+	}
+
 	@Override
 	protected void onStop() {
 		super.onStop();
 		// Unbind from the service has been moved to OpenGLThread
 		application.stopAudioService();
-		unregisterReceiver(upmillirec);
-		unregisterReceiver(upmillivolt);
-		unregisterReceiver(milliVoltSize);
-		unregisterReceiver(showRecordingButtonsReceiver);
+		unregisterReceivers();
 		Editor editor = settings.edit();
 		editor.putBoolean("triggerMode", false);
 		editor.commit();
+	}
+	
+	private void unregisterReceivers() {
+		UIFactory.getUi().unregisterReceivers(this);
 	}
 
 	@Override
@@ -167,93 +130,28 @@ public class BackyardAndroidActivity extends Activity {
 		return super.onTouchEvent(event);
 	}
 	
-	private void setUpRecordingButtons() {
-		UIFactory.setupRecordingButtons(this);
-	}
-	
-	private void showRecordingButtons() {
-		UIFactory.showRecordingButtons(this);
-	}
-
-	private void hideRecordingButtons() {
-		UIFactory.hideRecordingButtons(this);
-	}
-
-	private void setUpSampleSlider() {
-		UIFactory.setupSampleSlider(this);
-	}
-
-	public void toggleSeekbar() {
-		UIFactory.toggleSeekbar(this);
-	}
-
-	private void showSampleSliderBox() {
-		UIFactory.showSampleSliderBox(this);
-	}
-
-	private void hideSampleSliderBox() {
-		UIFactory.hideSampleSliderBox(this);
-	}
-
 	void reassignSurfaceView(boolean isTriggerView) {
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
 		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
 		mainscreenGLLayout.addView(mAndroidSurface);
 		if (isTriggerView) {
-			hideRecordingButtons();
-			showSampleSliderBox();
+			UIFactory.hideRecordingButtons(this);
+			UIFactory.showSampleSliderBox(this);
 		} else {
-			showRecordingButtons();
-			hideSampleSliderBox();
+			UIFactory.showRecordingButtons(this);
+			UIFactory.hideSampleSliderBox(this);
 		}
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
 
 	public void toggleRecording() {
-		UIFactory uiFactory = new UIFactory();
-		uiFactory.toggleRecording(this, isRecording);
+		UIFactory.getUi().toggleRecording(this, isRecording);
 		isRecording = !isRecording;
 	}
 
 	public void setDisplayedMilliseconds(Float ms) {
-		msView.setText(ms.toString());
+		UIFactory.getUi().setDisplayedMilliseconds(ms);
 	}
 
-	private class UpdateMillisecondsReciever extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			msView.setText(intent.getStringExtra("millisecondsDisplayedString"));
-		};
-	}
-
-	private class UpdateMillivoltReciever extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			mVView.setText(intent.getStringExtra("millivoltsDisplayedString"));
-		};
-	}
-
-	private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			mVView.setHeight(intent.getIntExtra("millivoltsViewNewSize", mVView.getHeight()));
-		};
-	}
-
-	private class ShowRecordingButtonsReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			boolean yesno = intent.getBooleanExtra("showRecordingButton", true);
-			if (yesno) {
-				showRecordingButtons();
-			} else {
-				hideRecordingButtons();
-			}
-		}	
-		}
 }
