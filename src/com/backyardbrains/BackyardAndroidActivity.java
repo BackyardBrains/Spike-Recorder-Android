@@ -2,36 +2,20 @@ package com.backyardbrains;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.RelativeLayout.LayoutParams;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
+import com.backyardbrains.view.UIFactory;
 
 /**
  * Primary activity of the Backyard Brains app. By default shows the continuous
@@ -53,22 +37,18 @@ public class BackyardAndroidActivity extends Activity {
 	 */
 	private BackyardBrainsApplication application;
 	private TextView msView;
-	private ImageButton mRecordButton;
+	//private ImageButton mRecordButton;
 	private UpdateMillisecondsReciever upmillirec;
 	private boolean isRecording = false;
-	private View tapToStopRecView;
-	private View mFileButton;
+	//private View tapToStopRecView;
+	//private View mFileButton;
 	private TextView mVView;
 	private BroadcastReceiver upmillivolt;
 	private SetMillivoltViewSizeReceiver milliVoltSize;
-	private View recordingBackground;
+	//private View recordingBackground;
 	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
 	private FrameLayout mainscreenGLLayout;
 	private boolean triggerMode;
-	private LinearLayout triggerViewSampleChanger;
-	private SeekBar samplesSeekBar;
-	private TextView numberOfSamplesLabel;
-	private ImageView msLineView;
 	private SharedPreferences settings;
 
 	@Override
@@ -99,23 +79,8 @@ public class BackyardAndroidActivity extends Activity {
 	}
 
 	private void setupMsLineView() {
-		msLineView = new ImageView(this);
-		Bitmap bmp = BitmapFactory.decodeResource(getResources(),
-				R.drawable.msline);
-		int width = getWindowManager().getDefaultDisplay().getWidth() / 3;
-		int height = 2;
-		Bitmap resizedbitmap = Bitmap.createScaledBitmap(bmp, width, height,
-				false);
-		msLineView.setImageBitmap(resizedbitmap);
-		msLineView.setBackgroundColor(Color.BLACK);
-		msLineView.setScaleType(ScaleType.CENTER);
-		
-		LayoutParams rl = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		rl.setMargins(0, 0, 0, 20);
-		rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
-		rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
 		RelativeLayout parentLayout = (RelativeLayout) findViewById(R.id.parentLayout);
-		parentLayout.addView(msLineView, rl);
+		UIFactory.setupMsLineView(this, parentLayout);
 	}
 
 	@Override
@@ -203,114 +168,32 @@ public class BackyardAndroidActivity extends Activity {
 	}
 	
 	private void setUpRecordingButtons() {
-		recordingBackground = findViewById(R.id.recordButtonBackground);
-		
-		mRecordButton = (ImageButton) findViewById(R.id.recordButton);
-		OnClickListener toggleRecListener = new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				toggleRecording();
-			}
-		};
-		mRecordButton.setOnClickListener(toggleRecListener);
-
-		mFileButton = (ImageButton) findViewById(R.id.fileButton);
-		mFileButton.setOnClickListener(new View.OnClickListener() {
-			public void onClick(View view) {
-				Intent i = new Intent(view.getContext(), FileListActivity.class);
-				startActivityForResult(i, 0);
-			}
-
-		});
-		tapToStopRecView = findViewById(R.id.TapToStopRecordingTextView);
-		tapToStopRecView.setOnClickListener(toggleRecListener);
+		UIFactory.setupRecordingButtons(this);
 	}
 	
 	private void showRecordingButtons() {
-		if(mFileButton != null) {
-			mFileButton.setVisibility(View.VISIBLE);
-		}
-		if(mRecordButton != null) {
-			mRecordButton.setVisibility(View.VISIBLE);
-		}
-		if(recordingBackground != null) {
-			recordingBackground.setVisibility(View.VISIBLE);
-		}
+		UIFactory.showRecordingButtons(this);
 	}
 
 	private void hideRecordingButtons() {
-		if(mFileButton != null) {
-			mFileButton.setVisibility(View.GONE);
-		}
-		if(mRecordButton != null) {
-			mRecordButton.setVisibility(View.GONE);
-		}
-		if(recordingBackground != null) {
-			recordingBackground.setVisibility(View.GONE);
-		}
+		UIFactory.hideRecordingButtons(this);
 	}
 
 	private void setUpSampleSlider() {
-		triggerViewSampleChanger = (LinearLayout) findViewById(R.id.triggerViewSampleChangerLayout);
-	
-		numberOfSamplesLabel = (TextView) findViewById(R.id.numberOfSamplesAveraged);
-		OnClickListener toggleSeekbarListener = new OnClickListener() {
-			@Override public void onClick(View v) {
-				toggleSeekbar();
-			}
-		};
-		numberOfSamplesLabel.setOnClickListener(toggleSeekbarListener);
-		
-		samplesSeekBar = (SeekBar) findViewById(R.id.samplesSeekBar);
-		samplesSeekBar.setMax(49);
-		samplesSeekBar.setProgress(9);
-		samplesSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-			
-			@Override public void onStopTrackingTouch(SeekBar seekBar) { 
-			}
-			
-			@Override public void onStartTrackingTouch(SeekBar seekBar) {
-			}
-			
-			@Override
-			public void onProgressChanged(SeekBar seekBar, int progress,
-					boolean fromUser) {
-				if (!fromUser) return;
-				Intent i = new Intent("setSampleSize").putExtra("newSampleSize", progress+1);
-				sendBroadcast(i);
-				numberOfSamplesLabel.setText((progress+1)+" x");
-			}
-		});
-	
+		UIFactory.setupSampleSlider(this);
 	}
 
-	protected void toggleSeekbar() {
-		if (samplesSeekBar.getVisibility() == View.VISIBLE) {
-			samplesSeekBar.setVisibility(View.INVISIBLE);
-		} else {
-			samplesSeekBar.setVisibility(View.VISIBLE);
-		}
+	public void toggleSeekbar() {
+		UIFactory.toggleSeekbar(this);
 	}
 
 	private void showSampleSliderBox() {
-		if (triggerViewSampleChanger != null) {
-			triggerViewSampleChanger.setVisibility(View.VISIBLE);
-		}
-		if (numberOfSamplesLabel != null) {
-			numberOfSamplesLabel.setVisibility(View.VISIBLE);
-		}
-
+		UIFactory.showSampleSliderBox(this);
 	}
 
 	private void hideSampleSliderBox() {
-		if (triggerViewSampleChanger != null) {
-			triggerViewSampleChanger.setVisibility(View.GONE);
-		}
-		if (numberOfSamplesLabel != null) {
-			numberOfSamplesLabel.setVisibility(View.GONE);
-		}
-		
-	};
+		UIFactory.hideSampleSliderBox(this);
+	}
 
 	void reassignSurfaceView(boolean isTriggerView) {
 		mAndroidSurface = null;
@@ -327,64 +210,14 @@ public class BackyardAndroidActivity extends Activity {
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
 
-	protected void toggleRecording() {
-
-		try {
-			ShowRecordingAnimation anim = new ShowRecordingAnimation(this,
-					isRecording);
-			anim.run();
-			Intent i = new Intent();
-			i.setAction("BYBToggleRecording");
-			getBaseContext().sendBroadcast(i);
-			if (isRecording == false) {
-				tapToStopRecView.setVisibility(View.VISIBLE);
-			} else {
-				tapToStopRecView.setVisibility(View.GONE);
-			}
-			isRecording = !isRecording;
-		} catch (RuntimeException e) {
-			Toast.makeText(getApplicationContext(),
-					"No SD Card is available. Recording is disabled",
-					Toast.LENGTH_LONG).show();
-
-		}
+	public void toggleRecording() {
+		UIFactory uiFactory = new UIFactory();
+		uiFactory.toggleRecording(this, isRecording);
+		isRecording = !isRecording;
 	}
 
 	public void setDisplayedMilliseconds(Float ms) {
 		msView.setText(ms.toString());
-	}
-	
-	private class ShowRecordingAnimation implements Runnable {
-
-		private Activity activity;
-		private boolean recording;
-
-		public ShowRecordingAnimation(Activity a, Boolean b) {
-			this.activity = a;
-			this.recording = b;
-		}
-
-		@Override
-		public void run() {
-			Animation a = null;
-			if (this.recording == false) {
-				a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0,
-						Animation.RELATIVE_TO_SELF, 0,
-						Animation.RELATIVE_TO_SELF, -1,
-						Animation.RELATIVE_TO_SELF, 0);
-			} else {
-				a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0,
-						Animation.RELATIVE_TO_SELF, 0,
-						Animation.RELATIVE_TO_SELF, 0,
-						Animation.RELATIVE_TO_SELF, -1);
-			}
-			a.setDuration(250);
-			a.setInterpolator(AnimationUtils.loadInterpolator(this.activity,
-					android.R.anim.anticipate_overshoot_interpolator));
-			View stopRecView = findViewById(R.id.TapToStopRecordingTextView);
-			stopRecView.startAnimation(a);
-		}
-
 	}
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
