@@ -28,10 +28,6 @@ public class BackyardAndroidActivity extends Activity {
 	 * activity
 	 */
 	private OscilloscopeGLSurfaceView mAndroidSurface;
-	/**
-	 * Reference to the {@link BackyardBrainsApplication} for message passing
-	 */
-	private BackyardBrainsApplication application;
 	private boolean isRecording = false;
 	private FrameLayout mainscreenGLLayout;
 	private boolean triggerMode;
@@ -41,14 +37,10 @@ public class BackyardAndroidActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.backyard_main);
-
 		// get application
-		application = (BackyardBrainsApplication) getApplication();
-
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
-		settings = getPreferences(MODE_PRIVATE);
-		triggerMode = settings.getBoolean("triggerMode", false);
+		triggerMode = readTriggerModeFromSettings();
 		
 		UIFactory.getUi().setupLabels(this);
 		UIFactory.setupMsLineView(this);
@@ -64,21 +56,36 @@ public class BackyardAndroidActivity extends Activity {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
 	}
+	
+	public void writeTriggerModeToSettings(boolean yesorno) {
+		getSettings();
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putBoolean("triggerMode", yesorno);
+		editor.commit();
+	}
+	
+	private void getSettings() {
+		if (settings == null) {
+			settings = getPreferences(MODE_PRIVATE);
+		}
+	}
+	
+	public boolean readTriggerModeFromSettings() {
+		getSettings();
+		return settings.getBoolean("triggerMode", false);
+	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		SharedPreferences.Editor editor = settings.edit();
 		switch (item.getItemId()) {
 		case R.id.waveview:
 			triggerMode = false;
-			editor.putBoolean("triggerMode", triggerMode);
-			editor.commit();
+			writeTriggerModeToSettings(triggerMode);
 			reassignSurfaceView(triggerMode);
 			return true;
 		case R.id.threshold:
 			triggerMode = true;
-			editor.putBoolean("triggerMode", triggerMode);
-			editor.commit();
+			writeTriggerModeToSettings(triggerMode);
 			reassignSurfaceView(triggerMode);
 			return true;
 		default:
@@ -91,7 +98,7 @@ public class BackyardAndroidActivity extends Activity {
 		super.onStart();
 		// Bind to LocalService has been moved to OpenGLThread
 		registerReceivers();
-
+		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
 		
 	}
@@ -104,11 +111,10 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStop() {
 		super.onStop();
 		// Unbind from the service has been moved to OpenGLThread
+		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
 		unregisterReceivers();
-		Editor editor = settings.edit();
-		editor.putBoolean("triggerMode", false);
-		editor.commit();
+		writeTriggerModeToSettings(false);
 	}
 	
 	private void unregisterReceivers() {
@@ -117,10 +123,7 @@ public class BackyardAndroidActivity extends Activity {
 
 	@Override
 	protected void onDestroy() {
-		// TODO Auto-generated method stub
-		Editor editor = settings.edit();
-		editor.putBoolean("triggerMode", false);
-		editor.commit();
+		writeTriggerModeToSettings(false);
 		super.onDestroy();
 	}
 	
