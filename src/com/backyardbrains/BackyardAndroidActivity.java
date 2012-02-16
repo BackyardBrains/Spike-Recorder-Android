@@ -50,6 +50,21 @@ public class BackyardAndroidActivity extends Activity {
 		reassignSurfaceView(triggerMode);
 		
 	}
+	
+	void reassignSurfaceView(boolean isTriggerView) {
+		mAndroidSurface = null;
+		mainscreenGLLayout.removeAllViews();
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
+		mainscreenGLLayout.addView(mAndroidSurface);
+		if (isTriggerView) {
+			UIFactory.hideRecordingButtons(this);
+			UIFactory.showSampleSliderBox(this);
+		} else {
+			UIFactory.showRecordingButtons(this);
+			UIFactory.hideSampleSliderBox(this);
+		}
+		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -105,21 +120,6 @@ public class BackyardAndroidActivity extends Activity {
 	public boolean onTouchEvent(MotionEvent event) {
 		mAndroidSurface.onTouchEvent(event);
 		return super.onTouchEvent(event);
-	}
-	
-	void reassignSurfaceView(boolean isTriggerView) {
-		mAndroidSurface = null;
-		mainscreenGLLayout.removeAllViews();
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
-		mainscreenGLLayout.addView(mAndroidSurface);
-		if (isTriggerView) {
-			UIFactory.hideRecordingButtons(this);
-			UIFactory.showSampleSliderBox(this);
-		} else {
-			UIFactory.showRecordingButtons(this);
-			UIFactory.hideSampleSliderBox(this);
-		}
-		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 	}
 
 	public void toggleRecording() {
