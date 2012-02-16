@@ -56,24 +56,6 @@ public class BackyardAndroidActivity extends Activity {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
 	}
-	
-	public void writeTriggerModeToSettings(boolean yesorno) {
-		getSettings();
-		SharedPreferences.Editor editor = settings.edit();
-		editor.putBoolean("triggerMode", yesorno);
-		editor.commit();
-	}
-	
-	private void getSettings() {
-		if (settings == null) {
-			settings = getPreferences(MODE_PRIVATE);
-		}
-	}
-	
-	public boolean readTriggerModeFromSettings() {
-		getSettings();
-		return settings.getBoolean("triggerMode", false);
-	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -97,30 +79,22 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStart() {
 		super.onStart();
 		// Bind to LocalService has been moved to OpenGLThread
-		registerReceivers();
+		UIFactory.getUi().registerReceivers(this);
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
 		
 	}
 	
-	private void registerReceivers() {
-		UIFactory.getUi().registerReceivers(this);
-	}
-
 	@Override
 	protected void onStop() {
 		super.onStop();
 		// Unbind from the service has been moved to OpenGLThread
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
-		unregisterReceivers();
+		UIFactory.getUi().unregisterReceivers(this);
 		writeTriggerModeToSettings(false);
 	}
 	
-	private void unregisterReceivers() {
-		UIFactory.getUi().unregisterReceivers(this);
-	}
-
 	@Override
 	protected void onDestroy() {
 		writeTriggerModeToSettings(false);
@@ -156,5 +130,22 @@ public class BackyardAndroidActivity extends Activity {
 	public void setDisplayedMilliseconds(Float ms) {
 		UIFactory.getUi().setDisplayedMilliseconds(ms);
 	}
-
+	
+	public void writeTriggerModeToSettings(boolean yesorno) {
+		getSettings();
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putBoolean("triggerMode", yesorno);
+		editor.commit();
+	}
+	
+	private void getSettings() {
+		if (settings == null) {
+			settings = getPreferences(MODE_PRIVATE);
+		}
+	}
+	
+	public boolean readTriggerModeFromSettings() {
+		getSettings();
+		return settings.getBoolean("triggerMode", false);
+	}
 }
