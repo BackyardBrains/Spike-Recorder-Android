@@ -34,10 +34,17 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 	@Override
 	protected void preRunLoopHandler() {
-		registerThresholdChangeReceiver(true);
 		broadcastToggleTrigger(true);
-		setDefaultThresholdValue();
+		registerThresholdChangeReceiver(true);
 		super.preRunLoopHandler();
+		try {
+			while (!isServiceReady()) {
+				sleep(20);
+			}
+		} catch (InterruptedException e) {
+			Log.d(getName(), "Waiting for audio service interrupted with: "+e.getMessage());
+		}
+		setDefaultThresholdValue();
 	}
 	
 	@Override
@@ -64,7 +71,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	}
 
 	private void setDefaultThresholdValue() {
-		thresholdPixelHeight = glHeightToPixelHeight(getGlWindowVerticalSize()/4);
+		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
 	}
 
 	protected void setGlWindow(final int samplesToShow, final int lengthOfSampleSet) {
@@ -76,13 +83,7 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 	protected void setmVText () {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
 		final float yPerDiv = glHeight / 4 / 24.5f / 1000;
-		if (mAudioService != null && mAudioServiceIsBound) {
-			mAudioService.getTriggerHandler().post(new Runnable() {
-				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
-				}
-			});
-		}
+
 		parent.setmVText(yPerDiv);
 	}
 	
@@ -122,6 +123,14 @@ public class TriggerViewThread extends OscilloscopeGLThread {
 
 	public void adjustThresholdValue(float dy) {
 		thresholdPixelHeight = dy;
+		if (mAudioService != null && mAudioServiceIsBound) {
+			final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
+			mAudioService.getTriggerHandler().post(new Runnable() {
+				@Override public void run() {
+					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
+				}
+			});
+		}
 	}
 
 	protected void registerThresholdChangeReceiver(boolean on) {
