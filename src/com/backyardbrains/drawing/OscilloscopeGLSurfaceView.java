@@ -93,11 +93,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-		/*
-		 * @TODO fix this to restore buffer length on orientation change
-		 * mGLThread.setBufferLengthDivisor(bufferLengthDivisor);
-		 */
-		mGLThread.rescaleWaveform();
 		setMillivoltLabelPosition(height);
 	}
 
@@ -108,9 +103,17 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		resetDrawingThread();
+		Log.d(TAG, "Resetting drawing thread with triggerView set to "+ triggerView);
+		if (triggerView) {
+			mGLThread = new TriggerViewThread(this);
+		} else {
+			mGLThread = new OscilloscopeGLThread(this);
+		}
 		setKeepScreenOn(true);
 		readSettings();
+		synchronized (this) {
+			mGLThread.start();
+		}
 	}
 
 	/**
@@ -142,24 +145,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	public void setAutoScaled(boolean autoScaled) {
 		if (haveThread()) {
 			mGLThread.setAutoScaled(autoScaled);
-		}
-	}
-
-	private void resetDrawingThread() {
-		Log.d(TAG, "Resetting drawing thread with triggerView set to "
-				+ triggerView);
-		if (haveThread()) {
-			Log.d(TAG,
-					"We have already had a GL Thread, so let's reset its scaling");
-			isAutoScaled();
-		}
-		if (triggerView) {
-			mGLThread = new TriggerViewThread(this);
-		} else {
-			mGLThread = new OscilloscopeGLThread(this);
-		}
-		synchronized (this) {
-			mGLThread.start();
 		}
 	}
 
@@ -195,9 +180,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	
 	private void readSettings() {
 		if (mGLThread.isDrawThresholdLine()) {
+			mGLThread.setAutoScaled(settings.getBoolean("triggerAutoscaled", mGLThread.isAutoScaled()));
 			mGLThread.setGlWindowHorizontalSize(settings.getInt("triggerGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize()));
 			mGLThread.setGlWindowVerticalSize(settings.getInt("triggerGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize()));
 		} else {
+			mGLThread.setAutoScaled(settings.getBoolean("continuousAutoscaled", mGLThread.isAutoScaled()));
 			mGLThread.setGlWindowHorizontalSize(settings.getInt("continuousGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize()));
 			mGLThread.setGlWindowVerticalSize(settings.getInt("continuousGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize()));
 		}
@@ -208,9 +195,11 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 		Boolean triggerMode = mGLThread.isDrawThresholdLine();
 		editor.putBoolean("triggerMode", triggerMode);
 		if (triggerMode) {
+			editor.putBoolean("triggerAutoscaled", mGLThread.isAutoScaled());
 			editor.putInt("triggerGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize());
 			editor.putInt("triggerGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize());
 		} else {
+			editor.putBoolean("continuousAutoscaled", mGLThread.isAutoScaled());
 			editor.putInt("continuousGlWindowHorizontalSize", mGLThread.getGlWindowHorizontalSize());
 			editor.putInt("continuousGlWindowVerticalSize", mGLThread.getGlWindowVerticalSize());
 		}

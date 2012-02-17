@@ -107,6 +107,10 @@ public class BackyardAndroidActivity extends Activity {
 		application.stopAudioService();
 		UIFactory.getUi().unregisterReceivers(this);
 		writeTriggerModeToSettings(false);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.putBoolean("triggerAutoscaled", false);
+		editor.putBoolean("continuousAutoscaled", false);
+		editor.commit();
 	}
 	
 	@Override
