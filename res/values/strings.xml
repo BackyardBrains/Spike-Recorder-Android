@@ -6,8 +6,7 @@
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
     <string name="tap_to_stop_recording">Tap to stop recording</string>
-    <string name="read_speed_multiplier">Audio speed multiplier</string>
-    <string name="global_prefs">BackyardBrainsGlobalPreferences</string>
+    <string name="read_speed_multiplier_label">Audio speed multiplier</string>
     <string-array name="speeds_array">
         <item>1</item>
         <item>2</item>
@@ -17,4 +16,7 @@
     </string-array>
     <string name="read_speed_warning">Warning: changing this value to anything other than "1" could create instability and cause the program to behave unexpectedly.</string>
     <string name="configuration">Configuration</string>
+    <!--  Key Names used in software -->
+    <string name="global_prefs">BackyardBrainsGlobalPreferences</string>
+    <string name="microphone_read_speed">MicrophoneReadSpeed</string>
 </resources>

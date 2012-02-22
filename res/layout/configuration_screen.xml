@@ -10,14 +10,14 @@
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 			android:layout_marginTop="10dip"
-			android:text="@string/read_speed_multiplier"
+			android:text="@string/read_speed_multiplier_label"
     	/>
     	
     	<Spinner
 			android:id="@+id/read_speed_spinner"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:prompt="@string/read_speed_multiplier"
+			android:prompt="@string/read_speed_multiplier_label"
     	/>
          
 	<TextView 

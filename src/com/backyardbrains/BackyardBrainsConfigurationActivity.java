@@ -14,6 +14,7 @@ import android.widget.Toast;
 public class BackyardBrainsConfigurationActivity extends Activity {
 
 	private SharedPreferences prefs;
+	private String speedPrefsKey;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -22,8 +23,10 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 		setContentView(R.layout.configuration_screen);
 		
 		final String prefsname = getResources().getString(R.string.global_prefs);
+		speedPrefsKey = getResources().getString(R.string.microphone_read_speed);
+		
 		prefs = getSharedPreferences(prefsname, MODE_WORLD_READABLE);
-		CharSequence preferencesSpeed = prefs.getString("MicrophoneReadSpeed", "1");
+		CharSequence preferencesSpeed = prefs.getString(speedPrefsKey, "1");
 
 		Log.d("Config Screen", "read MicrophoneReadSpeed of " + preferencesSpeed);
 		Spinner spinner = (Spinner) findViewById(R.id.read_speed_spinner);
@@ -42,7 +45,7 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 	    public void onItemSelected(AdapterView<?> parent,
 	        View view, int pos, long id) {
 	    	SharedPreferences.Editor ed = prefs.edit();
-	    	ed.putString("MicrophoneReadSpeed", parent.getItemAtPosition(pos).toString());
+	    	ed.putString(speedPrefsKey, parent.getItemAtPosition(pos).toString());
 	    	ed.commit();
 	      Toast.makeText(parent.getContext(), "Set audio read speed to " +
 	          parent.getItemAtPosition(pos).toString(), Toast.LENGTH_LONG).show();
