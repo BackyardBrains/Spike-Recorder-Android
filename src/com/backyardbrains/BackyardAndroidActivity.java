@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -83,6 +84,10 @@ public class BackyardAndroidActivity extends Activity {
 			triggerMode = true;
 			writeTriggerModeToSettings(triggerMode);
 			reassignSurfaceView(triggerMode);
+			return true;
+		case R.id.configuration:
+			Intent config = new Intent(this, BackyardBrainsConfigurationActivity.class);
+			startActivity(config);
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);

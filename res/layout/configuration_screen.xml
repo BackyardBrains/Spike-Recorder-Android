@@ -6,11 +6,6 @@
          android:paddingLeft="8dp"
          android:paddingRight="8dp">
 
-	<LinearLayout
-		android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"> 
-         
 	    <TextView
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
@@ -25,8 +20,6 @@
 			android:prompt="@string/read_speed_multiplier"
     	/>
          
-	</LinearLayout>
-     
 	<TextView 
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"

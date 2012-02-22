@@ -17,6 +17,7 @@
 			</intent-filter>
 		</activity>
 		<activity android:name=".FileListActivity"></activity>
+		<activity android:name=".BackyardBrainsConfigurationActivity"></activity>
 		<service android:name="com.backyardbrains.audio.AudioService"></service>
 	</application>
 </manifest>
