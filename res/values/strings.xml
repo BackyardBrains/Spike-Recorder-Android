@@ -14,7 +14,7 @@
         <item>8</item>
         <item>16</item>
     </string-array>
-    <string name="read_speed_warning">Warning: changing this value to anything other than "1" could create instability and cause the program to behave unexpectedly.</string>
+    <string name="read_speed_warning">Warning: changing this value to anything other than "1" could create instability and cause the program to behave unexpectedly. Once changing it, you will need to restart the Backyard Brains app for your changes to take effect.</string>
     <string name="configuration">Configuration</string>
     <!--  Key Names used in software -->
     <string name="global_prefs">BackyardBrainsGlobalPreferences</string>

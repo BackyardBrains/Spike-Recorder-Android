@@ -3,10 +3,14 @@ package com.backyardbrains.audio;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
+
+import com.backyardbrains.R;
 
 /**
  * A specialized thread to manage Android's {@link AudioRecord} objects and
@@ -82,6 +86,13 @@ public class MicListener extends Thread {
 	public void run() {
 		Log.d(TAG, "Thread Launched");
 		recorder = null;
+
+		final String prefsname = ((AudioService) service).getResources().getString(R.string.global_prefs);
+		final String speedPrefsKey = ((AudioService) service).getResources().getString(R.string.microphone_read_speed);
+		
+		SharedPreferences prefs = ((AudioService) service).getSharedPreferences(prefsname, Context.MODE_WORLD_READABLE);
+		String preferencesSpeed = prefs.getString(speedPrefsKey, "1");
+		final int readSpeedDivisor = Integer.parseInt(preferencesSpeed);
 		try {
 			recorder = newRecorder();
 			if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -92,9 +103,9 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			Log.d(TAG, "Recorder Started");
 			
-			while (!mDone && recorder.read(audioInfo, audioInfo.limit()/8) > 0) {
+			while (!mDone && recorder.read(audioInfo, audioInfo.limit()/readSpeedDivisor) > 0) {
 				audioInfo.clear();
-				byte[] swapper = new byte[audioInfo.limit()/8];
+				byte[] swapper = new byte[audioInfo.limit()/readSpeedDivisor];
 				audioInfo.get(swapper);
 				ByteBuffer derp = ByteBuffer.wrap(swapper);
 				derp.order(ByteOrder.nativeOrder());
