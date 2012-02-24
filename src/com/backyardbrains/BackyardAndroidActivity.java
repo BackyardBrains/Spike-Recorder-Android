@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
+import com.backyardbrains.drawing.ThresholdGlSurfaceView;
 import com.backyardbrains.view.UIFactory;
 
 /**
@@ -54,7 +55,11 @@ public class BackyardAndroidActivity extends Activity {
 	void reassignSurfaceView(boolean isTriggerView) {
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this, isTriggerView);
+		if (isTriggerView) {
+			mAndroidSurface = new ThresholdGlSurfaceView(this);
+		} else {
+			mAndroidSurface = new OscilloscopeGLSurfaceView(this);
+		}
 		mainscreenGLLayout.addView(mAndroidSurface);
 		if (isTriggerView) {
 			UIFactory.hideRecordingButtons(this);

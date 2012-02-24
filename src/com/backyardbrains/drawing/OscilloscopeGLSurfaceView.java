@@ -29,20 +29,16 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	private static final String TAG = OscilloscopeGLSurfaceView.class
 			.getCanonicalName();
 
-	private TwoDimensionScaleGestureDetector mScaleDetector;
+	protected TwoDimensionScaleGestureDetector mScaleDetector;
 	SurfaceHolder mAndroidHolder;
-	private OscilloscopeGLThread mGLThread;
+	protected OscilloscopeGLThread mGLThread;
 
-	private boolean triggerView;
-
-	private float initialThresholdTouch = -1;
 
 	private SharedPreferences settings;
 
-	public OscilloscopeGLSurfaceView(Context context, boolean isTriggerMode) {
+	public OscilloscopeGLSurfaceView(Context context) {
 		this(context, null, 0);
-		triggerView = isTriggerMode;
-		Log.d(TAG, "Starting surface with triggerView set to " + triggerView);
+		Log.d(TAG, "Creating GL surface");
 	}
 
 	public OscilloscopeGLSurfaceView(Context context, AttributeSet attrs,
@@ -59,34 +55,6 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleDetector.onTouchEvent(event);
-		final int action = event.getAction();
-		if (triggerView) {
-			switch (action & MotionEvent.ACTION_MASK) {
-			case MotionEvent.ACTION_DOWN: {
-				if (Math.abs(event.getY() - mGLThread.getThresholdYValue()) < 30) {
-					initialThresholdTouch = event.getY();
-				}
-				break;
-			}
-			case MotionEvent.ACTION_MOVE: {
-				if (!mScaleDetector.isInProgress()
-						&& initialThresholdTouch != -1) {
-
-					final float y = event.getY();
-					getContext().sendBroadcast(
-							new Intent("BYBThresholdChange").putExtra(
-									"deltathreshold", y));
-
-				}
-				break;
-			}
-			case MotionEvent.ACTION_POINTER_UP:
-			case MotionEvent.ACTION_UP: {
-				initialThresholdTouch = -1;
-				break;
-			}
-			}
-		}
 		return super.onTouchEvent(event);
 	}
 
@@ -103,17 +71,17 @@ public class OscilloscopeGLSurfaceView extends SurfaceView implements
 	 */
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
-		Log.d(TAG, "Resetting drawing thread with triggerView set to "+ triggerView);
-		if (triggerView) {
-			mGLThread = new TriggerViewThread(this);
-		} else {
-			mGLThread = new OscilloscopeGLThread(this);
-		}
+		assignThread();
 		setKeepScreenOn(true);
 		readSettings();
 		synchronized (this) {
 			mGLThread.start();
 		}
+	}
+
+	protected void assignThread() {
+		Log.d(TAG, "Creating Continuous View Thread");
+		mGLThread = new OscilloscopeGLThread(this);
 	}
 
 	/**
