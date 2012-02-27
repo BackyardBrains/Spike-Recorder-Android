@@ -45,9 +45,8 @@ public class UIFactory {
 		}
 		return instance;
 	}
-
-	public void registerReceivers(
-			BackyardAndroidActivity context) {
+	
+	public void registerReceivers(Activity context) {
 		
 		IntentFilter intentFilter = new IntentFilter(
 				"BYBUpdateMillisecondsReciever");
@@ -72,7 +71,7 @@ public class UIFactory {
 	}
 
 
-	public void unregisterReceivers(BackyardAndroidActivity context) {
+	public void unregisterReceivers(Activity context) {
 		context.unregisterReceiver(upmillirec);
 		context.unregisterReceiver(upmillivolt);
 		context.unregisterReceiver(milliVoltSize);

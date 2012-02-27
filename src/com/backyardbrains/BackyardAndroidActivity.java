@@ -11,7 +11,6 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
-import com.backyardbrains.drawing.ThresholdGlSurfaceView;
 import com.backyardbrains.view.UIFactory;
 
 /**
@@ -28,47 +27,44 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link OscilloscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
-	private OscilloscopeGLSurfaceView mAndroidSurface;
+	protected OscilloscopeGLSurfaceView mAndroidSurface;
 	private boolean isRecording = false;
 	private FrameLayout mainscreenGLLayout;
-	private boolean triggerMode;
 	private SharedPreferences settings;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.backyard_main);
-		// get application
+		
+		getSettings();
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
-		triggerMode = readTriggerModeFromSettings();
-		
 		UIFactory.getUi().setupLabels(this);
 		UIFactory.setupMsLineView(this);
 		UIFactory.setupRecordingButtons(this);
 		UIFactory.setupSampleSlider(this);
 
-		reassignSurfaceView(triggerMode);
+		reassignSurfaceView();
 		
 	}
 	
-	void reassignSurfaceView(boolean isTriggerView) {
+	protected void reassignSurfaceView() {
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
-		if (isTriggerView) {
-			mAndroidSurface = new ThresholdGlSurfaceView(this);
-		} else {
-			mAndroidSurface = new OscilloscopeGLSurfaceView(this);
-		}
+		setGlSurface();
 		mainscreenGLLayout.addView(mAndroidSurface);
-		if (isTriggerView) {
-			UIFactory.hideRecordingButtons(this);
-			UIFactory.showSampleSliderBox(this);
-		} else {
-			UIFactory.showRecordingButtons(this);
-			UIFactory.hideSampleSliderBox(this);
-		}
+		enableUiForActivity();
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
+	}
+
+	protected void enableUiForActivity() {
+		UIFactory.showRecordingButtons(this);
+		UIFactory.hideSampleSliderBox(this);
+	}
+
+	protected void setGlSurface() {
+		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 	}
 
 	@Override
@@ -81,14 +77,12 @@ public class BackyardAndroidActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.waveview:
-			triggerMode = false;
-			writeTriggerModeToSettings(triggerMode);
-			reassignSurfaceView(triggerMode);
+			Intent ca = new Intent(this, BackyardAndroidActivity.class);
+			startActivity(ca);
 			return true;
 		case R.id.threshold:
-			triggerMode = true;
-			writeTriggerModeToSettings(triggerMode);
-			reassignSurfaceView(triggerMode);
+			Intent ta = new Intent(this, TriggerActivity.class);
+			startActivity(ta);
 			return true;
 		case R.id.configuration:
 			Intent config = new Intent(this, BackyardBrainsConfigurationActivity.class);
@@ -102,7 +96,6 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		// Bind to LocalService has been moved to OpenGLThread
 		UIFactory.getUi().registerReceivers(this);
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
@@ -111,21 +104,18 @@ public class BackyardAndroidActivity extends Activity {
 	
 	@Override
 	protected void onStop() {
-		super.onStop();
-		// Unbind from the service has been moved to OpenGLThread
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
-		UIFactory.getUi().unregisterReceivers(this);
-		writeTriggerModeToSettings(false);
+		/* UIFactory.getUi().unregisterReceivers(this); */
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putBoolean("triggerAutoscaled", false);
 		editor.putBoolean("continuousAutoscaled", false);
 		editor.commit();
+		super.onStop();
 	}
 	
 	@Override
 	protected void onDestroy() {
-		writeTriggerModeToSettings(false);
 		super.onDestroy();
 	}
 	
@@ -144,21 +134,9 @@ public class BackyardAndroidActivity extends Activity {
 		UIFactory.getUi().setDisplayedMilliseconds(ms);
 	}
 	
-	public void writeTriggerModeToSettings(boolean yesorno) {
-		getSettings();
-		SharedPreferences.Editor editor = settings.edit();
-		editor.putBoolean("triggerMode", yesorno);
-		editor.commit();
-	}
-	
 	private void getSettings() {
 		if (settings == null) {
 			settings = getPreferences(MODE_PRIVATE);
 		}
-	}
-	
-	public boolean readTriggerModeFromSettings() {
-		getSettings();
-		return settings.getBoolean("triggerMode", false);
 	}
 }
