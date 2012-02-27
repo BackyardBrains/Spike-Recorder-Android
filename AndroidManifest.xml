@@ -17,7 +17,8 @@
 			</intent-filter>
 		</activity>
 		<activity android:name=".FileListActivity"></activity>
-		<activity android:name=".TriggerActivity"></activity>
+		<activity android:name=".TriggerActivity"
+			android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"></activity>
 		<activity android:name=".BackyardBrainsConfigurationActivity"
 			android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"></activity>
 		<service android:name="com.backyardbrains.audio.AudioService"></service>
