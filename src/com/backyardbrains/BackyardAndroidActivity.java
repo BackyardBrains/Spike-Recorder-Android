@@ -3,6 +3,7 @@ package com.backyardbrains;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -10,7 +11,10 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
+import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
+import com.backyardbrains.drawing.OscilloscopeRenderer;
 import com.backyardbrains.view.UIFactory;
 
 /**
@@ -27,16 +31,17 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link OscilloscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
-	protected OscilloscopeGLSurfaceView mAndroidSurface;
+	protected GLSurfaceView mAndroidSurface;
 	private boolean isRecording = false;
 	private FrameLayout mainscreenGLLayout;
 	private SharedPreferences settings;
+	protected AudioService mAudioService;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.backyard_main);
-		
+
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) findViewById(R.id.glContainer);
 
@@ -45,14 +50,13 @@ public class BackyardAndroidActivity extends Activity {
 		UIFactory.setupRecordingButtons(this);
 		UIFactory.setupSampleSlider(this);
 
-		reassignSurfaceView();
-		
 	}
 	
 	protected void reassignSurfaceView() {
 		mAndroidSurface = null;
 		mainscreenGLLayout.removeAllViews();
-		setGlSurface();
+		mAndroidSurface = new ContinuousGLSurfaceView(this);
+		mAndroidSurface.setRenderer(new OscilloscopeRenderer(this));
 		mainscreenGLLayout.addView(mAndroidSurface);
 		enableUiForActivity();
 		Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
@@ -61,10 +65,6 @@ public class BackyardAndroidActivity extends Activity {
 	protected void enableUiForActivity() {
 		UIFactory.showRecordingButtons(this);
 		UIFactory.hideSampleSliderBox(this);
-	}
-
-	protected void setGlSurface() {
-		mAndroidSurface = new OscilloscopeGLSurfaceView(this);
 	}
 
 	@Override
@@ -99,14 +99,14 @@ public class BackyardAndroidActivity extends Activity {
 		UIFactory.getUi().registerReceivers(this);
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
-		
+		reassignSurfaceView();
 	}
 	
 	@Override
 	protected void onStop() {
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
-		/* UIFactory.getUi().unregisterReceivers(this); */
+		UIFactory.getUi().unregisterReceivers(this);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putBoolean("triggerAutoscaled", false);
 		editor.putBoolean("continuousAutoscaled", false);
@@ -139,4 +139,5 @@ public class BackyardAndroidActivity extends Activity {
 			settings = getPreferences(MODE_PRIVATE);
 		}
 	}
+	
 }
