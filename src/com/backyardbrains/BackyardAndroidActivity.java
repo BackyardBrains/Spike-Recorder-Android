@@ -106,7 +106,7 @@ public class BackyardAndroidActivity extends Activity {
 	protected void onStop() {
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
-		/* UIFactory.getUi().unregisterReceivers(this); */
+		UIFactory.getUi().unregisterReceivers(this);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putBoolean("triggerAutoscaled", false);
 		editor.putBoolean("continuousAutoscaled", false);
