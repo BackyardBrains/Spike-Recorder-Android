@@ -51,7 +51,7 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 	          parent.getItemAtPosition(pos).toString(), Toast.LENGTH_LONG).show();
 	    }
 
-	    public void onNothingSelected(AdapterView parent) {
+	    public void onNothingSelected(AdapterView<?> parent) {
 	      // Do nothing.
 	    }
 	}	
