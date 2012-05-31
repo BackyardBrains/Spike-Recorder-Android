@@ -46,9 +46,11 @@ public class FileListActivity extends ListActivity {
 		
 		File[] files = bybDirectory.listFiles();
 
-		ListAdapter adapter = new FileListAdapter(this,
+		if(files != null) {
+			ListAdapter adapter = new FileListAdapter(this,
 				R.layout.file_list_row_layout, files);
-		setListAdapter(adapter);
+			setListAdapter(adapter);
+		}
 	}
 	
 	@Override

@@ -96,17 +96,26 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		UIFactory.getUi().registerReceivers(this);
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
-		
+	}
+	
+	@Override
+	protected void onResume() {
+		UIFactory.getUi().registerReceivers(this);
+		super.onResume();
+	}
+	
+	@Override
+	protected void onPause() {
+		UIFactory.getUi().unregisterReceivers(this);
+		super.onPause();
 	}
 	
 	@Override
 	protected void onStop() {
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.stopAudioService();
-		UIFactory.getUi().unregisterReceivers(this);
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putBoolean("triggerAutoscaled", false);
 		editor.putBoolean("continuousAutoscaled", false);
