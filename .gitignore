@@ -5,3 +5,6 @@ gen/
 .settings/
 byb.keystore
 *.apk
+device*.png
+desktop.ini
+
