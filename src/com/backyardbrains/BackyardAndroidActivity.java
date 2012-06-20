@@ -50,13 +50,14 @@ public class BackyardAndroidActivity extends Activity {
                 UIFactory.setupRecordingButtons(this);
                 UIFactory.setupSampleSlider(this);
 
+		reassignSurfaceView();
+		
         }
         
         protected void reassignSurfaceView() {
                 mAndroidSurface = null;
                 mainscreenGLLayout.removeAllViews();
-                mAndroidSurface = new ContinuousGLSurfaceView(this);
-                mAndroidSurface.setRenderer(new OscilloscopeRenderer(this));
+		        setGlSurface();
                 mainscreenGLLayout.addView(mAndroidSurface);
                 enableUiForActivity();
                 Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
@@ -65,6 +66,10 @@ public class BackyardAndroidActivity extends Activity {
         protected void enableUiForActivity() {
                 UIFactory.showRecordingButtons(this);
                 UIFactory.hideSampleSliderBox(this);
+	    }
+
+    	protected void setGlSurface() {
+			mAndroidSurface = new OscilloscopeGLSurfaceView(this);
         }
 
         @Override

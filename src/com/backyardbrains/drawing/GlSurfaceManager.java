@@ -62,6 +62,7 @@ public class GlSurfaceManager {
 		mGL.glEnable(GL10.GL_DEPTH_TEST);
 		mGL.glDepthFunc(GL10.GL_LEQUAL);
 		mGL.glEnable(GL10.GL_LINE_SMOOTH );
+		mGL.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
 		// Enable Blending
 		mGL.glEnable(GL10.GL_BLEND);
 		// Specifies pixel arithmetic
