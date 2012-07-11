@@ -14,7 +14,6 @@ import android.widget.FrameLayout;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
-import com.backyardbrains.drawing.OscilloscopeRenderer;
 import com.backyardbrains.view.UIFactory;
 
 /**
@@ -69,7 +68,7 @@ public class BackyardAndroidActivity extends Activity {
 	    }
 
     	protected void setGlSurface() {
-			mAndroidSurface = new OscilloscopeGLSurfaceView(this);
+			mAndroidSurface = new ContinuousGLSurfaceView(this);
         }
 
         @Override

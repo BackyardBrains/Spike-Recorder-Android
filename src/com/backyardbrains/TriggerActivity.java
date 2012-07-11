@@ -7,7 +7,6 @@ public class TriggerActivity extends BackyardAndroidActivity {
 
 	@Override
 	protected void setGlSurface() {
-		// TODO Auto-generated method stub
 		mAndroidSurface = new ThresholdGlSurfaceView(this);
 	}
 

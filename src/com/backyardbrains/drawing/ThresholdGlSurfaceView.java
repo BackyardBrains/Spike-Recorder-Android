@@ -1,17 +1,46 @@
 package com.backyardbrains.drawing;
 
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
+import android.app.Activity;
+import android.content.SharedPreferences;
 import android.view.MotionEvent;
 
-public class ThresholdGlSurfaceView extends OscilloscopeGLSurfaceView {
+public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 
-	private static final String TAG = ThresholdGlSurfaceView.class.getCanonicalName();
+	private static final String TAG = ContinuousGLSurfaceView.class
+			.getCanonicalName();
+	protected ThresholdRenderer renderer;
 	private float initialThresholdTouch = -1;
 
-	public ThresholdGlSurfaceView(Context context) {
+	public ThresholdGlSurfaceView(Activity context) {
 		super(context);
+	}
+
+	@Override
+	protected void assignRenderer(Activity context) {
+		renderer = new ThresholdRenderer(context);
+		setRenderer(renderer);
+	}
+
+	protected void readSettings() {
+		renderer.setAutoScaled(settings.getBoolean("thresholdAutoscaled",
+				renderer.isAutoScaled()));
+		renderer.setGlWindowHorizontalSize(settings.getInt(
+				"thresholdGlWindowHorizontalSize",
+				renderer.getGlWindowHorizontalSize()));
+		renderer.setGlWindowVerticalSize(settings.getInt(
+				"thresholdGlWindowVerticalSize",
+				renderer.getGlWindowVerticalSize()));
+	}
+
+	protected void saveSettings() {
+		final SharedPreferences.Editor editor = settings.edit();
+		editor.putBoolean("thresholdAutoscaled", renderer.isAutoScaled());
+		editor.putInt("thresholdGlWindowHorizontalSize",
+				renderer.getGlWindowHorizontalSize());
+		editor.putInt("thresholdGlWindowVerticalSize",
+				renderer.getGlWindowVerticalSize());
+		editor.commit();
+
 	}
 
 	@Override
@@ -19,37 +48,28 @@ public class ThresholdGlSurfaceView extends OscilloscopeGLSurfaceView {
 		// TODO Auto-generated method stub
 		boolean result = super.onTouchEvent(event);
 		final int action = event.getAction();
-			switch (action & MotionEvent.ACTION_MASK) {
-			case MotionEvent.ACTION_DOWN: {
-				if (Math.abs(event.getY() - mGLThread.getThresholdYValue()) < 30) {
-					initialThresholdTouch = event.getY();
-				}
-				break;
+		switch (action & MotionEvent.ACTION_MASK) {
+		case MotionEvent.ACTION_DOWN: {
+			if (Math.abs(event.getY() - renderer.getThresholdYValue()) < 30) {
+				initialThresholdTouch = event.getY();
 			}
-			case MotionEvent.ACTION_MOVE: {
-				if (!mScaleDetector.isInProgress()
-						&& initialThresholdTouch != -1) {
+			break;
+		}
+		case MotionEvent.ACTION_MOVE: {
+			if (!mScaleDetector.isInProgress() && initialThresholdTouch != -1) {
 
-					final float y = event.getY();
-					getContext().sendBroadcast(
-							new Intent("BYBThresholdChange").putExtra(
-									"deltathreshold", y));
-
-				}
-				break;
+				final float y = event.getY();
+				renderer.adjustThresholdValue(y);
 			}
-			case MotionEvent.ACTION_POINTER_UP:
-			case MotionEvent.ACTION_UP: {
-				initialThresholdTouch = -1;
-				break;
-			}
-			}
+			break;
+		}
+		case MotionEvent.ACTION_POINTER_UP:
+		case MotionEvent.ACTION_UP: {
+			initialThresholdTouch = -1;
+			break;
+		}
+		}
 		return result;
 	}
-	
-	@Override
-	protected void assignThread() {
-		Log.d(TAG, "Creating Trigger View Thread");
-		mGLThread = new TriggerViewThread(this);
-	}
+
 }
