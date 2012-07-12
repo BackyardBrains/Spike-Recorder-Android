@@ -27,13 +27,13 @@ public class ContinuousGLSurfaceView extends GLSurfaceView {
 				.getPreferences(BackyardAndroidActivity.MODE_PRIVATE);
 
 		assignRenderer(context);
-		mScaleDetector = new TwoDimensionScaleGestureDetector(context,
-				new ScaleListener());
 	}
 
 	protected void assignRenderer(Activity context) {
 		renderer = new OscilloscopeRenderer(context);
 		setRenderer(renderer);
+		mScaleDetector = new TwoDimensionScaleGestureDetector(context,
+				new ScaleListener());
 	}
 
 	@Override
@@ -79,11 +79,15 @@ public class ContinuousGLSurfaceView extends GLSurfaceView {
 
 	}
 
-	protected class ScaleListener extends Simple2DOnScaleGestureListener {
+	public class ScaleListener extends Simple2DOnScaleGestureListener {
 
 		int xSizeAtBeginning = -1;
 		int ySizeAtBeginning = -1;
 
+		ScaleListener() {
+			super();
+		}
+		
 		@Override
 		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
 			xSizeAtBeginning = renderer.getGlWindowHorizontalSize();
