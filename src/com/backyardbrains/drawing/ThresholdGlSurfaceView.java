@@ -1,14 +1,11 @@
 package com.backyardbrains.drawing;
 
-import com.backyardbrains.drawing.ContinuousGLSurfaceView.ScaleListener;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
-
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.util.Log;
-import android.util.Pair;
 import android.view.MotionEvent;
+
+import com.backyardbrains.view.ScaleListener;
+import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 
@@ -26,7 +23,7 @@ public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 		renderer = new ThresholdRenderer(context);
 		setRenderer(renderer);
 		mScaleDetector = new TwoDimensionScaleGestureDetector(context,
-				new ScaleListener());
+				new ScaleListener(renderer));
 	}
 
 	protected void readSettings() {
@@ -81,46 +78,5 @@ public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 		return result;
 	}
 
-	public class ScaleListener extends Simple2DOnScaleGestureListener {
 
-		int xSizeAtBeginning = -1;
-		int ySizeAtBeginning = -1;
-
-		ScaleListener() {
-			super();
-		}
-		
-		@Override
-		public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
-			xSizeAtBeginning = renderer.getGlWindowHorizontalSize();
-			ySizeAtBeginning = renderer.getGlWindowVerticalSize();
-
-			return super.onScaleBegin(detector);
-		}
-
-		@Override
-		public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-
-			try {
-				final Pair<Float, Float> scaleModifier = detector
-						.getScaleFactor();
-				int newXsize = (int) (xSizeAtBeginning / scaleModifier.first);
-				renderer.setGlWindowHorizontalSize(newXsize);
-
-				int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
-
-				renderer.setGlWindowVerticalSize(newYsize);
-			} catch (IllegalStateException e) {
-				Log.e(TAG, "Got invalid values back from Scale listener!");
-			} catch (NullPointerException e) {
-				Log.e(TAG, "NPE while monitoring scale.");
-			}
-			return super.onScale(detector);
-		}
-
-		@Override
-		public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
-			super.onScaleEnd(detector);
-		}
-	}
 }
