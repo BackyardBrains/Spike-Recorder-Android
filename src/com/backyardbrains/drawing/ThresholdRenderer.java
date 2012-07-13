@@ -6,7 +6,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.util.Log;
 
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
