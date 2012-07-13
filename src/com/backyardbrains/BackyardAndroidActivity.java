@@ -3,7 +3,6 @@ package com.backyardbrains;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;

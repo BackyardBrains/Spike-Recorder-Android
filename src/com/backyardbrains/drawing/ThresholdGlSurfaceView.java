@@ -9,6 +9,7 @@ import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 
+	@SuppressWarnings("unused")
 	private static final String TAG = ContinuousGLSurfaceView.class
 			.getCanonicalName();
 	protected ThresholdRenderer renderer;
