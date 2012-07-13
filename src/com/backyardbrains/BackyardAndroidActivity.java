@@ -30,7 +30,7 @@ public class BackyardAndroidActivity extends Activity {
 	 * Reference to the {@link OscilloscopeGLSurfaceView} to draw in this
 	 * activity
 	 */
-	protected GLSurfaceView mAndroidSurface;
+	protected ContinuousGLSurfaceView mAndroidSurface;
 	private boolean isRecording = false;
 	private FrameLayout mainscreenGLLayout;
 	private SharedPreferences settings;
@@ -48,9 +48,6 @@ public class BackyardAndroidActivity extends Activity {
 		UIFactory.setupMsLineView(this);
 		UIFactory.setupRecordingButtons(this);
 		UIFactory.setupSampleSlider(this);
-
-		reassignSurfaceView();
-
 	}
 
 	protected void reassignSurfaceView() {
@@ -109,11 +106,13 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	protected void onResume() {
 		UIFactory.getUi().registerReceivers(this);
+		reassignSurfaceView(); 
 		super.onResume();
 	}
 
 	@Override
 	protected void onPause() {
+		mAndroidSurface = null;
 		UIFactory.getUi().unregisterReceivers(this);
 		super.onPause();
 	}

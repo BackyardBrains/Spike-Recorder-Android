@@ -76,7 +76,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		gl.glEnable(GL10.GL_DEPTH_TEST);
 	}
 	
-	void onSurfaceDestroyed() {
+	void cleanUp() {
 		bindAudioService(false);
 	}
 

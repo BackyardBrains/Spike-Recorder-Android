@@ -24,16 +24,9 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		super.onSurfaceCreated(gl, config);
-		broadcastToggleTrigger(true);
 		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
 	}
 
-	@Override
-	void onSurfaceDestroyed() {
-		broadcastToggleTrigger(false);
-		super.onSurfaceDestroyed();
-	}
-	
 	@Override
 	protected void postDrawingHandler(GL10 gl) {
 		super.postDrawingHandler(gl);
@@ -68,11 +61,6 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 		super.setmVText(yPerDiv);
 	}
 	
-	private void broadcastToggleTrigger(boolean b) {
-		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", b);
-		context.sendBroadcast(i);
-	}
-
 	public float getThresholdYValue() {
 		return thresholdPixelHeight;
 	}
