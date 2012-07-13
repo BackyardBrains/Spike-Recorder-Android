@@ -43,7 +43,6 @@ public class ContinuousGLSurfaceView extends GLSurfaceView {
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		renderer.onSurfaceDestroyed();
 		saveSettings();
 		setKeepScreenOn(false);
 		super.surfaceDestroyed(holder);
