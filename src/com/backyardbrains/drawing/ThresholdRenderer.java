@@ -23,9 +23,14 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		super.onSurfaceCreated(gl, config);
-		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
 	}
 
+	@Override
+	public void onSurfaceChanged(GL10 gl, int width, int height) {
+		super.onSurfaceChanged(gl, width, height);
+		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
+	}
+	
 	@Override
 	protected void postDrawingHandler(GL10 gl) {
 		super.postDrawingHandler(gl);
