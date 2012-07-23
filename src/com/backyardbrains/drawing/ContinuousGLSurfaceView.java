@@ -13,7 +13,7 @@ import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 public class ContinuousGLSurfaceView extends GLSurfaceView {
 
 	@SuppressWarnings("unused")
-	private static final String TAG = OscilloscopeGLThread.class
+	private static final String TAG = ContinuousGLSurfaceView.class
 			.getCanonicalName();
 	protected TwoDimensionScaleGestureDetector mScaleDetector;
 

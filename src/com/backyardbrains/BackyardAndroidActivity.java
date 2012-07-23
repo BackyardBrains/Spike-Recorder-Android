@@ -12,7 +12,6 @@ import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
-import com.backyardbrains.drawing.OscilloscopeGLSurfaceView;
 import com.backyardbrains.view.UIFactory;
 
 /**
