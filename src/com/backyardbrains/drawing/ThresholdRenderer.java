@@ -34,7 +34,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	@Override
 	protected void postDrawingHandler(GL10 gl) {
 		super.postDrawingHandler(gl);
-		final float thresholdLineLength = glWindowHorizontalSize;
+		final float thresholdLineLength = mBufferToDraws.length;
 		float[] thresholdLine = new float[] { -thresholdLineLength*2, getThresholdValue(),
 				thresholdLineLength*2, getThresholdValue() };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
@@ -48,10 +48,10 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 
 	@Override
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-		float[] arr = new float[(glWindowHorizontalSize) * 2]; // array to fill
+		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
 		int j = 0; // index of arr
 		try {
-			for (int i = shortArrayToDraw.length - glWindowHorizontalSize; i < shortArrayToDraw.length; i++) {
+			for (int i = 0; i < shortArrayToDraw.length; i++) {
 				arr[j++] = i;
 				arr[j++] = shortArrayToDraw[i];
 			}
