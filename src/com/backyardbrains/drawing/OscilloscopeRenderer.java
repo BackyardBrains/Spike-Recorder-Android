@@ -20,7 +20,6 @@ import android.util.Log;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
-import com.backyardbrains.audio.MicListener;
 
 public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 

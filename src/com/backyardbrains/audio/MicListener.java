@@ -92,7 +92,6 @@ public class MicListener extends Thread {
 		
 		SharedPreferences prefs = ((AudioService) service).getSharedPreferences(prefsname, Context.MODE_WORLD_READABLE);
 		String preferencesSpeed = prefs.getString(speedPrefsKey, "1");
-		@SuppressWarnings("unused")
 		final int readSpeedDivisor = Integer.parseInt(preferencesSpeed);
 		try {
 			recorder = newRecorder();
