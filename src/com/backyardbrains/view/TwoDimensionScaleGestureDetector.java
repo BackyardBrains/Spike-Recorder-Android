@@ -1,5 +1,12 @@
 /*
+ * Backyard Brains Android App
+ * Copyright (C) 2011 Backyard Brains
+ *
+ * This class is part of the Backyard Brains Android App, but was modified
+ * from part of the AOSP, and retains its copyright below.
+ *
  * Copyright (C) 2010 The Android Open Source Project
+ * Modified 2011 by Nathan Dotz <nate (at) backyardbrains.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
