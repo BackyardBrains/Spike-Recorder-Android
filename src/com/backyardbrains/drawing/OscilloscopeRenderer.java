@@ -20,6 +20,7 @@ import android.util.Log;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
+import com.backyardbrains.audio.MicListener;
 
 public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 
@@ -157,12 +158,18 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		setAutoScaled(true);
 	}
 
-	private FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-		float[] arr = new float[glWindowHorizontalSize * 2]; // array to fill
+	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+		int micSize = mAudioService.getMicListenerBufferSizeInSamples();
+		float[] arr = new float[(glWindowHorizontalSize + micSize) * 2];
 		int j = 0; // index of arr
-		for (int i = shortArrayToDraw.length - glWindowHorizontalSize; i < shortArrayToDraw.length; i++) {
-			arr[j++] = i;
-			arr[j++] = shortArrayToDraw[i];
+		try {
+			for (int i = shortArrayToDraw.length - glWindowHorizontalSize
+					- micSize; i < shortArrayToDraw.length; i++) {
+				arr[j++] = i;
+				arr[j++] = shortArrayToDraw[i];
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			Log.e(TAG, e.getMessage());
 		}
 		return getFloatBufferFromFloatArray(arr);
 	}
@@ -221,10 +228,27 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		context.sendBroadcast(i);
 	}
 
+	/*
+	private long samplesToMs(long samps) {
+		return Math.round(samps / 44.1);
+	}
+	*/
+
+	private long msToSamples(long timeSince) {
+		return Math.round(44.1 * timeSince);
+	}
+
 	protected void setGlWindow(GL10 gl, final int samplesToShow,
 			final int lengthOfSampleSet) {
-		initGL(gl, lengthOfSampleSet - glWindowHorizontalSize,
-				lengthOfSampleSet, -getGlWindowVerticalSize() / 2,
+		
+		final int micBufferSize = mAudioService.getMicListenerBufferSizeInSamples();
+		final long lastTimestamp = mAudioService.getLastSamplesReceivedTimestamp();
+		final long timeSince = System.currentTimeMillis() - lastTimestamp;
+		
+		long xEnd = lengthOfSampleSet - micBufferSize + msToSamples(timeSince);
+		long xBegin = xEnd - glWindowHorizontalSize;
+		initGL(gl, xBegin,
+				xEnd, -getGlWindowVerticalSize() / 2,
 				getGlWindowVerticalSize() / 2);
 	}
 

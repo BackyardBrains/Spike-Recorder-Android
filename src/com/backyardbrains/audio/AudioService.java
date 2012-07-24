@@ -55,6 +55,22 @@ public class AudioServiceBinder extends Binder {
 	private boolean triggerMode;
 	private ToggleTriggerListener toggleTrigger;
 	private SetSampleSizeListener sampleSizeListener;
+	private long lastSamplesReceivedTimestamp;
+	private int micListenerBufferSizeInSamples;
+
+	/**
+	 * @return the micListenerBufferSizeInSamples
+	 */
+	public int getMicListenerBufferSizeInSamples() {
+		return micListenerBufferSizeInSamples;
+	}
+
+	/**
+	 * @return the lastSamplesReceivedTimestamp
+	 */
+	public long getLastSamplesReceivedTimestamp() {
+		return lastSamplesReceivedTimestamp;
+	}
 
 	/**
 	 * return a byte array with in the appropriate order representing the last
@@ -68,6 +84,10 @@ public class AudioServiceBinder extends Binder {
 	
 	public short[] getTriggerBuffer() {
 		return triggerAverager.getAveragedSamples();
+	}
+
+	public void setMicListenerBufferSizeInSamples(int i) {
+		micListenerBufferSizeInSamples = i;
 	}
 
 	/**
@@ -225,6 +245,7 @@ public class AudioServiceBinder extends Binder {
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
+		lastSamplesReceivedTimestamp = System.currentTimeMillis();
 		if(triggerMode) {
 //			Log.d(TAG, "Pushing audio to triggerAverager, length: "+audioInfo.capacity());
 			triggerAverager.push(audioInfo);
@@ -311,4 +332,5 @@ public class AudioServiceBinder extends Binder {
 		}
 		
 	}
+
 }

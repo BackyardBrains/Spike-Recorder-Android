@@ -45,7 +45,22 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 		gl.glDrawArrays(GL10.GL_LINES, 0, 4);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
-	
+
+	@Override
+	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+		float[] arr = new float[(glWindowHorizontalSize) * 2]; // array to fill
+		int j = 0; // index of arr
+		try {
+			for (int i = shortArrayToDraw.length - glWindowHorizontalSize; i < shortArrayToDraw.length; i++) {
+				arr[j++] = i;
+				arr[j++] = shortArrayToDraw[i];
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			Log.e(TAG, e.getMessage());
+		}
+		return getFloatBufferFromFloatArray(arr);
+	}
+
 	public float getThresholdValue() {
 		return pixelHeightToGlHeight(thresholdPixelHeight);
 	}
@@ -72,7 +87,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	protected void setGlWindow(GL10 gl, final int samplesToShow,
 			final int lengthOfSampleSet) {
 		final int size = getGlWindowVerticalSize();
-		initGL(gl, lengthOfSampleSet/2 - samplesToShow/2, lengthOfSampleSet/2 + samplesToShow/2, -size/2, size/2);
+		initGL(gl, (lengthOfSampleSet - samplesToShow)/2, (lengthOfSampleSet + samplesToShow)/2, -size/2, size/2);
 	}
 	
 	int map(float glHeight, int in_min, int in_max, int out_min, int out_max)
