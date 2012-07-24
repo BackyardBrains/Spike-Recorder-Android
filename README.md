@@ -33,7 +33,7 @@ To Do for version 1.0
 To Do for version 1.1
 ---------------------
 
-* Add thresholding of spikes. 
-* Averaging spike waveforms together (reduces noise inherent in spikes).
+* <del>Add thresholding of spikes.</del>
+* <del>Averaging spike waveforms together (reduces noise inherent in spikes).</del>
 * Add a "heard a spike" page to grow the neuro-converts by N.
 * Playback of the recorded data via application.
