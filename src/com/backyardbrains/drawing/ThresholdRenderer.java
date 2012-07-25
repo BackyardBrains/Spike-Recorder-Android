@@ -48,7 +48,6 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		super.onSurfaceChanged(gl, width, height);
-		defaultThresholdValue();
 		drewFirstFrame = false;
 	}
 
@@ -60,7 +59,11 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	protected void preDrawingHandler() {
 		super.preDrawingHandler();
 		if(!drewFirstFrame) {
-			defaultThresholdValue();
+			if (thresholdPixelHeight == 0) {
+				defaultThresholdValue();
+			} else {
+				adjustThresholdValue(thresholdPixelHeight);
+			}
 			drewFirstFrame = true;
 		}
 	}
@@ -142,6 +145,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	}
 
 	public void adjustThresholdValue(float dy) {
+		if(dy == 0) { return; }
 		thresholdPixelHeight = dy;
 		Log.d(TAG, "Adjusted threshold by " + dy);
 		if (mAudioService != null && mAudioServiceIsBound) {

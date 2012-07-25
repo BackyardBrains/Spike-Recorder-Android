@@ -49,6 +49,7 @@ public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 	protected void readSettings() {
 		renderer.setAutoScaled(settings.getBoolean("thresholdAutoscaled",
 				renderer.isAutoScaled()));
+		renderer.adjustThresholdValue(settings.getFloat("thresholdPixelHeight", 0));
 		renderer.setGlWindowHorizontalSize(settings.getInt(
 				"thresholdGlWindowHorizontalSize",
 				renderer.getGlWindowHorizontalSize()));
@@ -62,6 +63,7 @@ public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 		editor.putBoolean("thresholdAutoscaled", renderer.isAutoScaled());
 		editor.putInt("thresholdGlWindowHorizontalSize",
 				renderer.getGlWindowHorizontalSize());
+		editor.putFloat("thresholdPixelHeight", renderer.getThresholdYValue());
 		editor.putInt("thresholdGlWindowVerticalSize",
 				renderer.getGlWindowVerticalSize());
 		editor.commit();
