@@ -34,6 +34,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	private static final String TAG = ThresholdRenderer.class
 			.getCanonicalName();
 	private float thresholdPixelHeight;
+	private boolean drewFirstFrame;
 	
 	public ThresholdRenderer(Activity backyardAndroidActivity) {
 		super(backyardAndroidActivity);
@@ -47,19 +48,34 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		super.onSurfaceChanged(gl, width, height);
+		defaultThresholdValue();
+		drewFirstFrame = false;
+	}
+
+	public void defaultThresholdValue() {
 		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
+	}
+	
+	@Override
+	protected void preDrawingHandler() {
+		super.preDrawingHandler();
+		if(!drewFirstFrame) {
+			defaultThresholdValue();
+			drewFirstFrame = true;
+		}
 	}
 	
 	@Override
 	protected void postDrawingHandler(GL10 gl) {
 		super.postDrawingHandler(gl);
 		final float thresholdLineLength = mBufferToDraws.length;
-		float[] thresholdLine = new float[] { -thresholdLineLength*2, getThresholdValue(),
-				thresholdLineLength*2, getThresholdValue() };
+		final float thresholdValue = getThresholdValue();
+		float[] thresholdLine = new float[] { -thresholdLineLength*2, thresholdValue,
+				thresholdLineLength*2, thresholdValue };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-		gl.glLineWidth(1.0f);
+		gl.glLineWidth(2.0f);
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
 		gl.glDrawArrays(GL10.GL_LINES, 0, 4);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
