@@ -263,8 +263,8 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		final long lastTimestamp = mAudioService.getLastSamplesReceivedTimestamp();
 		final long timeSince = System.currentTimeMillis() - lastTimestamp;
 		
-		long xEnd = lengthOfSampleSet - micBufferSize + msToSamples(timeSince);
-		long xBegin = xEnd - glWindowHorizontalSize;
+		long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet - micBufferSize + msToSamples(timeSince));
+		long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
 		initGL(gl, xBegin,
 				xEnd, -getGlWindowVerticalSize() / 2,
 				getGlWindowVerticalSize() / 2);
