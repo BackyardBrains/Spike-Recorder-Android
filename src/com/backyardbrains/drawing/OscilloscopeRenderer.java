@@ -27,18 +27,13 @@ import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.opengl.GLSurfaceView;
-import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 
 public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 
@@ -46,26 +41,25 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 			.getCanonicalName();
 	public static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 3 / 2);
 
-	protected AudioService mAudioService;
 	protected int glWindowHorizontalSize = 4000;
 	private float minimumDetectedPCMValue = -5000000f;
 	protected int glWindowVerticalSize = 10000;
 	private boolean autoScaled = false;
-	protected Activity context;
+	protected BackyardAndroidActivity context;
 	protected short[] mBufferToDraws;
 	protected boolean mAudioServiceIsBound;
 	protected int height;
 	protected int width;
 	private long firstBufferDrawn = 0;
 
-	public OscilloscopeRenderer(Activity backyardAndroidActivity) {
+	public OscilloscopeRenderer(BackyardAndroidActivity backyardAndroidActivity) {
 		context = backyardAndroidActivity;
 	}
 
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		// grab current audio from audioservice
-		if (!isServiceReady())
+		if (context.getmAudioService() == null)
 			return;
 
 		getCurrentAudio();
@@ -88,15 +82,9 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
-		bindAudioService(true);
 		gl.glDisable(GL10.GL_DITHER);
 		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
 		gl.glEnable(GL10.GL_DEPTH_TEST);
-	}
-	
-	void cleanUp() {
-		bindAudioService(false);
 	}
 
 	private void glClear(GL10 gl) {
@@ -177,7 +165,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 	}
 
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-		int micSize = mAudioService.getMicListenerBufferSizeInSamples();
+		int micSize = context.getmAudioService().getMicListenerBufferSizeInSamples();
 		float[] arr = new float[(glWindowHorizontalSize + micSize) * 2];
 		int j = 0; // index of arr
 		try {
@@ -203,10 +191,6 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 
 	protected boolean isValidAudioBuffer() {
 		return mBufferToDraws != null && mBufferToDraws.length > 0;
-	}
-
-	protected boolean isServiceReady() {
-		return mAudioServiceIsBound && mAudioService != null;
 	}
 
 	protected void setLabels(int samplesToShow) {
@@ -259,8 +243,8 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 	protected void setGlWindow(GL10 gl, final int samplesToShow,
 			final int lengthOfSampleSet) {
 		
-		final int micBufferSize = mAudioService.getMicListenerBufferSizeInSamples();
-		final long lastTimestamp = mAudioService.getLastSamplesReceivedTimestamp();
+		final int micBufferSize = context.getmAudioService().getMicListenerBufferSizeInSamples();
+		final long lastTimestamp = context.getmAudioService().getLastSamplesReceivedTimestamp();
 		final long timeSince = System.currentTimeMillis() - lastTimestamp;
 		
 		long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet - micBufferSize + msToSamples(timeSince));
@@ -325,9 +309,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 	}
 
 	protected void getCurrentAudio() {
-		synchronized (mAudioService) {
-			mBufferToDraws = mAudioService.getAudioBuffer();
-		}
+		mBufferToDraws = context.getmAudioService().getAudioBuffer();
 	}
 
 	public boolean isAutoScaled() {
@@ -337,48 +319,5 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 	public void setAutoScaled(boolean isScaled) {
 		autoScaled = isScaled;
 	}
-
-	protected void bindAudioService(boolean on) {
-		if (on) {
-			// Log.d(TAG, "Binding audio service.");
-			Intent intent = new Intent(context, AudioService.class);
-			context.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-		} else {
-			// Log.d(TAG, "UnBinding audio service.");
-			context.unbindService(mConnection);
-		}
-	}
-
-	protected ServiceConnection mConnection = new ServiceConnection() {
-
-		/**
-		 * Sets a reference in this activity to the {@link AudioService}, which
-		 * allows for {@link ByteBuffer}s full of audio information to be passed
-		 * from the {@link AudioService} down into the local
-		 * {@link OscilloscopeGLSurfaceView}
-		 * 
-		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
-		 *      android.os.IBinder)
-		 */
-		@Override
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// We've bound to LocalService, cast the IBinder and get
-			// LocalService instance
-			AudioServiceBinder binder = (AudioServiceBinder) service;
-			mAudioService = binder.getService();
-			mAudioServiceIsBound = true;
-		}
-
-		/**
-		 * Clean up bindings
-		 * 
-		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
-		 */
-		@Override
-		public void onServiceDisconnected(ComponentName arg0) {
-			mAudioService = null;
-			mAudioServiceIsBound = false;
-		}
-	};
 
 }

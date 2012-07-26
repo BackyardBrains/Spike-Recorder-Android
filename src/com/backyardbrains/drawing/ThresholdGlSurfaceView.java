@@ -19,10 +19,10 @@
 
 package com.backyardbrains.drawing;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.view.MotionEvent;
 
+import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.view.ScaleListener;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
@@ -34,12 +34,12 @@ public class ThresholdGlSurfaceView extends ContinuousGLSurfaceView {
 	protected ThresholdRenderer renderer;
 	private float initialThresholdTouch = -1;
 
-	public ThresholdGlSurfaceView(Activity context) {
+	public ThresholdGlSurfaceView(BackyardAndroidActivity context) {
 		super(context);
 	}
 
 	@Override
-	protected void assignRenderer(Activity context) {
+	protected void assignRenderer(BackyardAndroidActivity context) {
 		renderer = new ThresholdRenderer(context);
 		setRenderer(renderer);
 		mScaleDetector = new TwoDimensionScaleGestureDetector(context,

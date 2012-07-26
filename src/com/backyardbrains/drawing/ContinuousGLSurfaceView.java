@@ -39,7 +39,7 @@ public class ContinuousGLSurfaceView extends GLSurfaceView {
 	protected OscilloscopeRenderer renderer;
 	protected SharedPreferences settings;
 
-	public ContinuousGLSurfaceView(Activity context) {
+	public ContinuousGLSurfaceView(BackyardAndroidActivity context) {
 		super(context);
 		settings = ((BackyardAndroidActivity) context)
 				.getPreferences(BackyardAndroidActivity.MODE_PRIVATE);
@@ -47,7 +47,7 @@ public class ContinuousGLSurfaceView extends GLSurfaceView {
 		assignRenderer(context);
 	}
 
-	protected void assignRenderer(Activity context) {
+	protected void assignRenderer(BackyardAndroidActivity context) {
 		renderer = new OscilloscopeRenderer(context);
 		setRenderer(renderer);
 		mScaleDetector = new TwoDimensionScaleGestureDetector(context,

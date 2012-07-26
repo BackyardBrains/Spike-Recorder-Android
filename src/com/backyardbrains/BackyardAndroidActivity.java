@@ -19,10 +19,16 @@
 
 package com.backyardbrains;
 
+import java.nio.ByteBuffer;
+
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,6 +36,7 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
 import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.view.UIFactory;
 
@@ -52,6 +59,13 @@ public class BackyardAndroidActivity extends Activity {
 	private FrameLayout mainscreenGLLayout;
 	private SharedPreferences settings;
 	protected AudioService mAudioService;
+
+	/**
+	 * @return the mAudioService
+	 */
+	public AudioService getmAudioService() {
+		return mAudioService;
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -119,10 +133,12 @@ public class BackyardAndroidActivity extends Activity {
 		super.onStart();
 		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
 		application.startAudioService();
+		bindAudioService(true);
 	}
 
 	@Override
 	protected void onResume() {
+		bindAudioService(true);
 		UIFactory.getUi().registerReceivers(this);
 		reassignSurfaceView();
 		super.onResume();
@@ -133,6 +149,7 @@ public class BackyardAndroidActivity extends Activity {
 		mAndroidSurface = null;
 		UIFactory.getUi().unregisterReceivers(this);
 		super.onPause();
+		bindAudioService(false);
 	}
 
 	@Override
@@ -171,5 +188,50 @@ public class BackyardAndroidActivity extends Activity {
 			settings = getPreferences(MODE_PRIVATE);
 		}
 	}
+
+	protected void bindAudioService(boolean on) {
+		if (on) {
+			// Log.d(TAG, "Binding audio service.");
+			Intent intent = new Intent(this, AudioService.class);
+			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		} else {
+			// Log.d(TAG, "UnBinding audio service.");
+			unbindService(mConnection);
+		}
+	}
+
+	protected ServiceConnection mConnection = new ServiceConnection() {
+
+		private boolean mAudioServiceIsBound;
+
+		/**
+		 * Sets a reference in this activity to the {@link AudioService}, which
+		 * allows for {@link ByteBuffer}s full of audio information to be passed
+		 * from the {@link AudioService} down into the local
+		 * {@link OscilloscopeGLSurfaceView}
+		 * 
+		 * @see android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+		 *      android.os.IBinder)
+		 */
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get
+			// LocalService instance
+			AudioServiceBinder binder = (AudioServiceBinder) service;
+			mAudioService = binder.getService();
+			mAudioServiceIsBound = true;
+		}
+
+		/**
+		 * Clean up bindings
+		 * 
+		 * @see android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
+		 */
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			mAudioService = null;
+			mAudioServiceIsBound = false;
+		}
+	};
 
 }

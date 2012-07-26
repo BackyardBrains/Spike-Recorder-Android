@@ -24,9 +24,9 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import android.app.Activity;
 import android.util.Log;
 
+import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 
 public class ThresholdRenderer extends OscilloscopeRenderer {
@@ -36,7 +36,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	private float thresholdPixelHeight;
 	private boolean drewFirstFrame;
 	
-	public ThresholdRenderer(Activity backyardAndroidActivity) {
+	public ThresholdRenderer(BackyardAndroidActivity backyardAndroidActivity) {
 		super(backyardAndroidActivity);
 	}
 
@@ -105,9 +105,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	
 	@Override
 	protected void getCurrentAudio() {
-		synchronized (mAudioService) {
-			mBufferToDraws = mAudioService.getTriggerBuffer();
-		}
+		mBufferToDraws = context.getmAudioService().getTriggerBuffer();
 	}
 	
 	@Override
@@ -148,11 +146,11 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 		if(dy == 0) { return; }
 		thresholdPixelHeight = dy;
 		Log.d(TAG, "Adjusted threshold by " + dy);
-		if (mAudioService != null && mAudioServiceIsBound) {
+		if (context.getmAudioService() != null) {
 			final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
-			mAudioService.getTriggerHandler().post(new Runnable() {
+			context.getmAudioService().getTriggerHandler().post(new Runnable() {
 				@Override public void run() {
-					((TriggerHandler)mAudioService.getTriggerHandler()).setThreshold(glHeight);
+					((TriggerHandler)context.getmAudioService().getTriggerHandler()).setThreshold(glHeight);
 				}
 			});
 		}
