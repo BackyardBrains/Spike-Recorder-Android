@@ -33,7 +33,6 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.backyardbrains.BackyardAndroidActivity;
-import com.backyardbrains.audio.AudioService;
 
 public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 

@@ -19,7 +19,6 @@
 
 package com.backyardbrains.drawing;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
 import android.view.MotionEvent;
