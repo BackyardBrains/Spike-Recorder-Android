@@ -19,4 +19,14 @@
     <!--  Key Names used in software -->
     <string name="global_prefs">BackyardBrainsGlobalPreferences</string>
     <string name="microphone_read_speed">MicrophoneReadSpeed</string>
+    <string name="filename">filename</string>
+    <string name="file_date">file_date</string>
+    <string name="filesize">filesize</string>
+    <string name="recording_button_background_image">Recording Button Background Image</string>
+    <string name="file_list_activity_launch_button">File List Activity Launch Button</string>
+    <string name="tickmarks_on_left_side_of_screen">Tickmarks on left side of screen</string>
+    <string name="default_milliseconds">0 ms</string>
+    <string name="no_files_found">No files found! Record some spikes!</string>
+    <string name="start_recording_button">Start Recording Button</string>
+    <string name="default_threshold_amount">10 x</string>
 </resources>

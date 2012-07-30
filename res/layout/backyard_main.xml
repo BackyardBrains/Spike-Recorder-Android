@@ -17,7 +17,7 @@
         android:layout_alignBottom="@id/glContainer"
         android:layout_alignTop="@id/glContainer"
         android:scaleType="fitXY"
-        android:src="@drawable/tickmarks" >
+        android:src="@drawable/tickmarks" android:contentDescription="@string/tickmarks_on_left_side_of_screen">
     </ImageView>
 
     <TextView
@@ -27,7 +27,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20sp"
-        android:text="0 ms" >
+        android:text="@string/default_milliseconds" >
     </TextView>
 
 <!--     <ImageView -->
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:src="@drawable/rounded_button_background" >
+        android:src="@drawable/rounded_button_background" android:contentDescription="@string/recording_button_background_image">
     </ImageView>
 
     <LinearLayout
@@ -64,19 +64,17 @@
             android:layout_weight="1"
             android:background="#0000"
             android:padding="5sp"
-            android:src="@drawable/file_button" >
+            android:src="@drawable/file_button" android:contentDescription="@string/file_list_activity_launch_button">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/recordButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
             android:layout_weight="1"
             android:background="#0000"
             android:padding="5sp"
-            android:src="@drawable/record_button" >
+            android:src="@drawable/record_button" android:contentDescription="@string/start_recording_button">
         </ImageButton>
     </LinearLayout>
 
@@ -98,7 +96,7 @@
         android:layout_toRightOf="@+id/tickmarkImageView"
         android:layout_alignParentTop="true"
         android:gravity="center_vertical"
-        android:text="0 ms" />
+        android:text="@string/default_milliseconds" />
     
 	<LinearLayout 
 	    android:id="@+id/triggerViewSampleChangerLayout"
@@ -112,7 +110,7 @@
 	        android:id="@+id/samplesSeekBar"
 	        android:layout_weight="1"
 	        android:layout_margin="5sp"
-	        android:layout_width="fill_parent"
+	        android:layout_width="0dip"
 	        android:layout_height="wrap_content"
 	        android:visibility="invisible"/>
 	    
@@ -123,7 +121,7 @@
 	        android:layout_margin="5sp"
 	        android:textColor="#00ff00"
 	   		android:textSize="20sp"
-	        android:text="10 x" />
+	        android:text="@string/default_threshold_amount" />
 	    
 	</LinearLayout>
 

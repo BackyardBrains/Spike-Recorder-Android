@@ -44,7 +44,7 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 		final String prefsname = getResources().getString(R.string.global_prefs);
 		speedPrefsKey = getResources().getString(R.string.microphone_read_speed);
 		
-		prefs = getSharedPreferences(prefsname, MODE_WORLD_READABLE);
+		prefs = getSharedPreferences(prefsname, MODE_PRIVATE);
 		CharSequence preferencesSpeed = prefs.getString(speedPrefsKey, "1");
 
 		Log.d("Config Screen", "read MicrophoneReadSpeed of " + preferencesSpeed);
