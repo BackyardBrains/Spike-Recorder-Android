@@ -33,13 +33,18 @@ public class TriggerAverager {
 	private ArrayList<short[]> sampleBuffersInAverage;
 
 	private Handler handler;
-	public int triggerValue;
-	
+	private int triggerValue;
+	private int lastTriggeredValue;
+
 	public TriggerAverager(int size) {
-		sampleBuffersInAverage = new ArrayList<short[]>();
+		resetBuffers();
 		setMaxsize(10);
-		averagedSamples = null;
 		handler = new TriggerHandler();
+	}
+
+	public void resetBuffers() {
+		sampleBuffersInAverage = new ArrayList<short[]>();
+		averagedSamples = null;
 	}
 
 	public void push (ByteBuffer incoming) {
@@ -58,6 +63,10 @@ public class TriggerAverager {
 			short s = incomingAsArray[i];
 
 			if ((triggerValue >= 0 && s > triggerValue) || (triggerValue < 0 && s < triggerValue)) {
+				if(lastTriggeredValue != triggerValue) {
+					resetBuffers();
+					lastTriggeredValue = triggerValue;
+				}
 				incomingAsArray = wrapToCenter(incomingAsArray, i);
 				pushToSampleBuffers(incomingAsArray);
 			}
