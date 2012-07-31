@@ -130,7 +130,6 @@ public class BackyardAndroidActivity extends Activity {
 			Intent config = new Intent(this,
 					BackyardBrainsConfigurationActivity.class);
 			startActivity(config);
-			this.finish();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
