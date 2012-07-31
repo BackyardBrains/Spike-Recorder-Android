@@ -119,15 +119,18 @@ public class BackyardAndroidActivity extends Activity {
 		case R.id.waveview:
 			Intent ca = new Intent(this, BackyardAndroidActivity.class);
 			startActivity(ca);
+			this.finish();
 			return true;
 		case R.id.threshold:
 			Intent ta = new Intent(this, TriggerActivity.class);
 			startActivity(ta);
+			this.finish();
 			return true;
 		case R.id.configuration:
 			Intent config = new Intent(this,
 					BackyardBrainsConfigurationActivity.class);
 			startActivity(config);
+			this.finish();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
