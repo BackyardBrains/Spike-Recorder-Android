@@ -20,9 +20,12 @@
 package com.backyardbrains;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -57,6 +60,39 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 		spinner.setSelection(adapter.getPosition(preferencesSpeed), true);
 		spinner.setOnItemSelectedListener(new SpeedSelectedListener());
 
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.option_menu, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		menu.findItem(R.id.configuration).setVisible(false);
+		return super.onPrepareOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.waveview:
+			Intent ca = new Intent(this, BackyardAndroidActivity.class);
+			startActivity(ca);
+			return true;
+		case R.id.threshold:
+			Intent ta = new Intent(this, TriggerActivity.class);
+			startActivity(ta);
+			return true;
+		case R.id.configuration:
+			Intent config = new Intent(this,
+					BackyardBrainsConfigurationActivity.class);
+			startActivity(config);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	public class SpeedSelectedListener implements OnItemSelectedListener {
