@@ -20,6 +20,7 @@
 package com.backyardbrains;
 
 import android.content.Intent;
+import android.view.Menu;
 
 import com.backyardbrains.drawing.ThresholdGlSurfaceView;
 import com.backyardbrains.view.UIFactory;
@@ -41,6 +42,12 @@ public class TriggerActivity extends BackyardAndroidActivity {
 	protected void onPause() {
 		broadcastToggleTrigger(false);
 		super.onPause();
+	}
+	
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		menu.findItem(R.id.threshold).setEnabled(false);
+		return super.onPrepareOptionsMenu(menu);
 	}
 
 	private void broadcastToggleTrigger(boolean b) {

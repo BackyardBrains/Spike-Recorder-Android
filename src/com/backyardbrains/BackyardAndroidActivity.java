@@ -106,6 +106,12 @@ public class BackyardAndroidActivity extends Activity {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
 	}
+	
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		menu.findItem(R.id.waveview).setEnabled(false);
+		return super.onPrepareOptionsMenu(menu);
+	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {

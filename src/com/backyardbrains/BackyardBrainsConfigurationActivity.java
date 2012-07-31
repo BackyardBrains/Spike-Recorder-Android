@@ -70,7 +70,7 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		menu.findItem(R.id.configuration).setVisible(false);
+		menu.findItem(R.id.configuration).setEnabled(false);
 		return super.onPrepareOptionsMenu(menu);
 	}
 
