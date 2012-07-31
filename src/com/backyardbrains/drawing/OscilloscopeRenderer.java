@@ -174,7 +174,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 				arr[j++] = shortArrayToDraw[i];
 			}
 		} catch (ArrayIndexOutOfBoundsException e) {
-			Log.e(TAG, e.getMessage());
+			Log.e(TAG, "Array size out of sync while building new waveform buffer");
 		}
 		return getFloatBufferFromFloatArray(arr);
 	}
@@ -248,6 +248,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		
 		long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet - micBufferSize + msToSamples(timeSince));
 		long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
+		xBegin = Math.max(0, xBegin);
 		initGL(gl, xBegin,
 				xEnd, -getGlWindowVerticalSize() / 2,
 				getGlWindowVerticalSize() / 2);
