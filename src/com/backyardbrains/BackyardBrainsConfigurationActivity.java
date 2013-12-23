@@ -68,27 +68,21 @@ public class BackyardBrainsConfigurationActivity extends Activity {
 		return true;
 	}
 
+	
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		menu.findItem(R.id.configuration).setEnabled(false);
 		return super.onPrepareOptionsMenu(menu);
 	}
+	
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.waveview:
-			Intent ca = new Intent(this, BackyardAndroidActivity.class);
-			startActivity(ca);
+			startActivity(new Intent(this, BackyardAndroidActivity.class));
 			return true;
 		case R.id.threshold:
-			Intent ta = new Intent(this, TriggerActivity.class);
-			startActivity(ta);
-			return true;
-		case R.id.configuration:
-			Intent config = new Intent(this,
-					BackyardBrainsConfigurationActivity.class);
-			startActivity(config);
+			startActivity(new Intent(this, TriggerActivity.class));
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);

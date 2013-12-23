@@ -38,14 +38,16 @@ import android.widget.FrameLayout;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
+import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.view.UIFactory;
+
 
 /**
  * Primary activity of the Backyard Brains app. By default shows the continuous
  * oscilloscope view for use with the spikerbox
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
- * @version 1
+ * @version 1.5
  * 
  */
 public class BackyardAndroidActivity extends Activity {
@@ -59,6 +61,8 @@ public class BackyardAndroidActivity extends Activity {
 	private FrameLayout mainscreenGLLayout;
 	private SharedPreferences settings;
 	protected AudioService mAudioService;
+	private int mBindingsCount;
+
 
 	/**
 	 * @return the mAudioService
@@ -70,6 +74,9 @@ public class BackyardAndroidActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+
+	    	
 		setContentView(R.layout.backyard_main);
 
 		getSettings();
@@ -79,8 +86,12 @@ public class BackyardAndroidActivity extends Activity {
 		UIFactory.setupMsLineView(this);
 		UIFactory.setupRecordingButtons(this);
 		UIFactory.setupSampleSlider(this);
+		
 
-	}
+		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+		application.startAudioService();
+		bindAudioService(true);
+	    }
 
 	protected void reassignSurfaceView() {
 		mAndroidSurface = null;
@@ -106,49 +117,34 @@ public class BackyardAndroidActivity extends Activity {
 		getMenuInflater().inflate(R.menu.option_menu, menu);
 		return true;
 	}
-	
+
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		menu.findItem(R.id.waveview).setEnabled(false);
 		return super.onPrepareOptionsMenu(menu);
 	}
+	
+
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.waveview:
-			Intent ca = new Intent(this, BackyardAndroidActivity.class);
-			startActivity(ca);
-			this.finish();
+			startActivity(new Intent(this, BackyardAndroidActivity.class));
 			return true;
 		case R.id.threshold:
-			Intent ta = new Intent(this, TriggerActivity.class);
-			startActivity(ta);
-			this.finish();
-			return true;
-		case R.id.configuration:
-			Intent config = new Intent(this,
-					BackyardBrainsConfigurationActivity.class);
-			startActivity(config);
+			startActivity(new Intent(this, TriggerActivity.class));
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
 	}
 
-	@Override
-	protected void onStart() {
-		super.onStart();
-		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
-		application.startAudioService();
-		bindAudioService(true);
-	}
 
 	@Override
 	protected void onResume() {
-		bindAudioService(true);
 		UIFactory.getUi().registerReceivers(this);
 		reassignSurfaceView();
+		//bindAudioService(true);
 		super.onResume();
 	}
 
@@ -157,22 +153,36 @@ public class BackyardAndroidActivity extends Activity {
 		mAndroidSurface = null;
 		UIFactory.getUi().unregisterReceivers(this);
 		super.onPause();
-		bindAudioService(false);
+		//bindAudioService(false);
 	}
 
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		//BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+		//application.startAudioService();
+		//bindAudioService(true);
+	}
+	
 	@Override
 	protected void onStop() {
-		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
-		application.stopAudioService();
+		//bindAudioService(false);
+		//BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+		//application.stopAudioService();
 		SharedPreferences.Editor editor = settings.edit();
 		editor.putBoolean("triggerAutoscaled", false);
 		editor.putBoolean("continuousAutoscaled", false);
 		editor.commit();
 		super.onStop();
+		//finish();
 	}
 
 	@Override
 	protected void onDestroy() {
+		bindAudioService(false);
+		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+		application.stopAudioService();
 		super.onDestroy();
 	}
 
@@ -199,12 +209,16 @@ public class BackyardAndroidActivity extends Activity {
 
 	protected void bindAudioService(boolean on) {
 		if (on) {
-			// Log.d(TAG, "Binding audio service.");
+			//Log.d(getClass().getCanonicalName(), "Binding audio service to main activity.");
 			Intent intent = new Intent(this, AudioService.class);
 			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+			mBindingsCount++;
+			Log.d(getClass().getCanonicalName(), "Binder called" + mBindingsCount + "bindings");
 		} else {
-			// Log.d(TAG, "UnBinding audio service.");
+			//Log.d(getClass().getCanonicalName(), "unBinding audio service from main activity.");
 			unbindService(mConnection);
+			mBindingsCount--;
+			Log.d(getClass().getCanonicalName(), "Unbinder called" + mBindingsCount + "bindings");
 		}
 	}
 
@@ -228,6 +242,7 @@ public class BackyardAndroidActivity extends Activity {
 			AudioServiceBinder binder = (AudioServiceBinder) service;
 			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
+			Log.d(getClass().getCanonicalName(), "Service connected and bound");
 		}
 
 		/**
@@ -239,7 +254,10 @@ public class BackyardAndroidActivity extends Activity {
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioService = null;
 			mAudioServiceIsBound = false;
+			Log.d(getClass().getCanonicalName(), "Service disconnected.");
 		}
 	};
+	
+	 
 
 }

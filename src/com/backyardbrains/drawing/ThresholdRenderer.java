@@ -36,6 +36,8 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	private float thresholdPixelHeight;
 	private boolean drewFirstFrame;
 	
+	
+	
 	public ThresholdRenderer(BackyardAndroidActivity backyardAndroidActivity) {
 		super(backyardAndroidActivity);
 	}
@@ -59,7 +61,8 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	protected void preDrawingHandler() {
 		super.preDrawingHandler();
 		if(!drewFirstFrame) {
-			if (thresholdPixelHeight == 0) {
+			// so that threshold bar doesn't get lost!
+			if ((thresholdPixelHeight == 0) | (thresholdPixelHeight >= height)) {
 				defaultThresholdValue();
 			} else {
 				adjustThresholdValue(thresholdPixelHeight);
@@ -80,7 +83,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 		gl.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
 		gl.glLineWidth(2.0f);
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
-		gl.glDrawArrays(GL10.GL_LINES, 0, 4);
+		gl.glDrawArrays(GL10.GL_LINES, 0, 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
 
@@ -126,6 +129,8 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 		initGL(gl, (lengthOfSampleSet - samplesToShow)/2, (lengthOfSampleSet + samplesToShow)/2, -size/2, size/2);
 	}
 	
+
+	//multiply glHeight by height to cancel out normalization
 	int map(float glHeight, int in_min, int in_max, int out_min, int out_max)
 	{
 	  return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
@@ -133,7 +138,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 
 	private float glHeightToPixelHeight(float glHeight) {
 		if (height <= 0) {
-			Log.d(TAG, "Checked height and size was less than or equal to zero");
+			//Log.d(TAG, "Checked height and size was less than or equal to zero");
 		}
 		return map(glHeight, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2, height, 0);
 	}
@@ -144,8 +149,9 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 
 	public void adjustThresholdValue(float dy) {
 		if(dy == 0) { return; }
+		//normalize to window
 		thresholdPixelHeight = dy;
-		Log.d(TAG, "Adjusted threshold by " + dy);
+		//Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 		if (context.getmAudioService() != null) {
 			final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
 			context.getmAudioService().getTriggerHandler().post(new Runnable() {
@@ -154,7 +160,9 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 				}
 			});
 		}
-		Log.d(TAG, "Threshold is now " + thresholdPixelHeight);
+		//Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
+		//Log.d(TAG, "Threshold is now " + pixelHeightToGlHeight(thresholdPixelHeight));
+		dy = 0;
 	}
 
 }

@@ -218,7 +218,7 @@ public class UIFactory {
 		
 		SeekBar samplesSeekBar = (SeekBar) context.findViewById(R.id.samplesSeekBar);
 		samplesSeekBar.setMax(49);
-		samplesSeekBar.setProgress(9);
+		samplesSeekBar.setProgress(0);
 		samplesSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
 			
 			@Override public void onStopTrackingTouch(SeekBar seekBar) { 

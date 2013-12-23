@@ -14,18 +14,14 @@
         android:id="@+id/waveview"
         android:icon="@android:drawable/ic_menu_view"
         android:title="@string/waveview">
-    </item>
-
+    </item>      
+    
     <item
         android:id="@+id/threshold"
         android:icon="@android:drawable/ic_menu_preferences"
         android:title="@string/threshold">
     </item>
+ 
 
-    <item
-        android:id="@+id/configuration"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:title="@string/configuration">
-    </item>
 
 </menu>

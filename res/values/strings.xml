@@ -28,5 +28,5 @@
     <string name="default_milliseconds">0 ms</string>
     <string name="no_files_found">No files found! Record some spikes!</string>
     <string name="start_recording_button">Start Recording Button</string>
-    <string name="default_threshold_amount">10 x</string>
+    <string name="default_threshold_amount">1 x</string>
 </resources>

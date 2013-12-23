@@ -2,6 +2,7 @@
  * Backyard Brains Android App
  * Copyright (C) 2011 Backyard Brains
  * by Nathan Dotz <nate (at) backyardbrains.com>
+ * Edited by Ekavali Mishra <ekavali (at) gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +20,14 @@
 
 package com.backyardbrains;
 
+import android.content.Context;
+import android.os.Bundle;
+import android.util.Log;
 import android.content.Intent;
 import android.view.Menu;
+import android.view.MenuItem;
 
+import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.ThresholdGlSurfaceView;
 import com.backyardbrains.view.UIFactory;
 
@@ -31,6 +37,7 @@ public class TriggerActivity extends BackyardAndroidActivity {
 	protected void setGlSurface() {
 		mAndroidSurface = new ThresholdGlSurfaceView(this);
 	}
+	
 	
 	@Override
 	protected void onResume() {
@@ -44,11 +51,6 @@ public class TriggerActivity extends BackyardAndroidActivity {
 		super.onPause();
 	}
 	
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-		menu.findItem(R.id.threshold).setEnabled(false);
-		return super.onPrepareOptionsMenu(menu);
-	}
 
 	private void broadcastToggleTrigger(boolean b) {
 		Intent i = new Intent("BYBToggleTrigger").putExtra("triggerMode", b);

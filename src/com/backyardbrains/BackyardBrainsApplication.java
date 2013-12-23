@@ -28,7 +28,8 @@ import android.content.Intent;
  * Main application class for the Backyard Brains app.
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
- * @version 1
+ * @author Ekavali Mishra <ekavali@gmail.com>
+ * @version 1.5
  */
 public class BackyardBrainsApplication extends Application {
 	private boolean serviceRunning;
@@ -43,10 +44,10 @@ public class BackyardBrainsApplication extends Application {
 
 	public void startAudioService() {
 		// spin up service
-		if (!this.serviceRunning) {
+		//if (!this.serviceRunning) {
 			startService(new Intent(this, AudioService.class));
 			serviceRunning = true;
-		}
+		//}
 	}
 
 	public void stopAudioService() {

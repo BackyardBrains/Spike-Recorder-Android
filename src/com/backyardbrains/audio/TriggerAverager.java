@@ -38,7 +38,7 @@ public class TriggerAverager {
 
 	public TriggerAverager(int size) {
 		resetBuffers();
-		setMaxsize(10);
+		setMaxsize(size);
 		handler = new TriggerHandler();
 	}
 
