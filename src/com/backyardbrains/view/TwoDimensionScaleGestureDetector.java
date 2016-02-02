@@ -25,6 +25,7 @@ package com.backyardbrains.view;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -189,9 +190,14 @@ public class TwoDimensionScaleGestureDetector {
 	}
 
 	public boolean onTouchEvent(MotionEvent event) {
+		Log.d("TwoDimensionScaleGestureDetector", "onTouchEvent");
 		final int action = event.getAction();
 		boolean handled = true;
 
+		Log.d("TwoDimensionScaleGestureDetector", "ACTION "+ action);
+			
+	
+		
 		if (!mGestureInProgress) {
 			switch (action & MotionEvent.ACTION_MASK) {
 			case MotionEvent.ACTION_POINTER_DOWN: {

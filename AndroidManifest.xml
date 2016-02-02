@@ -1,28 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="com.backyardbrains" android:versionCode="7"
-	android:versionName="1.1"
-	android:debuggable= "false">
-	<uses-sdk android:minSdkVersion="8" android:targetSdkVersion="8"/>
+	package="com.backyardbrains" android:versionCode="10"
+	android:versionName="1.2">
+	<uses-sdk android:minSdkVersion="14" android:targetSdkVersion="14"/>
 	<uses-permission android:name="android.permission.RECORD_AUDIO"></uses-permission>
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
 
 	<application android:icon="@drawable/ic_launcher_byb"
-		android:label="@string/app_name" android:name=".BackyardBrainsApplication">
-		<activity android:name=".BackyardAndroidActivity"
-			android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
-			android:launchMode="singleTask"
-			android:label="@string/app_name">
+	    android:label="@string/app_name" android:name=".BackyardBrainsApplication"
+	    android:theme="@style/BYBAppStyle">
+	    <activity android:name=".BackyardBrainsMain" android:label="@string/app_name"
+	        android:launchMode="singleTask"
+	        android:screenOrientation="landscape">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
-		<activity android:name=".FileListActivity"
-		    android:launchMode="singleTask"></activity>
-		<activity android:name=".TriggerActivity"
-			android:launchMode="singleTask"
-			android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"></activity>
 		<service android:name="com.backyardbrains.audio.AudioService"></service>
 	</application>
 </manifest>
+<!-- 		android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"> 
+android:style/Theme.Holo.Light.DarkActionBar
+-->

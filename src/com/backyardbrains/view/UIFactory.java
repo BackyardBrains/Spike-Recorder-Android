@@ -41,12 +41,12 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.backyardbrains.BackyardAndroidActivity;
+//import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.FileListActivity;
 import com.backyardbrains.R;
 
 public class UIFactory {
-	
+	/*
 	private TextView msView;
 	private TextView mVView;
 	private UpdateMillisecondsReciever upmillirec;
@@ -96,7 +96,7 @@ public class UIFactory {
 		context.unregisterReceiver(milliVoltSize);
 		context.unregisterReceiver(showRecordingButtonsReceiver);
 	}
-	
+
 	public void setupLabels(BackyardAndroidActivity context) {
 		msView = (TextView) context.findViewById(R.id.millisecondsView);
 		mVView = (TextView) context.findViewById(R.id.mVLabelView);
@@ -126,12 +126,11 @@ public class UIFactory {
 		RelativeLayout parentLayout = (RelativeLayout) context.findViewById(R.id.parentLayout);
 		parentLayout.addView(msLineView, rl);
 	}
-
 	public static void setupRecordingButtons(final BackyardAndroidActivity context) {
 		OnClickListener recordingToggle = new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				context.toggleRecording();
+				//context.toggleRecording();
 			}
 		};
 		ImageButton mRecordButton = (ImageButton) context.findViewById(R.id.recordButton);
@@ -338,5 +337,5 @@ public class UIFactory {
 		}
 
 	}
-
+//*/
 }

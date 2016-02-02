@@ -32,11 +32,11 @@ import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.backyardbrains.BackyardAndroidActivity;
+import com.backyardbrains.BackyardBrainsMain;
 
-public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
+public class WaveformRenderer implements GLSurfaceView.Renderer {
 
-	private static final String TAG = OscilloscopeRenderer.class
+	private static final String TAG = WaveformRenderer.class
 			.getCanonicalName();
 	public static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 3 / 2);
 
@@ -44,28 +44,32 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 	private float minimumDetectedPCMValue = -5000000f;
 	protected int glWindowVerticalSize = 10000;
 	private boolean autoScaled = false;
-	protected BackyardAndroidActivity context;
+	protected BackyardBrainsMain context;
 	protected short[] mBufferToDraws;
 	protected boolean mAudioServiceIsBound;
 	protected int height;
 	protected int width;
 	private long firstBufferDrawn = 0;
 
-	public OscilloscopeRenderer(BackyardAndroidActivity backyardAndroidActivity) {
+	public WaveformRenderer(BackyardBrainsMain backyardAndroidActivity) {
 		context = backyardAndroidActivity;
+		Log.d(TAG, "new!");
 	}
 
 	@Override
 	public void onDrawFrame(GL10 gl) {
+		//Log.d(TAG, "onDrawFrame");
 		// grab current audio from audioservice
-		if (context.getmAudioService() == null)
+		if (context.getmAudioService() == null){
+			Log.d(TAG, "AudioService is null!");
 			return;
-
+		}
 		getCurrentAudio();
 
-		if (!isValidAudioBuffer())
+		if (!isValidAudioBuffer()){
+			Log.d(TAG, "Invalid audio buffer!");
 			return;
-
+		}
 		preDrawingHandler();
 		glClear(gl);
 		drawingHandler(gl);
@@ -276,7 +280,7 @@ public class OscilloscopeRenderer implements GLSurfaceView.Renderer {
 		// Enable Blending
 		gl.glEnable(GL10.GL_BLEND);
 		// Specifies pixel arithmetic
-		gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+	//	gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
 	}
 

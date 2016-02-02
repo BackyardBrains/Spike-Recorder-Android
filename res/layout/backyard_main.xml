@@ -41,31 +41,11 @@
 <!--         android:src="@drawable/msline" > -->
 <!--     </ImageView> -->
 
-    <ImageView
-        android:id="@+id/recordButtonBackground"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:src="@drawable/rounded_button_background" android:contentDescription="@string/recording_button_background_image">
-    </ImageView>
-
     <LinearLayout
         android:id="@+id/buttonHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/recordButtonBackground"
         android:layout_alignParentRight="true" >
-
-        <ImageButton
-            android:id="@+id/fileButton"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="#0000"
-            android:padding="5sp"
-            android:src="@drawable/file_button" android:contentDescription="@string/file_list_activity_launch_button">
-        </ImageButton>
 
         <ImageButton
             android:id="@+id/recordButton"

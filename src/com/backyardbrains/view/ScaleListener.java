@@ -22,7 +22,7 @@ package com.backyardbrains.view;
 import android.util.Log;
 import android.util.Pair;
 
-import com.backyardbrains.drawing.OscilloscopeRenderer;
+import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
 
 public class ScaleListener extends Simple2DOnScaleGestureListener {
@@ -31,9 +31,9 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 
 	int xSizeAtBeginning = -1;
 	int ySizeAtBeginning = -1;
-	private OscilloscopeRenderer renderer;
+	private WaveformRenderer renderer;
 
-	public ScaleListener(OscilloscopeRenderer r) {
+	public ScaleListener(WaveformRenderer r) {
 		super();
 		this.renderer = r;
 	}
@@ -42,12 +42,13 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 	public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
 		xSizeAtBeginning = renderer.getGlWindowHorizontalSize();
 		ySizeAtBeginning = renderer.getGlWindowVerticalSize();
-
+		Log.d(TAG, "onScaleBegin");
 		return super.onScaleBegin(detector);
 	}
 
 	@Override
 	public boolean onScale(TwoDimensionScaleGestureDetector detector) {
+		Log.d(TAG, "onScale");
 
 		try {
 			final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
@@ -57,6 +58,7 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 			int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
 
 			renderer.setGlWindowVerticalSize(newYsize);
+			Log.d(TAG, "onScale newX: " + newXsize + " newY: " + newYsize );
 		} catch (IllegalStateException e) {
 			Log.e(TAG, "Got invalid values back from Scale listener!");
 		} catch (NullPointerException e) {
@@ -67,6 +69,7 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
+		Log.d(TAG, "onScaleEnd");
 		super.onScaleEnd(detector);
 	}
 }

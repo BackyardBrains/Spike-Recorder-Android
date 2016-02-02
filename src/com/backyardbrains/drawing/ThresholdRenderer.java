@@ -26,10 +26,10 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.util.Log;
 
-import com.backyardbrains.BackyardAndroidActivity;
+import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 
-public class ThresholdRenderer extends OscilloscopeRenderer {
+public class ThresholdRenderer extends WaveformRenderer {
 
 	private static final String TAG = ThresholdRenderer.class
 			.getCanonicalName();
@@ -38,7 +38,7 @@ public class ThresholdRenderer extends OscilloscopeRenderer {
 	
 	
 	
-	public ThresholdRenderer(BackyardAndroidActivity backyardAndroidActivity) {
+	public ThresholdRenderer(BackyardBrainsMain backyardAndroidActivity) {
 		super(backyardAndroidActivity);
 	}
 

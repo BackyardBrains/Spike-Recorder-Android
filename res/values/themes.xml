@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<style name="BYBAppStyle" parent="android:Theme.Light">
+    	<item  name="android:windowBackground"><color>#000000</color></item>
+    	<item  name="android:windowNoTitle">false</item>
+	    <item name="android:windowFullscreen">true</item>
+    	<item name="android:windowActionBar">true</item>
+	</style>
+</resources>

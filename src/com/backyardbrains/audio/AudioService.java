@@ -35,7 +35,7 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.backyardbrains.BackyardAndroidActivity;
+
 import com.backyardbrains.R;
 
 /**
@@ -246,6 +246,7 @@ public class AudioServiceBinder extends Binder {
 	 * @see NotificationManager#notify()
 	 */
 	private void showNotification(boolean show) {
+		/*
 		if (show) {
 			CharSequence text = getText(R.string.mic_thread_running);
 			Notification not = new Notification(R.drawable.ic_launcher_byb,
@@ -253,12 +254,13 @@ public class AudioServiceBinder extends Binder {
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 					new Intent(this, BackyardAndroidActivity.class), 0);
 			not.setLatestEventInfo(this, "Backyard Brains", text, contentIntent);
-			mNM.notify(NOTIFICATION, not);
+			//mNM.notify(NOTIFICATION, not);
 		} else {
 			if (mNM != null) {
 				mNM.cancel(NOTIFICATION);
 			}
 		}
+		//*/
 	}
 
 	/**
