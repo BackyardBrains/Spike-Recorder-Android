@@ -54,7 +54,12 @@ public class RingBuffer {
 		sb.get(buffer, buffer.length-sb.capacity(), sb.capacity());
 		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
 	}
-
+	public void add(final ShortBuffer incoming) {
+		incoming.clear();
+		System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length-incoming.capacity());
+		incoming.get(buffer, buffer.length-incoming.capacity(), incoming.capacity());
+		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
+	}
 	/**
 	 * return an order-adjusted version of the whole buffer
 	 * 

@@ -3,30 +3,31 @@ package com.backyardbrains;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.ViewPager;
+//*/
 import android.util.Log;
 //import android.widget.FrameLayout;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-//*
-import java.nio.ByteBuffer;
+
+import java.util.List;
+
 import com.backyardbrains.audio.AudioService;
+
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
-import com.backyardbrains.drawing.ContinuousGLSurfaceView;
+import com.backyardbrains.BackyardBrainsRecordingsFragment;
 //*/
 import com.backyardbrains.view.*;
 
@@ -35,12 +36,12 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	@SuppressWarnings("unused")
 	private static final String TAG = BackyardBrainsMain.class.getCanonicalName();
     AppSectionsPagerAdapter mAppSectionsPagerAdapter;
-	protected AudioService mAudioService;
-	private int mBindingsCount;
-	//ViewPager mViewPager;
-	//NonSwipeableViewPager mViewPager;
-	
-	//private SharedPreferences settings;
+//	protected AudioService mAudioService;
+//	private int mBindingsCount;
+//	//ViewPager mViewPager;
+	NonSwipeableViewPager mViewPager;
+	private AudioWriteDoneListener writeDoneListener;
+//	private SharedPreferences settings;
 //----------------------------------------------------------------------------------------
 	public BackyardBrainsMain(){
 		super();
@@ -49,20 +50,36 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.activity_main);
+//        BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+//     	application.startAudioService();
+     	//bindAudioService(true);
+    	registerAudioWriteDoneReceiver(true);
+     
+    	
+    }
+	private void initTabsAndFragments(){
+//		if(mAudioService == null){
+//    		Log.d("BackyardBrainsMain", "initTabsAndFragments: audioservice is null!!");
+//    	}else{
+//    		Log.d("BackyardBrainsMain", "initTabsAndFragments: audioservice is OK");
+//    	}
+//    	
+    	
+        mAppSectionsPagerAdapter = new AppSectionsPagerAdapter(getSupportFragmentManager(), this);//, mAudioService);
 
-        mAppSectionsPagerAdapter = new AppSectionsPagerAdapter(getSupportFragmentManager(), this);
-
+        mViewPager = (NonSwipeableViewPager) findViewById(R.id.pager);
+        mViewPager.setAdapter(mAppSectionsPagerAdapter);
+        
         final ActionBar actionBar = getActionBar();
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setDisplayShowHomeEnabled(false);
         actionBar.setDisplayUseLogoEnabled(false);
         actionBar.setHomeButtonEnabled(false);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-/*
-        mViewPager = (NonSwipeableViewPager) findViewById(R.id.pager);
-       // mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setAdapter(mAppSectionsPagerAdapter);
+
+      
     
+        /*
         mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
@@ -75,17 +92,28 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
         
         // For each of the sections in the app, add a tab to the action bar.
         for (int i = 0; i < mAppSectionsPagerAdapter.getCount(); i++) {
-            actionBar.addTab(
-                    actionBar.newTab()
+            actionBar.addTab(actionBar.newTab()
                             .setText(mAppSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
-        //*
-        BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
-		application.startAudioService();
-		bindAudioService(true);
-		//*/
-    }
+		
+	}
+	//----------------------------------------------------------------------------------------
+		@Override
+		public boolean onTouchEvent(MotionEvent event) {
+			List<Fragment> frags = getSupportFragmentManager().getFragments();
+			boolean ret = false;
+    		if(frags != null){
+    			for(int i =0; i < frags.size(); i++){
+    				if(frags.get(i) instanceof BackyardBrainsOscilloscopeFragment){
+    					((BackyardBrainsOscilloscopeFragment) frags.get(i)).onTouchEvent(event);
+    					ret = true;
+    					break;
+    				}
+    			}
+    		}
+    		return super.onTouchEvent(event) || ret;
+		}
 	/*
 	//----------------------------------------------------------------------------------------
 	@Override
@@ -133,9 +161,10 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	@Override
 	protected void onDestroy() {
 		//*
-		bindAudioService(false);
-		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
-		application.stopAudioService();
+		//bindAudioService(false);
+//		BackyardBrainsApplication application = (BackyardBrainsApplication) getApplication();
+//		application.stopAudioService();
+		registerAudioWriteDoneReceiver(false);
 		//*/
 		super.onDestroy();
 	}
@@ -146,6 +175,20 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
     @Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     	Log.d(TAG, "onTabSelected " + tab.getPosition());
+    	if(tab.getPosition() == 0 || tab.getPosition() == 1){
+    		mViewPager.setCurrentItem(0);
+    		List<Fragment> frags = getSupportFragmentManager().getFragments();
+    		if(frags != null){
+    			for(int i =0; i < frags.size(); i++){
+    				if(frags.get(i) instanceof BackyardBrainsOscilloscopeFragment){
+    					((BackyardBrainsOscilloscopeFragment) frags.get(i)).setRenderer(tab.getPosition());
+    					break;
+    				}
+    			}
+    		}
+    	}else if(mViewPager.getChildCount() > 1){
+    		mViewPager.setCurrentItem(1);
+    	}
    //     mViewPager.setCurrentItem(tab.getPosition());
     }
   //----------------------------------------------------------------------------------------
@@ -156,10 +199,12 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
   //----------------------------------------------------------------------------------------
     //*
     public static class AppSectionsPagerAdapter extends FragmentPagerAdapter {
-    	BackyardBrainsMain context;
-        public AppSectionsPagerAdapter(FragmentManager fm, BackyardBrainsMain ctx) {
+    	Context context;
+    	//AudioService audioService;
+        public AppSectionsPagerAdapter(FragmentManager fm, Context ctx){//, AudioService audioService) {
             super(fm);
             context= ctx;
+            //this.audioService = audioService;
         }
 
         @Override
@@ -168,11 +213,13 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
         	switch(i){
         	case 0:
         	default:
-        		return new BackyardBrainsOscilloscopeFragment(context);
+        		return new BackyardBrainsOscilloscopeFragment(context);//, audioService);
         	case 1:
-        		return new BackyardBrainsThresholdFragment();
-        	case 2:
-        		return new BackyardBrainsRecordingsFragment();
+        		//return new BackyardBrainsThresholdFragment();
+        //	case 2:
+        		//BackyardBrainsRecordingsFragment frag = new BackyardBrainsRecordingsFragment(context);
+        		//return frag;
+        		return new  BackyardBrainsRecordingsFragment(context);
         	}
         
         }
@@ -195,9 +242,27 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
         	}
         }
     }//*/
+    //----------------------------------------------------------------------------------------    
+    private void registerAudioWriteDoneReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBRecordingSaverSuccessfulSave");
+			writeDoneListener = new AudioWriteDoneListener();
+			registerReceiver(writeDoneListener, intentFilter);
+		} else {
+			unregisterReceiver(writeDoneListener);
+		}
+	}
+    //----------------------------------------------------------------------------------------
+    private class AudioWriteDoneListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
+			Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
+		}
+	}
+
   //----------------------------------------------------------------------------------------
   //----------------------------------------------------------------------------------------
-    //*
+    /*
     protected void bindAudioService(boolean on) {
 		if (on) {
 			//Log.d(getClass().getCanonicalName(), "Binding audio service to main activity.");
@@ -233,6 +298,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
 			Log.d(getClass().getCanonicalName(), "Service connected and bound");
+			initTabsAndFragments();
 		}
 
 	

@@ -24,29 +24,29 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.Context;
 import android.util.Log;
 
+import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsMain;
+import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 
-public class ThresholdRenderer extends WaveformRenderer {
+public class ThresholdRenderer extends BYBBaseRenderer {
 
-	private static final String TAG = ThresholdRenderer.class
-			.getCanonicalName();
+	private static final String TAG = ThresholdRenderer.class.getCanonicalName();
 	private float thresholdPixelHeight;
 	private boolean drewFirstFrame;
-	
-	
-	
-	public ThresholdRenderer(BackyardBrainsMain backyardAndroidActivity) {
-		super(backyardAndroidActivity);
+
+	public ThresholdRenderer(Context context){//, AudioService audioService) {
+		super(context);//, audioService);
+		defaultThresholdValue();
 	}
 
-	@Override
-	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		super.onSurfaceCreated(gl, config);
-	}
-
+	/*6
+	 * @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+	 * super.onSurfaceCreated(gl, config); } //
+	 */
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		super.onSurfaceChanged(gl, width, height);
@@ -54,13 +54,13 @@ public class ThresholdRenderer extends WaveformRenderer {
 	}
 
 	public void defaultThresholdValue() {
-		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize()/4));
+		adjustThresholdValue(glHeightToPixelHeight(getGlWindowVerticalSize() / 4));
 	}
-	
+
 	@Override
 	protected void preDrawingHandler() {
 		super.preDrawingHandler();
-		if(!drewFirstFrame) {
+		if (!drewFirstFrame) {
 			// so that threshold bar doesn't get lost!
 			if ((thresholdPixelHeight == 0) | (thresholdPixelHeight >= height)) {
 				defaultThresholdValue();
@@ -70,14 +70,33 @@ public class ThresholdRenderer extends WaveformRenderer {
 			drewFirstFrame = true;
 		}
 	}
-	
+
+	// ----------------------------------------------------------------------------------------
 	@Override
+	protected void drawingHandler(GL10 gl) {
+		setGlWindow(gl, glWindowHorizontalSize, mBufferToDraws.length);
+		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
+
+		firstBufferDrawnCheck();
+		autoScaleCheck();
+
+		gl.glMatrixMode(GL10.GL_MODELVIEW);
+		gl.glLoadIdentity();
+
+		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		gl.glLineWidth(1f);
+		gl.glColor4f(0f, 1f, 0f, 1f);
+		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
+		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
+		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+	}
+
+	// @Override
 	protected void postDrawingHandler(GL10 gl) {
-		super.postDrawingHandler(gl);
 		final float thresholdLineLength = mBufferToDraws.length;
 		final float thresholdValue = getThresholdValue();
-		float[] thresholdLine = new float[] { -thresholdLineLength*2, thresholdValue,
-				thresholdLineLength*2, thresholdValue };
+		float[] thresholdLine = new float[] { -thresholdLineLength * 2, thresholdValue, thresholdLineLength * 2,
+				thresholdValue };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
@@ -102,66 +121,49 @@ public class ThresholdRenderer extends WaveformRenderer {
 		return getFloatBufferFromFloatArray(arr);
 	}
 
-	public float getThresholdValue() {
-		return pixelHeightToGlHeight(thresholdPixelHeight);
-	}
-	
 	@Override
-	protected void getCurrentAudio() {
-		mBufferToDraws = context.getmAudioService().getTriggerBuffer();
-	}
-	
-	@Override
-	protected void setmVText () {
+	protected void setmVText() {
 		final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
 		final float yPerDiv = glHeight / 4 / 24.5f / 1000;
 
 		super.setmVText(yPerDiv);
 	}
-	
+
 	public float getThresholdYValue() {
 		return thresholdPixelHeight;
 	}
 
-	protected void setGlWindow(GL10 gl, final int samplesToShow,
-			final int lengthOfSampleSet) {
+	@Override
+	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
 		final int size = getGlWindowVerticalSize();
-		initGL(gl, (lengthOfSampleSet - samplesToShow)/2, (lengthOfSampleSet + samplesToShow)/2, -size/2, size/2);
-	}
-	
-
-	//multiply glHeight by height to cancel out normalization
-	int map(float glHeight, int in_min, int in_max, int out_min, int out_max)
-	{
-	  return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+		initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2,
+				size / 2);
 	}
 
-	private float glHeightToPixelHeight(float glHeight) {
-		if (height <= 0) {
-			//Log.d(TAG, "Checked height and size was less than or equal to zero");
-		}
-		return map(glHeight, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2, height, 0);
-	}
-
-	private float pixelHeightToGlHeight(float pxHeight) {
-		return map(pxHeight, height, 0, -getGlWindowVerticalSize()/2, getGlWindowVerticalSize()/2);
+	public float getThresholdValue() {
+		return pixelHeightToGlHeight(thresholdPixelHeight);
 	}
 
 	public void adjustThresholdValue(float dy) {
-		if(dy == 0) { return; }
-		//normalize to window
+		if (dy == 0) {
+			return;
+		}
+		// normalize to window
 		thresholdPixelHeight = dy;
-		//Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
-		if (context.getmAudioService() != null) {
+		// Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
+		
+		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
 			final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
-			context.getmAudioService().getTriggerHandler().post(new Runnable() {
-				@Override public void run() {
-					((TriggerHandler)context.getmAudioService().getTriggerHandler()).setThreshold(glHeight);
+			((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
+				@Override
+				public void run() {
+					((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(glHeight);
 				}
 			});
 		}
-		//Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
-		//Log.d(TAG, "Threshold is now " + pixelHeightToGlHeight(thresholdPixelHeight));
+		// Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
+		// Log.d(TAG, "Threshold is now " +
+		// pixelHeightToGlHeight(thresholdPixelHeight));
 		dy = 0;
 	}
 

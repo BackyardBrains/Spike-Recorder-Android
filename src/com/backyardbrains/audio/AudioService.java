@@ -20,6 +20,7 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -35,7 +36,7 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-
+import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.R;
 
 /**
@@ -47,38 +48,46 @@ import com.backyardbrains.R;
  * 
  */
 
-
-
 public class AudioService extends Service implements ReceivesAudio {
-	static final String TAG = AudioService.class.getCanonicalName();
-	private int NOTIFICATION = R.string.mic_thread_running;
-	public boolean running;
+	static final String	TAG				= AudioService.class.getCanonicalName();
+	private int			NOTIFICATION	= R.string.mic_thread_running;
+	public boolean		running;
 
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
 	 */
-public class AudioServiceBinder extends Binder {
+	public class AudioServiceBinder extends Binder {
 		public AudioService getService() {
 			return AudioService.this;
 		}
 	}
 
-	private ToggleRecordingListener toggleRecorder;
+	
 
-	private final IBinder mBinder = new AudioServiceBinder();
-	//private int mBindingsCount;
+	private final IBinder			mBinder	= new AudioServiceBinder();
 
-	private MicListener micThread;
-	private RingBuffer audioBuffer;
-	private RecordingSaver mRecordingSaverInstance;
+	private MicListener				micThread;
+	//private PlaybackThread			playbackThread;
+//	private RecordingReader			mRecordingReader = null;
+	private AudioFilePlayer			audioPlayer = null;
+	private RingBuffer				audioBuffer;
+	private RecordingSaver			mRecordingSaverInstance;
 
-	private NotificationManager mNM;
-	private TriggerAverager triggerAverager;
-	private boolean triggerMode;
-	private ToggleTriggerListener toggleTrigger;
-	private SetSampleSizeListener sampleSizeListener;
-	private long lastSamplesReceivedTimestamp;
-	private int micListenerBufferSizeInSamples;
+	private NotificationManager		mNM;
+	private TriggerAverager			triggerAverager;
+	private boolean					triggerMode;
+	
+	private ToggleTriggerListener	toggleTrigger;
+	private SetSampleSizeListener	sampleSizeListener;
+	private ToggleRecordingListener	toggleRecorder;
+	private PlayAudioFileListener 	playListener;
+	private long					lastSamplesReceivedTimestamp;
+	private int						micListenerBufferSizeInSamples;
+	private Context appContext = null; 
+
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- GETTERS SETTERS
+//-----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * @return the micListenerBufferSizeInSamples
@@ -103,14 +112,21 @@ public class AudioServiceBinder extends Binder {
 	public short[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
-	
+
 	public short[] getTriggerBuffer() {
 		return triggerAverager.getAveragedSamples();
+	}
+
+	public Handler getTriggerHandler() {
+		return triggerAverager.getHandler();
 	}
 
 	public void setMicListenerBufferSizeInSamples(int i) {
 		micListenerBufferSizeInSamples = i;
 	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- LIFECYCLE OVERRIDES
+//-----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Register a receiver for toggling recording funcionality, then instantiate
@@ -121,21 +137,21 @@ public class AudioServiceBinder extends Binder {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-
+		appContext = this.getApplicationContext();
 		registerRecordingToggleReceiver(true);
 
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
-		
+
 		registerTriggerToggleReceiver(true);
 		triggerAverager = new TriggerAverager(50);
 		triggerMode = false;
 
 		registerSetSampleSizeReceiver(true);
-		
+		registerPlayAudioFileReceiver(true);
 		turnOnMicThread();
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -154,9 +170,14 @@ public class AudioServiceBinder extends Binder {
 		registerRecordingToggleReceiver(false);
 		registerTriggerToggleReceiver(false);
 		registerSetSampleSizeReceiver(false);
+		registerPlayAudioFileReceiver(false);
 		turnOffMicThread();
+		turnOffAudioPlayerThread();
 		super.onDestroy();
 	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- BIND
+//-----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * return a binding pointer for GL threads to reference this object
@@ -166,23 +187,41 @@ public class AudioServiceBinder extends Binder {
 	 */
 	@Override
 	public IBinder onBind(Intent arg0) {
-		//mBindingsCount++;
-		//Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
+		// mBindingsCount++;
+		// Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		return mBinder;
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent) {
-		//mBindingsCount--;
-		//Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
+		// mBindingsCount--;
+		// Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
 		return super.onUnbind(intent);
 	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- START/STOP THREADS
+//-----------------------------------------------------------------------------------------------------------------------------
 
+	public void turnOnAudioPlayerThread(){
+		if(audioPlayer != null){
+			turnOffMicThread();
+			audioPlayer.play();
+		}
+		
+	}
+	public void turnOffAudioPlayerThread(){
+		if(audioPlayer != null){
+			audioPlayer.stop();
+			audioPlayer = null;
+		}
+	}
 	/**
 	 * Instantiate {@link MicListener} thread, tell it to start, and put up the
 	 * notification via {@link AudioService#showNotification()}
 	 */
 	public void turnOnMicThread() {
+		turnOffAudioPlayerThread();
+		if(micThread == null){
 		micThread = null;
 		micThread = new MicListener();
 		micThread.start(AudioService.this);
@@ -190,11 +229,13 @@ public class AudioServiceBinder extends Binder {
 		showNotification(true);
 		Log.d(TAG, "Mic thread started");
 	}
+	}
 
 	/**
 	 * Clean up {@link MicListener} resources and remove notification
 	 */
 	public void turnOffMicThread() {
+		stopRecording();
 		if (micThread != null) {
 			micThread.requestStop();
 			micThread = null;
@@ -202,12 +243,159 @@ public class AudioServiceBinder extends Binder {
 		}
 		showNotification(false);
 	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- NOTIFICATIONS
+//-----------------------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * Toggle a notification that this service is running.
+	 * 
+	 * @param show
+	 *            show if true, hide otherwise.
+	 * @see android.app.Notification
+	 * @see NotificationManager#notify()
+	 */
+	private void showNotification(boolean show) {
+		/*
+		 * if (show) { CharSequence text = getText(R.string.mic_thread_running);
+		 * Notification not = new Notification(R.drawable.ic_launcher_byb, text,
+		 * System.currentTimeMillis()); PendingIntent contentIntent =
+		 * PendingIntent.getActivity(this, 0, new Intent(this,
+		 * BackyardAndroidActivity.class), 0); not.setLatestEventInfo(this,
+		 * "Backyard Brains", text, contentIntent); //mNM.notify(NOTIFICATION,
+		 * not); } else { if (mNM != null) { mNM.cancel(NOTIFICATION); } } //
+		 */
+	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- ReceivesAudio OVERRIDES
+//-----------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * On receiving audio, add it to the RingBuffer. If we're recording, also
+	 * dispatch it to the RecordingSaver instance.
+	 * 
+	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
+	 */
+// @Override
+	public void receiveAudio(ByteBuffer audioInfo) {
+		audioBuffer.add(audioInfo);
+		lastSamplesReceivedTimestamp = System.currentTimeMillis();
+		if (triggerMode) {
+			// Log.d(TAG, "Pushing audio to triggerAverager, length:
+			// "+audioInfo.capacity());
+			triggerAverager.push(audioInfo);
+		}
+		if (mRecordingSaverInstance != null) {
+			recordAudio(audioInfo);
+		}
+
+	}
+
+	@Override
+	public void receiveAudio(ShortBuffer audioInfo) {
+		audioBuffer.add(audioInfo);
+		lastSamplesReceivedTimestamp = System.currentTimeMillis();
+// if (triggerMode) {
+// triggerAverager.push(audioInfo);
+// }
+// if (mRecordingSaverInstance != null) {
+// recordAudio(audioInfo);
+// }
+	}
+//-----------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------- RECORD AUDIO
+//-----------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * dispatch audio to the active RecordingSaver instance
+	 * 
+	 * @param audioInfo
+	 */
+	private void recordAudio(ByteBuffer audioInfo) {
+		audioInfo.clear();
+		try {
+			mRecordingSaverInstance.receiveAudio(audioInfo);
+		} catch (IllegalStateException e) {
+			Log.w(getClass().getCanonicalName(), "Ignoring bytes received while not synced: " + e.getMessage());
+		}
+	}
+
+	public boolean startRecording() {
+		if (mRecordingSaverInstance != null) {
+			return false;
+		}
+		Long theTime = (Long) System.currentTimeMillis();
+		try {
+			mRecordingSaverInstance = new RecordingSaver("Original", this.getApplicationContext());// theTime.toString());
+		} catch (IllegalStateException e) {
+			Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG).show();
+		}
+		return true;
+	}
+
+	public boolean stopRecording() {
+		if (mRecordingSaverInstance != null) {
+			mRecordingSaverInstance.finishRecording();
+			mRecordingSaverInstance = null;
+			return true;
+		}
+		return false;
+	}
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- BROADCAST RECEIVERS CLASS
+// -----------------------------------------------------------------------------------------------------------------------------
+	private class ToggleRecordingListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
+			if (!startRecording()) {
+				if (!stopRecording()) {
+					Log.w(TAG, "There was an error recording properly");
+				}
+			}
+		};
+	}
+
+	private class ToggleTriggerListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
+			triggerMode = intent.getBooleanExtra("triggerMode", false);
+			Log.d(TAG, "Switched triggerMode to " + triggerMode);
+		};
+
+	}
+
+	private class SetSampleSizeListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			triggerAverager.setMaxsize(intent.getIntExtra("newSampleSize", 1));
+			Log.d(TAG, "Set triggeraverager sample size to " + triggerAverager.getMaxsize());
+		}
+
+	}
+	
+	private class PlayAudioFileListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if(appContext != null){
+				turnOffAudioPlayerThread();
+				audioPlayer = new AudioFilePlayer((ReceivesAudio) AudioService.this, appContext);
+				turnOnAudioPlayerThread();
+			}
+		}
+	}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
+// -----------------------------------------------------------------------------------------------------------------------------
 	/**
 	 * Toggle our receiver. If true, register a receiver for intents with the
 	 * action "BYBToggleRecording", otherwise, unregister the same receiver.
 	 * 
-	 * @param reg register if true, unregister otherwise.
+	 * @param reg
+	 *            register if true, unregister otherwise.
 	 */
 	private void registerRecordingToggleReceiver(boolean reg) {
 		if (reg) {
@@ -238,126 +426,13 @@ public class AudioServiceBinder extends Binder {
 			unregisterReceiver(sampleSizeListener);
 		}
 	}
-	/**
-	 * Toggle a notification that this service is running.
-	 * 
-	 * @param show show if true, hide otherwise.
-	 * @see android.app.Notification
-	 * @see NotificationManager#notify()
-	 */
-	private void showNotification(boolean show) {
-		/*
-		if (show) {
-			CharSequence text = getText(R.string.mic_thread_running);
-			Notification not = new Notification(R.drawable.ic_launcher_byb,
-					text, System.currentTimeMillis());
-			PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-					new Intent(this, BackyardAndroidActivity.class), 0);
-			not.setLatestEventInfo(this, "Backyard Brains", text, contentIntent);
-			//mNM.notify(NOTIFICATION, not);
+	private void registerPlayAudioFileReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBPlayAudioFile");
+			playListener = new PlayAudioFileListener();
+			registerReceiver(playListener, intentFilter);
 		} else {
-			if (mNM != null) {
-				mNM.cancel(NOTIFICATION);
-			}
-		}
-		//*/
-	}
-
-	/**
-	 * On receiving audio, add it to the RingBuffer. If we're recording, also
-	 * dispatch it to the RecordingSaver instance.
-	 * 
-	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
-	 */
-	@Override
-	public void receiveAudio(ByteBuffer audioInfo) {
-		audioBuffer.add(audioInfo);
-		lastSamplesReceivedTimestamp = System.currentTimeMillis();
-		if(triggerMode) {
-//			Log.d(TAG, "Pushing audio to triggerAverager, length: "+audioInfo.capacity());
-			triggerAverager.push(audioInfo);
-		}
-		if (mRecordingSaverInstance != null) {
-			recordAudio(audioInfo);
-		}
-
-	}
-
-	/**
-	 * dispatch audio to the active RecordingSaver instance
-	 * 
-	 * @param audioInfo
-	 */
-	private void recordAudio(ByteBuffer audioInfo) {
-		audioInfo.clear();
-		try {
-			mRecordingSaverInstance.receiveAudio(audioInfo);
-		} catch (IllegalStateException e) {
-			Log.w(getClass().getCanonicalName(),
-					"Ignoring bytes received while not synced: "
-							+ e.getMessage());
+			unregisterReceiver(playListener);
 		}
 	}
-
-	public boolean startRecording() {
-		if (mRecordingSaverInstance != null) {
-			return false;
-		}
-		Long theTime = (Long) System.currentTimeMillis();
-		try {
-			mRecordingSaverInstance = new RecordingSaver(theTime.toString());
-		} catch (IllegalStateException e) {
-			Toast.makeText(getApplicationContext(),
-					"No SD Card is available. Recording is disabled",
-					Toast.LENGTH_LONG).show();
-		}
-		return true;
-	}
-
-	public boolean stopRecording() {
-		if (mRecordingSaverInstance != null) {
-			mRecordingSaverInstance.finishRecording();
-			mRecordingSaverInstance = null;
-			return true;
-		}
-		return false;
-	}
-	
-	public Handler getTriggerHandler() {
-		return triggerAverager.getHandler();
-	}
-
-	private class ToggleRecordingListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			if (!startRecording()) {
-				if (!stopRecording()) {
-					Log.w(TAG, "There was an error recording properly");
-				}
-			}
-		};
-	}
-
-	private class ToggleTriggerListener extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
-			triggerMode = intent.getBooleanExtra("triggerMode", false);
-			Log.d(TAG, "Switched triggerMode to "+triggerMode);
-		};
-		
-	}
-	
-	private class SetSampleSizeListener extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			triggerAverager.setMaxsize(intent.getIntExtra("newSampleSize", 1));
-			Log.d(TAG, "Set triggeraverager sample size to "+triggerAverager.getMaxsize()); 
-		}
-		
-	}
-
 }

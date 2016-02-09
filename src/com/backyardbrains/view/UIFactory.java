@@ -20,6 +20,7 @@
 package com.backyardbrains.view;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -41,19 +42,20 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.backyardbrains.BackyardBrainsOscilloscopeFragment;
 //import com.backyardbrains.BackyardAndroidActivity;
 import com.backyardbrains.FileListActivity;
 import com.backyardbrains.R;
 
 public class UIFactory {
-	/*
+	//*
 	private TextView msView;
 	private TextView mVView;
 	private UpdateMillisecondsReciever upmillirec;
 	private SetMillivoltViewSizeReceiver milliVoltSize;
 	private UpdateMillivoltReciever upmillivolt;
 	private ShowRecordingButtonsReceiver showRecordingButtonsReceiver;
-	
+	private static BackyardBrainsOscilloscopeFragment oscilloscopeContext = null;
 	private static UIFactory instance = null;
 	protected UIFactory() {}; // singleton like whoa.
 	
@@ -65,52 +67,51 @@ public class UIFactory {
 		return instance;
 	}
 	
-	public void registerReceivers(Activity context) {
+	public void registerReceivers(BackyardBrainsOscilloscopeFragment context) {
 		
-		IntentFilter intentFilter = new IntentFilter(
-				"BYBUpdateMillisecondsReciever");
+		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
 		upmillirec = new UpdateMillisecondsReciever();
-		context.registerReceiver(upmillirec, intentFilter);
+		context.getActivity().registerReceiver(upmillirec, intentFilter);
 
-		IntentFilter intentFilterVolts = new IntentFilter(
-				"BYBUpdateMillivoltReciever");
+		IntentFilter intentFilterVolts = new IntentFilter("BYBUpdateMillivoltReciever");
 		upmillivolt = new UpdateMillivoltReciever();
-		context.registerReceiver(upmillivolt, intentFilterVolts);
+		context.getActivity().registerReceiver(upmillivolt, intentFilterVolts);
 
-		IntentFilter intentFilterVoltSize = new IntentFilter(
-				"BYBMillivoltsViewSize");
+		IntentFilter intentFilterVoltSize = new IntentFilter("BYBMillivoltsViewSize");
 		milliVoltSize = new SetMillivoltViewSizeReceiver();
-		context.registerReceiver(milliVoltSize, intentFilterVoltSize);
+		context.getActivity().registerReceiver(milliVoltSize, intentFilterVoltSize);
 		
-		IntentFilter intentFilterRecordingButtons = new IntentFilter(
-				"BYBShowRecordingButtons");
+		IntentFilter intentFilterRecordingButtons = new IntentFilter("BYBShowRecordingButtons");
 		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
-		context.registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+		context.getActivity().registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+		
+		oscilloscopeContext  = context;
 
 	}
 
 
-	public void unregisterReceivers(Activity context) {
-		context.unregisterReceiver(upmillirec);
-		context.unregisterReceiver(upmillivolt);
-		context.unregisterReceiver(milliVoltSize);
-		context.unregisterReceiver(showRecordingButtonsReceiver);
+	public void unregisterReceivers(BackyardBrainsOscilloscopeFragment context) {
+		context.getActivity().unregisterReceiver(upmillirec);
+		context.getActivity().unregisterReceiver(upmillivolt);
+		context.getActivity().unregisterReceiver(milliVoltSize);
+		context.getActivity().unregisterReceiver(showRecordingButtonsReceiver);
+		
+		oscilloscopeContext  = null;
 	}
 
-	public void setupLabels(BackyardAndroidActivity context) {
-		msView = (TextView) context.findViewById(R.id.millisecondsView);
-		mVView = (TextView) context.findViewById(R.id.mVLabelView);
+ 	public void setupLabels(View v) {
+		msView = (TextView) v.findViewById(R.id.millisecondsView);
+		mVView = (TextView) v.findViewById(R.id.mVLabelView);
 	}
 	
 	public void setDisplayedMilliseconds(Float ms) {
 		msView.setText(ms.toString());
 	}
-	
-	public static void setupMsLineView(BackyardAndroidActivity context) {
-		ImageView msLineView = new ImageView(context);
-		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),
-				R.drawable.msline);
-		int width = context.getWindowManager().getDefaultDisplay().getWidth() / 3;
+	//*
+	public static void setupMsLineView(BackyardBrainsOscilloscopeFragment context, View v) {
+		ImageView msLineView = new ImageView(context.getActivity());
+		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),R.drawable.msline);
+		int width = context.getActivity().getWindowManager().getDefaultDisplay().getWidth() / 3;
 		int height = 2;
 		Bitmap resizedbitmap = Bitmap.createScaledBitmap(bmp, width, height,
 				false);
@@ -123,99 +124,107 @@ public class UIFactory {
 		rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
 		rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
 		
-		RelativeLayout parentLayout = (RelativeLayout) context.findViewById(R.id.parentLayout);
+		RelativeLayout parentLayout = (RelativeLayout) v.findViewById(R.id.parentLayout);
 		parentLayout.addView(msLineView, rl);
 	}
-	public static void setupRecordingButtons(final BackyardAndroidActivity context) {
+	//*/
+	public static void setupRecordingButtons(final BackyardBrainsOscilloscopeFragment context, View v) {
 		OnClickListener recordingToggle = new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				//context.toggleRecording();
+				context.toggleRecording();
 			}
 		};
-		ImageButton mRecordButton = (ImageButton) context.findViewById(R.id.recordButton);
+		ImageButton mRecordButton = (ImageButton) v.findViewById(R.id.recordButton);
 		mRecordButton.setOnClickListener(recordingToggle);
-		
+		/*
 		OnClickListener fileViewclick = new OnClickListener() {
 			public void onClick(View view) {
 				Intent i = new Intent(view.getContext(), FileListActivity.class);
 				context.startActivityForResult(i, 0);
 			}
-
-		};
+		};//*/
+		/*
 		ImageButton mFileButton = (ImageButton) context.findViewById(R.id.fileButton);
 		mFileButton.setOnClickListener(fileViewclick);
-		
-		View tapToStopRecView = context.findViewById(R.id.TapToStopRecordingTextView);
+		//*/
+		View tapToStopRecView = v.findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(recordingToggle);
 	}
 	
-	public static void hideRecordingButtons(BackyardAndroidActivity context) {
-		ImageButton mRecordButton = (ImageButton) context.findViewById(R.id.recordButton);
+	public static void hideRecordingButtons(){//BackyardBrainsOscilloscopeFragment context) {
+		if(oscilloscopeContext  != null){
+		ImageButton mRecordButton = (ImageButton) oscilloscopeContext.getView().findViewById(R.id.recordButton);
+		/*
 		ImageButton mFileButton = (ImageButton) context.findViewById(R.id.fileButton);
 		ImageView recordingBackground = (ImageView) context.findViewById(R.id.recordButtonBackground);
 		
 		if(mFileButton != null) {
 			mFileButton.setVisibility(View.GONE);
 		}
+		//*/
 		if(mRecordButton != null) {
 			mRecordButton.setVisibility(View.GONE);
 		}
+		/*
 		if(recordingBackground != null) {
 			recordingBackground.setVisibility(View.GONE);
+		}//*/
 		}
 	}
 	
-	public static void showRecordingButtons(BackyardAndroidActivity context) {
-		ImageButton mRecordButton = (ImageButton) context.findViewById(R.id.recordButton);
+	public static void showRecordingButtons(){//BackyardBrainsOscilloscopeFragment context) {
+		if(oscilloscopeContext  != null){
+		ImageButton mRecordButton = (ImageButton) oscilloscopeContext.getView().findViewById(R.id.recordButton);
+		/*
 		ImageButton mFileButton = (ImageButton) context.findViewById(R.id.fileButton);
 		ImageView recordingBackground = (ImageView) context.findViewById(R.id.recordButtonBackground);
 
 		if(mFileButton != null) {
 			mFileButton.setVisibility(View.VISIBLE);
-		}
+		}//*/
 		if(mRecordButton != null) {
 			mRecordButton.setVisibility(View.VISIBLE);
 		}
+		/*
 		if(recordingBackground != null) {
 			recordingBackground.setVisibility(View.VISIBLE);
 		}
-		
+		//*/
+		}
 	}
 	
-	public void toggleRecording(BackyardAndroidActivity context, boolean isRecording) {
-		ShowRecordingAnimation anim = new ShowRecordingAnimation(context, isRecording);
+	public void toggleRecording(BackyardBrainsOscilloscopeFragment context, boolean isRecording) {
+		ShowRecordingAnimation anim = new ShowRecordingAnimation(context.getActivity(), isRecording);
 		try {
-			View tapToStopRecView = context.findViewById(R.id.TapToStopRecordingTextView);
+			View tapToStopRecView = context.getView().findViewById(R.id.TapToStopRecordingTextView);
 			anim.run();
 			Intent i = new Intent();
 			i.setAction("BYBToggleRecording");
-			context.getBaseContext().sendBroadcast(i);
+			context.getActivity().getBaseContext().sendBroadcast(i);
 			if (isRecording == false) {
 				tapToStopRecView.setVisibility(View.VISIBLE);
 			} else {
 				tapToStopRecView.setVisibility(View.GONE);
 			}
 		} catch (RuntimeException e) {
-			Toast.makeText(context.getApplicationContext(),
+			Toast.makeText(context.getActivity().getApplicationContext(),
 					"No SD Card is available. Recording is disabled",
 					Toast.LENGTH_LONG).show();
 
 		}
 	}
-	
-	public static void setupSampleSlider(final BackyardAndroidActivity context) {
+	/*
+	public static void setupSampleSlider(final BackyardBrainsOscilloscopeFragment context) {
 		//LinearLayout triggerViewSampleChanger = (LinearLayout) context.findViewById(R.id.triggerViewSampleChangerLayout);
 	
-		final TextView numberOfSamplesLabel = (TextView) context.findViewById(R.id.numberOfSamplesAveraged);
+		final TextView numberOfSamplesLabel = (TextView) context.getView().findViewById(R.id.numberOfSamplesAveraged);
 		OnClickListener toggleSeekbarListener = new OnClickListener() {
-			@Override public void onClick(View v) {
-				toggleSeekbar(context);
-			}
+			@Override public void onClick(View v) {toggleSeekbar(context);}
 		};
 		numberOfSamplesLabel.setOnClickListener(toggleSeekbarListener);
 		
-		SeekBar samplesSeekBar = (SeekBar) context.findViewById(R.id.samplesSeekBar);
+		SeekBar samplesSeekBar = (SeekBar) context.getView().findViewById(R.id.samplesSeekBar);
 		samplesSeekBar.setMax(49);
 		samplesSeekBar.setProgress(0);
 		samplesSeekBar.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
@@ -236,9 +245,10 @@ public class UIFactory {
 			}
 		});
 	}
-	
-	public static void toggleSeekbar(final BackyardAndroidActivity context) {
-		View samplesSeekBar = context.findViewById(R.id.samplesSeekBar);
+	//*/
+	public static void toggleSeekbar(final BackyardBrainsOscilloscopeFragment context) {
+		
+		View samplesSeekBar = context.getView().findViewById(R.id.samplesSeekBar);
 		if (samplesSeekBar.getVisibility() == View.VISIBLE) {
 			samplesSeekBar.setVisibility(View.INVISIBLE);
 		} else {
@@ -246,23 +256,23 @@ public class UIFactory {
 		}
 	}
 	
-	public static void showSampleSliderBox(BackyardAndroidActivity context) {
-		View triggerViewSampleChanger = context.findViewById(R.id.triggerViewSampleChangerLayout);
+	public static void showSampleSliderBox(BackyardBrainsOscilloscopeFragment context) {
+		View triggerViewSampleChanger = context.getView().findViewById(R.id.triggerViewSampleChangerLayout);
 		if (triggerViewSampleChanger != null) {
 			triggerViewSampleChanger.setVisibility(View.VISIBLE);
 		}
-		View numberOfSamplesLabel = context.findViewById(R.id.numberOfSamplesAveraged);
+		View numberOfSamplesLabel = context.getView().findViewById(R.id.numberOfSamplesAveraged);
 		if (numberOfSamplesLabel != null) {
 			numberOfSamplesLabel.setVisibility(View.VISIBLE);
 		}
 	}
 	
-	public static void hideSampleSliderBox(BackyardAndroidActivity context) {
-		View triggerViewSampleChanger = context.findViewById(R.id.triggerViewSampleChangerLayout);
+	public static void hideSampleSliderBox(BackyardBrainsOscilloscopeFragment context) {
+		View triggerViewSampleChanger = context.getView().findViewById(R.id.triggerViewSampleChangerLayout);
 		if (triggerViewSampleChanger != null) {
 			triggerViewSampleChanger.setVisibility(View.GONE);
 		}
-		View numberOfSamplesLabel = context.findViewById(R.id.numberOfSamplesAveraged);
+		View numberOfSamplesLabel = context.getView().findViewById(R.id.numberOfSamplesAveraged);
 		if (numberOfSamplesLabel != null) {
 			numberOfSamplesLabel.setVisibility(View.GONE);
 		}
@@ -294,13 +304,12 @@ public class UIFactory {
 	
 	private class ShowRecordingButtonsReceiver extends BroadcastReceiver {
 		@Override
-		public void onReceive(android.content.Context context,
-				android.content.Intent intent) {
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
 			boolean yesno = intent.getBooleanExtra("showRecordingButton", true);
 			if (yesno) {
-				showRecordingButtons((BackyardAndroidActivity) context);
+				showRecordingButtons();//(BackyardBrainsOscilloscopeFragment) context);
 			} else {
-				hideRecordingButtons((BackyardAndroidActivity) context);
+				hideRecordingButtons();//(BackyardBrainsOscilloscopeFragment) context);
 			}
 		}	
 		}

@@ -20,19 +20,28 @@
 package com.backyardbrains;
 
 import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 
 import android.app.Application;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.util.Log;
 
 /**
  * Main application class for the Backyard Brains app.
  * 
  * @author Nathan Dotz <nate@backyardbrains.com>
  * @author Ekavali Mishra <ekavali@gmail.com>
+ *
  * @version 1.5
  */
 public class BackyardBrainsApplication extends Application {
-	private boolean serviceRunning;
+	private boolean			serviceRunning;
+	protected AudioService	mAudioService;
+	private int				mBindingsCount;
 
 	public boolean isServiceRunning() {
 		return serviceRunning;
@@ -44,24 +53,88 @@ public class BackyardBrainsApplication extends Application {
 
 	public void startAudioService() {
 		// spin up service
-		//if (!this.serviceRunning) {
-			startService(new Intent(this, AudioService.class));
-			serviceRunning = true;
-		//}
+		// if (!this.serviceRunning) {
+		startService(new Intent(this, AudioService.class));
+		serviceRunning = true;
+		// }
 	}
 
 	public void stopAudioService() {
 		stopService(new Intent(this, AudioService.class));
 		serviceRunning = false;
 	}
-
+	@Override
+	public void onCreate() {
+		startAudioService();
+     	bindAudioService(true);
+	}
 	/**
 	 * Make sure we stop the {@link AudioService} when we exit
 	 */
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
-		if(this.serviceRunning) stopAudioService();
+		bindAudioService(false);
+		if (this.serviceRunning) stopAudioService();
 	}
 
+	// ----------------------------------------------------------------------------------------
+	protected void bindAudioService(boolean on) {
+		if (on) {
+			// Log.d(getClass().getCanonicalName(), "Binding audio service to
+			// main activity.");
+			Intent intent = new Intent(this, AudioService.class);
+			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+			mBindingsCount++;
+			Log.d(getClass().getCanonicalName(), "Binder called" + mBindingsCount + "bindings");
+		} else {
+			// Log.d(getClass().getCanonicalName(), "unBinding audio service
+			// from main activity.");
+			unbindService(mConnection);
+			mBindingsCount--;
+			Log.d(getClass().getCanonicalName(), "Unbinder called" + mBindingsCount + "bindings");
+		}
+	}
+
+	// ----------------------------------------------------------------------------------------
+	protected ServiceConnection mConnection = new ServiceConnection() {
+
+		private boolean mAudioServiceIsBound;
+
+		// Sets a reference in this activity to the {@link AudioService}, which
+		// allows for {@link ByteBuffer}s full of audio information to be passed
+		// from the {@link AudioService} down into the local
+		// {@link OscilloscopeGLSurfaceView}
+		//
+		// @see
+		// android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+		// android.os.IBinder)
+		@Override
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			// We've bound to LocalService, cast the IBinder and get
+			// LocalService instance
+			AudioServiceBinder binder = (AudioServiceBinder) service;
+			mAudioService = binder.getService();
+			mAudioServiceIsBound = true;
+			Log.d(getClass().getCanonicalName(), "Service connected and bound");
+			// initTabsAndFragments();
+		}
+
+		// Clean up bindings
+		//
+		// @see
+		// android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
+
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			mAudioService = null;
+			mAudioServiceIsBound = false;
+			Log.d(getClass().getCanonicalName(), "Service disconnected.");
+		}
+	};
+
+	// ----------------------------------------------------------------------------------------
+	public AudioService getmAudioService() {
+		return mAudioService;
+	}
 }

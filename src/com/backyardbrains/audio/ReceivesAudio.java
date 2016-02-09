@@ -20,6 +20,7 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 
 /**
  * A simple interface to attach to services which allows a callback into
@@ -36,4 +37,5 @@ public interface ReceivesAudio {
 	 * @param audioInfo
 	 */
 	public void receiveAudio(ByteBuffer audioInfo);
+	public void receiveAudio(ShortBuffer audioInfo);
 }

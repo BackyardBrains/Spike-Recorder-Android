@@ -30,6 +30,9 @@ import java.nio.ShortBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
@@ -41,9 +44,11 @@ public class RecordingSaver implements ReceivesAudio {
 	private BufferedOutputStream bufferedStream;
 	private DataOutputStream dataOutputStreamInstance;
 	private File bybDirectory;
-
-	public RecordingSaver(String filename) {
-		initializeAndCreateFile(filename);
+	protected String filename = "";
+	protected Context context;
+	
+	public RecordingSaver(String filename, Context context) {
+		initializeAndCreateFile(filename, context);
 	}
 
 	/**
@@ -53,8 +58,9 @@ public class RecordingSaver implements ReceivesAudio {
 	 * 
 	 * @param filename
 	 */
-	private void initializeAndCreateFile(String filename) {
+	private void initializeAndCreateFile(String filename, Context context) {
 
+		this.context = context.getApplicationContext();
 		bybDirectory = createBybDirectory();
 
 		mArrayToRecordTo = new ByteArrayOutputStream();
@@ -64,8 +70,9 @@ public class RecordingSaver implements ReceivesAudio {
 			throw new IllegalStateException("Cannot open file for writing", e);
 		}
 		dataOutputStreamInstance = new DataOutputStream(bufferedStream);
-
+		this.filename = filename;
 	}
+	
 
 	/**
 	 * Create our directory on the SD card
@@ -73,8 +80,7 @@ public class RecordingSaver implements ReceivesAudio {
 	 * @return the File instance of our directory
 	 */
 	private File createBybDirectory() {
-		File BybDirectory = new File(Environment.getExternalStorageDirectory()
-				+ "/BackyardBrains/");
+		File BybDirectory = new File(Environment.getExternalStorageDirectory()+ "/BackyardBrains/");
 		BybDirectory.mkdirs();
 		return BybDirectory;
 	}
@@ -85,12 +91,13 @@ public class RecordingSaver implements ReceivesAudio {
 	 * spit out to the our data output stream.
 	 */
 	@Override
+	public void receiveAudio(ShortBuffer audioInfo) {}
+	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		ShortBuffer sb = audioInfo.asShortBuffer();
 		while (sb.hasRemaining()) {
 			try {
-				dataOutputStreamInstance
-						.writeShort(Short.reverseBytes(sb.get()));
+				dataOutputStreamInstance.writeShort(Short.reverseBytes(sb.get()));
 			} catch (IOException e) {
 				throw new IllegalStateException(
 						"Could not write bytes out to file");
@@ -112,8 +119,7 @@ public class RecordingSaver implements ReceivesAudio {
 		}
 	}
 
-	private class ConvertToWavefile extends
-			AsyncTask<ByteArrayOutputStream, Void, String> {
+	private class ConvertToWavefile extends AsyncTask<ByteArrayOutputStream, Void, String> {
 
 		/**
 		 * Takes a ByteArrayOutputStream provided to our execute() method, and
@@ -123,10 +129,9 @@ public class RecordingSaver implements ReceivesAudio {
 		 * @return
 		 * @throws IOException
 		 */
-		private String convertToWave(ByteArrayOutputStream byteData)
-				throws IOException {
+		private String convertToWave(ByteArrayOutputStream byteData) throws IOException {
 			byte[] mFileToRecordTo2 = byteData.toByteArray();
-			File outputFile = new File(bybDirectory, new SimpleDateFormat(
+			File outputFile = new File(bybDirectory, filename + new SimpleDateFormat(
 					"d_MMM_yyyy_HH_mm_s_a").format(new Date(System
 					.currentTimeMillis()))
 					+ ".wav");
@@ -151,8 +156,7 @@ public class RecordingSaver implements ReceivesAudio {
 			datastream.writeShort(Short.reverseBytes((short) mChannels));
 			datastream.writeInt(Integer.reverseBytes(mSampleRate));
 			datastream.writeInt(Integer.reverseBytes(byteRate));
-			datastream.writeShort(Short.reverseBytes((short) (mChannels
-					* mBitsPerSample / 8))); // block align
+			datastream.writeShort(Short.reverseBytes((short) (mChannels * mBitsPerSample / 8))); // block align
 			datastream.writeShort(Short.reverseBytes((short) mBitsPerSample));
 			datastream.writeBytes("data");
 			datastream.writeInt(Integer.reverseBytes((int) subchunk2size));
@@ -160,7 +164,7 @@ public class RecordingSaver implements ReceivesAudio {
 			datastream.write(mFileToRecordTo2);
 			out.close();
 			datastream.close();
-			return outputFile.getName();
+			return outputFile.getAbsolutePath();
 		}
 
 		/**
@@ -170,9 +174,10 @@ public class RecordingSaver implements ReceivesAudio {
 		@Override
 		protected String doInBackground(ByteArrayOutputStream... params) {
 			StringBuilder s = new StringBuilder();
+			String writtenFile="";
 			for (ByteArrayOutputStream f : params) {
 				try {
-					String writtenFile = convertToWave(f);
+					writtenFile = convertToWave(f);
 					s.append(" - " + writtenFile);
 					// f.delete();
 					// f = null;
@@ -182,11 +187,14 @@ public class RecordingSaver implements ReceivesAudio {
 					f = null;
 				}
 			}
-			Log.d(getClass().getCanonicalName(),
-					"Finished writing out " + s.toString());
-			return "Finished writing file to SD Card" + s.toString();
+			Log.d(getClass().getCanonicalName(),"Finished writing out " + s.toString());
+			return  writtenFile;//"Finished writing file to SD Card" + s.toString();
 		}
-
+		@Override
+		protected void onPostExecute(String s){
+			Intent i = new Intent();
+			i.setAction("BYBRecordingSaverSuccessfulSave");
+			context.sendBroadcast(i);
+		}
 	}
-
 }

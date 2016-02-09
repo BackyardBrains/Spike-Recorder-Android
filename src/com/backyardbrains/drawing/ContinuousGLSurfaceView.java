@@ -19,73 +19,33 @@
 
 package com.backyardbrains.drawing;
 
-import android.content.SharedPreferences;
-import android.opengl.GLSurfaceView;
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
 
 import com.backyardbrains.BackyardBrainsMain;
 
-import com.backyardbrains.view.ScaleListener;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
+import android.content.Context;
+import android.opengl.GLSurfaceView;
+import android.view.SurfaceHolder;
 
 public class ContinuousGLSurfaceView extends GLSurfaceView  {
 
 	@SuppressWarnings("unused")
 	private static final String TAG = ContinuousGLSurfaceView.class.getCanonicalName();
-	//protected TwoDimensionScaleGestureDetector mScaleDetector;
-
-//	protected WaveformRenderer renderer;
-	//protected SharedPreferences settings;
-
-	public ContinuousGLSurfaceView(BackyardBrainsMain context) {
+//*
+	public ContinuousGLSurfaceView(Context context, BYBBaseRenderer renderer) {
 		super(context);
-		//settings = ((BackyardBrainsMain) context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
-		//assignRenderer(context);
-	}
-/*
-	protected void assignRenderer(BackyardBrainsMain context) {
-		renderer = new WaveformRenderer(context);
 		setRenderer(renderer);
-		mScaleDetector = new TwoDimensionScaleGestureDetector(context, new ScaleListener(renderer));
 	}
-//*/
+//*
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		super.surfaceCreated(holder);
 		setKeepScreenOn(true);
-	//	readSettings();
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-		//saveSettings();
 		setKeepScreenOn(false);
 		super.surfaceDestroyed(holder);
 	}
-/*
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		Log.d(TAG, "touch event! " + event.getAction());
-		mScaleDetector.onTouchEvent(event);
-		
-		return super.onTouchEvent(event);
-	}
-//*/
-	/*
-	protected void readSettings() {
-		renderer.setAutoScaled(settings.getBoolean("continuousAutoscaled",renderer.isAutoScaled()));
-		renderer.setGlWindowHorizontalSize(settings.getInt("continuousGlWindowHorizontalSize", renderer.getGlWindowHorizontalSize()));
-		renderer.setGlWindowVerticalSize(settings.getInt("continuousGlWindowVerticalSize",renderer.getGlWindowVerticalSize()));
-	}
-
-	protected void saveSettings() {
-		final SharedPreferences.Editor editor = settings.edit();
-		editor.putBoolean("continuousAutoscaled", renderer.isAutoScaled());
-		editor.putInt("continuousGlWindowHorizontalSize", renderer.getGlWindowHorizontalSize());
-		editor.putInt("continuousGlWindowVerticalSize", renderer.getGlWindowVerticalSize());
-		editor.commit();
-	}
-//*/
+	//*/
 }
