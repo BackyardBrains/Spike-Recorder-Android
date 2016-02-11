@@ -41,22 +41,32 @@
 <!--         android:src="@drawable/msline" > -->
 <!--     </ImageView> -->
 
-    <LinearLayout
+  	<LinearLayout
         android:id="@+id/buttonHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true" >
 
+  		<ImageButton
+  		    android:id="@+id/recordButton"
+  		    android:layout_width="match_parent"
+  		    android:layout_height="match_parent"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/start_recording_button"
+  		    android:padding="5sp"
+  		    android:src="@drawable/record_button" />
+
         <ImageButton
-            android:id="@+id/recordButton"
+            android:id="@+id/closeButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="#0000"
             android:padding="5sp"
-            android:src="@drawable/record_button" android:contentDescription="@string/start_recording_button">
+            android:src="@drawable/close_button" android:contentDescription="@string/close_view_button">
         </ImageButton>
-    </LinearLayout>
+     </LinearLayout>
 
     <TextView
         android:id="@+id/TapToStopRecordingTextView"

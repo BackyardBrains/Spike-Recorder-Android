@@ -34,7 +34,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class BackyardBrainsRecordingsFragment extends ListFragment {
-
+	
+	private static final String TAG = "BackyardBrainsRecordingsFragment";
+	
 	private File bybDirectory;
 	private Context context;
 	private FileReadReceiver readReceiver;
@@ -175,8 +177,10 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 	
 	// ----------------------------------------------------------------------------------------
 	private void playAudioFile(File f) {
+		Log.d(TAG, "----------------playAudioFile------------------");
 		Intent i = new Intent();
 		i.setAction("BYBPlayAudioFile");
+		i.putExtra("filePath", f.getAbsolutePath());
 		context.sendBroadcast(i);
 //		MediaPlayer mp = new MediaPlayer();
 //		try {

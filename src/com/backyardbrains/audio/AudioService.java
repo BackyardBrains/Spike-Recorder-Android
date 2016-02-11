@@ -39,6 +39,7 @@ import android.widget.Toast;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.R;
 
+
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data
  * to bound activities.
@@ -52,7 +53,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	static final String	TAG				= AudioService.class.getCanonicalName();
 	private int			NOTIFICATION	= R.string.mic_thread_running;
 	public boolean		running;
-
+	private int mode;
+	public static final int LIVE_MODE = 0;
+	public static final int PLAYBACK_MODE = 1;
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
 	 */
@@ -62,32 +65,33 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 
+	private final IBinder				mBinder		= new AudioServiceBinder();
+
+	private MicListener					micThread;
+	// private PlaybackThread playbackThread;
+// private RecordingReader mRecordingReader = null;
+	private AudioFilePlayer				audioPlayer	= null;
+	private RingBuffer					audioBuffer;
+	private RecordingSaver				mRecordingSaverInstance;
+
+	private NotificationManager			mNM;
+	private TriggerAverager				triggerAverager;
+	private boolean						triggerMode;
+
+	private ToggleTriggerListener		toggleTrigger;
+	private SetSampleSizeListener		sampleSizeListener;
+	private ToggleRecordingListener		toggleRecorder;
+	private PlayAudioFileListener		playListener;
+	private SetLiveAudioInputListener	liveInput;
+	private CloseButtonListener 		closeListener;
 	
+	private long						lastSamplesReceivedTimestamp;
+	private int							micListenerBufferSizeInSamples;
+	private Context						appContext	= null;
 
-	private final IBinder			mBinder	= new AudioServiceBinder();
-
-	private MicListener				micThread;
-	//private PlaybackThread			playbackThread;
-//	private RecordingReader			mRecordingReader = null;
-	private AudioFilePlayer			audioPlayer = null;
-	private RingBuffer				audioBuffer;
-	private RecordingSaver			mRecordingSaverInstance;
-
-	private NotificationManager		mNM;
-	private TriggerAverager			triggerAverager;
-	private boolean					triggerMode;
-	
-	private ToggleTriggerListener	toggleTrigger;
-	private SetSampleSizeListener	sampleSizeListener;
-	private ToggleRecordingListener	toggleRecorder;
-	private PlayAudioFileListener 	playListener;
-	private long					lastSamplesReceivedTimestamp;
-	private int						micListenerBufferSizeInSamples;
-	private Context appContext = null; 
-
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- GETTERS SETTERS
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- GETTERS SETTERS
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * @return the micListenerBufferSizeInSamples
@@ -124,9 +128,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void setMicListenerBufferSizeInSamples(int i) {
 		micListenerBufferSizeInSamples = i;
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- LIFECYCLE OVERRIDES
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- LIFECYCLE OVERRIDES
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Register a receiver for toggling recording funcionality, then instantiate
@@ -149,6 +153,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
 		registerSetSampleSizeReceiver(true);
 		registerPlayAudioFileReceiver(true);
+		registerToggleInputReceiver(true);
 		turnOnMicThread();
 	}
 
@@ -171,13 +176,14 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerTriggerToggleReceiver(false);
 		registerSetSampleSizeReceiver(false);
 		registerPlayAudioFileReceiver(false);
+		registerToggleInputReceiver(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
 		super.onDestroy();
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- BIND
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- BIND
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * return a binding pointer for GL threads to reference this object
@@ -198,37 +204,42 @@ public class AudioService extends Service implements ReceivesAudio {
 		// Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
 		return super.onUnbind(intent);
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- START/STOP THREADS
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- START/STOP THREADS
+// -----------------------------------------------------------------------------------------------------------------------------
 
-	public void turnOnAudioPlayerThread(){
-		if(audioPlayer != null){
+	public void turnOnAudioPlayerThread() {
+		mode = PLAYBACK_MODE;
+		if (audioPlayer != null) {
 			turnOffMicThread();
 			audioPlayer.play();
 		}
-		
+
 	}
-	public void turnOffAudioPlayerThread(){
-		if(audioPlayer != null){
+
+	public void turnOffAudioPlayerThread() {
+		if (audioPlayer != null) {
 			audioPlayer.stop();
 			audioPlayer = null;
 		}
+		Log.d(TAG, "Turn Off Audio Player");
 	}
+
 	/**
 	 * Instantiate {@link MicListener} thread, tell it to start, and put up the
 	 * notification via {@link AudioService#showNotification()}
 	 */
 	public void turnOnMicThread() {
+		mode = LIVE_MODE;
 		turnOffAudioPlayerThread();
-		if(micThread == null){
-		micThread = null;
-		micThread = new MicListener();
-		micThread.start(AudioService.this);
-		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		showNotification(true);
-		Log.d(TAG, "Mic thread started");
-	}
+		if (micThread == null) {
+			micThread = null;
+			micThread = new MicListener();
+			micThread.start(AudioService.this);
+			mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			showNotification(true);
+			Log.d(TAG, "Mic thread started");
+		}
 	}
 
 	/**
@@ -243,9 +254,9 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 		showNotification(false);
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- NOTIFICATIONS
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- NOTIFICATIONS
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Toggle a notification that this service is running.
@@ -266,9 +277,9 @@ public class AudioService extends Service implements ReceivesAudio {
 		 * not); } else { if (mNM != null) { mNM.cancel(NOTIFICATION); } } //
 		 */
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- ReceivesAudio OVERRIDES
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- ReceivesAudio OVERRIDES
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * On receiving audio, add it to the RingBuffer. If we're recording, also
@@ -302,9 +313,9 @@ public class AudioService extends Service implements ReceivesAudio {
 // recordAudio(audioInfo);
 // }
 	}
-//-----------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------- RECORD AUDIO
-//-----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- RECORD AUDIO
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	/**
 	 * dispatch audio to the active RecordingSaver instance
@@ -324,9 +335,8 @@ public class AudioService extends Service implements ReceivesAudio {
 		if (mRecordingSaverInstance != null) {
 			return false;
 		}
-		Long theTime = (Long) System.currentTimeMillis();
 		try {
-			mRecordingSaverInstance = new RecordingSaver("Original", this.getApplicationContext());// theTime.toString());
+			mRecordingSaverInstance = new RecordingSaver("BYB", this.getApplicationContext());// theTime.toString());
 		} catch (IllegalStateException e) {
 			Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG).show();
 		}
@@ -341,6 +351,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 		return false;
 	}
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS CLASS
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -374,22 +385,63 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 
 	}
-	
+
 	private class PlayAudioFileListener extends BroadcastReceiver {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(appContext != null){
-				turnOffAudioPlayerThread();
-				audioPlayer = new AudioFilePlayer((ReceivesAudio) AudioService.this, appContext);
-				turnOnAudioPlayerThread();
+			Log.d("PlayAudioFileListener", "onReceive");
+			if (appContext != null) {
+				if (intent.hasExtra("filePath")) {
+					String path = intent.getStringExtra("filePath");
+					if (!path.isEmpty()) {
+						turnOffAudioPlayerThread();
+						audioPlayer = new AudioFilePlayer((ReceivesAudio) AudioService.this, appContext);
+						audioPlayer.load(path);
+						turnOnAudioPlayerThread();
+					}else{Log.d("PlayAudioFileListener", "onReceive:: filePath is empty!");}
+				}else{Log.d("PlayAudioFileListener", "onReceive:: there's no extra in intent!");}
+			}else{Log.d("PlayAudioFileListener", "onReceive::appContext == null");}
+			
+		}
+	}
+
+	private class SetLiveAudioInputListener extends BroadcastReceiver {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (appContext != null) {
+				Log.d("SetLiveAudioInputListener", "onReceive");
+				if(mode == PLAYBACK_MODE){
+					if(audioPlayer == null){
+						turnOnMicThread();
+					}else if(!audioPlayer.isPlaying()){
+						turnOnMicThread();
+					}
+				}
 			}
+		}
+	}
+	private class CloseButtonListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			turnOffAudioPlayerThread();
 		}
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 // -----------------------------------------------------------------------------------------------------------------------------
+	private void registerCloseButtonReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBCloseButton");
+			closeListener = new  CloseButtonListener();
+			appContext.registerReceiver(closeListener, intentFilter);
+		} else {
+			appContext.unregisterReceiver(closeListener);
+		}
+	}
+	
 	/**
 	 * Toggle our receiver. If true, register a receiver for intents with the
 	 * action "BYBToggleRecording", otherwise, unregister the same receiver.
@@ -397,13 +449,24 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * @param reg
 	 *            register if true, unregister otherwise.
 	 */
+
+	private void registerToggleInputReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBSetLiveAudioInput");
+			liveInput = new SetLiveAudioInputListener();
+			appContext.registerReceiver(liveInput, intentFilter);
+		} else {
+			appContext.unregisterReceiver(toggleRecorder);
+		}
+	}
+
 	private void registerRecordingToggleReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
 			toggleRecorder = new ToggleRecordingListener();
-			registerReceiver(toggleRecorder, intentFilter);
+			appContext.registerReceiver(toggleRecorder, intentFilter);
 		} else {
-			unregisterReceiver(toggleRecorder);
+			appContext.unregisterReceiver(toggleRecorder);
 		}
 	}
 
@@ -411,9 +474,9 @@ public class AudioService extends Service implements ReceivesAudio {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBToggleTrigger");
 			toggleTrigger = new ToggleTriggerListener();
-			registerReceiver(toggleTrigger, intentFilter);
+			appContext.registerReceiver(toggleTrigger, intentFilter);
 		} else {
-			unregisterReceiver(toggleTrigger);
+			appContext.unregisterReceiver(toggleTrigger);
 		}
 	}
 
@@ -421,18 +484,19 @@ public class AudioService extends Service implements ReceivesAudio {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("setSampleSize");
 			sampleSizeListener = new SetSampleSizeListener();
-			registerReceiver(sampleSizeListener, intentFilter);
+			appContext.registerReceiver(sampleSizeListener, intentFilter);
 		} else {
-			unregisterReceiver(sampleSizeListener);
+			appContext.unregisterReceiver(sampleSizeListener);
 		}
 	}
+
 	private void registerPlayAudioFileReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBPlayAudioFile");
 			playListener = new PlayAudioFileListener();
-			registerReceiver(playListener, intentFilter);
+			appContext.registerReceiver(playListener, intentFilter);
 		} else {
-			unregisterReceiver(playListener);
+			appContext.unregisterReceiver(playListener);
 		}
 	}
 }

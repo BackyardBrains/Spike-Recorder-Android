@@ -29,4 +29,5 @@
     <string name="no_files_found">No files found! Record some spikes!</string>
     <string name="start_recording_button">Start Recording Button</string>
     <string name="default_threshold_amount">1 x</string>
+    <string name="close_view_button">Close</string>
 </resources>

@@ -20,7 +20,8 @@ public class RecordingReader {
 	private BufferedInputStream bufferedStream = null;
 	private File recordingFile;
 	private ReadFromWavefile asyncReader;
-
+	private boolean bReady = false;
+	private byte [] data;
 	Context context;
 	// ----------------------------------------------------------------------------------------
 		public RecordingReader(String filePath){
@@ -54,12 +55,14 @@ public class RecordingReader {
 	
 	// ----------------------------------------------------------------------------------------
 	public void loadFile(File f) throws IOException{
+		bReady = false;
 		asyncReader = new ReadFromWavefile();
 		recordingFile = f;
 		if(recordingFile != null){
 		if(recordingFile.exists()){
 			try {
 				bufferedStream = new BufferedInputStream(new FileInputStream(recordingFile));
+				
 				asyncReader.execute(bufferedStream);
 				//byte [] buff = convertFromWave(bufferedStream);
 //				byte [] orig = new byte [buff.length];
@@ -75,9 +78,40 @@ public class RecordingReader {
 		}
 	}
 	// ----------------------------------------------------------------------------------------
-	public byte [] getData(){return asyncReader.getData();}
+	public void close(){
+		try {
+			fileReadDone();
+			bReady = false;
+			data = null;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	// ----------------------------------------------------------------------------------------
-	public boolean isReady(){return asyncReader.isReady();}
+	private void fileReadDone() throws IOException {
+		bReady = true;
+		if(bufferedStream != null){
+		try {
+			bufferedStream.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		}
+		bufferedStream = null;
+		asyncReader = null;
+		recordingFile = null;
+	}
+	// ----------------------------------------------------------------------------------------
+	public byte [] getData(){
+		if(bReady){
+			return data;
+		}else{
+			byte [] b = new byte[0];
+			return b;
+		}
+	}
+	// ----------------------------------------------------------------------------------------
+	public boolean isReady(){return bReady;}
 	// ----------------------------------------------------------------------------------------
 	private byte [] convertFromWave(BufferedInputStream in)throws IOException {
 		/* RIFF header */
@@ -132,19 +166,17 @@ public class RecordingReader {
 	// ----------------------------------------------------------------------------------------
 	private class ReadFromWavefile extends AsyncTask<BufferedInputStream, Void, Void> {
 
-		private boolean bReady = false;
-		private byte [] buffer = {};
+	
 		
-
-		public boolean isReady(){return bReady;}
-		public byte [] getData(){
-				return buffer;
-		}
+		
+//		public byte [] getData(){
+//				return buffer;
+//		}
 		@Override
 		protected Void doInBackground(BufferedInputStream... params) {
 			for (BufferedInputStream f : params) {
 				try {
-					buffer =convertFromWave(f);
+					data =convertFromWave(f);
 				} catch (IOException e) {
 					Log.e(TAG, "Couldn't read wav file ");
 					e.printStackTrace();
@@ -155,16 +187,20 @@ public class RecordingReader {
 		}
 		@Override
 		protected void onPostExecute(Void v) {
-			bReady = true;
+			try {
+				fileReadDone();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			Log.d(TAG, "onPostExecute: bReady = true");
 			Intent i = new Intent();
 			i.setAction("BYBAudioFileRead");
-			//i.putExtra(name, data);
 			context.sendBroadcast(i);
 		}
 		@Override
 		protected void onPreExecute() {
 			bReady = false;
+			data = null;
 		}
 	}
 	
