@@ -181,6 +181,10 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		if (tab.getPosition() < 0 || tab.getPosition() >= mAppSectionsPagerAdapter.getCount()) {
 			return;
 		}
+		Intent ii = new Intent();
+		ii.setAction("BYBonTabSelected");
+		ii.putExtra("tab", tab.getPosition());
+		getApplicationContext().sendBroadcast(ii);
 //		if(tab.getPosition() <2 && bChangePageBroadcastMessage){
 //			Intent i = new Intent();
 //			i.setAction("BYBSetLiveAudioInput");
@@ -207,7 +211,6 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 //				getActionBar().setSelectedNavigationItem(2);
 //			}
 		}
-		
 // if(tab.getPosition() == 0 || tab.getPosition() == 1){
 // mViewPager.setCurrentItem(0);
 // List<Fragment> frags = getSupportFragmentManager().getFragments();

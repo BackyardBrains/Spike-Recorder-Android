@@ -82,9 +82,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	private SetSampleSizeListener		sampleSizeListener;
 	private ToggleRecordingListener		toggleRecorder;
 	private PlayAudioFileListener		playListener;
-	private SetLiveAudioInputListener	liveInput;
+//	private SetLiveAudioInputListener	liveInput;
 	private CloseButtonListener 		closeListener;
-	
+	private OnTabSelectedListener 		tabSelectedListener;
 	private long						lastSamplesReceivedTimestamp;
 	private int							micListenerBufferSizeInSamples;
 	private Context						appContext	= null;
@@ -153,7 +153,9 @@ public class AudioService extends Service implements ReceivesAudio {
 
 		registerSetSampleSizeReceiver(true);
 		registerPlayAudioFileReceiver(true);
-		registerToggleInputReceiver(true);
+		//registerToggleInputReceiver(true);
+		registerOnTabSelectedReceiver(true);
+		registerCloseButtonReceiver(true);
 		turnOnMicThread();
 	}
 
@@ -176,7 +178,9 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerTriggerToggleReceiver(false);
 		registerSetSampleSizeReceiver(false);
 		registerPlayAudioFileReceiver(false);
-		registerToggleInputReceiver(false);
+		//registerToggleInputReceiver(false);
+		registerOnTabSelectedReceiver(false);
+		registerCloseButtonReceiver(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
 		super.onDestroy();
@@ -406,29 +410,35 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 
-	private class SetLiveAudioInputListener extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (appContext != null) {
-				Log.d("SetLiveAudioInputListener", "onReceive");
-				if(mode == PLAYBACK_MODE){
-					if(audioPlayer == null){
-						turnOnMicThread();
-					}else if(!audioPlayer.isPlaying()){
-						turnOnMicThread();
-					}
-				}
-			}
-		}
-	}
+//	private class SetLiveAudioInputListener extends BroadcastReceiver {
+//
+//		@Override
+//		public void onReceive(Context context, Intent intent) {
+//			if (appContext != null) {
+//				Log.d("SetLiveAudioInputListener", "onReceive");
+//				if(mode == PLAYBACK_MODE){
+//					if(audioPlayer == null){
+//						turnOnMicThread();
+//					}else if(!audioPlayer.isPlaying()){
+//						turnOnMicThread();
+//					}
+//				}
+//			}
+//		}
+//	}
 	private class CloseButtonListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			turnOffAudioPlayerThread();
 		}
 	}
-
+	private class OnTabSelectedListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			
+		}
+	}
+	
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -450,15 +460,15 @@ public class AudioService extends Service implements ReceivesAudio {
 	 *            register if true, unregister otherwise.
 	 */
 
-	private void registerToggleInputReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBSetLiveAudioInput");
-			liveInput = new SetLiveAudioInputListener();
-			appContext.registerReceiver(liveInput, intentFilter);
-		} else {
-			appContext.unregisterReceiver(toggleRecorder);
-		}
-	}
+//	private void registerToggleInputReceiver(boolean reg) {
+//		if (reg) {
+//			IntentFilter intentFilter = new IntentFilter("BYBSetLiveAudioInput");
+//			liveInput = new SetLiveAudioInputListener();
+//			appContext.registerReceiver(liveInput, intentFilter);
+//		} else {
+//			appContext.unregisterReceiver(toggleRecorder);
+//		}
+//	}
 
 	private void registerRecordingToggleReceiver(boolean reg) {
 		if (reg) {
@@ -490,6 +500,15 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 
+	private void registerOnTabSelectedReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBonTabSelected");
+			tabSelectedListener = new OnTabSelectedListener();
+			appContext.registerReceiver(tabSelectedListener , intentFilter);
+		} else {
+			appContext.unregisterReceiver(playListener);
+		}
+	}
 	private void registerPlayAudioFileReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBPlayAudioFile");
