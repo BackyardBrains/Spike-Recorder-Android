@@ -34,66 +34,78 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class BackyardBrainsRecordingsFragment extends ListFragment {
-	
-	private static final String TAG = "BackyardBrainsRecordingsFragment";
-	
-	private File bybDirectory;
-	private Context context;
-	private FileReadReceiver readReceiver;
-	// ----------------------------------------------------------------------------------------
- 	public BackyardBrainsRecordingsFragment(Context context){
+
+	private static final String	TAG	= "BackyardBrainsRecordingsFragment";
+
+	private File				bybDirectory;
+	private Context				context;
+	private FileReadReceiver	readReceiver;
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- CONSTRUCTOR
+// -----------------------------------------------------------------------------------------------------------------------------
+	public BackyardBrainsRecordingsFragment(Context context) {
 		super();
 		this.context = context.getApplicationContext();
 	}
 
-	//*
-	// ----------------------------------------------------------------------------------------
-	@Override	
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- FRAGMENT LIFECYCLE
+// -----------------------------------------------------------------------------------------------------------------------------
+	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.file_list, container, false);
 		return rootView;
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
 		rescanFiles();
 		registerReceivers();
 	}
-	// ----------------------------------------------------------------------------------------
-	public void registerReceivers(){
-		IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
-		readReceiver= new FileReadReceiver();
-		context.registerReceiver(readReceiver, fileReadIntent);		
-	}
-	public void unregisterReceivers(){
-		context.unregisterReceiver(readReceiver);
-	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onDestroy() {
 		bybDirectory = null;
 		unregisterReceivers();
 		super.onDestroy();
 	}
-	// ----------------------------------------------------------------------------------------
-	void rescanFiles() {
 
-		File[] files = bybDirectory.listFiles();
-
-		if (files != null) {
-			ListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_row_layout, files);
-			setListAdapter(adapter);
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- BROADCAST RECEIVERS CLASS
+// -----------------------------------------------------------------------------------------------------------------------------
+	private class FileReadReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
 		}
 	}
-	// ----------------------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- REGISTER RECEIVERS
+// -----------------------------------------------------------------------------------------------------------------------------
+	public void registerReceivers() {
+		IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
+		readReceiver = new FileReadReceiver();
+		context.registerReceiver(readReceiver, fileReadIntent);
+	}
+
+	public void unregisterReceivers() {
+		context.unregisterReceiver(readReceiver);
+	}
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- LIST TASKS
+// -----------------------------------------------------------------------------------------------------------------------------
+
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		final File f = (File) this.getListAdapter().getItem(position);
 
-		final CharSequence[] actions = { "File Details", "Play this file", "Find Spikes","Autocorrelation", "ISI", "Cross Correlation", "Average Spike", "Email this file", "Rename this file", "Delete this file" };
+		final CharSequence[] actions = { "File Details", "Play this file", "Find Spikes", "Autocorrelation", "ISI", "Cross Correlation", "Average Spike", "Email this file", "Rename this file", "Delete this file" };
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
 		builder.setTitle("Choose an action");
@@ -115,7 +127,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 				case 3:
 					autocorrelation(f);
 					break;
-				case 4 :
+				case 4:
 					ISI(f);
 					break;
 				case 5:
@@ -141,81 +153,67 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		d.show();
 		super.onListItemClick(l, v, position, id);
 	}
-	// ----------------------------------------------------------------------------------------
-	private void fileDetails(File f) {
-		
-		
-	}
-	// ----------------------------------------------------------------------------------------
-	private class FileReadReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context, android.content.Intent intent) {
-//			if(read != null){
-//			if(read.isReady()){
-//				byte [] data = null;
-//				Log.d("FileDetails","read is ready, resave data");
-//				data = read.getData();
-//				//if(data != null){
-//				if(data.length > 0){
-//					ByteBuffer buff = ByteBuffer.allocate(data.length);
-//					//b.allocate(data.length);
-//					buff.put(data);
-//					Log.d("FileReadReceiver","Datalength:" + data.length + " ByteBuffer length: " +buff.capacity() );
-//					RecordingSaver rec = new RecordingSaver("saveReadTest");	
-//					rec.receiveAudio(buff);
-//					rec.finishRecording();
-					rescanFiles();
-//				}else{
-//					Log.d("FileDetails","data length = 0");
-//				}
-//			}else{
-//				Log.d("FileDetails","notReady! ");
-//			}
-//		}
+
+// ----------------------------------------------------------------------------------------
+	void rescanFiles() {
+		File[] files = bybDirectory.listFiles();
+		if (files != null) {
+			ListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_row_layout, files);
+			setListAdapter(adapter);
 		}
 	}
-	
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
+	private void fileDetails(File f) {
+	}
+
+// ----------------------------------------------------------------------------------------
 	private void playAudioFile(File f) {
 		Log.d(TAG, "----------------playAudioFile------------------");
 		Intent i = new Intent();
 		i.setAction("BYBPlayAudioFile");
 		i.putExtra("filePath", f.getAbsolutePath());
 		context.sendBroadcast(i);
-//		MediaPlayer mp = new MediaPlayer();
-//		try {
-//			mp.setDataSource(f.getAbsolutePath());
-//			mp.prepare();
-//			mp.start();
-//		} catch (IllegalArgumentException e) {
-//			e.printStackTrace();
-//		} catch (IllegalStateException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+// MediaPlayer mp = new MediaPlayer();
+// try {
+// mp.setDataSource(f.getAbsolutePath());
+// mp.prepare();
+// mp.start();
+// } catch (IllegalArgumentException e) {
+// e.printStackTrace();
+// } catch (IllegalStateException e) {
+// e.printStackTrace();
+// } catch (IOException e) {
+// e.printStackTrace();
+// }
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	private void findSpikes(File f) {
-		
-}	
-	// ----------------------------------------------------------------------------------------
+
+	}
+
+// ----------------------------------------------------------------------------------------
 	private void autocorrelation(File f) {
-			
+
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	private void ISI(File f) {
-			
+
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	private void crossCorrelation(File f) {
-		
+
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	private void averageSpike(File f) {
-			
+
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	private void emailFile(File f) {
 		Intent sendIntent = new Intent(Intent.ACTION_SEND);
 		sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
@@ -223,7 +221,8 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		sendIntent.setType("audio/wav");
 		startActivity(Intent.createChooser(sendIntent, "Email file"));
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	protected void renameFile(final File f) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
 		builder.setTitle("Rename File");
@@ -245,7 +244,8 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		builder.setNegativeButton("Cancel", null);
 		builder.create().show();
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	protected void deleteFile(final File f) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
 		builder.setTitle("Delete File");
@@ -262,18 +262,18 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		builder.create().show();
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	static class FileListViewHolder {
-		public TextView filenameView;
-		public TextView filesizeView;
-		public TextView filedateView;
+		public TextView	filenameView;
+		public TextView	filesizeView;
+		public TextView	filedateView;
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	private class FileListAdapter extends ArrayAdapter<File> {
 
-		private Activity mContext;
-		private File[] mFiles;
+		private Activity	mContext;
+		private File[]		mFiles;
 
 		public FileListAdapter(Activity context, int textViewResourceId, File[] objects) {
 			super(context, textViewResourceId, objects);
@@ -299,8 +299,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 			}
 			holder.filenameView.setText(mFiles[position].getName());
 			holder.filesizeView.setText(getWaveLengthString(mFiles[position].length()));
-			holder.filedateView.setText(
-					new SimpleDateFormat("MMM d, yyyy HH:mm a").format(new Date(mFiles[position].lastModified())));
+			holder.filedateView.setText(new SimpleDateFormat("MMM d, yyyy HH:mm a").format(new Date(mFiles[position].lastModified())));
 			return rowView;
 		}
 
@@ -317,5 +316,4 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 			}
 		}
 	}
-	//*/
 }

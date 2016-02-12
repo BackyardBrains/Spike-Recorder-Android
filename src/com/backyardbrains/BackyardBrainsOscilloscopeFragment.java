@@ -1,8 +1,6 @@
 package com.backyardbrains;
 
-import com.backyardbrains.audio.AudioFilePlayer;
-import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.ReceivesAudio;
+import com.backyardbrains.audio.AudioService.OnTabSelectedListener;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.ThresholdRenderer;
@@ -41,12 +39,16 @@ import android.widget.RelativeLayout.LayoutParams;
 
 public class BackyardBrainsOscilloscopeFragment extends Fragment {
 
-	// public static final String ARG_SECTION_NUMBER = "section_number";
-	// *
+// public static final String ARG_SECTION_NUMBER = "section_number";
+// *
 	private static final String					TAG					= BackyardBrainsOscilloscopeFragment.class.getCanonicalName();
 
 	public static final int						WAVE				= 0;
 	public static final int						THRESH				= 1;
+	public static final int						LIVE_MODE			= 0;
+	public static final int						PLAYBACK_MODE		= 1;
+
+	private int									mode				= 0;
 	protected ContinuousGLSurfaceView			mAndroidSurface		= null;
 	private boolean								isRecording			= false;
 	private FrameLayout							mainscreenGLLayout;
@@ -65,25 +67,19 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	private SetMillivoltViewSizeReceiver		milliVoltSize;
 	private UpdateMillivoltReciever				upmillivolt;
 	private ShowRecordingButtonsReceiver		showRecordingButtonsReceiver;
+	private ShowCloseButtonReceiver				showCloseButtonReceiver;
+	private OnTabSelectedListener 				tabSelectedListener;
 
-// protected AudioService audioService = null;
 // ----------------------------------------------------------------------------------------
-	public BackyardBrainsOscilloscopeFragment(Context context) {// ,
-																// AudioService
-																// audioService)
-																// {
+	public BackyardBrainsOscilloscopeFragment(Context context) {
 		super();
 		this.context = context.getApplicationContext();
-		// this.audioService = audioService;
+		mode = LIVE_MODE;
 		Log.d("BackyardBrainsOscilloscopeFragment", "Constructor");
-// if(this.audioService == null){
-// Log.d("BackyardBrainsOscilloscopeFragment","null audioservice");
-// }
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- FRAGMENT LIFECYCLE
-	// -----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- FRAGMENT LIFECYCLE
+// -----------------------------------------------------------------------------------------------------------------------------
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -98,64 +94,61 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		}
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.backyard_main, container, false);
-		// Log.d("BackyardBrainsOscilloscopeFragment", "onCreateView");
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
-
+		Log.d(TAG, "onCreateView");
 		setupLabels(rootView);
-		// setupMsLineView(rootView);
+		setupMsLineView(rootView);
 		setupRecordingButtons(rootView);
-
-		// UIFactory.setupRecordingButtons(this, rootView);
-		// UIFactory.setupSampleSlider(this);
 		return rootView;
 
 	}
-	// ----------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onStart() {
+		Log.d(TAG, "onStart");
 		readSettings();
 		reassignSurfaceView();
+		enableUiForActivity();
 		super.onStart();
 	}
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onResume() {
+		Log.d(TAG, "onResume");
 		registerReceivers();
 		mAndroidSurface.onResume();
-		// reassignSurfaceView();
-		// bindAudioService(true);
-		enableUiForActivity();
+
 		readSettings();
 		super.onResume();
 	}
-
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onPause() {
-		// mAndroidSurface = null;
+		Log.d(TAG, "onPause");
 		mAndroidSurface.onPause();
 		unregisterReceivers();
 		hideRecordingButtons();
+
 		saveSettings();
 		super.onPause();
 	}
-
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	@Override
 	public void onStop() {
+		Log.d(TAG, "onStop");
 		saveSettings();
 		super.onStop();
 		mAndroidSurface = null;
-		// finish();
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- GL RENDERING
-	// -----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- GL RENDERING
+// -----------------------------------------------------------------------------------------------------------------------------
 	private void createRenderers() {
 		if (waveRenderer != null) {
 			waveRenderer = null;
@@ -168,7 +161,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		bRenderersCreated = true;
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	public void setRenderer(int i) {
 		if (i == WAVE || i == THRESH) {
 			currentRenderer = i;
@@ -176,7 +169,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		}
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView() {
 		if (context != null && bRenderersCreated) {
 			mAndroidSurface = null;
@@ -194,12 +187,11 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 
 			readSettings();
 
-			// enableUiForActivity();
 			Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
 		}
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	protected void setGlSurface(BYBBaseRenderer renderer) {
 		if (context != null) {
 			if (mAndroidSurface != null) {
@@ -212,15 +204,126 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		}
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- TOUCH
-	// -----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- TOUCH
+// -----------------------------------------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleDetector.onTouchEvent(event);
 		return mAndroidSurface.onTouchEvent(event);
 	}
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- SETTINGS
+// -----------------------------------------------------------------------------------------------------------------------------
+	private void getSettings() {
+		if (settings == null) {
+			// settings = (
+			// context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
+		}
+	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
+	protected void readSettings() {
+		if (settings != null) {
+			waveRenderer.setAutoScaled(settings.getBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled()));
+			waveRenderer.setGlWindowHorizontalSize(settings.getInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize()));
+			waveRenderer.setGlWindowVerticalSize(settings.getInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize()));
+
+			threshRenderer.setAutoScaled(settings.getBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled()));
+			threshRenderer.setGlWindowHorizontalSize(settings.getInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize()));
+			threshRenderer.setGlWindowVerticalSize(settings.getInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize()));
+		}
+	}
+
+// ----------------------------------------------------------------------------------------
+	protected void saveSettings() {
+		if (settings != null) {
+			final SharedPreferences.Editor editor = settings.edit();
+			editor.putBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled());
+			editor.putInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize());
+			editor.putInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize());
+
+			editor.putBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled());
+			editor.putInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize());
+			editor.putInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize());
+			editor.commit();
+		}
+	}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- UI
+// -----------------------------------------------------------------------------------------------------------------------------
+
+	public void showCloseButton() {
+		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
+		if (mCloseButton != null) {
+			mCloseButton.setVisibility(View.VISIBLE);
+			hideRecordingButtons();
+			mode = PLAYBACK_MODE;
+		}
+	}
+
+// ----------------------------------------------------------------------------------------
+	public void hideCloseButton() {
+		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
+		if (mCloseButton != null) {
+			if (mCloseButton.getVisibility() == View.VISIBLE) {
+				mCloseButton.setVisibility(View.GONE);
+				showRecordingButtons();
+			}
+		}
+	}
+
+// ----------------------------------------------------------------------------------------
+	public void toggleCloseButton() {
+		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
+		if (mCloseButton != null) {
+			if (mCloseButton.getVisibility() == View.VISIBLE) {
+				mCloseButton.setVisibility(View.GONE);
+				showRecordingButtons();
+			} else {
+				mCloseButton.setVisibility(View.VISIBLE);
+				mode = PLAYBACK_MODE;
+				hideRecordingButtons();
+			}
+		}
+		Log.d(TAG, "toggleCloseButton");
+	}
+
+// ----------------------------------------------------------------------------------------
+	public void hideRecordingButtons() {// BackyardBrainsOscilloscopeFragment
+		// context) {
+// if(oscilloscopeContext != null){
+		ImageButton mRecordButton = (ImageButton) getView().findViewById(R.id.recordButton);
+
+		if (mRecordButton != null) {
+			mRecordButton.setVisibility(View.GONE);
+		}
+// }
+	}
+
+// ----------------------------------------------------------------------------------------
+	public void showRecordingButtons() {// BackyardBrainsOscilloscopeFragment
+		// context) {
+// if(oscilloscopeContext != null){
+		ImageButton mRecordButton = (ImageButton) getView().findViewById(R.id.recordButton);
+
+		if (mRecordButton != null) {
+			mRecordButton.setVisibility(View.VISIBLE);
+			mode = LIVE_MODE;
+		}
+
+	}// ----------------------------------------------------------------------------------------
+
+	protected void enableUiForActivity() {
+		if (mode == LIVE_MODE) {
+			showRecordingButtons();
+		} else {
+			showCloseButton();
+		}
+// UIFactory.hideSampleSliderBox(this);
+	}
+
+// ----------------------------------------------------------------------------------------
 	public void toggleRecording() {
 		// UIFactory.getUi().toggleRecording(this, isRecording);
 		ShowRecordingAnimation anim = new ShowRecordingAnimation(getActivity(), isRecording);
@@ -241,163 +344,6 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		isRecording = !isRecording;
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- SETTINGS
-	// -----------------------------------------------------------------------------------------------------------------------------
-	private void getSettings() {
-		if (settings == null) {
-			// settings = (
-			// context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------
-	protected void readSettings() {
-		if (settings != null) {
-			waveRenderer.setAutoScaled(settings.getBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled()));
-			waveRenderer.setGlWindowHorizontalSize(settings.getInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize()));
-			waveRenderer.setGlWindowVerticalSize(settings.getInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize()));
-
-			threshRenderer.setAutoScaled(settings.getBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled()));
-			threshRenderer.setGlWindowHorizontalSize(settings.getInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize()));
-			threshRenderer.setGlWindowVerticalSize(settings.getInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize()));
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------
-	protected void saveSettings() {
-		if (settings != null) {
-			final SharedPreferences.Editor editor = settings.edit();
-			editor.putBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled());
-			editor.putInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize());
-			editor.putInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize());
-
-			editor.putBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled());
-			editor.putInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize());
-			editor.putInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize());
-			editor.commit();
-		}
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- REGISTER RECEIVERS
-	// -----------------------------------------------------------------------------------------------------------------------------
-
-	public void registerReceivers() {
-		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
-		upmillirec = new UpdateMillisecondsReciever();
-		context.registerReceiver(upmillirec, intentFilter);
-
-		IntentFilter intentFilterVolts = new IntentFilter("BYBUpdateMillivoltReciever");
-		upmillivolt = new UpdateMillivoltReciever();
-		context.registerReceiver(upmillivolt, intentFilterVolts);
-
-		IntentFilter intentFilterVoltSize = new IntentFilter("BYBMillivoltsViewSize");
-		milliVoltSize = new SetMillivoltViewSizeReceiver();
-		context.registerReceiver(milliVoltSize, intentFilterVoltSize);
-
-		IntentFilter intentFilterRecordingButtons = new IntentFilter("BYBShowRecordingButtons");
-		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
-		context.registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
-
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- UNREGISTER RECEIVERS
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public void unregisterReceivers() {
-		context.unregisterReceiver(upmillirec);
-		context.unregisterReceiver(upmillivolt);
-		context.unregisterReceiver(milliVoltSize);
-		context.unregisterReceiver(showRecordingButtonsReceiver);
-	}
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------- UI
-// -----------------------------------------------------------------------------------------------------------------------------
-
-	public void showCloseButton() {
-		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
-		if (mCloseButton != null) {
-			mCloseButton.setVisibility(View.VISIBLE);
-			hideRecordingButtons();
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------
-	public void hideCloseButton() {
-		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
-		if (mCloseButton != null) {
-			if (mCloseButton.getVisibility() == View.VISIBLE) {
-				mCloseButton.setVisibility(View.GONE);
-				showRecordingButtons();
-			}
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------
-	public void toggleCloseButton() {
-		ImageButton mCloseButton = (ImageButton) getView().findViewById(R.id.closeButton);
-		if (mCloseButton != null) {
-			if (mCloseButton.getVisibility() == View.VISIBLE) {
-				mCloseButton.setVisibility(View.GONE);
-				showRecordingButtons();
-			} else {
-				mCloseButton.setVisibility(View.VISIBLE);
-				hideRecordingButtons();
-			}
-		}
-	}
-
-	// ----------------------------------------------------------------------------------------
-	public void hideRecordingButtons() {// BackyardBrainsOscilloscopeFragment
-										// context) {
-		// if(oscilloscopeContext != null){
-		ImageButton mRecordButton = (ImageButton) getView().findViewById(R.id.recordButton);
-
-		if (mRecordButton != null) {
-			mRecordButton.setVisibility(View.GONE);
-		}
-		// }
-	}
-
-	// ----------------------------------------------------------------------------------------
-	public void showRecordingButtons() {// BackyardBrainsOscilloscopeFragment
-										// context) {
-		// if(oscilloscopeContext != null){
-		ImageButton mRecordButton = (ImageButton) getView().findViewById(R.id.recordButton);
-
-		if (mRecordButton != null) {
-			mRecordButton.setVisibility(View.VISIBLE);
-		}
-
-	}// ----------------------------------------------------------------------------------------
-
-	protected void enableUiForActivity() {
-		showRecordingButtons();
-		// UIFactory.hideSampleSliderBox(this);
-	}
-
-	// ----------------------------------------------------------------------------------------
-// public void toggleRecording(boolean isRecording) {
-// ShowRecordingAnimation anim = new ShowRecordingAnimation(getActivity(),
-// isRecording);
-// try {
-// View tapToStopRecView =
-// getView().findViewById(R.id.TapToStopRecordingTextView);
-// anim.run();
-// Intent i = new Intent();
-// i.setAction("BYBToggleRecording");
-// context.sendBroadcast(i);
-// if (isRecording == false) {
-// tapToStopRecView.setVisibility(View.VISIBLE);
-// } else {
-// tapToStopRecView.setVisibility(View.GONE);
-// }
-// } catch (RuntimeException e) {
-// Toast.makeText(context.getApplicationContext(),
-// "No SD Card is available. Recording is disabled",
-// Toast.LENGTH_LONG).show();
-// }
-// }
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- UI SETUPS
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -406,12 +352,12 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		mVView = (TextView) v.findViewById(R.id.mVLabelView);
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	public void setDisplayedMilliseconds(Float ms) {
 		msView.setText(ms.toString());
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	public void setupMsLineView(View v) {
 		ImageView msLineView = new ImageView(getActivity());
 		Bitmap bmp = BitmapFactory.decodeResource(context.getResources(), R.drawable.msline);
@@ -431,7 +377,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		parentLayout.addView(msLineView, rl);
 	}
 
-	// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
 	public void setupRecordingButtons(View v) {
 		OnClickListener recordingToggle = new OnClickListener() {
 			@Override
@@ -461,9 +407,9 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		tapToStopRecView.setOnClickListener(recordingToggle);
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- UI ANIMATIONS
-	// -----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- UI ANIMATIONS
+// -----------------------------------------------------------------------------------------------------------------------------
 	private class ShowRecordingAnimation implements Runnable {
 
 		private Activity	activity;
@@ -488,9 +434,9 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 			stopRecView.startAnimation(a);
 		}
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- BROADCAST RECEIVERS CLASS
-	// -----------------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- BROADCAST RECEIVERS CLASS
+// -----------------------------------------------------------------------------------------------------------------------------
 
 	private class UpdateMillisecondsReciever extends BroadcastReceiver {
 		@Override
@@ -523,5 +469,66 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				hideRecordingButtons();
 			}
 		}
+	}
+
+	private class ShowCloseButtonReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
+			toggleCloseButton();
+			Log.d(TAG, "ShowCloseButtonReceiver");
+		};
+	}
+	
+	private class OnTabSelectedListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if(intent.hasExtra("tab")){
+				setRenderer(intent.getIntExtra("tab", 0));
+			}else{
+				setRenderer(0);
+			}
+		}
+	}
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- REGISTER RECEIVERS
+// -----------------------------------------------------------------------------------------------------------------------------
+
+	public void registerReceivers() {
+		IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
+		upmillirec = new UpdateMillisecondsReciever();
+		context.registerReceiver(upmillirec, intentFilter);
+
+		IntentFilter intentFilterVolts = new IntentFilter("BYBUpdateMillivoltReciever");
+		upmillivolt = new UpdateMillivoltReciever();
+		context.registerReceiver(upmillivolt, intentFilterVolts);
+
+		IntentFilter intentFilterVoltSize = new IntentFilter("BYBMillivoltsViewSize");
+		milliVoltSize = new SetMillivoltViewSizeReceiver();
+		context.registerReceiver(milliVoltSize, intentFilterVoltSize);
+
+		IntentFilter intentFilterRecordingButtons = new IntentFilter("BYBShowRecordingButtons");
+		showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
+		context.registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
+
+		IntentFilter intentShowCloseButton = new IntentFilter("BYBShowCloseButton");
+		showCloseButtonReceiver = new ShowCloseButtonReceiver();
+		context.registerReceiver(showCloseButtonReceiver, intentShowCloseButton);
+		
+		IntentFilter intentTabSelectedFilter = new IntentFilter("BYBonTabSelected");
+		tabSelectedListener = new OnTabSelectedListener();
+		context.registerReceiver(tabSelectedListener , intentTabSelectedFilter);
+
+	}
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- UNREGISTER RECEIVERS
+// -----------------------------------------------------------------------------------------------------------------------------
+	public void unregisterReceivers() {
+		context.unregisterReceiver(upmillirec);
+		context.unregisterReceiver(upmillivolt);
+		context.unregisterReceiver(milliVoltSize);
+		context.unregisterReceiver(showRecordingButtonsReceiver);
+		context.unregisterReceiver(showCloseButtonReceiver);
+		context.unregisterReceiver(tabSelectedListener);
 	}
 }

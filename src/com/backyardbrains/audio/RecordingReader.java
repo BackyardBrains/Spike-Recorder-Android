@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 
 import com.backyardbrains.BackyardBrainsMain;
 
@@ -22,7 +25,7 @@ public class RecordingReader {
 	private ReadFromWavefile asyncReader;
 	private boolean bReady = false;
 	private byte [] data;
-	Context context;
+	Context context = null;
 	// ----------------------------------------------------------------------------------------
 		public RecordingReader(String filePath){
 			try {
@@ -103,13 +106,26 @@ public class RecordingReader {
 	}
 	// ----------------------------------------------------------------------------------------
 	public byte [] getData(){
-		if(bReady){
+		if(bReady && data != null){
 			return data;
 		}else{
 			byte [] b = new byte[0];
 			return b;
 		}
 	}
+	// ----------------------------------------------------------------------------------------
+	public short[] getDataShorts() {
+		short[] samples;
+		if (bReady && data != null) {
+			ShortBuffer sb = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+			samples = new short[sb.limit()];
+			sb.get(samples);
+		} else {
+			samples = new short[0];
+		}
+		return samples;
+	}
+
 	// ----------------------------------------------------------------------------------------
 	public boolean isReady(){return bReady;}
 	// ----------------------------------------------------------------------------------------
@@ -166,12 +182,7 @@ public class RecordingReader {
 	// ----------------------------------------------------------------------------------------
 	private class ReadFromWavefile extends AsyncTask<BufferedInputStream, Void, Void> {
 
-	
-		
-		
-//		public byte [] getData(){
-//				return buffer;
-//		}
+
 		@Override
 		protected Void doInBackground(BufferedInputStream... params) {
 			for (BufferedInputStream f : params) {
@@ -193,9 +204,11 @@ public class RecordingReader {
 				e.printStackTrace();
 			}
 			Log.d(TAG, "onPostExecute: bReady = true");
+			if(context != null){
 			Intent i = new Intent();
 			i.setAction("BYBAudioFileRead");
 			context.sendBroadcast(i);
+			}
 		}
 		@Override
 		protected void onPreExecute() {

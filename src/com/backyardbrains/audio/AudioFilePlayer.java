@@ -58,15 +58,17 @@ public class AudioFilePlayer implements PlaybackListener {
 
 	public void stop() {
 		turnOffPlaybackThread();
-		reader.close();
-		reader = null;
+		if (reader != null) {
+			reader.close();
+			reader = null;
+		}
 	}
 
 	private void turnOnPlaybackThread() {
 		Log.d("AudioFilePlayer","turnOnPlaybackThread");
 		if (reader != null && audioReceiver != null && bFileLoaded) {
 			playbackThread = null;
-			playbackThread = new PlaybackThread(getDataShort(), this, audioReceiver);
+			playbackThread = new PlaybackThread(reader.getDataShorts(), this, audioReceiver);
 			playbackThread.startPlayback();
 			bPlaying = true;
 		}else{
@@ -96,18 +98,6 @@ public class AudioFilePlayer implements PlaybackListener {
 	}
 	public void enableLooping(boolean loop){
 		bLooping = loop;
-	}
-	private short[] getDataShort() {
-		short[] samples;
-		if (reader != null) {
-			byte[] data = reader.getData();
-			ShortBuffer sb = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-			samples = new short[sb.limit()];
-			sb.get(samples);
-		} else {
-			samples = new short[0];
-		}
-		return samples;
 	}
 
 	public void onProgress(int progress) {

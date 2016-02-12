@@ -56,6 +56,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private int mode;
 	public static final int LIVE_MODE = 0;
 	public static final int PLAYBACK_MODE = 1;
+	private int currentTab;
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
 	 */
@@ -132,12 +133,6 @@ public class AudioService extends Service implements ReceivesAudio {
 // ----------------------------------------- LIFECYCLE OVERRIDES
 // -----------------------------------------------------------------------------------------------------------------------------
 
-	/**
-	 * Register a receiver for toggling recording funcionality, then instantiate
-	 * our ringbuffer and turn on mic thread
-	 * 
-	 * @see android.app.Service#onCreate()
-	 */
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -159,19 +154,10 @@ public class AudioService extends Service implements ReceivesAudio {
 		turnOnMicThread();
 	}
 
-	/**
-	 * 
-	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return super.onStartCommand(intent, Service.START_STICKY, startId);
 	}
-
-	/**
-	 * unregister our recording listener, then kill {@link MicListener}
-	 * 
-	 * @see android.app.Service#onDestroy()
-	 */
 	@Override
 	public void onDestroy() {
 		registerRecordingToggleReceiver(false);
@@ -213,12 +199,12 @@ public class AudioService extends Service implements ReceivesAudio {
 // -----------------------------------------------------------------------------------------------------------------------------
 
 	public void turnOnAudioPlayerThread() {
-		mode = PLAYBACK_MODE;
+		
 		if (audioPlayer != null) {
 			turnOffMicThread();
 			audioPlayer.play();
 		}
-
+		mode = PLAYBACK_MODE;
 	}
 
 	public void turnOffAudioPlayerThread() {
@@ -234,7 +220,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * notification via {@link AudioService#showNotification()}
 	 */
 	public void turnOnMicThread() {
-		mode = LIVE_MODE;
+		
 		turnOffAudioPlayerThread();
 		if (micThread == null) {
 			micThread = null;
@@ -244,6 +230,7 @@ public class AudioService extends Service implements ReceivesAudio {
 			showNotification(true);
 			Log.d(TAG, "Mic thread started");
 		}
+		mode = LIVE_MODE;
 	}
 
 	/**
@@ -303,7 +290,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		if (mRecordingSaverInstance != null) {
 			recordAudio(audioInfo);
 		}
-
 	}
 
 	@Override
@@ -403,29 +389,24 @@ public class AudioService extends Service implements ReceivesAudio {
 						audioPlayer = new AudioFilePlayer((ReceivesAudio) AudioService.this, appContext);
 						audioPlayer.load(path);
 						turnOnAudioPlayerThread();
+						
+						Intent i = new Intent();
+						i.setAction("BYBShowCloseButton");
+						appContext.sendBroadcast(i);
+						
+						
+						Intent ii = new Intent();
+						ii.setAction("BYBChangePage");
+						ii.putExtra("page", 0);
+						appContext.sendBroadcast(ii);
+						Log.d("PlayAudioFileListener","BroadcastReceiver ");
+						
 					}else{Log.d("PlayAudioFileListener", "onReceive:: filePath is empty!");}
 				}else{Log.d("PlayAudioFileListener", "onReceive:: there's no extra in intent!");}
 			}else{Log.d("PlayAudioFileListener", "onReceive::appContext == null");}
 			
 		}
 	}
-
-//	private class SetLiveAudioInputListener extends BroadcastReceiver {
-//
-//		@Override
-//		public void onReceive(Context context, Intent intent) {
-//			if (appContext != null) {
-//				Log.d("SetLiveAudioInputListener", "onReceive");
-//				if(mode == PLAYBACK_MODE){
-//					if(audioPlayer == null){
-//						turnOnMicThread();
-//					}else if(!audioPlayer.isPlaying()){
-//						turnOnMicThread();
-//					}
-//				}
-//			}
-//		}
-//	}
 	private class CloseButtonListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -435,7 +416,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	private class OnTabSelectedListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			
+			if(intent.hasExtra("tab")){
+				currentTab = intent.getIntExtra("tab", 0); 
+				if(currentTab < 2 ){
+					turnOnMicThread();
+				}
+			}
 		}
 	}
 	
@@ -452,24 +438,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 	
-	/**
-	 * Toggle our receiver. If true, register a receiver for intents with the
-	 * action "BYBToggleRecording", otherwise, unregister the same receiver.
-	 * 
-	 * @param reg
-	 *            register if true, unregister otherwise.
-	 */
-
-//	private void registerToggleInputReceiver(boolean reg) {
-//		if (reg) {
-//			IntentFilter intentFilter = new IntentFilter("BYBSetLiveAudioInput");
-//			liveInput = new SetLiveAudioInputListener();
-//			appContext.registerReceiver(liveInput, intentFilter);
-//		} else {
-//			appContext.unregisterReceiver(toggleRecorder);
-//		}
-//	}
-
 	private void registerRecordingToggleReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
@@ -506,7 +474,7 @@ public class AudioService extends Service implements ReceivesAudio {
 			tabSelectedListener = new OnTabSelectedListener();
 			appContext.registerReceiver(tabSelectedListener , intentFilter);
 		} else {
-			appContext.unregisterReceiver(playListener);
+			appContext.unregisterReceiver(tabSelectedListener);
 		}
 	}
 	private void registerPlayAudioFileReceiver(boolean reg) {
