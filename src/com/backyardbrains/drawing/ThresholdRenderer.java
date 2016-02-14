@@ -24,7 +24,10 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.util.Log;
 
 import com.backyardbrains.BackyardBrainsApplication;
@@ -38,11 +41,17 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	private float thresholdPixelHeight;
 	private boolean drewFirstFrame;
 
+	AdjustThresholdListener adjustThresholdListener;
+	
 	public ThresholdRenderer(Context context){//, AudioService audioService) {
 		super(context);//, audioService);
 		defaultThresholdValue();
+		registerAdjustThresholdReceiver(true);
 	}
-
+	@Override
+	public void close(){
+		registerAdjustThresholdReceiver(false);
+	}
 	/*6
 	 * @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 	 * super.onSurfaceCreated(gl, config); } //
@@ -95,7 +104,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	protected void postDrawingHandler(GL10 gl) {
 		final float thresholdLineLength = mBufferToDraws.length;
 		final float thresholdValue = getThresholdValue();
-		float[] thresholdLine = new float[] { -thresholdLineLength * 2, thresholdValue, thresholdLineLength * 2,
+		float[] thresholdLine = new float[] { -thresholdLineLength * 2 , thresholdValue, thresholdLineLength * 2,
 				thresholdValue };
 		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
@@ -154,17 +163,44 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		
 		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
 			final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
-			((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
-				@Override
-				public void run() {
-					((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(glHeight);
-				}
-			});
+//			((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
+//				@Override
+//				public void run() {
+//					((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(glHeight);
+//				}
+//			});
 		}
 		// Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
 		// Log.d(TAG, "Threshold is now " +
 		// pixelHeightToGlHeight(thresholdPixelHeight));
-		dy = 0;
+		//dy = 0;
 	}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS CLASS
+	// -----------------------------------------------------------------------------------------------------------------------------
+
+		private class AdjustThresholdListener extends BroadcastReceiver {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				if(intent.hasExtra("y")){
+					adjustThresholdValue(intent.getFloatExtra("y", getThresholdYValue()));
+				}
+			}
+		}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
+	// -----------------------------------------------------------------------------------------------------------------------------
+
+		private void registerAdjustThresholdReceiver(boolean reg) {
+			if (reg) {
+				IntentFilter intentFilter = new IntentFilter("BYBThresholdHandlePos");
+				adjustThresholdListener = new AdjustThresholdListener();
+				context.registerReceiver(adjustThresholdListener , intentFilter);
+			} else {
+				context.unregisterReceiver(adjustThresholdListener);
+			}
+		}
 
 }

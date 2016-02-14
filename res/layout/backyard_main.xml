@@ -40,7 +40,24 @@
 <!--         android:scaleType="fitXY" -->
 <!--         android:src="@drawable/msline" > -->
 <!--     </ImageView> -->
+  	<LinearLayout
+        android:id="@+id/thresholdHandleLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+         >
 
+  		<ImageButton
+  		    android:id="@+id/thresholdHandle"
+  		    android:layout_width="0dp"
+  		    android:layout_height="wrap_content"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/threshold_handle"
+  		    android:paddingLeft="20dp"
+  		    android:src="@drawable/handle_red" />
+        
+     </LinearLayout>
   	<LinearLayout
         android:id="@+id/buttonHolderLayout"
         android:layout_width="wrap_content"

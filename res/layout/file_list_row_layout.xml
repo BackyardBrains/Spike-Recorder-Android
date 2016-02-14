@@ -18,7 +18,8 @@
             android:layout_gravity="top"
             android:layout_weight="1"
             android:text="@string/filename"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:textColor="#ffffff" />
 
         <TextView
             android:id="@+id/file_date"
@@ -26,7 +27,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:text="@string/file_date"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:textColor="#e0e0e0" />
     </LinearLayout>
 
     <TextView
@@ -35,7 +37,8 @@
         android:layout_height="match_parent"
         android:drawableRight="@android:drawable/ic_media_play"
         android:text="@string/filesize"
-        android:textSize="18sp" >
+        android:textSize="18sp"
+        android:textColor="#ffffff" >
     </TextView>
 
 </LinearLayout>

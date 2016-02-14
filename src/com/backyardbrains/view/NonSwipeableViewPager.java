@@ -21,15 +21,16 @@ import android.view.MotionEvent;
             // Never allow swiping to switch between pages
         	
     	//	Log.d("NonSwipeableViewPager", "onInterceptTouchEvent: "+  event.getAction());
-            return false;
+        	return super.onInterceptTouchEvent(event);
+//            return false;
         }
      
         @Override
         public boolean onTouchEvent(MotionEvent event) {
     	//	Log.d("NonSwipeableViewPager", "onTouchEvent: "+  event.getAction());
         	// Never allow swiping to switch between pages
-    		super.onTouchEvent(event);
-            return false;
+    		return super.onTouchEvent(event);
+            //return false;
         }
         //*/
 }

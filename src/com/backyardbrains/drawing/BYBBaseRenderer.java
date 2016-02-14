@@ -37,7 +37,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 //		this.audioService = audioService;
 		this.context = context.getApplicationContext();
 	}
-
+	// ----------------------------------------------------------------------------------------
+	public void close(){}
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowHorizontalSize(final int newX) {
 		glWindowHorizontalSize = newX;

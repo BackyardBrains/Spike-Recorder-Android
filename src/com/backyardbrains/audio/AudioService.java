@@ -22,9 +22,9 @@ package com.backyardbrains.audio;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
-import android.app.Notification;
+
 import android.app.NotificationManager;
-import android.app.PendingIntent;
+
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -36,8 +36,6 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.backyardbrains.BackyardBrainsMain;
-import com.backyardbrains.R;
 
 
 /**
@@ -51,12 +49,34 @@ import com.backyardbrains.R;
 
 public class AudioService extends Service implements ReceivesAudio {
 	static final String	TAG				= AudioService.class.getCanonicalName();
-	private int			NOTIFICATION	= R.string.mic_thread_running;
+	
 	public boolean		running;
-	private int mode;
+	
 	public static final int LIVE_MODE = 0;
 	public static final int PLAYBACK_MODE = 1;
-	private int currentTab;
+	private int mode = LIVE_MODE;
+	
+
+
+	private final IBinder				mBinder		= new AudioServiceBinder();
+
+	private MicListener					micThread;
+	private AudioFilePlayer				audioPlayer	= null;
+	private RingBuffer					audioBuffer;
+	private RecordingSaver				mRecordingSaverInstance;
+
+	private ToggleRecordingListener		toggleRecorder;
+	private PlayAudioFileListener		playListener;
+	private CloseButtonListener 		closeListener;
+	private OnTabSelectedListener 		tabSelectedListener;
+
+	private long						lastSamplesReceivedTimestamp;
+	private int							micListenerBufferSizeInSamples;
+	private Context						appContext	= null;
+	
+// -----------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------- GETTERS SETTERS
+// -----------------------------------------------------------------------------------------------------------------------------
 	/**
 	 * Provides a reference to {@link AudioService} to all bound clients.
 	 */
@@ -65,35 +85,6 @@ public class AudioService extends Service implements ReceivesAudio {
 			return AudioService.this;
 		}
 	}
-
-	private final IBinder				mBinder		= new AudioServiceBinder();
-
-	private MicListener					micThread;
-	// private PlaybackThread playbackThread;
-// private RecordingReader mRecordingReader = null;
-	private AudioFilePlayer				audioPlayer	= null;
-	private RingBuffer					audioBuffer;
-	private RecordingSaver				mRecordingSaverInstance;
-
-	private NotificationManager			mNM;
-	private TriggerAverager				triggerAverager;
-	private boolean						triggerMode;
-
-	private ToggleTriggerListener		toggleTrigger;
-	private SetSampleSizeListener		sampleSizeListener;
-	private ToggleRecordingListener		toggleRecorder;
-	private PlayAudioFileListener		playListener;
-//	private SetLiveAudioInputListener	liveInput;
-	private CloseButtonListener 		closeListener;
-	private OnTabSelectedListener 		tabSelectedListener;
-	private long						lastSamplesReceivedTimestamp;
-	private int							micListenerBufferSizeInSamples;
-	private Context						appContext	= null;
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------- GETTERS SETTERS
-// -----------------------------------------------------------------------------------------------------------------------------
-
 	/**
 	 * @return the micListenerBufferSizeInSamples
 	 */
@@ -118,14 +109,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		return audioBuffer.getArray();
 	}
 
-	public short[] getTriggerBuffer() {
-		return triggerAverager.getAveragedSamples();
-	}
-
-	public Handler getTriggerHandler() {
-		return triggerAverager.getHandler();
-	}
-
 	public void setMicListenerBufferSizeInSamples(int i) {
 		micListenerBufferSizeInSamples = i;
 	}
@@ -142,13 +125,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
 
-		registerTriggerToggleReceiver(true);
-		triggerAverager = new TriggerAverager(50);
-		triggerMode = false;
-
-		registerSetSampleSizeReceiver(true);
 		registerPlayAudioFileReceiver(true);
-		//registerToggleInputReceiver(true);
 		registerOnTabSelectedReceiver(true);
 		registerCloseButtonReceiver(true);
 		turnOnMicThread();
@@ -161,10 +138,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public void onDestroy() {
 		registerRecordingToggleReceiver(false);
-		registerTriggerToggleReceiver(false);
-		registerSetSampleSizeReceiver(false);
 		registerPlayAudioFileReceiver(false);
-		//registerToggleInputReceiver(false);
 		registerOnTabSelectedReceiver(false);
 		registerCloseButtonReceiver(false);
 		turnOffMicThread();
@@ -198,7 +172,7 @@ public class AudioService extends Service implements ReceivesAudio {
 // ----------------------------------------- START/STOP THREADS
 // -----------------------------------------------------------------------------------------------------------------------------
 
-	public void turnOnAudioPlayerThread() {
+	protected void turnOnAudioPlayerThread() {
 		
 		if (audioPlayer != null) {
 			turnOffMicThread();
@@ -207,7 +181,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		mode = PLAYBACK_MODE;
 	}
 
-	public void turnOffAudioPlayerThread() {
+	protected void turnOffAudioPlayerThread() {
 		if (audioPlayer != null) {
 			audioPlayer.stop();
 			audioPlayer = null;
@@ -219,15 +193,13 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * Instantiate {@link MicListener} thread, tell it to start, and put up the
 	 * notification via {@link AudioService#showNotification()}
 	 */
-	public void turnOnMicThread() {
+	protected void turnOnMicThread() {
 		
 		turnOffAudioPlayerThread();
 		if (micThread == null) {
 			micThread = null;
 			micThread = new MicListener();
 			micThread.start(AudioService.this);
-			mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-			showNotification(true);
 			Log.d(TAG, "Mic thread started");
 		}
 		mode = LIVE_MODE;
@@ -236,38 +208,15 @@ public class AudioService extends Service implements ReceivesAudio {
 	/**
 	 * Clean up {@link MicListener} resources and remove notification
 	 */
-	public void turnOffMicThread() {
+	protected void turnOffMicThread() {
 		stopRecording();
 		if (micThread != null) {
 			micThread.requestStop();
 			micThread = null;
 			Log.d(TAG, "Mic Thread Shut Off");
 		}
-		showNotification(false);
 	}
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------- NOTIFICATIONS
-// -----------------------------------------------------------------------------------------------------------------------------
 
-	/**
-	 * Toggle a notification that this service is running.
-	 * 
-	 * @param show
-	 *            show if true, hide otherwise.
-	 * @see android.app.Notification
-	 * @see NotificationManager#notify()
-	 */
-	private void showNotification(boolean show) {
-		/*
-		 * if (show) { CharSequence text = getText(R.string.mic_thread_running);
-		 * Notification not = new Notification(R.drawable.ic_launcher_byb, text,
-		 * System.currentTimeMillis()); PendingIntent contentIntent =
-		 * PendingIntent.getActivity(this, 0, new Intent(this,
-		 * BackyardAndroidActivity.class), 0); not.setLatestEventInfo(this,
-		 * "Backyard Brains", text, contentIntent); //mNM.notify(NOTIFICATION,
-		 * not); } else { if (mNM != null) { mNM.cancel(NOTIFICATION); } } //
-		 */
-	}
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- ReceivesAudio OVERRIDES
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -278,15 +227,10 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * 
 	 * @see com.backyardbrains.audio.RecievesAudio#receiveAudio(byte[])
 	 */
-// @Override
+	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
 		lastSamplesReceivedTimestamp = System.currentTimeMillis();
-		if (triggerMode) {
-			// Log.d(TAG, "Pushing audio to triggerAverager, length:
-			// "+audioInfo.capacity());
-			triggerAverager.push(audioInfo);
-		}
 		if (mRecordingSaverInstance != null) {
 			recordAudio(audioInfo);
 		}
@@ -296,12 +240,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void receiveAudio(ShortBuffer audioInfo) {
 		audioBuffer.add(audioInfo);
 		lastSamplesReceivedTimestamp = System.currentTimeMillis();
-// if (triggerMode) {
-// triggerAverager.push(audioInfo);
-// }
-// if (mRecordingSaverInstance != null) {
-// recordAudio(audioInfo);
-// }
 	}
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- RECORD AUDIO
@@ -356,26 +294,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		};
 	}
 
-	private class ToggleTriggerListener extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			triggerMode = intent.getBooleanExtra("triggerMode", false);
-			Log.d(TAG, "Switched triggerMode to " + triggerMode);
-		};
-
-	}
-
-	private class SetSampleSizeListener extends BroadcastReceiver {
-
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			triggerAverager.setMaxsize(intent.getIntExtra("newSampleSize", 1));
-			Log.d(TAG, "Set triggeraverager sample size to " + triggerAverager.getMaxsize());
-		}
-
-	}
-
 	private class PlayAudioFileListener extends BroadcastReceiver {
 
 		@Override
@@ -388,17 +306,13 @@ public class AudioService extends Service implements ReceivesAudio {
 						turnOffAudioPlayerThread();
 						audioPlayer = new AudioFilePlayer((ReceivesAudio) AudioService.this, appContext);
 						audioPlayer.load(path);
+						stopRecording();
 						turnOnAudioPlayerThread();
 						
 						Intent i = new Intent();
-						i.setAction("BYBShowCloseButton");
+						i.setAction("BYBAudioPlaybackStart");
 						appContext.sendBroadcast(i);
 						
-						
-						Intent ii = new Intent();
-						ii.setAction("BYBChangePage");
-						ii.putExtra("page", 0);
-						appContext.sendBroadcast(ii);
 						Log.d("PlayAudioFileListener","BroadcastReceiver ");
 						
 					}else{Log.d("PlayAudioFileListener", "onReceive:: filePath is empty!");}
@@ -417,8 +331,8 @@ public class AudioService extends Service implements ReceivesAudio {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if(intent.hasExtra("tab")){
-				currentTab = intent.getIntExtra("tab", 0); 
-				if(currentTab < 2 ){
+				int currentTab = intent.getIntExtra("tab", 0); 
+				if(currentTab < 2 && audioPlayer == null){
 					turnOnMicThread();
 				}
 			}
@@ -447,27 +361,6 @@ public class AudioService extends Service implements ReceivesAudio {
 			appContext.unregisterReceiver(toggleRecorder);
 		}
 	}
-
-	private void registerTriggerToggleReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBToggleTrigger");
-			toggleTrigger = new ToggleTriggerListener();
-			appContext.registerReceiver(toggleTrigger, intentFilter);
-		} else {
-			appContext.unregisterReceiver(toggleTrigger);
-		}
-	}
-
-	private void registerSetSampleSizeReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("setSampleSize");
-			sampleSizeListener = new SetSampleSizeListener();
-			appContext.registerReceiver(sampleSizeListener, intentFilter);
-		} else {
-			appContext.unregisterReceiver(sampleSizeListener);
-		}
-	}
-
 	private void registerOnTabSelectedReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBonTabSelected");
