@@ -20,15 +20,6 @@
         android:src="@drawable/tickmarks" android:contentDescription="@string/tickmarks_on_left_side_of_screen">
     </ImageView>
 
-    <TextView
-        android:id="@+id/millisecondsView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20sp"
-        android:text="@string/default_milliseconds" >
-    </TextView>
 
 <!--     <ImageView -->
 <!--         android:id="@+id/msLineView" -->
@@ -95,7 +86,14 @@
         android:textAppearance="@android:style/TextAppearance.Large"
         android:visibility="gone" >
     </TextView>
-
+    <TextView
+        android:id="@+id/DebugTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#ffffffff"
+        android:gravity="bottom">
+    </TextView>
+    
     <TextView
         android:id="@+id/mVLabelView"
         android:layout_width="wrap_content"
@@ -109,17 +107,22 @@
 	    android:id="@+id/triggerViewSampleChangerLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
         android:layout_toRightOf="@+id/tickmarkImageView"
-        android:visibility="gone" >
+        android:visibility="visible" >
 	    
 	    <SeekBar
 	        android:id="@+id/samplesSeekBar"
-	        android:layout_weight="1"
-	        android:layout_margin="5sp"
 	        android:layout_width="0dip"
 	        android:layout_height="wrap_content"
-	        android:visibility="invisible"/>
+	        android:layout_margin="5sp"
+	        android:layout_weight="1"
+	        android:contentDescription="@string/average_num_slider"
+	        android:indeterminate="false"
+	        android:max="32"
+	        android:minHeight="10dp"
+	        android:progress="1"
+	        android:visibility="visible" />
 	    
 	    <TextView 
 	        android:id="@+id/numberOfSamplesAveraged"
@@ -131,5 +134,18 @@
 	        android:text="@string/default_threshold_amount" />
 	    
 	</LinearLayout>
+	
+	    <TextView
+        android:id="@+id/millisecondsView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:layout_above="@id/triggerViewSampleChangerLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20sp"
+        android:layout_alignWithParentIfMissing="true"
+    	android:layout_alignParentBottom="true"
+        android:text="@string/default_milliseconds" >
+    </TextView>
+	
 
 </RelativeLayout>

@@ -31,4 +31,5 @@
     <string name="default_threshold_amount">1 x</string>
     <string name="close_view_button">Close</string>
     <string name="threshold_handle">Threshold</string>
+    <string name="average_num_slider">Num Samples Averaged</string>
 </resources>

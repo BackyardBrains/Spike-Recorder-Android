@@ -23,11 +23,14 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
+import android.util.Log;
 
 public class TriggerAverager {
 
-	// private static final String TAG = TriggerAverager.class.getCanonicalName();
+	 private static final String TAG = TriggerAverager.class.getCanonicalName();
 	private int maxsize;
 	private short[] averagedSamples;
 	private ArrayList<short[]> sampleBuffersInAverage;
@@ -35,47 +38,89 @@ public class TriggerAverager {
 	private Handler handler;
 	private int triggerValue;
 	private int lastTriggeredValue;
-
-	public TriggerAverager(int size) {
+	private int lastIncomingBufferSize =0;
+	private Context context = null;
+	//private short[] incomingAsArray;
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public TriggerAverager(int size, Context context) {
 		resetBuffers();
 		setMaxsize(size);
 		handler = new TriggerHandler();
+		this.context = context.getApplicationContext();
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public void resetBuffers() {
+		Log.d(TAG, "resetBufers");
 		sampleBuffersInAverage = new ArrayList<short[]>();
 		averagedSamples = null;
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public void push (ShortBuffer incoming) {
+		incoming.clear();
+		proceesIncomingData(incoming);
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public void push (ByteBuffer incoming) {
 		incoming.clear();
-		//Log.d(TAG, "Got buffer of samples: "+incoming.capacity());
+		proceesIncomingData(incoming.asShortBuffer());
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	private void proceesIncomingData(ShortBuffer sb){	
+		
+		if(sb.capacity() != lastIncomingBufferSize){// || lastTriggeredValue != triggerValue){
+			Log.d(TAG, "incoming.capacity() != lastIncomingBufferSize");
+			resetBuffers();
+			lastIncomingBufferSize = sb.capacity();
+//			lastTriggeredValue = triggerValue;
+		}
+		/*
+		if( incomingAsArray == null){
+			incomingAsArray = new short [sb.capacity()];
+		}
+		if(incomingAsArray.length != sb.capacity()){
+			incomingAsArray = null;
+			incomingAsArray = new short [sb.capacity()];
+		}
+		sb.get(incomingAsArray);
+	
+		//*/
+//		Log.d(TAG, "processIncomingData");
+		//ensure that all the buffers are the same size
+		
+		
 
-		ShortBuffer sb = incoming.asShortBuffer();
-
+		//*
 		short[] incomingAsArray = new short [sb.capacity()];
 		sb.get(incomingAsArray, 0, incomingAsArray.length);
-		
+		//*/
 		// Scan for triggers 
-
-		
+//		
 		for (int i = 0; i<incomingAsArray.length; i++) {
 			short s = incomingAsArray[i];
-
 			if ((triggerValue >= 0 && s > triggerValue) || (triggerValue < 0 && s < triggerValue)) {
-				if(lastTriggeredValue != triggerValue) {
+				if(lastTriggeredValue != triggerValue){
 					resetBuffers();
 					lastTriggeredValue = triggerValue;
 				}
 				incomingAsArray = wrapToCenter(incomingAsArray, i);
 				pushToSampleBuffers(incomingAsArray);
+				break;
 			}
 		}
 		
-		if (averagedSamples == null) {
-			return;
+		if(context != null){
+			Intent i = new Intent();
+			i.setAction("updateDebugView");
+			i.putExtra("clear", true);
+			i.putExtra("debug", (String)("in buff size: " + sb.capacity() + "\n" + "Num avgs: "+sampleBuffersInAverage.size()));			
+			context.sendBroadcast(i);
 		}
 		
+		if (averagedSamples == null) {
+			Log.d(TAG,"averagedSamples == null");
+			return;
+		}
+		//*
 		for(int i = 0; i < averagedSamples.length; i++) {
 			Integer curAvg = 0;
 			for (short[] prev : sampleBuffersInAverage) {
@@ -84,8 +129,9 @@ public class TriggerAverager {
 			curAvg /= sampleBuffersInAverage.size();
 			averagedSamples[i] = curAvg.shortValue();
 		}
+		//*/
 	}
-
+// -----------------------------------------------------------------------------------------------------------------------------
 	private short[] wrapToCenter(short[] incomingAsArray, int index) {
 		final int middleOfArray = incomingAsArray.length / 2;
 		// create a new array to copy the adjusted samples into
@@ -114,40 +160,42 @@ public class TriggerAverager {
 		}
 		return sampleChunk;
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
 	private void pushToSampleBuffers(short[] incomingAsArray) {
 		if (averagedSamples == null) {
 			averagedSamples = incomingAsArray;
+			//*
 			sampleBuffersInAverage.add(incomingAsArray);
 			return;
 		}
-
+	//	averagedSamples = incomingAsArray;
+		
 		while (sampleBuffersInAverage.size() >= getMaxsize()) {
 			sampleBuffersInAverage.remove(0);
 		}
-		
 		sampleBuffersInAverage.add(incomingAsArray);
+		//*/
 	}
-	
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public short[] getAveragedSamples() {
 		return averagedSamples;
 	}
-	
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public int getMaxsize() {
 		return maxsize;
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public void setMaxsize(int maxsize) {
 		this.maxsize = maxsize;
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public Handler getHandler() {
 		return handler;
 	}
-
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public class TriggerHandler extends Handler {
 		public void setThreshold(float y) {
-			//Log.d(TAG, "Got new triggerValue of "+y);
+			Log.d(TAG, "Got new triggerValue of "+y);
 			triggerValue = (int) y;
 		}
 	}

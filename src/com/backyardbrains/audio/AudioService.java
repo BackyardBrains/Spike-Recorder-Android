@@ -71,8 +71,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	private OnTabSelectedListener 		tabSelectedListener;
 
 	private long						lastSamplesReceivedTimestamp;
-	private int							micListenerBufferSizeInSamples;
-	private Context						appContext	= null;
+	private int						micListenerBufferSizeInSamples;
+	private Context					appContext		= null;
+
+	private TriggerAverager					averager;
+	private boolean bUseAverager = false;
+	
 	
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- GETTERS SETTERS
@@ -108,9 +112,25 @@ public class AudioService extends Service implements ReceivesAudio {
 	public short[] getAudioBuffer() {
 		return audioBuffer.getArray();
 	}
-
+	public short[] getAverageBuffer() {
+		if(averager != null){
+			return averager.getAveragedSamples();
+		}else{
+			return new short[0];
+		}
+	}
 	public void setMicListenerBufferSizeInSamples(int i) {
 		micListenerBufferSizeInSamples = i;
+	}
+	public Handler getTriggerHandler(){
+		if(averager != null){
+			return averager.getHandler();
+		}else{
+			return null;
+		}
+	}
+	public void setUseAverager(boolean bUse){
+		bUseAverager = bUse;
 	}
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- LIFECYCLE OVERRIDES
@@ -125,6 +145,8 @@ public class AudioService extends Service implements ReceivesAudio {
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
 
+		averager = new TriggerAverager(32, appContext);
+		
 		registerPlayAudioFileReceiver(true);
 		registerOnTabSelectedReceiver(true);
 		registerCloseButtonReceiver(true);
@@ -143,6 +165,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerCloseButtonReceiver(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
+		averager = null;
 		super.onDestroy();
 	}
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -229,7 +252,11 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
+		if(!bUseAverager){
 		audioBuffer.add(audioInfo);
+		}else{
+		averager.push(audioInfo);
+		}
 		lastSamplesReceivedTimestamp = System.currentTimeMillis();
 		if (mRecordingSaverInstance != null) {
 			recordAudio(audioInfo);
@@ -238,7 +265,11 @@ public class AudioService extends Service implements ReceivesAudio {
 
 	@Override
 	public void receiveAudio(ShortBuffer audioInfo) {
+		if(!bUseAverager){
 		audioBuffer.add(audioInfo);
+		}else{
+		averager.push(audioInfo);
+		}
 		lastSamplesReceivedTimestamp = System.currentTimeMillis();
 	}
 // -----------------------------------------------------------------------------------------------------------------------------

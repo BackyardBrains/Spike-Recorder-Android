@@ -67,21 +67,4 @@ public class WaveformRenderer extends  BYBBaseRenderer {
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
-	//----------------------------------------------------------------------------------------	
-	@Override
-	public void setGlWindowHorizontalSize(final int newX) {
-		int maxlength = 0;
-		if (mBufferToDraws != null)
-			maxlength = mBufferToDraws.length;
-		if (newX < 16 || (maxlength > 0 && newX> maxlength))
-			return;
-		this.glWindowHorizontalSize = newX;
-	}
-	//----------------------------------------------------------------------------------------
-	@Override
-	public void setGlWindowVerticalSize(int newY) {
-		if (newY < 800 || newY > PCM_MAXIMUM_VALUE * 2)
-			return;
-		glWindowVerticalSize = newY;
-	}
 }
