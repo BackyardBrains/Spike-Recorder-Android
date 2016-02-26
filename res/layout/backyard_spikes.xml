@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/parentLayout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <FrameLayout
+        android:id="@+id/glContainer2"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent" >
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/tickmarkImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignBottom="@id/glContainer"
+        android:layout_alignTop="@id/glContainer"
+        android:scaleType="fitXY"
+        android:src="@drawable/tickmarks" android:contentDescription="@string/tickmarks_on_left_side_of_screen">
+    </ImageView>
+
+    <TextView
+        android:id="@+id/debugShit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="top"
+        android:textColor="#ffffff"
+        />
+    
+  	<LinearLayout
+        android:id="@+id/leftThresholdHandleLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+         >
+
+  		<ImageButton
+  		    android:id="@+id/leftThresholdHandle"
+  		    android:layout_width="0dp"
+  		    android:layout_height="wrap_content"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/threshold_handle"
+  		    android:src="@drawable/handle_red" />
+     </LinearLayout>
+
+  	<LinearLayout
+        android:id="@+id/rightThresholdHandleLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentRight="true"
+         >
+
+  		<ImageButton
+  		    android:id="@+id/rightThresholdHandle"
+  		    android:layout_width="0dp"
+  		    android:layout_height="wrap_content"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/threshold_handle"
+  		    android:rotation="180"
+  		    android:src="@drawable/handle_red" />
+     </LinearLayout>
+  	
+  	
+    <TextView
+        android:id="@+id/mVLabelView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical"
+        android:text="@string/default_milliseconds" />
+    
+	<LinearLayout
+	    android:id="@+id/playheadLayout"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_toRightOf="@+id/leftThresholdHandleLayout"
+	    android:layout_toLeftOf="@+id/rightThresholdHandleLayout" >
+	    
+	    <SeekBar
+	        android:id="@+id/playheadBar"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="bottom"
+	        android:layout_margin="5sp"
+	        android:contentDescription="@string/average_num_slider"
+	        android:indeterminate="false"
+	        android:max="100000"
+	        android:minHeight="10dp"
+	        android:visibility="visible" />
+	    
+	</LinearLayout>
+	
+
+</RelativeLayout>

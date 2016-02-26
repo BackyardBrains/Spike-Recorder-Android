@@ -30,6 +30,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
+import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.AudioService;
@@ -39,6 +40,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 
 	private static final String TAG = ThresholdRenderer.class.getCanonicalName();
 	private float threshold;// in sample value range, which happens to be also gl values
+	private float tempThreshold;
 //	private boolean drewFirstFrame;
 
 	AdjustThresholdListener adjustThresholdListener;
@@ -81,22 +83,22 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 			Log.d(TAG, "AudioService is null!");
 			return;
 		}
-		if (!isValidAudioBuffer()) {
+		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
 			Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
 		preDrawingHandler();
-		glClear(gl);
+		BYBUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 	}
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		setGlWindow(gl, glWindowHorizontalSize, mBufferToDraws.length);
+		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
 
-		firstBufferDrawnCheck();
+		//firstBufferDrawnCheck();
 		autoScaleCheck();
 
 		gl.glMatrixMode(GL10.GL_MODELVIEW);
@@ -113,10 +115,10 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	// @Override
 	protected void postDrawingHandler(GL10 gl) {
 		final float thresholdLineLength = mBufferToDraws.length;
-		final float thresholdValue = getThresholdValue();
-		float[] thresholdLine = new float[] { -thresholdLineLength * 2 , thresholdValue, thresholdLineLength * 2,
-				thresholdValue };
-		FloatBuffer thl = getFloatBufferFromFloatArray(thresholdLine);
+		//final float thresholdValue = getThresholdValue();
+		float[] thresholdLine = new float[] { -thresholdLineLength * 2 , tempThreshold, thresholdLineLength * 2,
+				tempThreshold };
+		FloatBuffer thl = BYBUtils.getFloatBufferFromFloatArray(thresholdLine);
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 		gl.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
 		gl.glLineWidth(2.0f);
@@ -137,7 +139,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Log.e(TAG, e.getMessage());
 		}
-		return getFloatBufferFromFloatArray(arr);
+		return BYBUtils.getFloatBufferFromFloatArray(arr);
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
 	@Override
@@ -169,7 +171,8 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		}
 		// normalize to window
 		threshold = dy;
-		 Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
+		tempThreshold = dy;
+		// Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 		
 		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
 			//final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
@@ -194,8 +197,10 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				if(intent.hasExtra("y")){
-					adjustThresholdValue( pixelHeightToGlHeight(intent.getFloatExtra("y", getThresholdScreenValue())));
-					
+					tempThreshold =	pixelHeightToGlHeight(intent.getFloatExtra("y", getThresholdScreenValue()));
+				}
+				if(intent.hasExtra("update")){
+					adjustThresholdValue( tempThreshold);					
 				}
 			}
 		}

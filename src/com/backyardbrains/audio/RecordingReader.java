@@ -25,36 +25,47 @@ public class RecordingReader {
 	private ReadFromWavefile asyncReader;
 	private boolean bReady = false;
 	private byte [] data;
+	
+    protected int format = 0 ;
+    protected int numChannels = 0;
+    protected int sampleRate = 0;
+    protected int byteRate = 0;
+    protected short blockAlign = 0;
+    protected int bitsPerSample = 0;
+	
 	Context context = null;
+	private AudiofileReadListener listener = null;
+	public interface AudiofileReadListener{
+		public void audioFileRead();
+	}
 	// ----------------------------------------------------------------------------------------
-		public RecordingReader(String filePath){
+	public RecordingReader(File f, AudiofileReadListener listener){
+		this(f);
+		this.listener = listener;
+	}
+	// ----------------------------------------------------------------------------------------
+		public RecordingReader(File f){
 			try {
-				loadFile(new File(filePath));
+				loadFile(f);
 			} catch (IOException e) {
 				Log.e(TAG, "Couldn't load wav file ");
 				e.printStackTrace();
 			}
 		}
 	// ----------------------------------------------------------------------------------------
-	public RecordingReader(String filePath, Context context){
-		this.context = context.getApplicationContext();
-		try {
-			loadFile(new File(filePath));
-		} catch (IOException e) {
-			Log.e(TAG, "Couldn't load wav file ");
-			e.printStackTrace();
+		public RecordingReader(String filePath){
+			this(new File(filePath));
 		}
-	}
+	
 	// ----------------------------------------------------------------------------------------
 	public RecordingReader(File f,Context context){
+		this(f);
 		this.context = context.getApplicationContext();
-		try {
-			loadFile(f);
-		} catch (IOException e) {
-			Log.e(TAG, "Couldn't load wav file ");
-			e.printStackTrace();
-		}
 	}
+	// ----------------------------------------------------------------------------------------
+		public RecordingReader(String filePath, Context context){
+			this(new File(filePath), context);
+		}
 	
 	// ----------------------------------------------------------------------------------------
 	public void loadFile(File f) throws IOException{
@@ -105,6 +116,16 @@ public class RecordingReader {
 		recordingFile = null;
 	}
 	// ----------------------------------------------------------------------------------------
+	// ---------------------------------- GETTERS
+	// ----------------------------------------------------------------------------------------
+	
+	public int getFormat(){return format;}
+	public int getNumChannels(){return numChannels;}
+	public int getSampleRate(){return sampleRate;}
+	public int getByteRate(){return byteRate;}
+	public short getBlockAlign(){return blockAlign;}
+	public int getBitsPerSample(){return bitsPerSample;}
+    
 	public byte [] getData(){
 		if(bReady && data != null){
 			return data;
@@ -138,29 +159,29 @@ public class RecordingReader {
         /* fmt chunk */
         readId(in, "fmt ");
         if (16 != readInt(in)) throw new IOException("fmt chunk length not 16");
-        int mFormat = readShort(in);
-        int mNumChannels = readShort(in);
-        int mSampleRate = readInt(in);
-        int byteRate = readInt(in);
-        short blockAlign = readShort(in);
-        int mBitsPerSample = readShort(in);
-        if (byteRate != mNumChannels * mSampleRate * mBitsPerSample / 8) {
+        format = readShort(in);
+        numChannels = readShort(in);
+        sampleRate = readInt(in);
+        byteRate = readInt(in);
+        blockAlign = readShort(in);
+        bitsPerSample = readShort(in);
+        if (byteRate != numChannels * sampleRate * bitsPerSample / 8) {
             throw new IOException("fmt.ByteRate field inconsistent");
         }
-        if (blockAlign != mNumChannels * mBitsPerSample / 8) {
+        if (blockAlign != numChannels * bitsPerSample / 8) {
             throw new IOException("fmt.BlockAlign field inconsistent");
         }
 
         /* data chunk */
         readId(in, "data");
-        int mNumBytes = readInt(in)*2/mNumChannels/mBitsPerSample*2;
+        int mNumBytes = readInt(in)*2/numChannels/bitsPerSample*2;
 
         byte [] buff = new byte [mNumBytes];
         
         int readSize = in.read(buff);
         if(readSize == -1) throw new IOException("wav data end before expected");
         if(readSize != mNumBytes) throw new IOException("wav data size differs from what header says");
-        Log.d(TAG, "Successfully read file. numBytes " + mNumBytes + " format " + mFormat + " numChannels " + mNumChannels + " samplerate: " + mSampleRate + " byteRate: " + byteRate + " blockAlign: " + blockAlign + " bitsPerSample: "+ mBitsPerSample);
+        Log.d(TAG, "Successfully read file. numBytes " + mNumBytes + " format " + format + " numChannels " + numChannels + " samplerate: " + sampleRate + " byteRate: " + byteRate + " blockAlign: " + blockAlign + " bitsPerSample: "+ bitsPerSample);
         return buff;
 		
 	}
@@ -204,11 +225,14 @@ public class RecordingReader {
 				e.printStackTrace();
 			}
 			Log.d(TAG, "onPostExecute: bReady = true");
-			if(context != null){
+			if(listener !=  null){
+				listener.audioFileRead();
+			}else if(context != null){
 			Intent i = new Intent();
 			i.setAction("BYBAudioFileRead");
 			context.sendBroadcast(i);
 			}
+			
 		}
 		@Override
 		protected void onPreExecute() {

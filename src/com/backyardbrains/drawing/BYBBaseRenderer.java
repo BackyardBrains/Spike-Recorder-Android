@@ -16,10 +16,12 @@ import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.Log;
+import com.backyardbrains.BYBUtils;
 
 public class BYBBaseRenderer implements GLSurfaceView.Renderer {
-	protected int				glWindowHorizontalSize	= 4000;
-	protected int				glWindowVerticalSize	= 10000;
+	private int				glWindowHorizontalSize	= 4000;
+	private int				glWindowVerticalSize	= 10000;
+
 	private static final String	TAG						= BYBBaseRenderer.class.getCanonicalName();
 //	protected AudioService		audioService			= null;
 	protected short[]			mBufferToDraws;
@@ -40,13 +42,15 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public void close(){}
 	// ----------------------------------------------------------------------------------------
-	public void setGlWindowHorizontalSize(final int newX) {
+	public void setGlWindowHorizontalSize(int newX) {
 		int maxlength = 0;
 		if (mBufferToDraws != null)
 			maxlength = mBufferToDraws.length;
 		if (newX < 16 || (maxlength > 0 && newX> maxlength))
 			return;
 		this.glWindowHorizontalSize = newX;
+//		Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
+		
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -54,6 +58,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newY < 800 || newY > PCM_MAXIMUM_VALUE * 2)
 			return;
 		glWindowVerticalSize = newY;
+	//	Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -84,35 +89,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		} else {
 			arr = new float[0];
 		}
-		return getFloatBufferFromFloatArray(arr);
+		return BYBUtils.getFloatBufferFromFloatArray(arr);
 	}
 
-	// ----------------------------------------------------------------------------------------
-	FloatBuffer getFloatBufferFromFloatArray(final float[] array) {
-		final FloatBuffer buf ;
-		final ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
-		temp.order(ByteOrder.nativeOrder());
-		buf= temp.asFloatBuffer();
-		buf.put(array);
-		buf.position(0);
-		return buf;
-	}
 
-	// ----------------------------------------------------------------------------------------
-	protected void firstBufferDrawnCheck() {
-		if (firstBufferDrawn == 0) {
-			firstBufferDrawn = SystemClock.currentThreadTimeMillis();
-		}
-	}
 
 	// ----------------------------------------------------------------------------------------
 	public float getMinimumDetectedPCMValue() {
 		return minimumDetectedPCMValue;
-	}
-
-	// ----------------------------------------------------------------------------------------
-	protected boolean isValidAudioBuffer() {
-		return mBufferToDraws != null && mBufferToDraws.length > 0;
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -148,12 +132,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			Log.d(TAG, "AudioService is null!");
 			return;
 		}
-		if (!isValidAudioBuffer()) {
+		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws )) {
 			Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
 		preDrawingHandler();
-		glClear(gl);
+		BYBUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 	}
@@ -234,10 +218,11 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 	// ----------------------------------------------------------------------------------------
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
+	//	Log.d(TAG, "InitGL: xBegin: " + xBegin + " xEnd: " + xEnd + " yBegin: " +scaledYBegin+ " yEnd: " + scaledYEnd);
 		// set viewport
 		gl.glViewport(0, 0, width, height);
 
-		glClear(gl);
+		BYBUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
 		gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
@@ -258,20 +243,19 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
 	}
 
-	// ----------------------------------------------------------------------------------------
-	protected void glClear(GL10 gl) {
-		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-	}
 
 	// ----------------------------------------------------------------------------------------
 	protected void autoScaleCheck() {
-		if (!isAutoScaled() && firstBufferDrawn != 0 && (SystemClock.currentThreadTimeMillis() - firstBufferDrawn) > 100) {
-			autoSetFrame(mBufferToDraws);
+		if (!isAutoScaled() && mBufferToDraws != null) {
+			if(mBufferToDraws.length >0){
+				autoSetFrame(mBufferToDraws);
+			}
 		}
 	}
 
 	// ----------------------------------------------------------------------------------------
 	protected void autoSetFrame(short[] arrayToScaleTo) {
+		Log.d(TAG, "autoSetFrame");
 		int theMax = 0;
 		int theMin = 0;
 
@@ -311,10 +295,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		}
 	}
 
-	// ----------------------------------------------------------------------------------------
-	int map(float glHeight, int in_min, int in_max, int out_min, int out_max) {
-		return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
-	}
+
 
 	// ----------------------------------------------------------------------------------------
 	protected int glHeightToPixelHeight(float glHeight) {
@@ -322,11 +303,11 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			// Log.d(TAG, "Checked height and size was less than or equal to
 			// zero");
 		}
-		return map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
+		return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
 	}
 
 	// ----------------------------------------------------------------------------------------
 	protected float pixelHeightToGlHeight(float pxHeight) {
-		return map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+		return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
 	}
 }

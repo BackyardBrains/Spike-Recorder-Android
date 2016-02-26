@@ -5,7 +5,7 @@ import android.content.Context;
 public class BYBAutocorrelationAnalysis extends BYBBaseAsyncAnalysis {
 	
 	public BYBAutocorrelationAnalysis(Context context, int analysisType, short [] data){
-		super(context, analysisType);
+		super(context, BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION, true, true);
 		execute(data);
 	}
 	@Override

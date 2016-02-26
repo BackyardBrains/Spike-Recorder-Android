@@ -38,12 +38,25 @@ import com.backyardbrains.audio.AudioService;
 
 public class WaveformRenderer extends  BYBBaseRenderer {
 
-	private static final String TAG = WaveformRenderer.class.getCanonicalName();
+	private static final String TAG = "WaveformRenderer";
 
 	//----------------------------------------------------------------------------------------
 	public WaveformRenderer(Context context){//, AudioService audioService) {
 		super(context);//, audioService);
 	}
+	// ----------------------------------------------------------------------------------------
+	@Override
+	public void setGlWindowHorizontalSize(int newX) {
+		Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);	
+		super.setGlWindowHorizontalSize(newX);
+	}
+	@Override
+	// ----------------------------------------------------------------------------------------
+	public void setGlWindowVerticalSize(int newY) {
+		super.setGlWindowVerticalSize(newY);
+		Log.d(TAG, "SetGLVerticalSize "+getGlWindowVerticalSize() + " newY: " + newY);
+	}
+
 	//----------------------------------------------------------------------------------------
 	//----------------------------------------------------------------------------------------
 	@Override
@@ -51,10 +64,10 @@ public class WaveformRenderer extends  BYBBaseRenderer {
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		setGlWindow(gl, glWindowHorizontalSize, mBufferToDraws.length);
+		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
 
-		firstBufferDrawnCheck();
+		//firstBufferDrawnCheck();
 		autoScaleCheck();
 
 		gl.glMatrixMode(GL10.GL_MODELVIEW);
@@ -66,5 +79,9 @@ public class WaveformRenderer extends  BYBBaseRenderer {
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+		
+		
+
+		
 	}
 }

@@ -21,7 +21,6 @@ import android.view.MotionEvent;
 import java.util.List;
 
 import com.backyardbrains.BackyardBrainsRecordingsFragment;
-
 //*/
 import com.backyardbrains.view.*;
 
@@ -31,11 +30,17 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	AppSectionsPagerAdapter				mAppSectionsPagerAdapter;
 	NonSwipeableViewPager				mViewPager;
 
-//	private AudioWriteDoneListener		writeDoneListener;
+// private AudioWriteDoneListener writeDoneListener;
 	private CloseButtonListener			closeListener;
-	//private ChangePageListener			changePageListener;
+	private ChangePageListener changePageListener;
 	private AudioPlaybackStartListener	audioPlaybackStartListener;
 	private boolean						bBroadcastTabSelected	= true;
+
+	public static final int				OSCILLOSCOPE_VIEW		= 0;
+	public static final int				THRESHOLD_VIEW			= 1;
+	public static final int				RECORDINGS_LIST			= 2;
+	public static final int				ANALYSIS_VIEW			= 3;
+	public static final int				FIND_SPIKES_VIEW		= 4;
 
 // ----------------------------------------------------------------------------------------
 	public BackyardBrainsMain() {
@@ -56,7 +61,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		actionBar.setHomeButtonEnabled(false);
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
-		for (int i = 0; i < mAppSectionsPagerAdapter.getCount(); i++) {
+		for (int i = 0; i < 3; i++) {
 			actionBar.addTab(actionBar.newTab().setText(mAppSectionsPagerAdapter.getPageTitle(i)).setTabListener(this));
 		}
 
@@ -71,7 +76,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.activity_main);
-		//registerAudioWriteDoneReceiver(true);
+		// registerAudioWriteDoneReceiver(true);
 		initTabsAndFragments();
 	}
 
@@ -79,26 +84,20 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	@Override
 	protected void onStart() {
 		super.onStart();
-		// registerPlayAudioFileReceiver(true);
-		registerCloseButtonReceiver(true);
-		///registerChangePageReceiver(true);
-		registerAudioPlaybackStartReceiver(true);
+		registerReceivers();
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onStop() {
 		super.onStop();
-		// registerPlayAudioFileReceiver(false);
-		registerCloseButtonReceiver(false);
-	//	registerChangePageReceiver(false);
-		registerAudioPlaybackStartReceiver(false);
+		unregisterReceivers();
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onDestroy() {
-//		registerAudioWriteDoneReceiver(false);
+// registerAudioWriteDoneReceiver(false);
 		super.onDestroy();
 	}
 
@@ -108,16 +107,22 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		List<Fragment> frags = getSupportFragmentManager().getFragments();
+
 		boolean ret = false;
 
 		if (frags != null) {
-			for (int i = 0; i < frags.size(); i++) {
-				if (frags.get(i) instanceof BackyardBrainsOscilloscopeFragment) {
-					((BackyardBrainsOscilloscopeFragment) frags.get(i)).onTouchEvent(event);
-					ret = true;
-					break;
-				}
+			int i = mViewPager.getCurrentItem();
+// for (int i = 0; i < frags.size(); i++) {
+			if (frags.get(i) instanceof BackyardBrainsOscilloscopeFragment) {
+				((BackyardBrainsOscilloscopeFragment) frags.get(i)).onTouchEvent(event);
+				ret = true;
+				// break;
+			} else if (frags.get(i) instanceof BackyardBrainsSpikesFragment) {
+				((BackyardBrainsSpikesFragment) frags.get(i)).onTouchEvent(event);
+				ret = true;
+				// break;
 			}
+			// }
 		}
 		return super.onTouchEvent(event) || ret;
 	}
@@ -136,8 +141,8 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		if (tab.getPosition() < 0 || tab.getPosition() >= 4) {
 			return;
 		}
-		
-//*
+
+// *
 		if (tab.getPosition() == 0 || tab.getPosition() == 1) {
 			mViewPager.setCurrentItem(0);
 // List<Fragment> frags = getSupportFragmentManager().getFragments();
@@ -153,7 +158,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		} else if (mViewPager.getChildCount() > 1) {
 			mViewPager.setCurrentItem(tab.getPosition() - 1);
 		}
-		//*/
+		// */
 		// if (bBroadcastTabSelected) {
 		Intent ii = new Intent();
 		ii.setAction("BYBonTabSelected");
@@ -185,32 +190,36 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			Log.d("AppSectionsPagerAdapter", "getItem" + i);
 			switch (i) {
 			case 0:
-			default:		
+			default:
 				return new BackyardBrainsOscilloscopeFragment(context);
 			case 1:
 				return new BackyardBrainsRecordingsFragment(context);
 			case 2:
-				return new BackyardBrainsAnalysisFragment(context);	
+				return new BackyardBrainsAnalysisFragment(context);
+			case 3:
+				return new BackyardBrainsSpikesFragment(context);
 			}
 		}
 
 		@Override
 		public int getCount() {
-			return 3;
+			return 4;
 		}
 
 		@Override
 		public CharSequence getPageTitle(int position) {
 			switch (position) {
-			case 0:
+			case OSCILLOSCOPE_VIEW:
 			default:
 				return "Oscilloscope View";
-			case 1:
+			case THRESHOLD_VIEW:
 				return "Threshold View";
-			case 2:
+			case RECORDINGS_LIST:
 				return "Recordings List";
-			case 3:
+			case ANALYSIS_VIEW:
 				return "Analysis";
+			case FIND_SPIKES_VIEW:
+				return "FindSpikes view";
 			}
 		}
 	}
@@ -218,16 +227,26 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS CLASS
 // -----------------------------------------------------------------------------------------------------------------------------
-//	private class ChangePageListener extends BroadcastReceiver {
-//		@Override
-//		public void onReceive(Context context, Intent intent) {
-//			if (intent.hasExtra("page")) {
-//				bBroadcastTabSelected = false;
-//				// getActionBar().setSelectedNavigationItem(intent.getIntExtra("page",
-//				// 0));
-//			}
-//		}
-//	}
+	private class ChangePageListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d("BYBMain", "ChangePageListener");
+			if (intent.hasExtra("page")) {
+				bBroadcastTabSelected = false;
+				if(intent.hasExtra("page")){
+					int page = intent.getIntExtra("page", 0);
+					mViewPager.setCurrentItem(page);
+					if(page == FIND_SPIKES_VIEW){
+						getActionBar().hide();
+					}else{
+						getActionBar().show();
+					}
+				}
+				// getActionBar().setSelectedNavigationItem(intent.getIntExtra("page",
+				// 0));
+			}
+		}
+	}
 
 // ----------------------------------------------------------------------------------------
 	private class CloseButtonListener extends BroadcastReceiver {
@@ -236,18 +255,19 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			// changePage(2, false);
 			// bChangePageBroadcastMessage = false;
 			bBroadcastTabSelected = false;
-			Log.d("CloseButtonListener","onReceive");
-			getActionBar().setSelectedNavigationItem(2);
+			// Log.d("CloseButtonListener","onReceive");
+			// getActionBar().setSelectedNavigationItem(2);
 		}
 	}
 
 //// ----------------------------------------------------------------------------------------
-//	private class AudioWriteDoneListener extends BroadcastReceiver {
-//		@Override
-//		public void onReceive(android.content.Context context, android.content.Intent intent) {
-//			Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
-//		}
-//	}
+// private class AudioWriteDoneListener extends BroadcastReceiver {
+// @Override
+// public void onReceive(android.content.Context context, android.content.Intent
+//// intent) {
+// Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
+// }
+// }
 
 	// ----------------------------------------------------------------------------------------
 	private class AudioPlaybackStartListener extends BroadcastReceiver {
@@ -258,9 +278,9 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			Intent ii = new Intent();
 			ii.setAction("BYBShowCloseButton");
 			context.getApplicationContext().sendBroadcast(ii);
-
 		}
 	}
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -276,15 +296,16 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	}
 
 //// ----------------------------------------------------------------------------------------
-//	private void registerAudioWriteDoneReceiver(boolean reg) {
-//		if (reg) {
-//			IntentFilter intentFilter = new IntentFilter("BYBRecordingSaverSuccessfulSave");
-//			writeDoneListener = new AudioWriteDoneListener();
-//			getApplicationContext().registerReceiver(writeDoneListener, intentFilter);
-//		} else {
-//			getApplicationContext().unregisterReceiver(writeDoneListener);
-//		}
-//	}
+// private void registerAudioWriteDoneReceiver(boolean reg) {
+// if (reg) {
+// IntentFilter intentFilter = new
+//// IntentFilter("BYBRecordingSaverSuccessfulSave");
+// writeDoneListener = new AudioWriteDoneListener();
+// getApplicationContext().registerReceiver(writeDoneListener, intentFilter);
+// } else {
+// getApplicationContext().unregisterReceiver(writeDoneListener);
+// }
+// }
 
 	// ----------------------------------------------------------------------------------------
 	private void registerAudioPlaybackStartReceiver(boolean reg) {
@@ -297,14 +318,37 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		}
 	}
 
-//	// ----------------------------------------------------------------------------------------
-//	private void registerChangePageReceiver(boolean reg) {
-//		if (reg) {
-//			IntentFilter intentFilter = new IntentFilter("BYBChangePage");
-//			changePageListener = new ChangePageListener();
-//			getApplicationContext().registerReceiver(changePageListener, intentFilter);
-//		} else {
-//			getApplicationContext().unregisterReceiver(changePageListener);
-//		}
-//	}
+	// ----------------------------------------------------------------------------------------
+	private void registerChangePageReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBChangePage");
+			changePageListener = new ChangePageListener();
+			getApplicationContext().registerReceiver(changePageListener, intentFilter);
+		} else {
+			getApplicationContext().unregisterReceiver(changePageListener);
+		}
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- REGISTER RECEIVERS
+	// -----------------------------------------------------------------------------------------------------------------------------
+
+	public void registerReceivers() {
+		registerCloseButtonReceiver(true);
+		registerAudioPlaybackStartReceiver(true);
+
+ registerChangePageReceiver(true);
+
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- UNREGISTER RECEIVERS
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public void unregisterReceivers() {
+		registerCloseButtonReceiver(false);
+		registerAudioPlaybackStartReceiver(false);
+
+		 registerChangePageReceiver(false);
+
+	}
 }

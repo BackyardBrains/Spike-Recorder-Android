@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.backyardbrains.audio.RecordingReader;
-import com.backyardbrains.audio.RecordingSaver;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -174,23 +172,23 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		i.setAction("BYBPlayAudioFile");
 		i.putExtra("filePath", f.getAbsolutePath());
 		context.sendBroadcast(i);
-// MediaPlayer mp = new MediaPlayer();
-// try {
-// mp.setDataSource(f.getAbsolutePath());
-// mp.prepare();
-// mp.start();
-// } catch (IllegalArgumentException e) {
-// e.printStackTrace();
-// } catch (IllegalStateException e) {
-// e.printStackTrace();
-// } catch (IOException e) {
-// e.printStackTrace();
-// }
+
 	}
 
 // ----------------------------------------------------------------------------------------
 	private void findSpikes(File f) {
-
+		if(f.exists()){
+			Intent i = new Intent();
+			i.setAction("BYBFindPeaks");
+			i.putExtra("filePath", f.getAbsolutePath());
+			context.sendBroadcast(i);			
+			Intent j = new Intent();
+			j.setAction("BYBChangePage");
+			j.putExtra("page", BackyardBrainsMain.FIND_SPIKES_VIEW);
+			context.sendBroadcast(j);			
+		
+			
+		}
 	}
 
 // ----------------------------------------------------------------------------------------

@@ -5,9 +5,16 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.android.texample2.GLText;
+
 import android.content.Context;
+import android.opengl.GLES20;
+import android.opengl.GLU;
+import android.opengl.Matrix;
+import android.util.Log;
 
 public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 
@@ -16,10 +23,29 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 //	FloatBuffer vertsBuffer;
 //	ShortBuffer indicesBuffer;
 	//ByteBuffer indicesBuffer;
+
+	Context context;
+	BYBMesh mesh;
+	
+	private GLText glText;                             // A GLText Instance
+
+	private int width = 100;                           // Updated to the Current Width + Height in onSurfaceChanged()
+	private int height = 100;
+	private float[] mProjMatrix = new float[16];
+	private float[] mVMatrix = new float[16];
+	private float[] mVPMatrix = new float[16];
+	
 	//----------------------------------------------------------------------------------------
 	public WaitRenderer(Context context){
 
 		super(context);
+		this.context = context;
+		
+		mesh = new BYBMesh(BYBMesh.TRIANGLES);
+		mesh.addRectangle(100, 100, 200, 200, BYBColors.magenta, true);
+		
+		//mesh.addRectangle(-1.0f, -1.0f, 2, 2, BYBColors.white, true);
+		
 //		int circleRes = 120;
 //		float [] verts;
 //		float outerRadius = 100;
@@ -123,11 +149,49 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		initGL(gl);
+		//Log.d(TAG, "draw");
+	//	initGL(gl);
+		gl.glMatrixMode(GL10.GL_MODELVIEW);
+		gl.glLoadIdentity();
+
+
 		
-//		gl.glMatrixMode(GL10.GL_MODELVIEW);
-//		gl.glLoadIdentity();
-//
+		
+		
+		
+		int clearMask = GLES20.GL_COLOR_BUFFER_BIT;
+
+		GLES20.glClear(clearMask);
+	
+		Matrix.multiplyMM(mVPMatrix, 0, mProjMatrix, 0, mVMatrix, 0);
+		
+		// TEST: render the entire font texture
+		glText.drawTexture( width/2, height/2, mVPMatrix);            // Draw the Entire Texture
+		
+		// TEST: render some strings with the font
+		glText.begin( 1.0f, 1.0f, 1.0f, 1.0f, mVPMatrix );         // Begin Text Rendering (Set Color WHITE)
+		glText.drawC("Test String 3D!", 0f, 0f, 0f, 0, -30, 0);
+//		glText.drawC( "Test String :)", 0, 0, 0 );          // Draw Test String
+		glText.draw( "Diagonal 1", 40, 40, 40);                // Draw Test String
+		glText.draw( "Column 1", 100, 100, 90);              // Draw Test String
+		glText.end();                                   // End Text Rendering
+		
+		glText.begin( 0.0f, 0.0f, 1.0f, 1.0f, mVPMatrix );         // Begin Text Rendering (Set Color BLUE)
+		glText.draw( "More Lines...", 50, 200 );        // Draw Test String
+		glText.draw( "The End.", 50, 200 + glText.getCharHeight(), 180);  // Draw Test String
+		glText.end();
+		mesh.draw(gl);
+		/*
+		
+		float [] values = new float [10];
+		for(int i = 0; i < values.length; i++){
+			values[i]=(float)Math.random();
+		}
+		BYBBarGraph b = new BYBBarGraph(values, 30, 30, 300, 200, BYBColors.red);
+		b.setHorizontalAxis(0, 1, 5);
+		b.setVerticalAxis(0, 2, 10);
+		b.draw(gl);
+		//*/
 //		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
 //		gl.glLineWidth(1f);
 //		gl.glTranslatef(width*0.5f, height*0.5f, 0);
@@ -140,4 +204,81 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 //		//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 //		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
+//*	
+	@Override
+	public void onSurfaceChanged(GL10 gl, int width, int height) {
+		if(height == 0) { 						//Prevent A Divide By Zero By
+			height = 1; 						//Making Height Equal One
+		}
+/*
+		gl.glViewport(0, 0, width, height); 	//Reset The Current Viewport
+		gl.glMatrixMode(GL10.GL_PROJECTION); 	//Select The Projection Matrix
+		gl.glLoadIdentity(); 					//Reset The Projection Matrix
+
+		//Calculate The Aspect Ratio Of The Window
+		GLU.gluPerspective(gl, 45.0f, (float)width / (float)height, 0.1f, 100.0f);
+
+		gl.glMatrixMode(GL10.GL_MODELVIEW); 	//Select The Modelview Matrix
+		gl.glLoadIdentity(); 					//Reset The Modelview Matrix
+		
+		
+		//*/
+		
+		GLES20.glViewport(0, 0, width, height);
+		float ratio = (float) width / height;
+
+		// Take into account device orientation
+		if (width > height) {
+			Matrix.frustumM(mProjMatrix, 0, -ratio, ratio, -1, 1, 1, 10);
+		}
+		else {
+			Matrix.frustumM(mProjMatrix, 0, -1, 1, -1/ratio, 1/ratio, 1, 10);
+		}
+		
+		// Save width and height
+		this.width = width;                             // Save Current Width
+		this.height = height;                           // Save Current Height
+		
+		int useForOrtho = Math.min(width, height);
+		
+		//TODO: Is this wrong?
+		Matrix.orthoM(mVMatrix, 0,
+				-useForOrtho/2,
+				useForOrtho/2,
+				-useForOrtho/2,
+				useForOrtho/2, 0.1f, 100f);
+		
+		
+	}
+
+	@Override
+	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		// Load the texture for the square
+		// Set the background frame color
+		GLES20.glClearColor( 0.5f, 0.5f, 0.5f, 1.0f );
+		
+		// Create the GLText
+		glText = new GLText(context.getAssets());
+
+		// Load the font from file (set size + padding), creates the texture
+		// NOTE: after a successful call to this the font is ready for rendering!
+		glText.load( "Roboto-Regular.ttf", 14, 2, 2 );  // Create Font (Height: 14 Pixels / X+Y Padding 2 Pixels)
+
+		// enable texture + alpha blending
+		GLES20.glEnable(GLES20.GL_BLEND);
+		GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+	
+		
+		gl.glEnable(GL10.GL_TEXTURE_2D);			//Enable Texture Mapping ( NEW )
+		gl.glShadeModel(GL10.GL_SMOOTH); 			//Enable Smooth Shading
+		gl.glClearColor(0.0f, 0.0f, 0.0f, 0.5f); 	//Black Background
+		gl.glClearDepthf(1.0f); 					//Depth Buffer Setup
+		gl.glEnable(GL10.GL_DEPTH_TEST); 			//Enables Depth Testing
+		gl.glDepthFunc(GL10.GL_LEQUAL); 			//The Type Of Depth Testing To Do
+		
+		//Really Nice Perspective Calculations
+		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST); 
+
+	}
+	//*/
 }

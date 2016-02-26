@@ -5,7 +5,7 @@ import android.content.Context;
 public class BYBAverageSpikeAnalysis  extends BYBBaseAsyncAnalysis {
 	
 	public BYBAverageSpikeAnalysis(Context context, int analysisType, short [] data){
-		super(context, analysisType);
+		super(context, BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE, true, true);
 		execute(data);
 	}
 	@Override

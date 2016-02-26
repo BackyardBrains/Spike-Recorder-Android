@@ -11,16 +11,21 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-public class AudioFilePlayer implements PlaybackListener {
+public class AudioFilePlayer implements PlaybackListener, RecordingReader.AudiofileReadListener{
+	
+	private static final String TAG = "AudioFilePlayer";
+	
 	private PlaybackThread			playbackThread;
 	private RecordingReader			reader		= null;
 	private ReceivesAudio			audioReceiver;
 	private Context					context		= null;
-	private AudioFileReadListener	audioFileReadListener;
 	private boolean					bFileLoaded	= false;
 	private boolean					bPlaying	= false;
 	private boolean 				bShouldPlay = false;
 	private boolean					bLooping = false;
+	
+	
+	
 	public AudioFilePlayer(ReceivesAudio audioReceiver, Context context) {
 		this.context = context.getApplicationContext();
 		this.audioReceiver = audioReceiver;
@@ -30,6 +35,14 @@ public class AudioFilePlayer implements PlaybackListener {
 		bLooping = false;
 	}
 
+	public void audioFileRead(){
+		Log.d(TAG, "AudioFileRead");
+		bFileLoaded = true;
+		if (bShouldPlay) {
+			play();
+			bShouldPlay = false;
+		}
+	}
 	public void load(String filePath) {
 		load(new File(filePath));
 	}
@@ -38,8 +51,7 @@ public class AudioFilePlayer implements PlaybackListener {
 		if (context != null) {
 			if (f.exists()) {
 				reader = null;
-				registerAudioFileReadReceiver(true);
-				reader = new RecordingReader(f, context);
+				reader = new RecordingReader(f, (RecordingReader.AudiofileReadListener)this);
 				bFileLoaded = false;
 				bShouldPlay = false;
 			}else{
@@ -86,8 +98,7 @@ public class AudioFilePlayer implements PlaybackListener {
 			playbackThread.stopPlayback();
 			playbackThread = null;
 			 Log.d("AudioFilePlayer", "Playback Thread Shut Off");
-		}
-		
+		}	
 	}
 
 	public boolean isPlaying() {
@@ -111,43 +122,6 @@ public class AudioFilePlayer implements PlaybackListener {
 			Intent i = new Intent();
 			i.setAction("BYBAudioFilePlaybackEnded");
 			context.sendBroadcast(i);
-		}
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- BROADCAST RECEIVERS CLASS
-	// -----------------------------------------------------------------------------------------------------------------------------
-	private class AudioFileReadListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			Log.d("AudioFileReadListener", "onReceive");
-			bFileLoaded = true;
-			if (bShouldPlay) {
-				play();
-				bShouldPlay = false;
-			}
-			registerAudioFileReadReceiver(false);
-		};
-	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-	// -----------------------------------------------------------------------------------------------------------------------------
-	/**
-	 * Toggle our receiver. If true, register a receiver for intents with the
-	 * action "BYBToggleRecording", otherwise, unregister the same receiver.
-	 * 
-	 * @param reg
-	 *            register if true, unregister otherwise.
-	 */
-	private void registerAudioFileReadReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBAudioFileRead");
-			audioFileReadListener = new AudioFileReadListener();
-			context.registerReceiver(audioFileReadListener, intentFilter);
-		} else {
-			context.unregisterReceiver(audioFileReadListener);
-			audioFileReadListener = null;
 		}
 	}
 }

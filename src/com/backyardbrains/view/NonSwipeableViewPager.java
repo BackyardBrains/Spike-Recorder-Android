@@ -23,7 +23,7 @@ public class NonSwipeableViewPager extends ViewPager {
 
 		// Log.d("NonSwipeableViewPager", "onInterceptTouchEvent: "+
 		// event.getAction());
-		super.onInterceptTouchEvent(event);
+		//return super.onInterceptTouchEvent(event);
 		return false;
 	}
 
@@ -31,7 +31,7 @@ public class NonSwipeableViewPager extends ViewPager {
 	public boolean onTouchEvent(MotionEvent event) {
 		// Log.d("NonSwipeableViewPager", "onTouchEvent: "+ event.getAction());
 		// Never allow swiping to switch between pages
-		super.onTouchEvent(event);
+		//return super.onTouchEvent(event);
 		return false;
 	}
 	// */

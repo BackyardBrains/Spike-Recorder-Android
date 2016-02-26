@@ -18,6 +18,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 public class BYBSignalAnalysis {
+	/*
 	private static final String TAG = "BYBSignalAnalysis"; 
 	private Context	context;
 	private float [] data = null;
@@ -66,7 +67,7 @@ public class BYBSignalAnalysis {
 				analyzer = new BYBCrossCorrelationAnalysis(context, analysisType, data);
 				break;
 			case BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES:
-				analyzer = new BYBFindSpikesAnalysis(context, analysisType, data);
+				analyzer = new BYBFindSpikesAnalysis(context,  data);
 				break;
 			case BYBAnalysisType.BYB_ANALYSIS_ISI:
 				analyzer = new BYBIsiAnalysis(context, analysisType, data);
@@ -85,5 +86,5 @@ public class BYBSignalAnalysis {
 		}
 		data = null;
 	}
-	
+	//*/
 }

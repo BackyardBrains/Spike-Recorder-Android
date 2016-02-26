@@ -45,7 +45,6 @@
   		    android:layout_weight="1"
   		    android:background="#0000"
   		    android:contentDescription="@string/threshold_handle"
-  		    android:paddingLeft="20dp"
   		    android:src="@drawable/handle_red" />
         
      </LinearLayout>
@@ -103,18 +102,19 @@
         android:gravity="center_vertical"
         android:text="@string/default_milliseconds" />
     
-	<LinearLayout 
+	<LinearLayout
 	    android:id="@+id/triggerViewSampleChangerLayout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/tickmarkImageView"
-        android:visibility="visible" >
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_toRightOf="@+id/tickmarkImageView"
+	    android:visibility="gone" >
 	    
 	    <SeekBar
 	        android:id="@+id/samplesSeekBar"
 	        android:layout_width="0dip"
 	        android:layout_height="wrap_content"
+	        android:layout_gravity="bottom"
 	        android:layout_margin="5sp"
 	        android:layout_weight="1"
 	        android:contentDescription="@string/average_num_slider"
@@ -123,28 +123,31 @@
 	        android:minHeight="10dp"
 	        android:progress="1"
 	        android:visibility="visible" />
-	    
-	    <TextView 
+
+	    <TextView
 	        android:id="@+id/numberOfSamplesAveraged"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
+	        android:layout_gravity="center_vertical"
 	        android:layout_margin="5sp"
-	        android:textColor="#00ff00"
-	   		android:textSize="20sp"
-	        android:text="@string/default_threshold_amount" />
+	        android:text="@string/default_threshold_amount"
+	        android:textColor="#00ff00" >
+ 
+        </TextView>
 	    
 	</LinearLayout>
 	
 	    <TextView
-        android:id="@+id/millisecondsView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-		android:layout_above="@id/triggerViewSampleChangerLayout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20sp"
-        android:layout_alignWithParentIfMissing="true"
-    	android:layout_alignParentBottom="true"
-        android:text="@string/default_milliseconds" >
+	        android:id="@+id/millisecondsView"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_above="@id/triggerViewSampleChangerLayout"
+	        android:layout_alignParentBottom="false"
+	        android:layout_alignWithParentIfMissing="true"
+	        android:layout_centerHorizontal="true"
+	        android:layout_marginBottom="20sp"
+	        android:text="@string/default_milliseconds" >
+
     </TextView>
 	
 

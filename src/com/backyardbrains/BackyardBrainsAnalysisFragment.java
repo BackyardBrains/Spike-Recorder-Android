@@ -7,7 +7,6 @@ import java.nio.ShortBuffer;
 
 import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.analysis.BYBSignalAnalysis;
-import com.backyardbrains.audio.RecordingReader;
 import com.backyardbrains.drawing.AutoCorrelationRenderer;
 import com.backyardbrains.drawing.AverageSpikeRenderer;
 import com.backyardbrains.drawing.BYBAnalysisBaseRenderer;
@@ -16,7 +15,7 @@ import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
-
+  
 import com.backyardbrains.drawing.WaitRenderer;
 
 import android.content.BroadcastReceiver;
@@ -45,8 +44,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	private BYBSignalAnalysis 			signalAnalysis;
 	protected int						currentAnalyzer				= BYBAnalysisType.BYB_ANALYSIS_NONE;
 
-	private RecordingReader				reader						= null;
-	private AudioFileReadListener		audioFileReadListener;
+
 	private SignalAnalysisDoneListener 	signalAnalysisDoneListener;
 	private boolean						bFileLoaded					= false;
 	private boolean 					bAnalysisDone				= false;
@@ -146,9 +144,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			mainscreenGLLayout.removeAllViews();
 			if(bFileLoaded && bAnalysisDone){
 			switch (renderer) {
-			case BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES :
-				setGlSurface(new FindSpikesRenderer(context), true);
-				break;
+//			case BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES :
+//				setGlSurface(new FindSpikesRenderer(context), true);
+//				break;
 			case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
 				setGlSurface(new AutoCorrelationRenderer(context), true);
 				break;
@@ -162,11 +160,11 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 				setGlSurface(new AverageSpikeRenderer(context), true);
 				break;
 			case BYBAnalysisType.BYB_ANALYSIS_NONE:
-				setGlSurface(new WaitRenderer(context), false);
+				setGlSurface(new WaitRenderer(context), true);
 				break;
 			}
 			}else{
-				setGlSurface(new WaitRenderer(context), false);
+				setGlSurface(new WaitRenderer(context), true);
 			}
 		}
 		mainscreenGLLayout.addView(mAndroidSurface);
@@ -182,6 +180,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 				mAndroidSurface = null;
 			}
 			mAndroidSurface = new GLSurfaceView(context);
+			mAndroidSurface.setEGLContextClientVersion(2); 
 			mAndroidSurface.setRenderer(renderer);
 			if(bSetOnDemand){
 				mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -210,47 +209,10 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 		}
 	}
 
-	public void load(String filePath, int analysisType) {
-		load(new File(filePath), analysisType);
-	}
-
-	public void load(File f, int analysisType) {
-		if (context != null) {
-			if (f.exists()) {
-				reader = null;
-				registerAudioFileReadReceiver(true);
-				reader = new RecordingReader(f, context);
-				bFileLoaded = false;
-				bAnalysisDone = false;
-				if(signalAnalysis != null){
-					signalAnalysis.resetAnalyzer();
-					signalAnalysis = null;
-				}
-				currentAnalyzer = analysisType;
-				reassignSurfaceView(BYBAnalysisType.BYB_ANALYSIS_NONE);
-			} else {
-				Log.d("AudioFilePlayer", "Cant load file: it doent exist!!");
-			}
-		}
-	}
-
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS
 	// -----------------------------------------------------------------------------------------------------------------------------
 	
-	private class AudioFileReadListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			Log.d("AudioFileReadListener", "onReceive");
-			
-			bFileLoaded = true;
-
-			registerSignalAnalysisDoneReceiver(true);
-			signalAnalysis = new BYBSignalAnalysis(context, reader.getDataShorts(), currentAnalyzer);
-			
-			registerAudioFileReadReceiver(false);
-		};
-	}
 	private class SignalAnalysisDoneListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
@@ -270,16 +232,6 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 	// -----------------------------------------------------------------------------------------------------------------------------
 
-	private void registerAudioFileReadReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBAudioFileRead");
-			audioFileReadListener = new AudioFileReadListener();
-			context.registerReceiver(audioFileReadListener, intentFilter);
-		} else {
-			context.unregisterReceiver(audioFileReadListener);
-			audioFileReadListener = null;
-		}
-	}
 	private void registerSignalAnalysisDoneReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBSignalAnalysisDone");

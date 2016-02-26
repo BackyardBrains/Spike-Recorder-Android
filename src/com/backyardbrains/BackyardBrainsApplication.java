@@ -29,7 +29,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
-
+import com.backyardbrains.analysis.*;
 /**
  * Main application class for the Backyard Brains app.
  * 
@@ -42,7 +42,7 @@ public class BackyardBrainsApplication extends Application {
 	private boolean			serviceRunning;
 	protected AudioService	mAudioService;
 	private int				mBindingsCount;
-
+	protected BYBAnalysisManager analysisManager;
 	public boolean isServiceRunning() {
 		return serviceRunning;
 	}
@@ -65,6 +65,7 @@ public class BackyardBrainsApplication extends Application {
 	}
 	@Override
 	public void onCreate() {
+		analysisManager = new BYBAnalysisManager(getApplicationContext());
 		startAudioService();
      	bindAudioService(true);
 	}
@@ -74,6 +75,7 @@ public class BackyardBrainsApplication extends Application {
 	@Override
 	public void onTerminate() {
 		super.onTerminate();
+		analysisManager.close();
 		bindAudioService(false);
 		if (this.serviceRunning) stopAudioService();
 	}
@@ -117,7 +119,12 @@ public class BackyardBrainsApplication extends Application {
 			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
 			Log.d(getClass().getCanonicalName(), "Service connected and bound");
-			// initTabsAndFragments();
+			/*
+			Intent i = new Intent();
+			i.setAction("BYBAudioServiceBind");
+			i.putExtra("isBind", true);
+			sendBroadcast(i);
+			//*/
 		}
 
 		// Clean up bindings
@@ -129,6 +136,10 @@ public class BackyardBrainsApplication extends Application {
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioService = null;
 			mAudioServiceIsBound = false;
+//			Intent i = new Intent();
+//			i.setAction("BYBAudioServiceBind");
+//			i.putExtra("isBind", false);
+//			getApplicationContext().sendBroadcast(i);
 			Log.d(getClass().getCanonicalName(), "Service disconnected.");
 		}
 	};
@@ -137,4 +148,8 @@ public class BackyardBrainsApplication extends Application {
 	public AudioService getmAudioService() {
 		return mAudioService;
 	}
+	public BYBAnalysisManager getAnalysisManager(){
+		return analysisManager;
+	}
+	
 }

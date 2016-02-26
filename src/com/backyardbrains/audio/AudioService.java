@@ -19,6 +19,7 @@
 
 package com.backyardbrains.audio;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
@@ -69,12 +70,16 @@ public class AudioService extends Service implements ReceivesAudio {
 	private PlayAudioFileListener		playListener;
 	private CloseButtonListener 		closeListener;
 	private OnTabSelectedListener 		tabSelectedListener;
-
+	private AveragesNumListener 		averagesNumListener;
+	
 	private long						lastSamplesReceivedTimestamp;
 	private int						micListenerBufferSizeInSamples;
 	private Context					appContext		= null;
 
 	private TriggerAverager					averager;
+	
+
+	
 	private boolean bUseAverager = false;
 	
 	
@@ -132,6 +137,9 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void setUseAverager(boolean bUse){
 		bUseAverager = bUse;
 	}
+	
+	
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- LIFECYCLE OVERRIDES
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -145,11 +153,12 @@ public class AudioService extends Service implements ReceivesAudio {
 		audioBuffer = new RingBuffer(131072);
 		audioBuffer.zeroFill();
 
-		averager = new TriggerAverager(32, appContext);
+		averager = new TriggerAverager(TriggerAverager.defaultSize, appContext);
 		
 		registerPlayAudioFileReceiver(true);
 		registerOnTabSelectedReceiver(true);
 		registerCloseButtonReceiver(true);
+		registerAveragerSetMaxReceiver(true);
 		turnOnMicThread();
 	}
 
@@ -163,6 +172,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerPlayAudioFileReceiver(false);
 		registerOnTabSelectedReceiver(false);
 		registerCloseButtonReceiver(false);
+		registerAveragerSetMaxReceiver(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
 		averager = null;
@@ -369,6 +379,14 @@ public class AudioService extends Service implements ReceivesAudio {
 			}
 		}
 	}
+	private class AveragesNumListener extends BroadcastReceiver{
+		@Override
+		public void onReceive(Context context, Intent intent) {
+		if(intent.hasExtra("num")){
+			averager.setMaxsize(intent.getIntExtra("num", TriggerAverager.defaultSize));//, false);
+		}
+		}
+	}
 	
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
@@ -406,6 +424,15 @@ public class AudioService extends Service implements ReceivesAudio {
 			IntentFilter intentFilter = new IntentFilter("BYBPlayAudioFile");
 			playListener = new PlayAudioFileListener();
 			appContext.registerReceiver(playListener, intentFilter);
+		} else {
+			appContext.unregisterReceiver(playListener);
+		}
+	}
+	private void registerAveragerSetMaxReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBThresholdNumAverages");
+			averagesNumListener = new AveragesNumListener();
+			appContext.registerReceiver(averagesNumListener, intentFilter);
 		} else {
 			appContext.unregisterReceiver(playListener);
 		}

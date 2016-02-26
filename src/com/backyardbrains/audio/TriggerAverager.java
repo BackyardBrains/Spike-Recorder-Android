@@ -40,11 +40,12 @@ public class TriggerAverager {
 	private int lastTriggeredValue;
 	private int lastIncomingBufferSize =0;
 	private Context context = null;
+	public static final int defaultSize = 32; 
 	//private short[] incomingAsArray;
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public TriggerAverager(int size, Context context) {
 		resetBuffers();
-		setMaxsize(size);
+		setMaxsize(size);//, true);
 		handler = new TriggerHandler();
 		this.context = context.getApplicationContext();
 	}
@@ -185,8 +186,16 @@ public class TriggerAverager {
 		return maxsize;
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
-	public void setMaxsize(int maxsize) {
-		this.maxsize = maxsize;
+	public void setMaxsize(int maxsize){//, boolean bBroadcast) {
+		if(maxsize > 0){
+			this.maxsize = maxsize;
+//			if(bBroadcast){
+//				Intent i = new Intent();
+//				i.setAction("BYBSetAveragerSlider");
+//				i.putExtra("maxSize", maxsize);			
+//				context.sendBroadcast(i);
+//			}
+		}
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public Handler getHandler() {
