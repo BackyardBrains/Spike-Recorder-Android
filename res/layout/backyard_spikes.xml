@@ -16,8 +16,9 @@
         android:layout_height="fill_parent"
         android:layout_alignBottom="@id/glContainer"
         android:layout_alignTop="@id/glContainer"
+        android:contentDescription="@string/tickmarks_on_left_side_of_screen"
         android:scaleType="fitXY"
-        android:src="@drawable/tickmarks" android:contentDescription="@string/tickmarks_on_left_side_of_screen">
+        android:src="@drawable/tickmarks" >
     </ImageView>
 
     <TextView
@@ -26,75 +27,141 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:gravity="top"
-        android:textColor="#ffffff"
-        />
-    
-  	<LinearLayout
-        android:id="@+id/leftThresholdHandleLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:layout_alignParentLeft="true"
-         >
+        android:textColor="#ffffff" />
 
-  		<ImageButton
-  		    android:id="@+id/leftThresholdHandle"
-  		    android:layout_width="0dp"
-  		    android:layout_height="wrap_content"
-  		    android:layout_weight="1"
-  		    android:background="#0000"
-  		    android:contentDescription="@string/threshold_handle"
-  		    android:src="@drawable/handle_red" />
-     </LinearLayout>
-
-  	<LinearLayout
+    <LinearLayout
         android:id="@+id/rightThresholdHandleLayout"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_alignParentRight="true"
-         >
+        android:layout_alignParentRight="true" >
 
-  		<ImageButton
-  		    android:id="@+id/rightThresholdHandle"
-  		    android:layout_width="0dp"
-  		    android:layout_height="wrap_content"
-  		    android:layout_weight="1"
-  		    android:background="#0000"
-  		    android:contentDescription="@string/threshold_handle"
-  		    android:rotation="180"
-  		    android:src="@drawable/handle_red" />
-     </LinearLayout>
-  	
-  	
+        <ImageButton
+            android:id="@+id/rightThresholdHandle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/threshold_handle"
+            android:src="@drawable/handle_white_right" />
+
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/leftThresholdHandleLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true" >
+
+        <ImageButton
+            android:id="@+id/leftThresholdHandle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/threshold_handle"
+            android:src="@drawable/handle_white_left" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/controlsLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/rightThresholdHandleLayout"
+        android:layout_toRightOf="@id/leftThresholdHandleLayout"
+        android:paddingTop="10dp" >
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/back_button"
+            android:src="@drawable/backbtn" />
+
+        <ImageButton
+            android:id="@+id/trash_can"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/trash_can"
+            android:src="@drawable/trash" />
+
+        <ImageButton
+            android:id="@+id/threshold0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/threshold0"
+            android:src="@drawable/handle" />
+
+        <ImageButton
+            android:id="@+id/threshold1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/threshold1"
+            android:src="@drawable/handle" />
+
+        <ImageButton
+            android:id="@+id/threshold2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/threshold2"
+            android:src="@drawable/handle" />
+
+        <ImageButton
+            android:id="@+id/new_threshold"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="#0000"
+            android:contentDescription="@string/new_threshold"
+            android:src="@drawable/plus" />
+
+    </LinearLayout>
+
     <TextView
         android:id="@+id/mVLabelView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/tickmarkImageView"
         android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/tickmarkImageView"
         android:gravity="center_vertical"
         android:text="@string/default_milliseconds" />
-    
-	<LinearLayout
-	    android:id="@+id/playheadLayout"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentBottom="true"
-	    android:layout_toRightOf="@+id/leftThresholdHandleLayout"
-	    android:layout_toLeftOf="@+id/rightThresholdHandleLayout" >
-	    
-	    <SeekBar
-	        android:id="@+id/playheadBar"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:layout_gravity="bottom"
-	        android:layout_margin="5sp"
-	        android:contentDescription="@string/average_num_slider"
-	        android:indeterminate="false"
-	        android:max="100000"
-	        android:minHeight="10dp"
-	        android:visibility="visible" />
-	    
-	</LinearLayout>
-	
+
+    <LinearLayout
+        android:id="@+id/playheadLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/rightThresholdHandleLayout"
+        android:layout_toRightOf="@id/leftThresholdHandleLayout" >
+
+        <SeekBar
+            android:id="@+id/playheadBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="5sp"
+            android:contentDescription="@string/playhead_slider"
+            android:indeterminate="false"
+            android:max="100000"
+            android:minHeight="10dp"
+            android:visibility="visible" />
+    </LinearLayout>
 
 </RelativeLayout>

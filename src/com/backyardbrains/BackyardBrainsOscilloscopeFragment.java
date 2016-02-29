@@ -6,7 +6,7 @@ import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
-
+import com.backyardbrains.view.BYBThresholdHandle;
 import com.backyardbrains.view.ScaleListener;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
@@ -47,25 +47,25 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 
 // public static final String ARG_SECTION_NUMBER = "section_number";
 // *
-	private static final String					TAG					= BackyardBrainsOscilloscopeFragment.class.getCanonicalName();
+	private static final String					TAG				= BackyardBrainsOscilloscopeFragment.class.getCanonicalName();
 
-	public static final int						WAVE				= 0;
-	public static final int						THRESH				= 1;
-	public static final int						LIVE_MODE			= 0;
-	public static final int						PLAYBACK_MODE		= 1;
+	public static final int						WAVE			= 0;
+	public static final int						THRESH			= 1;
+	public static final int						LIVE_MODE		= 0;
+	public static final int						PLAYBACK_MODE	= 1;
 
-	private int									mode				= 0;
-	protected ContinuousGLSurfaceView			mAndroidSurface		= null;
-	private boolean								isRecording			= false;
+	private int									mode			= 0;
+	protected ContinuousGLSurfaceView			mAndroidSurface	= null;
+	private boolean								isRecording		= false;
 	private FrameLayout							mainscreenGLLayout;
-	private SharedPreferences					settings			= null;
-	private Context								context				= null;
-	private WaveformRenderer					waveRenderer		= null;
-	private ThresholdRenderer					threshRenderer		= null;
+	private SharedPreferences					settings		= null;
+	private Context								context			= null;
+	private WaveformRenderer					waveRenderer	= null;
+	private ThresholdRenderer					threshRenderer	= null;
 	protected TwoDimensionScaleGestureDetector	mScaleDetector;
 	private ScaleListener						mScaleListener;
 
-	protected int								currentRenderer		= -1;
+	protected int								currentRenderer	= -1;
 
 	private TextView							msView;
 	private TextView							mVView;
@@ -76,10 +76,13 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	private ShowRecordingButtonsReceiver		showRecordingButtonsReceiver;
 	private ShowCloseButtonReceiver				showCloseButtonReceiver;
 	private OnTabSelectedListener				tabSelectedListener;
-	private UpdateThresholdHandleListener		updateThresholdHandleListener;
+//	private UpdateThresholdHandleListener		updateThresholdHandleListener;
 	private UpdateDebugTextViewListener			updateDebugTextViewListener;
-	private AudioServiceBindListener  audioServiceBindListener;
-	private SetAverageSliderListener setAverageSliderListener;
+	private AudioServiceBindListener			audioServiceBindListener;
+	private SetAverageSliderListener			setAverageSliderListener;
+
+	private BYBThresholdHandle					thresholdHandle;
+
 // ----------------------------------------------------------------------------------------
 	public BackyardBrainsOscilloscopeFragment(Context context) {
 		super();
@@ -113,7 +116,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		setupLabels(rootView);
 
 		setupButtons(rootView);
-		//setRenderer(WAVE);
+		// setRenderer(WAVE);
 		return rootView;
 	}
 
@@ -133,7 +136,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	public void onResume() {
 		Log.d(TAG, "onResume");
 		registerReceivers();
-		if(mAndroidSurface != null){			
+		if (mAndroidSurface != null) {
 			mAndroidSurface.onResume();
 		}
 
@@ -145,7 +148,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	@Override
 	public void onPause() {
 		Log.d(TAG, "onPause");
-		if(mAndroidSurface != null){
+		if (mAndroidSurface != null) {
 			mAndroidSurface.onPause();
 		}
 		unregisterReceivers();
@@ -201,7 +204,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 			mAndroidSurface = null;
 			mainscreenGLLayout.removeAllViews();
 			if (currentRenderer < 1) {
-				if(as != null){
+				if (as != null) {
 					as.setUseAverager(false);
 				}
 				if (threshRenderer != null) {
@@ -209,20 +212,20 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 					threshRenderer = null;
 				}
 				if (waveRenderer == null) {
-					waveRenderer = new WaveformRenderer(context);					
+					waveRenderer = new WaveformRenderer(context);
 				}
 				setGlSurface(waveRenderer);
 				mScaleListener.setRenderer(waveRenderer);
 				currentRenderer = WAVE;
 				setThresholdGuiVisibility(false);
 			} else {
-				if(as != null){
+				if (as != null) {
 					as.setUseAverager(true);
 				}
 				if (waveRenderer != null) {
 					saveSettings();
 					waveRenderer = null;
-					
+
 				}
 				if (threshRenderer == null) {
 					threshRenderer = new ThresholdRenderer(context);
@@ -230,23 +233,24 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				setGlSurface(threshRenderer);
 				mScaleListener.setRenderer(threshRenderer);
 				currentRenderer = THRESH;
-				setThresholdGuiVisibility(true);				
+				setThresholdGuiVisibility(true);
 			}
 			mainscreenGLLayout.addView(mAndroidSurface);
 
 			readSettings();
 
 			Log.d(getClass().getCanonicalName(), "Reassigned OscilloscopeGLSurfaceView");
-		}else{
+		} else {
 			Log.d(TAG, "audio service == null");
 		}
-		
+
 	}
 
 	// ----------------------------------------------------------------------------------------
 	private void setThresholdGuiVisibility(boolean bVisible) {
 		if (getView() != null) {
-			ImageButton b = (ImageButton) getView().findViewById(R.id.thresholdHandle);
+			ImageButton b = thresholdHandle.getImageButton(); // (ImageButton)
+																// getView().findViewById(R.id.thresholdHandle);
 			if (b != null) {
 				if (bVisible) {
 					b.setVisibility(View.VISIBLE);
@@ -254,23 +258,23 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 					b.setVisibility(View.GONE);
 				}
 			}
-			LinearLayout ll =(LinearLayout) getView().findViewById(R.id.triggerViewSampleChangerLayout);
-			if(ll != null){
+			LinearLayout ll = (LinearLayout) getView().findViewById(R.id.triggerViewSampleChangerLayout);
+			if (ll != null) {
 				if (bVisible) {
 					ll.setVisibility(View.VISIBLE);
 				} else {
 					ll.setVisibility(View.GONE);
 				}
 			}
-			SeekBar sk=(SeekBar) getView().findViewById(R.id.samplesSeekBar);   	
-			if(sk != null){
+			SeekBar sk = (SeekBar) getView().findViewById(R.id.samplesSeekBar);
+			if (sk != null) {
 				if (bVisible) {
 					sk.setVisibility(View.VISIBLE);
 				} else {
 					sk.setVisibility(View.GONE);
 				}
 			}
-			
+
 		}
 	}
 
@@ -292,7 +296,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // -----------------------------------------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleDetector.onTouchEvent(event);
-		if(mAndroidSurface != null){
+		if (mAndroidSurface != null) {
 			return mAndroidSurface.onTouchEvent(event);
 		}
 		return false;
@@ -314,25 +318,32 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				waveRenderer.setAutoScaled(settings.getBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled()));
 				waveRenderer.setGlWindowHorizontalSize(settings.getInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize()));
 				waveRenderer.setGlWindowVerticalSize(settings.getInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize()));
-				Log.d(TAG,"waveRenderer readsettings");
-//				Log.d(TAG,"isAutoScaled: "+settings.getBoolean("waveRendererAutoscaled", false));
-//				Log.d(TAG,"GlHorizontalSize: "+settings.getInt("waveRendererGlWindowHorizontalSize", 0));
-//				Log.d(TAG,"GlVerticalSize: "+settings.getInt("waveRendererGlWindowVerticalSize", 0));
+				Log.d(TAG, "waveRenderer readsettings");
+// Log.d(TAG,"isAutoScaled: "+settings.getBoolean("waveRendererAutoscaled",
+// false));
+// Log.d(TAG,"GlHorizontalSize:
+// "+settings.getInt("waveRendererGlWindowHorizontalSize", 0));
+// Log.d(TAG,"GlVerticalSize:
+// "+settings.getInt("waveRendererGlWindowVerticalSize", 0));
 			}
 			if (threshRenderer != null) {
 				threshRenderer.setAutoScaled(settings.getBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled()));
 				threshRenderer.setGlWindowHorizontalSize(settings.getInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize()));
 				threshRenderer.setGlWindowVerticalSize(settings.getInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize()));
 				threshRenderer.adjustThresholdValue(settings.getFloat("threshRendererThresholdYValue", threshRenderer.getThresholdScreenValue()));
-		
-				Log.d(TAG,"threshRenderer readsettings");
-//				Log.d(TAG,"threshRenderer.setAutoScaled"+ settings.getBoolean("threshRendererAutoscaled", false));
-//				Log.d(TAG,"threshRenderer.setGlWindowHorizontalSize" +settings.getInt("threshRendererGlWindowHorizontalSize", 0));
-//				Log.d(TAG,"threshRenderer.setGlWindowVerticalSize" +settings.getInt("threshRendererGlWindowVerticalSize", 0));
-//				Log.d(TAG,"threshRenderer.adjustThresholdValue"+settings.getFloat("threshRendererThresholdYValue", 0));
+
+				Log.d(TAG, "threshRenderer readsettings");
+// Log.d(TAG,"threshRenderer.setAutoScaled"+
+// settings.getBoolean("threshRendererAutoscaled", false));
+// Log.d(TAG,"threshRenderer.setGlWindowHorizontalSize"
+// +settings.getInt("threshRendererGlWindowHorizontalSize", 0));
+// Log.d(TAG,"threshRenderer.setGlWindowVerticalSize"
+// +settings.getInt("threshRendererGlWindowVerticalSize", 0));
+// Log.d(TAG,"threshRenderer.adjustThresholdValue"+settings.getFloat("threshRendererThresholdYValue",
+// 0));
 			}
-		}else{
-			Log.d(TAG,"Cant Read settings. settings == null");
+		} else {
+			Log.d(TAG, "Cant Read settings. settings == null");
 		}
 	}
 
@@ -345,28 +356,34 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				editor.putInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize());
 				editor.putInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize());
 				editor.commit();
-				Log.d(TAG,"waveRenderer saved settings");				
-//				Log.d(TAG,"waveRendererAutoscaled "+ waveRenderer.isAutoScaled());
-//				Log.d(TAG,"waveRendererGlWindowHorizontalSize "+ waveRenderer.getGlWindowHorizontalSize());
-//				Log.d(TAG,"waveRendererGlWindowVerticalSize "+ waveRenderer.getGlWindowVerticalSize());
+				Log.d(TAG, "waveRenderer saved settings");
+// Log.d(TAG,"waveRendererAutoscaled "+ waveRenderer.isAutoScaled());
+// Log.d(TAG,"waveRendererGlWindowHorizontalSize "+
+// waveRenderer.getGlWindowHorizontalSize());
+// Log.d(TAG,"waveRendererGlWindowVerticalSize "+
+// waveRenderer.getGlWindowVerticalSize());
 			}
 			if (threshRenderer != null) {
 				editor.putBoolean("threshRendererAutoscaled", threshRenderer.isAutoScaled());
 				editor.putInt("threshRendererGlWindowHorizontalSize", threshRenderer.getGlWindowHorizontalSize());
 				editor.putInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize());
 				editor.putFloat("threshRendererThresholdYValue", threshRenderer.getThresholdScreenValue());
-				
+
 				editor.commit();
-				Log.d(TAG,"threshRenderer saved settings");
-//				Log.d(TAG,"threshRendererAutoscaled "+ threshRenderer.isAutoScaled());
-//				Log.d(TAG,"threshRendererGlWindowHorizontalSize " + threshRenderer.getGlWindowHorizontalSize());
-//				Log.d(TAG,"threshRendererGlWindowVerticalSize " + threshRenderer.getGlWindowVerticalSize());
-//				Log.d(TAG,"threshRendererThresholdYValue " + threshRenderer.getThresholdScreenValue());
+				Log.d(TAG, "threshRenderer saved settings");
+// Log.d(TAG,"threshRendererAutoscaled "+ threshRenderer.isAutoScaled());
+// Log.d(TAG,"threshRendererGlWindowHorizontalSize " +
+// threshRenderer.getGlWindowHorizontalSize());
+// Log.d(TAG,"threshRendererGlWindowVerticalSize " +
+// threshRenderer.getGlWindowVerticalSize());
+// Log.d(TAG,"threshRendererThresholdYValue " +
+// threshRenderer.getThresholdScreenValue());
 			}
-		}else{
-			Log.d(TAG,"Cant Save settings. settings == null");
+		} else {
+			Log.d(TAG, "Cant Save settings. settings == null");
 		}
 	}
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- UI
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -389,6 +406,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 			}
 		}
 	}
+
 // ----------------------------------------------------------------------------------------
 	public void hideRecordingButtons() {
 		ImageButton mRecordButton = (ImageButton) getView().findViewById(R.id.recordButton);
@@ -484,10 +502,10 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		};
 		ImageButton mRecordButton = (ImageButton) view.findViewById(R.id.recordButton);
 		mRecordButton.setOnClickListener(recordingToggle);
-		//------------------------------------
+		// ------------------------------------
 		View tapToStopRecView = view.findViewById(R.id.TapToStopRecordingTextView);
 		tapToStopRecView.setOnClickListener(recordingToggle);
-		//------------------------------------
+		// ------------------------------------
 		OnClickListener closeButtonListener = new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -502,75 +520,59 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		ImageButton mCloseButton = (ImageButton) view.findViewById(R.id.closeButton);
 		mCloseButton.setOnClickListener(closeButtonListener);
 		mCloseButton.setVisibility(View.GONE);
-		//------------------------------------
-		OnTouchListener threshTouch = new OnTouchListener() {
+		// ------------------------------------
+		/*
+		 * OnTouchListener threshTouch = new OnTouchListener() {
+		 * @Override public boolean onTouch(View v, MotionEvent event) { if
+		 * (v.getVisibility() == View.VISIBLE) { Log.d("threshold Handle", "y: "
+		 * + event.getY() + "  view.y: " + v.getY()); if (event.getActionIndex()
+		 * == 0) { int yOffset = 0; if
+		 * (getActivity().getActionBar().isShowing()) { yOffset =
+		 * getActivity().getActionBar().getHeight(); } switch
+		 * (event.getActionMasked()) { case MotionEvent.ACTION_DOWN: // break;
+		 * case MotionEvent.ACTION_MOVE: v.setY(event.getRawY() - v.getHeight()
+		 * / 2 - yOffset); Intent i = new Intent();
+		 * i.setAction("BYBThresholdHandlePos"); i.putExtra("y", event.getRawY()
+		 * - yOffset); context.sendBroadcast(i); break; case
+		 * MotionEvent.ACTION_CANCEL: case MotionEvent.ACTION_UP: Intent ii =
+		 * new Intent(); ii.setAction("BYBThresholdHandlePos");
+		 * ii.putExtra("update", true); ii.putExtra("y", event.getRawY() -
+		 * yOffset); context.sendBroadcast(ii); } } return true; } return false;
+		 * } }; //
+		 */
+		thresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.thresholdHandle)), "OsciloscopeHandle"); // .setOnTouchListener(threshTouch);
+
+		// ------------------------------------
+
+		final SeekBar sk = (SeekBar) view.findViewById(R.id.samplesSeekBar);
+
+		sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
 			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				if (v.getVisibility() == View.VISIBLE) {
-					Log.d("threshold Handle", "y: " + event.getY() + "  view.y: " + v.getY());
-					if (event.getActionIndex() == 0) {
-						int yOffset = 0;
-						if (getActivity().getActionBar().isShowing()) {
-							yOffset = getActivity().getActionBar().getHeight();
-						}
-						switch (event.getActionMasked()) {
-						case MotionEvent.ACTION_DOWN:
-							// break;
-						case MotionEvent.ACTION_MOVE:
-							v.setY(event.getRawY() - v.getHeight() / 2 - yOffset);
-							Intent i = new Intent();
-							i.setAction("BYBThresholdHandlePos");
-							i.putExtra("y", event.getRawY() - yOffset);
-							context.sendBroadcast(i);
-							break;
-						case MotionEvent.ACTION_CANCEL:
-						case MotionEvent.ACTION_UP:
-							Intent ii = new Intent();
-							ii.setAction("BYBThresholdHandlePos");
-							ii.putExtra("update", true);
-							ii.putExtra("y", event.getRawY() - yOffset);
-							context.sendBroadcast(ii);
-						}
-					}
-					return true;
-				}
-				return false;
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
 			}
-		};
 
-		((ImageButton) view.findViewById(R.id.thresholdHandle)).setOnTouchListener(threshTouch);
-		
-		//------------------------------------
-		
-		final SeekBar sk=(SeekBar) view.findViewById(R.id.samplesSeekBar);   
-		
-		sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {       
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+			}
 
-		    @Override       
-		    public void onStopTrackingTouch(SeekBar seekBar) {      
-		        // TODO Auto-generated method stub      
-		    }       
-
-		    @Override       
-		    public void onStartTrackingTouch(SeekBar seekBar) {     
-		        // TODO Auto-generated method stub      
-		    }       
-
-		    @Override       
-		    public void onProgressChanged(SeekBar seekBar, int progress,boolean fromUser) {  
-		    	if(getView()!=null){
-		    	TextView tx = ((TextView) getView().findViewById(R.id.numberOfSamplesAveraged));
-		    	if(tx !=  null){
-		    		tx.setText(progress + "x");
-		    	}
-		    	}
-		    	if(fromUser){
-		    	Intent i = new Intent();
-				i.setAction("BYBThresholdNumAverages");
-				i.putExtra("num",progress);
-				context.sendBroadcast(i);
-		    	}
-		    }       
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				if (getView() != null) {
+					TextView tx = ((TextView) getView().findViewById(R.id.numberOfSamplesAveraged));
+					if (tx != null) {
+						tx.setText(progress + "x");
+					}
+				}
+				if (fromUser) {
+					Intent i = new Intent();
+					i.setAction("BYBThresholdNumAverages");
+					i.putExtra("num", progress);
+					context.sendBroadcast(i);
+				}
+			}
 		});
 		((TextView) view.findViewById(R.id.numberOfSamplesAveraged)).setText(TriggerAverager.defaultSize + "x");
 		sk.setProgress(TriggerAverager.defaultSize);
@@ -660,53 +662,56 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 			}
 		}
 	}
-
-	private class UpdateThresholdHandleListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (intent.hasExtra("pos")) {
-				int pos = intent.getIntExtra("pos", 0);
-				ImageButton b = (ImageButton) getView().findViewById(R.id.thresholdHandle);
-				b.setY(pos - (b.getHeight() / 2));
-			}
-		}
-	}
+//
+//	private class UpdateThresholdHandleListener extends BroadcastReceiver {
+//		@Override
+//		public void onReceive(Context context, Intent intent) {
+//			if (intent.hasExtra("pos")) {
+//				int pos = intent.getIntExtra("pos", 0);
+//				if (thresholdHandle != null) {
+//					ImageButton b = thresholdHandle.getImageButton();// (ImageButton)getView().findViewById(R.id.thresholdHandle);
+//					b.setY(pos - (b.getHeight() / 2));
+//				}
+//			}
+//		}
+//	}
 
 	private class UpdateDebugTextViewListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-//			TextView t = ((TextView) getView().findViewById(R.id.DebugTextView));
-//			String s = "";
-//			if (intent.hasExtra("clear")) {
-//				t.setText("");
-//			}
-//			if (intent.hasExtra("debug")) {
-//				if (t.getText() != null || t.getText() != "") {
-//					s = t.getText() + "\n";
-//				}
-//				s = s + intent.getStringExtra("debug");
-//				t.setText(s);
-//			}
+// TextView t = ((TextView) getView().findViewById(R.id.DebugTextView));
+// String s = "";
+// if (intent.hasExtra("clear")) {
+// t.setText("");
+// }
+// if (intent.hasExtra("debug")) {
+// if (t.getText() != null || t.getText() != "") {
+// s = t.getText() + "\n";
+// }
+// s = s + intent.getStringExtra("debug");
+// t.setText(s);
+// }
 		}
 	}
-	
+
 	private class AudioServiceBindListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.hasExtra("isBind")) {
-				if(intent.getBooleanExtra("isBind", true)){
-					if(currentRenderer != WAVE || currentRenderer != THRESH){
+				if (intent.getBooleanExtra("isBind", true)) {
+					if (currentRenderer != WAVE || currentRenderer != THRESH) {
 						currentRenderer = WAVE;
-						
+
 					}
 					setRenderer(currentRenderer);
-					
-				}else{
+
+				} else {
 					destroyRenderers();
 				}
 			}
 		}
 	}
+
 	private class SetAverageSliderListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -744,14 +749,13 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		tabSelectedListener = new OnTabSelectedListener();
 		context.registerReceiver(tabSelectedListener, intentTabSelectedFilter);
 
-		IntentFilter intentUpdateThresholdFilter = new IntentFilter("BYBUpdateThresholdHandle");
-		updateThresholdHandleListener = new UpdateThresholdHandleListener();
-		context.registerReceiver(updateThresholdHandleListener, intentUpdateThresholdFilter);
+//		IntentFilter intentUpdateThresholdFilter = new IntentFilter("BYBUpdateThresholdHandle");
+//		updateThresholdHandleListener = new UpdateThresholdHandleListener();
+//		context.registerReceiver(updateThresholdHandleListener, intentUpdateThresholdFilter);
 
 		IntentFilter intentUpdateDebugTextFilter = new IntentFilter("updateDebugView");
 		updateDebugTextViewListener = new UpdateDebugTextViewListener();
 		context.registerReceiver(updateDebugTextViewListener, intentUpdateDebugTextFilter);
-		
 
 		IntentFilter intentAudioServiceBindFilter = new IntentFilter("BYBAudioServiceBind");
 		audioServiceBindListener = new AudioServiceBindListener();
@@ -761,6 +765,8 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		setAverageSliderListener = new SetAverageSliderListener();
 		context.registerReceiver(setAverageSliderListener, intentSetAverageSliderFilter);
 		
+		thresholdHandle.registerUpdateThresholdHandleListener(true);
+
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -773,8 +779,9 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		context.unregisterReceiver(showRecordingButtonsReceiver);
 		context.unregisterReceiver(showCloseButtonReceiver);
 		context.unregisterReceiver(tabSelectedListener);
-		context.unregisterReceiver(updateThresholdHandleListener);
+//		context.unregisterReceiver(updateThresholdHandleListener);
 		context.unregisterReceiver(audioServiceBindListener);
 		context.unregisterReceiver(setAverageSliderListener);
+		thresholdHandle.registerUpdateThresholdHandleListener(false);
 	}
 }

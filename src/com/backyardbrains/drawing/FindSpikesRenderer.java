@@ -18,30 +18,105 @@ import android.util.Log;
 
 public class FindSpikesRenderer extends BYBBaseRenderer {
 
-	private static final String TAG = "FindSpikesRenderer";
-	private float playheadPosition = 0.5f;
-	protected int glWidth;
-	protected int glHeight;
-	protected BYBSpike [] spikes;
+	private static final String		TAG					= "FindSpikesRenderer";
+	private float					playheadPosition	= 0.5f;
+	protected int					glWidth;
+	protected int					glHeight;
+	protected BYBSpike[]			spikes;
+	private int[]					thresholds			= new int[2];
+
+	public static final int			LEFT_THRESH_INDEX	= 0;
+	public static final int			RIGHT_THRESH_INDEX	= 1;
+
+	public static final String[]	thresholdsNames		= { "LeftSpikesHandle", "RightSpikesHandle" };
+
+//	public static final float[]		GL_COLORS			= { 1.0f, 0.0f, 0.0f, 1.0f,						// RED
+//														1.0f, 1.0f, 0.0f, 1.0f,							// YELLOW
+//														0.0f, 1.0f, 1.0f, 1.0f,							// CYAN
+//														1.0f, 1.0f, 1.0f, 1.0f };						// WHITE
+//
+//	public static final int			RED_INDEX			= 0;
+//	public static final int			YELLOW_INDEX		= 1;
+//	public static final int			CYAN_INDEX			= 2;
+//	public static final int			WHITE_INDEX			= 3;
+//	private int						currentColorIndex	= RED_INDEX;//
+	
+	private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
+	
+	private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 	// ----------------------------------------------------------------------------------------
 	public FindSpikesRenderer(Context context) {
+		
 		super(context);
+		Log.d(TAG, "CONSTRUCTOR!");
+		updateThresholdHandles();
+	}
+
+	// ----------------------------------------------------------------------------------------
+// @Override
+// public void setGlWindowHorizontalSize(int newX) {
+// Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ " glWidth: " +
+// glWidth + " newX: " + newX);
+// // super.setGlWindowHorizontalSize(newX);
+// glWidth = newX;
+//
+// }
+	@Override
+	// ----------------------------------------------------------------------------------------
+	public void setGlWindowVerticalSize(int newY) {
+		super.setGlWindowVerticalSize(newY);
+		updateThresholdHandles();
 	}
 	// ----------------------------------------------------------------------------------------
-//	@Override
-//	public void setGlWindowHorizontalSize(int newX) {
-//		Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "  glWidth: " + glWidth + " newX: " + newX);
-//	//	super.setGlWindowHorizontalSize(newX);
-//		glWidth = newX;
-//	
-//	}
-//	@Override
-//	// ----------------------------------------------------------------------------------------
-//	public void setGlWindowVerticalSize(int newY) {
-//		super.setGlWindowVerticalSize(newY);
-//		glHeight = newY;
-//	}
+	public void updateThresholdHandles() {
+		updateThresholdHandle(LEFT_THRESH_INDEX);
+		updateThresholdHandle(RIGHT_THRESH_INDEX);
+	}
+	// ----------------------------------------------------------------------------------------
+	public int getThreshold(int index){
+		if(index >= 0 && index < 2){
+			return thresholds[index];
+		}
+		return 0;
+	}
+	// ----------------------------------------------------------------------------------------
+		public int getThresholdScreenValue(int index){
+			if(index >= 0 && index < 2){
+				Log.d(TAG, "getThreshold  ScreenValue: " + glHeightToPixelHeight(thresholds[index]) + "  glValue: " + thresholds[index] );
+				return glHeightToPixelHeight(thresholds[index]);
+			}
+			return 0;
+		}
+	// ----------------------------------------------------------------------------------------
+	public void updateThresholdHandle(int threshIndex) {
+		if (threshIndex >= 0 && threshIndex < thresholds.length) {
+			Intent j = new Intent();
+			j.setAction("BYBUpdateThresholdHandle");
+			j.putExtra("name", thresholdsNames[threshIndex]);
+			j.putExtra("pos", glHeightToPixelHeight(thresholds[threshIndex]));
+			context.sendBroadcast(j);
+		}
+	}
 
+	// ----------------------------------------------------------------------------------------
+	public void setThreshold(int t, int index) {
+		setThreshold(t, index, false);
+	}
+	// ----------------------------------------------------------------------------------------
+	public void setThreshold(int t, int index, boolean bBroadcast) {
+		if (index >= 0 && index < 2) {
+			thresholds[index] = t;
+			if (bBroadcast) {
+				updateThresholdHandle(index);
+			}
+		}
+	}
+	// ----------------------------------------------------------------------------------------
+	@Override
+	public void onSurfaceChanged(GL10 gl, int width, int height) {
+		super.onSurfaceChanged(gl, width, height);
+		updateThresholdHandles();
+	}
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onDrawFrame(GL10 gl) {
@@ -50,36 +125,35 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 			return;
 		}
 		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
-	//		Log.d(TAG, "Invalid audio buffer!");
+			// Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
-		//Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "  glWidth: " + glWidth);
+		// Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "
+		// glWidth: " + glWidth);
 		preDrawingHandler();
 		BYBUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
-		Intent i = new Intent();
-		i.setAction("DebugShit");
-		i.putExtra("d", "GlWidth: " + glWidth +"\nGlHeight: " + glHeight);
-		context.sendBroadcast(i);
 		// }
 	}
-	// ----------------------------------------------------------------------------------------
-		private boolean getSpikes(){
-			
-			if (((BackyardBrainsApplication) context).getAnalysisManager() != null) {
-				spikes = ((BackyardBrainsApplication) context).getAnalysisManager().getSpikes();
-				if(spikes.length>0){
-					return true;	
-				}
-			}
-			spikes = null;
-			return false;
 
-		}
 	// ----------------------------------------------------------------------------------------
-	public boolean getAudioSamples(){
-		
+	private boolean getSpikes() {
+
+		if (((BackyardBrainsApplication) context).getAnalysisManager() != null) {
+			spikes = ((BackyardBrainsApplication) context).getAnalysisManager().getSpikes();
+			if (spikes.length > 0) {
+				return true;
+			}
+		}
+		spikes = null;
+		return false;
+
+	}
+
+	// ----------------------------------------------------------------------------------------
+	public boolean getAudioSamples() {
+
 		if (((BackyardBrainsApplication) context).getAnalysisManager() != null) {
 			mBufferToDraws = ((BackyardBrainsApplication) context).getAnalysisManager().getReaderSamples();
 			return true;
@@ -87,23 +161,25 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 		return false;
 
 	}
+
 	@Override
-	protected void preDrawingHandler() {}
+	protected void preDrawingHandler() {
+	}
+
 	// ----------------------------------------------------------------------------------------
-	public void setStartSample(float pos){// normalized position
+	public void setStartSample(float pos) {// normalized position
 		playheadPosition = pos;
 		Log.d(TAG, "setStartSample: " + pos);
 	}
+
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		setGlWindow(gl,getGlWindowHorizontalSize(), mBufferToDraws.length);
+		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
-		
-		
-		
+
 		// firstBufferDrawnCheck();
-	//	autoScaleCheck();
+		// autoScaleCheck();
 
 		gl.glMatrixMode(GL10.GL_MODELVIEW);
 		gl.glLoadIdentity();
@@ -114,30 +190,79 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		
-		
-		if(!getSpikes())return;
+
+		if (!getSpikes()) return;
 		FloatBuffer spikesBuffer = getPointsFromSpikes();
-		
+
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
 		gl.glPointSize(10.0f);
-		gl.glColor4f(1f, .25f, 1f, 1f);
+		// gl.glColor4f(1f, .25f, 1f, 1f);
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, spikesBuffer);
+		gl.glColorPointer(4, GL10.GL_FLOAT, 0, getColorsFloatBuffer());
 		gl.glDrawArrays(GL10.GL_POINTS, 0, spikesBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		
-		
-		
+		gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
+
+		final float thresholdLineLength = mBufferToDraws.length;
+
+		float[] thresholdLine = new float[] { -thresholdLineLength * 2, thresholds[LEFT_THRESH_INDEX], thresholdLineLength * 2, thresholds[LEFT_THRESH_INDEX], -thresholdLineLength * 2, thresholds[RIGHT_THRESH_INDEX], thresholdLineLength * 2, thresholds[RIGHT_THRESH_INDEX] };
+
+		FloatBuffer thl = BYBUtils.getFloatBufferFromFloatArray(thresholdLine);
+		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		gl.glColor4f(currentColor[0],currentColor[1],currentColor[2],currentColor[3]);
+		gl.glLineWidth(2.0f);
+		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
+		gl.glDrawArrays(GL10.GL_LINES, 0, thl.limit() / 2);
+		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+
 	}
+
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// @Override
-//	protected void postDrawingHandler(GL10 gl) {
-//	//	Log.d(TAG, "glWidth: " +getGlWindowHorizontalSize() + "  glHeight: " + getGlWindowVerticalSize());
-//	}
-	protected FloatBuffer getPointsFromSpikes(){
+// protected void postDrawingHandler(GL10 gl) {
+// // Log.d(TAG, "glWidth: " +getGlWindowHorizontalSize() + " glHeight: " +
+// getGlWindowVerticalSize());
+// }
+// -----------------------------------------------------------------------------------------------------------------------------
+	public void setCurrentColor(float[] color) {
+			currentColor = color;
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	protected FloatBuffer getColorsFloatBuffer() {
 		float[] arr = null;
-		if(spikes != null){
-			if(spikes.length > 0){
+		if (spikes != null) {
+			if (spikes.length > 0) {
+				arr = new float[spikes.length * 4];
+				int j = 0; // index of arr
+				int mn = Math.min(thresholds[0], thresholds[1]);
+				int mx = Math.max(thresholds[0], thresholds[1]);
+				try {
+					for (int i = 0; i < spikes.length; i++) {
+						float v = spikes[i].value;
+						float[] colorToSet = whiteColor;
+						if (v >= mn && v < mx) {
+							colorToSet = currentColor;
+						}
+						for (int k = 0; k < 4; k++) {
+							arr[j++] = colorToSet[k];
+						}
+					}
+				} catch (ArrayIndexOutOfBoundsException e) {
+					Log.e(TAG, e.getMessage());
+				}
+			}
+		}
+		if (arr == null) arr = new float[0];
+		return BYBUtils.getFloatBufferFromFloatArray(arr);
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+	protected FloatBuffer getPointsFromSpikes() {
+		float[] arr = null;
+		if (spikes != null) {
+			if (spikes.length > 0) {
 				arr = new float[spikes.length * 2];
 				int j = 0; // index of arr
 				try {
@@ -150,9 +275,10 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 				}
 			}
 		}
-		if(arr == null)arr = new float [0];
+		if (arr == null) arr = new float[0];
 		return BYBUtils.getFloatBufferFromFloatArray(arr);
 	}
+
 	// -----------------------------------------------------------------------------------------------------------------------------
 	@Override
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
@@ -173,9 +299,10 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	@Override
 	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
 		final int size = getGlWindowVerticalSize();
-		int startSample = (int) Math.floor((lengthOfSampleSet - samplesToShow)*playheadPosition);
+		int startSample = (int) Math.floor((lengthOfSampleSet - samplesToShow) * playheadPosition);
 		int endSample = startSample + samplesToShow;
-		//initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
+		// initGL(gl, (lengthOfSampleSet - samplesToShow) / 2,
+		// (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
 		initGL(gl, startSample, endSample, -size / 2, size / 2);
 	}
 

@@ -1,7 +1,7 @@
 package com.backyardbrains.analysis;
 
 import java.io.File;
-
+import java.util.ArrayList;
 
 import com.backyardbrains.audio.RecordingReader;
 
@@ -23,15 +23,87 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	private boolean					bSpikesFound	= false;
 	private BYBSpike[]				spikes;
 
+	private int selectedThreshold = 0;
+	private ArrayList<int[]>					thresholds;
+	public static final int						maxThresholds	= 3;
+	
+
+	
+	
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public BYBAnalysisManager(Context context) {
 		this.context = context;
+		thresholds = new ArrayList<int[]>();
+		thresholds.add(new int[2]);
 		registerFindSpikesListener(true);
 	}
+	// -----------------------------------------------------------------------------------------------------------------------------
 	public void close(){
 		registerFindSpikesListener(false);
 		
 	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public int getMaxThresholds(){
+		return maxThresholds;
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public int getThresholdsSize(){
+		return thresholds.size();
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public int getSelectedThresholdIndex(){
+		return selectedThreshold;
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+
+	public int [] getSelectedThresholds(){
+		if(selectedThreshold >=0 && selectedThreshold < thresholds.size()){
+			return thresholds.get(selectedThreshold);
+		}
+		int [] z = new int [2];
+		return z;
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public void selectThreshold(int index) {
+		if (index >= 0 && index < maxThresholds) {
+			selectedThreshold = index;
+			updateThresholdHandles();
+			Log.d(TAG, "selectThreshold " + index);
+			// for (int i = 0; i < maxThresholds; i++) {
+			// thresholdButtons[i].
+			// }
+		}
+	}
+	// ----------------------------------------------------------------------------------------
+	public void addThreshold(){
+		if(thresholds.size() < maxThresholds){
+			thresholds.add(new int[2]);
+			selectedThreshold = thresholds.size()-1;
+			updateThresholdHandles();
+		}
+	}
+	// ----------------------------------------------------------------------------------------
+	public void removeSelectedThreshold(){
+		if(thresholds.size() > 0 && thresholds.size() > selectedThreshold){
+			thresholds.remove(selectedThreshold);
+			selectedThreshold = thresholds.size()-1;
+			updateThresholdHandles();
+		}
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public void setThreshold(int group, int index, int value){
+		if(thresholds.size() > 0 && thresholds.size() > group && index < 2){
+			thresholds.get(group)[index]  = value;
+		}
+	}
+	protected void updateThresholdHandles(){
+		if(context != null){
+		Intent i = new Intent();
+		i.setAction("BYBUpdateThresholdHandle");
+		context.getApplicationContext().sendBroadcast(i);
+		}
+	}
+	
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public int getReaderSampleRate() {
 		if (reader != null) {

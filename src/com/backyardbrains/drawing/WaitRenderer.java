@@ -42,7 +42,7 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 		this.context = context;
 		
 		mesh = new BYBMesh(BYBMesh.TRIANGLES);
-		mesh.addRectangle(100, 100, 200, 200, BYBColors.magenta, true);
+	//	mesh.addRectangle(100, 100, 200, 200, BYBColors.magenta, true);
 		
 		//mesh.addRectangle(-1.0f, -1.0f, 2, 2, BYBColors.white, true);
 		

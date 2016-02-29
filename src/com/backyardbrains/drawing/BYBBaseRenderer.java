@@ -203,9 +203,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
+		//Log.d(TAG, "----------------------------------------- onSurfaceChanged begin");
+		//Log.d(TAG, "width: " + width + "  height: " + height);
 		this.width = width;
 		this.height = height;
 		setMillivoltLabelPosition(height);
+		//Log.d(TAG, "***************************************** onSurfaceChanged end");
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -298,16 +301,15 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 
 	// ----------------------------------------------------------------------------------------
-	protected int glHeightToPixelHeight(float glHeight) {
+	public int glHeightToPixelHeight(float glHeight) {
 		if (height <= 0) {
-			// Log.d(TAG, "Checked height and size was less than or equal to
-			// zero");
+			 Log.d(TAG, "Checked height and size was less than or equal to zero");
 		}
 		return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
 	}
 
 	// ----------------------------------------------------------------------------------------
-	protected float pixelHeightToGlHeight(float pxHeight) {
+	public float pixelHeightToGlHeight(float pxHeight) {
 		return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
 	}
 }

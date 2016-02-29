@@ -14,6 +14,8 @@ public class BYBBarGraph {
 	float margin = markerLength + 10;
 	float l, r, t,b;
 	
+	protected float [] axisColor = BYBColors.getColorAsGlById(BYBColors.white);
+	
 	public BYBBarGraph(float [] values, float x, float y, float w, float h, float[] color){
 		float barWidth = (Math.abs(w) - margin)/values.length;
 		mesh =  new BYBMesh(BYBMesh.TRIANGLES);
@@ -29,6 +31,11 @@ public class BYBBarGraph {
 		this.x = x; this.y = y; this.w = w; this.h = h;
 		
 	}
+	public void setAxisColor(float[] c){
+		if(c.length == 4){
+			axisColor = c;
+		}
+	}
 	public void setVerticalAxis(float min, float max, int numDivs){
 		if(axisMesh == null){
 			axisMesh  = new BYBMesh(BYBMesh.LINES);
@@ -36,9 +43,9 @@ public class BYBBarGraph {
 		minV = min; maxV = max; numDivsV = numDivs;
 
 		float inc = (Math.abs(h) - margin)/numDivs;
-		axisMesh.addLine(l, b, l, t, BYBColors.white);
+		axisMesh.addLine(l, b, l, t, axisColor);
 		for(int i = 0; i < numDivs+1; i++){
-			axisMesh.addLine(l, t+ inc*i, l-markerLength,t+ inc*i, BYBColors.white );
+			axisMesh.addLine(l, t+ inc*i, l-markerLength,t+ inc*i, axisColor);
 		}
 		bAxisSet = true;
 	}
@@ -47,9 +54,9 @@ public class BYBBarGraph {
 			axisMesh  = new BYBMesh(BYBMesh.LINES);
 		}
 		float inc = (Math.abs(w) - margin)/numDivs;
-		axisMesh.addLine(l, b, r, b, BYBColors.white);
+		axisMesh.addLine(l, b, r, b, axisColor);
 		for(int i = 0; i < numDivs+1; i++){
-			axisMesh.addLine(l+ inc*i, b, l+ inc*i,b+markerLength, BYBColors.white );
+			axisMesh.addLine(l+ inc*i, b, l+ inc*i,b+markerLength, axisColor);
 		}
 		minH = min; maxH = max; numDivsH = numDivs;
 		bAxisSet = true;

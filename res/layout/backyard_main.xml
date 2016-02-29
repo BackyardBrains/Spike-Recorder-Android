@@ -45,7 +45,7 @@
   		    android:layout_weight="1"
   		    android:background="#0000"
   		    android:contentDescription="@string/threshold_handle"
-  		    android:src="@drawable/handle_red" />
+  		    android:src="@drawable/handle_white_left" />
         
      </LinearLayout>
   	<LinearLayout

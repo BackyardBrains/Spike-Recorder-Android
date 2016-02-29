@@ -32,4 +32,11 @@
     <string name="close_view_button">Close</string>
     <string name="threshold_handle">Threshold</string>
     <string name="average_num_slider">Num Samples Averaged</string>
+    <string name="back_button"> Back to previous page</string>
+    <string name="trash_can">Remove current</string>
+    <string name="threshold0">Select threshold 0</string>
+    <string name="threshold1">Select threshold 1</string>
+    <string name="threshold2">Select threshold 2</string>
+    <string name="new_threshold">New threshold</string>
+    <string name="playhead_slider">Playhead</string>
 </resources>

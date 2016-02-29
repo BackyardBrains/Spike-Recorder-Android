@@ -235,7 +235,24 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 				bBroadcastTabSelected = false;
 				if(intent.hasExtra("page")){
 					int page = intent.getIntExtra("page", 0);
-					mViewPager.setCurrentItem(page);
+					switch(page){
+					case OSCILLOSCOPE_VIEW:
+						mViewPager.setCurrentItem(0, false);						
+						break;
+					case THRESHOLD_VIEW:
+						mViewPager.setCurrentItem(0, false);						
+						break;
+					case RECORDINGS_LIST:
+						mViewPager.setCurrentItem(1, false);						
+						break;
+					case ANALYSIS_VIEW:
+						mViewPager.setCurrentItem(2, false);
+						break;
+					case FIND_SPIKES_VIEW:
+						mViewPager.setCurrentItem(3, false);						
+						break;
+					}
+
 					if(page == FIND_SPIKES_VIEW){
 						getActionBar().hide();
 					}else{
