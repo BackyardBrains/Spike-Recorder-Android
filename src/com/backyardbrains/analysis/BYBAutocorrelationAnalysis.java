@@ -2,14 +2,15 @@ package com.backyardbrains.analysis;
 
 import android.content.Context;
 
-public class BYBAutocorrelationAnalysis extends BYBBaseAsyncAnalysis {
-	
-	public BYBAutocorrelationAnalysis(Context context, int analysisType, short [] data){
-		super(context, BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION, true, true);
-		execute(data);
+public class BYBAutocorrelationAnalysis {
+	private Context context;
+	public BYBAutocorrelationAnalysis(Context context){
+		this.context = context;	
 	}
-	@Override
-	public void process(short[] data){
+	public void process(){
+		
+		
+		
 		
 	}
 }

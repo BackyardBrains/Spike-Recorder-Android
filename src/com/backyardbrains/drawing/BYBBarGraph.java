@@ -49,6 +49,17 @@ public class BYBBarGraph {
 		}
 		bAxisSet = true;
 	}
+	
+	public void makeBox(float [] color){
+		if(axisMesh == null){
+			axisMesh  = new BYBMesh(BYBMesh.LINES);
+		}
+		axisMesh.addLine(x, y, x+w, y, color);
+		axisMesh.addLine(x+w, y, x+w, y+h, color);
+		axisMesh.addLine(x, y+h, x+w, y+h, color);
+		axisMesh.addLine(x, y, x, y+h, color);
+	}
+	
 	public void setHorizontalAxis(float min, float max, int numDivs){
 		if(axisMesh == null){
 			axisMesh  = new BYBMesh(BYBMesh.LINES);
@@ -63,7 +74,7 @@ public class BYBBarGraph {
 	}
 	public void draw(GL10 gl){
 		mesh.draw(gl);
-		if(bAxisSet){
+		if(axisMesh.getNumVertices() > 0){
 			axisMesh.draw(gl);
 		}
 		//

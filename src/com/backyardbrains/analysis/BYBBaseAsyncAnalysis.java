@@ -21,6 +21,8 @@ class BYBBaseAsyncAnalysis {
 	protected boolean bProcessShorts;
 	asyncProcessShorts asyncShorts = null;
 	asyncProcessFloats asyncFloats = null;
+	asyncProcessVoid asyncVoid = null;
+
 	public interface AnalysisListener{
 		public void analysisDone(int analysisType);
 		public void analysisCanceled(int analysisType);
@@ -46,7 +48,12 @@ class BYBBaseAsyncAnalysis {
 			asyncFloats = new asyncProcessFloats();
 		}
 	}
-
+	public BYBBaseAsyncAnalysis(AnalysisListener listener, int analysisType) {
+		this(analysisType, false, false);
+		this.listener = listener;
+		this.context = null;
+		asyncVoid = new asyncProcessVoid();
+	}
 	public boolean isReady() {
 		return bReady;
 	}
@@ -62,6 +69,11 @@ class BYBBaseAsyncAnalysis {
 			asyncFloats.execute(data);
 		}else{
 			Log.d(TAG, "can't execute, doesn't process floats");
+		}
+	}
+	public void execute(){
+		if(asyncVoid != null){
+			asyncVoid.execute();
 		}
 	}
 
@@ -83,7 +95,9 @@ class BYBBaseAsyncAnalysis {
 	public void process(float[] data) {
 		// override this with the code to process data
 	}
-
+	public void process() {
+		// override this with the code to process data
+	}
 	
 	public short[] getShortResult() {
 		if (bReady && bReturnsShorts) {
@@ -183,6 +197,31 @@ class BYBBaseAsyncAnalysis {
 		protected Void doInBackground(short[]... params) {
 			for (short[] f : params) {
 				process(f);
+			}
+			return null;
+		}
+
+		@Override
+		protected void onCancelled(Void v) {
+			asyncOnCancelled();
+		}
+
+		@Override
+		protected void onPostExecute(Void v) {
+			asyncPostExecute();
+		}
+
+		@Override
+		protected void onPreExecute() {
+			asyncPreExecute();
+		}
+	}
+	private class asyncProcessVoid extends AsyncTask<Void, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			for (Void f : params) {
+				process();
 			}
 			return null;
 		}

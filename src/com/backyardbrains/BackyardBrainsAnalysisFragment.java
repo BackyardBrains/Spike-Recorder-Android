@@ -15,7 +15,7 @@ import com.backyardbrains.drawing.ContinuousGLSurfaceView;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
-  
+
 import com.backyardbrains.drawing.WaitRenderer;
 
 import android.content.BroadcastReceiver;
@@ -31,32 +31,31 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnTouchListener;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 public class BackyardBrainsAnalysisFragment extends Fragment {
 
-	private static final String			TAG							= BackyardBrainsAnalysisFragment.class.getCanonicalName();
+	private static final String	TAG				= BackyardBrainsAnalysisFragment.class.getCanonicalName();
 
-	protected GLSurfaceView	mAndroidSurface				= null;
-	private FrameLayout					mainscreenGLLayout;
-	private SharedPreferences			settings					= null;
-	private Context						context						= null;
-	private BYBSignalAnalysis 			signalAnalysis;
-	protected int						currentAnalyzer				= BYBAnalysisType.BYB_ANALYSIS_NONE;
+	protected GLSurfaceView		mAndroidSurface	= null;
+	private FrameLayout			mainscreenGLLayout;
+	private SharedPreferences	settings		= null;
+	private Context				context			= null;
+	private BYBAnalysisBaseRenderer currentRenderer = null;
+	protected int				currentAnalyzer	= BYBAnalysisType.BYB_ANALYSIS_NONE;
 
-
-	private SignalAnalysisDoneListener 	signalAnalysisDoneListener;
-	private boolean						bFileLoaded					= false;
-	private boolean 					bAnalysisDone				= false;
-
-
-
-
+	private TextView title;
+	private ImageButton backButton;
+	
 	// ----------------------------------------------------------------------------------------
 	public BackyardBrainsAnalysisFragment(Context context) {
 		super();
 		this.context = context.getApplicationContext();
 		Log.d("BackyardBrainsAnalysisFragment", "Constructor");
+		registerListeners();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -78,6 +77,47 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 		View rootView = inflater.inflate(R.layout.analysis_layout, container, false);
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.analysisGlContainer);
+		
+		title = (TextView) rootView.findViewById(R.id.analysis_title);
+		backButton = (ImageButton) rootView.findViewById(R.id.backButton);
+
+		backButton.setOnTouchListener(new OnTouchListener() {
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				if (v.getVisibility() == View.VISIBLE) {
+					if (event.getActionIndex() == 0) {
+						if (event.getActionMasked() == MotionEvent.ACTION_UP) {
+							switch (currentAnalyzer) {
+							case BYBAnalysisType.BYB_ANALYSIS_ISI:
+							case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
+							case BYBAnalysisType.BYB_ANALYSIS_NONE:
+							case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
+								Intent j = new Intent();
+								j.setAction("BYBChangePage");
+								j.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
+								context.sendBroadcast(j);
+								break;
+							case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
+								if(currentRenderer instanceof CrossCorrelationRenderer){
+									if(((CrossCorrelationRenderer) currentRenderer).isDrawThumbs()){
+										Intent i = new Intent();
+										i.setAction("BYBChangePage");
+										i.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
+										context.sendBroadcast(i);		
+									}else{
+										((CrossCorrelationRenderer) currentRenderer).setDrawThumbs(true);
+									}
+								}
+								break;
+							}
+						}
+					}
+					return true;
+				}
+				return false;
+			}
+		});
+		
 		Log.d(TAG, "onCreateView");
 
 		return rootView;
@@ -120,7 +160,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// -----------------------------------------------------------------------------------------------------------------------------
 
 	// ----------------------------------------------------------------------------------------
-	
+
 	public void setRenderer(int i) {
 		if (i >= 0 && i <= 4) {
 			currentAnalyzer = i;
@@ -136,17 +176,14 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			mainscreenGLLayout = null;
 		}
 	}
+
 	// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView(int renderer) {
-		if (context != null ) {
-			
+		if (context != null) {
+
 			mAndroidSurface = null;
 			mainscreenGLLayout.removeAllViews();
-			if(bFileLoaded && bAnalysisDone){
 			switch (renderer) {
-//			case BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES :
-//				setGlSurface(new FindSpikesRenderer(context), true);
-//				break;
 			case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
 				setGlSurface(new AutoCorrelationRenderer(context), true);
 				break;
@@ -163,26 +200,42 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 				setGlSurface(new WaitRenderer(context), true);
 				break;
 			}
-			}else{
-				setGlSurface(new WaitRenderer(context), true);
-			}
 		}
 		mainscreenGLLayout.addView(mAndroidSurface);
-
-		// enableUiForActivity();
+		
+		if(title != null){
+			title.setText(getRendererTitle(renderer));
+		}
+		
 		Log.d(getClass().getCanonicalName(), "Reassigned AnalysisGLSurfaceView");
 	}
-
+	// ----------------------------------------------------------------------------------------
+	private String getRendererTitle(int renderer){
+		switch (renderer) {
+		case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
+			return "Auto Correlation";
+		case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
+			return "Cross Correlation";
+		case BYBAnalysisType.BYB_ANALYSIS_ISI:
+			return "Inter Spike Interval (ISI)";
+		case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
+			return "Average Spike";
+		case BYBAnalysisType.BYB_ANALYSIS_NONE:
+			return "Please wait...";
+		}
+		return "";
+	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlSurface(BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
 		if (context != null && renderer != null) {
 			if (mAndroidSurface != null) {
 				mAndroidSurface = null;
 			}
+			currentRenderer = renderer;
 			mAndroidSurface = new GLSurfaceView(context);
-			mAndroidSurface.setEGLContextClientVersion(2); 
+			//mAndroidSurface.setEGLContextClientVersion(2);
 			mAndroidSurface.setRenderer(renderer);
-			if(bSetOnDemand){
+			if (bSetOnDemand) {
 				mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 			}
 			Log.d(TAG, "setGLSurface oK.");
@@ -195,7 +248,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// ----------------------------------------- TOUCH
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
-
+		if(currentRenderer != null){
+			currentRenderer.onTouchEvent(event);
+		}
 		return mAndroidSurface.onTouchEvent(event);
 	}
 
@@ -208,38 +263,49 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			// context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
 		}
 	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS INSTANCES
+	// -----------------------------------------------------------------------------------------------------------------------------
 
+	private RenderAnalysisListener renderAnalysisListener;
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS
 	// -----------------------------------------------------------------------------------------------------------------------------
-	
-	private class SignalAnalysisDoneListener extends BroadcastReceiver {
+
+	private class RenderAnalysisListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			registerSignalAnalysisDoneReceiver(false);
-			Log.d("SignalAnalysisDoneListener", "onReceive");
-			if(intent.getIntExtra("analysisType", BYBAnalysisType.BYB_ANALYSIS_NONE ) == currentAnalyzer){
-				bAnalysisDone = true;
-				reassignSurfaceView(currentAnalyzer);
-			}else{
-				Log.d("SignalAnalysisDoneListener", " recieved analysis type differs from current analysis type	");
+			if (intent.hasExtra("ISI")) {
+				setRenderer(BYBAnalysisType.BYB_ANALYSIS_ISI);
+			} else if (intent.hasExtra("AutoCorrelation")) {
+				setRenderer(BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION);
+			} else if (intent.hasExtra("CrossCorrelation")) {
+				setRenderer(BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION);
+			} else if (intent.hasExtra("AverageSpike")) {
+				setRenderer(BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE);
+			}else if (intent.hasExtra("requestRender")) {
+				mAndroidSurface.requestRender();
 			}
-
-		};
+		}
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 	// -----------------------------------------------------------------------------------------------------------------------------
-
-	private void registerSignalAnalysisDoneReceiver(boolean reg) {
+	private void registerRenderAnalysisReceiver(boolean reg) {
 		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBSignalAnalysisDone");
-			signalAnalysisDoneListener = new SignalAnalysisDoneListener();
-			context.registerReceiver(signalAnalysisDoneListener, intentFilter);
+			IntentFilter intentFilter = new IntentFilter("BYBRenderAnalysis");
+			renderAnalysisListener = new RenderAnalysisListener();
+			context.registerReceiver(renderAnalysisListener, intentFilter);
 		} else {
-			context.unregisterReceiver(signalAnalysisDoneListener);
-			signalAnalysisDoneListener = null;
+			context.unregisterReceiver(renderAnalysisListener);
+			renderAnalysisListener = null;
 		}
+	}
+	protected void registerListeners(){
+		registerRenderAnalysisReceiver(true);
+	}
+	protected void unregisterListeners(){
+		registerRenderAnalysisReceiver(false);
 	}
 }

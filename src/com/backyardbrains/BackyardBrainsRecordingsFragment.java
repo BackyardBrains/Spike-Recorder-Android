@@ -62,6 +62,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		super.onCreate(savedInstanceState);
 
 		bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
+		Log.d(TAG, "bybDirectory: " + bybDirectory.getAbsolutePath());
 		rescanFiles();
 		registerReceivers();
 	}
@@ -179,38 +180,53 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 	private void findSpikes(File f) {
 		if(f.exists()){
 			Intent i = new Intent();
-			i.setAction("BYBFindPeaks");
+			i.setAction("BYBAnalizeFile");
 			i.putExtra("filePath", f.getAbsolutePath());
 			context.sendBroadcast(i);			
 			Intent j = new Intent();
 			j.setAction("BYBChangePage");
 			j.putExtra("page", BackyardBrainsMain.FIND_SPIKES_VIEW);
 			context.sendBroadcast(j);			
-		
-			
 		}
 	}
 
 // ----------------------------------------------------------------------------------------
 	private void autocorrelation(File f) {
-
+		doAnalysis(f, "doAutoCorrelation", "AutoCorrelation");	
 	}
 
 // ----------------------------------------------------------------------------------------
 	private void ISI(File f) {
-
+		doAnalysis(f, "doISI", "ISI");
 	}
-
 // ----------------------------------------------------------------------------------------
 	private void crossCorrelation(File f) {
-
+		doAnalysis(f, "doCrossCorrelation", "CrossCorrelation");
 	}
 
 // ----------------------------------------------------------------------------------------
 	private void averageSpike(File f) {
-
+		doAnalysis(f, "doAverageSpike", "AverageSpike");
 	}
-
+	// ----------------------------------------------------------------------------------------
+	private void doAnalysis(File f, String process, String render){
+		if(f.exists()){
+			Intent i = new Intent();
+			i.setAction("BYBAnalizeFile");
+			i.putExtra("filePath", f.getAbsolutePath());
+			i.putExtra(process, true);
+			context.sendBroadcast(i);			
+			Intent j = new Intent();
+			j.setAction("BYBChangePage");
+			j.putExtra("page", BackyardBrainsMain.ANALYSIS_VIEW);
+			context.sendBroadcast(j);			
+			Intent k = new Intent();
+			k.setAction("BYBRenderAnalysis");
+			k.putExtra(render, true);
+			context.sendBroadcast(k);
+		}
+		
+	}
 // ----------------------------------------------------------------------------------------
 	private void emailFile(File f) {
 		Intent sendIntent = new Intent(Intent.ACTION_SEND);

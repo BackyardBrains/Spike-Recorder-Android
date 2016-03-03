@@ -82,7 +82,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 					renderer.setCurrentColor(currentColor);
 					leftThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
 					rightThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-					Log.d(TAG, "updateThresholdHandle!");
+					//Log.d(TAG, "updateThresholdHandle!");
 				}
 				if (thresholdsSize < maxThresholds) {
 					addButton.setVisibility(View.VISIBLE);
@@ -114,43 +114,43 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 	// -----------------------------------------------------------------------------------------------------------------------------
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		Log.d(TAG, "----------------------------------------- onCreate begin");
+		//Log.d(TAG, "----------------------------------------- onCreate begin");
 		super.onCreate(savedInstanceState);
 		if (context != null) {
 			mScaleListener = new ScaleListener();
 			mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);
 		}
-		Log.d(TAG, "***************************************** onCreate end");
+		//Log.d(TAG, "***************************************** onCreate end");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		Log.d(TAG, "----------------------------------------- onCreateView begin");
+		//Log.d(TAG, "----------------------------------------- onCreateView begin");
 		View rootView = inflater.inflate(R.layout.backyard_spikes, container, false);
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer2);
 		setupButtons(rootView);
-		Log.d(TAG, "***************************************** onCreateView end");
+		//Log.d(TAG, "***************************************** onCreateView end");
 		return rootView;
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onStart() {
-		Log.d(TAG, "----------------------------------------- onStart begin");
+		//Log.d(TAG, "----------------------------------------- onStart begin");
 		reassignSurfaceView();
 		readSettings();
 
 		super.onStart();
-		Log.d(TAG, "***************************************** onStart end");
+		//Log.d(TAG, "***************************************** onStart end");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onResume() {
 
-		Log.d(TAG, "----------------------------------------- onResume begin");
+		//Log.d(TAG, "----------------------------------------- onResume begin");
 		registerReceivers();
 		readSettings();
 		if (mAndroidSurface != null) {
@@ -158,39 +158,39 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 		}
 		updateThresholdHandles();
 		super.onResume();
-		Log.d(TAG, "***************************************** onResume end");
+		//Log.d(TAG, "***************************************** onResume end");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onPause() {
-		Log.d(TAG, "----------------------------------------- onPause begin");
+		//Log.d(TAG, "----------------------------------------- onPause begin");
 		if (mAndroidSurface != null) {
 			mAndroidSurface.onPause();
 		}
 		unregisterReceivers();
 		saveSettings();
 		super.onPause();
-		Log.d(TAG, "***************************************** onPause end");
+		//Log.d(TAG, "***************************************** onPause end");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onStop() {
-		Log.d(TAG, "----------------------------------------- onStop begin");
+		//Log.d(TAG, "----------------------------------------- onStop begin");
 		saveSettings();
 		super.onStop();
 		mAndroidSurface = null;
-		Log.d(TAG, "***************************************** onStop end");
+		//Log.d(TAG, "***************************************** onStop end");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onDestroy() {
-		Log.d(TAG, "----------------------------------------- onDestroy begin");
+		//Log.d(TAG, "----------------------------------------- onDestroy begin");
 		destroyRenderers();
 		super.onDestroy();
-		Log.d(TAG, "***************************************** onDestroy end");
+		//Log.d(TAG, "***************************************** onDestroy end");
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 
 	// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView() {
-		Log.d(TAG, "----------------------------------------- reassignSurfaceView begin");
+		//Log.d(TAG, "----------------------------------------- reassignSurfaceView begin");
 		if (context != null) {
 			mAndroidSurface = null;
 			mainscreenGLLayout.removeAllViews();
@@ -230,12 +230,12 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 
 			updateThresholdHandles();
 
-			Log.d(getClass().getCanonicalName(), "Reassigned FindSpikesGLSurfaceView");
+			//Log.d(getClass().getCanonicalName(), "Reassigned FindSpikesGLSurfaceView");
 
 		} else {
-			Log.d(TAG, "context == null");
+			//Log.d(TAG, "context == null");
 		}
-		Log.d(TAG, "***************************************** reassignSurfaceView end");
+		//Log.d(TAG, "***************************************** reassignSurfaceView end");
 
 	}
 
@@ -267,14 +267,14 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				renderer.setAutoScaled(settings.getBoolean("spikesRendererAutoscaled", renderer.isAutoScaled()));
 				renderer.setGlWindowHorizontalSize(settings.getInt("spikesRendererGlWindowHorizontalSize", renderer.getGlWindowHorizontalSize()));
 				renderer.setGlWindowVerticalSize(settings.getInt("spikesRendererGlWindowVerticalSize", renderer.getGlWindowVerticalSize()));
-				Log.d(TAG, "renderer readsettings");
-				Log.d(TAG, "isAutoScaled: " + settings.getBoolean("spikesRendererAutoscaled", false));
-				Log.d(TAG, "GlHorizontalSize: " + settings.getInt("spikesRendererGlWindowHorizontalSize", 0)); //
-				Log.d(TAG, "GlVerticalSize: " + settings.getInt("spikesRendererGlWindowVerticalSize", 0));
+				//Log.d(TAG, "renderer readsettings");
+				//Log.d(TAG, "isAutoScaled: " + settings.getBoolean("spikesRendererAutoscaled", false));
+				//Log.d(TAG, "GlHorizontalSize: " + settings.getInt("spikesRendererGlWindowHorizontalSize", 0)); //
+				//Log.d(TAG, "GlVerticalSize: " + settings.getInt("spikesRendererGlWindowVerticalSize", 0));
 			} //
 
 		} else {
-			Log.d(TAG, "Cant Read settings. settings == null");
+			//Log.d(TAG, "Cant Read settings. settings == null");
 		}
 	}
 
@@ -288,14 +288,14 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				editor.putInt("spikesRendererGlWindowHorizontalSize", renderer.getGlWindowHorizontalSize());
 				editor.putInt("spikesRendererGlWindowVerticalSize", renderer.getGlWindowVerticalSize());
 				editor.commit();
-				Log.d(TAG, "renderer saved settings");
-				Log.d(TAG, "rendererAutoscaled " + renderer.isAutoScaled());
-				Log.d(TAG, "rendererGlWindowHorizontalSize " + renderer.getGlWindowHorizontalSize());
-				Log.d(TAG, "rendererGlWindowVerticalSize " + renderer.getGlWindowVerticalSize());
+				//Log.d(TAG, "renderer saved settings");
+				//Log.d(TAG, "rendererAutoscaled " + renderer.isAutoScaled());
+				//Log.d(TAG, "rendererGlWindowHorizontalSize " + renderer.getGlWindowHorizontalSize());
+				//Log.d(TAG, "rendererGlWindowVerticalSize " + renderer.getGlWindowVerticalSize());
 			}
 
 		} else {
-			Log.d(TAG, "Cant Save settings. settings == null");
+			//Log.d(TAG, "Cant Save settings. settings == null");
 		}
 	}
 
@@ -512,7 +512,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				if (intent.hasExtra("name")) {
 					if (renderer != null) {
 						int index = -1;
-						Log.d(TAG, intent.getStringExtra("name"));
+						//Log.d(TAG, intent.getStringExtra("name"));
 						if (intent.getStringExtra("name").equals("LeftSpikesHandle")) {
 							index = FindSpikesRenderer.LEFT_THRESH_INDEX;
 						} else if (intent.getStringExtra("name").equals("RightSpikesHandle")) {

@@ -63,5 +63,24 @@ public class BYBUtils {
 		buf.position(0);
 		return buf;
 	}
+	
+	public static float [] generateLogSpace(int min, int max, int logBins){
+	    double logarithmicBase = Math.E;
+	    double mins = Math.pow(10.0,min);
+	    double maxs = Math.pow(10.0,max);
+	    double logMin = Math.log(mins);
+	    double logMax = Math.log(maxs);
+	    double delta = (logMax - logMin) / logBins;
+
+	    double accDelta = 0;
+	    float[] v = new float[logBins+1];
+	    for (int i = 0; i <= logBins; ++i){
+	        v[i] = (float) Math.pow(logarithmicBase, logMin + accDelta);
+	        accDelta += delta;// accDelta = delta * i
+	    }
+	    return v;
+	}
+	
+	
 }
 

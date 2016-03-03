@@ -79,7 +79,7 @@ public class BYBThresholdHandle {
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------	
 	public void setYPosition(int pos){
-		Log.d(TAG, "setYPosition " + pos);
+		//Log.d(TAG, "setYPosition " + pos);
 		
 		button.setY(pos - (button.getHeight() / 2));
 	}
@@ -93,7 +93,7 @@ public class BYBThresholdHandle {
 	// ----------------------------------------- BROADCAST RECEIVERS
 	// -----------------------------------------------------------------------------------------------------------------------------	
 	public void registerUpdateThresholdHandleListener(boolean reg) {
-		Log.d(TAG, "registerListener " + reg);
+		//Log.d(TAG, "registerListener " + reg);
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
 			updateThresholdHandleListener = new UpdateThresholdHandleListener();

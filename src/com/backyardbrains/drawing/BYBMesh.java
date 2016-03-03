@@ -16,7 +16,8 @@ public class BYBMesh {
 	public static final int			LINES		= 0;
 	public static final int			TRIANGLES	= 1;
 	public static final int			TRIANGLE_STRIP	= 2;
-
+	public static final int			POINTS	= 3;
+	
 	protected ArrayList<float[]>	vertices;
 	protected ArrayList<float[]>	colors;
 	protected ArrayList<float[]>	texCoords;
@@ -29,7 +30,12 @@ public class BYBMesh {
 		texCoords = new ArrayList<float[]>();
 		this.mode = mode;
 	}
-
+	
+	public void clear(){
+		vertices.clear();
+		colors.clear();
+		texCoords.clear();
+	}
 	public void addVertex(float[] v) {
 		if (v.length == 2) vertices.add(v);
 	}
@@ -141,7 +147,9 @@ public class BYBMesh {
 			case TRIANGLE_STRIP:
 				gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, vertices.size());
 				break;
-			
+			case POINTS:
+				gl.glDrawArrays(GL10.GL_POINTS, 0, vertices.size());
+				break;
 			}
 			if (bDrawColors) gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			if (bDrawTexCoords) gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);

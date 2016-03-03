@@ -14,6 +14,7 @@ public class NonSwipeableViewPager extends ViewPager {
 
 	public NonSwipeableViewPager(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		setOffscreenPageLimit(0);
 	}
 
 	// *

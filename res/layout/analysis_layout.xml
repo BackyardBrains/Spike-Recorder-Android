@@ -3,10 +3,46 @@
     android:id="@+id/analysisParentLayout"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
+	<ImageButton
+  		    android:id="@+id/backButton"
+  		    android:layout_width="wrap_content"
+  		    android:layout_height="wrap_content"
+  		    android:layout_gravity="left"
+  		
+  		    android:background="#0000"
+  		    android:contentDescription="@string/back_button"
+  		    android:src="@drawable/backbtn" />
+    	 <LinearLayout
+        android:id="@+id/titleLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/backButton"
+         >
 
-    <FrameLayout
-        android:id="@+id/analysisGlContainer"
+    <TextView
+        android:id="@+id/analysis_title"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent" >
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:background="#00000000"
+        android:gravity="center"
+        android:text="@string/analysis_title"
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textColor="#ffffffff"
+        android:visibility="visible" >
+
+    </TextView>
+     </LinearLayout>
+   <FrameLayout
+       android:id="@+id/analysisGlContainer"
+       android:layout_width="fill_parent"
+       android:layout_height="fill_parent"
+       android:layout_below="@+id/backButton" >
+
     </FrameLayout>
+    
+    
+    
+    
 </RelativeLayout>

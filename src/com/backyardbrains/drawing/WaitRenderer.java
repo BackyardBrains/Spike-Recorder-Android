@@ -1,20 +1,20 @@
 package com.backyardbrains.drawing;
+//
+//import java.nio.ByteBuffer;
+//import java.nio.ByteOrder;
+//import java.nio.FloatBuffer;
+//import java.nio.ShortBuffer;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-
-import javax.microedition.khronos.egl.EGLConfig;
+//import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-
-import com.android.texample2.GLText;
+//
+//import com.android.texample2.GLText;
 
 import android.content.Context;
-import android.opengl.GLES20;
-import android.opengl.GLU;
-import android.opengl.Matrix;
-import android.util.Log;
+//import android.opengl.GLES20;
+//import android.opengl.GLU;
+//import android.opengl.Matrix;
+//import android.util.Log;
 
 public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 
@@ -26,15 +26,15 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 
 	Context context;
 	BYBMesh mesh;
-	
-	private GLText glText;                             // A GLText Instance
-
-	private int width = 100;                           // Updated to the Current Width + Height in onSurfaceChanged()
-	private int height = 100;
-	private float[] mProjMatrix = new float[16];
-	private float[] mVMatrix = new float[16];
-	private float[] mVPMatrix = new float[16];
-	
+//	
+//	private GLText glText;                             // A GLText Instance
+//
+//	private int width = 100;                           // Updated to the Current Width + Height in onSurfaceChanged()
+//	private int height = 100;
+//	private float[] mProjMatrix = new float[16];
+//	private float[] mVMatrix = new float[16];
+//	private float[] mVPMatrix = new float[16];
+//	
 	//----------------------------------------------------------------------------------------
 	public WaitRenderer(Context context){
 
@@ -151,6 +151,7 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 	protected void drawingHandler(GL10 gl) {
 		//Log.d(TAG, "draw");
 	//	initGL(gl);
+		/*
 		gl.glMatrixMode(GL10.GL_MODELVIEW);
 		gl.glLoadIdentity();
 
@@ -204,7 +205,7 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 //		//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 //		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
-//*	
+/*	
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if(height == 0) { 						//Prevent A Divide By Zero By
@@ -222,7 +223,7 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 		gl.glLoadIdentity(); 					//Reset The Modelview Matrix
 		
 		
-		//*/
+
 		
 		GLES20.glViewport(0, 0, width, height);
 		float ratio = (float) width / height;

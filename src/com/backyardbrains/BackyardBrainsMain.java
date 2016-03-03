@@ -121,6 +121,10 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 				((BackyardBrainsSpikesFragment) frags.get(i)).onTouchEvent(event);
 				ret = true;
 				// break;
+			}else if (frags.get(i) instanceof BackyardBrainsAnalysisFragment) {
+				((BackyardBrainsAnalysisFragment) frags.get(i)).onTouchEvent(event);
+				ret = true;
+				// break;
 			}
 			// }
 		}
@@ -253,7 +257,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 						break;
 					}
 
-					if(page == FIND_SPIKES_VIEW){
+					if(page == FIND_SPIKES_VIEW || page == ANALYSIS_VIEW){
 						getActionBar().hide();
 					}else{
 						getActionBar().show();

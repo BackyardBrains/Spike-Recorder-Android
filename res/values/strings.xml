@@ -39,4 +39,5 @@
     <string name="threshold2">Select threshold 2</string>
     <string name="new_threshold">New threshold</string>
     <string name="playhead_slider">Playhead</string>
+    <string name="analysis_title">Analysis Name</string>
 </resources>
