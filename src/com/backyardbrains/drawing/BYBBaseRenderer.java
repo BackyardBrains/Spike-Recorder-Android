@@ -50,7 +50,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			return;
 		this.glWindowHorizontalSize = newX;
 //		Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
-		
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -303,9 +302,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public int glHeightToPixelHeight(float glHeight) {
 		if (height <= 0) {
-			// Log.d(TAG, "Checked height and size was less than or equal to zero");
+			 Log.d(TAG, "Checked height and size was less than or equal to zero");
 		}
-		return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
+		int ret = BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
+		Log.d(TAG, "glHeightToPixelHeight glHeight: " + glHeight + "   " + ret); 
+		return ret;
+//		return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
 	}
 
 	// ----------------------------------------------------------------------------------------

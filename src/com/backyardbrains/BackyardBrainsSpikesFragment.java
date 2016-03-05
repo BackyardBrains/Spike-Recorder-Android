@@ -50,12 +50,31 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 // public static final int maxThresholds = 3;
 //
 
-	private float[][]							colors			= { BYBColors.getColorAsGlById(BYBColors.red), BYBColors.getColorAsGlById(BYBColors.yellow), BYBColors.getColorAsGlById(BYBColors.cyan) };
-
+	private float[][]							handleColors			;//= { BYBColors.getColorAsGlById(BYBColors.red), BYBColors.getColorAsGlById(BYBColors.yellow), BYBColors.getColorAsGlById(BYBColors.cyan) };
+	private static final int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ffff };  
+			//BYBColors.getGlColorAsHex( handleColors[0]), BYBColors.getGlColorAsHex( handleColors[1]),BYBColors.getGlColorAsHex( handleColors[2])};
+	
 	// ----------------------------------------------------------------------------------------
 	public BackyardBrainsSpikesFragment(Context context) {
 		super();
 		this.context = context.getApplicationContext();
+		handleColors = new float [3][4];
+		
+		handleColors[0][0] = 1.0f;
+		handleColors[0][1] = 0.0f;
+		handleColors[0][2] = 0.0f;
+		handleColors[0][3] = 1.0f;
+		
+		handleColors[1][0] = 1.0f;
+		handleColors[1][1] = 1.0f;
+		handleColors[1][2] = 0.0f;
+		handleColors[1][3] = 1.0f;
+		
+		handleColors[2][0] = 0.0f;
+		handleColors[2][1] = 1.0f;
+		handleColors[2][2] = 1.0f;
+		handleColors[2][3] = 1.0f;
+		
 // thresholds = new ArrayList<int[]>();
 // thresholds.add(new int[2]);
 	}
@@ -67,18 +86,23 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				int thresholdsSize = ((BackyardBrainsApplication) context).getAnalysisManager().getThresholdsSize();
 				int maxThresholds = ((BackyardBrainsApplication) context).getAnalysisManager().getMaxThresholds();
 				int selectedThreshold = ((BackyardBrainsApplication) context).getAnalysisManager().getSelectedThresholdIndex();
-
+				Log.d(TAG, "Update Threshold Handles thresholdSize: " + thresholdsSize + "  maxThresholds: " + maxThresholds + "  selectedThreshold: " + selectedThreshold );
 				if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < maxThresholds) {
 					int[] t = ((BackyardBrainsApplication) context).getAnalysisManager().getSelectedThresholds();
 					for (int i = 0; i < 2; i++) {
 						renderer.setThreshold(t[i], i);
 					}
-					leftThresholdHandle.setYPosition(renderer.getThresholdScreenValue(FindSpikesRenderer.LEFT_THRESH_INDEX));
-					rightThresholdHandle.setYPosition(renderer.getThresholdScreenValue(FindSpikesRenderer.RIGHT_THRESH_INDEX));
-					float[] currentColor = colors[selectedThreshold];// (thresholds.size()
-																		// - 1)
-																		// %
-																		// maxThresholds];
+					int l = renderer.getThresholdScreenValue(FindSpikesRenderer.LEFT_THRESH_INDEX);
+					int r = renderer.getThresholdScreenValue(FindSpikesRenderer.RIGHT_THRESH_INDEX);
+					Log.d(TAG, "leftHandle pos  " + l);
+					Log.d(TAG, "rightHandle pos " + r);
+					leftThresholdHandle.setYPosition(l);//renderer.getThresholdScreenValue(FindSpikesRenderer.LEFT_THRESH_INDEX));
+					rightThresholdHandle.setYPosition(r);//renderer.getThresholdScreenValue(FindSpikesRenderer.RIGHT_THRESH_INDEX));
+					float[] currentColor = handleColors[selectedThreshold];
+//					for(int i = 0; i < handleColors.length; i++){
+//						Log.d(TAG, "color "+ i +" : " + handleColors[i][0] + ", " + handleColors[i][1] + ", " + handleColors[i][2] + ", " + handleColors[i][3]);
+//					}
+//					Log.d(TAG, "current color: " + currentColor[0] + ", " + currentColor[1] + ", " + currentColor[2] + ", " + currentColor[3]);
 					renderer.setCurrentColor(currentColor);
 					leftThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
 					rightThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
@@ -101,8 +125,10 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				for (int i = 0; i < maxThresholds; i++) {
 					if (i < thresholdsSize) {
 						thresholdButtons[i].setVisibility(View.VISIBLE);
+					//	Log.d(TAG, "Threshold button " + i + "set to VISIBLE");
 					} else {
 						thresholdButtons[i].setVisibility(View.GONE);
+					//	Log.d(TAG, "Threshold button " + i + "set to GONE");
 					}
 				}
 			}
@@ -352,11 +378,19 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 	// ----------------------------------------------------------------------------------------
 
 	public void setupButtons(View view) {
-
+Log.d(TAG, "setupButtons");
+		if(thresholdButtons != null){
+			for(int i = 0; i < thresholdButtons.length; i++){
+				thresholdButtons[i] = null;
+			}
+			thresholdButtons = null;
+		}
 		thresholdButtons = new ImageButton[3];
 		thresholdButtons[0] = ((ImageButton) view.findViewById(R.id.threshold0));
 		thresholdButtons[1] = ((ImageButton) view.findViewById(R.id.threshold1));
 		thresholdButtons[2] = ((ImageButton) view.findViewById(R.id.threshold2));
+		
+		
 		backButton = ((ImageButton) view.findViewById(R.id.backButton));
 		addButton = ((ImageButton) view.findViewById(R.id.new_threshold));
 		trashButton = ((ImageButton) view.findViewById(R.id.trash_can));
@@ -412,7 +446,11 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 
 		// }
 		for (int i = 0; i < thresholdButtons.length; i++) {
-			thresholdButtons[i].setColorFilter(BYBColors.asARGB(BYBColors.getGlColorAsHex(colors[i])));
+			float [] c = new float[4];
+			for(int k = 0; k < 4; k ++){
+				c[k] = handleColors[i][k];
+			}
+			thresholdButtons[i].setColorFilter(handleColorsHex[i]); // BYBColors.asARGB(BYBColors.getGlColorAsHex(c)));
 		}
 
 		backButton.setOnTouchListener(new OnTouchListener() {

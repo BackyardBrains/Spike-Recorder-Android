@@ -13,16 +13,16 @@ import android.util.Log;
 
 public class BYBMesh {
 
-	public static final int			LINES		= 0;
-	public static final int			TRIANGLES	= 1;
+	public static final int			LINES			= 0;
+	public static final int			TRIANGLES		= 1;
 	public static final int			TRIANGLE_STRIP	= 2;
-	public static final int			POINTS	= 3;
-	
+	public static final int			POINTS			= 3;
+
 	protected ArrayList<float[]>	vertices;
 	protected ArrayList<float[]>	colors;
 	protected ArrayList<float[]>	texCoords;
 
-	protected int					mode		= TRIANGLES;
+	protected int					mode			= TRIANGLES;
 
 	public BYBMesh(int mode) {
 		vertices = new ArrayList<float[]>();
@@ -30,18 +30,19 @@ public class BYBMesh {
 		texCoords = new ArrayList<float[]>();
 		this.mode = mode;
 	}
-	
-	public void clear(){
+
+	public void clear() {
 		vertices.clear();
 		colors.clear();
 		texCoords.clear();
 	}
+
 	public void addVertex(float[] v) {
 		if (v.length == 2) vertices.add(v);
 	}
 
 	public void addVertex(float x, float y) {
-		float[] v = new float[]{ x, y };
+		float[] v = new float[] { x, y };
 		vertices.add(v);
 	}
 
@@ -90,29 +91,37 @@ public class BYBMesh {
 	public void addRectangle(float x, float y, float w, float h, float[] color) {
 		addRectangle(x, y, w, h, color, false);
 	}
+
 	public void addRectangle(float x, float y, float w, float h, float[] color, boolean bAutoAddTexCoords) {
-		addVertex(x, y);
-		addVertex(x + w, y);
-		addVertex(x, y + h);
-		if(mode == TRIANGLES){
+		if (mode == LINES) {
+			addLine(x, y, x + w, y, color);
+			addLine(x + w, y, x + w, y + h, color);
+			addLine(x, y + h, x + w, y + h, color);
+			addLine(x, y, x, y + h, color);
+		} else {
+			addVertex(x, y);
 			addVertex(x + w, y);
 			addVertex(x, y + h);
-		}
-		addVertex(x + w, y + h);
-		
-		int n = (mode == TRIANGLES)?6:4;
-		for (int i = 0; i < n; i++) {
-			addColor(color);
-		}
-		if(bAutoAddTexCoords){
-			addTexCoord(0.0f, 0.0f);
-			addTexCoord(1.0f, 0.0f);
-			addTexCoord(0.0f, 1.0f);
-			if(mode == TRIANGLES){
+			if (mode == TRIANGLES) {
+				addVertex(x + w, y);
+				addVertex(x, y + h);
+			}
+			addVertex(x + w, y + h);
+
+			int n = (mode == TRIANGLES) ? 6 : 4;
+			for (int i = 0; i < n; i++) {
+				addColor(color);
+			}
+			if (bAutoAddTexCoords) {
+				addTexCoord(0.0f, 0.0f);
 				addTexCoord(1.0f, 0.0f);
 				addTexCoord(0.0f, 1.0f);
+				if (mode == TRIANGLES) {
+					addTexCoord(1.0f, 0.0f);
+					addTexCoord(0.0f, 1.0f);
+				}
+				addTexCoord(1.0f, 1.0f);
 			}
-			addTexCoord(1.0f, 1.0f);
 		}
 	}
 

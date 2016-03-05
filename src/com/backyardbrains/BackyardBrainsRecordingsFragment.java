@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
+
 
 
 import android.app.Activity;
@@ -37,7 +40,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 
 	private File				bybDirectory;
 	private Context				context;
-	private FileReadReceiver	readReceiver;
+	
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- CONSTRUCTOR
@@ -75,27 +78,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		super.onDestroy();
 	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------- BROADCAST RECEIVERS CLASS
-// -----------------------------------------------------------------------------------------------------------------------------
-	private class FileReadReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(android.content.Context context, android.content.Intent intent) {
-		}
-	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------- REGISTER RECEIVERS
-// -----------------------------------------------------------------------------------------------------------------------------
-	public void registerReceivers() {
-		IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
-		readReceiver = new FileReadReceiver();
-		context.registerReceiver(readReceiver, fileReadIntent);
-	}
-
-	public void unregisterReceivers() {
-		context.unregisterReceiver(readReceiver);
-	}
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- LIST TASKS
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -156,9 +139,27 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 // ----------------------------------------------------------------------------------------
 	void rescanFiles() {
 		File[] files = bybDirectory.listFiles();
-		if (files != null) {
+		if (files != null && files.length > 1) {
+			String m = "";
+			for(int i =0; i < files.length; i++){
+				m+= files[i].getName() + "\n";
+			}
+			        Arrays.sort(files, new Comparator<File>() {
+			             @Override
+			             public int compare(File object1, File object2) {
+			                return (int) ((object1.lastModified() > object2.lastModified()) ? object1.lastModified(): object2.lastModified());
+			            	 //return object1.getName().compareTo(object2.getName());
+			             }
+			    });
+			        m+= "--------------================--------------\n";
+					for(int i =0; i < files.length; i++){
+						m+= files[i].getName() + "\n";
+					}
+					Log.d(TAG, m);
+			Log.d(TAG, "RESCAN FILES!!!!!");
 			ListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_row_layout, files);
 			setListAdapter(adapter);
+	
 		}
 	}
 
@@ -330,4 +331,78 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 			}
 		}
 	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS INSTANCES
+	// -----------------------------------------------------------------------------------------------------------------------------
+	private ToggleRecordingListener toggleRecorder;
+	private FileReadReceiver	readReceiver;
+	private SuccessfulSaveListener successfulSaveListener;
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS CLASS
+	// -----------------------------------------------------------------------------------------------------------------------------
+		private class ToggleRecordingListener extends BroadcastReceiver {
+			@Override
+			public void onReceive(android.content.Context context, android.content.Intent intent) {
+				rescanFiles();
+			};
+		}
+		private class FileReadReceiver extends BroadcastReceiver {
+			@Override
+			public void onReceive(android.content.Context context, android.content.Intent intent) {
+			}
+		}
+
+		private class SuccessfulSaveListener extends BroadcastReceiver {
+			@Override
+			public void onReceive(android.content.Context context, android.content.Intent intent) {
+				rescanFiles();
+			}
+		}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
+	// -----------------------------------------------------------------------------------------------------------------------------
+		private void registerSuccessfulSaveReceiver(boolean reg) {
+			if (reg) {
+				IntentFilter intentFilter = new IntentFilter("BYBRecordingSaverSuccessfulSave");
+				successfulSaveListener = new SuccessfulSaveListener();
+				context.registerReceiver(successfulSaveListener, intentFilter);
+			} else {
+				context.unregisterReceiver(successfulSaveListener);
+			}
+		}
+		
+	private void registerRecordingToggleReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
+			toggleRecorder = new ToggleRecordingListener();
+			context.registerReceiver(toggleRecorder, intentFilter);
+		} else {
+			context.unregisterReceiver(toggleRecorder);
+		}
+	}
+	private void registerFileReadReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
+			readReceiver = new FileReadReceiver();
+			context.registerReceiver(readReceiver, fileReadIntent);
+		}else{
+			context.unregisterReceiver(readReceiver);
+		}
+	}
+	// -----------------------------------------------------------------------------------------------------------------------------
+	// ----------------------------------------- REGISTER RECEIVERS
+	// -----------------------------------------------------------------------------------------------------------------------------
+		public void registerReceivers() {
+			Log.d(TAG, "registerReceivers");
+			registerRecordingToggleReceiver(true);
+			registerFileReadReceiver(true);
+			registerSuccessfulSaveReceiver(true);
+		}
+
+		public void unregisterReceivers() {
+			Log.d(TAG, "unregisterReceivers");
+			registerRecordingToggleReceiver(false);
+			registerFileReadReceiver(false);
+			registerSuccessfulSaveReceiver(false);
+		}
 }

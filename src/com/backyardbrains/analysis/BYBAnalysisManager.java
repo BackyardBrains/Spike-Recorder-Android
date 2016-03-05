@@ -13,41 +13,46 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener, BYBBaseAsyncAnalysis.AnalysisListener {
-	private static final String				TAG							= "BYBAnalysisManager";
+	private static final String				TAG									= "BYBAnalysisManager";
 
 	private Context							context;
 	private RecordingReader					reader;
 	private File							fileToAnalize;
 
 	private BYBFindSpikesAnalysis			spikesAnalysis;
-	private boolean							bSpikesDone					= false;
-	private boolean							bProcessSpikes				= false;
+	private boolean							bSpikesDone							= false;
+	private boolean							bProcessSpikes						= false;
 	private BYBSpike[]						spikes;
 	private float							maxSpikeValue, minSpikeValue;
-	private int								totalNumSamples				= 0;
+	private int								totalNumSamples						= 0;
 
 	private ArrayList<ArrayList<BYBSpike>>	spikeTrains;
-	private boolean							bSpikeTrainsDone			= false;
-	private boolean							bProcessSpikeTrains			= false;
+	private boolean							bSpikeTrainsDone					= false;
+	private boolean							bProcessSpikeTrains					= false;
 
 	private ArrayList<ArrayList<ISIResult>>	ISI;
-	private boolean							bProcessISI					= false;
-	private boolean							bISIDone					= false;
+	private boolean							bProcessISI							= false;
+	private boolean							bISIDone							= false;
 
-	private int								selectedThreshold			= 0;
+	private int								selectedThreshold					= 0;
 	private ArrayList<int[]>				thresholds;
-	public static final int					maxThresholds				= 3;
+	public static final int					maxThresholds						= 3;
+	private boolean bThresholdsChanged = false;
 
 	private ArrayList<ArrayList<Integer>>	autoCorrelation;
-	private boolean							bProcessAutoCorrelation		= false;
-	private boolean							bAutoCorrelationDone		= false;
+	private boolean							bProcessAutoCorrelation				= false;
+	private boolean							bAutoCorrelationDone				= false;
 
 	private ArrayList<ArrayList<Integer>>	crossCorrelation;
-	private boolean							bProcessCrossCorrelation	= false;
-	private boolean							bCrossCorrelationDone		= false;
+	private boolean							bProcessCrossCorrelation			= false;
+	private boolean							bCrossCorrelationDone				= false;
 
-	private boolean							bProcessAverageSpike		= false;
-	private boolean							bAverageSpikeDone			= false;
+	private AverageSpikeData[]				avr;
+	private boolean							bProcessAverageSpike				= false;
+	private boolean							bAverageSpikeDone					= false;
+
+	public static final int					BUFFER_SIZE							= 524288;
+	public static final float				AVERAGE_SPIKE_HALF_LENGTH_SECONDS	= 0.002f;
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public BYBAnalysisManager(Context context) {
@@ -76,6 +81,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		bProcessSpikes = false;
 		bProcessISI = false;
 		bISIDone = false;
+		bAverageSpikeDone = false;
 
 		bProcessAutoCorrelation = false;
 		bAutoCorrelationDone = false;
@@ -83,10 +89,16 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		bCrossCorrelationDone = false;
 		bProcessAverageSpike = false;
 		bAverageSpikeDone = false;
-
+		bThresholdsChanged = false;
 		clearISI();
 		clearSpikeTrains();
+		clearAutoCorrelation();
+		clearCrossCorrelation();
+		clearAverageSpike();
 		spikes = null;
+		clearThresholds();
+		
+
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -132,6 +144,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			i.putExtra("requestRender", true);
 			context.sendBroadcast(i);
 		}
+		 bThresholdsChanged = false;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -151,7 +164,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	private void autoCorrelationAnalysis() {
 		processSpikeTrains();
-		if (!bAutoCorrelationDone) {
+		if (!bAutoCorrelationDone || bThresholdsChanged) {
 			clearAutoCorrelation();
 			float maxtime = 0.1f;
 			float binsize = 0.001f;
@@ -236,7 +249,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	private void crossCorrelationAnalysis() {
 		processSpikeTrains();
-		if (!bCrossCorrelationDone) {
+		if (!bCrossCorrelationDone || bThresholdsChanged) {
 			clearCrossCorrelation();
 			float maxtime = 0.1f;
 			float binsize = 0.001f;
@@ -301,17 +314,240 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	public ArrayList<ArrayList<Integer>> getCrossCorrelation() {
 		return crossCorrelation;
 	}
-	
+
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// ----------------------------------------------- AVERAGE SPIKE
 	// -----------------------------------------------------------------------------------------------------------------------------
+
+	public class AverageSpikeData {
+
+		public float[]	averageSpike;			// Main line
+		public float	maxAverageSpike;
+		public float	minAverageSpike;
+		public float[]	topSTDLine;
+		public float[]	bottomSTDLine;
+		public float	maxStd;
+		public float	minStd;
+
+		public float[]	normAverageSpike;		// Main line
+		public float	normMaxAverageSpike;
+		public float	normMinAverageSpike;
+		public float[]	normTopSTDLine;
+		public float[]	normBottomSTDLine;
+	
+
+		public int		numberOfSamplesInData;
+		public float	samplingRate;
+		public int		countOfSpikes;
+	};
+
+	private void clearAverageSpike() {
+		if(avr != null){
+		for (int i = 0; i < avr.length; i++) {
+			avr[i] = null;
+		}
+		avr = null;
+		}
+	}
+
 	private void averageSpikeAnalysis() {
 		processSpikeTrains();
-		if (!bAverageSpikeDone) {
+		if (!bAverageSpikeDone || bThresholdsChanged) {
+			// int channelIndex
+			if (reader != null) {
+				if (reader.isReady()) {
+					Log.d(TAG, "===================== start average spike------");
+					int numberOfSamples = reader.getDataShorts().length;
+					short[] data = reader.getDataShorts();
+					int sampleRate = reader.getSampleRate();
 
+					int halfSpikeLength = (int) (sampleRate * AVERAGE_SPIKE_HALF_LENGTH_SECONDS);
+					int spikeLength = 2 * halfSpikeLength + 1;
+					clearAverageSpike();
+					avr = new AverageSpikeData[spikeTrains.size()];
+
+					ArrayList<BYBSpike> tempSpikeTrain;
+
+					for (int i = 0; i < spikeTrains.size(); i++) {
+						avr[i] = new AverageSpikeData();
+						
+						avr[i].averageSpike = new float[spikeLength];
+						avr[i].topSTDLine = new float[spikeLength];
+						avr[i].bottomSTDLine = new float[spikeLength];
+
+						avr[i].normAverageSpike = new float[spikeLength];
+						avr[i].normTopSTDLine = new float[spikeLength];
+						avr[i].normBottomSTDLine = new float[spikeLength];
+
+						avr[i].numberOfSamplesInData = spikeLength;
+						avr[i].samplingRate = sampleRate;
+						avr[i].countOfSpikes = 0;
+					}
+
+					for (int spikeTrainIndex = 0; spikeTrainIndex < spikeTrains.size(); spikeTrainIndex++) {
+						tempSpikeTrain = spikeTrains.get(spikeTrainIndex);
+						for (int spikeIndex = 0; spikeIndex < tempSpikeTrain.size(); spikeIndex++) {
+
+							int spikeSampleIndex = tempSpikeTrain.get(spikeIndex).index;
+
+							// if our spike is outside current batch of samples
+							// go to next channel
+							if ((spikeSampleIndex + halfSpikeLength) >= numberOfSamples || spikeSampleIndex - halfSpikeLength < 0) {
+								break;
+							}
+							// add spike to average buffer
+							for (int i = 0; i < spikeLength; i++) {
+								avr[spikeTrainIndex].averageSpike[i] += data[spikeSampleIndex - halfSpikeLength + i];
+								avr[spikeTrainIndex].topSTDLine[i] += data[spikeSampleIndex - halfSpikeLength + i] * data[spikeSampleIndex - halfSpikeLength + i];
+							}
+							avr[spikeTrainIndex].countOfSpikes++;
+
+						}
+					}
+
+					// divide sum of spikes with number of spikes
+					// and find max and min
+					for (int i = 0; i < spikeTrains.size(); i++) {
+						if (avr[i].countOfSpikes > 1) {
+							float divider = (float) avr[i].countOfSpikes;
+							float mn = Float.MAX_VALUE;
+							float mx = Float.MIN_VALUE;
+							for (int j = 0; j < spikeLength; j++) {
+								avr[i].averageSpike[j] /= divider;
+								if (avr[i].averageSpike[j] > mx) mx = avr[i].averageSpike[j];
+								if (avr[i].averageSpike[j] < mn) mn = avr[i].averageSpike[j];
+							}
+							avr[i].maxAverageSpike = mx;
+							avr[i].minAverageSpike = mn;
+
+							float[] temp = new float[spikeLength];
+							for (int j = 0; j < spikeLength; j++) {
+								avr[i].topSTDLine[j] /= divider;
+								temp[j] = avr[i].averageSpike[j] * avr[i].averageSpike[j];
+							}
+							for (int j = 0; j < spikeLength; j++) {
+								temp[j] = avr[i].topSTDLine[j] - temp[j];
+							}
+
+							// Calculate STD
+							// mean of square sum
+// vDSP_vsdiv (
+// avr[i].topSTDLine,
+// 1,
+// &divider,
+// avr[i].topSTDLine,
+// 1,
+// spikeLength
+// );
+// square of mean
+// vDSP_vsq(
+// avr[i].averageSpike
+// ,1
+// ,tempSqrBuffer
+// ,1
+// ,spikeLength);
+
+							// substract mean of square summ and square of mean
+							// vDSP_vsub has documentation error/contradiction
+							// in order of operands
+							// we will get variance
+// vDSP_vsub (
+// tempSqrBuffer,
+// 1,
+// avr[i].topSTDLine,
+// 1,
+// tempSqrBuffer,
+// 1,
+// spikeLength
+// );
+//
+// calculate STD from variance
+							for (int k = 0; k < spikeLength; k++) {
+								temp[k] = (float) Math.sqrt(temp[k]);
+							}
+
+							// Make top line and bottom line around mean that
+							// represent one STD deviation from mean
+
+							// vDSP_vsub has documentation error/contradiction
+							// in order of operands
+							// bottom line
+
+							for (int j = 0; j < spikeLength; j++) {
+								avr[i].bottomSTDLine[j] = avr[i].averageSpike[j] - temp[j];
+								avr[i].topSTDLine[j] = avr[i].averageSpike[j] + temp[j];
+							}
+
+//
+// vDSP_vsub (
+// tempSqrBuffer,
+// 1,
+// avr[i].averageSpike,
+// 1,
+// avr[i].bottomSTDLine,
+// 1,
+// spikeLength
+// );
+
+							// top line
+// vDSP_vadd (
+// avr[i].averageSpike,
+// 1,
+// tempSqrBuffer,
+// 1,
+// avr[i].topSTDLine,
+// 1,
+// spikeLength
+// );
+
+							// Find max and min of top and bottom std line
+							// respectively
+							// fined max
+							avr[i].minStd = Float.MAX_VALUE;
+							avr[i].maxStd = Float.MIN_VALUE;
+							for (int j = 0; j < spikeLength; j++) {
+
+								if (avr[i].maxStd < avr[i].topSTDLine[j]) avr[i].maxStd = avr[i].topSTDLine[j];
+								if (avr[i].minStd > avr[i].bottomSTDLine[j]) avr[i].minStd = avr[i].bottomSTDLine[j];
+							}
+
+// vDSP_maxv(avr[i].topSTDLine,
+// 1,
+// &(avr[i].maxStd),
+// spikeLength
+// );
+// //find min
+// vDSP_minv (
+// avr[i].bottomSTDLine,
+// 1,
+// &(avr[i].minStd),
+// spikeLength
+// );
+
+						}
+						float mn = Math.min(avr[i].minStd, avr[i].minAverageSpike);
+						float mx = Math.max(avr[i].maxStd, avr[i].maxAverageSpike);
+						for (int j = 0; j < spikeLength; j++) {
+							avr[i].normAverageSpike[j]= BYBUtils.map(avr[i].averageSpike[j], mn, mx, 0.0f,1.0f);
+							avr[i].normTopSTDLine[j] =  BYBUtils.map(avr[i].topSTDLine[j], mn, mx, 0.0f,1.0f);
+							avr[i].normBottomSTDLine[j] =  BYBUtils.map(avr[i].bottomSTDLine[j], mn, mx, 0.0f,1.0f);
+						}
+						Log.d(TAG, "Min: " + mn + "  Max: " + mx);
+					}
+					Log.d(TAG, "numSpikeAverages: " + avr.length);
+					Log.d(TAG, "===================== end average spike------");
+				}
+			}
+			
+			
+			
 			bAverageSpikeDone = true;
 			bProcessAverageSpike = false;
 		}
+	}
+
+	public AverageSpikeData[] getAverageSpikes() {
+		return avr;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -339,8 +575,12 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public int[] getSelectedThresholds() {
 		if (selectedThreshold >= 0 && selectedThreshold < thresholds.size()) {
+			Log.d(TAG, "getSelectedThreshold ok " + thresholds.get(selectedThreshold)[0] + "  ,  " + thresholds.get(selectedThreshold)[1]);
+
 			return thresholds.get(selectedThreshold);
+
 		}
+		Log.d(TAG, "getSelectedThreshold invalid!!!!");
 		int[] z = new int[2];
 		return z;
 	}
@@ -376,7 +616,15 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	public void setThreshold(int group, int index, int value) {
 		if (thresholds.size() > 0 && thresholds.size() > group && index < 2) {
 			thresholds.get(group)[index] = value;
+			bThresholdsChanged = true;
 		}
+	}
+
+	public void clearThresholds() {
+		thresholds.clear();
+		selectedThreshold = 0;
+		bThresholdsChanged = true;
+		updateThresholdHandles();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -385,6 +633,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			Intent i = new Intent();
 			i.setAction("BYBUpdateThresholdHandle");
 			context.getApplicationContext().sendBroadcast(i);
+			bThresholdsChanged = true;
 		}
 	}
 
@@ -411,7 +660,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	protected ArrayList<ArrayList<BYBSpike>> processSpikeTrains() {
-		if (!bSpikeTrainsDone) {
+		if (!bSpikeTrainsDone|| bThresholdsChanged) {
 			clearSpikeTrains();
 			Log.d(TAG, "processSpikeTrains");
 			spikeTrains = new ArrayList<ArrayList<BYBSpike>>();
@@ -453,7 +702,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public void ISIAnalysis() {
 		processSpikeTrains();
-		if (!bISIDone) {
+		if (!bISIDone || bThresholdsChanged) {
 			Log.d(TAG, "ISIAnalysis");
 			// getSpikesTrains();
 			// int spikesCount = spikesTrains.size();
@@ -628,25 +877,25 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 // }
 // }
 				if (intent.hasExtra("doISI")) {
-					if (!bISIDone) {
+					if (!bISIDone || bThresholdsChanged) {
 						bProcessISI = true;
 						bSpikeTrainsDone = false;
 					}
 				}
 				if (intent.hasExtra("doAutoCorrelation")) {
-					if (!bAutoCorrelationDone) {
+					if (!bAutoCorrelationDone|| bThresholdsChanged) {
 						bProcessAutoCorrelation = true;
 						bSpikeTrainsDone = false;
 					}
 				}
 				if (intent.hasExtra("doCrossCorrelation")) {
-					if (!bCrossCorrelationDone) {
+					if (!bCrossCorrelationDone|| bThresholdsChanged) {
 						bProcessCrossCorrelation = true;
 						bSpikeTrainsDone = false;
 					}
 				}
 				if (intent.hasExtra("doAverageSpike")) {
-					if (!bAverageSpikeDone) {
+					if (!bAverageSpikeDone|| bThresholdsChanged) {
 						bProcessAverageSpike = true;
 						bSpikeTrainsDone = false;
 					}
@@ -655,12 +904,14 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 				if (fileToAnalize != null) {
 					if (!fileToAnalize.getAbsolutePath().equals(filePath)) {
 						reset();
+						// clearThresholds();
 						load(filePath);
 					} else {
 						process();
 					}
 				} else {
 					reset();
+					// clearThresholds();
 					load(filePath);
 				}
 

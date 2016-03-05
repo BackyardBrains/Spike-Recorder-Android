@@ -4,11 +4,13 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.analysis.BYBAnalysisManager.AverageSpikeData;
+
 import android.content.Context;
 
 public class AverageSpikeRenderer  extends  BYBAnalysisBaseRenderer {
 
-	private static final String TAG = AverageSpikeRenderer.class.getCanonicalName();
+	private static final String TAG = "AverageSpikeRenderer";
 
 	//----------------------------------------------------------------------------------------
 	public AverageSpikeRenderer(Context context){
@@ -21,7 +23,63 @@ public class AverageSpikeRenderer  extends  BYBAnalysisBaseRenderer {
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
+		int margin = 20;
+		
+		initGL(gl);
+		AverageSpikeData [] avg = getManager().getAverageSpikes();
+		float aw = width - margin *avg.length;
+		float ah = (height - margin *(avg.length +1))/(float)avg.length;
+		
+		
+		
+		
+		
+		if(avg != null){
+			BYBMesh mesh = new BYBMesh(BYBMesh.LINES);
+			
+			
+			
+			for(int i =0; i < avg.length; i++){
+				float xInc = aw/avg[i].averageSpike.length;
+				float yOffSet = ((margin + ah)*(i+1));
+				for(int j =1; j < avg[i].averageSpike.length; j++){
+					mesh.addVertex(xInc * (j -1) + (margin * 2), yOffSet - avg[i].normAverageSpike[j-1] * ah  );					
+					mesh.addVertex(xInc * j + (margin * 2), yOffSet - avg[i].normAverageSpike[j] * ah  );
+					
+					
+					
+					
+//					mesh.addVertex(xInc * (j -1) + (margin * 2), ((margin + ah)*(i) + margin) + avg[i].normAverageSpike[j-1] * ah  );					
+//					mesh.addVertex(xInc * j + (margin * 2), ((margin + ah)*(i) + margin)+ avg[i].normAverageSpike[j] * ah  );
+					mesh.addColor(BYBColors.getColorAsGlById(i));
+					mesh.addColor(BYBColors.getColorAsGlById(i));
+					
 
+					
+					
+				}
+				for (int j = 1; j < avg[i].normTopSTDLine.length; j++) {
+					mesh.addVertex(xInc * (j - 1) + (margin * 2), yOffSet - avg[i].normTopSTDLine[j - 1] * ah);
+					mesh.addVertex(xInc * j + (margin * 2), yOffSet - avg[i].normTopSTDLine[j] * ah);
+
+					mesh.addVertex(xInc * (j - 1) + (margin * 2), yOffSet - avg[i].normBottomSTDLine[j - 1] * ah);
+					mesh.addVertex(xInc * j + (margin * 2), yOffSet - avg[i].normBottomSTDLine[j] * ah);
+				
+					mesh.addColor(BYBColors.getColorAsGlById(BYBColors.white));
+					mesh.addColor(BYBColors.getColorAsGlById(BYBColors.white));
+
+					mesh.addColor(BYBColors.getColorAsGlById(BYBColors.white));
+					mesh.addColor(BYBColors.getColorAsGlById(BYBColors.white));
+				}
+				
+				mesh.addRectangle(margin*2, margin + (ah+margin)*i, aw, ah, BYBColors.getColorAsGlById(BYBColors.white));
+			}
+			
+			gl.glLineWidth(2.0f);
+			
+			mesh.draw(gl);
+		
+		}
 //		firstBufferDrawnCheck();
 //		autoScaleCheck();
 //

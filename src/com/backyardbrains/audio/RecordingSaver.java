@@ -39,7 +39,7 @@ import android.util.Log;
 
 public class RecordingSaver implements ReceivesAudio {
 
-	public static final String TAG = RecordingSaver.class.getCanonicalName();
+	public static final String TAG = "RecordingSaver";
 	private ByteArrayOutputStream mArrayToRecordTo;
 	private BufferedOutputStream bufferedStream;
 	private DataOutputStream dataOutputStreamInstance;
@@ -188,10 +188,12 @@ public class RecordingSaver implements ReceivesAudio {
 				}
 			}
 			Log.d(getClass().getCanonicalName(),"Finished writing out " + s.toString());
+			
 			return  writtenFile;//"Finished writing file to SD Card" + s.toString();
 		}
 		@Override
 		protected void onPostExecute(String s){
+			Log.d(TAG, "onPostExecute");
 			Intent i = new Intent();
 			i.setAction("BYBRecordingSaverSuccessfulSave");
 			context.sendBroadcast(i);

@@ -44,6 +44,10 @@ public class BYBUtils {
 	public static int map(float glHeight, int in_min, int in_max, int out_min, int out_max) {
 		return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 	}
+		public static float map(float value, float in_min, float in_max, float out_min, float out_max) {
+			return ((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+		}
+	
 
 	public static FloatBuffer floatArrayListToFloatBuffer(ArrayList<float[]> arrayList){
 		final FloatBuffer buf;

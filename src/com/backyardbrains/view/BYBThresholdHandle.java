@@ -79,7 +79,7 @@ public class BYBThresholdHandle {
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------	
 	public void setYPosition(int pos){
-		//Log.d(TAG, "setYPosition " + pos);
+		Log.d(TAG, "setYPosition " + pos);
 		
 		button.setY(pos - (button.getHeight() / 2));
 	}

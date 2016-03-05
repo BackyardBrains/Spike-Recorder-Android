@@ -24,7 +24,7 @@ public class BYBBarGraph {
 		b = (h<0)?y:y+h - margin;
 		t = (h<0)?y+h:y;
 		//mesh.addRectangle(x, y, w, h, BYBColors.yellow);
-		if(values.length > 0){values[0] = 1.0f;}
+		//if(values.length > 0){values[0] = 1.0f;}
 		for(int i = 0; i < values.length; i++){
 			mesh.addRectangle(l+i*barWidth, b, barWidth, -(b-t) * values[i], color);
 		}

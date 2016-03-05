@@ -365,7 +365,8 @@ public class AudioService extends Service implements ReceivesAudio {
 	private class CloseButtonListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			turnOffAudioPlayerThread();
+			//turnOffAudioPlayerThread();
+			turnOnMicThread();
 		}
 	}
 	private class OnTabSelectedListener extends BroadcastReceiver {

@@ -100,7 +100,7 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold0"
-            android:src="@drawable/handle" />
+            android:src="@drawable/handle1" />
 
         <ImageButton
             android:id="@+id/threshold1"
@@ -110,7 +110,7 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold1"
-            android:src="@drawable/handle" />
+            android:src="@drawable/handle2" />
 
         <ImageButton
             android:id="@+id/threshold2"
@@ -120,7 +120,7 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold2"
-            android:src="@drawable/handle" />
+            android:src="@drawable/handle3" />
 
         <ImageButton
             android:id="@+id/new_threshold"

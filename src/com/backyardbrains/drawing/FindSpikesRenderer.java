@@ -30,17 +30,7 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 
 	public static final String[]	thresholdsNames		= { "LeftSpikesHandle", "RightSpikesHandle" };
 
-//	public static final float[]		GL_COLORS			= { 1.0f, 0.0f, 0.0f, 1.0f,						// RED
-//														1.0f, 1.0f, 0.0f, 1.0f,							// YELLOW
-//														0.0f, 1.0f, 1.0f, 1.0f,							// CYAN
-//														1.0f, 1.0f, 1.0f, 1.0f };						// WHITE
-//
-//	public static final int			RED_INDEX			= 0;
-//	public static final int			YELLOW_INDEX		= 1;
-//	public static final int			CYAN_INDEX			= 2;
-//	public static final int			WHITE_INDEX			= 3;
-//	private int						currentColorIndex	= RED_INDEX;//
-	
+
 	private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
 	
 	private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
@@ -217,16 +207,13 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// @Override
-// protected void postDrawingHandler(GL10 gl) {
-// // Log.d(TAG, "glWidth: " +getGlWindowHorizontalSize() + " glHeight: " +
-// getGlWindowVerticalSize());
-// }
 // -----------------------------------------------------------------------------------------------------------------------------
 	public void setCurrentColor(float[] color) {
-			currentColor = color;
+		if(currentColor.length == color.length && currentColor.length == 4){
+			for(int i=0; i < currentColor.length;i++){
+				currentColor[i] = color[i];
+			}
+		}
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
