@@ -140,10 +140,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 	void rescanFiles() {
 		File[] files = bybDirectory.listFiles();
 		if (files != null && files.length > 1) {
-			String m = "";
-			for(int i =0; i < files.length; i++){
-				m+= files[i].getName() + "\n";
-			}
+
 			        Arrays.sort(files, new Comparator<File>() {
 			             @Override
 			             public int compare(File object1, File object2) {
@@ -151,11 +148,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 			            	 //return object1.getName().compareTo(object2.getName());
 			             }
 			    });
-			        m+= "--------------================--------------\n";
-					for(int i =0; i < files.length; i++){
-						m+= files[i].getName() + "\n";
-					}
-					Log.d(TAG, m);
+
 			Log.d(TAG, "RESCAN FILES!!!!!");
 			ListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_row_layout, files);
 			setListAdapter(adapter);

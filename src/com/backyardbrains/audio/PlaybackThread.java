@@ -29,13 +29,18 @@ public class PlaybackThread {
 	private int					mNumSamples;
 	private PlaybackListener	mListener;
 	private ReceivesAudio		mService;
+	private boolean				bPlaying	= false;
 
 	public boolean playing() {
-		return mThread != null;
+		return bPlaying;
+		// return mThread != null;
+
 	}
 
 	public void startPlayback() {
-		if (mThread != null) return;
+		if (mThread != null){
+			bPlaying  = true;
+		}else{
 
 		// Start streaming in a thread
 		mShouldContinue = true;
@@ -46,13 +51,20 @@ public class PlaybackThread {
 			}
 		});
 		mThread.start();
+		}
 	}
 
 	public void stopPlayback() {
 		if (mThread == null) return;
 
 		mShouldContinue = false;
+		bPlaying = false;
 		mThread = null;
+	}
+
+	public void pausePlayback() {
+		if (mThread == null) return;
+		bPlaying = false;
 	}
 
 	private void play() {
@@ -60,7 +72,7 @@ public class PlaybackThread {
 		if (bufferSize == AudioTrack.ERROR || bufferSize == AudioTrack.ERROR_BAD_VALUE) {
 			bufferSize = SAMPLE_RATE * 2;
 		}
-
+		bPlaying = true;
 		AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
 
 		audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
@@ -94,23 +106,25 @@ public class PlaybackThread {
 		int limit = mNumSamples;
 		int totalWritten = 0;
 		while (mSamples.position() < limit && mShouldContinue) {
-			int numSamplesLeft = limit - mSamples.position();
-			int samplesToWrite;
-			if (numSamplesLeft >= buffer.length) {
-				mSamples.get(buffer);
-				samplesToWrite = buffer.length;
-			} else {
-				for (int i = numSamplesLeft; i < buffer.length; i++) {
-					buffer[i] = 0;
+			if (bPlaying) {
+				int numSamplesLeft = limit - mSamples.position();
+				int samplesToWrite;
+				if (numSamplesLeft >= buffer.length) {
+					mSamples.get(buffer);
+					samplesToWrite = buffer.length;
+				} else {
+					for (int i = numSamplesLeft; i < buffer.length; i++) {
+						buffer[i] = 0;
+					}
+					mSamples.get(buffer, 0, numSamplesLeft);
+					samplesToWrite = numSamplesLeft;
 				}
-				mSamples.get(buffer, 0, numSamplesLeft);
-				samplesToWrite = numSamplesLeft;
+				totalWritten += samplesToWrite;
+				synchronized (mService) {
+					mService.receiveAudio(ShortBuffer.wrap(buffer));
+				}
+				audioTrack.write(buffer, 0, samplesToWrite);
 			}
-			totalWritten += samplesToWrite;
-			synchronized (mService) {
-				mService.receiveAudio(ShortBuffer.wrap(buffer));
-			}
-			audioTrack.write(buffer, 0, samplesToWrite);
 		}
 
 		if (!mShouldContinue) {

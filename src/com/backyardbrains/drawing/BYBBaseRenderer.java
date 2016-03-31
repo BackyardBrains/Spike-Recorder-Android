@@ -21,7 +21,8 @@ import com.backyardbrains.BYBUtils;
 public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected int				glWindowHorizontalSize	= 4000;
 	protected int				glWindowVerticalSize	= 10000;
-
+	protected int				glOffsetX				= 0;
+	protected int				glOffsetY				= 0;
 	private static final String	TAG						= BYBBaseRenderer.class.getCanonicalName();
 //	protected AudioService		audioService			= null;
 	protected short[]			mBufferToDraws;
@@ -49,7 +50,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newX < 16 || (maxlength > 0 && newX> maxlength))
 			return;
 		this.glWindowHorizontalSize = newX;
-//		Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
+		Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newY < 800 || newY > PCM_MAXIMUM_VALUE * 2)
 			return;
 		glWindowVerticalSize = newY;
-	//	Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
+		Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -69,7 +70,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public int getGlWindowHorizontalSize() {
 		return glWindowHorizontalSize;
 	}
+	// ----------------------------------------------------------------------------------------
+	public void setGlOffsetX(int x){
+			glOffsetX = x;
 
+	}// ----------------------------------------------------------------------------------------
+	public void setGlOffsetY(int y){
+		glOffsetY = y;
+	}
 	// ----------------------------------------------------------------------------------------
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		float[] arr;
@@ -222,12 +230,21 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 	//	Log.d(TAG, "InitGL: xBegin: " + xBegin + " xEnd: " + xEnd + " yBegin: " +scaledYBegin+ " yEnd: " + scaledYEnd);
 		// set viewport
+		
+		if(xBegin + glOffsetX < 0 || xEnd + glOffsetX > mBufferToDraws.length){
+			glOffsetX *= 0.5;
+			if(Math.abs(glOffsetX) < 1){
+				glOffsetX = 0;
+			}
+		}
+		
+		
 		gl.glViewport(0, 0, width, height);
 
 		BYBUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
-		gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
+		gl.glOrthof(xBegin+glOffsetX, xEnd+glOffsetX, scaledYBegin, scaledYEnd, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/

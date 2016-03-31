@@ -21,7 +21,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
-	private static final String	TAG	= BYBBaseRenderer.class.getCanonicalName();
+	private static final String	TAG	= BYBAnalysisBaseRenderer.class.getCanonicalName();
 
 	protected int				height;
 	protected int				width;

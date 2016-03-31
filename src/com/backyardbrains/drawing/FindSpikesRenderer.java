@@ -46,15 +46,15 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	@Override
 	public void setGlWindowHorizontalSize(int newX) {
 		//Log.d(TAG, "SetGLHorizontalSize " + getGlWindowHorizontalSize() + " glWidth: " + glWidth + " newX: " + newX);
-		// super.setGlWindowHorizontalSize(newX);
-		this.glWindowHorizontalSize = Math.abs(newX);
+		 super.setGlWindowHorizontalSize(Math.abs(newX));
+		//this.glWindowHorizontalSize = Math.abs(newX);
 
 	}
 	@Override
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowVerticalSize(int newY) {
-		super.setGlWindowVerticalSize(newY);
-		this.glWindowVerticalSize = Math.abs(newY);
+		super.setGlWindowVerticalSize(Math.abs(newY));
+		//this.glWindowVerticalSize = Math.abs(newY);
 		updateThresholdHandles();
 	}
 	// ----------------------------------------------------------------------------------------

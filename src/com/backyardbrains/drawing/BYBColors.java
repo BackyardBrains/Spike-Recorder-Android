@@ -27,6 +27,8 @@ public class BYBColors {
 														{ 0.5f, 0.5f, 0.5f, 1.0f }, 			// gray
 														{ 1.0f, 1.0f, 1.0f, 1.0f },				// white
 														{ 0.0f, 0.0f, 0.0f, 1.0f }, };			// black
+	public static final float [][] chosenColors = {colors[red], colors[yellow], colors[cyan]};
+	
 	// ----------------------------------------------------------------------------------------
 
 	public static int asARGB(int rgba) {

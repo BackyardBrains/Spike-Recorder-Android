@@ -53,7 +53,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true" >
-
+		<ImageButton
+  		    android:id="@+id/pauseButton"
+  		    android:layout_width="match_parent"
+  		    android:layout_height="match_parent"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/pause_button"
+  		    android:padding="5sp"
+  		    android:src="@drawable/pause_button" />
+  	    <ImageButton
+  		    android:id="@+id/playButton"
+  		    android:layout_width="match_parent"
+  		    android:layout_height="match_parent"
+  		    android:layout_weight="1"
+  		    android:background="#0000"
+  		    android:contentDescription="@string/play_button"
+  		    android:padding="5sp"
+  		    android:src="@drawable/play_button" />
+  	    
   		<ImageButton
   		    android:id="@+id/recordButton"
   		    android:layout_width="match_parent"
@@ -149,6 +167,24 @@
 	        android:text="@string/default_milliseconds" >
 
     </TextView>
-	
+	   <LinearLayout
+        android:id="@+id/playheadLayout2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@id/thresholdHandleLayout" >
+
+        <SeekBar
+            android:id="@+id/playheadBar2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="5sp"
+            android:contentDescription="@string/playhead_slider"
+            android:indeterminate="false"
+            android:max="100000"
+            android:minHeight="10dp"
+            android:visibility="visible" />
+    </LinearLayout>
 
 </RelativeLayout>

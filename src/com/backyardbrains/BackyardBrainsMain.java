@@ -296,9 +296,9 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
 			Log.d("AudioPlayBacjStartListener", "onReceive");
 			getActionBar().setSelectedNavigationItem(0);
-			Intent ii = new Intent();
-			ii.setAction("BYBShowCloseButton");
-			context.getApplicationContext().sendBroadcast(ii);
+//			Intent ii = new Intent();
+//			ii.setAction("BYBShowCloseButton");
+//			context.getApplicationContext().sendBroadcast(ii);
 		}
 	}
 
@@ -358,7 +358,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		registerCloseButtonReceiver(true);
 		registerAudioPlaybackStartReceiver(true);
 
- registerChangePageReceiver(true);
+		registerChangePageReceiver(true);
 
 	}
 

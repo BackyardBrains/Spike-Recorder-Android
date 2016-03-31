@@ -17,6 +17,7 @@ public class BYBMesh {
 	public static final int			TRIANGLES		= 1;
 	public static final int			TRIANGLE_STRIP	= 2;
 	public static final int			POINTS			= 3;
+	public static final int			LINE_STRIP		= 4;
 
 	protected ArrayList<float[]>	vertices;
 	protected ArrayList<float[]>	colors;
@@ -124,7 +125,54 @@ public class BYBMesh {
 			}
 		}
 	}
+	public void addQuadSmooth(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, float[] color){
+		float [] c = new float [4];
+		c[0] = color[0];
+		c[1] = color[1];
+		c[2] = color[2];
+		c[0] = 0.0f;
+		addQuad(p0x, p0y-1, p1x, p1y-1, p0x, p0y, p1x, p1y);
+		addColor(c);
+		addColor(c);
+		if(mode == TRIANGLES){
+			addColor(color);
+			addColor(c);
+		}
+		addColor(color);
+		addColor(color);
+		addQuad(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, color);
 
+		
+		addQuad(p2x, p2y, p3x, p3y, p2x, p2y+1, p3x, p3y+1);
+		addColor(color);
+		addColor(color);
+		if(mode == TRIANGLES){
+			addColor(c);
+			addColor(color);
+		}
+		addColor(c);
+		addColor(c);
+
+		
+		
+	}
+	public void addQuad(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float p3x, float p3y){
+		addVertex(p0x, p0y);
+		addVertex(p1x, p1y);
+		if(mode == TRIANGLES){
+			addVertex(p2x, p2y);
+			addVertex(p1x, p1y);
+		}
+		addVertex(p2x, p2y);
+		addVertex(p3x, p3y);
+	}
+	public void addQuad(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float p3x, float p3y, float[] color){
+		addQuad(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y);
+		int n = (mode == TRIANGLES)?6:4;
+		for(int i =0; i < n; i++){
+			addColor(color);
+		}
+	}
 	public void addLine(float p0x, float p0y, float p1x, float p1y, float[] color) {
 		addVertex(p0x, p0y);
 		addVertex(p1x, p1y);
@@ -149,6 +197,9 @@ public class BYBMesh {
 			switch (mode) {
 			case TRIANGLES:
 				gl.glDrawArrays(GL10.GL_TRIANGLES, 0, vertices.size());
+				break;
+			case LINE_STRIP:
+				gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, vertices.size());
 				break;
 			case LINES:
 				gl.glDrawArrays(GL10.GL_LINES, 0, vertices.size());

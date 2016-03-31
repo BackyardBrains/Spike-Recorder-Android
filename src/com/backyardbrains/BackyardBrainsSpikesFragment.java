@@ -87,6 +87,8 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				int maxThresholds = ((BackyardBrainsApplication) context).getAnalysisManager().getMaxThresholds();
 				int selectedThreshold = ((BackyardBrainsApplication) context).getAnalysisManager().getSelectedThresholdIndex();
 				Log.d(TAG, "Update Threshold Handles thresholdSize: " + thresholdsSize + "  maxThresholds: " + maxThresholds + "  selectedThreshold: " + selectedThreshold );
+			
+				
 				if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < maxThresholds) {
 					int[] t = ((BackyardBrainsApplication) context).getAnalysisManager().getSelectedThresholds();
 					for (int i = 0; i < 2; i++) {
@@ -113,15 +115,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 				} else {
 					addButton.setVisibility(View.GONE);
 				}
-				if (thresholdsSize == 0) {
-					trashButton.setVisibility(View.GONE);
-					leftThresholdHandle.hide();
-					rightThresholdHandle.hide();
-				} else {
-					trashButton.setVisibility(View.VISIBLE);
-					leftThresholdHandle.show();
-					rightThresholdHandle.show();
-				}
+				
 				for (int i = 0; i < maxThresholds; i++) {
 					if (i < thresholdsSize) {
 						thresholdButtons[i].setVisibility(View.VISIBLE);
@@ -532,7 +526,7 @@ Log.d(TAG, "setupButtons");
 	// ----------------------------------------- BROADCAST RECEIVERS OBJECTS
 	private ThresholdHandlePosListener thresholdHandlePosListener;
 	private UpdateThresholdHandleListener updateThresholdHandleListener;
-	// ----------------------------------------- BROADCAST RECEIVERS CLASS
+	// ----------------------------------------- BROADCAST RECEIVERS CLASS 
 	// *
 	// ------------------------------------------------------------------------
 	private class UpdateThresholdHandleListener extends BroadcastReceiver {

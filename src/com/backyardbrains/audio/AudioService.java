@@ -71,6 +71,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private CloseButtonListener 		closeListener;
 	private OnTabSelectedListener 		tabSelectedListener;
 	private AveragesNumListener 		averagesNumListener;
+	private TogglePlaybackListener 		togglePlaybackListener;
 	
 	private long						lastSamplesReceivedTimestamp;
 	private int						micListenerBufferSizeInSamples;
@@ -158,6 +159,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerPlayAudioFileReceiver(true);
 		registerOnTabSelectedReceiver(true);
 		registerCloseButtonReceiver(true);
+		registerPlaybackToggleReceiver(true);
 		registerAveragerSetMaxReceiver(true);
 		turnOnMicThread();
 	}
@@ -173,6 +175,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerOnTabSelectedReceiver(false);
 		registerCloseButtonReceiver(false);
 		registerAveragerSetMaxReceiver(false);
+		registerPlaybackToggleReceiver(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
 		averager = null;
@@ -204,7 +207,15 @@ public class AudioService extends Service implements ReceivesAudio {
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- START/STOP THREADS
 // -----------------------------------------------------------------------------------------------------------------------------
-
+	protected void togglePlayback(boolean bPlay){
+		if(audioPlayer != null){
+			if(bPlay){
+				audioPlayer.play();
+			}else{
+				audioPlayer.pause();
+			}
+		}
+	}
 	protected void turnOnAudioPlayerThread() {
 		
 		if (audioPlayer != null) {
@@ -334,6 +345,15 @@ public class AudioService extends Service implements ReceivesAudio {
 			}
 		};
 	}
+	
+	private class TogglePlaybackListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(android.content.Context context, android.content.Intent intent) {
+			if(intent.hasExtra("play")){
+				togglePlayback(intent.getBooleanExtra("play", true));
+			}
+		};
+	}
 
 	private class PlayAudioFileListener extends BroadcastReceiver {
 
@@ -399,6 +419,15 @@ public class AudioService extends Service implements ReceivesAudio {
 			appContext.registerReceiver(closeListener, intentFilter);
 		} else {
 			appContext.unregisterReceiver(closeListener);
+		}
+	}
+	private void registerPlaybackToggleReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBTogglePlayback");
+			togglePlaybackListener = new TogglePlaybackListener();
+			appContext.registerReceiver(togglePlaybackListener, intentFilter);
+		} else {
+			appContext.unregisterReceiver(togglePlaybackListener);
 		}
 	}
 	

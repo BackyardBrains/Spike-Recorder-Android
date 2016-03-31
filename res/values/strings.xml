@@ -40,4 +40,6 @@
     <string name="new_threshold">New threshold</string>
     <string name="playhead_slider">Playhead</string>
     <string name="analysis_title">Analysis Name</string>
+    <string name="play_button">Play</string>
+    <string name="pause_button">Pause</string>
 </resources>

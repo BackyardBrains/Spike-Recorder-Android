@@ -67,6 +67,16 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 			bShouldPlay = true;
 		}
 	}
+	public void pause() {
+		if (bFileLoaded) {
+			bPlaying = false;
+			if (playbackThread != null) {
+				playbackThread.pausePlayback();
+			}
+		}else{
+			bShouldPlay = false;
+		}
+	}
 
 	public void stop() {
 		turnOffPlaybackThread();
@@ -78,6 +88,10 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 
 	private void turnOnPlaybackThread() {
 		Log.d("AudioFilePlayer","turnOnPlaybackThread");
+		if(playbackThread != null){
+			playbackThread.startPlayback();
+			bPlaying = true;
+		}else
 		if (reader != null && audioReceiver != null && bFileLoaded) {
 			playbackThread = null;
 			playbackThread = new PlaybackThread(reader.getDataShorts(), this, audioReceiver);
