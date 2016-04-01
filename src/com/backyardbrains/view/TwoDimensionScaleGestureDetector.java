@@ -25,6 +25,7 @@ package com.backyardbrains.view;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
+import android.util.Log;
 //import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
@@ -180,7 +181,8 @@ public class TwoDimensionScaleGestureDetector {
 	private float mScaleFactorY;
 
 	private float mScaleFactorX;
-
+	
+	
 	public TwoDimensionScaleGestureDetector(Context context,
 			OnScaleGestureListener listener) {
 		ViewConfiguration config = ViewConfiguration.get(context);
@@ -283,8 +285,9 @@ public class TwoDimensionScaleGestureDetector {
 						mGestureInProgress = mListener.onScaleBegin(this);
 					}
 				}
+				
 				break;
-
+			
 			case MotionEvent.ACTION_POINTER_UP:
 				if (mSloppyGesture) {
 					// Set focus point to the remaining finger
@@ -412,6 +415,8 @@ public class TwoDimensionScaleGestureDetector {
 		}
 		mSloppyGesture = false;
 		mGestureInProgress = false;
+		
+	
 	}
 
 	/**

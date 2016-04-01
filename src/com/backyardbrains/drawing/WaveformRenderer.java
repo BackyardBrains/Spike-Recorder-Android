@@ -44,18 +44,18 @@ public class WaveformRenderer extends  BYBBaseRenderer {
 	public WaveformRenderer(Context context){//, AudioService audioService) {
 		super(context);//, audioService);
 	}
-	// ----------------------------------------------------------------------------------------
-	@Override
-	public void setGlWindowHorizontalSize(int newX) {
-	//	Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);	
-		super.setGlWindowHorizontalSize(newX);
-	}
-	@Override
-	// ----------------------------------------------------------------------------------------
-	public void setGlWindowVerticalSize(int newY) {
-		super.setGlWindowVerticalSize(newY);
-		//Log.d(TAG, "SetGLVerticalSize "+getGlWindowVerticalSize() + " newY: " + newY);
-	}
+//	// ----------------------------------------------------------------------------------------
+//	@Override
+//	public void setGlWindowHorizontalSize(int newX) {
+//	//	Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);	
+//		super.setGlWindowHorizontalSize(newX);
+//	}
+//	@Override
+//	// ----------------------------------------------------------------------------------------
+//	public void setGlWindowVerticalSize(int newY) {
+//		super.setGlWindowVerticalSize(newY);
+//		//Log.d(TAG, "SetGLVerticalSize "+getGlWindowVerticalSize() + " newY: " + newY);
+//	}
 
 	//----------------------------------------------------------------------------------------
 	//----------------------------------------------------------------------------------------

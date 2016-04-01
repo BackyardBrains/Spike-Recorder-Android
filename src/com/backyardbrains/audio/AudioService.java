@@ -108,7 +108,15 @@ public class AudioService extends Service implements ReceivesAudio {
 	public long getLastSamplesReceivedTimestamp() {
 		return lastSamplesReceivedTimestamp;
 	}
-
+	public int getMode(){
+		return mode;
+	}
+	public boolean isAudioPlayerPlaying(){
+		if(audioPlayer != null){
+			return audioPlayer.isPlaying();
+		}
+		return false;
+	}
 	/**
 	 * return a byte array with in the appropriate order representing the last
 	 * 1.5 seconds of audio or so
@@ -116,7 +124,17 @@ public class AudioService extends Service implements ReceivesAudio {
 	 * @return a ordinate-corrected version of the audio buffer
 	 */
 	public short[] getAudioBuffer() {
-		return audioBuffer.getArray();
+		boolean bReturnAudioPlayerBuffer = false;
+		if(mode == PLAYBACK_MODE && audioPlayer != null){
+			if(!audioPlayer.isPlaying()){
+				bReturnAudioPlayerBuffer = true;
+			}
+		}
+		if(bReturnAudioPlayerBuffer){
+			return audioPlayer.getBuffer();
+		}else{
+			return audioBuffer.getArray();
+		}
 	}
 	public short[] getAverageBuffer() {
 		if(averager != null){

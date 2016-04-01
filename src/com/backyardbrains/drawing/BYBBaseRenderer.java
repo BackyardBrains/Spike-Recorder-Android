@@ -65,28 +65,40 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public int getGlWindowVerticalSize() {
 		return glWindowVerticalSize;
 	}
-
 	// ----------------------------------------------------------------------------------------
 	public int getGlWindowHorizontalSize() {
 		return glWindowHorizontalSize;
 	}
 	// ----------------------------------------------------------------------------------------
-	public void setGlOffsetX(int x){
-			glOffsetX = x;
-
-	}// ----------------------------------------------------------------------------------------
-	public void setGlOffsetY(int y){
-		glOffsetY = y;
+	public void addToGlOffset(float dx, float dy ){
+		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+			if(((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE && 
+					!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying()){
+				glOffsetX += dx;
+				glOffsetY += dy;
+			}
+		}
 	}
 	// ----------------------------------------------------------------------------------------
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		float[] arr;
 		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+			boolean bDrawFullArray = ((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE && 
+					!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying() ;
 			int micSize = ((BackyardBrainsApplication) context).getmAudioService().getMicListenerBufferSizeInSamples();
-			arr = new float[(glWindowHorizontalSize + micSize) * 2];
+			int startIndex =0;
+			if(bDrawFullArray){
+				arr = new float[shortArrayToDraw.length*2];
+			}else{
+				if(glWindowHorizontalSize > shortArrayToDraw.length){
+					setGlWindowHorizontalSize(shortArrayToDraw.length);
+				}
+				startIndex = shortArrayToDraw.length - glWindowHorizontalSize;// - micSize;
+				arr = new float[(glWindowHorizontalSize )*2];//+ micSize) * 2];
+			}
 			int j = 0; // index of arr
 			try {
-				for (int i = shortArrayToDraw.length - glWindowHorizontalSize - micSize; i < shortArrayToDraw.length; i++) {
+				for (int i = startIndex; i < shortArrayToDraw.length; i++) {
 					arr[j++] = i;
 					arr[j++] = shortArrayToDraw[i];
 				}
@@ -231,20 +243,48 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	//	Log.d(TAG, "InitGL: xBegin: " + xBegin + " xEnd: " + xEnd + " yBegin: " +scaledYBegin+ " yEnd: " + scaledYEnd);
 		// set viewport
 		
-		if(xBegin + glOffsetX < 0 || xEnd + glOffsetX > mBufferToDraws.length){
-			glOffsetX *= 0.5;
-			if(Math.abs(glOffsetX) < 1){
-				glOffsetX = 0;
+		float scaledOffsetX = 0;
+		
+		float scaledOffsetY = 0;
+		
+		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+			if(((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE && 
+					!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying()){
+				float scaleX = (xEnd - xBegin)/width;
+				
+				scaledOffsetX = glOffsetX*scaleX;
+				
+				float scaleY = (scaledYEnd - scaledYBegin)/height;
+				
+				scaledOffsetY = glOffsetY*scaleY;
 			}
 		}
-		
+		//---check if offset will not draw the complete window. if it does, ease until not.
+		if(xBegin - scaledOffsetX < 0 || xEnd - scaledOffsetX > mBufferToDraws.length){
+//			glOffsetX *= 0.5;
+//			scaledOffsetX *= 0.5;
+//			if(Math.abs(glOffsetX) < 1){
+//				glOffsetX = 0;
+				scaledOffsetX = 0;
+			//}
+		}
+//		
+//		if(scaledYBegin+ scaledOffsetY < 0 || scaledYEnd + scaledOffsetY > mBufferToDraws.length){
+//			glOffsetX *= 0.5;
+//			scaledOffsetX *= 0.5;
+//			if(Math.abs(glOffsetX) < 1){
+//				glOffsetX = 0;
+//				scaledOffsetX = 0;
+//			}
+//		}
+		//------
 		
 		gl.glViewport(0, 0, width, height);
 
 		BYBUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
-		gl.glOrthof(xBegin+glOffsetX, xEnd+glOffsetX, scaledYBegin, scaledYEnd, -1f, 1f);
+		gl.glOrthof(xBegin-scaledOffsetX, xEnd-scaledOffsetX, scaledYBegin+scaledOffsetY, scaledYEnd+scaledOffsetY, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/

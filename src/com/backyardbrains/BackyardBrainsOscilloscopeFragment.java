@@ -8,6 +8,7 @@ import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
 import com.backyardbrains.view.ScaleListener;
+import com.backyardbrains.view.SingleFingerGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 import android.app.Activity;
@@ -82,6 +83,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	private SetAverageSliderListener			setAverageSliderListener;
 	private AudioPlaybackStartListener			audioPlaybackStartListener;
 	private BYBThresholdHandle					thresholdHandle;
+	private SingleFingerGestureDetector			singleFingerGestureDetector = null;			
 
 // ----------------------------------------------------------------------------------------
 	public BackyardBrainsOscilloscopeFragment(Context context) {
@@ -100,6 +102,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		if (context != null) {
 			mScaleListener = new ScaleListener();
 			mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);
+			singleFingerGestureDetector = new SingleFingerGestureDetector();
 		} else {
 			//// Log.d(TAG, "onCreate failed, context == null");
 		}
@@ -275,7 +278,6 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 					sk.setVisibility(View.GONE);
 				}
 			}
-
 		}
 	}
 
@@ -296,7 +298,14 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // ----------------------------------------- TOUCH
 // -----------------------------------------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
+		if(mode == PLAYBACK_MODE && currentRenderer == WAVE && waveRenderer != null && singleFingerGestureDetector != null){
+			singleFingerGestureDetector.onTouchEvent(event);
+			if(singleFingerGestureDetector.hasChanged()){
+				waveRenderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
+			}
+		}
 		mScaleDetector.onTouchEvent(event);
+		
 		if (mAndroidSurface != null) {
 			return mAndroidSurface.onTouchEvent(event);
 		}
@@ -606,8 +615,6 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		 */
 		thresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.thresholdHandle)), "OsciloscopeHandle"); // .setOnTouchListener(threshTouch);
 
-		// ------------------------------------
-
 		final SeekBar sk = (SeekBar) view.findViewById(R.id.samplesSeekBar);
 
 		sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -641,6 +648,30 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		((TextView) view.findViewById(R.id.numberOfSamplesAveraged)).setText(TriggerAverager.defaultSize + "x");
 		sk.setProgress(TriggerAverager.defaultSize);
 
+		
+		// ------------------------------------
+//		final SeekBar sk2 = (SeekBar) view.findViewById(R.id.playheadBar2);
+//
+//		sk2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//
+//			@Override
+//			public void onStopTrackingTouch(SeekBar seekBar) {}
+//			@Override
+//			public void onStartTrackingTouch(SeekBar seekBar) {}
+//
+//			@Override
+//			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//				if (fromUser) {
+//					if(currentRenderer)
+//					Intent i = new Intent();
+//					i.setAction("BYBThresholdNumAverages");
+//					i.putExtra("num", progress);
+//					context.sendBroadcast(i);
+//				}
+//			}
+//		});
+//		sk.setProgress(0);
+		
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------

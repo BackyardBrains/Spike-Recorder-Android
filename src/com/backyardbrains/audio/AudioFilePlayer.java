@@ -34,7 +34,13 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 		bShouldPlay = false;
 		bLooping = false;
 	}
-
+	public short[] getBuffer(){
+		if(reader != null){
+			return reader.getDataShorts();
+		}else{
+			return new short[1];
+		}
+	}
 	public void audioFileRead(){
 		Log.d(TAG, "AudioFileRead");
 		bFileLoaded = true;

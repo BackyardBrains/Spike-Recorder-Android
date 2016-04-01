@@ -167,24 +167,6 @@
 	        android:text="@string/default_milliseconds" >
 
     </TextView>
-	   <LinearLayout
-        android:id="@+id/playheadLayout2"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@id/thresholdHandleLayout" >
-
-        <SeekBar
-            android:id="@+id/playheadBar2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_margin="5sp"
-            android:contentDescription="@string/playhead_slider"
-            android:indeterminate="false"
-            android:max="100000"
-            android:minHeight="10dp"
-            android:visibility="visible" />
-    </LinearLayout>
+	  
 
 </RelativeLayout>

@@ -26,7 +26,7 @@ import com.backyardbrains.view.*;
 
 public class BackyardBrainsMain extends FragmentActivity implements ActionBar.TabListener {
 	@SuppressWarnings("unused")
-	private static final String			TAG						= BackyardBrainsMain.class.getCanonicalName();
+	private static final String			TAG						= "BackyardBrainsMain";
 	AppSectionsPagerAdapter				mAppSectionsPagerAdapter;
 	NonSwipeableViewPager				mViewPager;
 
@@ -106,6 +106,15 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 // -----------------------------------------------------------------------------------------------------------------------------
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		
+		// void printSamples(MotionEvent ev) {
+//		     final int historySize = event.getHistorySize();
+//		     final int pointerCount = event.getPointerCount();
+//		     Log.d(TAG, "MotionEvent History size: " + historySize + " pointer count "+ pointerCount );
+//		 //}
+
+		
+		
 		List<Fragment> frags = getSupportFragmentManager().getFragments();
 
 		boolean ret = false;
