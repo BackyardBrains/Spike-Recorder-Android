@@ -54,7 +54,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	public BackyardBrainsAnalysisFragment(Context context) {
 		super();
 		this.context = context.getApplicationContext();
-		Log.d("BackyardBrainsAnalysisFragment", "Constructor");
+		//Log.d("BackyardBrainsAnalysisFragment", "Constructor");
 		registerListeners();
 	}
 
@@ -67,7 +67,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 		if (context != null) {
 
 		} else {
-			Log.d(TAG, "onCreate failed, context == null");
+			//Log.d(TAG, "onCreate failed, context == null");
 		}
 	}
 
@@ -118,7 +118,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			}
 		});
 		
-		Log.d(TAG, "onCreateView");
+		//Log.d(TAG, "onCreateView");
 
 		return rootView;
 	}
@@ -207,7 +207,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			title.setText(getRendererTitle(renderer));
 		}
 		
-		Log.d(getClass().getCanonicalName(), "Reassigned AnalysisGLSurfaceView");
+		//Log.d(getClass().getCanonicalName(), "Reassigned AnalysisGLSurfaceView");
 	}
 	// ----------------------------------------------------------------------------------------
 	private String getRendererTitle(int renderer){
@@ -238,9 +238,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			if (bSetOnDemand) {
 				mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 			}
-			Log.d(TAG, "setGLSurface oK.");
+			//Log.d(TAG, "setGLSurface oK.");
 		} else {
-			Log.d(TAG, "setGLSurface failed. Context == null.");
+			//Log.d(TAG, "setGLSurface failed. Context == null.");
 		}
 	}
 

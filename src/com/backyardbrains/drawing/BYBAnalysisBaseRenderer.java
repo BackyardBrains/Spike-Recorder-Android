@@ -121,7 +121,7 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
-		Log.d(TAG, "onSurfaceChanged " + width + ", " + height);
+		//Log.d(TAG, "onSurfaceChanged " + width + ", " + height);
 		this.width = width;
 		this.height = height;
 	}
@@ -175,11 +175,11 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 					float x = ((float)spikes.get(i).get(j).index / (float)tot)*width;
 					float y = height - (Math.abs(spikes.get(i).get(j).value) /mx)*height;
 					mesh.addLine(x, y, x, height, color);
-				//	Log.d(TAG, "addLine: " + x + " " + y);
+				//	//Log.d(TAG, "addLine: " + x + " " + y);
 				}
 			}
 		}else{
-			Log.d(TAG, "spikes == null");
+			//Log.d(TAG, "spikes == null");
 		}
 		mesh.draw(gl);
 	}

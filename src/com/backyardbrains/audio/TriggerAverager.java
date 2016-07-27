@@ -51,7 +51,7 @@ public class TriggerAverager {
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public void resetBuffers() {
-		Log.d(TAG, "resetBufers");
+		//Log.d(TAG, "resetBufers");
 		sampleBuffersInAverage = new ArrayList<short[]>();
 		averagedSamples = null;
 	}
@@ -69,7 +69,7 @@ public class TriggerAverager {
 	private void proceesIncomingData(ShortBuffer sb){	
 		
 		if(sb.capacity() != lastIncomingBufferSize){// || lastTriggeredValue != triggerValue){
-			Log.d(TAG, "incoming.capacity() != lastIncomingBufferSize");
+			//Log.d(TAG, "incoming.capacity() != lastIncomingBufferSize");
 			resetBuffers();
 			lastIncomingBufferSize = sb.capacity();
 //			lastTriggeredValue = triggerValue;
@@ -85,7 +85,7 @@ public class TriggerAverager {
 		sb.get(incomingAsArray);
 	
 		//*/
-//		Log.d(TAG, "processIncomingData");
+//		//Log.d(TAG, "processIncomingData");
 		//ensure that all the buffers are the same size
 		
 		
@@ -118,7 +118,7 @@ public class TriggerAverager {
 		}
 		
 		if (averagedSamples == null) {
-			Log.d(TAG,"averagedSamples == null");
+			//Log.d(TAG,"averagedSamples == null");
 			return;
 		}
 		//*
@@ -139,7 +139,7 @@ public class TriggerAverager {
 		short [] sampleChunk = new short[incomingAsArray.length];
 		int sampleChunkPosition = 0;
 		if(index > middleOfArray) {
-			// Log.d(TAG, "Wrapping from end onto beginning");
+			// //Log.d(TAG, "Wrapping from end onto beginning");
 			final int samplesToMove = index - middleOfArray;
 			for (int i = 0; i<incomingAsArray.length-samplesToMove; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i+samplesToMove];
@@ -149,7 +149,7 @@ public class TriggerAverager {
 			}
 		} else {
 			// it's near beginning, wrap from end on to front
-			// Log.d(TAG, "Wrapping from beginning onto end");
+			// //Log.d(TAG, "Wrapping from beginning onto end");
 			final int samplesToMove = middleOfArray - index;
 			for (int i = incomingAsArray.length - samplesToMove - 1; i < incomingAsArray.length; i++) {
 				sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
@@ -204,7 +204,7 @@ public class TriggerAverager {
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public class TriggerHandler extends Handler {
 		public void setThreshold(float y) {
-			Log.d(TAG, "Got new triggerValue of "+y);
+			//Log.d(TAG, "Got new triggerValue of "+y);
 			triggerValue = (int) y;
 		}
 	}

@@ -37,7 +37,7 @@ public class BYBColors {
 			argb |= ((rgba >> (i*8)) & 0xff) << ((i - 1)*8);
 		}
 		argb |= (rgba & 0xff) << (3*8);
-	//	Log.d(TAG, Integer.toHexString(rgba) + " asARGB: " + Integer.toHexString(argb));
+	//	//Log.d(TAG, Integer.toHexString(rgba) + " asARGB: " + Integer.toHexString(argb));
 		return argb;
 	}
 
@@ -75,7 +75,7 @@ public class BYBColors {
 //		msg += "AsHex: ";
 //		
 //		msg+= Integer.toHexString(c);
-//		Log.d(TAG, msg);
+//		//Log.d(TAG, msg);
 		
 		return c;
 	}

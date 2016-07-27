@@ -71,7 +71,7 @@ public class BYBFindSpikesAnalysis extends BYBBaseAsyncAnalysis {
 		}
 
 		if (lengthOfBin < 50) {
-			Log.d(TAG, "findSpikes: File too short.");
+			//Log.d(TAG, "findSpikes: File too short.");
 			return;
 		}
 

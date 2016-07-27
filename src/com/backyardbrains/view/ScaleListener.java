@@ -48,14 +48,14 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 		if(renderer != null){
 		xSizeAtBeginning = renderer.getGlWindowHorizontalSize();
 		ySizeAtBeginning = renderer.getGlWindowVerticalSize();
-		//Log.d(TAG, "onScaleBegin");
+		////Log.d(TAG, "onScaleBegin");
 		}
 		return super.onScaleBegin(detector);
 	}
 
 	@Override
 	public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-		//Log.d(TAG, "onScale");
+		////Log.d(TAG, "onScale");
 		if(renderer != null){
 			try {
 				final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
@@ -65,7 +65,7 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 				int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
 
 				renderer.setGlWindowVerticalSize(newYsize);
-				//Log.d(TAG, "onScale newX: " + newXsize + " newY: " + newYsize );
+				////Log.d(TAG, "onScale newX: " + newXsize + " newY: " + newYsize );
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
 			} catch (NullPointerException e) {
@@ -77,7 +77,7 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 
 	@Override
 	public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
-	//	Log.d(TAG, "onScaleEnd");
+	//	//Log.d(TAG, "onScaleEnd");
 		super.onScaleEnd(detector);
 	}
 }

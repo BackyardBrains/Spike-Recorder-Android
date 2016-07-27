@@ -41,13 +41,13 @@ public class BYBThresholdHandle {
 	private void setButton() {
 		setButtonColor(BYBColors.asARGB(BYBColors.getColorAsHexById(BYBColors.red)));
 		
-		//Log.d(TAG, "RED: " + BYBColors.getColorAsHexById(BYBColors.red) + "  " + 0xff0000ff);
+		////Log.d(TAG, "RED: " + BYBColors.getColorAsHexById(BYBColors.red) + "  " + 0xff0000ff);
 		
 		OnTouchListener threshTouch = new OnTouchListener() {
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
 				if (v.getVisibility() == View.VISIBLE) {
-					//Log.d("threshold Handle", "y: " + event.getY() + "  view.y: " + v.getY());
+					////Log.d("threshold Handle", "y: " + event.getY() + "  view.y: " + v.getY());
 					if (event.getActionIndex() == 0) {
 						Intent i = new Intent();
 						i.setAction("BYBThresholdHandlePos");
@@ -79,7 +79,7 @@ public class BYBThresholdHandle {
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------	
 	public void setYPosition(int pos){
-		Log.d(TAG, "setYPosition " + pos);
+		//Log.d(TAG, "setYPosition " + pos);
 		
 		button.setY(pos - (button.getHeight() / 2));
 	}
@@ -93,7 +93,7 @@ public class BYBThresholdHandle {
 	// ----------------------------------------- BROADCAST RECEIVERS
 	// -----------------------------------------------------------------------------------------------------------------------------	
 	public void registerUpdateThresholdHandleListener(boolean reg) {
-		//Log.d(TAG, "registerListener " + reg);
+		////Log.d(TAG, "registerListener " + reg);
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
 			updateThresholdHandleListener = new UpdateThresholdHandleListener();
@@ -107,13 +107,13 @@ public class BYBThresholdHandle {
 	private class UpdateThresholdHandleListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.d(TAG, "updateTheshold onReceive");
+			////Log.d(TAG, "updateTheshold onReceive");
 			if (intent.hasExtra("name")) {
-				//Log.d(TAG, "---------------------- intent name: " + intent.getStringExtra("name") + "  object name: " + name);
+				////Log.d(TAG, "---------------------- intent name: " + intent.getStringExtra("name") + "  object name: " + name);
 				if (name.equals(intent.getStringExtra("name"))) {
 					if (intent.hasExtra("pos")) {
 						int pos = intent.getIntExtra("pos", 0);
-				//		Log.d(TAG, "---------------------- pos: " + pos);
+				//		//Log.d(TAG, "---------------------- pos: " + pos);
 						// ImageButton b = thresholdHandle.getImageButton();//
 						// (ImageButton)getView().findViewById(R.id.thresholdHandle);
 						button.setY(pos - (button.getHeight() / 2));

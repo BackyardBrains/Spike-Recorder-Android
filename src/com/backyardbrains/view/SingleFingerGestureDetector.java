@@ -50,7 +50,7 @@ public class SingleFingerGestureDetector {
 //					i.putExtra("y", dy);
 //					context.sendBroadcast(i);
 //					}
-					//Log.d("ScaleGestureDet", "dx: " + dx + "  dy: "+ dy );
+					////Log.d("ScaleGestureDet", "dx: " + dx + "  dy: "+ dy );
 				}
 				
 				break;

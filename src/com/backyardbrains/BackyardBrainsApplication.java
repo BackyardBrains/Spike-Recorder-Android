@@ -83,18 +83,18 @@ public class BackyardBrainsApplication extends Application {
 	// ----------------------------------------------------------------------------------------
 	protected void bindAudioService(boolean on) {
 		if (on) {
-			// Log.d(getClass().getCanonicalName(), "Binding audio service to
+			// //Log.d(getClass().getCanonicalName(), "Binding audio service to
 			// main activity.");
 			Intent intent = new Intent(this, AudioService.class);
 			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 			mBindingsCount++;
-			Log.d(getClass().getCanonicalName(), "Binder called" + mBindingsCount + "bindings");
+			//Log.d(getClass().getCanonicalName(), "Binder called" + mBindingsCount + "bindings");
 		} else {
-			// Log.d(getClass().getCanonicalName(), "unBinding audio service
+			// //Log.d(getClass().getCanonicalName(), "unBinding audio service
 			// from main activity.");
 			unbindService(mConnection);
 			mBindingsCount--;
-			Log.d(getClass().getCanonicalName(), "Unbinder called" + mBindingsCount + "bindings");
+			//Log.d(getClass().getCanonicalName(), "Unbinder called" + mBindingsCount + "bindings");
 		}
 	}
 
@@ -118,7 +118,7 @@ public class BackyardBrainsApplication extends Application {
 			AudioServiceBinder binder = (AudioServiceBinder) service;
 			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
-			Log.d(getClass().getCanonicalName(), "Service connected and bound");
+			//Log.d(getClass().getCanonicalName(), "Service connected and bound");
 			/*
 			Intent i = new Intent();
 			i.setAction("BYBAudioServiceBind");
@@ -140,7 +140,7 @@ public class BackyardBrainsApplication extends Application {
 //			i.setAction("BYBAudioServiceBind");
 //			i.putExtra("isBind", false);
 //			getApplicationContext().sendBroadcast(i);
-			Log.d(getClass().getCanonicalName(), "Service disconnected.");
+			//Log.d(getClass().getCanonicalName(), "Service disconnected.");
 		}
 	};
 

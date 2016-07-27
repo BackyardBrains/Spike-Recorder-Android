@@ -44,7 +44,7 @@ public class BYBSignalAnalysis {
 				return analyzer.getFloatResult();
 			}
 		}
-			Log.d(TAG,"getResults(): analyzer is null!");
+			//Log.d(TAG,"getResults(): analyzer is null!");
 			return new float[0];
 	}
 	
@@ -73,7 +73,7 @@ public class BYBSignalAnalysis {
 				analyzer = new BYBIsiAnalysis(context, analysisType, data);
 				break;
 			case BYBAnalysisType.BYB_ANALYSIS_NONE:
-				Log.d("BYBSignalAnalysis", "analysisType is none!!");
+				//Log.d("BYBSignalAnalysis", "analysisType is none!!");
 			default:
 				break;
 		}

@@ -50,7 +50,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newX < 16 || (maxlength > 0 && newX> maxlength))
 			return;
 		this.glWindowHorizontalSize = newX;
-		Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
+		//Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newY < 800 || newY > PCM_MAXIMUM_VALUE * 2)
 			return;
 		glWindowVerticalSize = newY;
-		Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
+		//Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -145,14 +145,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		// Log.d(TAG, "onDrawFrame");
+		// //Log.d(TAG, "onDrawFrame");
 		// grab current audio from audioservice
 		if (!getCurrentAudio()) {
-			Log.d(TAG, "AudioService is null!");
+			//Log.d(TAG, "AudioService is null!");
 			return;
 		}
 		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws )) {
-			Log.d(TAG, "Invalid audio buffer!");
+			//Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
 		preDrawingHandler();
@@ -222,12 +222,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
-		//Log.d(TAG, "----------------------------------------- onSurfaceChanged begin");
-		//Log.d(TAG, "width: " + width + "  height: " + height);
+		////Log.d(TAG, "----------------------------------------- onSurfaceChanged begin");
+		////Log.d(TAG, "width: " + width + "  height: " + height);
 		this.width = width;
 		this.height = height;
 		setMillivoltLabelPosition(height);
-		//Log.d(TAG, "***************************************** onSurfaceChanged end");
+		////Log.d(TAG, "***************************************** onSurfaceChanged end");
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 	// ----------------------------------------------------------------------------------------
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
-	//	Log.d(TAG, "InitGL: xBegin: " + xBegin + " xEnd: " + xEnd + " yBegin: " +scaledYBegin+ " yEnd: " + scaledYEnd);
+	//	//Log.d(TAG, "InitGL: xBegin: " + xBegin + " xEnd: " + xEnd + " yBegin: " +scaledYBegin+ " yEnd: " + scaledYEnd);
 		// set viewport
 		
 		float scaledOffsetX = 0;
@@ -314,7 +314,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 	// ----------------------------------------------------------------------------------------
 	protected void autoSetFrame(short[] arrayToScaleTo) {
-	//	Log.d(TAG, "autoSetFrame");
+	//	//Log.d(TAG, "autoSetFrame");
 		int theMax = 0;
 		int theMin = 0;
 
@@ -332,7 +332,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 				newyMax = Math.abs(theMin) * 2;
 			}
 			if (-newyMax > getMinimumDetectedPCMValue()) {
-			//	Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
+			//	//Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
 				setGlWindowVerticalSize(newyMax * 2);
 			}
 
@@ -359,10 +359,10 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public int glHeightToPixelHeight(float glHeight) {
 		if (height <= 0) {
-			 Log.d(TAG, "Checked height and size was less than or equal to zero");
+			 //Log.d(TAG, "Checked height and size was less than or equal to zero");
 		}
 		int ret = BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
-		Log.d(TAG, "glHeightToPixelHeight glHeight: " + glHeight + "   " + ret); 
+		//Log.d(TAG, "glHeightToPixelHeight glHeight: " + glHeight + "   " + ret); 
 		return ret;
 //		return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
 	}

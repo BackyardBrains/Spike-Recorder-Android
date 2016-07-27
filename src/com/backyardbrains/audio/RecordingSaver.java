@@ -187,13 +187,13 @@ public class RecordingSaver implements ReceivesAudio {
 					f = null;
 				}
 			}
-			Log.d(getClass().getCanonicalName(),"Finished writing out " + s.toString());
+			//Log.d(getClass().getCanonicalName(),"Finished writing out " + s.toString());
 			
 			return  writtenFile;//"Finished writing file to SD Card" + s.toString();
 		}
 		@Override
 		protected void onPostExecute(String s){
-			Log.d(TAG, "onPostExecute");
+			//Log.d(TAG, "onPostExecute");
 			Intent i = new Intent();
 			i.setAction("BYBRecordingSaverSuccessfulSave");
 			context.sendBroadcast(i);

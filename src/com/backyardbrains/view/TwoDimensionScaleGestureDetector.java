@@ -192,11 +192,11 @@ public class TwoDimensionScaleGestureDetector {
 	}
 
 	public boolean onTouchEvent(MotionEvent event) {
-		//Log.d("TwoDimensionScaleGestureDetector", "onTouchEvent");
+		////Log.d("TwoDimensionScaleGestureDetector", "onTouchEvent");
 		final int action = event.getAction();
 		boolean handled = true;
 
-		//Log.d("TwoDimensionScaleGestureDetector", "ACTION "+ action);
+		////Log.d("TwoDimensionScaleGestureDetector", "ACTION "+ action);
 			
 	
 		

@@ -110,7 +110,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		// void printSamples(MotionEvent ev) {
 //		     final int historySize = event.getHistorySize();
 //		     final int pointerCount = event.getPointerCount();
-//		     Log.d(TAG, "MotionEvent History size: " + historySize + " pointer count "+ pointerCount );
+//		     //Log.d(TAG, "MotionEvent History size: " + historySize + " pointer count "+ pointerCount );
 //		 //}
 
 		
@@ -150,7 +150,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-		Log.d(TAG, "onTabSelected " + tab.getPosition());
+		//Log.d(TAG, "onTabSelected " + tab.getPosition());
 		if (tab.getPosition() < 0 || tab.getPosition() >= 4) {
 			return;
 		}
@@ -184,7 +184,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-		Log.d("BackyardBrainsMain", "tab reselected");
+		//Log.d("BackyardBrainsMain", "tab reselected");
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 
 		@Override
 		public Fragment getItem(int i) {
-			Log.d("AppSectionsPagerAdapter", "getItem" + i);
+			//Log.d("AppSectionsPagerAdapter", "getItem" + i);
 			switch (i) {
 			case 0:
 			default:
@@ -243,7 +243,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	private class ChangePageListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d("BYBMain", "ChangePageListener");
+			//Log.d("BYBMain", "ChangePageListener");
 			if (intent.hasExtra("page")) {
 				bBroadcastTabSelected = false;
 				if(intent.hasExtra("page")){
@@ -285,7 +285,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			// changePage(2, false);
 			// bChangePageBroadcastMessage = false;
 			bBroadcastTabSelected = false;
-			// Log.d("CloseButtonListener","onReceive");
+			// //Log.d("CloseButtonListener","onReceive");
 			// getActionBar().setSelectedNavigationItem(2);
 		}
 	}
@@ -295,7 +295,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 // @Override
 // public void onReceive(android.content.Context context, android.content.Intent
 //// intent) {
-// Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
+// //Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
 // }
 // }
 
@@ -303,7 +303,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	private class AudioPlaybackStartListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			Log.d("AudioPlayBacjStartListener", "onReceive");
+			//Log.d("AudioPlayBacjStartListener", "onReceive");
 			getActionBar().setSelectedNavigationItem(0);
 //			Intent ii = new Intent();
 //			ii.setAction("BYBShowCloseButton");

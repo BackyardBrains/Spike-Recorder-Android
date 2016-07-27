@@ -61,14 +61,14 @@ class BYBBaseAsyncAnalysis {
 		if(bProcessShorts){
 			asyncShorts.execute(data);
 		}else{
-			Log.d(TAG, "can't execute, doesn't process shorts");
+			//Log.d(TAG, "can't execute, doesn't process shorts");
 		}
 	}
 	public void execute(float[] data){
 		if(!bProcessShorts){
 			asyncFloats.execute(data);
 		}else{
-			Log.d(TAG, "can't execute, doesn't process floats");
+			//Log.d(TAG, "can't execute, doesn't process floats");
 		}
 	}
 	public void execute(){
@@ -104,7 +104,7 @@ class BYBBaseAsyncAnalysis {
 			return resultShorts;
 		} else {
 			if (bReturnsShorts) {
-				Log.d(TAG, "getShortResult() " + BYBAnalysisType.toString(analysisType) + " analysis not ready yet!!");
+				//Log.d(TAG, "getShortResult() " + BYBAnalysisType.toString(analysisType) + " analysis not ready yet!!");
 			} else {
 				Log.e(TAG, "getShortResult() " + BYBAnalysisType.toString(analysisType) + " doesn't return shorts!!");
 			}
@@ -117,7 +117,7 @@ class BYBBaseAsyncAnalysis {
 			return resultFloats;
 		} else {
 			if (!bReturnsShorts) {
-				Log.d(TAG, "getFloatResult() " + BYBAnalysisType.toString(analysisType) + " analysis not ready yet!!");
+				//Log.d(TAG, "getFloatResult() " + BYBAnalysisType.toString(analysisType) + " analysis not ready yet!!");
 			} else {
 				Log.e(TAG, "getFloatResult() " + BYBAnalysisType.toString(analysisType) + " doesn't return floats!!");
 			}
@@ -127,7 +127,7 @@ class BYBBaseAsyncAnalysis {
 
 	protected void asyncOnCancelled() {
 
-		Log.d(TAG, "onCancelled");
+		//Log.d(TAG, "onCancelled");
 		bReady = false;
 		if (context != null) {
 			Intent i = new Intent();
@@ -144,7 +144,7 @@ class BYBBaseAsyncAnalysis {
 
 	protected void asyncPostExecute() {
 
-		Log.d(TAG, "onPostExecute");
+		//Log.d(TAG, "onPostExecute");
 		bReady = true;
 		if (context != null) {
 			Intent i = new Intent();

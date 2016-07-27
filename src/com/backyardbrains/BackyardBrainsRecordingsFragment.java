@@ -65,7 +65,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 		super.onCreate(savedInstanceState);
 
 		bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
-		Log.d(TAG, "bybDirectory: " + bybDirectory.getAbsolutePath());
+	//	//Log.d(TAG, "bybDirectory: " + bybDirectory.getAbsolutePath());
 		rescanFiles();
 		registerReceivers();
 	}
@@ -149,7 +149,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 			             }
 			    });
 
-			Log.d(TAG, "RESCAN FILES!!!!!");
+			//Log.d(TAG, "RESCAN FILES!!!!!");
 			ListAdapter adapter = new FileListAdapter(this.getActivity(), R.layout.file_list_row_layout, files);
 			setListAdapter(adapter);
 	
@@ -162,7 +162,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 
 // ----------------------------------------------------------------------------------------
 	private void playAudioFile(File f) {
-		Log.d(TAG, "----------------playAudioFile------------------");
+		//Log.d(TAG, "----------------playAudioFile------------------");
 		Intent i = new Intent();
 		i.setAction("BYBPlayAudioFile");
 		i.putExtra("filePath", f.getAbsolutePath());
@@ -386,14 +386,14 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 	// ----------------------------------------- REGISTER RECEIVERS
 	// -----------------------------------------------------------------------------------------------------------------------------
 		public void registerReceivers() {
-			Log.d(TAG, "registerReceivers");
+			//Log.d(TAG, "registerReceivers");
 			registerRecordingToggleReceiver(true);
 			registerFileReadReceiver(true);
 			registerSuccessfulSaveReceiver(true);
 		}
 
 		public void unregisterReceivers() {
-			Log.d(TAG, "unregisterReceivers");
+			//Log.d(TAG, "unregisterReceivers");
 			registerRecordingToggleReceiver(false);
 			registerFileReadReceiver(false);
 			registerSuccessfulSaveReceiver(false);

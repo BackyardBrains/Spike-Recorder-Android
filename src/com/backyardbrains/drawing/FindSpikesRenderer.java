@@ -38,14 +38,14 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	public FindSpikesRenderer(Context context) {
 		
 		super(context);
-	//	Log.d(TAG, "CONSTRUCTOR!");
+	//	//Log.d(TAG, "CONSTRUCTOR!");
 		updateThresholdHandles();
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void setGlWindowHorizontalSize(int newX) {
-		//Log.d(TAG, "SetGLHorizontalSize " + getGlWindowHorizontalSize() + " glWidth: " + glWidth + " newX: " + newX);
+		////Log.d(TAG, "SetGLHorizontalSize " + getGlWindowHorizontalSize() + " glWidth: " + glWidth + " newX: " + newX);
 		 super.setGlWindowHorizontalSize(Math.abs(newX));
 		//this.glWindowHorizontalSize = Math.abs(newX);
 
@@ -72,7 +72,7 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	// ----------------------------------------------------------------------------------------
 		public int getThresholdScreenValue(int index){
 			if(index >= 0 && index < 2){
-			//	Log.d(TAG, "getThreshold  ScreenValue: " + glHeightToPixelHeight(thresholds[index]) + "  glValue: " + thresholds[index] );
+			//	//Log.d(TAG, "getThreshold  ScreenValue: " + glHeightToPixelHeight(thresholds[index]) + "  glValue: " + thresholds[index] );
 				return glHeightToPixelHeight(thresholds[index]);
 			}
 			return 0;
@@ -111,14 +111,14 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		if (!getAudioSamples()) {
-			Log.d(TAG, "No audio file!");
+			//Log.d(TAG, "No audio file!");
 			return;
 		}
 		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
-			// Log.d(TAG, "Invalid audio buffer!");
+			// //Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
-		// Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "
+		// //Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "
 		// glWidth: " + glWidth);
 		preDrawingHandler();
 		BYBUtils.glClear(gl);
@@ -159,7 +159,7 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	// ----------------------------------------------------------------------------------------
 	public void setStartSample(float pos) {// normalized position
 		playheadPosition = pos;
-		//Log.d(TAG, "setStartSample: " + pos);
+		////Log.d(TAG, "setStartSample: " + pos);
 	}
 
 	// ----------------------------------------------------------------------------------------

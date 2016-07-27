@@ -212,14 +212,14 @@ public class AudioService extends Service implements ReceivesAudio {
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// mBindingsCount++;
-		// Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
+		// //Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
 		return mBinder;
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent) {
 		// mBindingsCount--;
-		// Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
+		// //Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
 		return super.onUnbind(intent);
 	}
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ public class AudioService extends Service implements ReceivesAudio {
 			audioPlayer.stop();
 			audioPlayer = null;
 		}
-		Log.d(TAG, "Turn Off Audio Player");
+		//Log.d(TAG, "Turn Off Audio Player");
 	}
 
 	/**
@@ -262,7 +262,7 @@ public class AudioService extends Service implements ReceivesAudio {
 			micThread = null;
 			micThread = new MicListener();
 			micThread.start(AudioService.this);
-			Log.d(TAG, "Mic thread started");
+			//Log.d(TAG, "Mic thread started");
 		}
 		mode = LIVE_MODE;
 	}
@@ -275,7 +275,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		if (micThread != null) {
 			micThread.requestStop();
 			micThread = null;
-			Log.d(TAG, "Mic Thread Shut Off");
+			//Log.d(TAG, "Mic Thread Shut Off");
 		}
 	}
 
@@ -377,7 +377,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d("PlayAudioFileListener", "onReceive");
+			//Log.d("PlayAudioFileListener", "onReceive");
 			if (appContext != null) {
 				if (intent.hasExtra("filePath")) {
 					String path = intent.getStringExtra("filePath");
@@ -392,14 +392,16 @@ public class AudioService extends Service implements ReceivesAudio {
 						i.setAction("BYBAudioPlaybackStart");
 						appContext.sendBroadcast(i);
 						
-						Log.d("PlayAudioFileListener","BroadcastReceiver ");
+						//Log.d("PlayAudioFileListener","BroadcastReceiver ");
 						
-					}else{Log.d("PlayAudioFileListener", "onReceive:: filePath is empty!");}
-				}else{Log.d("PlayAudioFileListener", "onReceive:: there's no extra in intent!");}
-			}else{Log.d("PlayAudioFileListener", "onReceive::appContext == null");}
+					}
+					}
+				}
+				}
+			}
 			
-		}
-	}
+		
+	
 	private class CloseButtonListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {

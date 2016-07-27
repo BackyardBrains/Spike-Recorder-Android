@@ -97,11 +97,11 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		if (!getCurrentAverage()) {
-			Log.d(TAG, "AudioService is null!");
+			//Log.d(TAG, "AudioService is null!");
 			return;
 		}
 		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
-			Log.d(TAG, "Invalid audio buffer!");
+			//Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
 		preDrawingHandler();
@@ -195,7 +195,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		// normalize to window
 		threshold = dy;
 		tempThreshold = dy;
-		// Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
+		// //Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 
 		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
 			// final float glHeight =
@@ -207,8 +207,8 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 				}
 			});
 		}
-		// Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
-		// Log.d(TAG, "Threshold is now " +
+		// //Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
+		// //Log.d(TAG, "Threshold is now " +
 		// pixelHeightToGlHeight(thresholdPixelHeight));
 		// dy = 0;
 	}

@@ -154,7 +154,7 @@ public class UIFactory {
 //			@Override
 //			public void onClick(View v) {
 //				((ImageButton) v.findViewById(R.id.closeButton)).setVisibility(View.GONE);
-//				Log.d("UIFactory", "Close Button Pressed!");
+//				//Log.d("UIFactory", "Close Button Pressed!");
 //			}
 //		};
 //		ImageButton mCloseButton = (ImageButton) v.findViewById(R.id.closeButton);

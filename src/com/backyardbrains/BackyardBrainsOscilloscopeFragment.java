@@ -90,7 +90,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		super();
 		this.context = context.getApplicationContext();
 		mode = LIVE_MODE;
-		// Log.d("BackyardBrainsOscilloscopeFragment", "Constructor");
+		// //Log.d("BackyardBrainsOscilloscopeFragment", "Constructor");
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 			mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);
 			singleFingerGestureDetector = new SingleFingerGestureDetector();
 		} else {
-			//// Log.d(TAG, "onCreate failed, context == null");
+			//// //Log.d(TAG, "onCreate failed, context == null");
 		}
 	}
 
@@ -115,7 +115,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
 
-		// Log.d(TAG, "onCreateView");
+		// //Log.d(TAG, "onCreateView");
 		setupLabels(rootView);
 
 		setupButtons(rootView);
@@ -126,7 +126,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onStart() {
-		// Log.d(TAG, "onStart");
+		// //Log.d(TAG, "onStart");
 		readSettings();
 		setupMsLineView();
 		reassignSurfaceView();
@@ -137,7 +137,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onResume() {
-		// Log.d(TAG, "onResume");
+		// //Log.d(TAG, "onResume");
 		registerReceivers();
 		if (mAndroidSurface != null) {
 			mAndroidSurface.onResume();
@@ -150,7 +150,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onPause() {
-		// Log.d(TAG, "onPause");
+		// //Log.d(TAG, "onPause");
 		if (mAndroidSurface != null) {
 			mAndroidSurface.onPause();
 		}
@@ -164,7 +164,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onStop() {
-		// Log.d(TAG, "onStop");
+		// //Log.d(TAG, "onStop");
 		saveSettings();
 
 		super.onStop();
@@ -242,10 +242,10 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 
 			readSettings();
 
-			// Log.d(getClass().getCanonicalName(), "Reassigned
+			// //Log.d(getClass().getCanonicalName(), "Reassigned
 			// OscilloscopeGLSurfaceView");
 		} else {
-			// Log.d(TAG, "audio service == null");
+			// //Log.d(TAG, "audio service == null");
 		}
 
 	}
@@ -288,9 +288,9 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				mAndroidSurface = null;
 			}
 			mAndroidSurface = new ContinuousGLSurfaceView(context, renderer);
-			// Log.d(TAG, "setGLSurface oK.");
+			// //Log.d(TAG, "setGLSurface oK.");
 		} else {
-			// Log.d(TAG, "setGLSurface failed. Context == null.");
+			// //Log.d(TAG, "setGLSurface failed. Context == null.");
 		}
 	}
 
@@ -328,12 +328,12 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				waveRenderer.setAutoScaled(settings.getBoolean("waveRendererAutoscaled", waveRenderer.isAutoScaled()));
 				waveRenderer.setGlWindowHorizontalSize(settings.getInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize()));
 				waveRenderer.setGlWindowVerticalSize(settings.getInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize()));
-				// Log.d(TAG, "waveRenderer readsettings");
-// //Log.d(TAG,"isAutoScaled: "+settings.getBoolean("waveRendererAutoscaled",
+				// //Log.d(TAG, "waveRenderer readsettings");
+// ////Log.d(TAG,"isAutoScaled: "+settings.getBoolean("waveRendererAutoscaled",
 // false));
-// //Log.d(TAG,"GlHorizontalSize:
+// ////Log.d(TAG,"GlHorizontalSize:
 // "+settings.getInt("waveRendererGlWindowHorizontalSize", 0));
-// //Log.d(TAG,"GlVerticalSize:
+// ////Log.d(TAG,"GlVerticalSize:
 // "+settings.getInt("waveRendererGlWindowVerticalSize", 0));
 			}
 			if (threshRenderer != null) {
@@ -342,18 +342,18 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				threshRenderer.setGlWindowVerticalSize(settings.getInt("threshRendererGlWindowVerticalSize", threshRenderer.getGlWindowVerticalSize()));
 				threshRenderer.adjustThresholdValue(settings.getFloat("threshRendererThresholdYValue", threshRenderer.getThresholdScreenValue()));
 
-				// Log.d(TAG, "threshRenderer readsettings");
-// //Log.d(TAG,"threshRenderer.setAutoScaled"+
+				// //Log.d(TAG, "threshRenderer readsettings");
+// ////Log.d(TAG,"threshRenderer.setAutoScaled"+
 // settings.getBoolean("threshRendererAutoscaled", false));
-// //Log.d(TAG,"threshRenderer.setGlWindowHorizontalSize"
+// ////Log.d(TAG,"threshRenderer.setGlWindowHorizontalSize"
 // +settings.getInt("threshRendererGlWindowHorizontalSize", 0));
-// //Log.d(TAG,"threshRenderer.setGlWindowVerticalSize"
+// ////Log.d(TAG,"threshRenderer.setGlWindowVerticalSize"
 // +settings.getInt("threshRendererGlWindowVerticalSize", 0));
-// //Log.d(TAG,"threshRenderer.adjustThresholdValue"+settings.getFloat("threshRendererThresholdYValue",
+// ////Log.d(TAG,"threshRenderer.adjustThresholdValue"+settings.getFloat("threshRendererThresholdYValue",
 // 0));
 			}
 		} else {
-			// Log.d(TAG, "Cant Read settings. settings == null");
+			// //Log.d(TAG, "Cant Read settings. settings == null");
 		}
 	}
 
@@ -366,11 +366,11 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				editor.putInt("waveRendererGlWindowHorizontalSize", waveRenderer.getGlWindowHorizontalSize());
 				editor.putInt("waveRendererGlWindowVerticalSize", waveRenderer.getGlWindowVerticalSize());
 				editor.commit();
-				// Log.d(TAG, "waveRenderer saved settings");
-// //Log.d(TAG,"waveRendererAutoscaled "+ waveRenderer.isAutoScaled());
-// //Log.d(TAG,"waveRendererGlWindowHorizontalSize "+
+				// //Log.d(TAG, "waveRenderer saved settings");
+// ////Log.d(TAG,"waveRendererAutoscaled "+ waveRenderer.isAutoScaled());
+// ////Log.d(TAG,"waveRendererGlWindowHorizontalSize "+
 // waveRenderer.getGlWindowHorizontalSize());
-// //Log.d(TAG,"waveRendererGlWindowVerticalSize "+
+// ////Log.d(TAG,"waveRendererGlWindowVerticalSize "+
 // waveRenderer.getGlWindowVerticalSize());
 			}
 			if (threshRenderer != null) {
@@ -380,17 +380,17 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				editor.putFloat("threshRendererThresholdYValue", threshRenderer.getThresholdScreenValue());
 
 				editor.commit();
-				// Log.d(TAG, "threshRenderer saved settings");
-// //Log.d(TAG,"threshRendererAutoscaled "+ threshRenderer.isAutoScaled());
-// //Log.d(TAG,"threshRendererGlWindowHorizontalSize " +
+				// //Log.d(TAG, "threshRenderer saved settings");
+// ////Log.d(TAG,"threshRendererAutoscaled "+ threshRenderer.isAutoScaled());
+// ////Log.d(TAG,"threshRendererGlWindowHorizontalSize " +
 // threshRenderer.getGlWindowHorizontalSize());
-// //Log.d(TAG,"threshRendererGlWindowVerticalSize " +
+// ////Log.d(TAG,"threshRendererGlWindowVerticalSize " +
 // threshRenderer.getGlWindowVerticalSize());
-// //Log.d(TAG,"threshRendererThresholdYValue " +
+// ////Log.d(TAG,"threshRendererThresholdYValue " +
 // threshRenderer.getThresholdScreenValue());
 			}
 		} else {
-			// Log.d(TAG, "Cant Save settings. settings == null");
+			// //Log.d(TAG, "Cant Save settings. settings == null");
 		}
 	}
 
@@ -555,7 +555,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				Intent i = new Intent();
 				i.setAction("BYBCloseButton");
 				context.sendBroadcast(i);
-				// Log.d("UIFactory", "Close Button Pressed!");
+				// //Log.d("UIFactory", "Close Button Pressed!");
 			}
 		};
 		ImageButton mCloseButton = (ImageButton) view.findViewById(R.id.closeButton);
@@ -571,7 +571,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 				i.setAction("BYBTogglePlayback");
 				i.putExtra("play", true);
 				context.sendBroadcast(i);
-				// Log.d("UIFactory", "Close Button Pressed!");
+				// //Log.d("UIFactory", "Close Button Pressed!");
 			}
 		};
 		ImageButton mPlayButton = (ImageButton) view.findViewById(R.id.playButton);
@@ -597,7 +597,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 		/*
 		 * OnTouchListener threshTouch = new OnTouchListener() {
 		 * @Override public boolean onTouch(View v, MotionEvent event) { if
-		 * (v.getVisibility() == View.VISIBLE) { //Log.d("threshold Handle",
+		 * (v.getVisibility() == View.VISIBLE) { ////Log.d("threshold Handle",
 		 * "y: " + event.getY() + "  view.y: " + v.getY()); if
 		 * (event.getActionIndex() == 0) { int yOffset = 0; if
 		 * (getActivity().getActionBar().isShowing()) { yOffset =
@@ -743,7 +743,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 // public void onReceive(android.content.Context context, android.content.Intent
 // intent) {
 // showCloseButton();
-// //Log.d(TAG, "ShowCloseButtonReceiver");
+// ////Log.d(TAG, "ShowCloseButtonReceiver");
 // };
 // }
 

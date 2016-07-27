@@ -68,7 +68,7 @@ public class MicListener extends Thread {
 	private void setBufferSize() {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		Log.d(TAG, "Found buffer size of :" + buffersize);
+		//Log.d(TAG, "Found buffer size of :" + buffersize);
 	}
 
 	/**
@@ -85,8 +85,8 @@ public class MicListener extends Thread {
 	public void start(ReceivesAudio svc) {
 		service = svc;
 		if (service != null) {
-			Log.d(TAG,
-					"Service interface successfully bound from MicListener Thread");
+			//Log.d(TAG,
+					//"Service interface successfully bound from MicListener Thread");
 		} else {
 			throw new RuntimeException(TAG + ": No interface could be bound");
 		}
@@ -103,7 +103,7 @@ public class MicListener extends Thread {
 	 */
 	@Override
 	public void run() {
-		Log.d(TAG, "Thread Launched");
+		//Log.d(TAG, "Thread Launched");
 		recorder = null;
 
 		final String prefsname = ((AudioService) service).getResources().getString(R.string.global_prefs);
@@ -117,10 +117,10 @@ public class MicListener extends Thread {
 			if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
 				throw new RuntimeException(recorder.toString());
 			}
-			Log.d(TAG, "Recorder Created");
+			//Log.d(TAG, "Recorder Created");
 
 			recorder.startRecording();
-			Log.d(TAG, "Recorder Started");
+			//Log.d(TAG, "Recorder Started");
 			int readAmt = audioInfo.limit()/readSpeedDivisor;
 			((AudioService) service).setMicListenerBufferSizeInSamples(readAmt/2);
 			while (!mDone && recorder.read(audioInfo, readAmt) > 0) {
@@ -150,7 +150,7 @@ public class MicListener extends Thread {
 			Log.w(TAG, "Caught Illegal State Exception: " + e.toString());
 		}
 		recorder = null;
-		Log.d(TAG, "Recorder Released");
+		//Log.d(TAG, "Recorder Released");
 	}
 
 	/**

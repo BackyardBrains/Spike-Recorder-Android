@@ -149,7 +149,7 @@ public class WaitRenderer extends  BYBAnalysisBaseRenderer {
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		//Log.d(TAG, "draw");
+		////Log.d(TAG, "draw");
 	//	initGL(gl);
 		/*
 		gl.glMatrixMode(GL10.GL_MODELVIEW);

@@ -69,7 +69,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	protected void reset() {
-		Log.d(TAG, "RESET");
+		//Log.d(TAG, "RESET");
 		if (reader != null) {
 			reader.close();
 			reader = null;
@@ -116,7 +116,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	private void process() {
-		Log.d(TAG, "process!");
+		//Log.d(TAG, "process!");
 		if (bSpikesDone) {
 			if (bProcessSpikeTrains) {
 				processSpikeTrains();
@@ -356,7 +356,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			// int channelIndex
 			if (reader != null) {
 				if (reader.isReady()) {
-					Log.d(TAG, "===================== start average spike------");
+					//Log.d(TAG, "===================== start average spike------");
 					int numberOfSamples = reader.getDataShorts().length;
 					short[] data = reader.getDataShorts();
 					int sampleRate = reader.getSampleRate();
@@ -532,10 +532,10 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 							avr[i].normTopSTDLine[j] =  BYBUtils.map(avr[i].topSTDLine[j], mn, mx, 0.0f,1.0f);
 							avr[i].normBottomSTDLine[j] =  BYBUtils.map(avr[i].bottomSTDLine[j], mn, mx, 0.0f,1.0f);
 						}
-						Log.d(TAG, "Min: " + mn + "  Max: " + mx);
+						//Log.d(TAG, "Min: " + mn + "  Max: " + mx);
 					}
-					Log.d(TAG, "numSpikeAverages: " + avr.length);
-					Log.d(TAG, "===================== end average spike------");
+					//Log.d(TAG, "numSpikeAverages: " + avr.length);
+					//Log.d(TAG, "===================== end average spike------");
 				}
 			}
 			
@@ -575,12 +575,12 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public int[] getSelectedThresholds() {
 		if (selectedThreshold >= 0 && selectedThreshold < thresholds.size()) {
-			Log.d(TAG, "getSelectedThreshold ok " + thresholds.get(selectedThreshold)[0] + "  ,  " + thresholds.get(selectedThreshold)[1]);
+			//Log.d(TAG, "getSelectedThreshold ok " + thresholds.get(selectedThreshold)[0] + "  ,  " + thresholds.get(selectedThreshold)[1]);
 
 			return thresholds.get(selectedThreshold);
 
 		}
-		Log.d(TAG, "getSelectedThreshold invalid!!!!");
+		//Log.d(TAG, "getSelectedThreshold invalid!!!!");
 		int[] z = new int[2];
 		return z;
 	}
@@ -590,7 +590,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		if (index >= 0 && index < maxThresholds) {
 			selectedThreshold = index;
 			updateThresholdHandles();
-			Log.d(TAG, "selectThreshold " + index);
+			//Log.d(TAG, "selectThreshold " + index);
 		}
 	}
 
@@ -642,7 +642,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 	private void clearSpikeTrains() {
 		if (spikeTrains != null) {
-			Log.d(TAG, "clearSPikeTrains");
+			//Log.d(TAG, "clearSPikeTrains");
 			for (int i = 0; i < spikeTrains.size(); i++) {
 				if (spikeTrains.get(i) != null) {
 					spikeTrains.get(i).clear();
@@ -662,7 +662,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	protected ArrayList<ArrayList<BYBSpike>> processSpikeTrains() {
 		if (!bSpikeTrainsDone|| bThresholdsChanged) {
 			clearSpikeTrains();
-			Log.d(TAG, "processSpikeTrains");
+			//Log.d(TAG, "processSpikeTrains");
 			spikeTrains = new ArrayList<ArrayList<BYBSpike>>();
 			for (int j = 0; j < thresholds.size(); j++) {
 				int mn = Math.min(thresholds.get(j)[0], thresholds.get(j)[1]);
@@ -673,7 +673,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 						temp.add(spikes[i]);
 					}
 				}
-				Log.d(TAG, "Spike train added, size: " + temp.size());
+				//Log.d(TAG, "Spike train added, size: " + temp.size());
 				spikeTrains.add(temp);
 			}
 			bProcessSpikeTrains = false;
@@ -688,7 +688,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 	private void clearISI() {
 		if (ISI != null) {
-			Log.d(TAG, "clearISI");
+			//Log.d(TAG, "clearISI");
 			for (int i = 0; i < ISI.size(); i++) {
 				if (ISI.get(i) != null) {
 					ISI.get(i).clear();
@@ -703,7 +703,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	public void ISIAnalysis() {
 		processSpikeTrains();
 		if (!bISIDone || bThresholdsChanged) {
-			Log.d(TAG, "ISIAnalysis");
+			//Log.d(TAG, "ISIAnalysis");
 			// getSpikesTrains();
 			// int spikesCount = spikesTrains.size();
 			int bins = 100;
@@ -791,7 +791,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		fileToAnalize = file;
 		if (reader == null) {
 			reader = new RecordingReader(fileToAnalize, (RecordingReader.AudiofileReadListener) this);
-			Log.d(TAG, "loading audio file: " + fileToAnalize.getAbsolutePath());
+			//Log.d(TAG, "loading audio file: " + fileToAnalize.getAbsolutePath());
 		}
 		return true;
 	}
@@ -818,12 +818,12 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			minSpikeValue = spikesAnalysis.getLowestPeak();
 			maxSpikeValue = spikesAnalysis.getHighestPeak();
 			totalNumSamples = spikesAnalysis.getTotalSamples();
-			Log.d(TAG, "FindSpikes done: lowest: " + minSpikeValue + "  highest: " + maxSpikeValue + " totalSamples: " + totalNumSamples);
+			//Log.d(TAG, "FindSpikes done: lowest: " + minSpikeValue + "  highest: " + maxSpikeValue + " totalSamples: " + totalNumSamples);
 			spikesAnalysis = null;
 			bSpikesDone = true;
 			bProcessSpikes = false;
 			// bProcessSpikeTrains = true;
-			Log.d(TAG, "findSpike done");
+			//Log.d(TAG, "findSpike done");
 			process();
 		}
 	}
@@ -838,7 +838,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// -----------------------------------------------------------------------------------------------------------------------------
 
 	private void findSpikes() {
-		Log.d(TAG, "findSpikes begin");
+		//Log.d(TAG, "findSpikes begin");
 		spikesAnalysis = null;
 		bProcessSpikes = true;
 		spikesAnalysis = new BYBFindSpikesAnalysis((BYBBaseAsyncAnalysis.AnalysisListener) this, getReaderSamples(), getReaderSampleRate(), getReaderNumChannels());
@@ -868,7 +868,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	private class AnalizeFileListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d(TAG, "AnalizeFileListener: onReceive");
+			//Log.d(TAG, "AnalizeFileListener: onReceive");
 			if (intent.hasExtra("filePath")) {
 				String filePath = intent.getStringExtra("filePath");
 // if (fileToAnalize != null) {

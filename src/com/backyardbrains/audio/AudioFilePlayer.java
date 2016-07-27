@@ -42,7 +42,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 		}
 	}
 	public void audioFileRead(){
-		Log.d(TAG, "AudioFileRead");
+		//Log.d(TAG, "AudioFileRead");
 		bFileLoaded = true;
 		if (bShouldPlay) {
 			play();
@@ -61,7 +61,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 				bFileLoaded = false;
 				bShouldPlay = false;
 			}else{
-				Log.d("AudioFilePlayer","Cant load file: it doent exist!!");
+				//Log.d("AudioFilePlayer","Cant load file: it doent exist!!");
 			}
 		}
 	}
@@ -93,7 +93,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 	}
 
 	private void turnOnPlaybackThread() {
-		Log.d("AudioFilePlayer","turnOnPlaybackThread");
+		//Log.d("AudioFilePlayer","turnOnPlaybackThread");
 		if(playbackThread != null){
 			playbackThread.startPlayback();
 			bPlaying = true;
@@ -108,7 +108,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 			if(reader == null ){ m += "Reader is Null ";}
 			if(audioReceiver == null ){m += "audioReceiver is null";}
 			if(!bFileLoaded) {m += "file not loaded";}
-			Log.d("AudioFilePlayer", m);
+			//Log.d("AudioFilePlayer", m);
 		}
 	}
 
@@ -117,7 +117,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 		if (playbackThread != null) {
 			playbackThread.stopPlayback();
 			playbackThread = null;
-			 Log.d("AudioFilePlayer", "Playback Thread Shut Off");
+			 //Log.d("AudioFilePlayer", "Playback Thread Shut Off");
 		}	
 	}
 

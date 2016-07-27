@@ -85,11 +85,11 @@ public class RecordingReader {
 					asyncReader.execute(bufferedStream);
 					// byte [] buff = convertFromWave(bufferedStream);
 // byte [] orig = new byte [buff.length];
-// if(buff.length != orig.length){Log.d("RecordingReader","Different size
+// if(buff.length != orig.length){//Log.d("RecordingReader","Different size
 // buffers");}
 // for(int i = 0; i < buff.length && i < orig.length; i++){
 // if(buff[i] != orig[i]){
-// Log.d("RecordingReader", "samples not equal"); }
+// //Log.d("RecordingReader", "samples not equal"); }
 // }
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
@@ -210,7 +210,7 @@ public class RecordingReader {
 		int readSize = in.read(buff);
 		if (readSize == -1) throw new IOException("wav data end before expected");
 		if (readSize != mNumBytes) throw new IOException("wav data size differs from what header says");
-		Log.d(TAG, "Successfully read file. numBytes " + mNumBytes + " format " + format + " numChannels " + numChannels + " samplerate: " + sampleRate + " byteRate: " + byteRate + " blockAlign: " + blockAlign + " bitsPerSample: " + bitsPerSample);
+		//Log.d(TAG, "Successfully read file. numBytes " + mNumBytes + " format " + format + " numChannels " + numChannels + " samplerate: " + sampleRate + " byteRate: " + byteRate + " blockAlign: " + blockAlign + " bitsPerSample: " + bitsPerSample);
 		return buff;
 
 	}
@@ -246,7 +246,7 @@ public class RecordingReader {
 					e.printStackTrace();
 				}
 			}
-			Log.d(getClass().getCanonicalName(), "Finished reading " + recordingFile.getName());
+			//Log.d(getClass().getCanonicalName(), "Finished reading " + recordingFile.getName());
 			return null;
 		}
 
@@ -257,7 +257,7 @@ public class RecordingReader {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			Log.d(TAG, "onPostExecute: bReady = true");
+			//Log.d(TAG, "onPostExecute: bReady = true");
 			if (listener != null) {
 				listener.audioFileRead();
 			} else if (context != null) {
