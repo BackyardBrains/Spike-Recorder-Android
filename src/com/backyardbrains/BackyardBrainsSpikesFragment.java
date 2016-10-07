@@ -55,9 +55,9 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 			//BYBColors.getGlColorAsHex( handleColors[0]), BYBColors.getGlColorAsHex( handleColors[1]),BYBColors.getGlColorAsHex( handleColors[2])};
 	
 	// ----------------------------------------------------------------------------------------
-	public BackyardBrainsSpikesFragment(Context context) {
+	public BackyardBrainsSpikesFragment(){//Context context) {
 		super();
-		this.context = context.getApplicationContext();
+//		this.context = getActivity().getApplicationContext();
 		handleColors = new float [3][4];
 		
 		handleColors[0][0] = 1.0f;
@@ -136,6 +136,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 	public void onCreate(Bundle savedInstanceState) {
 		////Log.d(TAG, "----------------------------------------- onCreate begin");
 		super.onCreate(savedInstanceState);
+		context = getActivity().getApplicationContext();
 		if (context != null) {
 			mScaleListener = new ScaleListener();
 			mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);

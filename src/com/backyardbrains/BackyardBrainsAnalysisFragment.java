@@ -51,12 +51,17 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	private ImageButton backButton;
 	
 	// ----------------------------------------------------------------------------------------
-	public BackyardBrainsAnalysisFragment(Context context) {
+	public BackyardBrainsAnalysisFragment() {
 		super();
-		this.context = context.getApplicationContext();
-		//Log.d("BackyardBrainsAnalysisFragment", "Constructor");
-		registerListeners();
+		//this.context = getActivity().getApplicationContext();
+
 	}
+//	public BackyardBrainsAnalysisFragment(Context context) {
+//		super();
+//		this.context = context.getApplicationContext();
+//		//Log.d("BackyardBrainsAnalysisFragment", "Constructor");
+//		registerListeners();
+//	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
 	// ----------------------------------------- FRAGMENT LIFECYCLE
@@ -64,6 +69,8 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+        context = getActivity().getApplicationContext();
+        registerListeners();
 		if (context != null) {
 
 		} else {
@@ -179,6 +186,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 
 	// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView(int renderer) {
+        context = getActivity().getApplicationContext();
 		if (context != null) {
 
 			mAndroidSurface = null;
@@ -227,6 +235,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlSurface(BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
+        context = getActivity().getApplicationContext();
 		if (context != null && renderer != null) {
 			if (mAndroidSurface != null) {
 				mAndroidSurface = null;

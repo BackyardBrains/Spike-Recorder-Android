@@ -45,9 +45,9 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 // -----------------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------- CONSTRUCTOR
 // -----------------------------------------------------------------------------------------------------------------------------
-	public BackyardBrainsRecordingsFragment(Context context) {
+	public BackyardBrainsRecordingsFragment(){//Context context) {
 		super();
-		this.context = context.getApplicationContext();
+//		this.context = getActivity().getApplicationContext();
 	}
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		context = getActivity().getApplicationContext();
 		bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
 	//	//Log.d(TAG, "bybDirectory: " + bybDirectory.getAbsolutePath());
 		rescanFiles();

@@ -204,13 +204,13 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			switch (i) {
 			case 0:
 			default:
-				return new BackyardBrainsOscilloscopeFragment(context);
+				return new BackyardBrainsOscilloscopeFragment();//context);
 			case 1:
-				return new BackyardBrainsRecordingsFragment(context);
+				return new BackyardBrainsRecordingsFragment();//context);
 			case 2:
-				return new BackyardBrainsAnalysisFragment(context);
+				return new BackyardBrainsAnalysisFragment();//context);
 			case 3:
-				return new BackyardBrainsSpikesFragment(context);
+				return new BackyardBrainsSpikesFragment();//context);
 			}
 		}
 

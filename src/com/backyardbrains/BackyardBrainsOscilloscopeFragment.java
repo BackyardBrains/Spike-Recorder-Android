@@ -86,9 +86,9 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	private SingleFingerGestureDetector			singleFingerGestureDetector = null;			
 
 // ----------------------------------------------------------------------------------------
-	public BackyardBrainsOscilloscopeFragment(Context context) {
+	public BackyardBrainsOscilloscopeFragment(){//Context context) {
 		super();
-		this.context = context.getApplicationContext();
+		//this.context = getActivity().getApplicationContext();
 		mode = LIVE_MODE;
 		// //Log.d("BackyardBrainsOscilloscopeFragment", "Constructor");
 	}
@@ -99,6 +99,7 @@ public class BackyardBrainsOscilloscopeFragment extends Fragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		context = getActivity().getApplicationContext();
 		if (context != null) {
 			mScaleListener = new ScaleListener();
 			mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);

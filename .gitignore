@@ -4,7 +4,7 @@ build/
 .project
 .classpath
 .settings/
-byb.keystore
+backyardbrains.keystore
 *.apk
 device*.png
 desktop.ini
@@ -13,6 +13,5 @@ desktop.ini
 /local.properties
 /.idea/workspace.xml
 /.idea/libraries
-.DS_Store
 /build
 /captures
