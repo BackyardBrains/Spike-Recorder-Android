@@ -10,7 +10,7 @@ device*.png
 desktop.ini
 .DS_Store
 *.iml
-.gradle
+.gradle/
 /local.properties
 /.idea/workspace.xml
 /.idea/libraries
