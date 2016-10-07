@@ -9,3 +9,10 @@ byb.keystore
 device*.png
 desktop.ini
 .DS_Store
+*.iml
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
