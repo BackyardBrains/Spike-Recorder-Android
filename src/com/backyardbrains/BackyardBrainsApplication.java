@@ -30,6 +30,8 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 import com.backyardbrains.analysis.*;
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
 /**
  * Main application class for the Backyard Brains app.
  * 
@@ -65,6 +67,11 @@ public class BackyardBrainsApplication extends Application {
 	}
 	@Override
 	public void onCreate() {
+		try {
+			Fabric.with(this, new Crashlytics());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		analysisManager = new BYBAnalysisManager(getApplicationContext());
 		startAudioService();
      	bindAudioService(true);
