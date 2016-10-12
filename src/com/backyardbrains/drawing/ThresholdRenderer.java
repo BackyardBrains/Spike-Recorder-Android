@@ -51,7 +51,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 																					// gl
 																					// values
 	private float				tempThreshold;
-// private boolean drewFirstFrame;
+	private boolean bIsFirstFrame;
 
 	AdjustThresholdListener		adjustThresholdListener;
 
@@ -60,6 +60,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		super(context);// , audioService);
 		defaultThresholdValue();
 		registerAdjustThresholdReceiver(true);
+		bIsFirstFrame = true;
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -77,6 +78,10 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	@Override
 	public void setGlWindowVerticalSize(int newY) {
 		super.setGlWindowVerticalSize(newY);
+		if(bIsFirstFrame){
+			bIsFirstFrame = false;
+			defaultThresholdValue();
+		}
 		Intent i = new Intent();
 		i.setAction("BYBUpdateThresholdHandle");
 		i.putExtra("pos", getThresholdScreenValue());

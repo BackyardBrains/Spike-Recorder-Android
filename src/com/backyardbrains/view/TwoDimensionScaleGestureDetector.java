@@ -352,7 +352,10 @@ public class TwoDimensionScaleGestureDetector {
 	 */
 	private static float getRawX(MotionEvent event, int pointerIndex) {
 		float offset = event.getRawX() - event.getX();
-		return event.getX(pointerIndex) + offset;
+		if(pointerIndex < event.getPointerCount()) {
+			return event.getX(pointerIndex) + offset;
+		}
+		return event.getX() + offset;
 	}
 
 	/**
@@ -361,7 +364,10 @@ public class TwoDimensionScaleGestureDetector {
 	 */
 	private static float getRawY(MotionEvent event, int pointerIndex) {
 		float offset = event.getRawY() - event.getY();
-		return event.getY(pointerIndex) + offset;
+		if(pointerIndex < event.getPointerCount()) {
+			return event.getY(pointerIndex) + offset;
+		}
+		return event.getY() + offset;
 	}
 
 	private void setContext(MotionEvent curr) {

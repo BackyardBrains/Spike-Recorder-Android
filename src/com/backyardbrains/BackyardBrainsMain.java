@@ -30,7 +30,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	AppSectionsPagerAdapter				mAppSectionsPagerAdapter;
 	NonSwipeableViewPager				mViewPager;
 
-// private AudioWriteDoneListener writeDoneListener;
+
 	private CloseButtonListener			closeListener;
 	private ChangePageListener changePageListener;
 	private AudioPlaybackStartListener	audioPlaybackStartListener;
@@ -67,19 +67,15 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 
 	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 // ----------------------------------------- LIFECYCLE OVERRIDES
-// -----------------------------------------------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 		setContentView(R.layout.activity_main);
-		// registerAudioWriteDoneReceiver(true);
 		initTabsAndFragments();
 	}
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onStart() {
@@ -93,28 +89,18 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		super.onStop();
 		unregisterReceivers();
 	}
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onDestroy() {
-// registerAudioWriteDoneReceiver(false);
 		super.onDestroy();
 	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // ----------------------------------------- TOUCH OVERRIDES
-// -----------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		
-		// void printSamples(MotionEvent ev) {
-//		     final int historySize = event.getHistorySize();
-//		     final int pointerCount = event.getPointerCount();
-//		     //Log.d(TAG, "MotionEvent History size: " + historySize + " pointer count "+ pointerCount );
-//		 //}
 
-		
-		
 		List<Fragment> frags = getSupportFragmentManager().getFragments();
 
 		boolean ret = false;
@@ -125,7 +111,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			if (frags.get(i) instanceof BackyardBrainsOscilloscopeFragment) {
 				((BackyardBrainsOscilloscopeFragment) frags.get(i)).onTouchEvent(event);
 				ret = true;
-				// break;
+
 			} else if (frags.get(i) instanceof BackyardBrainsSpikesFragment) {
 				((BackyardBrainsSpikesFragment) frags.get(i)).onTouchEvent(event);
 				ret = true;
@@ -140,13 +126,12 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		return super.onTouchEvent(event) || ret;
 	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // ----------------------------------------- TAB LISTENER OVERRIDES
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 	@Override
 	public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
 	}
-
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
@@ -155,19 +140,8 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			return;
 		}
 
-// *
 		if (tab.getPosition() == 0 || tab.getPosition() == 1) {
 			mViewPager.setCurrentItem(0);
-// List<Fragment> frags = getSupportFragmentManager().getFragments();
-// if (frags != null) {
-// for (int i = 0; i < frags.size(); i++) {
-// if (frags.get(i) instanceof BackyardBrainsOscilloscopeFragment) {
-// ((BackyardBrainsOscilloscopeFragment)
-// frags.get(i)).setRenderer(tab.getPosition());
-// break;
-// }
-// }
-// }
 		} else if (mViewPager.getChildCount() > 1) {
 			mViewPager.setCurrentItem(tab.getPosition() - 1);
 		}
@@ -180,16 +154,14 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 		// }
 		bBroadcastTabSelected = true;
 	}
-
 // ----------------------------------------------------------------------------------------
 	@Override
 	public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
 		//Log.d("BackyardBrainsMain", "tab reselected");
 	}
-
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // ----------------------------------------- FRAGMENT ADAPTER
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 	public static class AppSectionsPagerAdapter extends FragmentPagerAdapter {
 		Context context;
 
@@ -236,14 +208,12 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			}
 		}
 	}
-
-// -----------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS CLASS
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 	private class ChangePageListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.d("BYBMain", "ChangePageListener");
 			if (intent.hasExtra("page")) {
 				bBroadcastTabSelected = false;
 				if(intent.hasExtra("page")){
@@ -277,44 +247,24 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			}
 		}
 	}
-
 // ----------------------------------------------------------------------------------------
 	private class CloseButtonListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			// changePage(2, false);
-			// bChangePageBroadcastMessage = false;
 			bBroadcastTabSelected = false;
-			// //Log.d("CloseButtonListener","onReceive");
-			// getActionBar().setSelectedNavigationItem(2);
 		}
 	}
-
-//// ----------------------------------------------------------------------------------------
-// private class AudioWriteDoneListener extends BroadcastReceiver {
-// @Override
-// public void onReceive(android.content.Context context, android.content.Intent
-//// intent) {
-// //Log.d(TAG, "BYBRecordingSaverSuccessfulSave");
-// }
-// }
-
 	// ----------------------------------------------------------------------------------------
 	private class AudioPlaybackStartListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			//Log.d("AudioPlayBacjStartListener", "onReceive");
 			getActionBar().setSelectedNavigationItem(0);
-//			Intent ii = new Intent();
-//			ii.setAction("BYBShowCloseButton");
-//			context.getApplicationContext().sendBroadcast(ii);
 		}
 	}
 
-// -----------------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-// -----------------------------------------------------------------------------------------------------------------------------
-
+// -------------------------------------------------------------------------------------------------
 	private void registerCloseButtonReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBCloseButton");
@@ -324,19 +274,6 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			getApplicationContext().unregisterReceiver(closeListener);
 		}
 	}
-
-//// ----------------------------------------------------------------------------------------
-// private void registerAudioWriteDoneReceiver(boolean reg) {
-// if (reg) {
-// IntentFilter intentFilter = new
-//// IntentFilter("BYBRecordingSaverSuccessfulSave");
-// writeDoneListener = new AudioWriteDoneListener();
-// getApplicationContext().registerReceiver(writeDoneListener, intentFilter);
-// } else {
-// getApplicationContext().unregisterReceiver(writeDoneListener);
-// }
-// }
-
 	// ----------------------------------------------------------------------------------------
 	private void registerAudioPlaybackStartReceiver(boolean reg) {
 		if (reg) {
@@ -347,7 +284,6 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			getApplicationContext().unregisterReceiver(audioPlaybackStartListener);
 		}
 	}
-
 	// ----------------------------------------------------------------------------------------
 	private void registerChangePageReceiver(boolean reg) {
 		if (reg) {
@@ -358,27 +294,20 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 			getApplicationContext().unregisterReceiver(changePageListener);
 		}
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- REGISTER RECEIVERS
-	// -----------------------------------------------------------------------------------------------------------------------------
-
+	// ---------------------------------------------------------------------------------------------
 	public void registerReceivers() {
 		registerCloseButtonReceiver(true);
 		registerAudioPlaybackStartReceiver(true);
-
 		registerChangePageReceiver(true);
-
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- UNREGISTER RECEIVERS
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public void unregisterReceivers() {
 		registerCloseButtonReceiver(false);
 		registerAudioPlaybackStartReceiver(false);
-
-		 registerChangePageReceiver(false);
-
+		registerChangePageReceiver(false);
 	}
 }

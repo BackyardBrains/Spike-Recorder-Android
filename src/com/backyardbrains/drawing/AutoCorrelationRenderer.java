@@ -32,11 +32,13 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 				for (int i = 0; i < AC.size(); i++) {
 					graphIntegerList(gl, AC.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);
 				}
-				int s = selected;
-				if (selected >= AC.size() || selected <  0) {
-					s = 0;
+				if(AC.size() > 0) {
+					int s = selected;
+					if (selected >= AC.size() || selected <  0) {
+						s = 0;
+					}
+					graphIntegerList(gl, AC.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
 				}
-				graphIntegerList(gl, AC.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
 			}
 		}
 	}

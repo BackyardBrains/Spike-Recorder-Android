@@ -26,6 +26,7 @@ import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -50,35 +51,18 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	private TextView title;
 	private ImageButton backButton;
 	
-	// ----------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public BackyardBrainsAnalysisFragment() {
 		super();
-		//this.context = getActivity().getApplicationContext();
-
 	}
-//	public BackyardBrainsAnalysisFragment(Context context) {
-//		super();
-//		this.context = context.getApplicationContext();
-//		//Log.d("BackyardBrainsAnalysisFragment", "Constructor");
-//		registerListeners();
-//	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
 	// ----------------------------------------- FRAGMENT LIFECYCLE
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        context = getActivity().getApplicationContext();
         registerListeners();
-		if (context != null) {
-
-		} else {
-			//Log.d(TAG, "onCreate failed, context == null");
-		}
 	}
-
-	// ----------------------------------------------------------------------------------------
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.analysis_layout, container, false);
@@ -102,7 +86,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 								Intent j = new Intent();
 								j.setAction("BYBChangePage");
 								j.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
-								context.sendBroadcast(j);
+								if(getContext()!= null) {
+                                    context.sendBroadcast(j);
+                                }
 								break;
 							case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
 								if(currentRenderer instanceof CrossCorrelationRenderer){
@@ -110,7 +96,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 										Intent i = new Intent();
 										i.setAction("BYBChangePage");
 										i.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
-										context.sendBroadcast(i);		
+                                        if(getContext()!= null) {
+                                            context.sendBroadcast(i);
+                                        }
 									}else{
 										((CrossCorrelationRenderer) currentRenderer).setDrawThumbs(true);
 									}
@@ -129,52 +117,42 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 
 		return rootView;
 	}
-
 	@Override
 	public void onStart() {
 		super.onStart();
 		reassignSurfaceView(currentAnalyzer);
 	}
-
 	@Override
 	public void onResume() {
 		super.onResume();
 	}
-
 	@Override
 	public void onPause() {
 		super.onPause();
 	}
-
 	@Override
 	public void onStop() {
 		super.onStop();
 		destroySurfaceView();
 	}
-
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 	}
-
 	@Override
 	public void onDestroyView() {
 		super.onDestroyView();
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- GL RENDERING
-	// -----------------------------------------------------------------------------------------------------------------------------
-
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------------------------------------------------------
-
 	public void setRenderer(int i) {
 		if (i >= 0 && i <= 4) {
 			currentAnalyzer = i;
 			reassignSurfaceView(currentAnalyzer);
 		}
 	}
-
 	// ----------------------------------------------------------------------------------------
 	protected void destroySurfaceView() {
 		mAndroidSurface = null;
@@ -183,34 +161,33 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			mainscreenGLLayout = null;
 		}
 	}
-
 	// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView(int renderer) {
-        context = getActivity().getApplicationContext();
-		if (context != null) {
-
-			mAndroidSurface = null;
-			mainscreenGLLayout.removeAllViews();
-			switch (renderer) {
-			case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-				setGlSurface(new AutoCorrelationRenderer(context), true);
-				break;
-			case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-				setGlSurface(new CrossCorrelationRenderer(context), true);
-				break;
-			case BYBAnalysisType.BYB_ANALYSIS_ISI:
-				setGlSurface(new ISIRenderer(context), true);
-				break;
-			case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-				setGlSurface(new AverageSpikeRenderer(context), true);
-				break;
-			case BYBAnalysisType.BYB_ANALYSIS_NONE:
-				setGlSurface(new WaitRenderer(context), true);
-				break;
+        context = getContext();
+		if(mainscreenGLLayout != null) {
+			if (context != null) {
+				mAndroidSurface = null;
+				mainscreenGLLayout.removeAllViews();
+				switch (renderer) {
+					case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
+						setGlSurface(new AutoCorrelationRenderer(context), true);
+						break;
+					case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
+						setGlSurface(new CrossCorrelationRenderer(context), true);
+						break;
+					case BYBAnalysisType.BYB_ANALYSIS_ISI:
+						setGlSurface(new ISIRenderer(context), true);
+						break;
+					case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
+						setGlSurface(new AverageSpikeRenderer(context), true);
+						break;
+					case BYBAnalysisType.BYB_ANALYSIS_NONE:
+						setGlSurface(new WaitRenderer(context), true);
+						break;
+				}
 			}
+			mainscreenGLLayout.addView(mAndroidSurface);
 		}
-		mainscreenGLLayout.addView(mAndroidSurface);
-		
 		if(title != null){
 			title.setText(getRendererTitle(renderer));
 		}
@@ -235,7 +212,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlSurface(BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
-        context = getActivity().getApplicationContext();
+        context = getContext();
 		if (context != null && renderer != null) {
 			if (mAndroidSurface != null) {
 				mAndroidSurface = null;
@@ -247,40 +224,49 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			if (bSetOnDemand) {
 				mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 			}
-			//Log.d(TAG, "setGLSurface oK.");
 		} else {
 			//Log.d(TAG, "setGLSurface failed. Context == null.");
 		}
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+    @Override
+    public Context getContext(){
+        if(context == null){
+            FragmentActivity act = getActivity();
+            if(act == null) {
+                return null;
+            }
+            context = act.getApplicationContext();
+        }
+        return context;
+    }
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- TOUCH
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
 		if(currentRenderer != null){
 			currentRenderer.onTouchEvent(event);
 		}
-		return mAndroidSurface.onTouchEvent(event);
+        if(mAndroidSurface != null) {
+            return mAndroidSurface.onTouchEvent(event);
+        }
+        return false;
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- SETTINGS
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	private void getSettings() {
 		if (settings == null) {
 			// settings = (
 			// context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
 		}
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS INSTANCES
-	// -----------------------------------------------------------------------------------------------------------------------------
-
+	// ---------------------------------------------------------------------------------------------
 	private RenderAnalysisListener renderAnalysisListener;
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS
-	// -----------------------------------------------------------------------------------------------------------------------------
-
+	// ---------------------------------------------------------------------------------------------
 	private class RenderAnalysisListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
@@ -293,21 +279,26 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			} else if (intent.hasExtra("AverageSpike")) {
 				setRenderer(BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE);
 			}else if (intent.hasExtra("requestRender")) {
-				mAndroidSurface.requestRender();
+                if(mAndroidSurface != null) {
+                    mAndroidSurface.requestRender();
+                }
 			}
 		}
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	private void registerRenderAnalysisReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBRenderAnalysis");
 			renderAnalysisListener = new RenderAnalysisListener();
-			context.registerReceiver(renderAnalysisListener, intentFilter);
+            if(getContext()!= null) {
+                context.registerReceiver(renderAnalysisListener, intentFilter);
+            }
 		} else {
-			context.unregisterReceiver(renderAnalysisListener);
+            if(getContext()!= null) {
+                context.unregisterReceiver(renderAnalysisListener);
+            }
 			renderAnalysisListener = null;
 		}
 	}

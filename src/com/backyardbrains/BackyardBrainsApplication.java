@@ -32,14 +32,7 @@ import android.util.Log;
 import com.backyardbrains.analysis.*;
 import com.crashlytics.android.Crashlytics;
 import io.fabric.sdk.android.Fabric;
-/**
- * Main application class for the Backyard Brains app.
- * 
- * @author Nathan Dotz <nate@backyardbrains.com>
- * @author Ekavali Mishra <ekavali@gmail.com>
- *
- * @version 1.5
- */
+
 public class BackyardBrainsApplication extends Application {
 	private boolean			serviceRunning;
 	protected AudioService	mAudioService;

@@ -11,13 +11,20 @@ public class BYBUtils {
 
 	// ----------------------------------------------------------------------------------------
 	public static FloatBuffer getFloatBufferFromFloatArray(final float[] array) {
-		final FloatBuffer buf;
-		final ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
-		temp.order(ByteOrder.nativeOrder());
-		buf = temp.asFloatBuffer();
-		buf.put(array);
-		buf.position(0);
-		return buf;
+        FloatBuffer buf = null;
+        try {
+
+			final ByteBuffer temp = ByteBuffer.allocateDirect(array.length * 4);
+			temp.order(ByteOrder.nativeOrder());
+			buf = temp.asFloatBuffer();
+			buf.put(array);
+			buf.position(0);
+
+		}catch(Exception e){
+
+
+		}
+        return buf;
 	}
 
 	// ----------------------------------------------------------------------------------------
