@@ -28,6 +28,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.backyardbrains.BYBUtils;
@@ -39,48 +40,44 @@ import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 public class ThresholdRenderer extends BYBBaseRenderer {
 
 	private static final String	TAG	= ThresholdRenderer.class.getCanonicalName();
-	private float				threshold;											// in
-																					// sample
-																					// value
-																					// range,
-																					// which
-																					// happens
-																					// to
-																					// be
-																					// also
-																					// gl
-																					// values
+	private float				threshold;	// in sample value range, which happens to be also gl values
 	private float				tempThreshold;
 	private boolean bIsFirstFrame;
-
 	AdjustThresholdListener		adjustThresholdListener;
 
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public ThresholdRenderer(Context context) {// , AudioService audioService) {
+	// ---------------------------------------------------------------------------------------------
+	public ThresholdRenderer() {
+		super();// , audioService);
+		Log.d(TAG,"Constructor");
+	}
+	public ThresholdRenderer(Context context) {
 		super(context);// , audioService);
-		defaultThresholdValue();
+		Log.d(TAG,"Constructor context");
+		setup(context);
+	}
+	@Override
+	public void setup(Context context){
+		super.setup(context);
+//		defaultThresholdValue();
 		registerAdjustThresholdReceiver(true);
 		bIsFirstFrame = true;
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	@Override
 	public void close() {
 		registerAdjustThresholdReceiver(false);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public void defaultThresholdValue() {
-		adjustThresholdValue(getGlWindowVerticalSize() / 4);
-	}
-
+	// ---------------------------------------------------------------------------------------------
+//	public void defaultThresholdValue() {
+//		adjustThresholdValue(getGlWindowVerticalSize() / 4);
+//	}
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void setGlWindowVerticalSize(int newY) {
 		super.setGlWindowVerticalSize(newY);
 		if(bIsFirstFrame){
 			bIsFirstFrame = false;
-			defaultThresholdValue();
+//			defaultThresholdValue();
 		}
 		Intent i = new Intent();
 		i.setAction("BYBUpdateThresholdHandle");
@@ -88,16 +85,16 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		i.putExtra("name", "OsciloscopeHandle");
 		context.sendBroadcast(i);
 	}
-
 	// ----------------------------------------------------------------------------------------
 	protected boolean getCurrentAverage() {
-		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-			mBufferToDraws = ((BackyardBrainsApplication) context).getmAudioService().getAverageBuffer();
-			return true;
+		if(context != null) {
+			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+				mBufferToDraws = ((BackyardBrainsApplication) context).getmAudioService().getAverageBuffer();
+				return true;
+			}
 		}
 		return false;
 	}
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void onDrawFrame(GL10 gl) {
@@ -114,7 +111,6 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 	}
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
@@ -134,8 +130,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	// @Override
 	protected void postDrawingHandler(GL10 gl) {
 		final float thresholdLineLength = mBufferToDraws.length;
@@ -149,8 +144,7 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		gl.glDrawArrays(GL10.GL_LINES, 0, 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	@Override
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
@@ -165,34 +159,27 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		}
 		return BYBUtils.getFloatBufferFromFloatArray(arr);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	@Override
 	protected void setmVText() {
-		// final float glHeight = pixelHeightToGlHeight(thresholdPixelHeight);
-		final float yPerDiv = threshold;// / 4 / 24.5f / 1000;
-
+		final float yPerDiv = threshold;
 		super.setmVText(yPerDiv);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public int getThresholdScreenValue() {
 		return glHeightToPixelHeight(threshold); // thresholdPixelHeight;
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	@Override
 	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
 		final int size = getGlWindowVerticalSize();
 		initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public float getThresholdValue() {
 		return threshold;
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public void adjustThresholdValue(float dy) {
 		if (dy == 0) {
 			return;
@@ -202,25 +189,22 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		tempThreshold = dy;
 		// //Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 
-		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-			// final float glHeight =
-			// pixelHeightToGlHeight(thresholdPixelHeight);
-			((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
-				@Override
-				public void run() {
-					((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(threshold);
-				}
-			});
+		if(context != null) {
+			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+				// final float glHeight =
+				// pixelHeightToGlHeight(thresholdPixelHeight);
+				((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
+					@Override
+					public void run() {
+						((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(threshold);
+					}
+				});
+			}
 		}
-		// //Log.d(TAG, "Threshold is now " + thresholdPixelHeight + " pixels");
-		// //Log.d(TAG, "Threshold is now " +
-		// pixelHeightToGlHeight(thresholdPixelHeight));
-		// dy = 0;
 	}
-
-	// -----------------------------------------------------------------------------------------------------------------------------
+	///////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS
-	// -----------------------------------------------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	private class AdjustThresholdListener extends BroadcastReceiver {
 		@Override
@@ -240,12 +224,12 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 		}
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-	// -----------------------------------------------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	private void registerAdjustThresholdReceiver(boolean reg) {
-		if (reg) {
+		if (reg && context != null) {
 			IntentFilter intentFilter = new IntentFilter("BYBThresholdHandlePos");
 			adjustThresholdListener = new AdjustThresholdListener();
 			context.registerReceiver(adjustThresholdListener, intentFilter);
@@ -253,5 +237,28 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 			context.unregisterReceiver(adjustThresholdListener);
 		}
 	}
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- SETTINGS
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	@Override
+	public void readSettings(SharedPreferences settings, String TAG) {
+		if (settings != null) {
+			super.readSettings(settings,TAG);
+			adjustThresholdValue(settings.getFloat(TAG + "_threshold", threshold));
+			bIsFirstFrame = settings.getBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
+		}
+	}
 
+
+	// ----------------------------------------------------------------------------------------
+	@Override
+	public void saveSettings(SharedPreferences settings, String TAG) {
+		if (settings != null) {
+			super.saveSettings(settings,TAG);
+			final SharedPreferences.Editor editor = settings.edit();
+			editor.putFloat(TAG + "_threshold", threshold);
+			editor.putBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
+			editor.commit();
+		}
+	}
 }

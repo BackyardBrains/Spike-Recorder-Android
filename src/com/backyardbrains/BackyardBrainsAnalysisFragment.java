@@ -39,7 +39,7 @@ import android.widget.TextView;
 
 public class BackyardBrainsAnalysisFragment extends Fragment {
 
-	private static final String	TAG				= BackyardBrainsAnalysisFragment.class.getCanonicalName();
+	public static final String	TAG				= "BackyardBrainsAnalysisFragment";
 
 	protected GLSurfaceView		mAndroidSurface	= null;
 	private FrameLayout			mainscreenGLLayout;

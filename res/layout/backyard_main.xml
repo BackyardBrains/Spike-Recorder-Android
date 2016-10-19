@@ -38,7 +38,7 @@
         android:layout_alignParentLeft="true"
          >
 
-  		<ImageButton
+  		<ImageView
   		    android:id="@+id/thresholdHandle"
   		    android:layout_width="0dp"
   		    android:layout_height="wrap_content"

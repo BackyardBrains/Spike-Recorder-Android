@@ -36,7 +36,7 @@ import android.widget.TextView;
 
 public class BackyardBrainsRecordingsFragment extends ListFragment {
 
-    private static final String	TAG	= "BackyardBrainsRecordingsFragment";
+    public static final String	TAG	= "BackyardBrainsRecordingsFragment";
 
     private File				bybDirectory;
     private Context				context;

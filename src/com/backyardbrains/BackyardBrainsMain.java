@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import android.support.v4.app.Fragment;
@@ -14,27 +15,26 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 //*/
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 //import android.widget.FrameLayout;
+import android.view.Menu;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.backyardbrains.BackyardBrainsRecordingsFragment;
 //*/
 import com.backyardbrains.view.*;
 
-public class BackyardBrainsMain extends FragmentActivity implements ActionBar.TabListener {
+public class BackyardBrainsMain extends AppCompatActivity implements View.OnClickListener, Animation.AnimationListener{
 	@SuppressWarnings("unused")
 	private static final String			TAG						= "BackyardBrainsMain";
-	AppSectionsPagerAdapter				mAppSectionsPagerAdapter;
-	NonSwipeableViewPager				mViewPager;
-
-
-	private CloseButtonListener			closeListener;
-	private ChangePageListener changePageListener;
-	private AudioPlaybackStartListener	audioPlaybackStartListener;
-	private boolean						bBroadcastTabSelected	= true;
 
 	public static final int				OSCILLOSCOPE_VIEW		= 0;
 	public static final int				THRESHOLD_VIEW			= 1;
@@ -42,158 +42,215 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	public static final int				ANALYSIS_VIEW			= 3;
 	public static final int				FIND_SPIKES_VIEW		= 4;
 
-// ----------------------------------------------------------------------------------------
+	private Animation animShow;
+	private Animation animHide;
+	private Animation animHideButtons;
+	private Animation animShowButtons;
+
+	protected Button buttonScope;
+	protected Button buttonThresh;
+	protected Button buttonRecordings;
+	protected View buttons;
+	private boolean bShowingButtons;
+	private int currentFrag = -1;
+	private List<Button> allButtons;
+
+	public enum FragTransaction{
+		ADD,REPLACE,REMOVE
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//                       CONSTRUCTOR
+	//////////////////////////////////////////////////////////////////////////////
 	public BackyardBrainsMain() {
 		super();
 	}
 
-// ----------------------------------------------------------------------------------------
-	private void initTabsAndFragments() {
-		mAppSectionsPagerAdapter = new AppSectionsPagerAdapter(getSupportFragmentManager(), this);
-
-		mViewPager = (NonSwipeableViewPager) findViewById(R.id.pager);
-		mViewPager.setAdapter(mAppSectionsPagerAdapter);
-
-		final ActionBar actionBar = getActionBar();
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setDisplayShowHomeEnabled(false);
-		actionBar.setDisplayUseLogoEnabled(false);
-		actionBar.setHomeButtonEnabled(false);
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-
-		for (int i = 0; i < 3; i++) {
-			actionBar.addTab(actionBar.newTab().setText(mAppSectionsPagerAdapter.getPageTitle(i)).setTabListener(this));
-		}
-
-	}
-
-// ------------------------------------------------------------------------------------------------
-// ----------------------------------------- LIFECYCLE OVERRIDES
-// ------------------------------------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////////////
+	//                       LIFECYCLE OVERRIDES
+	//////////////////////////////////////////////////////////////////////////////
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		initTabsAndFragments();
+
+		buttonRecordings = (Button)findViewById(R.id.buttonRecordings);
+		buttonScope = (Button)findViewById(R.id.buttonScope);
+		buttonThresh = (Button)findViewById(R.id.buttonThresh);
+
+		buttons = findViewById(R.id.buttons);
+
+		bShowingButtons = false;
+
+		buttonRecordings.setOnClickListener(this);
+		buttonScope.setOnClickListener(this);
+		buttonThresh.setOnClickListener(this);
+
+		allButtons = new ArrayList<>();
+		allButtons.add(buttonScope);
+		allButtons.add(buttonRecordings);
+		allButtons.add(buttonThresh);
+
+		animShowButtons = AnimationUtils.loadAnimation(this, R.anim.slide_in_top);
+		animShowButtons.setAnimationListener(this);
+		animHideButtons  = AnimationUtils.loadAnimation(this, R.anim.slide_out_top);
+		animHideButtons.setAnimationListener(this);
+
+		hideActionBar();
+		loadFragment(OSCILLOSCOPE_VIEW);
 	}
-	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onStart() {
 		super.onStart();
+		hideActionBar();
 		registerReceivers();
 	}
-
-	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onStop() {
 		super.onStop();
 		unregisterReceivers();
 	}
-	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 	}
-
-// -------------------------------------------------------------------------------------------------
-// ----------------------------------------- TOUCH OVERRIDES
-// ------------------------------------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////////////
+	//                       OnClickListener methods
+	//////////////////////////////////////////////////////////////////////////////
 	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-
-		List<Fragment> frags = getSupportFragmentManager().getFragments();
-
-		boolean ret = false;
-
-		if (frags != null) {
-			int i = mViewPager.getCurrentItem();
-// for (int i = 0; i < frags.size(); i++) {
-			if (frags.get(i) instanceof BackyardBrainsOscilloscopeFragment) {
-				((BackyardBrainsOscilloscopeFragment) frags.get(i)).onTouchEvent(event);
-				ret = true;
-
-			} else if (frags.get(i) instanceof BackyardBrainsSpikesFragment) {
-				((BackyardBrainsSpikesFragment) frags.get(i)).onTouchEvent(event);
-				ret = true;
-				// break;
-			}else if (frags.get(i) instanceof BackyardBrainsAnalysisFragment) {
-				((BackyardBrainsAnalysisFragment) frags.get(i)).onTouchEvent(event);
-				ret = true;
-				// break;
+	public void onClick(View view) {
+		loadFragment(view.getId());
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Fragment managment
+	//////////////////////////////////////////////////////////////////////////////
+	public void loadFragment(int fragType) {
+		if (fragType == R.id.buttonRecordings) {
+			fragType =  RECORDINGS_LIST;
+		}else if (fragType == R.id.buttonScope) {
+			fragType =  OSCILLOSCOPE_VIEW;
+		}else if (fragType == R.id.buttonThresh) {
+			fragType =  THRESHOLD_VIEW;
+		}
+		if(fragType != currentFrag){
+			currentFrag  = fragType;
+			Fragment frag = null;
+			String fragName = "";
+			Intent i = null;
+			switch (fragType) {
+				//------------------------------
+				case RECORDINGS_LIST:
+					frag = new BackyardBrainsRecordingsFragment();
+					fragName = "BackyardBrainsRecordingsFragment";
+					i = new Intent();
+					i.putExtra("tab", RECORDINGS_LIST);
+					break;
+				//------------------------------
+				case THRESHOLD_VIEW:
+					frag = new BackyardBrainsThresholdFragment();
+					fragName = "BackyardBrainsThresholdFragment";
+					i = new Intent();
+					i.putExtra("tab", THRESHOLD_VIEW);
+					break;
+				//------------------------------
+				case FIND_SPIKES_VIEW:
+					frag = new BackyardBrainsSpikesFragment();
+					fragName = "BackyardBrainsSpikesFragment";
+					break;
+				//------------------------------
+				case ANALYSIS_VIEW:
+					frag = new BackyardBrainsAnalysisFragment();
+					fragName = "BackyardBrainsAnalysisFragment";
+					break;
+				//------------------------------
+				case OSCILLOSCOPE_VIEW:
+				default:
+					frag = new BackyardBrainsOscilloscopeFragment();
+					fragName = "BackyardBrainsOscilloscopeFragment";
+					i = new Intent();
+					i.putExtra("tab", OSCILLOSCOPE_VIEW);
+					break;
+				//------------------------------
 			}
-			// }
-		}
-		return super.onTouchEvent(event) || ret;
-	}
+			setSelectedButton(fragType);
 
-// -------------------------------------------------------------------------------------------------
-// ----------------------------------------- TAB LISTENER OVERRIDES
-// -------------------------------------------------------------------------------------------------
-	@Override
-	public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-	}
-// ----------------------------------------------------------------------------------------
-	@Override
-	public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-		//Log.d(TAG, "onTabSelected " + tab.getPosition());
-		if (tab.getPosition() < 0 || tab.getPosition() >= 4) {
-			return;
-		}
-
-		if (tab.getPosition() == 0 || tab.getPosition() == 1) {
-			mViewPager.setCurrentItem(0);
-		} else if (mViewPager.getChildCount() > 1) {
-			mViewPager.setCurrentItem(tab.getPosition() - 1);
-		}
-		// */
-		// if (bBroadcastTabSelected) {
-		Intent ii = new Intent();
-		ii.setAction("BYBonTabSelected");
-		ii.putExtra("tab", tab.getPosition());
-		getApplicationContext().sendBroadcast(ii);
-		// }
-		bBroadcastTabSelected = true;
-	}
-// ----------------------------------------------------------------------------------------
-	@Override
-	public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-		//Log.d("BackyardBrainsMain", "tab reselected");
-	}
-// -------------------------------------------------------------------------------------------------
-// ----------------------------------------- FRAGMENT ADAPTER
-// -------------------------------------------------------------------------------------------------
-	public static class AppSectionsPagerAdapter extends FragmentPagerAdapter {
-		Context context;
-
-		public AppSectionsPagerAdapter(FragmentManager fm, Context ctx) {
-			super(fm);
-			context = ctx;
-		}
-
-		@Override
-		public Fragment getItem(int i) {
-			//Log.d("AppSectionsPagerAdapter", "getItem" + i);
-			switch (i) {
-			case 0:
-			default:
-				return new BackyardBrainsOscilloscopeFragment();//context);
-			case 1:
-				return new BackyardBrainsRecordingsFragment();//context);
-			case 2:
-				return new BackyardBrainsAnalysisFragment();//context);
-			case 3:
-				return new BackyardBrainsSpikesFragment();//context);
+			showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, true, R.anim.slide_in_right, R.anim.slide_out_left);
+			if (i != null) {
+				i.setAction("BYBonTabSelected");
+				getApplicationContext().sendBroadcast(i);
 			}
 		}
+	}
 
-		@Override
-		public int getCount() {
-			return 4;
+
+	public void popFragment(){
+		if(getSupportFragmentManager().getBackStackEntryCount()>1) {
+			int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() -1;
+			String lastFragName =getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
+//			if( lastFragName.equals(EntelWelcomeVidPlayer.TAG) || lastFragName.equals(ELearnDelegate.TAG)){
+//				((EntelWelcomeApp) getApplicationContext()).controlViaje.goBack(false);
+//			}
+			getSupportFragmentManager().popBackStack();
+		}else{
+			Log.i(TAG, "popFragment noStack");
 		}
+	}
+	public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction, boolean bAnimate, int animIn, int animOut){
+		android.support.v4.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+		if(bAnimate) {
+			transaction.setCustomAnimations(animIn, animOut);
+		}
+		if(fragTransaction == FragTransaction.REPLACE) {
+			transaction.replace(fragContainer, frag);
+			transaction.addToBackStack(fragName);
+		}else if(fragTransaction == FragTransaction.REMOVE) {
+			transaction.remove(frag);
+		}else if(fragTransaction == FragTransaction.ADD) {
+			transaction.add(fragContainer, frag);
+			transaction.addToBackStack(fragName);
+		}
+		transaction.commit();
+	}
 
-		@Override
-		public CharSequence getPageTitle(int position) {
-			switch (position) {
+
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Action Bar
+	//////////////////////////////////////////////////////////////////////////////
+	public void setActionBarTitle(String title){
+		getSupportActionBar().setTitle(title);
+	}
+	public void showActionBar(){
+//        getSupportActionBar().show();
+		android.support.v7.app.ActionBar bar = getSupportActionBar();
+		if(bar != null) {
+			bar.show();
+		}else{
+			Log.d(TAG, "show action bar fail. null action bar.");
+		}
+	}
+	public void hideActionBar(){
+//        getSupportActionBar().hide();
+		android.support.v7.app.ActionBar bar = getSupportActionBar();
+		if(bar != null) {
+			bar.hide();
+		}else{
+			Log.d(TAG, "hide action bar fail. null action bar.");
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Animation Callbacks
+	//////////////////////////////////////////////////////////////////////////////
+	public void 	onAnimationStart(Animation animation){
+//		Log.w(TAG, "boton continuar start Animation");
+	}
+	public void onAnimationEnd(Animation animation){
+//		Log.w(TAG, "boton continuar endAnimation");
+	}
+	public void 	onAnimationRepeat(Animation animation){}
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Public Methods
+	//////////////////////////////////////////////////////////////////////////////
+	public String getPageTitle(int position) {
+		switch (position) {
 			case OSCILLOSCOPE_VIEW:
 			default:
 				return "Oscilloscope View";
@@ -205,75 +262,71 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 				return "Analysis";
 			case FIND_SPIKES_VIEW:
 				return "FindSpikes view";
-			}
 		}
 	}
-// ---------------------------------------------------------------------------------------------------
-// ----------------------------------------- BROADCAST RECEIVERS CLASS
-// -------------------------------------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Private Methods
+	//////////////////////////////////////////////////////////////////////////////
+	void setSelectedButton(int select){
+		Button selectedButton = null;
+		switch (select){
+			case OSCILLOSCOPE_VIEW:
+				selectedButton = buttonScope;
+				break;
+			case THRESHOLD_VIEW:
+				selectedButton = buttonThresh;
+				break;
+			case RECORDINGS_LIST:
+				selectedButton = buttonRecordings;
+				break;
+			default:
+				break;
+		}
+		for(Button b: allButtons) {
+			boolean bIsSelected = ( b == selectedButton);
+			b.setSelected(bIsSelected);
+			b.setTextColor(bIsSelected?0xFFFF8D08: Color.WHITE);
+		}
+		if(selectedButton != null) {
+			showButtons(true);
+		}else{
+			showButtons(false);
+		}
+	}
+	void showButtons (boolean bShow){
+		if(bShowingButtons != bShow) {
+			buttons.startAnimation(bShow ? animShowButtons : animHideButtons);
+			bShowingButtons = bShow;
+		}
+	}
+	// ---------------------------------------------------------------------------------------------
+	// ----------------------------------------- BROADCAST RECEIVERS CLASS
+	// ---------------------------------------------------------------------------------------------
+	private ChangePageListener 			changePageListener;
+	private AudioPlaybackStartListener	audioPlaybackStartListener;
+
 	private class ChangePageListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.hasExtra("page")) {
-				bBroadcastTabSelected = false;
 				if(intent.hasExtra("page")){
-					int page = intent.getIntExtra("page", 0);
-					switch(page){
-					case OSCILLOSCOPE_VIEW:
-						mViewPager.setCurrentItem(0, false);						
-						break;
-					case THRESHOLD_VIEW:
-						mViewPager.setCurrentItem(0, false);						
-						break;
-					case RECORDINGS_LIST:
-						mViewPager.setCurrentItem(1, false);						
-						break;
-					case ANALYSIS_VIEW:
-						mViewPager.setCurrentItem(2, false);
-						break;
-					case FIND_SPIKES_VIEW:
-						mViewPager.setCurrentItem(3, false);						
-						break;
-					}
-
-					if(page == FIND_SPIKES_VIEW || page == ANALYSIS_VIEW){
-						getActionBar().hide();
-					}else{
-						getActionBar().show();
-					}
+					loadFragment(intent.getIntExtra("page", 0));
 				}
-				// getActionBar().setSelectedNavigationItem(intent.getIntExtra("page",
-				// 0));
 			}
-		}
-	}
-// ----------------------------------------------------------------------------------------
-	private class CloseButtonListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			bBroadcastTabSelected = false;
 		}
 	}
 	// ----------------------------------------------------------------------------------------
 	private class AudioPlaybackStartListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
-			getActionBar().setSelectedNavigationItem(0);
+//			getActionBar().setSelectedNavigationItem(0);
+			loadFragment(OSCILLOSCOPE_VIEW);
 		}
 	}
 
-// -------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 // -------------------------------------------------------------------------------------------------
-	private void registerCloseButtonReceiver(boolean reg) {
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBCloseButton");
-			closeListener = new CloseButtonListener();
-			getApplicationContext().registerReceiver(closeListener, intentFilter);
-		} else {
-			getApplicationContext().unregisterReceiver(closeListener);
-		}
-	}
 	// ----------------------------------------------------------------------------------------
 	private void registerAudioPlaybackStartReceiver(boolean reg) {
 		if (reg) {
@@ -298,7 +351,7 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	// ----------------------------------------- REGISTER RECEIVERS
 	// ---------------------------------------------------------------------------------------------
 	public void registerReceivers() {
-		registerCloseButtonReceiver(true);
+
 		registerAudioPlaybackStartReceiver(true);
 		registerChangePageReceiver(true);
 	}
@@ -306,7 +359,6 @@ public class BackyardBrainsMain extends FragmentActivity implements ActionBar.Ta
 	// ----------------------------------------- UNREGISTER RECEIVERS
 	// ---------------------------------------------------------------------------------------------
 	public void unregisterReceivers() {
-		registerCloseButtonReceiver(false);
 		registerAudioPlaybackStartReceiver(false);
 		registerChangePageReceiver(false);
 	}

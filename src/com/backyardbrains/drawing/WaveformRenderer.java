@@ -36,18 +36,23 @@ import android.util.Log;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.AudioService;
 
-public class WaveformRenderer extends  BYBBaseRenderer {
+public class WaveformRenderer extends BYBBaseRenderer {
 
 	private static final String TAG = "WaveformRenderer";
 
 	//----------------------------------------------------------------------------------------
-	public WaveformRenderer(Context context){//, AudioService audioService) {
-		super(context);//, audioService);
+	public WaveformRenderer(){
+		super();
+		Log.d(TAG,"Constructor");
+	}
+	public WaveformRenderer(Context context) {
+		super(context);
+		Log.d(TAG, "Constructor(context)");
 	}
 //	// ----------------------------------------------------------------------------------------
 //	@Override
 //	public void setGlWindowHorizontalSize(int newX) {
-//	//	//Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);	
+//	//	//Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);
 //		super.setGlWindowHorizontalSize(newX);
 //	}
 //	@Override
@@ -64,6 +69,7 @@ public class WaveformRenderer extends  BYBBaseRenderer {
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
+
 		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
 		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
 

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent">
+
+    <include layout="@layout/play_live_rec_scope_layout"/>
+    <FrameLayout
+        android:id="@+id/thresholdHandleLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+
+        android:layout_gravity="left|center_vertical"
+        >
+        <ImageView
+            android:id="@+id/thresholdHandle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:contentDescription="@string/threshold_handle"
+            android:src="@drawable/handle_white_left" />
+    </FrameLayout>
+    <LinearLayout
+        android:id="@+id/triggerViewSampleChangerLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:orientation="vertical"
+        android:visibility="visible" >
+
+        <SeekBar
+            android:id="@+id/samplesSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="5sp"
+            android:layout_weight="1"
+            android:contentDescription="@string/average_num_slider"
+            android:indeterminate="false"
+            android:max="32"
+            android:minHeight="10dp"
+            android:progress="1"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/numberOfSamplesAveraged"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="5sp"
+            android:text="@string/default_threshold_amount"
+            android:textColor="#00ff00" >
+        </TextView>
+    </LinearLayout>
+</FrameLayout>

@@ -154,6 +154,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 	public void setUseAverager(boolean bUse){
+		Log.d(TAG, "setUseAverager: "+(bUse?"TRUE":"FALSE"));
 		bUseAverager = bUse;
 	}
 	

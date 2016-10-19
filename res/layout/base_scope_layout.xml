@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/baseParentLayout"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" >
+
+    <FrameLayout
+        android:id="@+id/glContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent" >
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/tickmarkImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignBottom="@id/glContainer"
+        android:layout_alignTop="@id/glContainer"
+        android:scaleType="fitXY"
+        android:src="@drawable/tickmarks"
+        android:contentDescription="@string/tickmarks_on_left_side_of_screen">
+    </ImageView>
+
+    <TextView
+        android:id="@+id/DebugTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#ffffffff"
+        android:gravity="bottom"
+        android:visibility="gone">
+    </TextView>
+
+    <TextView
+        android:id="@+id/mVLabelView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical"
+        android:text="@string/default_milliseconds" />
+
+    <LinearLayout
+        android:id="@+id/triggerViewSampleChangerLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:visibility="gone" >
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/millisecondsView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/triggerViewSampleChangerLayout"
+        android:layout_alignParentBottom="false"
+        android:layout_alignWithParentIfMissing="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20sp"
+        android:text="@string/default_milliseconds" >
+    </TextView>
+</RelativeLayout>

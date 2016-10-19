@@ -12,25 +12,29 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 
 public class BYBThresholdHandle {
 
 	private static final String TAG = "BYBThresholdHandle";
 	
-	protected ImageButton					button;
+	protected ImageView					button;
 	public Context							context;
 	protected String						name;
 	private UpdateThresholdHandleListener	updateThresholdHandleListener;
+	protected View layoutView;
 	// -----------------------------------------------------------------------------------------------------------------------------
-	public BYBThresholdHandle(Context context, ImageButton button, String name) {
+	public BYBThresholdHandle(Context context, ImageView button, View view, String name) {
 		this.context = context;
 		this.button = button;// ((ImageButton)
 								// view.findViewById(R.id.thresholdHandle));
+		this.layoutView = view;
 		this.name = name;
 		setButton();
+		setDefaultYPosition();
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
-	public ImageButton getImageButton() {
+	public ImageView getHandlerView() {
 		return button;
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
@@ -52,13 +56,15 @@ public class BYBThresholdHandle {
 						Intent i = new Intent();
 						i.setAction("BYBThresholdHandlePos");
 						i.putExtra("name", name);
-						i.putExtra("y", event.getRawY());
+						float pos = (float)setYPosition((int)event.getY());
+						i.putExtra("y", pos);
 						switch (event.getActionMasked()) {
 						case MotionEvent.ACTION_DOWN:
 							i.putExtra("action", "down");
 							break;
 						case MotionEvent.ACTION_MOVE:
-							v.setY(event.getRawY() - v.getHeight() / 2 );
+							//setYPosition((int)event.getY());
+//							v.setY(event.getRawY() - v.getHeight() / 2 );
 							i.putExtra("action", "move");
 							break;
 						case MotionEvent.ACTION_CANCEL:
@@ -75,13 +81,33 @@ public class BYBThresholdHandle {
 				return false;
 			}
 		};
-		this.button.setOnTouchListener(threshTouch);
+		this.layoutView.setOnTouchListener(threshTouch);
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------	
-	public void setYPosition(int pos){
+	// -----------------------------------------------------------------------------------------------------------------------------
+	public void setDefaultYPosition(){
+		float y = layoutView.getHeight()/4;
+		Intent i = new Intent();
+		i.setAction("BYBThresholdHandlePos");
+		i.putExtra("name", name);
+		i.putExtra("y", y);
+		i.putExtra("action", "up");
+		context.sendBroadcast(i);
+		setYPosition((int)y);
+		}
+	public int setYPosition(int pos){
 		//Log.d(TAG, "setYPosition " + pos);
-		
-		button.setY(pos - (button.getHeight() / 2));
+		int buttonHalf = (button.getHeight() / 2);
+		int p = pos;
+		if(p < buttonHalf){
+			p = buttonHalf;
+		}
+		int hiPos = layoutView.getHeight() - buttonHalf;
+		if(p > hiPos){
+			p = hiPos;
+		}
+
+		button.setY(p - buttonHalf);
+		return p;
 	}
 	public void hide(){
 		button.setVisibility(View.GONE);
@@ -116,7 +142,8 @@ public class BYBThresholdHandle {
 				//		//Log.d(TAG, "---------------------- pos: " + pos);
 						// ImageButton b = thresholdHandle.getImageButton();//
 						// (ImageButton)getView().findViewById(R.id.thresholdHandle);
-						button.setY(pos - (button.getHeight() / 2));
+						setYPosition(pos);
+						// 	button.setY(pos - (button.getHeight() / 2));
 					}
 				}
 			}

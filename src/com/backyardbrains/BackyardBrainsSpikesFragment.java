@@ -29,7 +29,7 @@ import android.widget.SeekBar;
 
 public class BackyardBrainsSpikesFragment extends Fragment {
 
-	private static final String					TAG				= "BackyardBrainsSpikesFragment";
+	public static final String					TAG				= "BackyardBrainsSpikesFragment";
 
 	private SharedPreferences					settings		= null;
 	private Context								context			= null;
@@ -314,8 +314,8 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 		addButton = ((ImageButton) view.findViewById(R.id.new_threshold));
 		trashButton = ((ImageButton) view.findViewById(R.id.trash_can));
         if(getContext() != null) {
-            leftThresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.leftThresholdHandle)), "LeftSpikesHandle");
-            rightThresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.rightThresholdHandle)), "RightSpikesHandle");
+            leftThresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.leftThresholdHandle)),view.findViewById(R.id.leftThresholdHandleLayout), "LeftSpikesHandle");
+            rightThresholdHandle = new BYBThresholdHandle(context, ((ImageButton) view.findViewById(R.id.rightThresholdHandle)),view.findViewById(R.id.rightThresholdHandleLayout), "RightSpikesHandle");
         }
 
 		thresholdButtons[0].setOnTouchListener(new OnTouchListener() {
