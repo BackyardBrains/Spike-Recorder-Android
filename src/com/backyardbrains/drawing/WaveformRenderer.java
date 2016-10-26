@@ -33,6 +33,7 @@ import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.AudioService;
 
@@ -49,18 +50,7 @@ public class WaveformRenderer extends BYBBaseRenderer {
 		super(context);
 		Log.d(TAG, "Constructor(context)");
 	}
-//	// ----------------------------------------------------------------------------------------
-//	@Override
-//	public void setGlWindowHorizontalSize(int newX) {
-//	//	//Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize() + " newX: " + newX);
-//		super.setGlWindowHorizontalSize(newX);
-//	}
-//	@Override
-//	// ----------------------------------------------------------------------------------------
-//	public void setGlWindowVerticalSize(int newY) {
-//		super.setGlWindowVerticalSize(newY);
-//		////Log.d(TAG, "SetGLVerticalSize "+getGlWindowVerticalSize() + " newY: " + newY);
-//	}
+
 
 	//----------------------------------------------------------------------------------------
 	//----------------------------------------------------------------------------------------
@@ -85,9 +75,6 @@ public class WaveformRenderer extends BYBBaseRenderer {
 		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
 		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-		
-		
-
-		
 	}
 }
+ 

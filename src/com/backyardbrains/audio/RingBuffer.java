@@ -50,8 +50,10 @@ public class RingBuffer {
 	public void add(final ByteBuffer incoming) {
 		incoming.clear();
 		final ShortBuffer sb = incoming.asShortBuffer();
-		System.arraycopy(buffer, sb.capacity(), buffer, 0, buffer.length-sb.capacity());
-		sb.get(buffer, buffer.length-sb.capacity(), sb.capacity());
+		add(sb);
+//		System.arraycopy(buffer, sb.capacity(), buffer, 0, buffer.length-sb.capacity());
+//		sb.get(buffer, buffer.length-sb.capacity(), sb.capacity());
+
 		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
 	}
 	public void add(final ShortBuffer incoming) {

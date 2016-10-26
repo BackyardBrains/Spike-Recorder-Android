@@ -11,7 +11,7 @@ import com.backyardbrains.drawing.AutoCorrelationRenderer;
 import com.backyardbrains.drawing.AverageSpikeRenderer;
 import com.backyardbrains.drawing.BYBAnalysisBaseRenderer;
 import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.drawing.ContinuousGLSurfaceView;
+
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ISIRenderer;

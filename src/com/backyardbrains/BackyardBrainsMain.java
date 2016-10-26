@@ -131,8 +131,8 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		}else if (fragType == R.id.buttonThresh) {
 			fragType =  THRESHOLD_VIEW;
 		}
-		if(fragType != currentFrag){
-			currentFrag  = fragType;
+		if(fragType != currentFrag) {
+			currentFrag = fragType;
 			Fragment frag = null;
 			String fragName = "";
 			Intent i = null;
@@ -172,11 +172,12 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 				//------------------------------
 			}
 			setSelectedButton(fragType);
-
-			showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, true, R.anim.slide_in_right, R.anim.slide_out_left);
-			if (i != null) {
-				i.setAction("BYBonTabSelected");
-				getApplicationContext().sendBroadcast(i);
+			if (frag != null) {
+				showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, true, R.anim.slide_in_right, R.anim.slide_out_left);
+				if (i != null) {
+					i.setAction("BYBonTabSelected");
+					getApplicationContext().sendBroadcast(i);
+				}
 			}
 		}
 	}
@@ -287,11 +288,8 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			b.setSelected(bIsSelected);
 			b.setTextColor(bIsSelected?0xFFFF8D08: Color.WHITE);
 		}
-		if(selectedButton != null) {
-			showButtons(true);
-		}else{
-			showButtons(false);
-		}
+		showButtons(selectedButton != null);
+
 	}
 	void showButtons (boolean bShow){
 		if(bShowingButtons != bShow) {
@@ -320,6 +318,7 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		@Override
 		public void onReceive(android.content.Context context, android.content.Intent intent) {
 //			getActionBar().setSelectedNavigationItem(0);
+			Log.w(TAG, "AudioPlaybackStartListener .onReceive");
 			loadFragment(OSCILLOSCOPE_VIEW);
 		}
 	}
@@ -329,6 +328,7 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 // -------------------------------------------------------------------------------------------------
 	// ----------------------------------------------------------------------------------------
 	private void registerAudioPlaybackStartReceiver(boolean reg) {
+		Log.w(TAG, "registerAudioPlaybackStartReceiver");
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBAudioPlaybackStart");
 			audioPlaybackStartListener = new AudioPlaybackStartListener();

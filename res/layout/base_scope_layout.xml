@@ -40,16 +40,7 @@
         android:text="@string/default_milliseconds" />
 
     <LinearLayout
-        android:id="@+id/triggerViewSampleChangerLayout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/tickmarkImageView"
-        android:visibility="gone" >
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/millisecondsView"
+        android:id="@+id/millisecondsViewLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/triggerViewSampleChangerLayout"
@@ -57,6 +48,21 @@
         android:layout_alignWithParentIfMissing="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20sp"
-        android:text="@string/default_milliseconds" >
-    </TextView>
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/millisecondsView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/default_milliseconds" />
+        <ImageView
+            android:id="@+id/millisecondsViewLine"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/msline"
+            android:layout_gravity="center_horizontal|bottom"
+
+            />
+    </LinearLayout>
 </RelativeLayout>

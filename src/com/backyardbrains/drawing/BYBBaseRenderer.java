@@ -17,7 +17,12 @@ import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.MotionEvent;
+
 import com.backyardbrains.BYBUtils;
+import com.backyardbrains.view.ScaleListener;
+import com.backyardbrains.view.SingleFingerGestureDetector;
+import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	private static final String	TAG						= BYBBaseRenderer.class.getCanonicalName();
@@ -26,17 +31,23 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected int				glOffsetX				= 0;
 	protected int				glOffsetY				= 0;
 
+
 	protected short[]			mBufferToDraws;
 	protected boolean			mAudioServiceIsBound;
 	protected int				height;
 	protected int				width;
 	protected boolean			autoScaled				= false;
 	public static final int		PCM_MAXIMUM_VALUE		= (Short.MAX_VALUE * 3 / 2);
+	public static final int     MIN_GL_HORIZONTAL_SIZE  = 16;
+	public static final int     MIN_GL_VERTICAL_SIZE    = 800;
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
+	boolean bTestingBufferDraw = true;
 	protected long				firstBufferDrawn		= 0;
 	protected Context context;
-	// ----------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- CONSTRUCTOR & SETUP
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	public BYBBaseRenderer(){
 		Log.d(TAG,"Constructor");
 		this.context = null;
@@ -55,20 +66,32 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	public void close(){}
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- SETTERS/GETTERS
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowHorizontalSize(int newX) {
 		int maxlength = 0;
-		if (mBufferToDraws != null)
+		if (mBufferToDraws != null) {
 			maxlength = mBufferToDraws.length;
-		if (newX < 16 || (maxlength > 0 && newX> maxlength))
-			return;
-		this.glWindowHorizontalSize = newX;
+			if (newX < MIN_GL_HORIZONTAL_SIZE){
+				newX = MIN_GL_HORIZONTAL_SIZE;
+			}
+			if(maxlength > 0 && newX > maxlength){
+				newX = maxlength;
+			}
+			this.glWindowHorizontalSize = newX;
+		}
 		//Log.d(TAG, "SetGLHorizontalSize "+glWindowHorizontalSize);
 	}
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowVerticalSize(int newY) {
-		if (newY < 800 || newY > PCM_MAXIMUM_VALUE * 2)
-			return;
+		if (newY < MIN_GL_VERTICAL_SIZE){
+			newY = MIN_GL_VERTICAL_SIZE;
+		}
+		if(newY > PCM_MAXIMUM_VALUE * 2) {
+			newY = PCM_MAXIMUM_VALUE * 2;
+		}
 		glWindowVerticalSize = newY;
 		//Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
 	}
@@ -83,12 +106,9 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public void addToGlOffset(float dx, float dy ){
 		if(context != null) {
-			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-				if (((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE &&
-						!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying()) {
-					glOffsetX += dx;
-					glOffsetY += dy;
-				}
+			if (getIsPlaybackMode() && !getIsPlaying()) {
+				glOffsetX += dx;
+				glOffsetY += dy;
 			}
 		}
 	}
@@ -96,12 +116,10 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		if(context != null) {
 			float[] arr;
-				if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-				boolean bDrawFullArray = ((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE &&
-						!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying();
-				int micSize = ((BackyardBrainsApplication) context).getmAudioService().getMicListenerBufferSizeInSamples();
+			if (getAudioService() != null) {
+				boolean bDrawFullArray = getIsPlaybackMode() && !getIsPlaying();
 				int startIndex = 0;
-				if (bDrawFullArray) {
+				if (bDrawFullArray || bTestingBufferDraw) {
 					arr = new float[shortArrayToDraw.length * 2];
 				} else {
 					if (glWindowHorizontalSize > shortArrayToDraw.length) {
@@ -131,14 +149,10 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		return minimumDetectedPCMValue;
 	}
 	// ----------------------------------------------------------------------------------------
-	protected long msToSamples(long timeSince) {
-		return Math.round(44.1 * timeSince);
-	}
-	// ----------------------------------------------------------------------------------------
 	protected boolean getCurrentAudio() {
 		if(context != null) {
-			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-				mBufferToDraws = ((BackyardBrainsApplication) context).getmAudioService().getAudioBuffer();
+			if (getAudioService() != null) {
+				mBufferToDraws = getAudioService().getAudioBuffer();
 				return true;
 			}
 		}
@@ -153,32 +167,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		autoScaled = isScaled;
 	}
 	// ----------------------------------------------------------------------------------------
-	@Override
-	public void onDrawFrame(GL10 gl) {
-		// //Log.d(TAG, "onDrawFrame");
-		// grab current audio from audioservice
-		if (!getCurrentAudio()) {
-			//Log.d(TAG, "AudioService is null!");
-			return;
-		}
-		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws )) {
-			//Log.d(TAG, "Invalid audio buffer!");
-			return;
-		}
-		preDrawingHandler();
-		BYBUtils.glClear(gl);
-		drawingHandler(gl);
-		postDrawingHandler(gl);
-	}
-	// ----------------------------------------------------------------------------------------
-	protected void preDrawingHandler() {
-		// scale the right side to the number of data points we have
-		if (mBufferToDraws.length < glWindowHorizontalSize) {
-			setGlWindowHorizontalSize(mBufferToDraws.length);
-		}
-		setLabels(glWindowHorizontalSize);
-	}
-	// ----------------------------------------------------------------------------------------
+	// ----------------------------------------- LABELS
 	protected void setLabels(int samplesToShow) {
 		setmVText();
 		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
@@ -208,20 +197,42 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			context.sendBroadcast(i);
 		}
 	}
-	// ----------------------------------------------------------------------------------------
-	private void broadcastTextUpdate(String action, String name, String data) {
-		if(context != null) {
-			Intent i = new Intent();
-			i.setAction(action);
-			i.putExtra(name, data);
-			context.sendBroadcast(i);
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- DRAWING
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	@Override
+	public void onDrawFrame(GL10 gl) {
+		// //Log.d(TAG, "onDrawFrame");
+		// grab current audio from audioservice
+		if (!getCurrentAudio()) {
+			//Log.d(TAG, "AudioService is null!");
+			return;
 		}
+		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws )) {
+			//Log.d(TAG, "Invalid audio buffer!");
+			return;
+		}
+		preDrawingHandler();
+		BYBUtils.glClear(gl);
+		drawingHandler(gl);
+		postDrawingHandler(gl);
+	}
+	// ----------------------------------------------------------------------------------------
+	protected void preDrawingHandler() {
+		// scale the right side to the number of data points we have
+		if (mBufferToDraws.length < glWindowHorizontalSize && !bTestingBufferDraw) {
+			setGlWindowHorizontalSize(mBufferToDraws.length);
+		}
+		setLabels(glWindowHorizontalSize);
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void postDrawingHandler(GL10 gl) {}
 	// ----------------------------------------------------------------------------------------
 	protected void drawingHandler(GL10 gl) {}
 	// ----------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- SURFACE LISTENERS
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		////Log.d(TAG, "----------------------------------------- onSurfaceChanged begin");
@@ -238,25 +249,26 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
 		gl.glEnable(GL10.GL_DEPTH_TEST);
 	}
-	// ----------------------------------------------------------------------------------------
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- GL
+	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 
 		float scaledOffsetX = 0;
-		
+
 		float scaledOffsetY = 0;
 		if(context != null) {
-		if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-			if(((BackyardBrainsApplication) context).getmAudioService().getMode() == AudioService.PLAYBACK_MODE && 
-					!((BackyardBrainsApplication) context).getmAudioService().isAudioPlayerPlaying()){
-				float scaleX = (xEnd - xBegin)/width;
-				
-				scaledOffsetX = glOffsetX*scaleX;
-				
-				float scaleY = (scaledYEnd - scaledYBegin)/height;
-				
-				scaledOffsetY = glOffsetY*scaleY;
+			if (getAudioService() != null) {
+				if(getIsPlaybackMode() && !getIsPlaying()){
+					float scaleX = (xEnd - xBegin)/width;
+
+					scaledOffsetX = glOffsetX*scaleX;
+
+					float scaleY = (scaledYEnd - scaledYBegin)/height;
+
+					scaledOffsetY = glOffsetY*scaleY;
+				}
 			}
-		}
 		}
 		//---check if offset will not draw the complete window. if it does, ease until not.
 		if(xBegin - scaledOffsetX < 0 || xEnd - scaledOffsetX > mBufferToDraws.length){
@@ -264,7 +276,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 //			scaledOffsetX *= 0.5;
 //			if(Math.abs(glOffsetX) < 1){
 //				glOffsetX = 0;
-				scaledOffsetX = 0;
+			scaledOffsetX = 0;
 			//}
 		}
 //
@@ -277,7 +289,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 //			}
 //		}
 		//------
-		
+
 		gl.glViewport(0, 0, width, height);
 
 		BYBUtils.glClear(gl);
@@ -310,7 +322,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void autoSetFrame(short[] arrayToScaleTo) {
-	//	//Log.d(TAG, "autoSetFrame");
+		//	//Log.d(TAG, "autoSetFrame");
 		int theMax = 0;
 		int theMin = 0;
 
@@ -328,41 +340,86 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 				newyMax = Math.abs(theMin) * 2;
 			}
 			if (-newyMax > getMinimumDetectedPCMValue()) {
-			//	//Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
+				//	//Log.d(TAG, "Scaling window to " + -newyMax + " < y < " + newyMax);
 				setGlWindowVerticalSize(newyMax * 2);
 			}
-
 		}
 		setAutoScaled(true);
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
 		if(context != null) {
-			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-				final int micBufferSize = ((BackyardBrainsApplication) context).getmAudioService().getMicListenerBufferSizeInSamples();
-				final long lastTimestamp = ((BackyardBrainsApplication) context).getmAudioService().getLastSamplesReceivedTimestamp();
+			if (getAudioService() != null) {
+				final int micBufferSize = getAudioService().getMicListenerBufferSizeInSamples();
+				final long lastTimestamp = getAudioService().getLastSamplesReceivedTimestamp();
 				final long timeSince = System.currentTimeMillis() - lastTimestamp;
 
 				long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet - micBufferSize + msToSamples(timeSince));
 				long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
 				xBegin = Math.max(0, xBegin);
-				initGL(gl, xBegin, xEnd, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+				if(bTestingBufferDraw){
+					initGL(gl, 0, lengthOfSampleSet, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+				}else {
+					initGL(gl, xBegin, xEnd, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+				}
 			}
+		}
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// ----------------------------------------- UTILS
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	private void broadcastTextUpdate(String action, String name, String data) {
+		if(context != null) {
+			Intent i = new Intent();
+			i.setAction(action);
+			i.putExtra(name, data);
+			context.sendBroadcast(i);
 		}
 	}
 	// ----------------------------------------------------------------------------------------
 	public int glHeightToPixelHeight(float glHeight) {
 		if (height <= 0) {
-			 //Log.d(TAG, "Checked height and size was less than or equal to zero");
+			//Log.d(TAG, "Checked height and size was less than or equal to zero");
 		}
 		int ret = BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
 
 		return ret;
 	}
-
 	// ----------------------------------------------------------------------------------------
 	public float pixelHeightToGlHeight(float pxHeight) {
 		return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+	}
+	// ----------------------------------------------------------------------------------------
+	protected long msToSamples(long timeSince) {
+		return Math.round(44.1 * timeSince);
+	}
+
+	public AudioService getAudioService(){
+		if(context!=null) {
+			BackyardBrainsApplication app = ((BackyardBrainsApplication) context.getApplicationContext());
+			if (app != null) {
+				return app.getmAudioService();
+			}
+		}
+		return null;
+	}
+	public boolean getIsRecording(){
+		if(getAudioService() != null){
+			return getAudioService().isRecording();
+		}
+		return false;
+	}
+	public boolean getIsPlaybackMode(){
+		if(getAudioService() != null){
+			return getAudioService().isPlaybackMode();
+		}
+		return false;
+	}
+	public boolean getIsPlaying(){
+		if(getAudioService() != null){
+			return getAudioService().isAudioPlayerPlaying();
+		}
+		return false;
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- SETTINGS

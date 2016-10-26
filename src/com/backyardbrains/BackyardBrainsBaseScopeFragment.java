@@ -14,15 +14,17 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.drawing.ContinuousGLSurfaceView;
+import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 
 
 import com.backyardbrains.drawing.ThresholdRenderer;
@@ -32,28 +34,27 @@ import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class BackyardBrainsBaseScopeFragment extends Fragment{
     public String TAG = "BackyardBrainsBaseScopeFragment";
-    protected TwoDimensionScaleGestureDetector  mScaleDetector;
-    protected ScaleListener                     mScaleListener;
-    protected SingleFingerGestureDetector       singleFingerGestureDetector = null;
+//    protected TwoDimensionScaleGestureDetector  mScaleDetector;
+//    protected ScaleListener                     mScaleListener;
+//    protected SingleFingerGestureDetector       singleFingerGestureDetector = null;
     protected Context                           context;
 
-    protected ContinuousGLSurfaceView           mAndroidSurface	    =           null;
+    protected InteractiveGLSurfaceView           mAndroidSurface	    =           null;
     protected FrameLayout                       mainscreenGLLayout  =           null;
     protected SharedPreferences                 settings		    =           null;
 
     protected TextView                          msView;
     protected TextView							mVView;
+    protected ImageView                         msLine;
 
     protected BYBBaseRenderer                   renderer            = null;
-    public static final int						LIVE_MODE		    = 0;
-    public static final int						PLAYBACK_MODE	    = 1;
 
     protected int                               layoutID;
-    protected int								mode			    = 0;
+
     protected Class rendererClass  = null;
 
     public BackyardBrainsBaseScopeFragment(){
-        mode = LIVE_MODE;
+        super();
         layoutID = R.layout.base_scope_layout;
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,14 +76,6 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (getContext()!= null) {
-            mScaleListener = new ScaleListener();
-            mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);
-            singleFingerGestureDetector = new SingleFingerGestureDetector();
-        } else {
-            //// //Log.d(TAG, "onCreate failed, context == null");
-        }
     }
     // ----------------------------------------------------------------------------------------
     @Override
@@ -90,25 +83,35 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         View rootView = inflater.inflate(layoutID, container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
+        ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mainscreenGLLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                int width  = mainscreenGLLayout.getMeasuredWidth();
+//                int height = mainscreenGLLayout.getMeasuredHeight();
+                setupMsLineView(width);
+            }
+        });
+        Log.w(TAG, String.format("glContainer width : %d",mainscreenGLLayout.getWidth() ));
         setupLabels(rootView);
+        readSettings();
+        reassignSurfaceView();
+        
         return rootView;
     }
     @Override
     public void onStart() {
         super.onStart();
-        readSettings();
-        setupMsLineView();
-        reassignSurfaceView();
     }
     @Override
     public void onResume() {
         super.onResume();
-        registerReceivers();
+        registerReceivers(true);
         if (mAndroidSurface != null) {
             mAndroidSurface.onResume();
         }
         readSettings();
-
     }
     @Override
     public void onPause() {
@@ -116,9 +119,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         if (mAndroidSurface != null) {
             mAndroidSurface.onPause();
         }
-        unregisterReceivers();
+        registerReceivers(false);
         saveSettings();
-
     }
     @Override
     public void onStop() {
@@ -178,8 +180,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
                 if (mAndroidSurface != null) {
                     mAndroidSurface = null;
                 }
-                mAndroidSurface = new ContinuousGLSurfaceView(context, renderer);
-                mScaleListener.setRenderer(renderer);
+                mAndroidSurface = new InteractiveGLSurfaceView(context, renderer);
+                //mScaleListener.setRenderer(renderer);
                 mainscreenGLLayout.addView(mAndroidSurface);
             }
             readSettings();
@@ -191,53 +193,18 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     public void setupLabels(View v) {
         msView = (TextView) v.findViewById(R.id.millisecondsView);
         mVView = (TextView) v.findViewById(R.id.mVLabelView);
+        msLine = (ImageView) v.findViewById(R.id.millisecondsViewLine);
     }
-
     // ----------------------------------------------------------------------------------------
     public void setDisplayedMilliseconds(Float ms) {
         msView.setText(ms.toString());
     }
-
     // ----------------------------------------------------------------------------------------
-    public void setupMsLineView() {
-        // TODO: ms Line via openGL line--> renderer
-// if (getView() != null) {
-// ImageView msLineView = new ImageView(getActivity());
-// Bitmap bmp = BitmapFactory.decodeResource(context.getResources(),
-// R.drawable.msline);
-// int width = getView().getWidth() / 3;
-// int height = 2;
-// Bitmap resizedbitmap = Bitmap.createScaledBitmap(bmp, width, height, false);
-// msLineView.setImageBitmap(resizedbitmap);
-// msLineView.setBackgroundColor(Color.BLACK);
-// msLineView.setScaleType(ScaleType.CENTER);
-//
-// LayoutParams rl = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
-// LayoutParams.WRAP_CONTENT);
-// rl.setMargins(0, 0, 0, 20);
-// rl.addRule(RelativeLayout.ABOVE, R.id.millisecondsView);
-// rl.addRule(RelativeLayout.CENTER_HORIZONTAL);
-//
-// RelativeLayout parentLayout = (RelativeLayout)
-// getView().findViewById(R.id.parentLayout);
-// parentLayout.addView(msLineView, rl);
-// }
-    }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- TOUCH
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    public boolean onTouchEvent(MotionEvent event) {
-        if(mode == PLAYBACK_MODE  && renderer != null && singleFingerGestureDetector != null){
-            singleFingerGestureDetector.onTouchEvent(event);
-            if(singleFingerGestureDetector.hasChanged()){
-                renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
-            }
-        }
-        mScaleDetector.onTouchEvent(event);
-        if (mAndroidSurface != null) {
-            return mAndroidSurface.onTouchEvent(event);
-        }
-        return false;
+    public void setupMsLineView(int width) {
+            int w = width / 3;
+            msLine.getLayoutParams().width = w;
+            msLine.requestLayout();
+            Log.d(TAG, String.format("msLine width : %d",w ));
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
@@ -309,20 +276,12 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     private AudioServiceBindListener audioServiceBindListener;
 
     // ----------------------------------------- REGISTER RECEIVERS
-    public void registerReceivers() {
-        registerReceivers(true);
-    }
     public void registerReceivers(boolean bRegister) {
-
         registerReceiverUpdateMilliseconds(bRegister);
         registerReceiverUpdateMillivolts(bRegister);
         registerReceiverMillivoltsViewSize(bRegister);
         registerReceiverUpdateDebugView(bRegister);
         registerReceiverAudioServiceBind(bRegister);
-
-    }
-    public void unregisterReceivers() {
-        registerReceivers(false);
     }
     private void registerReceiverUpdateMilliseconds(boolean reg) {
         if(getContext() != null) {

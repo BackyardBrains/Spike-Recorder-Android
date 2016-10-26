@@ -37,7 +37,7 @@ import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 
-public class ThresholdRenderer extends BYBBaseRenderer {
+public class ThresholdRenderer extends WaveformRenderer {
 
 	private static final String	TAG	= ThresholdRenderer.class.getCanonicalName();
 	private float				threshold;	// in sample value range, which happens to be also gl values
@@ -114,21 +114,22 @@ public class ThresholdRenderer extends BYBBaseRenderer {
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
-		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
-		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
-
-		// firstBufferDrawnCheck();
-		autoScaleCheck();
-
-		gl.glMatrixMode(GL10.GL_MODELVIEW);
-		gl.glLoadIdentity();
-
-		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		gl.glLineWidth(1f);
-		gl.glColor4f(0f, 1f, 0f, 1f);
-		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
-		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
-		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+		super.drawingHandler(gl);
+//		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+//		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
+//
+//		// firstBufferDrawnCheck();
+//		autoScaleCheck();
+//
+//		gl.glMatrixMode(GL10.GL_MODELVIEW);
+//		gl.glLoadIdentity();
+//
+//		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+//		gl.glLineWidth(1f);
+//		gl.glColor4f(0f, 1f, 0f, 1f);
+//		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
+//		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
+//		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 	}
 	// ---------------------------------------------------------------------------------------------
 	// @Override

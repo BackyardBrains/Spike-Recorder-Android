@@ -3,7 +3,7 @@ package com.backyardbrains;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.TriggerAverager;
 import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.drawing.ContinuousGLSurfaceView;
+import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
@@ -50,7 +50,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     private BYBThresholdHandle					thresholdHandle;
     public BackyardBrainsThresholdFragment(){
         super();
-        mode = LIVE_MODE;
+
         rendererClass = ThresholdRenderer.class;
         layoutID = R.layout.thresh_scope_layout;
         TAG	= "BackyardBrainsThresholdFragment";
@@ -67,33 +67,41 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GUI
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    protected void setViewVisibility(View view, boolean bVisible){
+        if (view != null) {
+            view.setVisibility(bVisible?View.VISIBLE:View.GONE);
+        }
+    }
     private void setThresholdGuiVisibility(boolean bVisible) {
         Log.d(TAG, "setThresholdGuiVisibility: "+ (bVisible?"TRUE":"FaLSE"));
         if (getView() != null) {
-            ImageView b = thresholdHandle.getHandlerView();
-            if (b != null) {
-                if (bVisible) {
-                    b.setVisibility(View.VISIBLE);
-                } else {
-                    b.setVisibility(View.GONE);
-                }
-            }
-            LinearLayout ll = (LinearLayout) getView().findViewById(R.id.triggerViewSampleChangerLayout);
-            if (ll != null) {
-                if (bVisible) {
-                    ll.setVisibility(View.VISIBLE);
-                } else {
-                    ll.setVisibility(View.GONE);
-                }
-            }
-            SeekBar sk = (SeekBar) getView().findViewById(R.id.samplesSeekBar);
-            if (sk != null) {
-                if (bVisible) {
-                    sk.setVisibility(View.VISIBLE);
-                } else {
-                    sk.setVisibility(View.GONE);
-                }
-            }
+            setViewVisibility(thresholdHandle.getHandlerView(), bVisible);
+//            ImageView b = thresholdHandle.getHandlerView();
+//            if (b != null) {
+//                if (bVisible) {
+//                    b.setVisibility(View.VISIBLE);
+//                } else {
+//                    b.setVisibility(View.GONE);
+//                }
+//            }
+            setViewVisibility( getView().findViewById(R.id.triggerViewSampleChangerLayout),bVisible);
+//            LinearLayout ll = (LinearLayout) getView().findViewById(R.id.triggerViewSampleChangerLayout);
+//            if (ll != null) {
+//                if (bVisible) {
+//                    ll.setVisibility(View.VISIBLE);
+//                } else {
+//                    ll.setVisibility(View.GONE);
+//                }
+//            }
+            setViewVisibility(getView().findViewById(R.id.samplesSeekBar), bVisible);
+//            SeekBar sk = (SeekBar) getView().findViewById(R.id.samplesSeekBar);
+//            if (sk != null) {
+//                if (bVisible) {
+//                    sk.setVisibility(View.VISIBLE);
+//                } else {
+//                    sk.setVisibility(View.GONE);
+//                }
+//            }
         }
     }
 
@@ -131,6 +139,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         });
         ((TextView) view.findViewById(R.id.numberOfSamplesAveraged)).setText(TriggerAverager.defaultSize + "x");
         sk.setProgress(TriggerAverager.defaultSize);
+//        ((RelativeLayout.LayoutParams)(view.findViewById(R.id.millisecondsViewLayout)).getLayoutParams()).addRule(RelativeLayout.ABOVE, R.id.triggerViewSampleChangerLayout);
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // -----------------------------------------  BROADCASTING LISTENERS

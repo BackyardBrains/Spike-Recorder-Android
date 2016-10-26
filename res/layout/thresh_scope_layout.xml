@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
              android:layout_height="match_parent">
 
     <include layout="@layout/play_live_rec_scope_layout"/>
@@ -23,13 +24,15 @@
         android:id="@+id/triggerViewSampleChangerLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:orientation="vertical"
-        android:visibility="visible" >
+        android:layout_gravity="top|center_horizontal"
+        android:orientation="horizontal"
+        android:visibility="visible"
+        android:layout_toRightOf="@+id/thresholdHandleLayout"
+        android:layout_alignParentTop="true">
 
         <SeekBar
             android:id="@+id/samplesSeekBar"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_margin="5sp"
@@ -39,16 +42,17 @@
             android:max="32"
             android:minHeight="10dp"
             android:progress="1"
-            android:visibility="visible" />
+            android:visibility="visible"
+            />
 
         <TextView
             android:id="@+id/numberOfSamplesAveraged"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="5sp"
+            android:layout_weight="0"
             android:text="@string/default_threshold_amount"
-            android:textColor="#00ff00" >
-        </TextView>
+            android:textColor="#00ff00"
+            android:layout_gravity="center_vertical"
+            android:layout_marginRight="10dp"/>
     </LinearLayout>
-</FrameLayout>
+</RelativeLayout>

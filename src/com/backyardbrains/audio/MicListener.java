@@ -64,13 +64,17 @@ public class MicListener extends Thread {
 		android.os.Process
 				.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 	}
-
+	public int getSampleRate(){
+		return sampleRate;
+	}
 	private void setBufferSize() {
 		buffersize = AudioRecord.getMinBufferSize(sampleRate,
 				AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		//Log.d(TAG, "Found buffer size of :" + buffersize);
 	}
-
+	public int getBufferSize(){
+		return buffersize;
+	}
 	/**
 	 * An alternate to {@link Thread#start()}, which allows us to provide a
 	 * service which implements {@link RecievesAudio} then start the thread as
@@ -109,7 +113,7 @@ public class MicListener extends Thread {
 		final String prefsname = ((AudioService) service).getResources().getString(R.string.global_prefs);
 		final String speedPrefsKey = ((AudioService) service).getResources().getString(R.string.microphone_read_speed);
 		
-		SharedPreferences prefs = ((AudioService) service).getSharedPreferences(prefsname, Context.MODE_WORLD_READABLE);
+		SharedPreferences prefs = ((AudioService) service).getSharedPreferences(prefsname, Context.MODE_PRIVATE);
 		String preferencesSpeed = prefs.getString(speedPrefsKey, "1");
 		final int readSpeedDivisor = Integer.parseInt(preferencesSpeed);
 		try {
@@ -122,7 +126,7 @@ public class MicListener extends Thread {
 			recorder.startRecording();
 			//Log.d(TAG, "Recorder Started");
 			int readAmt = audioInfo.limit()/readSpeedDivisor;
-			((AudioService) service).setMicListenerBufferSizeInSamples(readAmt/2);
+			//((AudioService) service).setMicListenerBufferSizeInSamples(readAmt/2);
 			while (!mDone && recorder.read(audioInfo, readAmt) > 0) {
 				audioInfo.clear();
 				byte[] swapper = new byte[readAmt];
