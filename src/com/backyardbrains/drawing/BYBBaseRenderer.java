@@ -42,7 +42,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public static final int     MIN_GL_VERTICAL_SIZE    = 800;
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
-	boolean bTestingBufferDraw = true;
+	boolean bTestingBufferDraw = false;
 	protected long				firstBufferDrawn		= 0;
 	protected Context context;
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +71,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowHorizontalSize(int newX) {
+		if(newX < 0){return;}
 		int maxlength = 0;
 		if (mBufferToDraws != null) {
 			maxlength = mBufferToDraws.length;
@@ -86,6 +87,11 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowVerticalSize(int newY) {
+
+		if(newY < 0){
+			return;
+		}
+		String text = "hsize: " + newY;
 		if (newY < MIN_GL_VERTICAL_SIZE){
 			newY = MIN_GL_VERTICAL_SIZE;
 		}
@@ -117,21 +123,22 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if(context != null) {
 			float[] arr;
 			if (getAudioService() != null) {
-				boolean bDrawFullArray = getIsPlaybackMode() && !getIsPlaying();
+//				boolean bDrawFullArray = getIsPlaybackMode() && !getIsPlaying();
 				int startIndex = 0;
-				if (bDrawFullArray || bTestingBufferDraw) {
-					arr = new float[shortArrayToDraw.length * 2];
-				} else {
-					if (glWindowHorizontalSize > shortArrayToDraw.length) {
-						setGlWindowHorizontalSize(shortArrayToDraw.length);
-					}
+				if (glWindowHorizontalSize > shortArrayToDraw.length) {
+					setGlWindowHorizontalSize(shortArrayToDraw.length);
+				}
+//				if (bDrawFullArray || bTestingBufferDraw) {
+//					arr = new float[shortArrayToDraw.length * 2];
+//				} else {
+
 					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;// - micSize;
 					arr = new float[(glWindowHorizontalSize) * 2];//+ micSize) * 2];
-				}
+//				}
 				int j = 0; // index of arr
 				try {
 					for (int i = startIndex; i < shortArrayToDraw.length; i++) {
-						arr[j++] = i;
+						arr[j++] = i-startIndex;
 						arr[j++] = shortArrayToDraw[i];
 					}
 				} catch (ArrayIndexOutOfBoundsException e) {
@@ -150,11 +157,9 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected boolean getCurrentAudio() {
-		if(context != null) {
-			if (getAudioService() != null) {
-				mBufferToDraws = getAudioService().getAudioBuffer();
-				return true;
-			}
+		if (getAudioService() != null) {
+			mBufferToDraws = getAudioService().getAudioBuffer();
+			return true;
 		}
 		return false;
 	}
@@ -205,11 +210,11 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		// //Log.d(TAG, "onDrawFrame");
 		// grab current audio from audioservice
 		if (!getCurrentAudio()) {
-			//Log.d(TAG, "AudioService is null!");
+			Log.d(TAG, "cant get current audio buffer!");
 			return;
 		}
 		if (!BYBUtils.isValidAudioBuffer(mBufferToDraws )) {
-			//Log.d(TAG, "Invalid audio buffer!");
+			Log.d(TAG, "Invalid audio buffer!");
 			return;
 		}
 		preDrawingHandler();
@@ -219,10 +224,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void preDrawingHandler() {
-		// scale the right side to the number of data points we have
-		if (mBufferToDraws.length < glWindowHorizontalSize && !bTestingBufferDraw) {
-			setGlWindowHorizontalSize(mBufferToDraws.length);
-		}
 		setLabels(glWindowHorizontalSize);
 	}
 	// ----------------------------------------------------------------------------------------
@@ -348,22 +349,15 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-		if(context != null) {
-			if (getAudioService() != null) {
-				final int micBufferSize = getAudioService().getMicListenerBufferSizeInSamples();
-				final long lastTimestamp = getAudioService().getLastSamplesReceivedTimestamp();
-				final long timeSince = System.currentTimeMillis() - lastTimestamp;
+		//if(context != null) {
 
-				long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet - micBufferSize + msToSamples(timeSince));
-				long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
-				xBegin = Math.max(0, xBegin);
-				if(bTestingBufferDraw){
-					initGL(gl, 0, lengthOfSampleSet, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
-				}else {
-					initGL(gl, xBegin, xEnd, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
-				}
-			}
-		}
+//			long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet);
+//			long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
+
+
+			initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+
+//		}
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- UTILS

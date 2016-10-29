@@ -28,6 +28,8 @@
         android:orientation="horizontal"
         android:visibility="visible"
         android:layout_toRightOf="@+id/thresholdHandleLayout"
+        android:layout_marginRight="100dp"
+        android:layout_marginTop="14dp"
         android:layout_alignParentTop="true">
 
         <SeekBar
@@ -39,7 +41,7 @@
             android:layout_weight="1"
             android:contentDescription="@string/average_num_slider"
             android:indeterminate="false"
-            android:max="32"
+            android:max="100"
             android:minHeight="10dp"
             android:progress="1"
             android:visibility="visible"

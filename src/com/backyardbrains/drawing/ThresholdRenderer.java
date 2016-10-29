@@ -87,11 +87,9 @@ public class ThresholdRenderer extends WaveformRenderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected boolean getCurrentAverage() {
-		if(context != null) {
-			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
-				mBufferToDraws = ((BackyardBrainsApplication) context).getmAudioService().getAverageBuffer();
-				return true;
-			}
+		if (getAudioService() != null) {
+			mBufferToDraws = getAudioService().getAverageBuffer();
+			return true;
 		}
 		return false;
 	}
@@ -148,11 +146,16 @@ public class ThresholdRenderer extends WaveformRenderer {
 	// ---------------------------------------------------------------------------------------------
 	@Override
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-		float[] arr = new float[shortArrayToDraw.length * 2]; // array to fill
+		if (glWindowHorizontalSize > shortArrayToDraw.length) {
+			setGlWindowHorizontalSize(shortArrayToDraw.length);
+		}
+		float[] arr = new float[getGlWindowHorizontalSize() * 2]; // array to fill
 		int j = 0; // index of arr
 		try {
-			for (int i = 0; i < shortArrayToDraw.length; i++) {
-				arr[j++] = i;
+			int start = (shortArrayToDraw.length - getGlWindowHorizontalSize())/2;
+			int end =(shortArrayToDraw.length + getGlWindowHorizontalSize())/2;
+			for (int i = start ; i < end && i < shortArrayToDraw.length; i++) {
+				arr[j++] = i - start;
 				arr[j++] = shortArrayToDraw[i];
 			}
 		} catch (ArrayIndexOutOfBoundsException e) {
@@ -171,11 +174,11 @@ public class ThresholdRenderer extends WaveformRenderer {
 		return glHeightToPixelHeight(threshold); // thresholdPixelHeight;
 	}
 	// ---------------------------------------------------------------------------------------------
-	@Override
-	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-		final int size = getGlWindowVerticalSize();
-		initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
-	}
+//	@Override
+//	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
+//		final int size = getGlWindowVerticalSize();
+//		initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
+//	}
 	// ---------------------------------------------------------------------------------------------
 	public float getThresholdValue() {
 		return threshold;
@@ -191,13 +194,13 @@ public class ThresholdRenderer extends WaveformRenderer {
 		// //Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 
 		if(context != null) {
-			if (((BackyardBrainsApplication) context).getmAudioService() != null) {
+			if (getAudioService()!= null) {
 				// final float glHeight =
 				// pixelHeightToGlHeight(thresholdPixelHeight);
-				((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler().post(new Runnable() {
+				getAudioService().getTriggerHandler().post(new Runnable() {
 					@Override
 					public void run() {
-						((TriggerHandler) ((BackyardBrainsApplication) context).getmAudioService().getTriggerHandler()).setThreshold(threshold);
+						((TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
 					}
 				});
 			}
@@ -249,8 +252,6 @@ public class ThresholdRenderer extends WaveformRenderer {
 			bIsFirstFrame = settings.getBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
 		}
 	}
-
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	public void saveSettings(SharedPreferences settings, String TAG) {

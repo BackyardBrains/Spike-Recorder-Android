@@ -65,4 +65,14 @@
 
             />
     </LinearLayout>
+    <!--<TextView-->
+        <!--android:id="@+id/debugText"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:textColor="#ffffffff"-->
+        <!--android:layout_gravity="center_horizontal|top"-->
+        <!--android:text="debug"-->
+        <!--android:visibility="visible">-->
+    <!--</TextView>-->
+
 </RelativeLayout>

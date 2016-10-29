@@ -40,7 +40,7 @@ public class TriggerAverager {
 	private int lastTriggeredValue;
 	private int lastIncomingBufferSize =0;
 	private Context context = null;
-	public static final int defaultSize = 32; 
+	public static final int defaultSize = 100;
 	//private short[] incomingAsArray;
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public TriggerAverager(int size, Context context) {
@@ -108,17 +108,7 @@ public class TriggerAverager {
 				break;
 			}
 		}
-		
-		if(context != null){
-			Intent i = new Intent();
-			i.setAction("updateDebugView");
-			i.putExtra("clear", true);
-			i.putExtra("debug", (String)("in buff size: " + sb.capacity() + "\n" + "Num avgs: "+sampleBuffersInAverage.size()));			
-			context.sendBroadcast(i);
-		}
-		
 		if (averagedSamples == null) {
-			//Log.d(TAG,"averagedSamples == null");
 			return;
 		}
 		//*
@@ -177,31 +167,25 @@ public class TriggerAverager {
 		sampleBuffersInAverage.add(incomingAsArray);
 		//*/
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public short[] getAveragedSamples() {
 		return averagedSamples;
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public int getMaxsize() {
 		return maxsize;
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public void setMaxsize(int maxsize){//, boolean bBroadcast) {
+	// ---------------------------------------------------------------------------------------------
+	public void setMaxsize(int maxsize){
 		if(maxsize > 0){
 			this.maxsize = maxsize;
-//			if(bBroadcast){
-//				Intent i = new Intent();
-//				i.setAction("BYBSetAveragerSlider");
-//				i.putExtra("maxSize", maxsize);			
-//				context.sendBroadcast(i);
-//			}
 		}
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public Handler getHandler() {
 		return handler;
 	}
-	// -----------------------------------------------------------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------------------------
 	public class TriggerHandler extends Handler {
 		public void setThreshold(float y) {
 			//Log.d(TAG, "Got new triggerValue of "+y);

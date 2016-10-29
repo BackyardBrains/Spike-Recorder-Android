@@ -1,6 +1,5 @@
 package com.backyardbrains;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -11,13 +10,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,23 +24,19 @@ import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 
 
 import com.backyardbrains.drawing.ThresholdRenderer;
-import com.backyardbrains.view.ScaleListener;
-import com.backyardbrains.view.SingleFingerGestureDetector;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class BackyardBrainsBaseScopeFragment extends Fragment{
     public String TAG = "BackyardBrainsBaseScopeFragment";
-//    protected TwoDimensionScaleGestureDetector  mScaleDetector;
-//    protected ScaleListener                     mScaleListener;
-//    protected SingleFingerGestureDetector       singleFingerGestureDetector = null;
+
     protected Context                           context;
 
-    protected InteractiveGLSurfaceView           mAndroidSurface	    =           null;
+    protected InteractiveGLSurfaceView          mAndroidSurface	    =           null;
     protected FrameLayout                       mainscreenGLLayout  =           null;
     protected SharedPreferences                 settings		    =           null;
 
     protected TextView                          msView;
     protected TextView							mVView;
+//    protected TextView							debugText;
     protected ImageView                         msLine;
 
     protected BYBBaseRenderer                   renderer            = null;
@@ -83,6 +75,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         View rootView = inflater.inflate(layoutID, container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
+//        debugText = (TextView)rootView.findViewById(R.id.debugText);
+//        debugText.bringToFront();
         ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -267,14 +261,12 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
-
     // ----------------------------------------- RECEIVERS INSTANCES
     private UpdateMillisecondsReciever upmillirec;
     private SetMillivoltViewSizeReceiver milliVoltSize;
     private UpdateMillivoltReciever upmillivolt;
     private UpdateDebugTextViewListener updateDebugTextViewListener;
     private AudioServiceBindListener audioServiceBindListener;
-
     // ----------------------------------------- REGISTER RECEIVERS
     public void registerReceivers(boolean bRegister) {
         registerReceiverUpdateMilliseconds(bRegister);
@@ -282,6 +274,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         registerReceiverMillivoltsViewSize(bRegister);
         registerReceiverUpdateDebugView(bRegister);
         registerReceiverAudioServiceBind(bRegister);
+        registerReceiverDebugText(bRegister);
     }
     private void registerReceiverUpdateMilliseconds(boolean reg) {
         if(getContext() != null) {
@@ -338,4 +331,5 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
 }

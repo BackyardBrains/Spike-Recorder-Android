@@ -23,6 +23,7 @@ import com.backyardbrains.view.BYBSlidingButton;
 
 public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment {
     BYBSlidingButton stopRecButton;
+
     // ----------------------------------------------------------------------------------------
     public BackyardBrainsPlayLiveScopeFragment(){
         super();
