@@ -42,18 +42,22 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	public static final int				ANALYSIS_VIEW			= 3;
 	public static final int				FIND_SPIKES_VIEW		= 4;
 
-	private Animation animShow;
-	private Animation animHide;
-	private Animation animHideButtons;
-	private Animation animShowButtons;
+//	private Animation animShow;
+//	private Animation animHide;
+//	private Animation animHideButtons;
+//	private Animation animShowButtons;
 
 	protected Button buttonScope;
 	protected Button buttonThresh;
 	protected Button buttonRecordings;
+	protected BYBSlidingButton buttonsSlider;
 	protected View buttons;
+	protected View buttonsView;
 	private boolean bShowingButtons;
 	private int currentFrag = -1;
 	private List<Button> allButtons;
+
+
 
 	public enum FragTransaction{
 		ADD,REPLACE,REMOVE
@@ -77,8 +81,15 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		buttonScope = (Button)findViewById(R.id.buttonScope);
 		buttonThresh = (Button)findViewById(R.id.buttonThresh);
 
-		buttons = findViewById(R.id.buttons);
 
+		//buttonsView = findViewById(R.id.buttons);
+		buttons  = findViewById(R.id.buttons);
+		buttonsSlider = new BYBSlidingButton(buttons,this, "top bar buttons");
+		//buttons= new BYBSlidingButton(buttonsView, getApplicationContext(),
+//buttonsView.setVisibility(View.VISIBLE);
+//		buttonsView.bringToFront();
+
+//		showButtons(true);
 		bShowingButtons = false;
 
 		buttonRecordings.setOnClickListener(this);
@@ -90,10 +101,10 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		allButtons.add(buttonRecordings);
 		allButtons.add(buttonThresh);
 
-		animShowButtons = AnimationUtils.loadAnimation(this, R.anim.slide_in_top);
-		animShowButtons.setAnimationListener(this);
-		animHideButtons  = AnimationUtils.loadAnimation(this, R.anim.slide_out_top);
-		animHideButtons.setAnimationListener(this);
+//		animShowButtons = AnimationUtils.loadAnimation(this, R.anim.slide_in_top);
+//		animShowButtons.setAnimationListener(this);
+//		animHideButtons  = AnimationUtils.loadAnimation(this, R.anim.slide_out_top);
+//		animHideButtons.setAnimationListener(this);
 
 		hideActionBar();
 		loadFragment(OSCILLOSCOPE_VIEW);
@@ -132,6 +143,7 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			fragType =  THRESHOLD_VIEW;
 		}
 		if(fragType != currentFrag) {
+
 			currentFrag = fragType;
 			Fragment frag = null;
 			String fragName = "";
@@ -181,8 +193,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			}
 		}
 	}
-
-
 	public void popFragment(){
 		if(getSupportFragmentManager().getBackStackEntryCount()>1) {
 			int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() -1;
@@ -211,8 +221,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		}
 		transaction.commit();
 	}
-
-
 	//////////////////////////////////////////////////////////////////////////////
 	//                      Action Bar
 	//////////////////////////////////////////////////////////////////////////////
@@ -228,12 +236,12 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			Log.d(TAG, "show action bar fail. null action bar.");
 		}
 	}
-	public void hideActionBar(){
+	public void hideActionBar() {
 //        getSupportActionBar().hide();
 		android.support.v7.app.ActionBar bar = getSupportActionBar();
-		if(bar != null) {
+		if (bar != null) {
 			bar.hide();
-		}else{
+		} else {
 			Log.d(TAG, "hide action bar fail. null action bar.");
 		}
 	}
@@ -269,6 +277,7 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	//                      Private Methods
 	//////////////////////////////////////////////////////////////////////////////
 	void setSelectedButton(int select){
+		//
 		Button selectedButton = null;
 		switch (select){
 			case OSCILLOSCOPE_VIEW:
@@ -289,13 +298,17 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			b.setTextColor(bIsSelected?0xFFFF8D08: Color.WHITE);
 		}
 		showButtons(selectedButton != null);
-
+//*/
 	}
 	void showButtons (boolean bShow){
-		if(bShowingButtons != bShow) {
-			buttons.startAnimation(bShow ? animShowButtons : animHideButtons);
-			bShowingButtons = bShow;
-		}
+		buttonsSlider.show(bShow);
+//		if(bShowingButtons != bShow) {
+			//buttons.setVisibility(bShow? View.VISIBLE : View.GONE);
+//			buttons.startAnimation(bShow ? animShowButtons : animHideButtons);
+//			bShowingButtons = bShow;
+//		}
+//		buttonsView.setVisibility(View.VISIBLE);
+	//	buttons.show(bShow);
 	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS
@@ -351,7 +364,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	// ----------------------------------------- REGISTER RECEIVERS
 	// ---------------------------------------------------------------------------------------------
 	public void registerReceivers() {
-
 		registerAudioPlaybackStartReceiver(true);
 		registerChangePageReceiver(true);
 	}

@@ -31,7 +31,7 @@ public class BYBThresholdHandle {
 		this.layoutView = view;
 		this.name = name;
 		setButton();
-		setDefaultYPosition();
+		//setDefaultYPosition();
 	}
 	// -----------------------------------------------------------------------------------------------------------------------------
 	public ImageView getHandlerView() {
@@ -98,13 +98,13 @@ public class BYBThresholdHandle {
 		//Log.d(TAG, "setYPosition " + pos);
 		int buttonHalf = (button.getHeight() / 2);
 		int p = pos;
-		if(p < buttonHalf){
-			p = buttonHalf;
-		}
-		int hiPos = layoutView.getHeight() - buttonHalf;
-		if(p > hiPos){
-			p = hiPos;
-		}
+//		if(p < buttonHalf){
+//			p = buttonHalf;
+//		}
+//		int hiPos = layoutView.getHeight() - buttonHalf;
+//		if(p > hiPos){
+//			p = hiPos;
+//		}
 
 		button.setY(p - buttonHalf);
 		return p;

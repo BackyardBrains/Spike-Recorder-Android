@@ -37,9 +37,9 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected int				height;
 	protected int				width;
 	protected boolean			autoScaled				= false;
-	public static final int		PCM_MAXIMUM_VALUE		= (Short.MAX_VALUE * 3 / 2);
+	public static final int		PCM_MAXIMUM_VALUE		= (Short.MAX_VALUE * 3);
 	public static final int     MIN_GL_HORIZONTAL_SIZE  = 16;
-	public static final int     MIN_GL_VERTICAL_SIZE    = 800;
+	public static final int     MIN_GL_VERTICAL_SIZE    = 400;
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
 	boolean bTestingBufferDraw = false;
@@ -87,7 +87,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowVerticalSize(int newY) {
-
+		Log.d(TAG, "SetGLVerticalSize newY: "+newY);
 		if(newY < 0){
 			return;
 		}
@@ -95,11 +95,11 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (newY < MIN_GL_VERTICAL_SIZE){
 			newY = MIN_GL_VERTICAL_SIZE;
 		}
-		if(newY > PCM_MAXIMUM_VALUE * 2) {
-			newY = PCM_MAXIMUM_VALUE * 2;
+		if(newY > PCM_MAXIMUM_VALUE) {
+			newY = PCM_MAXIMUM_VALUE;
 		}
 		glWindowVerticalSize = newY;
-		//Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
+//		Log.d(TAG, "SetGLVerticalSize "+glWindowVerticalSize);
 	}
 	// ----------------------------------------------------------------------------------------
 	public int getGlWindowVerticalSize() {
@@ -123,18 +123,13 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if(context != null) {
 			float[] arr;
 			if (getAudioService() != null) {
-//				boolean bDrawFullArray = getIsPlaybackMode() && !getIsPlaying();
 				int startIndex = 0;
 				if (glWindowHorizontalSize > shortArrayToDraw.length) {
 					setGlWindowHorizontalSize(shortArrayToDraw.length);
 				}
-//				if (bDrawFullArray || bTestingBufferDraw) {
-//					arr = new float[shortArrayToDraw.length * 2];
-//				} else {
-
 					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;// - micSize;
 					arr = new float[(glWindowHorizontalSize) * 2];//+ micSize) * 2];
-//				}
+
 				int j = 0; // index of arr
 				try {
 					for (int i = startIndex; i < shortArrayToDraw.length; i++) {

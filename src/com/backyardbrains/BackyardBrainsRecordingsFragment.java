@@ -63,6 +63,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.file_list, container, false);
+        ((BackyardBrainsMain)getActivity()).showButtons(true);
         return rootView;
     }
 

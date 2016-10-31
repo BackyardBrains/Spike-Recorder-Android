@@ -20,22 +20,25 @@ public class BYBSlidingButton  implements Animation.AnimationListener{
     private boolean bAnimating;
     private Animation animShow;
     private Animation animHide;
+    private String name;
+    private final static String TAG = "BYBSlidingButton";
 
-
-    public BYBSlidingButton(View b, Context context){
+    public BYBSlidingButton(View b, Context context, String name){
         animShow = AnimationUtils.loadAnimation(context, R.anim.slide_in_top);
         animShow.setAnimationListener(this);
         animHide = AnimationUtils.loadAnimation(context, R.anim.slide_out_top);
         animHide.setAnimationListener(this);
 
+        this.name = name;
         button = b;
 
-        button.bringToFront();
+//        button.bringToFront();
 
         bAnimating = false;
 
     }
     public boolean show(boolean bShow) {
+        Log.w(TAG + name, "show: " + (bShow?"true":"false")+ "  isShowing: "+ (isShowing()?"true":"false"));
         if(button == null)return false;
         if((isShowing() != bShow ) && !bAnimating) {
             button.startAnimation(bShow?animShow:animHide);
@@ -56,10 +59,10 @@ public class BYBSlidingButton  implements Animation.AnimationListener{
     public void 	onAnimationStart(Animation animation){
         if(button == null)return;
         bAnimating = true;
-        button.bringToFront();
+//        button.bringToFront();
         if(animation == animHide){
-            button.setEnabled(false);
-            button.setClickable(false);
+//            button.setEnabled(false);
+//            button.setClickable(false);
         }else if (animation == animShow){
             button.setVisibility(View.VISIBLE);
         }
@@ -68,12 +71,12 @@ public class BYBSlidingButton  implements Animation.AnimationListener{
         if(button == null)return;
         bAnimating = false;
         if(animation == animShow){
-            button.setEnabled(true);
-            button.setClickable(true);
+//            button.setEnabled(true);
+//            button.setClickable(true);
         }else if(animation == animHide){
             button.setVisibility(View.GONE);
         }
-        button.bringToFront();
+//        button.bringToFront();
     }
     public void 	onAnimationRepeat(Animation animation){}
 

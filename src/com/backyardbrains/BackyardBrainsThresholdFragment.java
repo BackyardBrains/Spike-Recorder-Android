@@ -76,32 +76,8 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         Log.d(TAG, "setThresholdGuiVisibility: "+ (bVisible?"TRUE":"FaLSE"));
         if (getView() != null) {
             setViewVisibility(thresholdHandle.getHandlerView(), bVisible);
-//            ImageView b = thresholdHandle.getHandlerView();
-//            if (b != null) {
-//                if (bVisible) {
-//                    b.setVisibility(View.VISIBLE);
-//                } else {
-//                    b.setVisibility(View.GONE);
-//                }
-//            }
             setViewVisibility( getView().findViewById(R.id.triggerViewSampleChangerLayout),bVisible);
-//            LinearLayout ll = (LinearLayout) getView().findViewById(R.id.triggerViewSampleChangerLayout);
-//            if (ll != null) {
-//                if (bVisible) {
-//                    ll.setVisibility(View.VISIBLE);
-//                } else {
-//                    ll.setVisibility(View.GONE);
-//                }
-//            }
             setViewVisibility(getView().findViewById(R.id.samplesSeekBar), bVisible);
-//            SeekBar sk = (SeekBar) getView().findViewById(R.id.samplesSeekBar);
-//            if (sk != null) {
-//                if (bVisible) {
-//                    sk.setVisibility(View.VISIBLE);
-//                } else {
-//                    sk.setVisibility(View.GONE);
-//                }
-//            }
         }
     }
 

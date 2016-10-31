@@ -30,7 +30,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         rendererClass = WaveformRenderer.class;
         layoutID = R.layout.play_live_rec_scope_layout;
         TAG	= "BackyardBrainsPlayLiveScopeFragment";
-
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
@@ -40,6 +39,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = super.onCreateView(inflater, container,savedInstanceState);
         setupButtons(rootView);
+        ((BackyardBrainsMain)getActivity()).showButtons(true);
         return rootView;
     }
     @Override
@@ -125,31 +125,12 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         boolean bIsRecording = getIsRecording();
         showRecButton(bShow && !bIsRecording);
         showRecBar(bShow && bIsRecording);
-//        toggleRecording();
     }
     // ---------------------------------------------------------------------------------------------
     public void showRecBar(boolean bShow) {
         if(stopRecButton != null) {
             stopRecButton.show(bShow && getIsRecording());
         }
-//        ShowRecordingAnimation anim = new ShowRecordingAnimation(getActivity(), bShow && bIsRecording);
-//        try {
-//
-//            View tapToStopRecView = getView().findViewById(R.id.TapToStopRecordingTextView);
-//            if(bShow && bIsRecording) {
-//                tapToStopRecView.setVisibility(View.VISIBLE );//: View.GONE);
-//            }
-//            anim.run();
-//
-//            if(!bShow || !bIsRecording) {
-//                tapToStopRecView.setVisibility(View.GONE);//: View.GONE);
-//            }
-//
-//        } catch (RuntimeException e) {
-//            if(getContext()!= null){
-//                Toast.makeText(context, "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG).show();
-//            }
-//        }
     }
     // ---------------------------------------------------------------------------------------------
     public void setupButtons(View view) {
@@ -172,7 +153,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                 }
             }
         });
-        stopRecButton = new BYBSlidingButton(tapToStopRecView, getContext());
+        stopRecButton = new BYBSlidingButton(tapToStopRecView, getContext(), "tapToStopRec");
         // ------------------------------------
         View.OnClickListener closeButtonListener = new View.OnClickListener() {
             @Override
@@ -196,12 +177,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                 if(getAudioService()!=null){
                     getAudioService().togglePlayback(true);
                 }
-//                if(getContext() != null) {
-//                    Intent i = new Intent();
-//                    i.setAction("BYBTogglePlayback");
-//                    i.putExtra("play", true);
-//                    context.sendBroadcast(i);
-//                }
             }
         };
         ImageButton mPlayButton = (ImageButton) view.findViewById(R.id.playButton);
@@ -214,12 +189,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                 if(getAudioService()!=null){
                     getAudioService().togglePlayback(false);
                 }
-//                if(getContext() != null) {
-//                    Intent i = new Intent();
-//                    i.setAction("BYBTogglePlayback");
-//                    i.putExtra("play", false);
-//                    context.sendBroadcast(i);
-//                }
             }
         };
         ImageButton mPauseButton = (ImageButton) view.findViewById(R.id.pauseButton);
@@ -228,33 +197,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         // ------------------------------------
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- UI ANIMATIONS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-//    private class ShowRecordingAnimation implements Runnable {
-//
-//        private Activity activity;
-//        private boolean		recording;
-//
-//        public ShowRecordingAnimation(Activity a, Boolean b) {
-//            this.activity = a;
-//            this.recording = b;
-//        }
-//
-//        @Override
-//        public void run() {
-//            Animation a = null;
-//            if (this.recording == false) {
-//                a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0, Animation.RELATIVE_TO_SELF, 0, Animation.RELATIVE_TO_SELF, -1, Animation.RELATIVE_TO_SELF, 0);
-//            } else {
-//                a = new TranslateAnimation(Animation.RELATIVE_TO_SELF, 0, Animation.RELATIVE_TO_SELF, 0, Animation.RELATIVE_TO_SELF, 0, Animation.RELATIVE_TO_SELF, -1);
-//            }
-//            a.setDuration(250);
-//            a.setInterpolator(AnimationUtils.loadInterpolator(this.activity, android.R.anim.anticipate_overshoot_interpolator));
-//            View stopRecView = activity.findViewById(R.id.TapToStopRecordingTextView);
-//            stopRecView.startAnimation(a);
-//        }
-//    }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
     // -----------------------------------------  BROADCASTING LISTENERS
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
@@ -262,7 +204,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         @Override
         public void onReceive(android.content.Context context, android.content.Intent intent) {
             Log.w(TAG, "AudioPlaybackStartListener");
-//            showCloseButton();
             showUIForMode();
         }
     }
@@ -273,14 +214,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
             showUIForMode();
         }
     }
-    /*private class ShowRecordingButtonsReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(android.content.Context context, android.content.Intent intent) {
-            showRecordingButtons(intent.getBooleanExtra("showRecordingButton", true));
-        }
-    }*/
     // ----------------------------------------- RECEIVERS INSTANCES
-//    private ShowRecordingButtonsReceiver		showRecordingButtonsReceiver;
     private AudioPlaybackStartListener			audioPlaybackStartListener;
     private UpdateUIListener                    updateUIListener;
     // ----------------------------------------- REGISTER RECEIVERS
@@ -288,7 +222,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         super.registerReceivers(bRegister);
         registerAudioPlaybackStartReceiver(bRegister);
         registerUpdateUIReceiver(bRegister);
-//        registerReceiverShowRecordingButtons(bRegister);
     }
     private void registerAudioPlaybackStartReceiver(boolean reg) {
         Log.w(TAG, "registerAudioPlaybackStartReceiver: " + (reg?"true":"false"));
@@ -314,15 +247,4 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         }
     }
 
-  /*  private void registerReceiverShowRecordingButtons(boolean reg) {
-        if(getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilterRecordingButtons = new IntentFilter("BYBShowRecordingButtons");
-                showRecordingButtonsReceiver = new ShowRecordingButtonsReceiver();
-                context.registerReceiver(showRecordingButtonsReceiver, intentFilterRecordingButtons);
-            } else {
-                context.unregisterReceiver(showRecordingButtonsReceiver);
-            }
-        }
-    }*/
 }

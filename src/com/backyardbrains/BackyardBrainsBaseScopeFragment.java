@@ -274,7 +274,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         registerReceiverMillivoltsViewSize(bRegister);
         registerReceiverUpdateDebugView(bRegister);
         registerReceiverAudioServiceBind(bRegister);
-        registerReceiverDebugText(bRegister);
+
     }
     private void registerReceiverUpdateMilliseconds(boolean reg) {
         if(getContext() != null) {

@@ -112,7 +112,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 				return false;
 			}
 		});
-		
+		((BackyardBrainsMain)getActivity()).showButtons(false);
 		//Log.d(TAG, "onCreateView");
 
 		return rootView;

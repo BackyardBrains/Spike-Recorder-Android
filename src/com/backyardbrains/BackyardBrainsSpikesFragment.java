@@ -134,6 +134,7 @@ public class BackyardBrainsSpikesFragment extends Fragment {
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer2);
 		setupButtons(rootView);
+		((BackyardBrainsMain)getActivity()).showButtons(false);
 		return rootView;
 	}
 	// ----------------------------------------------------------------------------------------

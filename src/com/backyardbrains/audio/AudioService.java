@@ -51,11 +51,6 @@ import android.widget.Toast;
 public class AudioService extends Service implements ReceivesAudio {
 	static final String	TAG				= AudioService.class.getCanonicalName();
 
-	public boolean		running;
-
-//	public static final int LIVE_MODE = 0;
-//	public static final int PLAYBACK_MODE = 1;
-//	private int mode = LIVE_MODE;
 
 	private final IBinder				mBinder		= new AudioServiceBinder();
 
@@ -69,7 +64,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private CloseButtonListener 		closeListener;
 	private OnTabSelectedListener 		tabSelectedListener;
 	private AveragesNumListener 		averagesNumListener;
-//	private TogglePlaybackListener 		togglePlaybackListener;
+
 
 	private long						lastSamplesReceivedTimestamp;
 	private Context					appContext		= null;
@@ -121,11 +116,11 @@ public class AudioService extends Service implements ReceivesAudio {
 		return audioPlayer != null;
 	}
 	public short[] getAudioBuffer() {
-		if(isAudioPlayerPlaying()){
-			return audioPlayer.getBuffer();
-		}else{
+//		if(isAudioPlayerPlaying()){
+//			return audioPlayer.getBuffer();
+//		}else{
 			return audioBuffer.getArray();
-		}
+//		}
 	}
 	public short[] getAverageBuffer() {
 		if(averager != null){
@@ -145,9 +140,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		Log.d(TAG, "setUseAverager: "+(bUse?"TRUE":"FALSE"));
 		bUseAverager = bUse;
 	}
-	//public int getMode(){
-//		return mode;
-//	}
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- LIFECYCLE OVERRIDES
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -309,7 +302,7 @@ public class AudioService extends Service implements ReceivesAudio {
 			Log.w(TAG, "stop recording");
 			mRecordingSaverInstance.finishRecording();
 			mRecordingSaverInstance = null;
-
+			broadcastUpdateUI();
 			return true;
 		}
 		broadcastUpdateUI();
@@ -338,14 +331,6 @@ public class AudioService extends Service implements ReceivesAudio {
 			}
 		};
 	}
-//	private class TogglePlaybackListener extends BroadcastReceiver {
-//		@Override
-//		public void onReceive(android.content.Context context, android.content.Intent intent) {
-//			if(intent.hasExtra("play")){
-//				togglePlayback(intent.getBooleanExtra("play", true));
-//			}
-//		};
-//	}
 	private class PlayAudioFileListener extends BroadcastReceiver {
 
 		@Override
@@ -406,7 +391,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerPlayAudioFileReceiver(reg);
 		registerOnTabSelectedReceiver(reg);
 		registerCloseButtonReceiver(reg);
-//		registerPlaybackToggleReceiver(reg);
 		registerAveragerSetMaxReceiver(reg);
 	}
 	private void registerCloseButtonReceiver(boolean reg) {
@@ -418,15 +402,6 @@ public class AudioService extends Service implements ReceivesAudio {
 			appContext.unregisterReceiver(closeListener);
 		}
 	}
-//	private void registerPlaybackToggleReceiver(boolean reg) {
-//		if (reg) {
-//			IntentFilter intentFilter = new IntentFilter("BYBTogglePlayback");
-//			togglePlaybackListener = new TogglePlaybackListener();
-//			appContext.registerReceiver(togglePlaybackListener, intentFilter);
-//		} else {
-//			appContext.unregisterReceiver(togglePlaybackListener);
-//		}
-//	}
 	private void registerRecordingToggleReceiver(boolean reg) {
 		if (reg) {
 			IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");

@@ -44,21 +44,19 @@ public class ThresholdRenderer extends WaveformRenderer {
 	private float				tempThreshold;
 	private boolean bIsFirstFrame;
 	AdjustThresholdListener		adjustThresholdListener;
-
 	// ---------------------------------------------------------------------------------------------
 	public ThresholdRenderer() {
-		super();// , audioService);
+		super();
 		Log.d(TAG,"Constructor");
 	}
 	public ThresholdRenderer(Context context) {
-		super(context);// , audioService);
+		super(context);
 		Log.d(TAG,"Constructor context");
 		setup(context);
 	}
 	@Override
 	public void setup(Context context){
 		super.setup(context);
-//		defaultThresholdValue();
 		registerAdjustThresholdReceiver(true);
 		bIsFirstFrame = true;
 	}
@@ -68,10 +66,6 @@ public class ThresholdRenderer extends WaveformRenderer {
 		registerAdjustThresholdReceiver(false);
 	}
 	// ---------------------------------------------------------------------------------------------
-//	public void defaultThresholdValue() {
-//		adjustThresholdValue(getGlWindowVerticalSize() / 4);
-//	}
-	// ----------------------------------------------------------------------------------------
 	@Override
 	public void setGlWindowVerticalSize(int newY) {
 		super.setGlWindowVerticalSize(newY);
@@ -79,11 +73,16 @@ public class ThresholdRenderer extends WaveformRenderer {
 			bIsFirstFrame = false;
 //			defaultThresholdValue();
 		}
-		Intent i = new Intent();
-		i.setAction("BYBUpdateThresholdHandle");
-		i.putExtra("pos", getThresholdScreenValue());
-		i.putExtra("name", "OsciloscopeHandle");
-		context.sendBroadcast(i);
+		updateThresholdHandle();
+	}
+	protected void updateThresholdHandle(){
+		if(context != null) {
+			Intent i = new Intent();
+			i.setAction("BYBUpdateThresholdHandle");
+			i.putExtra("pos", getThresholdScreenValue());
+			i.putExtra("name", "OsciloscopeHandle");
+			context.sendBroadcast(i);
+		}
 	}
 	// ----------------------------------------------------------------------------------------
 	protected boolean getCurrentAverage() {
@@ -185,18 +184,15 @@ public class ThresholdRenderer extends WaveformRenderer {
 	}
 	// ---------------------------------------------------------------------------------------------
 	public void adjustThresholdValue(float dy) {
+		Log.d(TAG, "adjustThresholdValue "+ dy);
 		if (dy == 0) {
 			return;
 		}
-		// normalize to window
 		threshold = dy;
 		tempThreshold = dy;
-		// //Log.d(TAG, "Adjusted threshold by " + dy + " pixels");
 
 		if(context != null) {
 			if (getAudioService()!= null) {
-				// final float glHeight =
-				// pixelHeightToGlHeight(thresholdPixelHeight);
 				getAudioService().getTriggerHandler().post(new Runnable() {
 					@Override
 					public void run() {
@@ -204,6 +200,7 @@ public class ThresholdRenderer extends WaveformRenderer {
 					}
 				});
 			}
+
 		}
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,6 +210,7 @@ public class ThresholdRenderer extends WaveformRenderer {
 	private class AdjustThresholdListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG,"AdjustThresholdListener onReceive: ");
 			if (intent.hasExtra("name")) {
 				if (intent.getStringExtra("name").equals("OsciloscopeHandle")) {
 					if (intent.hasExtra("y")) {
@@ -227,11 +225,9 @@ public class ThresholdRenderer extends WaveformRenderer {
 			}
 		}
 	}
-
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 	////////////////////////////////////////////////////////////////////////////////////////////////
-
 	private void registerAdjustThresholdReceiver(boolean reg) {
 		if (reg && context != null) {
 			IntentFilter intentFilter = new IntentFilter("BYBThresholdHandlePos");
@@ -249,6 +245,8 @@ public class ThresholdRenderer extends WaveformRenderer {
 		if (settings != null) {
 			super.readSettings(settings,TAG);
 			adjustThresholdValue(settings.getFloat(TAG + "_threshold", threshold));
+			//updateThresholdHandle();
+			Log.w(TAG, "loadsetting threshold: " + threshold);
 			bIsFirstFrame = settings.getBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
 		}
 	}
@@ -258,6 +256,7 @@ public class ThresholdRenderer extends WaveformRenderer {
 		if (settings != null) {
 			super.saveSettings(settings,TAG);
 			final SharedPreferences.Editor editor = settings.edit();
+			Log.w(TAG, "savesetting threshold: " + threshold);
 			editor.putFloat(TAG + "_threshold", threshold);
 			editor.putBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
 			editor.commit();
