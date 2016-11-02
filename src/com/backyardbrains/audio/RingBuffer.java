@@ -41,12 +41,16 @@ public class RingBuffer {
 	}
 
 	private int end;
+	private int lastIncomingBufferSize;
 
 	public RingBuffer(int size) {
 		buffer = new short[size];
 		beginning = end = -1;
+		lastIncomingBufferSize = 0;
 	}
-
+	public int getLastIncomingBufferSize(){
+		return lastIncomingBufferSize;
+	}
 	public void add(final ByteBuffer incoming) {
 		incoming.clear();
 		final ShortBuffer sb = incoming.asShortBuffer();
@@ -61,6 +65,7 @@ public class RingBuffer {
 		System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length-incoming.capacity());
 		incoming.get(buffer, buffer.length-incoming.capacity(), incoming.capacity());
 		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
+		lastIncomingBufferSize = incoming.capacity();
 	}
 	/**
 	 * return an order-adjusted version of the whole buffer

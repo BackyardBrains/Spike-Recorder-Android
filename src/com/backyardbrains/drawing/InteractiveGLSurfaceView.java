@@ -50,7 +50,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 		mScaleListener = new ScaleListener();
 		mScaleDetector = new TwoDimensionScaleGestureDetector(context, mScaleListener);
 		mScaleListener.setRenderer(renderer);
-		singleFingerGestureDetector = new SingleFingerGestureDetector();
+		singleFingerGestureDetector = new SingleFingerGestureDetector(context);
 	}
 //*
 	@Override
@@ -66,7 +66,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 	}
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		Log.d(TAG, "onTouchEvent " + event.toString());
+//		Log.d(TAG, "onTouchEvent " + event.toString());
 		if(renderer != null && singleFingerGestureDetector != null){
 			singleFingerGestureDetector.onTouchEvent(event);
 			if(singleFingerGestureDetector.hasChanged()){

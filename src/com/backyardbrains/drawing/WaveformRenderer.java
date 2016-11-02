@@ -50,32 +50,6 @@ public class WaveformRenderer extends BYBBaseRenderer {
 		super(context);
 		Log.d(TAG, "Constructor(context)");
 	}
-
-
-	//----------------------------------------------------------------------------------------
-	//----------------------------------------------------------------------------------------
-//	@Override
-//	protected void postDrawingHandler(GL10 gl) {
-//		float[] arr = new float[ 8];
-//		arr[0] = -getGlWindowHorizontalSize();
-//		arr[1] = 0;
-//		arr[2] = getGlWindowHorizontalSize();
-//		arr[3] = 0;
-//
-//		arr[4] = 0;
-//		arr[5] = -getGlWindowVerticalSize();
-//		arr[6] = 0;
-//		arr[7] = getGlWindowVerticalSize();
-//
-//
-//		FloatBuffer mVertexBuffer = BYBUtils.getFloatBufferFromFloatArray(arr);
-//		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-//		gl.glLineWidth(5f);
-//		gl.glColor4f(0f, 1f, 1f, 1f);
-//		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
-//		gl.glDrawArrays(GL10.GL_LINES, 0, mVertexBuffer.limit() / 2);
-//		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-//	}
 	//----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {

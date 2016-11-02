@@ -20,22 +20,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5ac24d1e-f4e4-4edb-8561-72c2f0187cc8" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/AndroidManifest.xml" afterPath="$PROJECT_DIR$/AndroidManifest.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Backyard-Brains-Android-App.iml" afterPath="$PROJECT_DIR$/Backyard-Brains-Android-App.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsAnalysisFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsAnalysisFragment.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/backyard_spikes.xml" afterPath="$PROJECT_DIR$/res/layout/backyard_spikes.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/base_scope_layout.xml" afterPath="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java" />
     </list>
     <ignored path="Backyard-Brains-Android-App.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -67,85 +67,115 @@
     <favorites_list name="Backyard-Brains-Android-App" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+    <leaf>
+      <file leaf-file-name="AudioService.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="66">
+              <caret line="119" column="37" selection-start-line="119" selection-start-column="37" selection-end-line="119" selection-end-column="37" />
+              <folding>
+                <element signature="docComment;class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
+                <element signature="class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
+                <element signature="method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#getLastSamplesReceivedTimestamp#0;class#AudioService#0" expanded="false" />
+                <element signature="method#isAudioPlayerPlaying#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#isPlaybackMode#0;class#AudioService#0" expanded="false" />
+                <element signature="method#getTriggerHandler#0;class#AudioService#0" expanded="false" />
+                <element signature="method#setUseAverager#0;class#AudioService#0" expanded="false" />
+                <element signature="method#onCreate#0;class#AudioService#0" expanded="false" />
+                <element signature="method#onStartCommand#0;class#AudioService#0" expanded="false" />
+                <element signature="method#onDestroy#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#onBind#0;class#AudioService#0" expanded="false" />
+                <element signature="method#onBind#0;class#AudioService#0" expanded="false" />
+                <element signature="method#onUnbind#0;class#AudioService#0" expanded="false" />
+                <element signature="method#togglePlayback#0;class#AudioService#0" expanded="false" />
+                <element signature="method#turnOnAudioPlayerThread#0;class#AudioService#0" expanded="false" />
+                <element signature="method#turnOffAudioPlayerThread#0;class#AudioService#0" expanded="false" />
+                <element signature="method#turnOnMicThread#0;class#AudioService#0" expanded="false" />
+                <element signature="method#turnOffMicThread#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#receiveAudio#0;class#AudioService#0" expanded="false" />
+                <element signature="docComment;method#recordAudio#0;class#AudioService#0" expanded="false" />
+                <element signature="method#startRecording#0;class#AudioService#0" expanded="false" />
+                <element signature="method#stopRecording#0;class#AudioService#0" expanded="false" />
+                <element signature="method#broadcastUpdateUI#0;class#AudioService#0" expanded="false" />
+                <element signature="class#ToggleRecordingListener#0;class#AudioService#0" expanded="false" />
+                <element signature="class#PlayAudioFileListener#0;class#AudioService#0" expanded="false" />
+                <element signature="class#CloseButtonListener#0;class#AudioService#0" expanded="false" />
+                <element signature="class#OnTabSelectedListener#0;class#AudioService#0" expanded="false" />
+                <element signature="class#AveragesNumListener#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerReceivers#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerCloseButtonReceiver#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerRecordingToggleReceiver#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerOnTabSelectedReceiver#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerPlayAudioFileReceiver#0;class#AudioService#0" expanded="false" />
+                <element signature="method#registerAveragerSetMaxReceiver#0;class#AudioService#0" expanded="false" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="BackyardBrainsBaseScopeFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1219">
-              <caret line="53" column="19" selection-start-line="53" selection-start-column="19" selection-end-line="53" selection-end-column="19" />
+            <state relative-caret-position="390">
+              <caret line="255" column="34" selection-start-line="255" selection-start-column="34" selection-end-line="255" selection-end-column="34" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BackyardBrainsSpikesFragment.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2464">
-              <caret line="203" column="46" selection-start-line="203" selection-start-column="46" selection-end-line="203" selection-end-column="46" />
-              <folding>
-                <element signature="method#BackyardBrainsSpikesFragment#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
-                <element signature="method#registerReceivers#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
-                <element signature="method#unregisterReceivers#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
-              </folding>
-            </state>
+      <file leaf-file-name="base_scope_layout.xml" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
+          <provider editor-type-id="android-designer2">
+            <state />
           </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="FindSpikesRenderer.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1326">
-              <caret line="18" column="47" selection-start-line="18" selection-start-column="47" selection-end-line="18" selection-end-column="47" />
+            <state relative-caret-position="306">
+              <caret line="28" column="52" selection-start-line="28" selection-start-column="52" selection-end-line="28" selection-end-column="52" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BYBBaseRenderer.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="BYBBaseRenderer.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2465">
-              <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
+            <state relative-caret-position="459">
+              <caret line="139" column="60" selection-start-line="139" selection-start-column="60" selection-end-line="139" selection-end-column="60" />
               <folding>
-                <element signature="method#BYBBaseRenderer#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#BYBBaseRenderer#1;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setGlWindowHorizontalSize#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#addToGlOffset#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#getCurrentAudio#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setLabels#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setmVText#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setMsText#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setmVText#1;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setMillivoltLabelPosition#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#onSurfaceChanged#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#onSurfaceCreated#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#initGL#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="e#10503#10525#0" expanded="false" />
-                <element signature="e#10641#10643#0" expanded="false" />
-                <element signature="e#11174#11216#0" expanded="false" />
-                <element signature="e#11532#11561#0" expanded="false" />
-                <element signature="method#autoScaleCheck#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#autoSetFrame#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#setGlWindow#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#broadcastTextUpdate#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#glHeightToPixelHeight#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#pixelHeightToGlHeight#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#getAudioService#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#getIsRecording#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#getIsPlaybackMode#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#getIsPlaying#0;class#BYBBaseRenderer#0" expanded="false" />
-                <element signature="method#saveSettings#0;class#BYBBaseRenderer#0" expanded="false" />
+                <element signature="e#4081#4082#0" expanded="true" />
+                <element signature="e#4117#4118#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BackyardBrainsPlayLiveScopeFragment.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
+      <file leaf-file-name="InteractiveGLSurfaceView.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="234">
-              <caret line="155" column="93" selection-start-line="155" selection-start-column="93" selection-end-line="155" selection-end-column="93" />
+            <state relative-caret-position="492">
+              <caret line="72" column="32" selection-start-line="72" selection-start-column="32" selection-end-line="72" selection-end-column="32" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="WaveformRenderer.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="391">
+              <caret line="56" column="14" selection-start-line="56" selection-start-column="14" selection-end-line="56" selection-end-column="14" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="BackyardBrainsSpikesFragment.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2108">
+              <caret line="157" column="37" selection-start-line="157" selection-start-column="37" selection-end-line="157" selection-end-column="37" />
               <folding />
             </state>
           </provider>
@@ -1101,30 +1131,33 @@
         <option value="$PROJECT_DIR$/res/layout/activity_main.xml" />
         <option value="$PROJECT_DIR$/res/values/themes.xml" />
         <option value="$PROJECT_DIR$/res/layout/play_live_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/res/layout/backyard_spikes.xml" />
-        <option value="$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/ContinuousGLSurfaceView.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
-        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java" />
         <option value="$PROJECT_DIR$/res/layout/thresh_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java" />
-        <option value="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsAnalysisFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java" />
+        <option value="$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
+        <option value="$PROJECT_DIR$/res/layout/backyard_spikes.xml" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
+        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java" />
+        <option value="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
       </list>
     </option>
   </component>
@@ -1159,9 +1192,6 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="PackagesPane" />
-      <pane id="ProjectPane" />
-      <pane id="Scratches" />
       <pane id="AndroidView">
         <subPane>
           <PATH>
@@ -1169,10 +1199,6 @@
               <option name="myItemId" value="Backyard-Brains-Android-App" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
             </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Gradle Scripts" />
-              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidBuildScriptsGroupNode" />
-            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -1202,7 +1228,7 @@
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="anim" />
+              <option name="myItemId" value="layout" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderTypeNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -1214,10 +1240,6 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="Backyard-Brains-Android-App" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="assets" />
-              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidSourceTypeNode" />
             </PATH_ELEMENT>
           </PATH>
           <PATH>
@@ -1259,6 +1281,14 @@
               <option name="myItemId" value="com" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidPsiDirectoryNode" />
             </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="backyardbrains" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="drawing" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
           </PATH>
           <PATH>
             <PATH_ELEMENT>
@@ -1270,12 +1300,47 @@
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="manifests" />
-              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidManifestsGroupNode" />
+              <option name="myItemId" value="java" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidSourceTypeNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="com" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidPsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="backyardbrains" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="audio" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Backyard-Brains-Android-App" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Backyard-Brains-Android-App" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="java" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidSourceTypeNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="com" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidPsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
+      <pane id="ProjectPane">
+        <subPane />
+      </pane>
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -1307,6 +1372,7 @@
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="831" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
+    <property name="UI_DESIGNER_EDITOR_MODE.NlPropertiesWindowManager-NlEditorPanel.SHOW" value="false" />
   </component>
   <component name="RunManager" selected="Android App.Backyard-Brains-Android-App">
     <configuration default="true" type="AndroidRunConfigurationType" factoryName="Android App">
@@ -1684,7 +1750,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="22" width="1440" height="874" extended-state="0" />
+    <frame x="0" y="22" width="1440" height="874" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Nl-Palette" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1708,7 +1774,7 @@
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24964234" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27181688" sideWeight="0.49472296" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2160229" sideWeight="0.49472296" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298153" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Fabric" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.10729614" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
@@ -1783,317 +1849,34 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java</url>
-          <line>269</line>
+          <line>275</line>
           <properties />
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="3" />
+      <option name="time" value="5" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/res/values/colors.xml">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="33" selection-start-line="2" selection-start-column="26" selection-end-line="2" selection-end-column="33" />
+        <state relative-caret-position="-284">
+          <caret line="26" column="11" selection-start-line="26" selection-start-column="11" selection-end-line="26" selection-end-column="11" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/graphics/Color.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="43" column="38" selection-start-line="43" selection-start-column="38" selection-end-line="43" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/drawable/msline.png">
-      <provider selected="true" editor-type-id="images">
+    <entry file="file://$PROJECT_DIR$/res/layout/backyard_spikes.xml">
+      <provider selected="true" editor-type-id="android-designer2">
         <state />
       </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/View.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="313">
-          <caret line="7484" column="16" selection-start-line="7484" selection-start-column="16" selection-end-line="7484" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/opengl/GLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="431">
-          <caret line="2002" column="30" selection-start-line="2002" selection-start-column="21" selection-end-line="2002" selection-end-column="30" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaitRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="160">
-          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/ViewGroup.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="112" column="39" selection-start-line="112" selection-start-column="39" selection-end-line="112" selection-end-column="39" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/widget/LinearLayout.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="64" column="38" selection-start-line="64" selection-start-column="38" selection-end-line="64" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/widget/RelativeLayout.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="83" column="27" selection-start-line="83" selection-start-column="13" selection-end-line="83" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/app/Service.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="123" column="85" selection-start-line="123" selection-start-column="85" selection-end-line="123" selection-end-column="85" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/content/Context.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="681" column="6" selection-start-line="681" selection-start-column="6" selection-end-line="681" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/content/ContextWrapper.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="163" column="33" selection-start-line="163" selection-start-column="33" selection-end-line="163" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/FileListActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="44" column="13" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="15" column="0" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-        </state>
-      </provider>
-      <provider editor-type-id="android-manifest">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/os/Handler.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="736">
-          <caret line="63" column="13" selection-start-line="63" selection-start-column="13" selection-end-line="63" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="425">
-          <caret line="72" column="0" selection-start-line="72" selection-start-column="0" selection-end-line="72" selection-end-column="0" />
+      <provider editor-type-id="text-editor">
+        <state relative-caret-position="148">
+          <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
           <folding>
-            <element signature="e#2384#2385#0" expanded="true" />
-            <element signature="e#2415#2416#0" expanded="true" />
-            <element signature="e#2457#2458#0" expanded="true" />
-            <element signature="e#2488#2489#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RecordingSaver.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="753">
-          <caret line="112" column="16" selection-start-line="112" selection-start-column="16" selection-end-line="112" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1938">
-          <caret line="147" column="24" selection-start-line="147" selection-start-column="24" selection-end-line="147" selection-end-column="24" />
-          <folding>
-            <element signature="e#4901#4902#0" expanded="true" />
-            <element signature="e#4928#4929#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="24" column="13" selection-start-line="24" selection-start-column="13" selection-end-line="24" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ISIRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="595">
-          <caret line="76" column="5" selection-start-line="76" selection-start-column="5" selection-end-line="76" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="7" column="43" selection-start-line="7" selection-start-column="25" selection-end-line="7" selection-end-column="43" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="488">
-          <caret line="72" column="44" selection-start-line="72" selection-start-column="44" selection-end-line="72" selection-end-column="44" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/media/AudioRecord.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-10297">
-          <caret line="55" column="13" selection-start-line="55" selection-start-column="13" selection-end-line="55" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="49" column="18" selection-start-line="49" selection-start-column="18" selection-end-line="49" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/PlaybackListener.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="16" column="17" selection-start-line="16" selection-start-column="17" selection-end-line="16" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/media/AudioTrack.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-629">
-          <caret line="78" column="13" selection-start-line="78" selection-start-column="13" selection-end-line="78" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/ReceivesAudio.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="39" column="16" selection-start-line="39" selection-start-column="16" selection-end-line="39" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RecordingReader.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="19" column="13" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/PlaybackThread.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-936">
-          <caret line="46" column="29" selection-start-line="46" selection-start-column="29" selection-end-line="46" selection-end-column="29" />
-          <folding>
-            <element signature="e#1153#1226#0" expanded="false" />
-            <element signature="e#1225#1226#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioFilePlayer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="591">
-          <caret line="102" column="42" selection-start-line="102" selection-start-column="42" selection-end-line="102" selection-end-column="42" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="328">
-          <caret line="304" column="32" selection-start-line="304" selection-start-column="32" selection-end-line="304" selection-end-column="32" />
-          <folding>
-            <element signature="class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#getLastSamplesReceivedTimestamp#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#isPlaybackMode#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getAverageBuffer#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getTriggerHandler#0;class#AudioService#0" expanded="false" />
-            <element signature="method#setUseAverager#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onDestroy#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#onBind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onBind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onUnbind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#turnOffMicThread#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#receiveAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#recordAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#recordAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#startRecording#0;class#AudioService#0" expanded="false" />
-            <element signature="class#ToggleRecordingListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#PlayAudioFileListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#CloseButtonListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#OnTabSelectedListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#AveragesNumListener#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerCloseButtonReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerRecordingToggleReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerOnTabSelectedReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerPlayAudioFileReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerAveragerSetMaxReceiver#0;class#AudioService#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="39" column="50" selection-start-line="39" selection-start-column="50" selection-end-line="39" selection-end-column="50" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="526">
-          <caret line="189" column="20" selection-start-line="189" selection-start-column="20" selection-end-line="189" selection-end-column="20" />
-          <folding>
-            <element signature="method#setMaxsize#0;class#TriggerAverager#0" expanded="false" />
+            <element signature="e#1437#4103#0" expanded="false" />
+            <element signature="e#4109#4914#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2103,90 +1886,93 @@
         <state />
       </provider>
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="259">
-          <caret line="15" column="44" selection-start-line="15" selection-start-column="29" selection-end-line="15" selection-end-column="44" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="226">
-          <caret line="106" column="9" selection-start-line="106" selection-start-column="9" selection-end-line="106" selection-end-column="9" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="516">
-          <caret line="232" column="79" selection-start-line="232" selection-start-column="58" selection-end-line="232" selection-end-column="79" />
+        <state relative-caret-position="374">
+          <caret line="22" column="17" selection-start-line="22" selection-start-column="17" selection-end-line="22" selection-end-column="17" />
           <folding>
-            <element signature="method#getCurrentAverage#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#onDrawFrame#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#drawingHandler#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#postDrawingHandler#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#getWaveformBuffer#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#setmVText#0;class#ThresholdRenderer#0" expanded="false" />
-            <element signature="method#saveSettings#0;class#ThresholdRenderer#0" expanded="false" />
+            <element signature="e#867#2317#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/TwoDimensionScaleGestureDetector.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5">
-          <caret line="510" column="30" selection-start-line="510" selection-start-column="30" selection-end-line="510" selection-end-column="30" />
+        <state relative-caret-position="34">
+          <caret line="89" column="39" selection-start-line="89" selection-start-column="39" selection-end-line="89" selection-end-column="39" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/ScaleListener.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBFindSpikesAnalysis.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="339">
-          <caret line="66" column="59" selection-start-line="66" selection-start-column="59" selection-end-line="66" selection-end-column="59" />
+        <state relative-caret-position="107">
+          <caret line="33" column="11" selection-start-line="33" selection-start-column="11" selection-end-line="33" selection-end-column="11" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="111" column="0" selection-start-line="111" selection-start-column="0" selection-end-line="111" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/proguard.cfg">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="408">
+          <caret line="24" column="33" selection-start-line="24" selection-start-column="33" selection-end-line="24" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
+      <provider editor-type-id="android-manifest">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" column="30" selection-start-line="4" selection-start-column="30" selection-end-line="4" selection-end-column="30" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="65" column="63" selection-start-line="65" selection-start-column="63" selection-end-line="65" selection-end-column="63" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsAnalysisFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="736">
-          <caret line="114" column="63" selection-start-line="114" selection-start-column="63" selection-end-line="114" selection-end-column="63" />
+        <state relative-caret-position="379">
+          <caret line="262" column="41" selection-start-line="262" selection-start-column="41" selection-end-line="262" selection-end-column="41" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#10868#11172#0" expanded="true" />
+            <element signature="e#11171#11172#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
+    <entry file="file://$PROJECT_DIR$/local.properties">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="155" column="93" selection-start-line="155" selection-start-column="93" selection-end-line="155" selection-end-column="93" />
+        <state relative-caret-position="153">
+          <caret line="9" column="46" selection-start-line="9" selection-start-column="46" selection-end-line="9" selection-end-column="46" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/activity_main.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
+    <entry file="file://$PROJECT_DIR$/project.properties">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="11" column="36" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
+        <state relative-caret-position="187">
+          <caret line="11" column="0" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/res/anim/slide_in_top.xml">
+    <entry file="file://$PROJECT_DIR$/fabric.properties">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
@@ -2194,105 +1980,235 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
+    <entry file="file://$PROJECT_DIR$/default.properties">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2482">
-          <caret line="304" column="0" selection-start-line="304" selection-start-column="0" selection-end-line="310" selection-end-column="28" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="578">
+          <caret line="34" column="33" selection-start-line="34" selection-start-column="33" selection-end-line="34" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6938">
+          <caret line="574" column="42" selection-start-line="574" selection-start-column="42" selection-end-line="574" selection-end-column="42" />
           <folding>
-            <element signature="method#onStart#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#onStop#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#loadFragment#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#popFragment#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#showFragment#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#showActionBar#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#setSelectedButton#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="class#ChangePageListener#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="class#AudioPlaybackStartListener#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#registerAudioPlaybackStartReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#registerChangePageReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#registerReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#unregisterReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
+            <element signature="e#2448#2449#0" expanded="false" />
+            <element signature="e#2476#2477#0" expanded="false" />
+            <element signature="e#3414#3415#0" expanded="false" />
+            <element signature="e#3443#3444#0" expanded="false" />
+            <element signature="e#3479#3480#0" expanded="false" />
+            <element signature="e#3506#3507#0" expanded="false" />
+            <element signature="e#3542#3543#0" expanded="false" />
+            <element signature="e#3569#3570#0" expanded="false" />
+            <element signature="e#6597#6606#0" expanded="false" />
+            <element signature="e#7001#7002#0" expanded="false" />
+            <element signature="e#7030#7031#0" expanded="false" />
+            <element signature="e#9755#9756#0" expanded="false" />
+            <element signature="e#9785#9786#0" expanded="false" />
+            <element signature="e#16540#16541#0" expanded="false" />
+            <element signature="e#16557#16558#0" expanded="false" />
+            <element signature="e#16863#16864#0" expanded="false" />
+            <element signature="e#16887#16888#0" expanded="false" />
+            <element signature="e#17018#17019#0" expanded="false" />
+            <element signature="e#17045#17046#0" expanded="false" />
+            <element signature="e#17178#17179#0" expanded="false" />
+            <element signature="e#17209#17210#0" expanded="false" />
+            <element signature="e#17350#17351#0" expanded="false" />
+            <element signature="e#17381#17382#0" expanded="false" />
+            <element signature="e#20261#20262#0" expanded="false" />
+            <element signature="e#20286#20287#0" expanded="false" />
+            <element signature="e#20844#20854#0" expanded="false" />
+            <element signature="e#22791#22802#0" expanded="false" />
+            <element signature="e#24692#24693#0" expanded="false" />
+            <element signature="e#24730#24731#0" expanded="false" />
+            <element signature="e#25127#25128#0" expanded="false" />
+            <element signature="e#25146#25147#0" expanded="false" />
+            <element signature="e#26795#26796#0" expanded="false" />
+            <element signature="e#26820#26821#0" expanded="false" />
+            <element signature="e#29686#29687#0" expanded="false" />
+            <element signature="e#29726#29727#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1054">
-          <caret line="74" column="40" selection-start-line="74" selection-start-column="40" selection-end-line="74" selection-end-column="40" />
+        <state relative-caret-position="2108">
+          <caret line="157" column="37" selection-start-line="157" selection-start-column="37" selection-end-line="157" selection-end-column="37" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="356">
-          <caret line="89" column="43" selection-start-line="89" selection-start-column="43" selection-end-line="89" selection-end-column="43" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1219">
-          <caret line="53" column="19" selection-start-line="53" selection-start-column="19" selection-end-line="53" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2465">
-          <caret line="26" column="13" selection-start-line="26" selection-start-column="13" selection-end-line="26" selection-end-column="13" />
+        <state relative-caret-position="374">
+          <caret line="64" column="100" selection-start-line="64" selection-start-column="100" selection-end-line="64" selection-end-column="100" />
           <folding>
-            <element signature="method#BYBBaseRenderer#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#BYBBaseRenderer#1;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setGlWindowHorizontalSize#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#addToGlOffset#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#getCurrentAudio#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setLabels#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setmVText#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setMsText#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setmVText#1;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setMillivoltLabelPosition#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#onSurfaceChanged#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#onSurfaceCreated#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#initGL#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="e#10503#10525#0" expanded="false" />
-            <element signature="e#10641#10643#0" expanded="false" />
-            <element signature="e#11174#11216#0" expanded="false" />
-            <element signature="e#11532#11561#0" expanded="false" />
-            <element signature="method#autoScaleCheck#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#autoSetFrame#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#setGlWindow#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#broadcastTextUpdate#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#glHeightToPixelHeight#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#pixelHeightToGlHeight#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#getAudioService#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#getIsRecording#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#getIsPlaybackMode#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#getIsPlaying#0;class#BYBBaseRenderer#0" expanded="false" />
-            <element signature="method#saveSettings#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="e#1315#1316#0" expanded="false" />
+            <element signature="e#1351#1352#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1870">
+          <caret line="134" column="12" selection-start-line="134" selection-start-column="12" selection-end-line="134" selection-end-column="12" />
+          <folding>
+            <element signature="method#pushToSampleBuffers#0;class#TriggerAverager#0" expanded="false" />
+            <element signature="method#setMaxsize#0;class#TriggerAverager#0" expanded="false" />
+            <element signature="class#TriggerHandler#0;class#TriggerAverager#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1326">
-          <caret line="18" column="47" selection-start-line="18" selection-start-column="47" selection-end-line="18" selection-end-column="47" />
+        <state relative-caret-position="3910">
+          <caret line="248" column="5" selection-start-line="248" selection-start-column="5" selection-end-line="248" selection-end-column="5" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java">
+    <entry file="file://$PROJECT_DIR$/res/layout/backyard_main.xml">
+      <provider editor-type-id="android-designer2">
+        <state />
+      </provider>
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2464">
-          <caret line="203" column="46" selection-start-line="203" selection-start-column="46" selection-end-line="203" selection-end-column="46" />
+        <state relative-caret-position="-2261">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/MotionEvent.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="183" column="59" selection-start-line="183" selection-start-column="59" selection-end-line="183" selection-end-column="59" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
+      <provider editor-type-id="android-designer2">
+        <state />
+      </provider>
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="28" column="52" selection-start-line="28" selection-start-column="52" selection-end-line="28" selection-end-column="52" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="391">
+          <caret line="56" column="14" selection-start-line="56" selection-start-column="14" selection-end-line="56" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="36" column="4" selection-start-line="36" selection-start-column="4" selection-end-line="43" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="492">
+          <caret line="72" column="32" selection-start-line="72" selection-start-column="32" selection-end-line="72" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="390">
+          <caret line="255" column="34" selection-start-line="255" selection-start-column="34" selection-end-line="255" selection-end-column="34" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RecordingReader.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="243">
+          <caret line="163" column="19" selection-start-line="163" selection-start-column="19" selection-end-line="163" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioFilePlayer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="277">
+          <caret line="38" column="36" selection-start-line="38" selection-start-column="36" selection-end-line="38" selection-end-column="36" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="66">
+          <caret line="119" column="37" selection-start-line="119" selection-start-column="37" selection-end-line="119" selection-end-column="37" />
           <folding>
-            <element signature="method#BackyardBrainsSpikesFragment#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
-            <element signature="method#registerReceivers#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
-            <element signature="method#unregisterReceivers#0;class#BackyardBrainsSpikesFragment#0" expanded="false" />
+            <element signature="docComment;class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
+            <element signature="class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
+            <element signature="method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#getLastSamplesReceivedTimestamp#0;class#AudioService#0" expanded="false" />
+            <element signature="method#isAudioPlayerPlaying#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#isPlaybackMode#0;class#AudioService#0" expanded="false" />
+            <element signature="method#getTriggerHandler#0;class#AudioService#0" expanded="false" />
+            <element signature="method#setUseAverager#0;class#AudioService#0" expanded="false" />
+            <element signature="method#onCreate#0;class#AudioService#0" expanded="false" />
+            <element signature="method#onStartCommand#0;class#AudioService#0" expanded="false" />
+            <element signature="method#onDestroy#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#onBind#0;class#AudioService#0" expanded="false" />
+            <element signature="method#onBind#0;class#AudioService#0" expanded="false" />
+            <element signature="method#onUnbind#0;class#AudioService#0" expanded="false" />
+            <element signature="method#togglePlayback#0;class#AudioService#0" expanded="false" />
+            <element signature="method#turnOnAudioPlayerThread#0;class#AudioService#0" expanded="false" />
+            <element signature="method#turnOffAudioPlayerThread#0;class#AudioService#0" expanded="false" />
+            <element signature="method#turnOnMicThread#0;class#AudioService#0" expanded="false" />
+            <element signature="method#turnOffMicThread#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#receiveAudio#0;class#AudioService#0" expanded="false" />
+            <element signature="docComment;method#recordAudio#0;class#AudioService#0" expanded="false" />
+            <element signature="method#startRecording#0;class#AudioService#0" expanded="false" />
+            <element signature="method#stopRecording#0;class#AudioService#0" expanded="false" />
+            <element signature="method#broadcastUpdateUI#0;class#AudioService#0" expanded="false" />
+            <element signature="class#ToggleRecordingListener#0;class#AudioService#0" expanded="false" />
+            <element signature="class#PlayAudioFileListener#0;class#AudioService#0" expanded="false" />
+            <element signature="class#CloseButtonListener#0;class#AudioService#0" expanded="false" />
+            <element signature="class#OnTabSelectedListener#0;class#AudioService#0" expanded="false" />
+            <element signature="class#AveragesNumListener#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerReceivers#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerCloseButtonReceiver#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerRecordingToggleReceiver#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerOnTabSelectedReceiver#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerPlayAudioFileReceiver#0;class#AudioService#0" expanded="false" />
+            <element signature="method#registerAveragerSetMaxReceiver#0;class#AudioService#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="139" column="60" selection-start-line="139" selection-start-column="60" selection-end-line="139" selection-end-column="60" />
+          <folding>
+            <element signature="e#4081#4082#0" expanded="true" />
+            <element signature="e#4117#4118#0" expanded="true" />
           </folding>
         </state>
       </provider>

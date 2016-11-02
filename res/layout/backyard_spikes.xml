@@ -4,65 +4,39 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
+    <include layout="@layout/base_scope_layout"/>
+
     <FrameLayout
-        android:id="@+id/glContainer2"
-        android:layout_width="wrap_content"
-        android:layout_height="fill_parent" >
-    </FrameLayout>
-
-    <ImageView
-        android:id="@+id/tickmarkImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:layout_alignBottom="@id/glContainer"
-        android:layout_alignTop="@id/glContainer"
-        android:contentDescription="@string/tickmarks_on_left_side_of_screen"
-        android:scaleType="fitXY"
-        android:src="@drawable/tickmarks" >
-    </ImageView>
-
-    <TextView
-        android:id="@+id/debugShit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:gravity="top"
-        android:textColor="#ffffff" />
-
-    <LinearLayout
         android:id="@+id/rightThresholdHandleLayout"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:layout_alignParentRight="true" >
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_gravity="right|center_vertical">
 
-        <ImageButton
+        <ImageView
             android:id="@+id/rightThresholdHandle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"
-            android:background="#0000"
             android:contentDescription="@string/threshold_handle"
             android:src="@drawable/handle_white_right" />
 
-    </LinearLayout>
-    <LinearLayout
+    </FrameLayout>
+    <FrameLayout
         android:id="@+id/leftThresholdHandleLayout"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent"
-        android:layout_alignParentLeft="true" >
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_gravity="left|center_vertical" >
 
-        <ImageButton
+        <ImageView
             android:id="@+id/leftThresholdHandle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"
-            android:background="#0000"
+
             android:contentDescription="@string/threshold_handle"
             android:src="@drawable/handle_white_left" />
 
-    </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/controlsLayout"
@@ -133,15 +107,6 @@
             android:src="@drawable/plus" />
 
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/mVLabelView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_toRightOf="@+id/tickmarkImageView"
-        android:gravity="center_vertical"
-        android:text="@string/default_milliseconds" />
 
     <LinearLayout
         android:id="@+id/playheadLayout"

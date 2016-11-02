@@ -116,11 +116,11 @@ public class AudioService extends Service implements ReceivesAudio {
 		return audioPlayer != null;
 	}
 	public short[] getAudioBuffer() {
-//		if(isAudioPlayerPlaying()){
-//			return audioPlayer.getBuffer();
-//		}else{
+		if(isPlaybackMode() && !isAudioPlayerPlaying()){
+			return audioPlayer.getBuffer();
+		}else{
 			return audioBuffer.getArray();
-//		}
+		}
 	}
 	public short[] getAverageBuffer() {
 		if(averager != null){
@@ -140,7 +140,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		Log.d(TAG, "setUseAverager: "+(bUse?"TRUE":"FALSE"));
 		bUseAverager = bUse;
 	}
-
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- LIFECYCLE OVERRIDES
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +162,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerReceivers(false);
 		turnOffMicThread();
 		turnOffAudioPlayerThread();
+		averager.close();
 		averager = null;
 		super.onDestroy();
 	}
@@ -246,6 +246,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 */
 	@Override
 	public void receiveAudio(ByteBuffer audioInfo) {
+//		receiveAudio(audioInfo.asShortBuffer());
 		if(!bUseAverager){
 			audioBuffer.add(audioInfo);
 		}else{
@@ -258,12 +259,17 @@ public class AudioService extends Service implements ReceivesAudio {
 	}
 	@Override
 	public void receiveAudio(ShortBuffer audioInfo) {
+
 		if(!bUseAverager){
 			audioBuffer.add(audioInfo);
 		}else{
+			//averager.update(audioBuffer);
 			averager.push(audioInfo);
 		}
 		lastSamplesReceivedTimestamp = System.currentTimeMillis();
+//		if (mRecordingSaverInstance != null) {
+//			recordAudio(audioInfo);
+//		}
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- RECORD AUDIO
@@ -273,6 +279,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	 *
 	 * @param audioInfo
 	 */
+
 	private void recordAudio(ByteBuffer audioInfo) {
 		audioInfo.clear();
 		try {

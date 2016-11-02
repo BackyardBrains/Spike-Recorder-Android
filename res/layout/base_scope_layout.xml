@@ -21,14 +21,17 @@
         android:contentDescription="@string/tickmarks_on_left_side_of_screen">
     </ImageView>
 
-    <TextView
-        android:id="@+id/DebugTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#ffffffff"
-        android:gravity="bottom"
-        android:visibility="gone">
-    </TextView>
+
+
+            <TextView
+                android:id="@+id/DebugTextView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:textColor="#ffffffff"
+                android:gravity="top"
+                android:visibility="gone">
+
+            </TextView>
 
     <TextView
         android:id="@+id/mVLabelView"

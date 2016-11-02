@@ -28,9 +28,10 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	private static final String	TAG						= BYBBaseRenderer.class.getCanonicalName();
 	protected int				glWindowHorizontalSize	= 4000;
 	protected int				glWindowVerticalSize	= 10000;
-	protected int				glOffsetX				= 0;
-	protected int				glOffsetY				= 0;
-
+	protected float				glOffsetX				= 0;
+	protected float				glOffsetY				= 0;
+	protected float 			scaledOffsetX 			= 0;
+	protected float 			scaledOffsetY 			= 0;
 
 	protected short[]			mBufferToDraws;
 	protected boolean			mAudioServiceIsBound;
@@ -42,7 +43,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public static final int     MIN_GL_VERTICAL_SIZE    = 400;
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
-	boolean bTestingBufferDraw = false;
+	boolean 					bTestingBufferDraw 		= false;
 	protected long				firstBufferDrawn		= 0;
 	protected Context context;
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,10 +110,19 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public int getGlWindowHorizontalSize() {
 		return glWindowHorizontalSize;
 	}
+	void broadcastDebugText(String text){
+		if(context != null){
+			Intent i = new Intent();
+			i.setAction("updateDebugView");
+			i.putExtra("text", text);
+			context.sendBroadcast(i);
+		}
+	}
 	// ----------------------------------------------------------------------------------------
 	public void addToGlOffset(float dx, float dy ){
 		if(context != null) {
 			if (getIsPlaybackMode() && !getIsPlaying()) {
+				Log.w(TAG, "addToGLOffset: " + dx + ", "+ dy);
 				glOffsetX += dx;
 				glOffsetY += dy;
 			}
@@ -127,8 +137,20 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 				if (glWindowHorizontalSize > shortArrayToDraw.length) {
 					setGlWindowHorizontalSize(shortArrayToDraw.length);
 				}
-					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;// - micSize;
-					arr = new float[(glWindowHorizontalSize) * 2];//+ micSize) * 2];
+				startIndex = shortArrayToDraw.length - glWindowHorizontalSize - (int)scaledOffsetX;// - micSize;
+				String msg = "startIndex:   "+startIndex+"\n";
+				msg += "glOffsetX:          "+glOffsetX+"\n";
+				msg += "scaledOffsetX:      "+scaledOffsetX+"\n";
+				msg += "arrayToDraw length: " + shortArrayToDraw.length + "\n";
+				msg += "window H size:      " + glWindowHorizontalSize;
+				broadcastDebugText(msg);
+//				if(startIndex < 0){
+//					startIndex = 0;
+//				}
+//				if(startIndex > shortArrayToDraw.length - glWindowHorizontalSize){
+//					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;
+//				}
+				arr = new float[(glWindowHorizontalSize) * 2];//+ micSize) * 2];
 
 				int j = 0; // index of arr
 				try {
@@ -250,9 +272,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 
-		float scaledOffsetX = 0;
-
-		float scaledOffsetY = 0;
+		scaledOffsetX = 0;
+		scaledOffsetY = 0;
 		if(context != null) {
 			if (getAudioService() != null) {
 				if(getIsPlaybackMode() && !getIsPlaying()){
@@ -267,31 +288,19 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			}
 		}
 		//---check if offset will not draw the complete window. if it does, ease until not.
-		if(xBegin - scaledOffsetX < 0 || xEnd - scaledOffsetX > mBufferToDraws.length){
-//			glOffsetX *= 0.5;
-//			scaledOffsetX *= 0.5;
-//			if(Math.abs(glOffsetX) < 1){
-//				glOffsetX = 0;
-			scaledOffsetX = 0;
-			//}
-		}
+//		if(xBegin - scaledOffsetX < 0 || xEnd - scaledOffsetX > mBufferToDraws.length){
+//			scaledOffsetX = 0;
 //
-//		if(scaledYBegin+ scaledOffsetY < 0 || scaledYEnd + scaledOffsetY > mBufferToDraws.length){
-//			glOffsetX *= 0.5;
-//			scaledOffsetX *= 0.5;
-//			if(Math.abs(glOffsetX) < 1){
-//				glOffsetX = 0;
-//				scaledOffsetX = 0;
-//			}
 //		}
-		//------
+
 
 		gl.glViewport(0, 0, width, height);
 
 		BYBUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
-		gl.glOrthof(xBegin-scaledOffsetX, xEnd-scaledOffsetX, scaledYBegin+scaledOffsetY, scaledYEnd+scaledOffsetY, -1f, 1f);
+//		gl.glOrthof(xBegin-scaledOffsetX, xEnd-scaledOffsetX, scaledYBegin+scaledOffsetY, scaledYEnd+scaledOffsetY, -1f, 1f);
+		gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
 		// Blackout, then we're ready to draw! \o/
@@ -344,15 +353,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-		//if(context != null) {
-
-//			long xEnd = Math.min(lengthOfSampleSet, lengthOfSampleSet);
-//			long xBegin = Math.min(lengthOfSampleSet - glWindowHorizontalSize, xEnd - glWindowHorizontalSize);
-
-
-			initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
-
-//		}
+		initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- UTILS
@@ -417,8 +418,9 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if (settings != null) {
 			setGlWindowHorizontalSize(settings.getInt(TAG + "_glWindowHorizontalSize",glWindowHorizontalSize));
 			setGlWindowVerticalSize(settings.getInt(TAG + "_glWindowVerticalSize",glWindowVerticalSize));
-			glOffsetX = settings.getInt(TAG + "_glOffsetX",glOffsetX);
-			glOffsetY = settings.getInt(TAG + "_glOffsetY",glOffsetY);
+//			glOffsetX = settings.getFloat(TAG + "_glOffsetX",glOffsetX);
+//			glOffsetY = settings.getFloat(TAG + "_glOffsetY",glOffsetY);
+
 
 			height = settings.getInt(TAG + "_height", height);
 			width = settings.getInt(TAG + "_width", width);
@@ -432,8 +434,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			final SharedPreferences.Editor editor = settings.edit();
 			editor.putInt(TAG + "_glWindowHorizontalSize",glWindowHorizontalSize);
 			editor.putInt(TAG + "_glWindowVerticalSize",glWindowVerticalSize);
-			editor.putInt(TAG + "_glOffsetX",glOffsetX);
-			editor.putInt(TAG + "_glOffsetY",glOffsetY);
+//			editor.putFloat(TAG + "_glOffsetX",glOffsetX);
+//			editor.putFloat(TAG + "_glOffsetY",glOffsetY);
 
 			editor.putInt(TAG + "_height", height);
 			editor.putInt(TAG + "_width", width);

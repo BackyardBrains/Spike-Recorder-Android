@@ -41,20 +41,30 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 	//	//Log.d(TAG, "CONSTRUCTOR!");
 		updateThresholdHandles();
 	}
-
-	// ----------------------------------------------------------------------------------------
-	@Override
-	public void setGlWindowHorizontalSize(int newX) {
-		////Log.d(TAG, "SetGLHorizontalSize " + getGlWindowHorizontalSize() + " glWidth: " + glWidth + " newX: " + newX);
-		 super.setGlWindowHorizontalSize(Math.abs(newX));
-		//this.glWindowHorizontalSize = Math.abs(newX);
-
+	public FindSpikesRenderer(){
+		context=null;
 	}
+	@Override
+	public void setContext(Context ctx){
+		context = ctx;
+	}
+	@Override
+	public void setup(Context context) {
+		setContext(context);
+		updateThresholdHandles();
+	}
+	// ----------------------------------------------------------------------------------------
+//	@Override
+//	public void setGlWindowHorizontalSize(int newX) {
+//		////Log.d(TAG, "SetGLHorizontalSize " + getGlWindowHorizontalSize() + " glWidth: " + glWidth + " newX: " + newX);
+//		 super.setGlWindowHorizontalSize(Math.abs(newX));
+//		//this.glWindowHorizontalSize = Math.abs(newX);
+//
+//	}
 	@Override
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowVerticalSize(int newY) {
 		super.setGlWindowVerticalSize(Math.abs(newY));
-		//this.glWindowVerticalSize = Math.abs(newY);
 		updateThresholdHandles();
 	}
 	// ----------------------------------------------------------------------------------------
@@ -151,17 +161,10 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 		return false;
 
 	}
-
-	@Override
-	protected void preDrawingHandler() {
-	}
-
 	// ----------------------------------------------------------------------------------------
 	public void setStartSample(float pos) {// normalized position
 		playheadPosition = pos;
-		////Log.d(TAG, "setStartSample: " + pos);
 	}
-
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {

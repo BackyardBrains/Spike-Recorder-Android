@@ -36,7 +36,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 
     protected TextView                          msView;
     protected TextView							mVView;
-//    protected TextView							debugText;
+    protected TextView							debugText;
     protected ImageView                         msLine;
 
     protected BYBBaseRenderer                   renderer            = null;
@@ -75,8 +75,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         View rootView = inflater.inflate(layoutID, container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
-//        debugText = (TextView)rootView.findViewById(R.id.debugText);
-//        debugText.bringToFront();
+        debugText = (TextView)rootView.findViewById(R.id.DebugTextView);
+        debugText.setVisibility(View.VISIBLE);
+        debugText.bringToFront();
         ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -195,15 +196,17 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     }
     // ----------------------------------------------------------------------------------------
     public void setupMsLineView(int width) {
+        if(msLine != null) {
             int w = width / 3;
             msLine.getLayoutParams().width = w;
             msLine.requestLayout();
-            Log.d(TAG, String.format("msLine width : %d",w ));
+            Log.d(TAG, String.format("msLine width : %d", w));
+        }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    private void getSettings() {
+    protected void getSettings() {
         if (settings == null) {
             settings = getActivity().getPreferences(BackyardBrainsMain.MODE_PRIVATE);
         }
@@ -249,6 +252,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     private class UpdateDebugTextViewListener extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if(intent.hasExtra("text")) {
+                debugText.setText(intent.getStringExtra("text"));
+            }
         }
     }
     private class AudioServiceBindListener extends BroadcastReceiver {
