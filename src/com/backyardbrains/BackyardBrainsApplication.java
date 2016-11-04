@@ -38,6 +38,7 @@ public class BackyardBrainsApplication extends Application {
 	protected AudioService	mAudioService;
 	private int				mBindingsCount;
 	protected BYBAnalysisManager analysisManager;
+
 	public boolean isServiceRunning() {
 		return serviceRunning;
 	}

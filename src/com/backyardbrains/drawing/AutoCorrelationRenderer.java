@@ -5,6 +5,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 
 import android.content.Context;
+import android.util.Log;
 
 public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
@@ -14,6 +15,7 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 	// ----------------------------------------------------------------------------------------
 	public AutoCorrelationRenderer(Context context) {
 		super(context);
+		Log.w(TAG, "CONSTRUCTOR");
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -24,7 +26,7 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 	@Override
 	protected void drawingHandler(GL10 gl) {
 		initGL(gl);
-
+		Log.w(TAG, "drawingHandler");
 		makeThumbAndMainRectangles();
 		if (getManager() != null) {
 			ArrayList<ArrayList<Integer>> AC = getManager().getAutoCorrelation();

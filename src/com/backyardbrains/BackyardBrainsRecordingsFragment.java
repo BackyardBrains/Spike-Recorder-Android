@@ -34,9 +34,11 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.backyardbrains.analysis.BYBAnalysisManager;
+
 public class BackyardBrainsRecordingsFragment extends ListFragment {
 
-    public static final String	TAG	= "BackyardBrainsRecordingsFragment";
+    public static final String	TAG	= BackyardBrainsMain.BYB_RECORDINGS_FRAGMENT;// "BackyardBrainsRecordingsFragment";
 
     private File				bybDirectory;
     private Context				context;
@@ -135,6 +137,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
                 }
             }
         });
+
         // builder.setIcon(R.drawable.icon);
         AlertDialog d = builder.create();
         d.show();
@@ -160,6 +163,16 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         }
     }
     // ----------------------------------------------------------------------------------------
+    private BYBAnalysisManager getAnalysisManger(){
+        if(getContext()!=null){
+            return ((BackyardBrainsApplication)getContext()).getAnalysisManager();
+        }
+        return null;
+    }
+    private boolean isFindSpikesDone(){
+        if(getAnalysisManger() == null)return false;
+        return getAnalysisManger().spikesFound();
+    }
     private void fileDetails(File f) {
     }
     // ----------------------------------------------------------------------------------------
@@ -205,22 +218,26 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
     }
     // ----------------------------------------------------------------------------------------
     private void doAnalysis(File f, String process, String render){
-        if(getContext() != null) {
-            if (f.exists()) {
-                Intent i = new Intent();
-                i.setAction("BYBAnalizeFile");
-                i.putExtra("filePath", f.getAbsolutePath());
-                i.putExtra(process, true);
-                context.sendBroadcast(i);
-                Intent j = new Intent();
-                j.setAction("BYBChangePage");
-                j.putExtra("page", BackyardBrainsMain.ANALYSIS_VIEW);
-                context.sendBroadcast(j);
-                Intent k = new Intent();
-                k.setAction("BYBRenderAnalysis");
-                k.putExtra(render, true);
-                context.sendBroadcast(k);
+        if(isFindSpikesDone() && getAnalysisManger().checkCurrentFilePath(f.getAbsolutePath())) {
+            if (getContext() != null) {
+                if (f.exists()) {
+                    Intent j = new Intent();
+                    j.setAction("BYBChangePage");
+                    j.putExtra("page", BackyardBrainsMain.ANALYSIS_VIEW);
+                    context.sendBroadcast(j);
+                    Intent i = new Intent();
+                    i.setAction("BYBAnalizeFile");
+                    i.putExtra("filePath", f.getAbsolutePath());
+                    i.putExtra(process, true);
+                    context.sendBroadcast(i);
+                    Intent k = new Intent();
+                    k.setAction("BYBRenderAnalysis");
+                    k.putExtra(render, true);
+                    context.sendBroadcast(k);
+                }
             }
+        }else{
+            BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title), getString(R.string.find_spikes_not_done_message));
         }
     }
     // ----------------------------------------------------------------------------------------
@@ -366,7 +383,6 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
             }
         }
     }
-
     private void registerRecordingToggleReceiver(boolean reg) {
         if(getContext() != null) {
             if (reg) {

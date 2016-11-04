@@ -32,20 +32,23 @@ import com.backyardbrains.BackyardBrainsRecordingsFragment;
 //*/
 import com.backyardbrains.view.*;
 
-public class BackyardBrainsMain extends AppCompatActivity implements View.OnClickListener, Animation.AnimationListener{
+public class BackyardBrainsMain extends AppCompatActivity implements View.OnClickListener{
 	@SuppressWarnings("unused")
 	private static final String			TAG						= "BackyardBrainsMain";
 
+	public static final int				INVALID_VIEW			= -1;
 	public static final int				OSCILLOSCOPE_VIEW		= 0;
 	public static final int				THRESHOLD_VIEW			= 1;
 	public static final int				RECORDINGS_LIST			= 2;
 	public static final int				ANALYSIS_VIEW			= 3;
 	public static final int				FIND_SPIKES_VIEW		= 4;
 
-//	private Animation animShow;
-//	private Animation animHide;
-//	private Animation animHideButtons;
-//	private Animation animShowButtons;
+	public static final String BYB_RECORDINGS_FRAGMENT	= "BackyardBrainsRecordingsFragment";
+	public static final String BYB_THRESHOLD_FRAGMENT	= "BackyardBrainsThresholdFragment";
+	public static final String BYB_SPIKES_FRAGMENT		= "BackyardBrainsSpikesFragment";
+	public static final String BYB_ANALYSIS_FRAGMENT	= "BackyardBrainsAnalysisFragment";
+	public static final String BYB_OSCILLOSCOPE_FRAGMENT= "BackyardBrainsOscilloscopeFragment";
+
 
 	protected Button buttonScope;
 	protected Button buttonThresh;
@@ -101,11 +104,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		allButtons.add(buttonRecordings);
 		allButtons.add(buttonThresh);
 
-//		animShowButtons = AnimationUtils.loadAnimation(this, R.anim.slide_in_top);
-//		animShowButtons.setAnimationListener(this);
-//		animHideButtons  = AnimationUtils.loadAnimation(this, R.anim.slide_out_top);
-//		animHideButtons.setAnimationListener(this);
-
 		hideActionBar();
 		loadFragment(OSCILLOSCOPE_VIEW);
 	}
@@ -125,6 +123,23 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		super.onDestroy();
 	}
 	//////////////////////////////////////////////////////////////////////////////
+	//                       OnKey methods
+	//////////////////////////////////////////////////////////////////////////////
+	@Override
+	public void onBackPressed() {
+		boolean bShouldPop = true;
+		if(currentFrag == ANALYSIS_VIEW){
+			Fragment frag = getSupportFragmentManager().findFragmentByTag(BYB_ANALYSIS_FRAGMENT);
+			if(frag != null && frag instanceof BackyardBrainsAnalysisFragment){
+				bShouldPop  = false;
+				((BackyardBrainsAnalysisFragment)frag).onBackPressed();
+			}
+		}
+		if(bShouldPop){
+			popFragment();
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////
 	//                       OnClickListener methods
 	//////////////////////////////////////////////////////////////////////////////
 	@Override
@@ -142,84 +157,102 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		}else if (fragType == R.id.buttonThresh) {
 			fragType =  THRESHOLD_VIEW;
 		}
+		Log.d(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag );
 		if(fragType != currentFrag) {
 
 			currentFrag = fragType;
 			Fragment frag = null;
 			String fragName = "";
-			Intent i = null;
 			switch (fragType) {
 				//------------------------------
 				case RECORDINGS_LIST:
 					frag = new BackyardBrainsRecordingsFragment();
-					fragName = "BackyardBrainsRecordingsFragment";
-					i = new Intent();
-					i.putExtra("tab", RECORDINGS_LIST);
+					fragName = BYB_RECORDINGS_FRAGMENT;
 					break;
 				//------------------------------
 				case THRESHOLD_VIEW:
 					frag = new BackyardBrainsThresholdFragment();
-					fragName = "BackyardBrainsThresholdFragment";
-					i = new Intent();
-					i.putExtra("tab", THRESHOLD_VIEW);
+					fragName = BYB_THRESHOLD_FRAGMENT;
 					break;
 				//------------------------------
 				case FIND_SPIKES_VIEW:
 					frag = new BackyardBrainsSpikesFragment();
-					fragName = "BackyardBrainsSpikesFragment";
+					fragName = BYB_SPIKES_FRAGMENT;
 					break;
 				//------------------------------
 				case ANALYSIS_VIEW:
 					frag = new BackyardBrainsAnalysisFragment();
-					fragName = "BackyardBrainsAnalysisFragment";
+					fragName = BYB_ANALYSIS_FRAGMENT;
 					break;
 				//------------------------------
 				case OSCILLOSCOPE_VIEW:
 				default:
 					frag = new BackyardBrainsOscilloscopeFragment();
-					fragName = "BackyardBrainsOscilloscopeFragment";
-					i = new Intent();
-					i.putExtra("tab", OSCILLOSCOPE_VIEW);
+					fragName = BYB_OSCILLOSCOPE_FRAGMENT;
 					break;
 				//------------------------------
 			}
-			setSelectedButton(fragType);
 			if (frag != null) {
+				setSelectedButton(fragType);
 				showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, true, R.anim.slide_in_right, R.anim.slide_out_left);
-				if (i != null) {
-					i.setAction("BYBonTabSelected");
-					getApplicationContext().sendBroadcast(i);
-				}
 			}
 		}
 	}
-	public void popFragment(){
+	public boolean popFragment(String fragName){
+		boolean bPopped = false;
 		if(getSupportFragmentManager().getBackStackEntryCount()>1) {
-			int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() -1;
-			String lastFragName =getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
-//			if( lastFragName.equals(EntelWelcomeVidPlayer.TAG) || lastFragName.equals(ELearnDelegate.TAG)){
-//				((EntelWelcomeApp) getApplicationContext()).controlViaje.goBack(false);
-//			}
-			getSupportFragmentManager().popBackStack();
+			bPopped = getSupportFragmentManager().popBackStackImmediate(fragName,0);
+			Log.w(TAG, "popFragment name: " + fragName);
+			int fragType =getFragmentTypeFromName(fragName);
+			if( fragType != INVALID_VIEW) {
+				Log.w(TAG, "popFragment type: " + fragType);
+				setSelectedButton(fragType);
+				currentFrag = fragType;
+			}
 		}else{
 			Log.i(TAG, "popFragment noStack");
 		}
+		return bPopped;
+	}
+	public boolean popFragment(){
+		if(getSupportFragmentManager().getBackStackEntryCount()>1) {
+			int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() -2;
+			String lastFragName =getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
+			return popFragment(lastFragName);
+		}else{
+			Log.i(TAG, "popFragment noStack");
+			return false;
+		}
+	}
+	private void printBackstack(){
+		if(getSupportFragmentManager().getBackStackEntryCount()>0) {
+			String s = "Backstack:\n";
+			for(int i = 0; i <getSupportFragmentManager().getBackStackEntryCount(); i++){
+				s+=getSupportFragmentManager().getBackStackEntryAt(i).getName()+"\n";
+			}
+			Log.e(TAG, s);
+		}else{
+			Log.i(TAG, "printBackstack noStack");
+		}
 	}
 	public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction, boolean bAnimate, int animIn, int animOut){
-		android.support.v4.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-		if(bAnimate) {
-			transaction.setCustomAnimations(animIn, animOut);
+		if(!popFragment(fragName)) {
+			android.support.v4.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+			if(bAnimate) {
+				transaction.setCustomAnimations(animIn, animOut);
+			}
+			if (fragTransaction == FragTransaction.REPLACE) {
+				transaction.replace(fragContainer, frag, fragName);
+				transaction.addToBackStack(fragName);
+			} else if (fragTransaction == FragTransaction.REMOVE) {
+				transaction.remove(frag);
+			} else if (fragTransaction == FragTransaction.ADD) {
+				transaction.add(fragContainer, frag, fragName);
+				transaction.addToBackStack(fragName);
+			}
+			transaction.commit();
 		}
-		if(fragTransaction == FragTransaction.REPLACE) {
-			transaction.replace(fragContainer, frag);
-			transaction.addToBackStack(fragName);
-		}else if(fragTransaction == FragTransaction.REMOVE) {
-			transaction.remove(frag);
-		}else if(fragTransaction == FragTransaction.ADD) {
-			transaction.add(fragContainer, frag);
-			transaction.addToBackStack(fragName);
-		}
-		transaction.commit();
+		printBackstack();
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	//                      Action Bar
@@ -246,16 +279,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////
-	//                      Animation Callbacks
-	//////////////////////////////////////////////////////////////////////////////
-	public void 	onAnimationStart(Animation animation){
-//		Log.w(TAG, "boton continuar start Animation");
-	}
-	public void onAnimationEnd(Animation animation){
-//		Log.w(TAG, "boton continuar endAnimation");
-	}
-	public void 	onAnimationRepeat(Animation animation){}
-	//////////////////////////////////////////////////////////////////////////////
 	//                      Public Methods
 	//////////////////////////////////////////////////////////////////////////////
 	public String getPageTitle(int position) {
@@ -276,18 +299,65 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	//////////////////////////////////////////////////////////////////////////////
 	//                      Private Methods
 	//////////////////////////////////////////////////////////////////////////////
+	String getFragmentNameFromType(int fragType){
+		switch (fragType) {
+			case RECORDINGS_LIST:
+				return BYB_RECORDINGS_FRAGMENT;
+			case THRESHOLD_VIEW:
+				return BYB_THRESHOLD_FRAGMENT;
+
+			case FIND_SPIKES_VIEW:
+				return BYB_SPIKES_FRAGMENT;
+
+			case ANALYSIS_VIEW:
+				return BYB_ANALYSIS_FRAGMENT;
+
+			case OSCILLOSCOPE_VIEW:
+				return BYB_OSCILLOSCOPE_FRAGMENT;
+
+			case INVALID_VIEW:
+			default:
+				return "";
+		}
+	}
+	int getFragmentTypeFromName(String fragName){
+		if(fragName.equals(BYB_RECORDINGS_FRAGMENT)) {
+			return RECORDINGS_LIST;
+		}else if(fragName.equals(BYB_THRESHOLD_FRAGMENT)) {
+			return THRESHOLD_VIEW;
+		}else if(fragName.equals(BYB_SPIKES_FRAGMENT)) {
+			return FIND_SPIKES_VIEW;
+		}else if(fragName.equals(BYB_ANALYSIS_FRAGMENT)) {
+			return ANALYSIS_VIEW;
+		}else if(fragName.equals(BYB_OSCILLOSCOPE_FRAGMENT)) {
+			return OSCILLOSCOPE_VIEW;
+		}else{
+			return INVALID_VIEW;
+		}
+	}
+	void setSelectedButton(String tag){
+		setSelectedButton(getFragmentTypeFromName(tag));
+	}
 	void setSelectedButton(int select){
-		//
+
 		Button selectedButton = null;
+		Intent i = null;
+		Log.e(TAG, "setSelectedButton");
 		switch (select){
 			case OSCILLOSCOPE_VIEW:
 				selectedButton = buttonScope;
+				i = new Intent();
+				i.putExtra("tab", OSCILLOSCOPE_VIEW);
 				break;
 			case THRESHOLD_VIEW:
 				selectedButton = buttonThresh;
+				i = new Intent();
+				i.putExtra("tab", THRESHOLD_VIEW);
 				break;
 			case RECORDINGS_LIST:
 				selectedButton = buttonRecordings;
+				i = new Intent();
+				i.putExtra("tab", RECORDINGS_LIST);
 				break;
 			default:
 				break;
@@ -298,17 +368,14 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			b.setTextColor(bIsSelected?0xFFFF8D08: Color.WHITE);
 		}
 		showButtons(selectedButton != null);
-//*/
+		if (i != null) {
+			Log.e(TAG, "setSelectedButton: " + getFragmentNameFromType(i.getIntExtra("tab",-1)));
+			i.setAction("BYBonTabSelected");
+			getApplicationContext().sendBroadcast(i);
+		}
 	}
 	void showButtons (boolean bShow){
 		buttonsSlider.show(bShow);
-//		if(bShowingButtons != bShow) {
-			//buttons.setVisibility(bShow? View.VISIBLE : View.GONE);
-//			buttons.startAnimation(bShow ? animShowButtons : animHideButtons);
-//			bShowingButtons = bShow;
-//		}
-//		buttonsView.setVisibility(View.VISIBLE);
-	//	buttons.show(bShow);
 	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS

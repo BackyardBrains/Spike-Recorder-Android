@@ -1,5 +1,11 @@
 package com.backyardbrains;
 
+import android.app.Activity;
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.view.ContextThemeWrapper;
+import android.util.Log;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -8,6 +14,20 @@ import java.util.ArrayList;
 import javax.microedition.khronos.opengles.GL10;
 
 public class BYBUtils {
+
+	public static void showAlert(Activity activity, String title, String mensage){
+
+		AlertDialog alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(activity, R.style.BYBAppStyle)).create();
+		alertDialog.setTitle(title);
+		alertDialog.setMessage(mensage);
+		alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						dialog.dismiss();
+					}
+				});
+		alertDialog.show();
+	}
 
 	// ----------------------------------------------------------------------------------------
 	public static FloatBuffer getFloatBufferFromFloatArray(final float[] array) {

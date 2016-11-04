@@ -64,7 +64,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private CloseButtonListener 		closeListener;
 	private OnTabSelectedListener 		tabSelectedListener;
 	private AveragesNumListener 		averagesNumListener;
-
+	private AudioFilePlaybackEndedListener audioFilePlaybackEndedListener;
 
 	private long						lastSamplesReceivedTimestamp;
 	private Context					appContext		= null;
@@ -72,7 +72,7 @@ public class AudioService extends Service implements ReceivesAudio {
 	private TriggerAverager					averager;
 	private boolean bUseAverager = false;
 
-	private int ringBufferNumSamples = 44100*3;
+	private int ringBufferNumSamples = 44100*6;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- GETTERS SETTERS
@@ -209,11 +209,14 @@ public class AudioService extends Service implements ReceivesAudio {
 		}
 	}
 	protected void turnOffAudioPlayerThread() {
+		String msg ="turnOffAudioPlayerThread";
 		if (audioPlayer != null) {
+			msg += "\naudioPlayer not null. Stopping.";
 			audioPlayer.stop();
 			audioPlayer = null;
 			broadcastUpdateUI();
 		}
+		Log.d(TAG,msg);
 		//Log.d(TAG, "Turn Off Audio Player");
 	}
 	protected void turnOnMicThread() {
@@ -279,7 +282,6 @@ public class AudioService extends Service implements ReceivesAudio {
 	 *
 	 * @param audioInfo
 	 */
-
 	private void recordAudio(ByteBuffer audioInfo) {
 		audioInfo.clear();
 		try {
@@ -339,7 +341,6 @@ public class AudioService extends Service implements ReceivesAudio {
 		};
 	}
 	private class PlayAudioFileListener extends BroadcastReceiver {
-
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			//Log.d("PlayAudioFileListener", "onReceive");
@@ -390,6 +391,12 @@ public class AudioService extends Service implements ReceivesAudio {
 			}
 		}
 	}
+	private class AudioFilePlaybackEndedListener extends BroadcastReceiver{
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			broadcastUpdateUI();
+		}
+	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -399,6 +406,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		registerOnTabSelectedReceiver(reg);
 		registerCloseButtonReceiver(reg);
 		registerAveragerSetMaxReceiver(reg);
+		registerPlaybackEndReceiver(reg);
 	}
 	private void registerCloseButtonReceiver(boolean reg) {
 		if (reg) {
@@ -442,7 +450,17 @@ public class AudioService extends Service implements ReceivesAudio {
 			averagesNumListener = new AveragesNumListener();
 			appContext.registerReceiver(averagesNumListener, intentFilter);
 		} else {
-			appContext.unregisterReceiver(playListener);
+			appContext.unregisterReceiver(averagesNumListener);
 		}
 	}
+	private void registerPlaybackEndReceiver(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBAudioFilePlaybackEnded");
+			audioFilePlaybackEndedListener = new AudioFilePlaybackEndedListener();
+			appContext.registerReceiver(audioFilePlaybackEndedListener , intentFilter);
+		} else {
+			appContext.unregisterReceiver(audioFilePlaybackEndedListener );
+		}
+	}
+
 }

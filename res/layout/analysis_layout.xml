@@ -3,12 +3,19 @@
 	android:id="@+id/analysisParentLayout"
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent" >
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical"
+		android:layout_gravity="top|center_horizontal" >
 	<LinearLayout
 		android:id="@+id/titleLayout"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:orientation="horizontal"
         android:layout_gravity="top|center_horizontal"
+		android:layout_weight="0"
 		>
 		<ImageButton
 			android:id="@+id/backButton"
@@ -40,9 +47,37 @@
 	<FrameLayout
 		android:id="@+id/analysisGlContainer"
 		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_gravity="center" >
+		android:layout_height="0dp"
+		android:layout_gravity="center"
+		android:layout_weight="1">
 
 	</FrameLayout>
+	</LinearLayout>
+	<RelativeLayout
+		android:id="@+id/waitingLayout"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_vertical|center_horizontal"
+		android:visibility="gone">
+		<ProgressBar
+			android:id="@+id/waiting"
+
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="8dp"
+			android:layout_gravity="center_vertical|center_horizontal"
+			android:layout_centerInParent="true"
+			/>
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@+id/waiting"
+			android:textColor="@color/naranja"
+			android:textSize="18dp"
+			android:text="@string/analysis_wait_message"
+			android:layout_marginTop="10dp"/>
+	</RelativeLayout>
+
+
 </FrameLayout>
 

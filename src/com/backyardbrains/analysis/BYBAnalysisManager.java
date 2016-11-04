@@ -54,6 +54,8 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	public static final int					BUFFER_SIZE							= 524288;
 	public static final float				AVERAGE_SPIKE_HALF_LENGTH_SECONDS	= 0.002f;
 
+	private String lastProcess ="";
+
 	// ---------------------------------------------------------------------------------------------
 	public BYBAnalysisManager(Context context) {
 		this.context = context.getApplicationContext();
@@ -69,7 +71,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	// ---------------------------------------------------------------------------------------------
 	protected void reset() {
-		//Log.d(TAG, "RESET");
+		Log.d(TAG, "RESET");
 		if (reader != null) {
 			reader.close();
 			reader = null;
@@ -97,10 +99,28 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		clearAverageSpike();
 		spikes = null;
 		clearThresholds();
-		
-
 	}
 
+	private void broadcastSetRenderer(String renderer){
+//		"ISI"
+//		"AutoCorrelation"
+//		"CrossCorrelation"
+//		"AverageSpike"
+		if(context != null && !renderer.equalsIgnoreCase("")) {
+			lastProcess = renderer;
+			Log.w(TAG,"broadcastSetRenderer");
+			Intent k = new Intent();
+			k.setAction("BYBRenderAnalysis");
+			k.putExtra(renderer, true);
+			context.sendBroadcast(k);
+		}
+	}
+	public boolean checkCurrentFilePath(String filePath){
+		if (fileToAnalize != null) {
+			 return fileToAnalize.getAbsolutePath().equals(filePath);
+		}
+		return false;
+	}
 	// ---------------------------------------------------------------------------------------------
 	public int getTotalNumSamples() {
 		return totalNumSamples;
@@ -116,28 +136,35 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 
 	// ---------------------------------------------------------------------------------------------
 	private void process() {
-		//Log.d(TAG, "process!");
-		if (bSpikesDone) {
+		Log.d(TAG, "process!");
+		if (spikesFound()) {
+			String renderer = "";
 			if (bProcessSpikeTrains) {
 				processSpikeTrains();
 				bProcessSpikeTrains = false;
 			}
-
 			if (bProcessISI) {
 				ISIAnalysis();
 				bProcessISI = false;
+				renderer = "ISI";
 			}
 			if (bProcessAutoCorrelation) {
 				autoCorrelationAnalysis();
 				bProcessAutoCorrelation = false;
+				renderer = "AutoCorrelation";
 			}
 			if (bProcessCrossCorrelation) {
 				crossCorrelationAnalysis();
 				bProcessCrossCorrelation = false;
+				renderer = "CrossCorrelation";
 			}
 			if (bProcessAverageSpike) {
 				averageSpikeAnalysis();
 				bProcessAverageSpike = false;
+				renderer = "AverageSpike";
+			}
+			if(!renderer.equals("")) {
+				broadcastSetRenderer(renderer);
 			}
 			Intent i = new Intent();
 			i.setAction("BYBRenderAnalysis");
@@ -680,8 +707,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	}
 
 	// ---------------------------------------------------------------------------------------------
-	// ----------------------------------------------- ISI (Inter Spike
-	// Interval)
+	// ----------------------------------------------- ISI (Inter Spike Interval)
 	// ---------------------------------------------------------------------------------------------
 	private void clearISI() {
 		if (ISI != null) {
@@ -775,6 +801,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	}
 	// ---------------------------------------------------------------------------------------------
 	public boolean load(File file) {
+		Log.d(TAG, "load");
 		if (!file.exists()) return false;
 
 		reset();
@@ -785,7 +812,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		fileToAnalize = file;
 		if (reader == null) {
 			reader = new RecordingReader(fileToAnalize, (RecordingReader.AudiofileReadListener) this);
-			//Log.d(TAG, "loading audio file: " + fileToAnalize.getAbsolutePath());
+			Log.d(TAG, "loading audio file: " + fileToAnalize.getAbsolutePath());
 		}
 		return true;
 	}
@@ -816,13 +843,16 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			bSpikesDone = true;
 			bProcessSpikes = false;
 			// bProcessSpikeTrains = true;
-			//Log.d(TAG, "findSpike done");
+
+
 			process();
 		}
 	}
 
 	public void analysisCanceled(int analysisType) {
-		bSpikesDone = false;
+		if(analysisType == BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES) {
+			bSpikesDone = false;
+		}
 		bProcessSpikes = false;
 	}
 
@@ -838,7 +868,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	}
 
 	public BYBSpike[] getSpikes() {
-		if (bSpikesDone) {
+		if (spikesFound()) {
 			return spikes;
 		} else {
 			BYBSpike[] s = new BYBSpike[0];
@@ -847,21 +877,22 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	}
 
 	public boolean spikesFound() {
-		return bSpikesDone;
+		return ( getThresholdsSize() > 0 && spikes !=null && spikes.length > 0 && bSpikesDone);
+
 	}
 
 // ---------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVER INSTANCES
 // ---------------------------------------------------------------------------------------------
 	private AnalizeFileListener analizeFileListener;
-
+	private AnalysisFragmentReadyListener analysisFragmentReadyListener;
 // ---------------------------------------------------------------------------------------------
 // ----------------------------------------- BROADCAST RECEIVERS CLASS
 // ---------------------------------------------------------------------------------------------
 	private class AnalizeFileListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			//Log.d(TAG, "AnalizeFileListener: onReceive");
+			Log.d(TAG, "AnalizeFileListener: onReceive");
 			if (intent.hasExtra("filePath")) {
 				String filePath = intent.getStringExtra("filePath");
 // if (fileToAnalize != null) {
@@ -873,25 +904,26 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 					if (!bISIDone || bThresholdsChanged) {
 						bProcessISI = true;
 						bSpikeTrainsDone = false;
-					}
+					}else{broadcastSetRenderer("ISI");}
 				}
 				if (intent.hasExtra("doAutoCorrelation")) {
 					if (!bAutoCorrelationDone|| bThresholdsChanged) {
 						bProcessAutoCorrelation = true;
 						bSpikeTrainsDone = false;
-					}
+					}else{broadcastSetRenderer("AutoCorrelation");}
 				}
 				if (intent.hasExtra("doCrossCorrelation")) {
 					if (!bCrossCorrelationDone|| bThresholdsChanged) {
 						bProcessCrossCorrelation = true;
 						bSpikeTrainsDone = false;
-					}
+					}else{broadcastSetRenderer("CrossCorrelation");}
 				}
 				if (intent.hasExtra("doAverageSpike")) {
 					if (!bAverageSpikeDone|| bThresholdsChanged) {
 						bProcessAverageSpike = true;
 						bSpikeTrainsDone = false;
-					}
+					}else{broadcastSetRenderer("AverageSpike");}
+
 				}
 
 				if (fileToAnalize != null) {
@@ -911,7 +943,12 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			}
 		}
 	}
-
+	private class AnalysisFragmentReadyListener extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			broadcastSetRenderer(lastProcess);
+		}
+	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS TOGGLES
 	// ---------------------------------------------------------------------------------------------
@@ -924,13 +961,22 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 			context.unregisterReceiver(analizeFileListener);
 		}
 	}
-
+	private void registerAnalysisFragmentReadyListener(boolean reg) {
+		if (reg) {
+			IntentFilter intentFilter = new IntentFilter("BYBAnalysisFragmentReady");
+			analysisFragmentReadyListener = new AnalysisFragmentReadyListener();
+			context.registerReceiver(analysisFragmentReadyListener, intentFilter);
+		} else {
+			context.unregisterReceiver(analysisFragmentReadyListener);
+		}
+	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- REGISTER RECEIVERS
 	// ---------------------------------------------------------------------------------------------
 
 	public void registerReceivers() {
 		registerAnalizeFileListener(true);
+		registerAnalysisFragmentReadyListener(true);
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -938,5 +984,6 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 	// ---------------------------------------------------------------------------------------------
 	public void unregisterReceivers() {
 		registerAnalizeFileListener(false);
+		registerAnalysisFragmentReadyListener(false);
 	}
 }

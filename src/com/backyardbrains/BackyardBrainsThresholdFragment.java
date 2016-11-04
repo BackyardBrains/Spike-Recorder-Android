@@ -53,7 +53,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
 
         rendererClass = ThresholdRenderer.class;
         layoutID = R.layout.thresh_scope_layout;
-        TAG	= "BackyardBrainsThresholdFragment";
+        TAG	= BackyardBrainsMain.BYB_THRESHOLD_FRAGMENT;//"BackyardBrainsThresholdFragment";
     }
     @Override
     public void onStart() {

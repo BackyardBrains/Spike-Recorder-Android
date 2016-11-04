@@ -43,4 +43,7 @@
     <string name="analysis_title">Analysis Name</string>
     <string name="play_button">Play</string>
     <string name="pause_button">Pause</string>
+    <string name="find_spikes_not_done_title">Warning</string>
+    <string name="find_spikes_not_done_message">You need to Find Spikes before perfoming any analysis.</string>
+    <string name="analysis_wait_message">Please wait until analysis is finished.</string>
 </resources>

@@ -30,7 +30,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 		this.context = context.getApplicationContext();
 		this.audioReceiver = audioReceiver;
 		bFileLoaded = false;
-		bPlaying = false;
+		//bPlaying = false;
 		bShouldPlay = false;
 		bLooping = false;
 	}
@@ -75,7 +75,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 	}
 	public void pause() {
 		if (bFileLoaded) {
-			bPlaying = false;
+			//bPlaying = false;
 			if (playbackThread != null) {
 				playbackThread.pausePlayback();
 			}
@@ -91,29 +91,34 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 			reader = null;
 		}
 	}
-
+	public void rewind(){
+		if(playbackThread != null){
+			playbackThread.rewind();
+			turnOffPlaybackThread();
+		}
+	}
 	private void turnOnPlaybackThread() {
 		//Log.d("AudioFilePlayer","turnOnPlaybackThread");
 		if(playbackThread != null){
 			playbackThread.startPlayback();
-			bPlaying = true;
+			//bPlaying = true;
 		}else
 		if (reader != null && audioReceiver != null && bFileLoaded) {
 			playbackThread = null;
 			playbackThread = new PlaybackThread(reader.getDataShorts(), this, audioReceiver);
 			playbackThread.startPlayback();
-			bPlaying = true;
+		//	bPlaying = true;
 		}else{
 			String m = "TurnOnPlaybackThread failed! ";
 			if(reader == null ){ m += "Reader is Null ";}
 			if(audioReceiver == null ){m += "audioReceiver is null";}
 			if(!bFileLoaded) {m += "file not loaded";}
-			//Log.d("AudioFilePlayer", m);
+			Log.d("AudioFilePlayer", m);
 		}
 	}
 
 	private void turnOffPlaybackThread() {
-		bPlaying = false;
+		//bPlaying = false;
 		if (playbackThread != null) {
 			playbackThread.stopPlayback();
 			playbackThread = null;
@@ -122,7 +127,10 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 	}
 
 	public boolean isPlaying() {
-		return bPlaying;
+		if(playbackThread != null){
+			return playbackThread.isPlaying();
+		}
+		return  false;
 	}
 	public boolean isLooping(){
 		return bLooping;
@@ -135,12 +143,22 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 	}
 
 	public void onCompletion() {
+		Log.w(TAG, "onCompletion");
 		if(bLooping){
 			turnOnPlaybackThread();
 		}else{
-			stop();
+			//stop();
+			pause();
+			rewind();
 			Intent i = new Intent();
 			i.setAction("BYBAudioFilePlaybackEnded");
+			context.sendBroadcast(i);
+		}
+	}
+	public void onPlaybackStateChange(){
+		if(context != null) {
+			Intent i = new Intent();
+			i.setAction("BYBUpdateUI");
 			context.sendBroadcast(i);
 		}
 	}

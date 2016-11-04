@@ -35,7 +35,7 @@ import android.widget.SeekBar;
 
 public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragment {
 
-	public  String					TAG				= "BackyardBrainsSpikesFragment";
+//	public  String					TAG				=  "BackyardBrainsSpikesFragment";
 
 	private BYBThresholdHandle					leftThresholdHandle, rightThresholdHandle;
 	private ImageButton[]						thresholdButtons;
@@ -64,6 +64,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
 		handleColors[2][1] = 1.0f;
 		handleColors[2][2] = 1.0f;
 		handleColors[2][3] = 1.0f;
+		TAG = BackyardBrainsMain.BYB_SPIKES_FRAGMENT;
 	}
 	public BYBAnalysisManager getAnalysisManager(){
 		if(getContext()==null)return null;

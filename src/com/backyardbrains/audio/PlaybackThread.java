@@ -1,6 +1,7 @@
 
 package com.backyardbrains.audio;
 
+import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -31,10 +32,9 @@ public class PlaybackThread {
 	private ReceivesAudio		mService;
 	private boolean				bPlaying	= false;
 
-	public boolean playing() {
+	public boolean isPlaying() {
 		return bPlaying;
 		// return mThread != null;
-
 	}
 
 	public void startPlayback() {
@@ -52,6 +52,7 @@ public class PlaybackThread {
 		});
 		mThread.start();
 		}
+		onPlaybackStateChange();
 	}
 
 	public void stopPlayback() {
@@ -60,19 +61,28 @@ public class PlaybackThread {
 		mShouldContinue = false;
 		bPlaying = false;
 		mThread = null;
+		onPlaybackStateChange();
 	}
 
 	public void pausePlayback() {
 		if (mThread == null) return;
 		bPlaying = false;
+		onPlaybackStateChange();
 	}
-
+	private void onPlaybackStateChange(){
+		if(mListener!=null){
+			mListener.onPlaybackStateChange();
+		}
+	}
+	public void rewind(){
+		mSamples.rewind();
+	}
 	private void play() {
 		int bufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		if (bufferSize == AudioTrack.ERROR || bufferSize == AudioTrack.ERROR_BAD_VALUE) {
 			bufferSize = SAMPLE_RATE * 2;
 		}
-		bPlaying = true;
+
 		AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
 
 		audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
@@ -90,14 +100,14 @@ public class PlaybackThread {
 				if (mListener != null) {
 					mListener.onCompletion();
 				}
+				onPlaybackStateChange();
 			}
 		});
-		audioTrack.setPositionNotificationPeriod(SAMPLE_RATE / 30); // 30 times
-																	// per
-																	// second
+		audioTrack.setPositionNotificationPeriod(SAMPLE_RATE / 30); // 30 times per  second
 		audioTrack.setNotificationMarkerPosition(mNumSamples);
-
 		audioTrack.play();
+		bPlaying = true;
+		onPlaybackStateChange();
 
 		Log.v(LOG_TAG, "Audio streaming started");
 
@@ -130,7 +140,6 @@ public class PlaybackThread {
 		if (!mShouldContinue) {
 			audioTrack.release();
 		}
-
 		Log.v(LOG_TAG, "Audio streaming finished. Samples written: " + totalWritten);
 	}
 }

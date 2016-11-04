@@ -16,14 +16,18 @@ import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 
+import com.backyardbrains.drawing.TouchGLSurfaceView;
 import com.backyardbrains.drawing.WaitRenderer;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -37,15 +41,17 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+
 public class BackyardBrainsAnalysisFragment extends Fragment {
 
-	public static final String	TAG				= "BackyardBrainsAnalysisFragment";
+	public static final String	TAG				=  BackyardBrainsMain.BYB_ANALYSIS_FRAGMENT;//"BackyardBrainsAnalysisFragment";
 
-	protected GLSurfaceView		mAndroidSurface	= null;
+	protected TouchGLSurfaceView mAndroidSurface	= null;
 	private FrameLayout			mainscreenGLLayout;
 	private SharedPreferences	settings		= null;
 	private Context				context			= null;
 	private BYBAnalysisBaseRenderer currentRenderer = null;
+	private View waitingView = null;
 	protected int				currentAnalyzer	= BYBAnalysisType.BYB_ANALYSIS_NONE;
 
 	private TextView title;
@@ -54,6 +60,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// ---------------------------------------------------------------------------------------------
 	public BackyardBrainsAnalysisFragment() {
 		super();
+		Log.w(TAG, "CONSTRUCTOR");
 	}
     //----------------------------------------------------------------------------------------------
 	// ----------------------------------------- FRAGMENT LIFECYCLE
@@ -68,7 +75,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 		View rootView = inflater.inflate(R.layout.analysis_layout, container, false);
 		getSettings();
 		mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.analysisGlContainer);
-		
+		waitingView = rootView.findViewById(R.id.waitingLayout);
 		title = (TextView) rootView.findViewById(R.id.analysis_title);
 		backButton = (ImageButton) rootView.findViewById(R.id.backButton);
 
@@ -78,33 +85,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 				if (v.getVisibility() == View.VISIBLE) {
 					if (event.getActionIndex() == 0) {
 						if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-							switch (currentAnalyzer) {
-							case BYBAnalysisType.BYB_ANALYSIS_ISI:
-							case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-							case BYBAnalysisType.BYB_ANALYSIS_NONE:
-							case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-								Intent j = new Intent();
-								j.setAction("BYBChangePage");
-								j.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
-								if(getContext()!= null) {
-                                    context.sendBroadcast(j);
-                                }
-								break;
-							case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-								if(currentRenderer instanceof CrossCorrelationRenderer){
-									if(((CrossCorrelationRenderer) currentRenderer).isDrawThumbs()){
-										Intent i = new Intent();
-										i.setAction("BYBChangePage");
-										i.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
-                                        if(getContext()!= null) {
-                                            context.sendBroadcast(i);
-                                        }
-									}else{
-										((CrossCorrelationRenderer) currentRenderer).setDrawThumbs(true);
-									}
-								}
-								break;
-							}
+							onBackPressed();
 						}
 					}
 					return true;
@@ -113,14 +94,20 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			}
 		});
 		((BackyardBrainsMain)getActivity()).showButtons(false);
-		//Log.d(TAG, "onCreateView");
+		Log.d(TAG, "onCreateView");
 
 		return rootView;
 	}
 	@Override
 	public void onStart() {
 		super.onStart();
-		reassignSurfaceView(currentAnalyzer);
+		Log.d(TAG, "onStart");
+		if(context != null) {
+			reassignSurfaceView(currentAnalyzer);
+			Intent i = new Intent();
+			i.setAction("BYBAnalysisFragmentReady");
+			getContext().sendBroadcast(i);
+		}
 	}
 	@Override
 	public void onResume() {
@@ -129,6 +116,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	@Override
 	public void onPause() {
 		super.onPause();
+		unregisterListeners();
 	}
 	@Override
 	public void onStop() {
@@ -148,6 +136,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------------------------------------------------------
 	public void setRenderer(int i) {
+		Log.d(TAG, "setRenderer");
 		if (i >= 0 && i <= 4) {
 			currentAnalyzer = i;
 			reassignSurfaceView(currentAnalyzer);
@@ -161,10 +150,30 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			mainscreenGLLayout = null;
 		}
 	}
+	private void showWaiting(final boolean show) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+			int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+			waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
+			waitingView.animate().setDuration(shortAnimTime).alpha(
+					show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+				@Override
+				public void onAnimationEnd(Animator animation) {
+					waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
+				}
+			});
+		} else {
+			waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
+		}
+	}
 	// ----------------------------------------------------------------------------------------
 	protected void reassignSurfaceView(int renderer) {
+		Log.d(TAG, "reassignSurfaceView  renderer: " + getRendererTitle(renderer) + "  " + renderer);
         context = getContext();
+
+		showWaiting(renderer == BYBAnalysisType.BYB_ANALYSIS_NONE && waitingView != null);
+
 		if(mainscreenGLLayout != null) {
+
 			if (context != null) {
 				mAndroidSurface = null;
 				mainscreenGLLayout.removeAllViews();
@@ -192,7 +201,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 			title.setText(getRendererTitle(renderer));
 		}
 		
-		//Log.d(getClass().getCanonicalName(), "Reassigned AnalysisGLSurfaceView");
+		Log.d(TAG, "Reassigned AnalysisGLSurfaceView");
 	}
 	// ----------------------------------------------------------------------------------------
 	private String getRendererTitle(int renderer){
@@ -211,16 +220,16 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 		return "";
 	}
 	// ----------------------------------------------------------------------------------------
-	protected void setGlSurface(BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
+	protected void setGlSurface(final BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
         context = getContext();
 		if (context != null && renderer != null) {
 			if (mAndroidSurface != null) {
 				mAndroidSurface = null;
 			}
 			currentRenderer = renderer;
-			mAndroidSurface = new GLSurfaceView(context);
+			mAndroidSurface = new TouchGLSurfaceView(context,renderer);
 			//mAndroidSurface.setEGLContextClientVersion(2);
-			mAndroidSurface.setRenderer(renderer);
+//			mAndroidSurface.setRenderer(renderer);
 			if (bSetOnDemand) {
 				mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 			}
@@ -243,6 +252,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 	// ----------------------------------------- TOUCH
 	// ---------------------------------------------------------------------------------------------
 	public boolean onTouchEvent(MotionEvent event) {
+		Log.e(TAG, "onTouchEvent");
 		if(currentRenderer != null){
 			currentRenderer.onTouchEvent(event);
 		}
@@ -250,6 +260,25 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
             return mAndroidSurface.onTouchEvent(event);
         }
         return false;
+	}
+	public void onBackPressed(){
+		switch (currentAnalyzer) {
+			case BYBAnalysisType.BYB_ANALYSIS_ISI:
+			case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
+			case BYBAnalysisType.BYB_ANALYSIS_NONE:
+			case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
+				((BackyardBrainsMain)getActivity()).loadFragment(BackyardBrainsMain.RECORDINGS_LIST);
+				break;
+			case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
+				if(currentRenderer instanceof CrossCorrelationRenderer){
+					if(((CrossCorrelationRenderer) currentRenderer).isDrawThumbs()){
+						((BackyardBrainsMain)getActivity()).loadFragment(BackyardBrainsMain.RECORDINGS_LIST);
+					}else{
+						((CrossCorrelationRenderer) currentRenderer).setDrawThumbs(true);
+					}
+				}
+				break;
+		}
 	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- SETTINGS

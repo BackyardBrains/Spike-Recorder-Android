@@ -49,7 +49,7 @@ public class BackyardBrainsOscilloscopeFragment extends BackyardBrainsPlayLiveSc
     // ----------------------------------------------------------------------------------------
     public BackyardBrainsOscilloscopeFragment(){
         super();
-        TAG				= "BackyardBrainsOscilloscopeFragment";
+        TAG				= BackyardBrainsMain.BYB_OSCILLOSCOPE_FRAGMENT; //"BackyardBrainsOscilloscopeFragment";
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
