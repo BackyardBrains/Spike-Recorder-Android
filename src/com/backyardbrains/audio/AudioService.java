@@ -116,7 +116,7 @@ public class AudioService extends Service implements ReceivesAudio {
 		return audioPlayer != null;
 	}
 	public short[] getAudioBuffer() {
-		if(isPlaybackMode() && !isAudioPlayerPlaying()){
+		if(isPlaybackMode()){// && !isAudioPlayerPlaying()){
 			return audioPlayer.getBuffer();
 		}else{
 			return audioBuffer.getArray();
@@ -139,6 +139,12 @@ public class AudioService extends Service implements ReceivesAudio {
 	public void setUseAverager(boolean bUse){
 		Log.d(TAG, "setUseAverager: "+(bUse?"TRUE":"FALSE"));
 		bUseAverager = bUse;
+	}
+	public long getPlaybackProgress(){
+		if(isPlaybackMode()){
+			return audioPlayer.getLongProgress();
+		}
+		return 0;
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- LIFECYCLE OVERRIDES

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.analysis.BYBAnalysisManager;
@@ -92,7 +93,7 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		preDrawingHandler();
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 	}
@@ -140,7 +141,7 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 		// set viewport
 		gl.glViewport(0, 0, width, height);
 
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
 		gl.glOrthof(0f, width, height, 0f, -1f, 1f);

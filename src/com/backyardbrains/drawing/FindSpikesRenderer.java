@@ -5,6 +5,7 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.analysis.BYBSpike;
@@ -131,7 +132,7 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 		// //Log.d(TAG, "SetGLHorizontalSize "+getGlWindowHorizontalSize()+ "
 		// glWidth: " + glWidth);
 		preDrawingHandler();
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 		// }

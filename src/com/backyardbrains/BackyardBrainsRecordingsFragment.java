@@ -151,7 +151,10 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
             Arrays.sort(files, new Comparator<File>() {
                 @Override
                 public int compare(File object1, File object2) {
-                    return (int) ((object1.lastModified() > object2.lastModified()) ? object1.lastModified(): object2.lastModified());
+//                    int ret = (int) ((object1.lastModified() > object2.lastModified()) ? object1.lastModified(): object2.lastModified());
+//                    Log.w(TAG, "rescan compare: " + ret);
+                        return (int)(object2.lastModified() - object1.lastModified());
+//                    return ret;
                     //return object1.getName().compareTo(object2.getName());
                 }
             });

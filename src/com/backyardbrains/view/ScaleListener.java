@@ -27,7 +27,7 @@ import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleG
 
 public class ScaleListener extends Simple2DOnScaleGestureListener {
 
-	private static final String TAG = ScaleListener.class.getCanonicalName();
+	private static final String TAG = "BYBScaleListener";
 
 	int xSizeAtBeginning = -1;
 	int ySizeAtBeginning = -1;
@@ -49,35 +49,40 @@ public class ScaleListener extends Simple2DOnScaleGestureListener {
 		xSizeAtBeginning = renderer.getGlWindowHorizontalSize();
 		ySizeAtBeginning = renderer.getGlWindowVerticalSize();
 		////Log.d(TAG, "onScaleBegin");
+//			return true;
 		}
 		return super.onScaleBegin(detector);
 	}
 
 	@Override
 	public boolean onScale(TwoDimensionScaleGestureDetector detector) {
-		////Log.d(TAG, "onScale");
+
 		if(renderer != null){
 			try {
 				final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
 				int newXsize = (int) (xSizeAtBeginning / scaleModifier.first);
+				renderer.setScaleFactor(scaleModifier.first, scaleModifier.second);
 				renderer.setGlWindowHorizontalSize(newXsize);
 
 				int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
 
 				renderer.setGlWindowVerticalSize(newYsize);
-				////Log.d(TAG, "onScale newX: " + newXsize + " newY: " + newYsize );
+
+				renderer.setScaleFocusX(detector.getFocusX());
 			} catch (IllegalStateException e) {
 				Log.e(TAG, "Got invalid values back from Scale listener!");
+//				return false;
 			} catch (NullPointerException e) {
 				Log.e(TAG, "NPE while monitoring scale.");
+//				return false;
 			}
+//			return true;
 		}
+//		return false;
 		return super.onScale(detector);
 	}
-
 	@Override
 	public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
-	//	//Log.d(TAG, "onScaleEnd");
 		super.onScaleEnd(detector);
 	}
 }

@@ -31,6 +31,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsMain;
@@ -104,7 +105,7 @@ public class ThresholdRenderer extends WaveformRenderer {
 			return;
 		}
 		preDrawingHandler();
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
 	}

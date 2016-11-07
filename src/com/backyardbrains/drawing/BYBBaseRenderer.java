@@ -7,6 +7,8 @@ import java.text.DecimalFormat;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.audio.AudioService;
@@ -25,16 +27,27 @@ import com.backyardbrains.view.SingleFingerGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
 
 public class BYBBaseRenderer implements GLSurfaceView.Renderer {
-	private static final String	TAG						= BYBBaseRenderer.class.getCanonicalName();
+	private static final String	TAG						= "BYBBaseRenderer";
 	protected int				glWindowHorizontalSize	= 4000;
 	protected int				glWindowVerticalSize	= 10000;
-	protected float				glOffsetX				= 0;
-	protected float				glOffsetY				= 0;
-	protected float 			scaledOffsetX 			= 0;
-	protected float 			scaledOffsetY 			= 0;
+	protected int				prevGlWindowHorizontalSize=4000;
+	protected int				prevGlWindowVerticalSize = 10000;
+
+
+	protected float 			focusX					= 0;
+	protected float				scaledFocusX 			= 0;
+	protected float				normalizedFocusX 		= 0;
+	protected int 				focusedSample			= 0;
+
+	protected boolean bZooming = false;
+	protected boolean bPannig = false;
+	protected float panningDx =0;
+
+	protected float scaleFactorX = 0;
+	protected float scaleFactorY = 0;
 
 	protected short[]			mBufferToDraws;
-	protected boolean			mAudioServiceIsBound;
+
 	protected int				height;
 	protected int				width;
 	protected boolean			autoScaled				= false;
@@ -43,8 +56,9 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public static final int     MIN_GL_VERTICAL_SIZE    = 400;
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
-	boolean 					bTestingBufferDraw 		= false;
-	protected long				firstBufferDrawn		= 0;
+	protected int startIndex =0;
+	protected int endIndex =0;
+
 	protected Context context;
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- CONSTRUCTOR & SETUP
@@ -73,6 +87,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowHorizontalSize(int newX) {
 		if(newX < 0){return;}
+		prevGlWindowHorizontalSize = glWindowHorizontalSize;
 		int maxlength = 0;
 		if (mBufferToDraws != null) {
 			maxlength = mBufferToDraws.length;
@@ -92,6 +107,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		if(newY < 0){
 			return;
 		}
+		prevGlWindowVerticalSize = glWindowVerticalSize;
 		String text = "hsize: " + newY;
 		if (newY < MIN_GL_VERTICAL_SIZE){
 			newY = MIN_GL_VERTICAL_SIZE;
@@ -122,41 +138,179 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public void addToGlOffset(float dx, float dy ){
 		if(context != null) {
 			if (getIsPlaybackMode() && !getIsPlaying()) {
-				Log.w(TAG, "addToGLOffset: " + dx + ", "+ dy);
-				glOffsetX += dx;
-				glOffsetY += dy;
+				bPannig = true;
+				panningDx = dx;
+				bZooming = false;
+//				setStartIndex(startIndex + screenToSamplePos(dx));
 			}
 		}
 	}
+	private void setStartIndex(int si){
+		startIndex = si;
+		endIndex = startIndex + glWindowHorizontalSize;
+	}
+/*	private void constrainOffset(int samplesLenght) {
+		if (getIsPlaybackMode() && !getIsPlaying()) {
+			long playhead = getAudioService().getPlaybackProgress();
+			float scaleX =  (getGlWindowHorizontalSize() / width);
+
+			boolean bSetOffsetX = false;
+			if (scaledOffsetX > playhead){
+				scaledOffsetX = playhead;
+				bSetOffsetX = true;
+			}
+			if(scaledOffsetX < -(samplesLenght - playhead)) {
+				scaledOffsetX = -(samplesLenght - playhead);
+				bSetOffsetX = true;
+			}
+			if(bSetOffsetX){
+				glOffsetX = scaledOffsetX/scaleX;
+			}
+		}
+	}
+	public void resetGlOffset(){
+		glOffsetX = 0;
+		glOffsetY = 0;
+		scaledOffsetX = 0;
+		scaledOffsetY = 0;
+	}//*/
+	public void setScaleFocusX(float fx){
+		focusX = fx;
+		bZooming = true;
+		bPannig = false;
+//			normalizedFocusX = focusX/(float)width;
+//		scaledFocusX = (float)prevGlWindowHorizontalSize*normalizedFocusX;//(float)width)*focusX;
+//		focusedSample = startIndex + (int)Math.floor(scaledFocusX);
+//		setStartIndex(startIndex + (int)((prevGlWindowHorizontalSize - glWindowHorizontalSize)*normalizedFocusX));
+//		endIndex = startIndex + glWindowHorizontalSize;
+//		bUseFocusForOffset = true;
+//		resetGlOffset();
+		//printDebugText();
+	}
+	public void setScaleFactor(Float x, Float y ){
+		scaleFactorX = x.floatValue();
+		scaleFactorY = y.floatValue();
+
+	}
+	private void setStartEndIndex(int arrayLength){
+//		startIndex = 0;
+		boolean bTempZooming = false;
+		boolean bTempPanning = false;
+		if(getAudioService().isPlaybackMode()){
+			if(getAudioService().isAudioPlayerPlaying()) {
+			long playbackProgress = getAudioService().getPlaybackProgress();
+//			if(bUseFocusForOffset){
+//				bUseFocusForOffset = false;
+//				startIndex = (int)(focusedSample - (normalizedFocusX*getGlWindowHorizontalSize()));
+//			}else {
+			setStartIndex((int) playbackProgress - glWindowHorizontalSize);
+//			}
+//			if(!getAudioService().isAudioPlayerPlaying()) {
+//				startIndex -= (int)scaledOffsetX;
+			}else{
+				if(bZooming){
+					bZooming = false;
+					bTempZooming = true;
+					normalizedFocusX = focusX/(float)width;
+					scaledFocusX = (float)prevGlWindowHorizontalSize*normalizedFocusX;//(float)width)*focusX;
+					focusedSample = startIndex + (int)Math.floor(scaledFocusX);
+					setStartIndex(startIndex + (int)((prevGlWindowHorizontalSize - glWindowHorizontalSize)*normalizedFocusX));
+				}else
+				if(bPannig){
+					bTempPanning = true;
+					bPannig = false;
+					setStartIndex(startIndex - (int)Math.floor(((panningDx * glWindowHorizontalSize) / (float)width)));
+				}
+			}
+			//printDebugText(arrayLength,bTempZooming, bTempPanning);
+		}else{
+			setStartIndex(arrayLength - glWindowHorizontalSize);
+		}
+		if(startIndex< -glWindowHorizontalSize ){
+			setStartIndex( -glWindowHorizontalSize);
+		}
+		if(startIndex + getGlWindowHorizontalSize() > arrayLength){
+			setStartIndex(arrayLength - getGlWindowHorizontalSize());
+		}
+
+//		endIndex = startIndex + glWindowHorizontalSize;
+	}
+	/*
+	protected void printDebugText(int arrayLength,boolean bZoom , boolean bPan){//int arrayLength){
+		String msg = "startIndex:   " +startIndex+"\n";
+//		msg += "glOffsetX:          " +glOffsetX+"\n";
+//		msg += "scaledOffsetX:      " +scaledOffsetX+"\n";
+		msg += "arrayToDraw length: " + arrayLength + "\n";
+		msg += "window H size:      " + glWindowHorizontalSize + "\n";
+		msg += "scaleFactorX        " + scaleFactorX + "\n";
+		msg += "scaleFactorY        " + scaleFactorY + "\n";
+//		msg += "arrayLength + winH  " + (arrayLength + glWindowHorizontalSize) + "\n";
+		msg += "playhead pos        " + getAudioService().getPlaybackProgress() + "\n";
+//		msg += "normalized focusX   " + normalizedFocusX + "\n";
+//		msg += "scaled focusX       " + scaledFocusX + "\n";
+//		msg += "before: " + startIndex + "  " + getGlWindowHorizontalSize() + "  " + width + "\n";
+		msg += "raw focusX (screen) " + focusX+"\n";
+
+		msg += "focus samplePos     " + screenToSamplePos(focusX) +"\n";
+
+		msg += "calc focus onscreen " + samplePosToScreen(screenToSamplePos(focusX)) + "\n";
+//		msg += "after:m " + startIndex + "  " + getGlWindowHorizontalSize() + "  " + width + "\n";
+
+		msg += "Zooming:			 " + (bZoom ?"TRUE":"FALSE")+"\n";
+		msg += "Panning:			 " + (bPan ?"TRUE":"FALSE")+"\n";
+		msg += "Playing:			 " + (getAudioService().isAudioPlayerPlaying() ?"TRUE":"FALSE");
+		broadcastDebugText(msg);
+	}
+	//*/
 	// ----------------------------------------------------------------------------------------
 	protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
 		if(context != null) {
 			float[] arr;
 			if (getAudioService() != null) {
-				int startIndex = 0;
-				if (glWindowHorizontalSize > shortArrayToDraw.length) {
-					setGlWindowHorizontalSize(shortArrayToDraw.length);
-				}
-				startIndex = shortArrayToDraw.length - glWindowHorizontalSize - (int)scaledOffsetX;// - micSize;
-				String msg = "startIndex:   "+startIndex+"\n";
-				msg += "glOffsetX:          "+glOffsetX+"\n";
-				msg += "scaledOffsetX:      "+scaledOffsetX+"\n";
-				msg += "arrayToDraw length: " + shortArrayToDraw.length + "\n";
-				msg += "window H size:      " + glWindowHorizontalSize;
-				broadcastDebugText(msg);
+
+//				if (glWindowHorizontalSize > shortArrayToDraw.length) {
+//					setGlWindowHorizontalSize(shortArrayToDraw.length);
+//				}
+
+//				constrainOffset(shortArrayToDraw.length);
+				setStartEndIndex(shortArrayToDraw.length);
+//				if(getAudioService().isPlaybackMode()) {
+//					long playbackProgress = getAudioService().getPlaybackProgress();
+//					startIndex = (int)playbackProgress - glWindowHorizontalSize;
+//					if(!getAudioService().isAudioPlayerPlaying()) {
+//						startIndex -= (int)scaledOffsetX;
+//					}
+//				}else{
+//					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;
+//				}
+				//printDebugText(shortArrayToDraw.length);
 //				if(startIndex < 0){
 //					startIndex = 0;
 //				}
 //				if(startIndex > shortArrayToDraw.length - glWindowHorizontalSize){
 //					startIndex = shortArrayToDraw.length - glWindowHorizontalSize;
 //				}
+
+//				if(startIndex< -glWindowHorizontalSize ){
+//					startIndex = -glWindowHorizontalSize;
+//				}
+//				if(startIndex + getGlWindowHorizontalSize() > shortArrayToDraw.length){
+//					startIndex = shortArrayToDraw.length - getGlWindowHorizontalSize();
+//				}
+//
+//				int endIndex = startIndex + glWindowHorizontalSize;
+
 				arr = new float[(glWindowHorizontalSize) * 2];//+ micSize) * 2];
 
 				int j = 0; // index of arr
 				try {
-					for (int i = startIndex; i < shortArrayToDraw.length; i++) {
+					for (int i = startIndex; i < shortArrayToDraw.length && i < endIndex; i++) {
 						arr[j++] = i-startIndex;
-						arr[j++] = shortArrayToDraw[i];
+						if(i < 0){
+							arr[j++] = 0;
+						}else {
+							arr[j++] = shortArrayToDraw[i];
+						}
 					}
 				} catch (ArrayIndexOutOfBoundsException e) {
 					Log.e(TAG, "Array size out of sync while building new waveform buffer");
@@ -224,8 +378,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	@Override
 	public void onDrawFrame(GL10 gl) {
-		// //Log.d(TAG, "onDrawFrame");
-		// grab current audio from audioservice
+
+
 		if (!getCurrentAudio()) {
 			Log.d(TAG, "cant get current audio buffer!");
 			return;
@@ -235,16 +389,24 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			return;
 		}
 		preDrawingHandler();
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		drawingHandler(gl);
 		postDrawingHandler(gl);
+
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void preDrawingHandler() {
 		setLabels(glWindowHorizontalSize);
 	}
 	// ----------------------------------------------------------------------------------------
-	protected void postDrawingHandler(GL10 gl) {}
+	protected void postDrawingHandler(GL10 gl) {
+		if(getIsPlaybackMode() && !getIsPlaying()) {
+			float playheadDraw = getAudioService().getPlaybackProgress()-startIndex;
+
+			BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(),playheadDraw, getGlWindowVerticalSize(),0x00FFFFFF);
+//			BYBGlUtils.drawGlLine(gl, scaledFocusX, -getGlWindowVerticalSize(), scaledFocusX, getGlWindowVerticalSize(), 0xFFFF00FF);
+		}
+	}
 	// ----------------------------------------------------------------------------------------
 	protected void drawingHandler(GL10 gl) {}
 	// ----------------------------------------------------------------------------------------
@@ -272,39 +434,16 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 
-		scaledOffsetX = 0;
-		scaledOffsetY = 0;
-		if(context != null) {
-			if (getAudioService() != null) {
-				if(getIsPlaybackMode() && !getIsPlaying()){
-					float scaleX = (xEnd - xBegin)/width;
-
-					scaledOffsetX = glOffsetX*scaleX;
-
-					float scaleY = (scaledYEnd - scaledYBegin)/height;
-
-					scaledOffsetY = glOffsetY*scaleY;
-				}
-			}
-		}
-		//---check if offset will not draw the complete window. if it does, ease until not.
-//		if(xBegin - scaledOffsetX < 0 || xEnd - scaledOffsetX > mBufferToDraws.length){
-//			scaledOffsetX = 0;
-//
-//		}
-
+//		updateScaledOffset(xBegin,xEnd, scaledYBegin, scaledYEnd);
 
 		gl.glViewport(0, 0, width, height);
 
-		BYBUtils.glClear(gl);
+		BYBGlUtils.glClear(gl);
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
-//		gl.glOrthof(xBegin-scaledOffsetX, xEnd-scaledOffsetX, scaledYBegin+scaledOffsetY, scaledYEnd+scaledOffsetY, -1f, 1f);
 		gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
-		// Blackout, then we're ready to draw! \o/
-		// mGL.glEnable(GL10.GL_TEXTURE_2D);
 		gl.glClearColor(0f, 0f, 0f, 0.5f);
 		gl.glClearDepthf(1.0f);
 		gl.glEnable(GL10.GL_DEPTH_TEST);
@@ -358,6 +497,22 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- UTILS
 	////////////////////////////////////////////////////////////////////////////////////////////////
+//	private void updateScaledOffset(float xBegin, float xEnd,float yBegin, float yEnd){
+//		scaledOffsetX = 0;
+//		scaledOffsetY = 0;
+//		if(context != null) {
+//			if (getAudioService() != null) {
+//				if(getIsPlaybackMode() && !getIsPlaying()) {
+//					float scaleX = ((float)(xEnd - xBegin)) / (float)width;
+//					scaledOffsetX = glOffsetX * scaleX;
+//					float scaleY = ((float)(yEnd - yBegin)) / (float)height;
+//					scaledOffsetY = glOffsetY * scaleY;
+//				}else{
+//					resetGlOffset();
+//				}
+//			}
+//		}
+//	}
 	private void broadcastTextUpdate(String action, String name, String data) {
 		if(context != null) {
 			Intent i = new Intent();
@@ -378,6 +533,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------------------------------------------------------
 	public float pixelHeightToGlHeight(float pxHeight) {
 		return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+	}
+	public int screenToSamplePos(float screenPos){
+		float normalizedScreenPos = screenPos/(float)width;
+		return startIndex + (int)(normalizedScreenPos*getGlWindowHorizontalSize());
+	}
+	public float samplePosToScreen(int samplePos){
+		float normalizedScreenPos = (float)(samplePos - startIndex)/(float)getGlWindowHorizontalSize();
+		return normalizedScreenPos*width;
 	}
 	// ----------------------------------------------------------------------------------------
 	protected long msToSamples(long timeSince) {

@@ -29,7 +29,9 @@
                 android:layout_height="match_parent"
                 android:textColor="#ffffffff"
                 android:gravity="top"
-                android:visibility="gone">
+                android:visibility="gone"
+                android:typeface="monospace"
+                android:textSize="8dp">
 
             </TextView>
 

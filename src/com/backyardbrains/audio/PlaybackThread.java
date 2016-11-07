@@ -27,6 +27,7 @@ public class PlaybackThread {
 	private Thread				mThread;
 	private boolean				mShouldContinue;
 	private ShortBuffer			mSamples;
+
 	private int					mNumSamples;
 	private PlaybackListener	mListener;
 	private ReceivesAudio		mService;
@@ -89,7 +90,8 @@ public class PlaybackThread {
 			@Override
 			public void onPeriodicNotification(AudioTrack track) {
 				if (mListener != null && track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
-					mListener.onProgress((track.getPlaybackHeadPosition() * 1000) / SAMPLE_RATE);
+
+					mListener.onProgress(track.getPlaybackHeadPosition());// * 1000) / SAMPLE_RATE);
 				}
 			}
 

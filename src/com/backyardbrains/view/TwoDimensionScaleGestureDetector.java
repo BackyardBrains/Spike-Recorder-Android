@@ -336,7 +336,9 @@ public class TwoDimensionScaleGestureDetector {
 					final boolean updatePrevious = mListener.onScale(this);
 
 					if (updatePrevious) {
-						mPrevEvent.recycle();
+						if(mPrevEvent != null) {
+							mPrevEvent.recycle();
+						}
 						mPrevEvent = MotionEvent.obtain(event);
 					}
 				}
@@ -519,17 +521,17 @@ public class TwoDimensionScaleGestureDetector {
 			mScaleFactorX = newSpan.first / oldSpan.first;
 			mScaleFactorY = oldSpan.second / newSpan.second;
 			
-			if(Math.abs(newSpan.first - oldSpan.first) < 50) {
-				returnScaleFactorX = 1;
-			} else {
+//			if(Math.abs(newSpan.first - oldSpan.first) < 50) {
+//				returnScaleFactorX = 1;
+//			} else {
 				returnScaleFactorX = mScaleFactorX;
-			}
+//			}
 			
-			if(Math.abs(newSpan.second - oldSpan.second) < 50) {
-				returnScaleFactorY = 1;
-			} else {
+//			if(Math.abs(newSpan.second - oldSpan.second) < 50) {
+//				returnScaleFactorY = 1;
+//			} else {
 				returnScaleFactorY = mScaleFactorY;
-			}
+//			}
 			// mScaleFactor = getCurrentSpan() / getPreviousSpan();
 		}
 		if (mScaleFactorX >= 0 && mScaleFactorY >= 0)

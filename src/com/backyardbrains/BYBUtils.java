@@ -6,6 +6,8 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.view.ContextThemeWrapper;
 import android.util.Log;
 
+import com.backyardbrains.drawing.BYBColors;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -63,11 +65,6 @@ public class BYBUtils {
 		return buffer.length > 0;
 	}
 	// ----------------------------------------------------------------------------------------
-	public static void glClear(GL10 gl) {
-		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-	}
-
-	// ----------------------------------------------------------------------------------------
 	public static int map(float glHeight, int in_min, int in_max, int out_min, int out_max) {
 		return (int) ((glHeight - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 	}
@@ -111,7 +108,8 @@ public class BYBUtils {
 	    }
 	    return v;
 	}
-	
+
+
 	
 }
 

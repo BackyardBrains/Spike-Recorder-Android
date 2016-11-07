@@ -24,8 +24,8 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 	private boolean 				bShouldPlay = false;
 	private boolean					bLooping = false;
 	
-	
-	
+	private long longProgress = 0;
+
 	public AudioFilePlayer(ReceivesAudio audioReceiver, Context context) {
 		this.context = context.getApplicationContext();
 		this.audioReceiver = audioReceiver;
@@ -108,6 +108,7 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 			playbackThread = new PlaybackThread(reader.getDataShorts(), this, audioReceiver);
 			playbackThread.startPlayback();
 		//	bPlaying = true;
+//			longProgress = 0;
 		}else{
 			String m = "TurnOnPlaybackThread failed! ";
 			if(reader == null ){ m += "Reader is Null ";}
@@ -139,7 +140,10 @@ public class AudioFilePlayer implements PlaybackListener, RecordingReader.Audiof
 		bLooping = loop;
 	}
 
+	public long getLongProgress(){return longProgress;}
 	public void onProgress(int progress) {
+		longProgress = (0x7FFFFFFF&progress) + ((progress&0x80000000)>>31)*0x80000000;
+
 	}
 
 	public void onCompletion() {
