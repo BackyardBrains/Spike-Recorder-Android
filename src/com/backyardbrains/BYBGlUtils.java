@@ -40,10 +40,15 @@ public class BYBGlUtils {
         float [] glColor = BYBColors.getHexAsGlColor(color);
         gl.glColor4f(glColor[0],glColor[1],glColor[2],glColor[3]);
 //        gl.glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
-        gl.glLineWidth(lineWidth);
+//        gl.glLineWidth(lineWidth);
         gl.glVertexPointer(2, GL10.GL_FLOAT, 0, buffer );
 
         gl.glDrawArrays(mode, 0, (int)Math.floor(array.length/2.0));//GL10.GL_LINES
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+    }
+    public static void drawRectangle(GL10 gl, int x, int y, int w, int h, int color){
+        float [] array = new float[]{x,y, x+w, y, x, y+h, x+w, y+h};
+        drawArray2D(gl, array, color, 1, GL10.GL_TRIANGLE_STRIP);
+
     }
 }

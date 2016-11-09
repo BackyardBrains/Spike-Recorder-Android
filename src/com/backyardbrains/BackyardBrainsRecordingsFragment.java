@@ -177,6 +177,11 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         return getAnalysisManger().spikesFound();
     }
     private void fileDetails(File f) {
+
+        String details = "File name: "+ f.getName()+"\n";
+        details += "Full path: \n"+f.getAbsolutePath()+"\n";
+        details += "Duration: "+ getWaveLengthString(f.length() );
+        BYBUtils.showAlert(getActivity(),"File details",details);
     }
     // ----------------------------------------------------------------------------------------
     private void playAudioFile(File f) {
@@ -298,7 +303,18 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         public TextView	filesizeView;
         public TextView	filedateView;
     }
+    public CharSequence getWaveLengthString(long length) {
+        length -= 44;
+        long seconds = length / 88200;
 
+        if (seconds >= 60) {
+            long minutes = seconds / 60;
+            seconds -= minutes * 60;
+            return minutes + "m " + seconds + "s";
+        } else {
+            return seconds + "s";
+        }
+    }
     // ----------------------------------------------------------------------------------------
     private class FileListAdapter extends ArrayAdapter<File> {
 
@@ -333,18 +349,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
             return rowView;
         }
 
-        private CharSequence getWaveLengthString(long length) {
-            length -= 44;
-            long seconds = length / 88200;
 
-            if (seconds >= 60) {
-                long minutes = seconds / 60;
-                seconds -= minutes * 60;
-                return minutes + "m " + seconds + "s";
-            } else {
-                return seconds + "s";
-            }
-        }
     }
     // ---------------------------------------------------------------------------------------------
     // ----------------------------------------- BROADCAST RECEIVERS INSTANCES

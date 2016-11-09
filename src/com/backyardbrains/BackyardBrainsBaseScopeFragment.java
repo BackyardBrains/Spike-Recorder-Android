@@ -5,16 +5,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.Image;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -24,6 +27,8 @@ import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 
 
 import com.backyardbrains.drawing.ThresholdRenderer;
+import com.backyardbrains.view.BYBExclusiveToggleGroup;
+import com.backyardbrains.view.BYBToggleButton;
 
 public class BackyardBrainsBaseScopeFragment extends Fragment{
     public String TAG = "BackyardBrainsBaseScopeFragment";
@@ -42,6 +47,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     protected BYBBaseRenderer                   renderer            = null;
 
     protected int                               layoutID;
+
+    protected BYBExclusiveToggleGroup NonTouchButtons = null;
+    private boolean bDebugNonTouchButtons = true;
 
     protected Class rendererClass  = null;
 
@@ -72,6 +80,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     // ----------------------------------------------------------------------------------------
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        getContext();
         View rootView = inflater.inflate(layoutID, container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
@@ -88,11 +97,12 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
                 setupMsLineView(width);
             }
         });
+
         Log.w(TAG, String.format("glContainer width : %d",mainscreenGLLayout.getWidth() ));
         setupLabels(rootView);
         readSettings();
         reassignSurfaceView();
-        
+        setupNonTouchButtons(rootView);
         return rootView;
     }
     @Override
@@ -183,7 +193,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         }
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- UI SETUPS
+    // ----------------------------------------- UI
     ////////////////////////////////////////////////////////////////////////////////////////////////
     public void setupLabels(View v) {
         msView = (TextView) v.findViewById(R.id.millisecondsView);
@@ -203,6 +213,30 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             Log.d(TAG, String.format("msLine width : %d", w));
         }
     }
+    // ----------------------------------------------------------------------------------------
+    protected void setupNonTouchButtons(View rootView){
+        if(!((BackyardBrainsMain)getActivity()).isTouchSupported()|| bDebugNonTouchButtons) {
+            ImageButton zoomInButtonH = (ImageButton) rootView.findViewById(R.id.zoomInButtonH);
+            ImageButton zoomOutButtonH = (ImageButton) rootView.findViewById(R.id.zoomOutButtonH);
+            ImageButton zoomInButtonV = (ImageButton) rootView.findViewById(R.id.zoomInButtonV);
+            ImageButton zoomOutButtonV = (ImageButton) rootView.findViewById(R.id.zoomOutButtonV);
+            ImageButton moveButton = (ImageButton) rootView.findViewById(R.id.moveButton);
+            View holder = rootView.findViewById(R.id.noTouchButtonsHolderLayout);
+            if(zoomInButtonH != null && zoomOutButtonH != null &&
+                    zoomInButtonV != null && zoomOutButtonV != null &&
+                    moveButton != null && holder != null && getContext() != null){
+                holder.setVisibility(View.VISIBLE);
+                NonTouchButtons = new BYBExclusiveToggleGroup();
+                mAndroidSurface.enableNonTouchMode();
+                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(), moveButton, R.drawable.move_active, R.drawable.move, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_MOVE));
+                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomInButtonH, R.drawable.zoom_in_active_h, R.drawable.zoom_in_h, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_IN_H));
+                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomOutButtonH, R.drawable.zoom_out_active_h, R.drawable.zoom_out_h, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_OUT_H ));
+                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomInButtonV, R.drawable.zoom_in_active_v, R.drawable.zoom_in_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_IN_V));
+                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomOutButtonV, R.drawable.zoom_out_active_v, R.drawable.zoom_out_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V ));
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////

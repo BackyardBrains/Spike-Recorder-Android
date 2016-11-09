@@ -1,8 +1,6 @@
 package com.backyardbrains;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -10,19 +8,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.TranslateAnimation;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.WaveformRenderer;
-import com.backyardbrains.view.BYBSlidingButton;
+import com.backyardbrains.view.BYBSlidingView;
 
 public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment {
-    BYBSlidingButton stopRecButton;
+    BYBSlidingView stopRecButton;
 
     // ----------------------------------------------------------------------------------------
     public BackyardBrainsPlayLiveScopeFragment(){
@@ -153,7 +146,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                 }
             }
         });
-        stopRecButton = new BYBSlidingButton(tapToStopRecView, getContext(), "tapToStopRec");
+        stopRecButton = new BYBSlidingView(tapToStopRecView, getContext(), "tapToStopRec");
         // ------------------------------------
         View.OnClickListener closeButtonListener = new View.OnClickListener() {
             @Override

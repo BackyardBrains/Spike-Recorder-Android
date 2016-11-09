@@ -58,7 +58,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 	protected int startIndex =0;
 	protected int endIndex =0;
+	protected boolean bShowScalingAreaX = false;
+	protected int scalingAreaStartX;
+	protected int scalingAreaEndX;
+	protected boolean bShowScalingAreaY = false;
+	protected int scalingAreaStartY;
+	protected int scalingAreaEndY;
 
+	protected boolean bShowScalingInstructions = true;
 	protected Context context;
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- CONSTRUCTOR & SETUP
@@ -84,6 +91,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- SETTERS/GETTERS
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	public void setGlWindowUnscaledHorizontalSize(float newX){
+		setGlWindowHorizontalSize((int)(glWindowHorizontalSize * newX/(float)width));
+	}
+	public void setGlWindowUnscaledVerticalSize(float newY){
+		setGlWindowVerticalSize((int)(glWindowVerticalSize * newY/(float)height));
+	}
 	// ----------------------------------------------------------------------------------------
 	public void setGlWindowHorizontalSize(int newX) {
 		if(newX < 0){return;}
@@ -133,6 +146,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 			i.putExtra("text", text);
 			context.sendBroadcast(i);
 		}
+	}
+	// ----------------------------------------------------------------------------------------
+	public int getSurfaceWidth(){
+		return width;
+	}
+	// ----------------------------------------------------------------------------------------
+	public int getSurfaceHeight(){
+		return height;
 	}
 	// ----------------------------------------------------------------------------------------
 	public void addToGlOffset(float dx, float dy ){
@@ -187,10 +208,23 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 //		resetGlOffset();
 		//printDebugText();
 	}
+	public void showScalingAreaX(float start, float end){
+		bShowScalingAreaX = true;
+		scalingAreaStartX = screenToSampleScale(start);
+		scalingAreaEndX = screenToSampleScale(end);
+	}
+	public void showScalingAreaY(float start, float end){
+		bShowScalingAreaY = true;
+		scalingAreaStartY = (int)pixelHeightToGlHeight(start);
+		scalingAreaEndY = (int)pixelHeightToGlHeight(end);
+	}
+	public void hideScalingArea(){
+		bShowScalingAreaX = false;
+		bShowScalingAreaY = false;
+	}
 	public void setScaleFactor(Float x, Float y ){
 		scaleFactorX = x.floatValue();
 		scaleFactorY = y.floatValue();
-
 	}
 	private void setStartEndIndex(int arrayLength){
 //		startIndex = 0;
@@ -405,6 +439,20 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 			BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(),playheadDraw, getGlWindowVerticalSize(),0x00FFFFFF);
 //			BYBGlUtils.drawGlLine(gl, scaledFocusX, -getGlWindowVerticalSize(), scaledFocusX, getGlWindowVerticalSize(), 0xFFFF00FF);
+
+		}
+		if(bShowScalingAreaX || bShowScalingAreaY){
+			gl.glEnable(GL10.GL_BLEND);
+			// Specifies pixel arithmetic
+			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+			if(bShowScalingAreaX) {
+				BYBGlUtils.drawRectangle(gl, scalingAreaStartX, -getGlWindowVerticalSize(), scalingAreaEndX - scalingAreaStartX, getGlWindowVerticalSize() * 2, 0xFFFFFF33);
+			}else{
+				BYBGlUtils.drawRectangle(gl, 0, scalingAreaStartY, getGlWindowHorizontalSize(), scalingAreaEndY, 0xFFFFFF33);
+			}
+//			BYBGlUtils.drawGlLine(gl, scalingAreaStart, -getGlWindowVerticalSize(),scalingAreaStart, getGlWindowVerticalSize(),0xFF8F06FF);
+//			BYBGlUtils.drawGlLine(gl, scalingAreaEnd, -getGlWindowVerticalSize(),scalingAreaEnd, getGlWindowVerticalSize(),0xFF8F06FF);
+			gl.glDisable(GL10.GL_BLEND);
 		}
 	}
 	// ----------------------------------------------------------------------------------------
@@ -444,17 +492,18 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
-		gl.glClearColor(0f, 0f, 0f, 0.5f);
+		gl.glClearColor(0f, 0f, 0f, 1.0f);
 		gl.glClearDepthf(1.0f);
 		gl.glEnable(GL10.GL_DEPTH_TEST);
 		gl.glDepthFunc(GL10.GL_LEQUAL);
 		gl.glEnable(GL10.GL_LINE_SMOOTH);
 		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
 		// Enable Blending
-		gl.glEnable(GL10.GL_BLEND);
-		// Specifies pixel arithmetic
-		// gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+//		gl.glEnable(GL10.GL_BLEND);
+//		// Specifies pixel arithmetic
+//		gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void autoScaleCheck() {
@@ -534,9 +583,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public float pixelHeightToGlHeight(float pxHeight) {
 		return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
 	}
-	public int screenToSamplePos(float screenPos){
+	public int screenToSampleScale(float screenPos){
 		float normalizedScreenPos = screenPos/(float)width;
-		return startIndex + (int)(normalizedScreenPos*getGlWindowHorizontalSize());
+		return (int)(normalizedScreenPos*getGlWindowHorizontalSize());
+	}
+	public int screenToSamplePos(float screenPos){
+//		float normalizedScreenPos = screenPos/(float)width;
+//	return startIndex + (int)(normalizedScreenPos*getGlWindowHorizontalSize());
+	return startIndex + screenToSampleScale(screenPos);
 	}
 	public float samplePosToScreen(int samplePos){
 		float normalizedScreenPos = (float)(samplePos - startIndex)/(float)getGlWindowHorizontalSize();

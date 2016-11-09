@@ -1,0 +1,60 @@
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:id="@+id/container"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+              android:orientation="vertical"
+             >
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_weight="0"
+        android:id="@+id/buttons">
+
+        <Button
+            android:layout_weight="1.0"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColorHighlight="@color/naranja"
+            android:text="@string/scope_view"
+            android:id="@+id/buttonScope"/>
+        <Button
+            android:layout_weight="1.0"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColorHighlight="@color/naranja"
+            android:text="@string/threshold_view"
+            android:id="@+id/buttonThresh"/>
+        <Button
+            android:layout_weight="1.0"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textColorHighlight="@color/naranja"
+            android:text="@string/recordings_view"
+            android:id="@+id/buttonRecordings"/>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/fragments">
+
+
+        <FrameLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+        </FrameLayout>
+        <FrameLayout
+            android:id="@+id/fragment_recordings_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="4"
+            android:visibility="visible">
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>
