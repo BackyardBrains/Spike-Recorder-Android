@@ -101,10 +101,15 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		buttonThresh.setOnClickListener(this);
 
 		allButtons = new ArrayList<>();
-		allButtons.add(buttonScope);
-		allButtons.add(buttonRecordings);
-		allButtons.add(buttonThresh);
-
+		if(buttonScope!=null) {
+			allButtons.add(buttonScope);
+		}
+		if(buttonRecordings!=null) {
+			allButtons.add(buttonRecordings);
+		}
+		if(buttonThresh!=null) {
+			allButtons.add(buttonThresh);
+		}
 		hideActionBar();
 		loadFragment(OSCILLOSCOPE_VIEW);
 	}
@@ -198,6 +203,9 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			if (frag != null) {
 				setSelectedButton(fragType);
 				if(recordings_drawer != null && fragType==RECORDINGS_LIST){
+					Intent i = new Intent();
+					i.setAction("BYBRescanFiles");
+					getApplicationContext().sendBroadcast(i);
 					//showFragment(frag, fragName, R.id.fragment_recordings_list, FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
 				//	sliding_drawer.show(true);
 				}else {
@@ -398,10 +406,12 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 			default:
 				break;
 		}
-		for(Button b: allButtons) {
-			boolean bIsSelected = ( b == selectedButton);
-			b.setSelected(bIsSelected);
-			b.setTextColor(bIsSelected?0xFFFF8D08: Color.WHITE);
+		if(allButtons != null) {
+			for (Button b : allButtons) {
+				boolean bIsSelected = (b == selectedButton) && (selectedButton != null);
+				b.setSelected(bIsSelected);
+				b.setTextColor(bIsSelected ? 0xFFFF8D08 : Color.WHITE);
+			}
 		}
 		showButtons(selectedButton != null);
 		if(recordings_drawer != null &&  selectedButton != null && sliding_drawer != null){

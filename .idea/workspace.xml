@@ -23,21 +23,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5ac24d1e-f4e4-4edb-8561-72c2f0187cc8" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBExclusiveToggleGroup.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBToggleButton.java" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingView.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/AndroidManifest.xml" afterPath="$PROJECT_DIR$/AndroidManifest.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Backyard-Brains-Android-App.iml" afterPath="$PROJECT_DIR$/Backyard-Brains-Android-App.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/base_scope_layout.xml" afterPath="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/values/strings.xml" afterPath="$PROJECT_DIR$/res/values/strings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BYBGlUtils.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BYBGlUtils.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
     </list>
     <ignored path="Backyard-Brains-Android-App.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -73,7 +66,7 @@
       <file leaf-file-name="BYBBaseRenderer.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="655">
+            <state relative-caret-position="7718">
               <caret line="650" column="60" selection-start-line="650" selection-start-column="52" selection-end-line="650" selection-end-column="60" />
               <folding>
                 <element signature="method#BYBBaseRenderer#0;class#BYBBaseRenderer#0" expanded="false" />
@@ -122,23 +115,9 @@
       <file leaf-file-name="BYBUtils.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBUtils.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
+            <state relative-caret-position="884">
               <caret line="67" column="22" selection-start-line="67" selection-start-column="22" selection-end-line="67" selection-end-column="22" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="InteractiveGLSurfaceView.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="474">
-              <caret line="164" column="0" selection-start-line="164" selection-start-column="0" selection-end-line="164" selection-end-column="0" />
-              <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="e#4902#4903#0" expanded="true" />
-                <element signature="e#4941#4942#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -146,31 +125,27 @@
       <file leaf-file-name="BackyardBrainsMain.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="563">
-              <caret line="431" column="47" selection-start-line="431" selection-start-column="47" selection-end-line="431" selection-end-column="47" />
+            <state relative-caret-position="506">
+              <caret line="414" column="9" selection-start-line="414" selection-start-column="9" selection-end-line="414" selection-end-column="9" />
               <folding>
                 <element signature="class#FragTransaction#0;class#BackyardBrainsMain#0" expanded="false" />
-                <element signature="method#onCreate#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="e#3528#3595#0" expanded="false" />
-                <element signature="method#onBackPressed#0;class#BackyardBrainsMain#0" expanded="false" />
-                <element signature="method#loadFragment#0;class#BackyardBrainsMain#0" expanded="false" />
-                <element signature="e#6933#7074#0" expanded="false" />
                 <element signature="method#popFragment#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#popFragment#1;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#printBackstack#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#showFragment#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#showFragment#1;class#BackyardBrainsMain#0" expanded="false" />
-                <element signature="e#9709#9741#0" expanded="false" />
+                <element signature="e#9920#9952#0" expanded="false" />
                 <element signature="method#showActionBar#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#hideActionBar#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#getPageTitle#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#isTouchSupported#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#getFragmentNameFromType#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#getFragmentTypeFromName#0;class#BackyardBrainsMain#0" expanded="false" />
-                <element signature="method#setSelectedButton#1;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="class#ChangePageListener#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#onReceive#0;class#ChangePageListener#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="class#AudioPlaybackStartListener#0;class#BackyardBrainsMain#0" expanded="false" />
+                <element signature="method#onReceive#0;class#AudioPlaybackStartListener#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="class#ShowScalingInstructionsListener#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#onReceive#0;class#ShowScalingInstructionsListener#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#registerAudioPlaybackStartReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
@@ -178,8 +153,30 @@
                 <element signature="method#registerShowScalingInstructionsReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#registerReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
                 <element signature="method#unregisterReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
-                <marker date="1478651868000" expanded="false" signature="16295:16442" ph="{...}" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="BackyardBrainsRecordingsFragment.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="6511">
+              <caret line="425" column="70" selection-start-line="425" selection-start-column="56" selection-end-line="425" selection-end-column="70" />
+              <folding>
+                <element signature="e#1569#1570#0" expanded="true" />
+                <element signature="e#1592#1593#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="BackyardBrainsPlayLiveScopeFragment.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3536">
+              <caret line="220" column="5" selection-start-line="182" selection-start-column="4" selection-end-line="220" selection-end-column="5" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -1132,14 +1129,12 @@
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingButton.java" />
         <option value="$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
         <option value="$PROJECT_DIR$/res/layout/backyard_spikes.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/AutoCorrelationRenderer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/TouchGLSurfaceView.java" />
@@ -1157,30 +1152,31 @@
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/ScaleListener.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/TwoDimensionScaleGestureDetector.java" />
-        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/res/layout/activity_main.xml" />
         <option value="$PROJECT_DIR$/res/layout-w600dp/thresh_scope_layout.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingView.java" />
         <option value="$PROJECT_DIR$/res/layout-w600dp/activity_main.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBToggleButtons.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBExclusiveToggleGroup.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BYBGlUtils.java" />
         <option value="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
         <option value="$PROJECT_DIR$/res/values/strings.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBToggleButton.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
+        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="348" />
-    <option name="y" value="137" />
-    <option name="width" value="1709" />
-    <option name="height" value="1196" />
+    <option name="y" value="22" />
+    <option name="width" value="1440" />
+    <option name="height" value="874" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -1259,6 +1255,28 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="layout" />
               <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderTypeNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Backyard-Brains-Android-App" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Backyard-Brains-Android-App" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidModuleNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="res" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="layout" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResFolderTypeNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="activity_main.xml" />
+              <option name="myItemType" value="com.android.tools.idea.navigator.nodes.AndroidResGroupNode" />
             </PATH_ELEMENT>
           </PATH>
           <PATH>
@@ -1401,7 +1419,7 @@
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="android.project.structure.last.selected" value="Backyard-Brains-Android-App" />
     <property name="android.project.structure.proportion" value="0.15" />
-    <property name="device.picker.selection" value="LGMS34555e8c42f" />
+    <property name="device.picker.selection" value="10.1_WXGA_Tablet" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../OpenGL/HelloOpenGLES10" />
     <property name="ExportApk.ApkPath" value="$PROJECT_DIR$" />
     <property name="ExportApk.Flavors" value="" />
@@ -1803,7 +1821,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="348" y="137" width="1709" height="1196" extended-state="0" />
+    <frame x="0" y="22" width="1440" height="874" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Nl-Palette" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -1817,18 +1835,16 @@
       <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3297568" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.325" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32453826" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32904148" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5388889" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298153" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5388889" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24964234" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="11" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24175166" sideWeight="0.49472296" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298153" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24105866" sideWeight="0.49472296" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Fabric" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.10729614" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -1839,6 +1855,8 @@
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32904148" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3298153" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
@@ -1902,7 +1920,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java</url>
-          <line>309</line>
+          <line>352</line>
           <properties />
           <option name="timeStamp" value="2" />
         </line-breakpoint>
@@ -1912,772 +1930,9 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2023">
-          <caret line="155" column="69" selection-start-line="155" selection-start-column="69" selection-end-line="155" selection-end-column="69" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="47" column="66" selection-start-line="47" selection-start-column="66" selection-end-line="47" selection-end-column="66" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="23" column="71" selection-start-line="23" selection-start-column="71" selection-end-line="23" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4947">
-          <caret line="320" column="92" selection-start-line="320" selection-start-column="77" selection-end-line="320" selection-end-column="92" />
-          <folding>
-            <element signature="method#BackyardBrainsBaseScopeFragment#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#2428#2524#0" expanded="false" />
-            <element signature="e#3226#3300#0" expanded="false" />
-            <element signature="method#onResume#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onPause#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onStop#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onDestroy#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#destroyRenderer#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#setupLabels#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#setupMsLineView#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#saveSettings#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#11671#11767#0" expanded="false" />
-            <element signature="class#UpdateMillisecondsReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateMillisecondsReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#UpdateMillivoltReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateMillivoltReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#SetMillivoltViewSizeReceiver#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#SetMillivoltViewSizeReceiver#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#UpdateDebugTextViewListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateDebugTextViewListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#13041#13084#0" expanded="false" />
-            <element signature="class#AudioServiceBindListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceivers#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverMillivoltsViewSize#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverUpdateDebugView#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverAudioServiceBind#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1105">
-          <caret line="142" column="16" selection-start-line="142" selection-start-column="16" selection-end-line="142" selection-end-column="16" />
-          <folding>
-            <element signature="docComment;class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
-            <element signature="class#AudioServiceBinder#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getMicListenerBufferSizeInSamples#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#getLastSamplesReceivedTimestamp#0;class#AudioService#0" expanded="false" />
-            <element signature="method#isAudioPlayerPlaying#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#isPlaybackMode#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getAverageBuffer#0;class#AudioService#0" expanded="false" />
-            <element signature="method#getTriggerHandler#0;class#AudioService#0" expanded="false" />
-            <element signature="method#setUseAverager#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onCreate#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onStartCommand#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onDestroy#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#onBind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onBind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#onUnbind#0;class#AudioService#0" expanded="false" />
-            <element signature="method#togglePlayback#0;class#AudioService#0" expanded="false" />
-            <element signature="method#turnOnAudioPlayerThread#0;class#AudioService#0" expanded="false" />
-            <element signature="method#turnOffAudioPlayerThread#0;class#AudioService#0" expanded="false" />
-            <element signature="method#turnOnMicThread#0;class#AudioService#0" expanded="false" />
-            <element signature="method#turnOffMicThread#0;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#receiveAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#receiveAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#receiveAudio#1;class#AudioService#0" expanded="false" />
-            <element signature="docComment;method#recordAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#recordAudio#0;class#AudioService#0" expanded="false" />
-            <element signature="method#startRecording#0;class#AudioService#0" expanded="false" />
-            <element signature="method#stopRecording#0;class#AudioService#0" expanded="false" />
-            <element signature="method#broadcastUpdateUI#0;class#AudioService#0" expanded="false" />
-            <element signature="class#ToggleRecordingListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#PlayAudioFileListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#CloseButtonListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#OnTabSelectedListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#AveragesNumListener#0;class#AudioService#0" expanded="false" />
-            <element signature="class#AudioFilePlaybackEndedListener#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerReceivers#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerCloseButtonReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerRecordingToggleReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerOnTabSelectedReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerPlayAudioFileReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerAveragerSetMaxReceiver#0;class#AudioService#0" expanded="false" />
-            <element signature="method#registerPlaybackEndReceiver#0;class#AudioService#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/ViewConfiguration.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="529" column="15" selection-start-line="529" selection-start-column="15" selection-end-line="529" selection-end-column="15" />
-          <folding>
-            <element signature="e#18672#18673#0" expanded="false" />
-            <element signature="e#18704#18705#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/java/lang/Float.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="49" column="19" selection-start-line="49" selection-start-column="19" selection-end-line="49" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/local.properties">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/proguard.cfg">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/activity_main.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="505">
-          <caret line="40" column="31" selection-start-line="40" selection-start-column="8" selection-end-line="40" selection-end-column="31" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/analysis_layout.xml">
-      <provider selected="true" editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/file_list_row_layout.xml">
-      <provider selected="true" editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/file_list.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/thresh_scope_layout.xml">
-      <provider selected="true" editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="442">
-          <caret line="30" column="39" selection-start-line="30" selection-start-column="39" selection-end-line="30" selection-end-column="39" />
-          <folding>
-            <element signature="e#758#784#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/thresh_scope_layout.xml">
-      <provider selected="true" editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="31" column="39" selection-start-line="31" selection-start-column="8" selection-end-line="31" selection-end-column="39" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="47" column="66" selection-start-line="47" selection-start-column="66" selection-end-line="47" selection-end-column="66" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="23" column="71" selection-start-line="23" selection-start-column="71" selection-end-line="23" selection-end-column="71" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/ofRectangle.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-238">
-          <caret line="2" column="13" selection-start-line="2" selection-start-column="13" selection-end-line="2" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/captures/com.backyardbrains_2016.11.07_07.57.li">
-      <provider selected="true" editor-type-id="capture-editor">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/captures/com.backyardbrains_2016.11.07_08.04.li">
-      <provider selected="true" editor-type-id="capture-editor">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/app/AlertDialog.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3094">
-          <caret line="437" column="24" selection-start-line="437" selection-start-column="24" selection-end-line="437" selection-end-column="24" />
-          <folding>
-            <element signature="docComment;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#THEME_TRADITIONAL#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#THEME_HOLO_DARK#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#THEME_HOLO_LIGHT#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#THEME_DEVICE_DEFAULT_DARK#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#THEME_DEVICE_DEFAULT_LIGHT#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#LAYOUT_HINT_NONE#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;field#LAYOUT_HINT_SIDE#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#AlertDialog#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#AlertDialog#1;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#AlertDialog#2;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#getButton#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#getListView#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setCustomTitle#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setView#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setView#1;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButtonPanelLayoutHint#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton#1;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton#2;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton2#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton3#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton#3;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton2#1;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setButton3#1;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setIcon#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setIconAttribute#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#Builder#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#Builder#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#getContext#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setTitle#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setTitle#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setCustomTitle#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setMessage#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setMessage#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setIcon#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setIcon#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setIconAttribute#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setPositiveButton#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setPositiveButton#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setNegativeButton#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setNegativeButton#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setNeutralButton#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setNeutralButton#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setCancelable#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setOnCancelListener#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setOnDismissListener#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setOnKeyListener#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setItems#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setItems#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setAdapter#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setCursor#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setMultiChoiceItems#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setMultiChoiceItems#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setMultiChoiceItems#2;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setSingleChoiceItems#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setSingleChoiceItems#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setSingleChoiceItems#2;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setSingleChoiceItems#3;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setOnItemSelectedListener#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setView#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setView#1;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setView#2;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setInverseBackgroundForced#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#setRecycleOnMeasureEnabled#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#create#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-            <element signature="docComment;method#show#0;class#Builder#0;class#AlertDialog#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/analysis/BYBAnalysisManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="243">
-          <caret line="117" column="19" selection-start-line="117" selection-start-column="19" selection-end-line="117" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/java/io/File.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="906">
-          <caret line="901" column="16" selection-start-line="901" selection-start-column="16" selection-end-line="901" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/drawable/play_button.png">
-      <provider selected="true" editor-type-id="images">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBSlidingView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="19" column="31" selection-start-line="19" selection-start-column="31" selection-end-line="19" selection-end-column="31" />
-          <folding>
-            <element signature="e#1754#1755#0" expanded="false" />
-            <element signature="e#1795#1796#0" expanded="false" />
-            <element signature="e#1827#1828#0" expanded="false" />
-            <element signature="e#1904#1905#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="45" column="19" selection-start-line="6" selection-start-column="3" selection-end-line="45" selection-end-column="19" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/backyard_spikes.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/activity_main.xml">
-      <provider selected="true" editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider editor-type-id="text-editor">
-        <state relative-caret-position="607">
-          <caret line="56" column="41" selection-start-line="56" selection-start-column="41" selection-end-line="56" selection-end-column="41" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/TwoDimensionScaleGestureDetector.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="537">
-          <caret line="204" column="51" selection-start-line="203" selection-start-column="12" selection-end-line="204" selection-end-column="51" />
-          <folding>
-            <element signature="docComment;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;class#OnScaleGestureListener#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#onScale#0;class#OnScaleGestureListener#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#onScaleBegin#0;class#OnScaleGestureListener#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#onScaleEnd#0;class#OnScaleGestureListener#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;class#Simple2DOnScaleGestureListener#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;field#PRESSURE_THRESHOLD#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getRawX#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getRawY#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#isInProgress#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getFocusX#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getFocusY#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getCurrentSpan#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getPreviousSpan#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getScaleFactor#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getTimeDelta#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-            <element signature="docComment;method#getEventTime#0;class#TwoDimensionScaleGestureDetector#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/SingleFingerGestureDetector.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="367">
-          <caret line="64" column="8" selection-start-line="64" selection-start-column="8" selection-end-line="64" selection-end-column="45" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/MotionEvent.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="350">
-          <caret line="1484" column="32" selection-start-line="1484" selection-start-column="32" selection-end-line="1484" selection-end-column="32" />
-          <folding>
-            <element signature="e#79741#79742#0" expanded="false" />
-            <element signature="e#79822#79823#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/ScaleListener.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="731">
-          <caret line="68" column="50" selection-start-line="68" selection-start-column="12" selection-end-line="70" selection-end-column="62" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/TouchGLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="8" column="13" selection-start-line="8" selection-start-column="13" selection-end-line="8" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/view/SurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-14588">
-          <caret line="92" column="13" selection-start-line="92" selection-start-column="13" selection-end-line="92" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBColors.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="797">
-          <caret line="83" column="26" selection-start-line="83" selection-start-column="26" selection-end-line="83" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" column="18" selection-start-line="1" selection-start-column="18" selection-end-line="1" selection-end-column="18" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
-      <provider editor-type-id="android-manifest">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="629">
-          <caret line="37" column="3" selection-start-line="37" selection-start-column="3" selection-end-line="37" selection-end-column="3" />
-          <folding>
-            <element signature="e#519#537#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBGlUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="595">
-          <caret line="42" column="2" selection-start-line="42" selection-start-column="2" selection-end-line="42" selection-end-column="2" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="555">
-          <caret line="98" column="48" selection-start-line="98" selection-start-column="48" selection-end-line="98" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/CODE/ANDROID/android-sdk-macosx/sources/android-24/android/opengl/GLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="163" column="13" selection-start-line="163" selection-start-column="13" selection-end-line="163" selection-end-column="13" />
-          <folding>
-            <element signature="docComment;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#RENDERMODE_WHEN_DIRTY#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#RENDERMODE_CONTINUOUSLY#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#DEBUG_CHECK_GL_ERROR#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#DEBUG_LOG_GL_CALLS#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#GLSurfaceView#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#GLSurfaceView#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#GLSurfaceView#1;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#GLSurfaceView#1;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#finalize#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#9107#9162#0" expanded="false" />
-            <element signature="method#init#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#9367#9430#0" expanded="false" />
-            <element signature="e#9572#9639#0" expanded="false" />
-            <element signature="docComment;method#setGLWrapper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setDebugFlags#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#getDebugFlags#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setPreserveEGLContextOnPause#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setPreserveEGLContextOnPause#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#getPreserveEGLContextOnPause#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setRenderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setRenderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLConfigChooser#1;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLConfigChooser#1;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLConfigChooser#2;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLConfigChooser#2;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setEGLContextClientVersion#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setEGLContextClientVersion#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#setRenderMode#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#getRenderMode#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#requestRender#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#surfaceCreated#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#surfaceDestroyed#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#surfaceDestroyed#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#surfaceChanged#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#surfaceChanged#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#surfaceRedrawNeeded#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#surfaceRedrawNeeded#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onPause#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onResume#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#queueEvent#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onAttachedToWindow#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#onAttachedToWindow#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#onDetachedFromWindow#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#GLWrapper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#GLWrapper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#wrap#0;class#GLWrapper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#Renderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#Renderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onSurfaceCreated#0;class#Renderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onSurfaceChanged#0;class#Renderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#onDrawFrame#0;class#Renderer#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#EGLContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#EGLContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#DefaultContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#createContext#0;class#DefaultContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#destroyContext#0;class#DefaultContextFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#EGLWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#EGLWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#createWindowSurface#0;class#EGLWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#DefaultWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#createWindowSurface#0;class#DefaultWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#32084#32144#0" expanded="false" />
-            <element signature="method#destroySurface#0;class#DefaultWindowSurfaceFactory#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#EGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#EGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#chooseConfig#0;class#EGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#BaseConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#chooseConfig#0;class#BaseConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#filterConfigSpec#0;class#BaseConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#ComponentSizeChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#ComponentSizeChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#ComponentSizeChooser#0;class#ComponentSizeChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#chooseConfig#0;class#ComponentSizeChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#findConfigAttrib#0;class#ComponentSizeChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#SimpleEGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#SimpleEGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#SimpleEGLConfigChooser#0;class#SimpleEGLConfigChooser#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#EglHelper#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#start#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#start#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#createSurface#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#createSurface#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#createGL#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#createGL#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#swap#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#swap#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#destroySurface#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#destroySurfaceImp#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#finish#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#throwEglException#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#throwEglException#1;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#logEglErrorAsWarning#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#formatEglError#0;class#EglHelper#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#GLThread#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#run#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#stopEglSurfaceLocked#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#stopEglContextLocked#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#guardedRun#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#63517#63580#0" expanded="false" />
-            <element signature="method#readyToDraw#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#setRenderMode#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#getRenderMode#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#requestRender#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#requestRenderAndWait#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#65893#65960#0" expanded="false" />
-            <element signature="method#surfaceCreated#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#surfaceDestroyed#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#onPause#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#onResume#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#onWindowResize#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#70009#70076#0" expanded="false" />
-            <element signature="method#requestExitAndWait#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#71206#71267#0" expanded="false" />
-            <element signature="method#requestReleaseEglContextLocked#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;method#queueEvent#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#queueEvent#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#mGLSurfaceViewWeakRef#0;class#GLThread#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#LogWriter#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#write#0;class#LogWriter#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#flushBuilder#0;class#LogWriter#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#checkRenderThreadState#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#threadExiting#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#tryAcquireEglContextLocked#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#75885#75948#0" expanded="false" />
-            <element signature="method#releaseEglContextLocked#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#shouldReleaseEGLContextWhenPausing#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="e#76698#76745#0" expanded="false" />
-            <element signature="method#shouldTerminateEGLWhenPausing#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#checkGLDriver#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="method#checkGLESVersion#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-            <element signature="docComment;field#mGLESVersionCheckComplete#0;class#GLThreadManager#0;class#GLSurfaceView#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
-          <caret line="67" column="22" selection-start-line="67" selection-start-column="22" selection-end-line="67" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="372">
-          <caret line="261" column="5" selection-start-line="261" selection-start-column="5" selection-end-line="279" selection-end-column="32" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/values/strings.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="901">
-          <caret line="53" column="40" selection-start-line="53" selection-start-column="40" selection-end-line="53" selection-end-column="40" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="39" column="85" selection-start-line="39" selection-start-column="4" selection-end-line="39" selection-end-column="85" />
-          <folding>
-            <element signature="method#BackyardBrainsBaseScopeFragment#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#2428#2524#0" expanded="false" />
-            <element signature="e#3226#3300#0" expanded="false" />
-            <element signature="method#onResume#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onPause#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onStop#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onDestroy#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#destroyRenderer#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#setupLabels#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#setupMsLineView#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#saveSettings#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#11671#11767#0" expanded="false" />
-            <element signature="class#UpdateMillisecondsReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateMillisecondsReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#UpdateMillivoltReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateMillivoltReciever#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#SetMillivoltViewSizeReceiver#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#SetMillivoltViewSizeReceiver#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="class#UpdateDebugTextViewListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#onReceive#0;class#UpdateDebugTextViewListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="e#13041#13084#0" expanded="false" />
-            <element signature="class#AudioServiceBindListener#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceivers#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverMillivoltsViewSize#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverUpdateDebugView#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-            <element signature="method#registerReceiverAudioServiceBind#0;class#BackyardBrainsBaseScopeFragment#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBExclusiveToggleGroup.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="16" column="30" selection-start-line="16" selection-start-column="30" selection-end-line="16" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/view/BYBToggleButton.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="593">
-          <caret line="39" column="28" selection-start-line="39" selection-start-column="28" selection-end-line="39" selection-end-column="28" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#1084#1401#0" expanded="true" />
-            <element signature="e#1400#1401#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="474">
-          <caret line="164" column="0" selection-start-line="164" selection-start-column="0" selection-end-line="164" selection-end-column="0" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#4902#4903#0" expanded="true" />
-            <element signature="e#4941#4942#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="655">
+        <state relative-caret-position="7718">
           <caret line="650" column="60" selection-start-line="650" selection-start-column="52" selection-end-line="650" selection-end-column="60" />
           <folding>
             <element signature="method#BYBBaseRenderer#0;class#BYBBaseRenderer#0" expanded="false" />
@@ -2712,33 +1967,90 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7718">
+          <caret line="650" column="60" selection-start-line="650" selection-start-column="52" selection-end-line="650" selection-end-column="60" />
+          <folding>
+            <element signature="method#BYBBaseRenderer#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#BYBBaseRenderer#1;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setGlWindowVerticalSize#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="e#5323#5324#0" expanded="true" />
+            <element signature="e#5342#5343#0" expanded="true" />
+            <element signature="e#5467#5468#0" expanded="true" />
+            <element signature="e#5487#5488#0" expanded="true" />
+            <element signature="e#11202#11248#0" expanded="false" />
+            <element signature="method#getCurrentAudio#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setLabels#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setmVText#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setMsText#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setmVText#1;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setMillivoltLabelPosition#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#onSurfaceChanged#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="e#17614#17697#0" expanded="false" />
+            <element signature="method#onSurfaceCreated#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#autoScaleCheck#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#autoSetFrame#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#setGlWindow#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#broadcastTextUpdate#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#glHeightToPixelHeight#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#getAudioService#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#getIsRecording#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#getIsPlaybackMode#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="method#getIsPlaying#0;class#BYBBaseRenderer#0" expanded="false" />
+            <element signature="e#24230#24295#0" expanded="false" />
+            <element signature="e#25046#25097#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBUtils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="884">
+          <caret line="67" column="22" selection-start-line="67" selection-start-column="22" selection-end-line="67" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="563">
-          <caret line="431" column="47" selection-start-line="431" selection-start-column="47" selection-end-line="431" selection-end-column="47" />
+        <state relative-caret-position="506">
+          <caret line="414" column="9" selection-start-line="414" selection-start-column="9" selection-end-line="414" selection-end-column="9" />
           <folding>
             <element signature="class#FragTransaction#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#onCreate#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="e#3528#3595#0" expanded="false" />
-            <element signature="method#onBackPressed#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#loadFragment#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="e#6933#7074#0" expanded="false" />
             <element signature="method#popFragment#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#popFragment#1;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#printBackstack#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#showFragment#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#showFragment#1;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="e#9709#9741#0" expanded="false" />
+            <element signature="e#9920#9952#0" expanded="false" />
             <element signature="method#showActionBar#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#hideActionBar#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#getPageTitle#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#isTouchSupported#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#getFragmentNameFromType#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#getFragmentTypeFromName#0;class#BackyardBrainsMain#0" expanded="false" />
-            <element signature="method#setSelectedButton#1;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="class#ChangePageListener#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#onReceive#0;class#ChangePageListener#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="class#AudioPlaybackStartListener#0;class#BackyardBrainsMain#0" expanded="false" />
+            <element signature="method#onReceive#0;class#AudioPlaybackStartListener#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="class#ShowScalingInstructionsListener#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#onReceive#0;class#ShowScalingInstructionsListener#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#registerAudioPlaybackStartReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
@@ -2746,8 +2058,26 @@
             <element signature="method#registerShowScalingInstructionsReceiver#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#registerReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
             <element signature="method#unregisterReceivers#0;class#BackyardBrainsMain#0" expanded="false" />
-            <marker date="1478651868000" expanded="false" signature="16295:16442" ph="{...}" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6511">
+          <caret line="425" column="70" selection-start-line="425" selection-start-column="56" selection-end-line="425" selection-end-column="70" />
+          <folding>
+            <element signature="e#1569#1570#0" expanded="true" />
+            <element signature="e#1592#1593#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3536">
+          <caret line="220" column="5" selection-start-line="182" selection-start-column="4" selection-end-line="220" selection-end-column="5" />
+          <folding />
         </state>
       </provider>
     </entry>

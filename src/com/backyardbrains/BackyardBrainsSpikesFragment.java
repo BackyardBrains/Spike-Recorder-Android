@@ -66,10 +66,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
 		handleColors[2][3] = 1.0f;
 		TAG = BackyardBrainsMain.BYB_SPIKES_FRAGMENT;
 	}
-	public BYBAnalysisManager getAnalysisManager(){
-		if(getContext()==null)return null;
-		return ((BackyardBrainsApplication) context).getAnalysisManager();
-	}
+
 	private FindSpikesRenderer getRenderer(){
 		return (FindSpikesRenderer)renderer;
 	}
@@ -108,6 +105,12 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
 				}
 
 		}
+	}
+	private BYBAnalysisManager getAnalysisManager(){
+		if(getContext()!=null){
+			return ((BackyardBrainsApplication)getContext()).getAnalysisManager();
+		}
+		return null;
 	}
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- FRAGMENT LIFECYCLE

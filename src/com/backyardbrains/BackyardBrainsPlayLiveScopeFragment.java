@@ -43,33 +43,13 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- OTHER METHODS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public AudioService getAudioService(){
-        if(getActivity()!=null) {
-            BackyardBrainsApplication app = ((BackyardBrainsApplication) getActivity().getApplicationContext());
-            if (app != null) {
-                return app.mAudioService;
-            }
-        }
-        return null;
-    }
     public boolean getIsRecording(){
         if(getAudioService() != null){
             return getAudioService().isRecording();
         }
         return false;
     }
-    public boolean getIsPlaybackMode(){
-        if(getAudioService() != null){
-            return getAudioService().isPlaybackMode();
-        }
-        return false;
-    }
-    public boolean getIsPlaying(){
-        if(getAudioService() != null){
-            return getAudioService().isAudioPlayerPlaying();
-        }
-        return false;
-    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UI
     ////////////////////////////////////////////////////////////////////////////////////////////////

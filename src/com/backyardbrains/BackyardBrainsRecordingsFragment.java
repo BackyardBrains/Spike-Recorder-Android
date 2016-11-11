@@ -144,7 +144,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         super.onListItemClick(l, v, position, id);
     }
     // ----------------------------------------------------------------------------------------
-    void rescanFiles() {
+    public void rescanFiles() {
         File[] files = bybDirectory.listFiles();
         if (files != null && files.length > 1) {
 
@@ -357,6 +357,7 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
     private ToggleRecordingListener toggleRecorder;
     private FileReadReceiver	readReceiver;
     private SuccessfulSaveListener successfulSaveListener;
+    private RescanFilesListener rescanFilesListener;
     // ---------------------------------------------------------------------------------------------
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     // ---------------------------------------------------------------------------------------------
@@ -372,6 +373,12 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         }
     }
     private class SuccessfulSaveListener extends BroadcastReceiver {
+        @Override
+        public void onReceive(android.content.Context context, android.content.Intent intent) {
+            rescanFiles();
+        }
+    }
+    private class RescanFilesListener extends BroadcastReceiver {
         @Override
         public void onReceive(android.content.Context context, android.content.Intent intent) {
             rescanFiles();
@@ -413,6 +420,17 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
             }
         }
     }
+    private void registerRescanFilesReceiver(boolean reg) {
+        if(getContext() != null) {
+            if (reg) {
+                IntentFilter intent = new IntentFilter("BYBRescanFiles");
+                rescanFilesListener = new RescanFilesListener() ;
+                context.registerReceiver(rescanFilesListener , intent);
+            } else {
+                context.unregisterReceiver(rescanFilesListener );
+            }
+        }
+    }
     //----------------------------------------------------------------------------------------------
     // ----------------------------------------- REGISTER RECEIVERS
     // ---------------------------------------------------------------------------------------------
@@ -421,11 +439,13 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
         registerRecordingToggleReceiver(true);
         registerFileReadReceiver(true);
         registerSuccessfulSaveReceiver(true);
+        registerRescanFilesReceiver(true);
     }
     public void unregisterReceivers() {
         //Log.d(TAG, "unregisterReceivers");
         registerRecordingToggleReceiver(false);
         registerFileReadReceiver(false);
         registerSuccessfulSaveReceiver(false);
+        registerRescanFilesReceiver(false);
     }
 }

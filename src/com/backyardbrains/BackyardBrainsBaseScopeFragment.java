@@ -21,6 +21,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
@@ -50,29 +51,17 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 
     protected BYBExclusiveToggleGroup NonTouchButtons = null;
     private boolean bDebugNonTouchButtons = true;
-
+    ImageButton moveButton;
     protected Class rendererClass  = null;
 
     public BackyardBrainsBaseScopeFragment(){
         super();
         layoutID = R.layout.base_scope_layout;
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    @Override
-    public Context getContext(){
-        if(context == null){
-            FragmentActivity act = getActivity();
-            if(act == null) {
-                return null;
-            }
-            context = act.getApplicationContext();
-        }
-        return context;
-    }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,6 +125,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     @Override
     public void onDestroy() {
         destroyRenderer();
+        if(updateUIListener != null){
+            registerUpdateUIReceiver(false);
+        }
         super.onDestroy();
     }
     public void destroyRenderer() {
@@ -220,7 +212,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             ImageButton zoomOutButtonH = (ImageButton) rootView.findViewById(R.id.zoomOutButtonH);
             ImageButton zoomInButtonV = (ImageButton) rootView.findViewById(R.id.zoomInButtonV);
             ImageButton zoomOutButtonV = (ImageButton) rootView.findViewById(R.id.zoomOutButtonV);
-            ImageButton moveButton = (ImageButton) rootView.findViewById(R.id.moveButton);
+            moveButton = (ImageButton) rootView.findViewById(R.id.moveButton);
             View holder = rootView.findViewById(R.id.noTouchButtonsHolderLayout);
             if(zoomInButtonH != null && zoomOutButtonH != null &&
                     zoomInButtonV != null && zoomOutButtonV != null &&
@@ -234,9 +226,53 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
                 NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomInButtonV, R.drawable.zoom_in_active_v, R.drawable.zoom_in_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_IN_V));
                 NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomOutButtonV, R.drawable.zoom_out_active_v, R.drawable.zoom_out_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V ));
             }
+            registerUpdateUIReceiver(true);
+            updateNonTouchUI();
         }
     }
-
+    protected void updateNonTouchUI(){
+        if(!((BackyardBrainsMain)getActivity()).isTouchSupported()|| bDebugNonTouchButtons) {
+            if(moveButton != null && getAudioService()!=null) {
+                boolean bShow = getIsPlaybackMode() && !getIsPlaying();
+                moveButton.setVisibility(bShow?View.VISIBLE:View.GONE);
+            }
+        }
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ----------------------------------------- UTILS
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    public AudioService getAudioService(){
+        if(getContext()!=null) {
+            BackyardBrainsApplication app = ((BackyardBrainsApplication) getContext());
+            if (app != null) {
+                return app.mAudioService;
+            }
+        }
+        return null;
+    }
+    public boolean getIsPlaybackMode(){
+        if(getAudioService() != null){
+            return getAudioService().isPlaybackMode();
+        }
+        return false;
+    }
+    public boolean getIsPlaying(){
+        if(getAudioService() != null){
+            return getAudioService().isAudioPlayerPlaying();
+        }
+        return false;
+    }
+    @Override
+    public Context getContext(){
+        if(context == null){
+            FragmentActivity act = getActivity();
+            if(act == null) {
+                return null;
+            }
+            context = act.getApplicationContext();
+        }
+        return context;
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,12 +337,19 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+    private class UpdateUIListener extends BroadcastReceiver {
+        @Override
+        public void onReceive(android.content.Context context, android.content.Intent intent) {
+            updateNonTouchUI();
+        }
+    }
     // ----------------------------------------- RECEIVERS INSTANCES
     private UpdateMillisecondsReciever upmillirec;
     private SetMillivoltViewSizeReceiver milliVoltSize;
     private UpdateMillivoltReciever upmillivolt;
     private UpdateDebugTextViewListener updateDebugTextViewListener;
     private AudioServiceBindListener audioServiceBindListener;
+    private UpdateUIListener updateUIListener = null;
     // ----------------------------------------- REGISTER RECEIVERS
     public void registerReceivers(boolean bRegister) {
         registerReceiverUpdateMilliseconds(bRegister);
@@ -368,6 +411,18 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
                 context.registerReceiver(audioServiceBindListener, intentAudioServiceBindFilter);
             } else {
                 context.unregisterReceiver(audioServiceBindListener);
+            }
+        }
+    }
+
+    private void registerUpdateUIReceiver(boolean reg) {
+        if(getContext() != null) {
+            if (reg) {
+                IntentFilter intentFilter = new IntentFilter("BYBUpdateUI");
+                updateUIListener = new UpdateUIListener();
+                context.registerReceiver(updateUIListener, intentFilter);
+            } else {
+                context.unregisterReceiver(updateUIListener);
             }
         }
     }
