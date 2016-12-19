@@ -50,7 +50,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     protected int                               layoutID;
 
     protected BYBExclusiveToggleGroup NonTouchButtons = null;
-    private boolean bDebugNonTouchButtons = true;
+    private boolean bDebugNonTouchButtons = false;
     ImageButton moveButton;
     protected Class rendererClass  = null;
 
@@ -199,7 +199,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     // ----------------------------------------------------------------------------------------
     public void setupMsLineView(int width) {
         if(msLine != null) {
-            int w = width / 3;
+            int w = width / 2;
             msLine.getLayoutParams().width = w;
             msLine.requestLayout();
             Log.d(TAG, String.format("msLine width : %d", w));
