@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.backyardbrains.BYBConstants;
 import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsMain;
@@ -67,6 +68,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
 	protected boolean bShowScalingInstructions = true;
 	protected Context context;
+
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// ----------------------------------------- CONSTRUCTOR & SETUP
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -385,7 +388,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void setmVText() {
-		float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f / 1000;
+		float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
 		setmVText(yPerDiv);
 	}
 	// ----------------------------------------------------------------------------------------
