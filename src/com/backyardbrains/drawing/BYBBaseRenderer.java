@@ -380,7 +380,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	// ----------------------------------------- LABELS
 	protected void setLabels(int samplesToShow) {
 		setmVText();
-		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 3;
+		final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 2;
 		setMsText(millisecondsInThisWindow);
 	}
 	// ----------------------------------------------------------------------------------------
