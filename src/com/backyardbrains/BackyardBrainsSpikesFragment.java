@@ -120,6 +120,11 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
 		View rootView = super.onCreateView(inflater, container, savedInstanceState);
 		setupButtons(rootView);
 		((BackyardBrainsMain)getActivity()).showButtons(false);
+		if (getAnalysisManager() != null) {
+			if(!getAnalysisManager().spikesFound()) {
+				addThreshold();
+			}
+		}
 		return rootView;
 	}
 	// ----------------------------------------------------------------------------------------
