@@ -34,30 +34,27 @@ import com.crashlytics.android.Crashlytics;
 import io.fabric.sdk.android.Fabric;
 
 public class BackyardBrainsApplication extends Application {
-	private boolean			serviceRunning;
+	private boolean			bAudioServiceRunning = false;
 	protected AudioService	mAudioService;
-	private int				mBindingsCount;
 	protected BYBAnalysisManager analysisManager;
 
-	public boolean isServiceRunning() {
-		return serviceRunning;
+	public boolean isAudioServiceRunning() {
+		return bAudioServiceRunning;
 	}
-
-	public void setServiceRunning(boolean serviceRunning) {
-		this.serviceRunning = serviceRunning;
-	}
-
 	public void startAudioService() {
-		// spin up service
-		// if (!this.serviceRunning) {
-		startService(new Intent(this, AudioService.class));
-		serviceRunning = true;
-		// }
+		if (!this.bAudioServiceRunning) {
+			startService(new Intent(this, AudioService.class));
+			bAudioServiceRunning = true;
+			bindAudioService(true);
+		}
 	}
 
 	public void stopAudioService() {
-		stopService(new Intent(this, AudioService.class));
-		serviceRunning = false;
+		if (this.bAudioServiceRunning) {
+			bindAudioService(false);
+			stopService(new Intent(this, AudioService.class));
+			bAudioServiceRunning = false;
+		}
 	}
 	@Override
 	public void onCreate() {
@@ -67,8 +64,7 @@ public class BackyardBrainsApplication extends Application {
 			e.printStackTrace();
 		}
 		analysisManager = new BYBAnalysisManager(getApplicationContext());
-		startAudioService();
-     	bindAudioService(true);
+		//startAudioService();
 	}
 	/**
 	 * Make sure we stop the {@link AudioService} when we exit
@@ -77,25 +73,16 @@ public class BackyardBrainsApplication extends Application {
 	public void onTerminate() {
 		super.onTerminate();
 		analysisManager.close();
-		bindAudioService(false);
-		if (this.serviceRunning) stopAudioService();
+		stopAudioService();
 	}
 
 	// ----------------------------------------------------------------------------------------
 	protected void bindAudioService(boolean on) {
 		if (on) {
-			// //Log.d(getClass().getCanonicalName(), "Binding audio service to
-			// main activity.");
 			Intent intent = new Intent(this, AudioService.class);
 			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-			mBindingsCount++;
-			//Log.d(getClass().getCanonicalName(), "Binder called" + mBindingsCount + "bindings");
 		} else {
-			// //Log.d(getClass().getCanonicalName(), "unBinding audio service
-			// from main activity.");
 			unbindService(mConnection);
-			mBindingsCount--;
-			//Log.d(getClass().getCanonicalName(), "Unbinder called" + mBindingsCount + "bindings");
 		}
 	}
 
@@ -119,29 +106,12 @@ public class BackyardBrainsApplication extends Application {
 			AudioServiceBinder binder = (AudioServiceBinder) service;
 			mAudioService = binder.getService();
 			mAudioServiceIsBound = true;
-			//Log.d(getClass().getCanonicalName(), "Service connected and bound");
-			/*
-			Intent i = new Intent();
-			i.setAction("BYBAudioServiceBind");
-			i.putExtra("isBind", true);
-			sendBroadcast(i);
-			//*/
 		}
-
-		// Clean up bindings
-		//
-		// @see
-		// android.content.ServiceConnection#onServiceDisconnected(android.content.ComponentName)
 
 		@Override
 		public void onServiceDisconnected(ComponentName arg0) {
 			mAudioService = null;
 			mAudioServiceIsBound = false;
-//			Intent i = new Intent();
-//			i.setAction("BYBAudioServiceBind");
-//			i.putExtra("isBind", false);
-//			getApplicationContext().sendBroadcast(i);
-			//Log.d(getClass().getCanonicalName(), "Service disconnected.");
 		}
 	};
 
