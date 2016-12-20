@@ -52,4 +52,14 @@
     <string name="zoom_in_button_v">select to zoom in vertically</string>
     <string name="zoom_out_button_v">select to zoom out vertically</string>
     <string name="scaling_instructions">You can zoom in or zoom out by either clicking again the highlighted zoom button, click over the waveform for zooming that specific point or click and drag over the waveform to select the area to zoom.\nShould I show this message again?</string>
+
+
+    <string name="rationale_record_audio">This app needs access to your camera so you can take pictures.</string>
+    <string name="rationale_ask_again">This app may not work correctly without the requested permissions. Open the app settings screen to modify app permissions.</string>
+    <string name="title_settings_dialog">Permissions Required</string>
+    <string name="setting">Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings_dialog_canceled">Settings dialog canceled</string>
+    <string name="returned_from_app_settings_to_activity">Returned from app settings to MainActivity</string>
+
 </resources>

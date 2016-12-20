@@ -1,5 +1,6 @@
 package com.backyardbrains;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,6 +11,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 //*/
 import android.support.v7.app.AppCompatActivity;
@@ -17,14 +19,19 @@ import android.util.Log;
 //import android.widget.FrameLayout;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
 
 //*/
 import com.backyardbrains.view.*;
 
-public class BackyardBrainsMain extends AppCompatActivity implements View.OnClickListener{
+public class BackyardBrainsMain extends AppCompatActivity implements View.OnClickListener,
+		EasyPermissions.PermissionCallbacks {
 	@SuppressWarnings("unused")
 	private static final String			TAG						= "BackyardBrainsMain";
 
@@ -41,6 +48,8 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	public static final String BYB_ANALYSIS_FRAGMENT	= "BackyardBrainsAnalysisFragment";
 	public static final String BYB_OSCILLOSCOPE_FRAGMENT= "BackyardBrainsOscilloscopeFragment";
 
+	private static final int BYB_RECORD_AUDIO_PERM = 123;
+	private static final int BYB_SETTINGS_SCREEN = 125;
 
 	protected Button buttonScope;
 	protected Button buttonThresh;
@@ -74,6 +83,7 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		startAudioService();
 		setContentView(R.layout.activity_main);
 
 		buttonRecordings = (Button)findViewById(R.id.buttonRecordings);
@@ -340,6 +350,18 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 	public boolean isTouchSupported(){
 		return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
 	}
+
+
+	@AfterPermissionGranted(BYB_RECORD_AUDIO_PERM)
+	public void startAudioService() {
+		if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
+			((BackyardBrainsApplication)getApplication()).startAudioService();
+		} else {
+			EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio),
+					BYB_RECORD_AUDIO_PERM, Manifest.permission.RECORD_AUDIO);
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////////
 	//                      Private Methods
 	//////////////////////////////////////////////////////////////////////////////
@@ -454,6 +476,36 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 						});
 				alertDialog.show();
 			}
+	}
+	//////////////////////////////////////////////////////////////////////////////
+	//                      Permission Request >= API 23
+	//////////////////////////////////////////////////////////////////////////////
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+	}
+
+	@Override
+	public void onPermissionsGranted(int requestCode, List<String> perms) {
+		Log.d(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+	}
+
+	@Override
+	public void onPermissionsDenied(int requestCode, List<String> perms) {
+		Log.d(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+
+		// (Optional) Check whether the user denied any permissions and checked "NEVER ASK AGAIN."
+		// This will display a dialog directing them to enable the permission in app settings.
+		if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+			new AppSettingsDialog.Builder(this, getString(R.string.rationale_ask_again))
+					.setTitle(getString(R.string.title_settings_dialog))
+					.setPositiveButton(getString(R.string.setting))
+					.setNegativeButton(getString(R.string.cancel), null /* click listener */)
+					.setRequestCode(BYB_SETTINGS_SCREEN)
+					.build()
+					.show();
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------------
