@@ -5,5 +5,5 @@ package com.backyardbrains;
  */
 
 public class BYBConstants {
-    public static final float millivoltScale = 1.0;
+    public static final float millivoltScale = 1.0f;
 }
