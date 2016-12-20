@@ -425,7 +425,9 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 		}
 	}
 	void showButtons (boolean bShow){
-		buttonsSlider.show(bShow);
+		if (buttonsSlider != null) {
+			buttonsSlider.show(bShow);
+		}
 	}
 
 	private void showScalingInstructions(){
@@ -453,7 +455,6 @@ public class BackyardBrainsMain extends AppCompatActivity implements View.OnClic
 				alertDialog.show();
 			}
 	}
-
 
 	// ---------------------------------------------------------------------------------------------
 	// ----------------------------------------- BROADCAST RECEIVERS CLASS

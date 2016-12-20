@@ -42,7 +42,7 @@ public class BYBSlidingView implements Animation.AnimationListener{
         bAnimating = false;
     }
     public boolean show(boolean bShow) {
-        Log.w(TAG + name, "show: " + (bShow?"true":"false")+ "  isShowing: "+ (isShowing()?"true":"false"));
+       // Log.w(TAG + name, "show: " + (bShow?"true":"false")+ "  isShowing: "+ (isShowing()?"true":"false"));
         if(mView == null)return false;
         if((isShowing() != bShow ) && !bAnimating) {
             mView.startAnimation(bShow?animShow:animHide);
