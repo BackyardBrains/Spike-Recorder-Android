@@ -1,9 +1,11 @@
 package com.backyardbrains;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,9 +16,16 @@ import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.view.BYBSlidingView;
 
-public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment {
-    BYBSlidingView stopRecButton;
+import java.util.List;
 
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
+
+public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment  implements EasyPermissions.PermissionCallbacks {
+    BYBSlidingView stopRecButton;
+    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
+    private static final int BYB_SETTINGS_SCREEN = 121;
     // ----------------------------------------------------------------------------------------
     public BackyardBrainsPlayLiveScopeFragment(){
         super();
@@ -48,6 +57,46 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
             return getAudioService().isRecording();
         }
         return false;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //                      Permission Request >= API 23
+    //////////////////////////////////////////////////////////////////////////////
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM )
+    private void startRecording() {
+        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            if(getAudioService()!=null){
+                getAudioService().startRecording();
+            }
+        } else {
+            // Request one permission
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage),
+                    BYB_WRITE_EXTERNAL_STORAGE_PERM , Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+    }
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+//        Log.d(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+//        Log.d(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this, getString(R.string.rationale_ask_again))
+                    .setTitle(getString(R.string.title_settings_dialog))
+                    .setPositiveButton(getString(R.string.setting))
+                    .setNegativeButton(getString(R.string.cancel), null /* click listener */)
+                    .setRequestCode(BYB_SETTINGS_SCREEN)
+                    .build()
+                    .show();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,9 +160,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         mRecordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(getAudioService()!=null){
-                    getAudioService().startRecording();;
-                }
+                startRecording();
             }
         });
         // ------------------------------------
