@@ -52,6 +52,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public static final int		PCM_MAXIMUM_VALUE		= (Short.MAX_VALUE * 3);
 	public static final int     MIN_GL_HORIZONTAL_SIZE  = 16;
 	public static final int     MIN_GL_VERTICAL_SIZE    = 400;
+	public static final int		MAX_NUM_SAMPLES			= 4410000; //100 seconds
 	protected float				minimumDetectedPCMValue	= -5000000f;
 
 	protected int startIndex =0;
@@ -103,7 +104,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 		prevGlWindowHorizontalSize = glWindowHorizontalSize;
 		int maxlength = 0;
 		if (mBufferToDraws != null) {
-			maxlength = mBufferToDraws.length;
+			maxlength = Math.min(mBufferToDraws.length, MAX_NUM_SAMPLES);
 			if (newX < MIN_GL_HORIZONTAL_SIZE){
 				newX = MIN_GL_HORIZONTAL_SIZE;
 			}
