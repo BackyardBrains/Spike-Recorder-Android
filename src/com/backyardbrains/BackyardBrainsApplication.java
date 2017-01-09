@@ -38,6 +38,11 @@ public class BackyardBrainsApplication extends Application {
 	protected AudioService	mAudioService;
 	protected BYBAnalysisManager analysisManager;
 
+
+	public boolean isTouchSupported(){
+		return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+	}
+
 	public boolean isAudioServiceRunning() {
 		return bAudioServiceRunning;
 	}

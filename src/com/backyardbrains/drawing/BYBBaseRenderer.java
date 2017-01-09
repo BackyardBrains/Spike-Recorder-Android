@@ -457,6 +457,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 //			BYBGlUtils.drawGlLine(gl, scalingAreaEnd, -getGlWindowVerticalSize(),scalingAreaEnd, getGlWindowVerticalSize(),0xFF8F06FF);
 			gl.glDisable(GL10.GL_BLEND);
 		}
+//		BYBGlUtils.drawGlLine(gl, screenToSampleScale(width/4),pixelHeightToGlHeight( height - 20), screenToSampleScale(3*width/4),pixelHeightToGlHeight( height - 20),0xFFFFFFFF);
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void drawingHandler(GL10 gl) {}

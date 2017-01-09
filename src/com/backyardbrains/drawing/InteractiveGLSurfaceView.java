@@ -20,9 +20,11 @@
 package com.backyardbrains.drawing;
 
 
+import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.BackyardBrainsBaseScopeFragment;
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.R;
+import com.backyardbrains.view.BYBZoomButton;
 import com.backyardbrains.view.ScaleListener;
 import com.backyardbrains.view.SingleFingerGestureDetector;
 import com.backyardbrains.view.TwoDimensionScaleGestureDetector;
@@ -43,6 +45,11 @@ import android.widget.EditText;
 
 import java.io.File;
 
+import static android.view.MotionEvent.TOOL_TYPE_FINGER;
+import static android.view.MotionEvent.TOOL_TYPE_MOUSE;
+import static android.view.MotionEvent.TOOL_TYPE_STYLUS;
+import static android.view.MotionEvent.TOOL_TYPE_UNKNOWN;
+
 public class InteractiveGLSurfaceView extends GLSurfaceView  {
 
 	protected TwoDimensionScaleGestureDetector mScaleDetector;
@@ -55,15 +62,15 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 
 	BYBBaseRenderer renderer;
 
-	private boolean bNonTouchEnabled = false;
+	private boolean bZoomButtonsEnabled = false;
 	public static final int MODE_ZOOM_IN_H = 0;
 	public static final int MODE_ZOOM_OUT_H = 1;
 	public static final int MODE_MOVE = 2;
 	public static final int MODE_ZOOM_IN_V = 3;
 	public static final int MODE_ZOOM_OUT_V = 4;
 
-	public static final String setNonTouchBroadcastAction = "setNonTouchMode";
-	protected int nonTouchMode = -1;
+
+//	protected int nonTouchMode = -1;
 	float startTouchX;
 	float startTouchY;
 	float minScalingDistance = 5;
@@ -87,6 +94,11 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 		mScaleListener.setRenderer(renderer);
 		singleFingerGestureDetector = new SingleFingerGestureDetector(context);
 		getHolder().setFormat( PixelFormat.RGBA_8888 );
+
+		if(mContext != null){
+			boolean bHasTouch = ((BackyardBrainsApplication)mContext.getApplicationContext()).isTouchSupported();
+			enableZoomButtons(!bHasTouch);
+		}
 	}
 //*
 	@Override
@@ -98,42 +110,54 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		setKeepScreenOn(false);
-		if(bNonTouchEnabled){
-			bNonTouchEnabled = false;
-			enableNonTouchListeners(false);
+		if(bZoomButtonsEnabled){
+			bZoomButtonsEnabled = false;
+			enableZoomButtonListeners(false);
 		}
 		super.surfaceDestroyed(holder);
 	}
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-//		Log.d(TAG, "onTouchEvent " + event.toString());
-		if(renderer != null && singleFingerGestureDetector != null &&  (!bNonTouchEnabled || (bNonTouchEnabled && nonTouchMode == MODE_MOVE))){
-			singleFingerGestureDetector.onTouchEvent(event);
-			if(singleFingerGestureDetector.hasChanged()){
-				renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
+		if(event.getPointerCount()>0) {
+			switch (event.getToolType(0)) {
+				case TOOL_TYPE_UNKNOWN:
+				case TOOL_TYPE_STYLUS:
+				case TOOL_TYPE_MOUSE:
+					enableZoomButtons(true);
+					break;
+				case TOOL_TYPE_FINGER:
+					enableZoomButtons(false);
+					break;
 			}
 		}
-		if(!bNonTouchEnabled) {
-			mScaleDetector.onTouchEvent(event);
-		}else{
-			nonTouchScaling(event);
+		Log.d(TAG, "onTouchEvent " + event.toString());
+		if (renderer != null) {
+			if (singleFingerGestureDetector != null) {
+				singleFingerGestureDetector.onTouchEvent(event);
+				if (singleFingerGestureDetector.hasChanged()) {
+					renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
+				}
+			}
+			if (mScaleDetector != null) {
+				mScaleDetector.onTouchEvent(event);
+			}
 		}
 		return true;
 	}
-	private void scaleRenderer(){
+	private void scaleRenderer(int zoomMode){
 		if(renderer != null) {
-			scaleRenderer(renderer.getSurfaceWidth() * 0.5f);
+			scaleRenderer(renderer.getSurfaceWidth() * 0.5f, zoomMode);
 		}
 	}
-	private void scaleRenderer(float focusX){
-		if(renderer != null && isScalingMode()){
+	private void scaleRenderer(float focusX, int zoomMode){
+		if(renderer != null && isScalingMode(zoomMode)){
 			float scaling = 1;
-			if(isZoomIn()){
+			if(isZoomIn(zoomMode)){
 				scaling = scalingFactorIn;
-			}else if(isZoomOut()) {
+			}else if(isZoomOut(zoomMode)) {
 				scaling = scalingFactorOut;
 			}
-			if(isScalingHorizontally()){
+			if(isScalingHorizontally(zoomMode)){
 				renderer.setGlWindowHorizontalSize((int)(renderer.getGlWindowHorizontalSize()*scaling));
 				renderer.setScaleFocusX(focusX);
 			}else {
@@ -141,20 +165,21 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 			}
 		}
 	}
-	private boolean isZoomIn(){
-		return nonTouchMode == MODE_ZOOM_IN_H || nonTouchMode == MODE_ZOOM_IN_V;
+	private boolean isZoomIn(int mode){
+		return mode == MODE_ZOOM_IN_H || mode == MODE_ZOOM_IN_V;
 	}
-	private boolean isZoomOut(){
-		return nonTouchMode == MODE_ZOOM_OUT_H || nonTouchMode == MODE_ZOOM_OUT_V;
+	private boolean isZoomOut(int mode){
+		return mode == MODE_ZOOM_OUT_H || mode == MODE_ZOOM_OUT_V;
 	}
-	private boolean isScalingMode(){
-		return isZoomIn() || isZoomOut();
+	private boolean isScalingMode(int mode){
+		return isZoomIn(mode) || isZoomOut(mode);
 	}
-	private boolean isScalingHorizontally(){
-		return (nonTouchMode == MODE_ZOOM_IN_H || nonTouchMode == MODE_ZOOM_OUT_H);
+	private boolean isScalingHorizontally(int mode){
+		return (mode == MODE_ZOOM_IN_H || mode == MODE_ZOOM_OUT_H);
 	}
+/*
 	private void nonTouchScaling(MotionEvent event) {
-		if(bNonTouchEnabled && renderer != null && isScalingMode()){
+		if(bZoomButtonsEnabled && renderer != null && isScalingMode()){
 			final int action = event.getAction();
 			float distanceX=0;
 			float distanceY=0;
@@ -162,7 +187,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 				distanceX = Math.abs(event.getX() - startTouchX);
 				distanceY = Math.abs(event.getY() - startTouchY);
 			}
-
 			switch (action & MotionEvent.ACTION_MASK) {
 				case MotionEvent.ACTION_DOWN:
 					bIsNonTouchScaling = true;
@@ -201,40 +225,50 @@ public class InteractiveGLSurfaceView extends GLSurfaceView  {
 			}
 		}
 	}
-	public void enableNonTouchMode(){
-		bNonTouchEnabled = true;
-		enableNonTouchListeners(true);
-	}
-	protected void showScalingInstructions() {
-		if (mContext != null && isScalingMode()) {
+	//*/
+	public void enableZoomButtons(boolean bEnable) {
+		boolean bBroadcast = false;
+		if (bEnable && !bZoomButtonsEnabled) {
+			bZoomButtonsEnabled = true;
+			enableZoomButtonListeners(true);
+			bBroadcast = true;
+		} else if (!bEnable && bZoomButtonsEnabled) {
+			bZoomButtonsEnabled = false;
+			enableZoomButtonListeners(false);
+			bBroadcast = true;
+		}
+		if(mContext != null && bBroadcast){
 			Intent i = new Intent();
-			i.setAction("showScalingInstructions");
+			i.setAction("BYBShowZoomUI");
+			i.putExtra("showUI",bZoomButtonsEnabled);
 			mContext.sendBroadcast(i);
 		}
 	}
-	private class NonTouchButtonsListener extends BroadcastReceiver {
+//	protected void showScalingInstructions() {
+//		if (mContext != null && isScalingMode()) {
+//			Intent i = new Intent();
+//			i.setAction("showScalingInstructions");
+//			mContext.sendBroadcast(i);
+//		}
+//	}
+	private class ZoomButtonsListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if(intent.hasExtra("nonTouchMode")){
-				int newMode = intent.getIntExtra("nonTouchMode", MODE_MOVE);
-
-				if(newMode == nonTouchMode){
-					scaleRenderer();
-				}
-				nonTouchMode = newMode;
-				showScalingInstructions();
+			if(intent.hasExtra("zoomMode")){
+				int zoomMode = intent.getIntExtra("zoomMode", MODE_ZOOM_IN_H);
+				scaleRenderer(zoomMode);
 			}
 		}
 	}
-	private NonTouchButtonsListener nonTouchButtonsListener;
-	private void enableNonTouchListeners(boolean reg) {
+	private ZoomButtonsListener zoomButtonsListener;
+	private void enableZoomButtonListeners(boolean reg) {
 		if(mContext != null) {
 			if (reg) {
-				IntentFilter intentFilter = new IntentFilter(setNonTouchBroadcastAction);
-				nonTouchButtonsListener = new NonTouchButtonsListener();
-				mContext.registerReceiver(nonTouchButtonsListener, intentFilter);
+				IntentFilter intentFilter = new IntentFilter(BYBZoomButton.broadcastAction);
+				zoomButtonsListener = new ZoomButtonsListener();
+				mContext.registerReceiver(zoomButtonsListener, intentFilter);
 			} else {
-				mContext.unregisterReceiver(nonTouchButtonsListener);
+				mContext.unregisterReceiver(zoomButtonsListener);
 			}
 		}
 	}

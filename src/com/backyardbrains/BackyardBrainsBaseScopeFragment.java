@@ -5,31 +5,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.Image;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 
 
 import com.backyardbrains.drawing.ThresholdRenderer;
-import com.backyardbrains.view.BYBExclusiveToggleGroup;
-import com.backyardbrains.view.BYBToggleButton;
+import com.backyardbrains.view.BYBZoomButton;
 
 public class BackyardBrainsBaseScopeFragment extends Fragment{
     public String TAG = "BackyardBrainsBaseScopeFragment";
@@ -49,9 +47,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 
     protected int                               layoutID;
 
-    protected BYBExclusiveToggleGroup NonTouchButtons = null;
-    private boolean bDebugNonTouchButtons = false;
-    ImageButton moveButton;
+    protected BYBZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
+    protected View zoomButtonsHolder = null;
     protected Class rendererClass  = null;
 
     public BackyardBrainsBaseScopeFragment(){
@@ -76,6 +73,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 //        debugText = (TextView)rootView.findViewById(R.id.DebugTextView);
 //        debugText.setVisibility(View.VISIBLE);
 //        debugText.bringToFront();
+        setupLabels(rootView);
         ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -87,11 +85,13 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         });
 
-        Log.w(TAG, String.format("glContainer width : %d",mainscreenGLLayout.getWidth() ));
-        setupLabels(rootView);
+
         readSettings();
         reassignSurfaceView();
-        setupNonTouchButtons(rootView);
+        zoomButtonsHolder = rootView.findViewById(R.id.zoomButtonsHolderLayout);
+        setupZoomButtons(rootView);
+        showZoomUI(!((BackyardBrainsMain) getActivity()).isTouchSupported());
+
         return rootView;
     }
     @Override
@@ -125,9 +125,10 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     @Override
     public void onDestroy() {
         destroyRenderer();
-        if(updateUIListener != null){
-            registerUpdateUIReceiver(false);
-        }
+        registerReceivers(false);
+//        if(updateUIListener != null){
+//            registerUpdateUIReceiver(false);
+//        }
         super.onDestroy();
     }
     public void destroyRenderer() {
@@ -198,45 +199,62 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     }
     // ----------------------------------------------------------------------------------------
     public void setupMsLineView(int width) {
+        Log.d(TAG,String.format("setupMsLineView  %d: ", width));
         if(msLine != null) {
-            int w = width / 2;
-            msLine.getLayoutParams().width = w;
+            DisplayMetrics metrics = new DisplayMetrics();
+            getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            int w = (int)Math.floor(width*metrics.density);// /2;
+            Log.d(TAG, String.format("Display density %f: ", metrics.density));
+            Log.d(TAG, String.format("Height Pixels %d: ", metrics.heightPixels));
+            Log.d(TAG, String.format("Width Pixels %d: ", metrics.widthPixels));
+//            Log.d(TAG, String.format("current msLine width : %d", msLine.getLayoutParams().width));
+            msLine.getLayoutParams().width = metrics.widthPixels/2;
+//            float scale = (float)width/(float)msLine.getLayoutParams().width;
+//            msLine.setScaleType(ImageView.ScaleType.FIT_XY);
+//            LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(w, msLine.getHeight());
+
+//            msLine.setLayoutParams(parms);
+//            Log.d(TAG, String.format("width : %d", width));
+//            Log.d(TAG, String.format("msLineWidth: %d", msLine.getWidth()));
+
+//            float scale = (float)w/(float)msLine.getWidth();
+//            msLine.setScaleX(scale);
             msLine.requestLayout();
-            Log.d(TAG, String.format("msLine width : %d", w));
+//            Log.d(TAG, String.format("msLine scale : %f",msLine.getScaleX()));
+//            Log.d(TAG, String.format("msLine width : %d", msLine.getWidth()));
         }
     }
     // ----------------------------------------------------------------------------------------
-    protected void setupNonTouchButtons(View rootView){
-        if(!((BackyardBrainsMain)getActivity()).isTouchSupported()|| bDebugNonTouchButtons) {
-            ImageButton zoomInButtonH = (ImageButton) rootView.findViewById(R.id.zoomInButtonH);
-            ImageButton zoomOutButtonH = (ImageButton) rootView.findViewById(R.id.zoomOutButtonH);
-            ImageButton zoomInButtonV = (ImageButton) rootView.findViewById(R.id.zoomInButtonV);
-            ImageButton zoomOutButtonV = (ImageButton) rootView.findViewById(R.id.zoomOutButtonV);
-            moveButton = (ImageButton) rootView.findViewById(R.id.moveButton);
-            View holder = rootView.findViewById(R.id.noTouchButtonsHolderLayout);
-            if(zoomInButtonH != null && zoomOutButtonH != null &&
-                    zoomInButtonV != null && zoomOutButtonV != null &&
-                    moveButton != null && holder != null && getContext() != null){
-                holder.setVisibility(View.VISIBLE);
-                NonTouchButtons = new BYBExclusiveToggleGroup();
-                mAndroidSurface.enableNonTouchMode();
-                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(), moveButton, R.drawable.move_active, R.drawable.move, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_MOVE));
-                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomInButtonH, R.drawable.zoom_in_active_h, R.drawable.zoom_in_h, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_IN_H));
-                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomOutButtonH, R.drawable.zoom_out_active_h, R.drawable.zoom_out_h, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_OUT_H ));
-                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomInButtonV, R.drawable.zoom_in_active_v, R.drawable.zoom_in_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_IN_V));
-                NonTouchButtons.addToGroup(new BYBToggleButton(getContext(),zoomOutButtonV, R.drawable.zoom_out_active_v, R.drawable.zoom_out_v, InteractiveGLSurfaceView.setNonTouchBroadcastAction, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V ));
-            }
-            registerUpdateUIReceiver(true);
-            updateNonTouchUI();
+    protected void setupZoomButtons(View rootView) {
+        if (getContext() != null) {
+            zoomInButtonH = new BYBZoomButton(getContext(),
+                    (ImageButton) rootView.findViewById(R.id.zoomInButtonH),
+                    R.drawable.plus_button_active,
+                    R.drawable.plus_button,
+                    InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
+            zoomOutButtonH = new BYBZoomButton(getContext(),
+                    (ImageButton) rootView.findViewById(R.id.zoomOutButtonH),
+                    R.drawable.minus_button_active,
+                    R.drawable.minus_button,
+                    InteractiveGLSurfaceView.MODE_ZOOM_OUT_H);
+            zoomInButtonV = new BYBZoomButton(getContext(),
+                    (ImageButton) rootView.findViewById(R.id.zoomInButtonV),
+                    R.drawable.plus_button_active,
+                    R.drawable.plus_button,
+                    InteractiveGLSurfaceView.MODE_ZOOM_IN_V);
+            zoomOutButtonV = new BYBZoomButton(getContext(),
+                    (ImageButton) rootView.findViewById(R.id.zoomOutButtonV),
+                    R.drawable.minus_button_active,
+                    R.drawable.minus_button,
+                    InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
         }
     }
-    protected void updateNonTouchUI(){
-        if(!((BackyardBrainsMain)getActivity()).isTouchSupported()|| bDebugNonTouchButtons) {
-            if(moveButton != null && getAudioService()!=null) {
-                boolean bShow = getIsPlaybackMode() && !getIsPlaying();
-                moveButton.setVisibility(bShow?View.VISIBLE:View.GONE);
-            }
-        }
+    public void showZoomUI(boolean bShow){
+
+        zoomButtonsHolder.setVisibility(bShow?View.VISIBLE:View.GONE);
+
+        zoomInButtonH.setVisibility(bShow);
+        zoomOutButtonH.setVisibility(bShow);
     }
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UTILS
@@ -337,10 +355,13 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
-    private class UpdateUIListener extends BroadcastReceiver {
+    private class ShowZoomUIListener extends BroadcastReceiver {
         @Override
         public void onReceive(android.content.Context context, android.content.Intent intent) {
-            updateNonTouchUI();
+            if(intent.hasExtra("showUI")){
+                boolean bShow = intent.getBooleanExtra("showUI", false);
+                showZoomUI(bShow);
+            }
         }
     }
     // ----------------------------------------- RECEIVERS INSTANCES
@@ -349,7 +370,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     private UpdateMillivoltReciever upmillivolt;
     private UpdateDebugTextViewListener updateDebugTextViewListener;
     private AudioServiceBindListener audioServiceBindListener;
-    private UpdateUIListener updateUIListener = null;
+    private ShowZoomUIListener showZoomUIListener;
+
     // ----------------------------------------- REGISTER RECEIVERS
     public void registerReceivers(boolean bRegister) {
         registerReceiverUpdateMilliseconds(bRegister);
@@ -357,7 +379,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         registerReceiverMillivoltsViewSize(bRegister);
         registerReceiverUpdateDebugView(bRegister);
         registerReceiverAudioServiceBind(bRegister);
-
+        registerReceiverShowZoomUI(bRegister);
     }
     private void registerReceiverUpdateMilliseconds(boolean reg) {
         if(getContext() != null) {
@@ -414,17 +436,15 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
-
-    private void registerUpdateUIReceiver(boolean reg) {
+    private void registerReceiverShowZoomUI(boolean reg) {
         if(getContext() != null) {
             if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBUpdateUI");
-                updateUIListener = new UpdateUIListener();
-                context.registerReceiver(updateUIListener, intentFilter);
+                IntentFilter intentFilter= new IntentFilter("BYBShowZoomUI");
+                showZoomUIListener = new ShowZoomUIListener();
+                context.registerReceiver(showZoomUIListener, intentFilter);
             } else {
-                context.unregisterReceiver(updateUIListener);
+                context.unregisterReceiver(showZoomUIListener);
             }
         }
     }
-
 }

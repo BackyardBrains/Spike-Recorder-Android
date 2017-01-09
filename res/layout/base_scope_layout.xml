@@ -63,27 +63,57 @@
             android:layout_gravity="center_horizontal"
             android:text="@string/default_milliseconds"/>
 
-        <ImageView
-            android:id="@+id/millisecondsViewLine"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|bottom"
-            android:src="@drawable/msline"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:orientation="horizontal"
+            android:visibility="visible"
+            >
+            <ImageButton
+                android:id="@+id/zoomInButtonH"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/plus_button"
+                android:background="#0000"
+                android:layout_gravity="center_vertical|right"
+                android:layout_marginRight="20dp"
+                android:visibility="gone"/>
 
-            android:scaleType="center"
-            android:adjustViewBounds="false"
-            android:cropToPadding="false"/>
+            <ImageView
+                android:id="@+id/millisecondsViewLine"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/msline"
+
+                android:scaleType="center"
+                android:adjustViewBounds="false"
+                android:cropToPadding="false"/>
+
+            <ImageButton
+                android:id="@+id/zoomOutButtonH"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/minus_button"
+                android:background="#0000"
+                android:layout_gravity="center_vertical|left"
+                android:layout_marginLeft="20dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/zoomButtonsHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="40dp"
-        android:layout_marginRight="40dp"
-        android:orientation="horizontal"
+        android:layout_gravity="left|center_vertical"
+        android:orientation="vertical"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@+id/tickmarkImageView"
         android:visibility="gone">
 
         <ImageButton
@@ -93,7 +123,7 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_in_button_v"
             android:padding="5sp"
-            android:src="@drawable/zoom_in_v"/>
+            android:src="@drawable/plus_button"/>
 
         <ImageButton
             android:id="@+id/zoomOutButtonV"
@@ -102,34 +132,8 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_out_button_v"
             android:padding="5sp"
-            android:src="@drawable/zoom_out_v"/>
+            android:src="@drawable/minus_button"/>
 
-        <ImageButton
-            android:id="@+id/zoomInButtonH"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="#0000"
-            android:contentDescription="@string/zoom_in_button_h"
-            android:padding="5sp"
-            android:src="@drawable/zoom_in_h"/>
-
-        <ImageButton
-            android:id="@+id/zoomOutButtonH"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="#0000"
-            android:contentDescription="@string/zoom_out_button_h"
-            android:padding="5sp"
-            android:src="@drawable/zoom_out_h"/>
-
-        <ImageButton
-            android:id="@+id/moveButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="#0000"
-            android:contentDescription="@string/move_button"
-            android:padding="5sp"
-            android:src="@drawable/move"/>
     </LinearLayout>
     <!--<TextView-->
     <!--android:id="@+id/debugText"-->

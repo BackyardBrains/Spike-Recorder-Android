@@ -66,7 +66,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
-
     @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM )
     private void startRecording() {
         if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
@@ -79,12 +78,10 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                     BYB_WRITE_EXTERNAL_STORAGE_PERM , Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
-
     @Override
     public void onPermissionsGranted(int requestCode, List<String> perms) {
 //        Log.d(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
-
     @Override
     public void onPermissionsDenied(int requestCode, List<String> perms) {
 //        Log.d(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
@@ -98,7 +95,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                     .show();
         }
     }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UI
     ////////////////////////////////////////////////////////////////////////////////////////////////
