@@ -44,9 +44,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	protected boolean bPannig = false;
 	protected float panningDx =0;
 
-	protected float scaleFactorX = 0;
-	protected float scaleFactorY = 0;
-
 	protected short[]			mBufferToDraws;
 
 	protected int				height;
@@ -224,10 +221,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 	public void hideScalingArea(){
 		bShowScalingAreaX = false;
 		bShowScalingAreaY = false;
-	}
-	public void setScaleFactor(Float x, Float y ){
-		scaleFactorX = x.floatValue();
-		scaleFactorY = y.floatValue();
 	}
 	private void setStartEndIndex(int arrayLength){
 //		startIndex = 0;
