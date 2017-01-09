@@ -3,12 +3,12 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 android:id="@+id/baseParentLayout"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent" >
+                android:layout_height="fill_parent">
 
     <FrameLayout
         android:id="@+id/glContainer"
         android:layout_width="wrap_content"
-        android:layout_height="fill_parent" >
+        android:layout_height="fill_parent">
     </FrameLayout>
 
     <ImageView
@@ -17,43 +17,43 @@
         android:layout_height="fill_parent"
         android:layout_alignBottom="@id/glContainer"
         android:layout_alignTop="@id/glContainer"
+        android:contentDescription="@string/tickmarks_on_left_side_of_screen"
         android:scaleType="fitXY"
-        android:src="@drawable/tickmarks"
-        android:contentDescription="@string/tickmarks_on_left_side_of_screen">
+        android:src="@drawable/tickmarks">
     </ImageView>
 
 
+    <TextView
+        android:id="@+id/DebugTextView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="top"
+        android:textColor="#ffffffff"
+        android:textSize="8dp"
+        android:typeface="monospace"
+        android:visibility="gone">
 
-            <TextView
-                android:id="@+id/DebugTextView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:textColor="#ffffffff"
-                android:gravity="top"
-                android:visibility="gone"
-                android:typeface="monospace"
-                android:textSize="8dp">
-
-            </TextView>
+    </TextView>
 
     <TextView
         android:id="@+id/mVLabelView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/tickmarkImageView"
         android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/tickmarkImageView"
         android:gravity="center_vertical"
-        android:text="@string/default_milliseconds" />
+        android:text="@string/default_milliseconds"/>
 
     <LinearLayout
         android:id="@+id/millisecondsViewLayout"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/triggerViewSampleChangerLayout"
         android:layout_alignParentBottom="false"
         android:layout_alignWithParentIfMissing="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20sp"
+
         android:orientation="vertical">
 
         <TextView
@@ -61,26 +61,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="@string/default_milliseconds" />
+            android:text="@string/default_milliseconds"/>
+
         <ImageView
             android:id="@+id/millisecondsViewLine"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/msline"
             android:layout_gravity="center_horizontal|bottom"
+            android:src="@drawable/msline"
 
-            />
+            android:scaleType="center"
+            android:adjustViewBounds="false"
+            android:cropToPadding="false"/>
     </LinearLayout>
+
     <LinearLayout
-        android:id="@+id/noTouchButtonsHolderLayout"
+        android:id="@+id/zoomButtonsHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
         android:layout_marginBottom="40dp"
         android:layout_marginRight="40dp"
+        android:orientation="horizontal"
         android:visibility="gone">
+
         <ImageButton
             android:id="@+id/zoomInButtonV"
             android:layout_width="wrap_content"
@@ -88,7 +93,8 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_in_button_v"
             android:padding="5sp"
-            android:src="@drawable/zoom_in_v" />
+            android:src="@drawable/zoom_in_v"/>
+
         <ImageButton
             android:id="@+id/zoomOutButtonV"
             android:layout_width="wrap_content"
@@ -96,7 +102,8 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_out_button_v"
             android:padding="5sp"
-            android:src="@drawable/zoom_out_v" />
+            android:src="@drawable/zoom_out_v"/>
+
         <ImageButton
             android:id="@+id/zoomInButtonH"
             android:layout_width="wrap_content"
@@ -104,7 +111,8 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_in_button_h"
             android:padding="5sp"
-            android:src="@drawable/zoom_in_h" />
+            android:src="@drawable/zoom_in_h"/>
+
         <ImageButton
             android:id="@+id/zoomOutButtonH"
             android:layout_width="wrap_content"
@@ -112,7 +120,8 @@
             android:background="#0000"
             android:contentDescription="@string/zoom_out_button_h"
             android:padding="5sp"
-            android:src="@drawable/zoom_out_h" />
+            android:src="@drawable/zoom_out_h"/>
+
         <ImageButton
             android:id="@+id/moveButton"
             android:layout_width="wrap_content"
@@ -120,16 +129,16 @@
             android:background="#0000"
             android:contentDescription="@string/move_button"
             android:padding="5sp"
-            android:src="@drawable/move" />
+            android:src="@drawable/move"/>
     </LinearLayout>
     <!--<TextView-->
-        <!--android:id="@+id/debugText"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:textColor="#ffffffff"-->
-        <!--android:layout_gravity="center_horizontal|top"-->
-        <!--android:text="debug"-->
-        <!--android:visibility="visible">-->
+    <!--android:id="@+id/debugText"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:textColor="#ffffffff"-->
+    <!--android:layout_gravity="center_horizontal|top"-->
+    <!--android:text="debug"-->
+    <!--android:visibility="visible">-->
     <!--</TextView>-->
 
 </RelativeLayout>

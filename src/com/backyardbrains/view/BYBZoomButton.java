@@ -13,7 +13,7 @@ import com.backyardbrains.drawing.InteractiveGLSurfaceView;
  * Created by roy on 08-11-16.
  */
 
-public class BYBToggleButton {
+public class BYBZoomButton {
 
     public ImageButton button;
     protected boolean bActive;
@@ -23,7 +23,7 @@ public class BYBToggleButton {
     int broadcastExtra;
     protected Context context = null;
     protected BYBExclusiveToggleGroup group = null;
-    public BYBToggleButton(Context context, ImageButton button, int activeResId, int inactiveResId, String broadcastAction, int broadcastExtra){
+    public BYBZoomButton(Context context, ImageButton button, int activeResId, int inactiveResId, String broadcastAction, int broadcastExtra){
         this.button = button;
         this.broadcastAction = broadcastAction;
         this.broadcastExtra = broadcastExtra;
