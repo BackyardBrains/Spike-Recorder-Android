@@ -21,9 +21,6 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
 	// ----------------------------------------------------------------------------------------
 	// ----------------------------------------------------------------------------------------
-	@Override
-	protected void postDrawingHandler(GL10 gl) {
-	}
 	public void setDrawThumbs(boolean b){
 		if(bDrawThumbs != b){
 			Intent i = new Intent();

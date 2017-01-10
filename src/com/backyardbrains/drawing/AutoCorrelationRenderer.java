@@ -20,10 +20,6 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
 	// ----------------------------------------------------------------------------------------
 	@Override
-	protected void postDrawingHandler(GL10 gl) {
-	}
-	// ----------------------------------------------------------------------------------------
-	@Override
 	protected void drawingHandler(GL10 gl) {
 		initGL(gl);
 		Log.w(TAG, "drawingHandler");

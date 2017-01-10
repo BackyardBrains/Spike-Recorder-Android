@@ -18,12 +18,6 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
 	}
 
 	// ----------------------------------------------------------------------------------------
-	// ----------------------------------------------------------------------------------------
-	@Override
-	protected void postDrawingHandler(GL10 gl) {
-	}
-
-	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
 		int margin = 20;

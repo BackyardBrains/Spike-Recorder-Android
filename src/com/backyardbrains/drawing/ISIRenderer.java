@@ -21,12 +21,6 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
 		super(context);
 	}
 	// ----------------------------------------------------------------------------------------
-	// ----------------------------------------------------------------------------------------
-	@Override
-	protected void postDrawingHandler(GL10 gl) {
-	}
-
-	// ----------------------------------------------------------------------------------------
 	protected void drawISI(GL10 gl, ArrayList<ISIResult> ISI, ofRectangle r, float[] color, boolean bDrawBox) {
 		drawISI(gl, ISI, r.x, r.y, r.width, r.height, color, bDrawBox);
 	}
