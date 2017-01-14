@@ -15,14 +15,12 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 	// ----------------------------------------------------------------------------------------
 	public AutoCorrelationRenderer(Context context) {
 		super(context);
-		Log.w(TAG, "CONSTRUCTOR");
 	}
 
 	// ----------------------------------------------------------------------------------------
 	@Override
 	protected void drawingHandler(GL10 gl) {
 		initGL(gl);
-		Log.w(TAG, "drawingHandler");
 		makeThumbAndMainRectangles();
 		if (getManager() != null) {
 			ArrayList<ArrayList<Integer>> AC = getManager().getAutoCorrelation();
@@ -39,5 +37,8 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 				}
 			}
 		}
+//		renderTextBegin(gl);
+//		glText.drawCX("Auto Correlation", width/2, 100);
+//		renderTextEnd(gl);
 	}
 }
