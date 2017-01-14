@@ -24,7 +24,7 @@ import android.view.MotionEvent;
 
 public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 	private static final String	TAG	= BYBAnalysisBaseRenderer.class.getCanonicalName();
-	private GLText glText;
+	protected GLText glText;
 	protected int				height;
 	protected int				width;
 
@@ -113,8 +113,8 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 
 	// ----------------------------------------------------------------------------------------
 	protected void postDrawingHandler(GL10 gl) {
-		gl.glDisable( GL10.GL_BLEND );                  // Disable Alpha Blend
-		gl.glDisable( GL10.GL_TEXTURE_2D );
+//		gl.glDisable( GL10.GL_BLEND );                  // Disable Alpha Blend
+//		gl.glDisable( GL10.GL_TEXTURE_2D );
 	}
 
 	// ----------------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		gl.glDisable(GL10.GL_DITHER);
 		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-		gl.glEnable(GL10.GL_DEPTH_TEST);
+//		gl.glEnable(GL10.GL_DEPTH_TEST);
 		glText = new GLText( gl, context.getAssets() );
 
 		glText.load( "Roboto-Regular.ttf", 14, 2, 2 );  // Create Font (Height: 14 Pixels / X+Y Padding 2 Pixels)
@@ -152,19 +152,41 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 		gl.glOrthof(0f, width, height, 0f, -1f, 1f);
 		gl.glRotatef(0f, 0f, 0f, 1f);
 
+
 		// Blackout, then we're ready to draw! \o/
-		gl.glEnable(GL10.GL_TEXTURE_2D);
+//		gl.glEnable(GL10.GL_TEXTURE_2D);
 		gl.glClearColor(0f, 0f, 0f, 1.0f);
-		gl.glClearDepthf(1.0f);
-		gl.glEnable(GL10.GL_DEPTH_TEST);
-		gl.glDepthFunc(GL10.GL_LEQUAL);
-		gl.glEnable(GL10.GL_LINE_SMOOTH);
-		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-		// Enable Blending
-		gl.glEnable( GL10.GL_TEXTURE_2D );              // Enable Texture Mapping
+//		gl.glClearDepthf(1.0f);
 		gl.glEnable( GL10.GL_BLEND );                   // Enable Alpha Blend
 		gl.glBlendFunc( GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA );  // Set Alpha Blend Function
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+		gl.glDisable(GL10.GL_DEPTH_TEST);
+//		gl.glDepthFunc(GL10.GL_LEQUAL);
+//		gl.glEnable(GL10.GL_LINE_SMOOTH);
+//		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
+//		// Enable Blending
+
+	}
+	public void renderTextBegin(GL10 gl){
+		gl.glPushMatrix();
+		gl.glMatrixMode(GL10.GL_PROJECTION);
+		gl.glLoadIdentity();
+		gl.glOrthof(0f, width, 0f,height, -1f, 1f);
+		gl.glRotatef(0f, 0f, 0f, 1f);
+
+		gl.glEnable(GL10.GL_TEXTURE_2D);
+		gl.glDisable(GL10.GL_DEPTH_TEST);
+		gl.glEnable(GL10.GL_BLEND);
+
+		gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+
+		glText.begin();
+	}
+	public void renderTextEnd(GL10 gl) {
+		glText.end();
+		gl.glPopMatrix();
+		gl.glDisable(GL10.GL_BLEND);
+		gl.glDisable(GL10.GL_TEXTURE_2D);
 	}
 	// ----------------------------------------------------------------------------------------
 	protected void renderSpikeTrain(GL10 gl){
@@ -260,11 +282,12 @@ public class BYBAnalysisBaseRenderer implements GLSurfaceView.Renderer {
 				for (int i = 0; i < s; i++) {
 					values[i] = ((float) ac.get(i)) / (float) mx;
 				}
-
-				BYBBarGraph graph = new BYBBarGraph(values, px, py, w, h, color);// BYBColors.getColorAsGlById(BYBColors.yellow));
+				BYBBarGraph graph = new BYBBarGraph(values, px, py, w, h, color);
 				if (bDrawBox) {
 					graph.makeBox(BYBColors.getColorAsGlById(BYBColors.white));
 				}
+				graph.setVerticalAxis(0,mx,5);
+				graph.setHorizontalAxis(0,ac.size(), 6);
 				graph.draw(gl);
 			}
 		}
