@@ -375,6 +375,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
         }
 	}
 // ---------------------------------------------------------------------------- REGISTER RECEIVERS
+	@Override
 	public void registerReceivers(boolean bReg) {
 		super.registerReceivers(bReg);
 		registerThresholdHandlePosListener(bReg);
