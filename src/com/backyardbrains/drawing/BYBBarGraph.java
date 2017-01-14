@@ -1,15 +1,19 @@
 package com.backyardbrains.drawing;
 
+import android.util.Log;
+
 import javax.microedition.khronos.opengles.GL10;
 
 public class BYBBarGraph {
 
-	protected BYBMesh mesh;
-	protected BYBMesh axisMesh;
+	protected BYBMesh mesh = null;
+	protected BYBMesh axisMesh = null;
+	protected BYBMesh boxMesh = null;
 	protected float minV, maxV, minH, maxH;
 	protected int numDivsV, numDivsH;
 	protected float x, y, w,h;
-	protected boolean bAxisSet = false;
+	protected boolean bAxisHSet = false;
+	protected boolean bAxisVSet = false;
 	float markerLength = 10;
 	float margin = markerLength + 10;
 	float l, r, t,b;
@@ -23,8 +27,6 @@ public class BYBBarGraph {
 		r = (w<0)?x:x+w;
 		b = (h<0)?y:y+h - margin;
 		t = (h<0)?y+h:y;
-		//mesh.addRectangle(x, y, w, h, BYBColors.yellow);
-		//if(values.length > 0){values[0] = 1.0f;}
 		for(int i = 0; i < values.length; i++){
 			mesh.addRectangle(l+i*barWidth, b, barWidth, -(b-t) * values[i], color);
 		}
@@ -47,17 +49,17 @@ public class BYBBarGraph {
 		for(int i = 0; i < numDivs+1; i++){
 			axisMesh.addLine(l, t+ inc*i, l-markerLength,t+ inc*i, axisColor);
 		}
-		bAxisSet = true;
+		bAxisVSet = true;
 	}
 	
 	public void makeBox(float [] color){
-		if(axisMesh == null){
-			axisMesh  = new BYBMesh(BYBMesh.LINES);
+		if(boxMesh == null){
+			boxMesh = new BYBMesh(BYBMesh.LINES);
 		}
-		axisMesh.addLine(x, y, x+w, y, color);
-		axisMesh.addLine(x+w, y, x+w, y+h, color);
-		axisMesh.addLine(x, y+h, x+w, y+h, color);
-		axisMesh.addLine(x, y, x, y+h, color);
+		boxMesh.addLine(x, y, x+w, y, color);
+		boxMesh.addLine(x+w, y, x+w, y+h, color);
+		boxMesh.addLine(x, y+h, x+w, y+h, color);
+		boxMesh.addLine(x, y, x, y+h, color);
 	}
 	
 	public void setHorizontalAxis(float min, float max, int numDivs){
@@ -70,14 +72,18 @@ public class BYBBarGraph {
 			axisMesh.addLine(l+ inc*i, b, l+ inc*i,b+markerLength, axisColor);
 		}
 		minH = min; maxH = max; numDivsH = numDivs;
-		bAxisSet = true;
+		bAxisHSet = true;
 	}
 	public void draw(GL10 gl){
 		mesh.draw(gl);
-		if(axisMesh.getNumVertices() > 0){
-			axisMesh.draw(gl);
+		if(boxMesh!= null){
+			boxMesh.draw(gl);
 		}
-		//
+		if(axisMesh != null){
+			if(axisMesh.getNumVertices() > 0){
+				axisMesh.draw(gl);
+			}
+		}
 	}
 	
 	
