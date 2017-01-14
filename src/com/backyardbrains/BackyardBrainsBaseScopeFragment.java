@@ -40,7 +40,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 
     protected TextView                          msView;
     protected TextView							mVView;
-//    protected TextView							debugText;
+
     protected ImageView                         msLine;
 
     protected BYBBaseRenderer                   renderer            = null;
@@ -70,9 +70,6 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         View rootView = inflater.inflate(layoutID, container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
-//        debugText = (TextView)rootView.findViewById(R.id.DebugTextView);
-//        debugText.setVisibility(View.VISIBLE);
-//        debugText.bringToFront();
         setupLabels(rootView);
         ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -80,7 +77,6 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             public void onGlobalLayout() {
                 mainscreenGLLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 int width  = mainscreenGLLayout.getMeasuredWidth();
-//                int height = mainscreenGLLayout.getMeasuredHeight();
                 setupMsLineView(width);
             }
         });
@@ -125,7 +121,7 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
     @Override
     public void onDestroy() {
         destroyRenderer();
-        registerReceivers(false);
+//        registerReceivers(false);
 //        if(updateUIListener != null){
 //            registerUpdateUIReceiver(false);
 //        }
@@ -204,24 +200,8 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             DisplayMetrics metrics = new DisplayMetrics();
             getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
             int w = (int)Math.floor(width*metrics.density);// /2;
-            Log.d(TAG, String.format("Display density %f: ", metrics.density));
-            Log.d(TAG, String.format("Height Pixels %d: ", metrics.heightPixels));
-            Log.d(TAG, String.format("Width Pixels %d: ", metrics.widthPixels));
-//            Log.d(TAG, String.format("current msLine width : %d", msLine.getLayoutParams().width));
             msLine.getLayoutParams().width = metrics.widthPixels/2;
-//            float scale = (float)width/(float)msLine.getLayoutParams().width;
-//            msLine.setScaleType(ImageView.ScaleType.FIT_XY);
-//            LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(w, msLine.getHeight());
-
-//            msLine.setLayoutParams(parms);
-//            Log.d(TAG, String.format("width : %d", width));
-//            Log.d(TAG, String.format("msLineWidth: %d", msLine.getWidth()));
-
-//            float scale = (float)w/(float)msLine.getWidth();
-//            msLine.setScaleX(scale);
             msLine.requestLayout();
-//            Log.d(TAG, String.format("msLine scale : %f",msLine.getScaleX()));
-//            Log.d(TAG, String.format("msLine width : %d", msLine.getWidth()));
         }
     }
     // ----------------------------------------------------------------------------------------
