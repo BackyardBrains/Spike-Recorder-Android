@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">BackyardBrains</string>
+    <string name="app_name">Spike Recorder</string>
     <string name="scope_view">View/Record</string>
     <string name="recordings_view">Recordings</string>
     <string name="threshold_view">Threshold</string>
@@ -62,5 +62,8 @@
     <string name="cancel">Cancel</string>
     <string name="settings_dialog_canceled">Settings dialog canceled</string>
     <string name="returned_from_app_settings_to_activity">Returned from app settings to MainActivity</string>
+
+
+    <string name="privacypolicy">Privacy Policy</string>
 
 </resources>

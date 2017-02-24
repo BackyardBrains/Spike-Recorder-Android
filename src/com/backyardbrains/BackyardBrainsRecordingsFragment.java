@@ -29,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -66,6 +67,14 @@ public class BackyardBrainsRecordingsFragment extends ListFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.file_list, container, false);
         ((BackyardBrainsMain)getActivity()).showButtons(true);
+        Button PPbutton = (Button)rootView.findViewById(R.id.privacy_policy_button);
+        PPbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://backyardbrains.com/about/privacy"));
+                startActivity(browserIntent);
+            }
+        });
         return rootView;
     }
 
