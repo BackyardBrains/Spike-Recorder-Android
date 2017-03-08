@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Backyard-Brains-Android-App.iml" filepath="$PROJECT_DIR$/Backyard-Brains-Android-App.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Spike-Recorder-Android.iml" filepath="$PROJECT_DIR$/Spike-Recorder-Android.iml" />
     </modules>
   </component>
 </project>

@@ -1,60 +1,61 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:id="@+id/container"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-              android:orientation="vertical"
-             >
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
     <LinearLayout
-        android:orientation="horizontal"
+        android:id="@+id/buttons"
         android:layout_width="match_parent"
         android:layout_height="42dp"
-        android:layout_weight="0"
-        android:id="@+id/buttons">
+        android:orientation="horizontal">
 
         <Button
-            android:layout_weight="1.0"
+            android:id="@+id/buttonScope"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColorHighlight="@color/naranja"
+            android:layout_weight="1"
             android:text="@string/scope_view"
-            android:id="@+id/buttonScope"/>
+            android:textColorHighlight="@color/naranja" />
+
         <Button
-            android:layout_weight="1.0"
+            android:id="@+id/buttonThresh"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColorHighlight="@color/naranja"
+            android:layout_weight="1"
             android:text="@string/threshold_view"
-            android:id="@+id/buttonThresh"/>
+            android:textColorHighlight="@color/naranja" />
+
         <Button
-            android:layout_weight="1.0"
+            android:id="@+id/buttonRecordings"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:textColorHighlight="@color/naranja"
+            android:layout_weight="1"
             android:text="@string/recordings_view"
-            android:id="@+id/buttonRecordings"/>
+            android:textColorHighlight="@color/naranja" />
     </LinearLayout>
+
     <LinearLayout
-        android:orientation="horizontal"
+        android:id="@+id/fragments"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:id="@+id/fragments">
+        android:baselineAligned="false"
+        android:orientation="horizontal">
 
 
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-        </FrameLayout>
+            android:layout_weight="1"/>
+
         <FrameLayout
             android:id="@+id/fragment_recordings_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="4"
-            android:visibility="visible">
-        </FrameLayout>
+            android:visibility="visible"/>
     </LinearLayout>
 </LinearLayout>
