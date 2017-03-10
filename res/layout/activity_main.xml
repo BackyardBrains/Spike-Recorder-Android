@@ -1,11 +1,11 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:id="@+id/container"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-              android:orientation="vertical"
-             >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -19,6 +19,7 @@
             android:textColorHighlight="@color/naranja"
             android:text="@string/scope_view"
             android:id="@+id/buttonScope"/>
+
         <Button
             android:layout_weight="1.0"
             android:layout_width="wrap_content"
@@ -26,6 +27,7 @@
             android:textColorHighlight="@color/naranja"
             android:text="@string/threshold_view"
             android:id="@+id/buttonThresh"/>
+
         <Button
             android:layout_weight="1.0"
             android:layout_width="wrap_content"
@@ -34,6 +36,7 @@
             android:text="@string/recordings_view"
             android:id="@+id/buttonRecordings"/>
     </LinearLayout>
+
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"

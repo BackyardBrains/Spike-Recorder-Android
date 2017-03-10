@@ -32,7 +32,7 @@ public class BYBGlUtils {
         drawArray2D(gl, array,color, lineWidth, GL10.GL_LINES);
     }
     public static void drawArray2D(GL10 gl, float [] array, int color, float lineWidth, int mode){
-        FloatBuffer buffer = BYBUtils.getFloatBufferFromFloatArray(array );
+        FloatBuffer buffer = BYBUtils.getFloatBufferFromFloatArray(array, array.length);
         if(array.length%2 != 0){
             Log.e("BYBGlUtils", "drawArray2D incorrect array size. array.length%2 !=0");
         }

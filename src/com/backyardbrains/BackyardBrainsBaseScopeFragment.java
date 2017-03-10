@@ -6,81 +6,69 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
-
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
-
-
-import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.view.BYBZoomButton;
+import java.util.Locale;
 
-public class BackyardBrainsBaseScopeFragment extends Fragment{
-    public String TAG = "BackyardBrainsBaseScopeFragment";
+import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utls.LogUtils.LOGE;
+import static com.backyardbrains.utls.LogUtils.LOGW;
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-    protected Context                           context;
+public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
 
-    protected InteractiveGLSurfaceView          mAndroidSurface	    =           null;
-    protected FrameLayout                       mainscreenGLLayout  =           null;
-    protected SharedPreferences                 settings		    =           null;
+    private String TAG = makeLogTag(BackyardBrainsBaseScopeFragment.class);
 
-    protected TextView                          msView;
-    protected TextView							mVView;
+    protected Context context;
 
-    protected ImageView                         msLine;
+    protected InteractiveGLSurfaceView mAndroidSurface = null;
+    protected FrameLayout mainscreenGLLayout = null;
+    protected SharedPreferences settings = null;
 
-    protected BYBBaseRenderer                   renderer            = null;
+    protected TextView msView;
+    protected TextView mVView;
 
-    protected int                               layoutID;
+    protected ImageView msLine;
+
+    private BYBBaseRenderer renderer;
 
     protected BYBZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
     protected View zoomButtonsHolder = null;
-    protected Class rendererClass  = null;
 
-    public BackyardBrainsBaseScopeFragment(){
-        super();
-        layoutID = R.layout.base_scope_layout;
-    }
+    protected float[] bufferWithXs = BYBBaseRenderer.initTempBuffer();
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-    // ----------------------------------------------------------------------------------------
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         getContext();
-        View rootView = inflater.inflate(layoutID, container, false);
+        View rootView = inflater.inflate(getLayoutID(), container, false);
         getSettings();
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.glContainer);
         setupLabels(rootView);
         ViewTreeObserver vto = mainscreenGLLayout.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
+            @Override public void onGlobalLayout() {
                 mainscreenGLLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                int width  = mainscreenGLLayout.getMeasuredWidth();
+                int width = mainscreenGLLayout.getMeasuredWidth();
                 setupMsLineView(width);
             }
         });
-
 
         readSettings();
         reassignSurfaceView();
@@ -90,97 +78,96 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
 
         return rootView;
     }
-    @Override
-    public void onStart() {
+
+    @Override public void onStart() {
         super.onStart();
+        if (mAndroidSurface != null) mAndroidSurface.onResume();
     }
-    @Override
-    public void onResume() {
+
+    @Override public void onResume() {
         super.onResume();
         registerReceivers(true);
-        if (mAndroidSurface != null) {
-            mAndroidSurface.onResume();
-        }
         readSettings();
     }
-    @Override
-    public void onPause() {
+
+    @Override public void onPause() {
         super.onPause();
-        if (mAndroidSurface != null) {
-            mAndroidSurface.onPause();
-        }
         registerReceivers(false);
         saveSettings();
     }
-    @Override
-    public void onStop() {
+
+    @Override public void onStop() {
         super.onStop();
         saveSettings();
+        if (mAndroidSurface != null) mAndroidSurface.onPause();
         mAndroidSurface = null;
     }
-    @Override
-    public void onDestroy() {
+
+    @Override public void onDestroy() {
         destroyRenderer();
-//        registerReceivers(false);
-//        if(updateUIListener != null){
-//            registerUpdateUIReceiver(false);
-//        }
+        //        registerReceivers(false);
+        //        if(updateUIListener != null){
+        //            registerUpdateUIReceiver(false);
+        //        }
         super.onDestroy();
     }
+
     public void destroyRenderer() {
         if (renderer != null) {
             renderer.close();
             renderer = null;
         }
     }
+
+    protected abstract BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer);
+
+    protected BYBBaseRenderer getRenderer() {
+        return renderer;
+    }
+
+    protected abstract @LayoutRes int getLayoutID();
+
+    protected boolean shouldUseAverager() {
+        return false;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GL
     ////////////////////////////////////////////////////////////////////////////////////////////////
     protected void reassignSurfaceView() {
-        Log.d(TAG, "reassignSurfaceView");
-        if( rendererClass == null){
-            Log.w(TAG, "RendererClass is null. It need to be assigned in the subclass constructor!!");
-            return;
-        }
-        if (getContext()!= null) {
+        LOGD(TAG, "reassignSurfaceView");
+        if (getContext() != null) {
             AudioService as = ((BackyardBrainsApplication) context).getmAudioService();
             mAndroidSurface = null;
 
             if (mainscreenGLLayout != null) {
                 mainscreenGLLayout.removeAllViews();
                 if (as != null) {
-                    as.setUseAverager(rendererClass.equals(ThresholdRenderer.class));
-                }else{
-                    Log.w(TAG, "AudioService is null");
+                    as.setUseAverager(shouldUseAverager());
+                } else {
+                    LOGW(TAG, "AudioService is null");
                 }
                 if (renderer != null) {
                     saveSettings();
                     renderer = null;
                 }
-                if (renderer == null) {
-                    try {
-                        renderer = (BYBBaseRenderer) rendererClass.newInstance();
-//                        ((BYBBaseRenderer)
-                        renderer.setup(context);
-                    } catch (InstantiationException ex) {
-                        Log.d(TAG, rendererClass.getName()+  ex.getMessage());
-                    } catch (IllegalAccessException ex) {
-                        Log.d(TAG, rendererClass.getName()+  ex.getMessage());
-                    }catch (Exception ex){
-                        Log.d(TAG, rendererClass.getName()+  ex.getMessage());
-                    }
-
+                long start = System.currentTimeMillis();
+                LOGD(TAG, "START");
+                try {
+                    renderer = createRenderer(context, bufferWithXs);//(BYBBaseRenderer) rendererClass.newInstance();
+                    LOGD(TAG, "AFTER createRenderer():" + (System.currentTimeMillis() - start));
+                } catch (Exception ex) {
+                    LOGE(TAG, "Renderer creation failed - " + ex.getMessage());
                 }
-                if (mAndroidSurface != null) {
-                    mAndroidSurface = null;
-                }
+                if (mAndroidSurface != null) mAndroidSurface = null;
                 mAndroidSurface = new InteractiveGLSurfaceView(context, renderer);
-                //mScaleListener.setRenderer(renderer);
+                LOGD(TAG, "AFTER new InteractiveGLSurfaceView():" + (System.currentTimeMillis() - start));
                 mainscreenGLLayout.addView(mAndroidSurface);
             }
             readSettings();
         }
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UI
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,58 +176,51 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         mVView = (TextView) v.findViewById(R.id.mVLabelView);
         msLine = (ImageView) v.findViewById(R.id.millisecondsViewLine);
     }
+
     // ----------------------------------------------------------------------------------------
     public void setDisplayedMilliseconds(Float ms) {
         msView.setText(ms.toString());
     }
+
     // ----------------------------------------------------------------------------------------
     public void setupMsLineView(int width) {
-        Log.d(TAG,String.format("setupMsLineView  %d: ", width));
-        if(msLine != null) {
+        LOGD(TAG, String.format(Locale.getDefault(), "setupMsLineView  %d: ", width));
+        if (getActivity() != null && msLine != null) {
             DisplayMetrics metrics = new DisplayMetrics();
             getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            int w = (int)Math.floor(width*metrics.density);// /2;
-            msLine.getLayoutParams().width = metrics.widthPixels/2;
+            int w = (int) Math.floor(width * metrics.density);// /2;
+            msLine.getLayoutParams().width = metrics.widthPixels / 2;
             msLine.requestLayout();
         }
     }
+
     // ----------------------------------------------------------------------------------------
     protected void setupZoomButtons(View rootView) {
         if (getContext() != null) {
-            zoomInButtonH = new BYBZoomButton(getContext(),
-                    (ImageButton) rootView.findViewById(R.id.zoomInButtonH),
-                    R.drawable.plus_button_active,
-                    R.drawable.plus_button,
-                    InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
-            zoomOutButtonH = new BYBZoomButton(getContext(),
-                    (ImageButton) rootView.findViewById(R.id.zoomOutButtonH),
-                    R.drawable.minus_button_active,
-                    R.drawable.minus_button,
-                    InteractiveGLSurfaceView.MODE_ZOOM_OUT_H);
-            zoomInButtonV = new BYBZoomButton(getContext(),
-                    (ImageButton) rootView.findViewById(R.id.zoomInButtonV),
-                    R.drawable.plus_button_active,
-                    R.drawable.plus_button,
-                    InteractiveGLSurfaceView.MODE_ZOOM_IN_V);
-            zoomOutButtonV = new BYBZoomButton(getContext(),
-                    (ImageButton) rootView.findViewById(R.id.zoomOutButtonV),
-                    R.drawable.minus_button_active,
-                    R.drawable.minus_button,
-                    InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
+            zoomInButtonH = new BYBZoomButton(getContext(), (ImageButton) rootView.findViewById(R.id.zoomInButtonH),
+                R.drawable.plus_button_active, R.drawable.plus_button, InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
+            zoomOutButtonH = new BYBZoomButton(getContext(), (ImageButton) rootView.findViewById(R.id.zoomOutButtonH),
+                R.drawable.minus_button_active, R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_H);
+            zoomInButtonV = new BYBZoomButton(getContext(), (ImageButton) rootView.findViewById(R.id.zoomInButtonV),
+                R.drawable.plus_button_active, R.drawable.plus_button, InteractiveGLSurfaceView.MODE_ZOOM_IN_V);
+            zoomOutButtonV = new BYBZoomButton(getContext(), (ImageButton) rootView.findViewById(R.id.zoomOutButtonV),
+                R.drawable.minus_button_active, R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
         }
     }
-    public void showZoomUI(boolean bShow){
 
-        zoomButtonsHolder.setVisibility(bShow?View.VISIBLE:View.GONE);
+    public void showZoomUI(boolean bShow) {
+
+        zoomButtonsHolder.setVisibility(bShow ? View.VISIBLE : View.GONE);
 
         zoomInButtonH.setVisibility(bShow);
         zoomOutButtonH.setVisibility(bShow);
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UTILS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public AudioService getAudioService(){
-        if(getContext()!=null) {
+    public AudioService getAudioService() {
+        if (getContext() != null) {
             BackyardBrainsApplication app = ((BackyardBrainsApplication) getContext());
             if (app != null) {
                 return app.mAudioService;
@@ -248,29 +228,32 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         }
         return null;
     }
-    public boolean getIsPlaybackMode(){
-        if(getAudioService() != null){
+
+    public boolean getIsPlaybackMode() {
+        if (getAudioService() != null) {
             return getAudioService().isPlaybackMode();
         }
         return false;
     }
-    public boolean getIsPlaying(){
-        if(getAudioService() != null){
+
+    public boolean getIsPlaying() {
+        if (getAudioService() != null) {
             return getAudioService().isAudioPlayerPlaying();
         }
         return false;
     }
-    @Override
-    public Context getContext(){
-        if(context == null){
+
+    @Override public Context getContext() {
+        if (context == null) {
             FragmentActivity act = getActivity();
-            if(act == null) {
+            if (act == null) {
                 return null;
             }
             context = act.getApplicationContext();
         }
         return context;
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,55 +262,63 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             settings = getActivity().getPreferences(BackyardBrainsMain.MODE_PRIVATE);
         }
     }
+
     // ----------------------------------------------------------------------------------------
     protected void readSettings() {
         getSettings();
         if (settings != null) {
             if (renderer != null) {
-                renderer.readSettings(settings,TAG);
+                renderer.readSettings(settings, TAG);
             }
         }
     }
+
     // ----------------------------------------------------------------------------------------
     protected void saveSettings() {
         getSettings();
         if (settings != null) {
-            renderer.saveSettings(settings,TAG);
+            renderer.saveSettings(settings, TAG);
         }
     }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // -----------------------------------------  BROADCASTING LISTENERS
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     private class UpdateMillisecondsReciever extends BroadcastReceiver {
-        @Override
-        public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
             msView.setText(intent.getStringExtra("millisecondsDisplayedString"));
-        };
+        }
+
+        ;
     }
+
     private class UpdateMillivoltReciever extends BroadcastReceiver {
-        @Override
-        public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
             mVView.setText(intent.getStringExtra("millivoltsDisplayedString"));
-        };
+        }
+
+        ;
     }
+
     private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
             mVView.setHeight(intent.getIntExtra("millivoltsViewNewSize", mVView.getHeight()));
-        };
+        }
+
+        ;
     }
+
     private class UpdateDebugTextViewListener extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-//            if(intent.hasExtra("text")) {
-//                debugText.setText(intent.getStringExtra("text"));
-//            }
+        @Override public void onReceive(Context context, Intent intent) {
+            //            if(intent.hasExtra("text")) {
+            //                debugText.setText(intent.getStringExtra("text"));
+            //            }
         }
     }
+
     private class AudioServiceBindListener extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             if (intent.hasExtra("isBind")) {
                 if (!intent.getBooleanExtra("isBind", true)) {
                     destroyRenderer();
@@ -335,15 +326,16 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private class ShowZoomUIListener extends BroadcastReceiver {
-        @Override
-        public void onReceive(android.content.Context context, android.content.Intent intent) {
-            if(intent.hasExtra("showUI")){
+        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            if (intent.hasExtra("showUI")) {
                 boolean bShow = intent.getBooleanExtra("showUI", false);
                 showZoomUI(bShow);
             }
         }
     }
+
     // ----------------------------------------- RECEIVERS INSTANCES
     private UpdateMillisecondsReciever upmillirec;
     private SetMillivoltViewSizeReceiver milliVoltSize;
@@ -361,8 +353,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
         registerReceiverAudioServiceBind(bRegister);
         registerReceiverShowZoomUI(bRegister);
     }
+
     private void registerReceiverUpdateMilliseconds(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
                 upmillirec = new UpdateMillisecondsReciever();
@@ -372,8 +365,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private void registerReceiverUpdateMillivolts(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentFilterVolts = new IntentFilter("BYBUpdateMillivoltReciever");
                 upmillivolt = new UpdateMillivoltReciever();
@@ -383,8 +377,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private void registerReceiverMillivoltsViewSize(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentFilterVoltSize = new IntentFilter("BYBMillivoltsViewSize");
                 milliVoltSize = new SetMillivoltViewSizeReceiver();
@@ -394,8 +389,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private void registerReceiverUpdateDebugView(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentUpdateDebugTextFilter = new IntentFilter("updateDebugView");
                 updateDebugTextViewListener = new UpdateDebugTextViewListener();
@@ -405,8 +401,9 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private void registerReceiverAudioServiceBind(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentAudioServiceBindFilter = new IntentFilter("BYBAudioServiceBind");
                 audioServiceBindListener = new AudioServiceBindListener();
@@ -416,10 +413,11 @@ public class BackyardBrainsBaseScopeFragment extends Fragment{
             }
         }
     }
+
     private void registerReceiverShowZoomUI(boolean reg) {
-        if(getContext() != null) {
+        if (getContext() != null) {
             if (reg) {
-                IntentFilter intentFilter= new IntentFilter("BYBShowZoomUI");
+                IntentFilter intentFilter = new IntentFilter("BYBShowZoomUI");
                 showZoomUIListener = new ShowZoomUIListener();
                 context.registerReceiver(showZoomUIListener, intentFilter);
             } else {

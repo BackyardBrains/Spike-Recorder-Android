@@ -6,7 +6,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.0'
-        classpath 'io.fabric.tools:gradle:1.22.0'
+        classpath 'io.fabric.tools:gradle:1.22.1'
     }
 }
 repositories {
@@ -45,9 +45,16 @@ android {
         minSdkVersion 17
         targetSdkVersion 25
         versionCode 17
-        versionName '1.4.1'
     }
     productFlavors {
+        prod {
+            versionName '1.4.1'
+        }
+        dev {
+            minSdkVersion 21
+            versionCode 1
+            versionName '1.0'
+        }
     }
 }
 ext {
@@ -57,7 +64,7 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile "com.android.support:appcompat-v7:$supportLibVersion"
     // crashlytics
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.6@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.7@aar') {
         transitive = true;
     }
 }

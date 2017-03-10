@@ -19,113 +19,110 @@
 
 package com.backyardbrains;
 
-import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.AudioService.AudioServiceBinder;
-
 import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.util.Log;
-import com.backyardbrains.analysis.*;
+import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.BuildConfig;
 import io.fabric.sdk.android.Fabric;
 
 public class BackyardBrainsApplication extends Application {
-	private boolean			bAudioServiceRunning = false;
-	protected AudioService	mAudioService;
-	protected BYBAnalysisManager analysisManager;
+    private boolean bAudioServiceRunning = false;
+    protected AudioService mAudioService;
+    protected BYBAnalysisManager analysisManager;
 
+    public boolean isTouchSupported() {
+        return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
+    }
 
-	public boolean isTouchSupported(){
-		return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
-	}
+    public boolean isAudioServiceRunning() {
+        return bAudioServiceRunning;
+    }
 
-	public boolean isAudioServiceRunning() {
-		return bAudioServiceRunning;
-	}
-	public void startAudioService() {
-		if (!this.bAudioServiceRunning) {
-			startService(new Intent(this, AudioService.class));
-			bAudioServiceRunning = true;
-			bindAudioService(true);
-		}
-	}
+    public void startAudioService() {
+        if (!this.bAudioServiceRunning) {
+            startService(new Intent(this, AudioService.class));
+            bAudioServiceRunning = true;
+            bindAudioService(true);
+        }
+    }
 
-	public void stopAudioService() {
-		if (this.bAudioServiceRunning) {
-			bindAudioService(false);
-			stopService(new Intent(this, AudioService.class));
-			bAudioServiceRunning = false;
-		}
-	}
-	@Override
-	public void onCreate() {
-		try {
-			Fabric.with(this, new Crashlytics());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		analysisManager = new BYBAnalysisManager(getApplicationContext());
-		//startAudioService();
-	}
-	/**
-	 * Make sure we stop the {@link AudioService} when we exit
-	 */
-	@Override
-	public void onTerminate() {
-		super.onTerminate();
-		analysisManager.close();
-		stopAudioService();
-	}
+    public void stopAudioService() {
+        if (this.bAudioServiceRunning) {
+            bindAudioService(false);
+            stopService(new Intent(this, AudioService.class));
+            bAudioServiceRunning = false;
+        }
+    }
 
-	// ----------------------------------------------------------------------------------------
-	protected void bindAudioService(boolean on) {
-		if (on) {
-			Intent intent = new Intent(this, AudioService.class);
-			bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-		} else {
-			unbindService(mConnection);
-		}
-	}
+    @Override public void onCreate() {
+        super.onCreate();
 
-	// ----------------------------------------------------------------------------------------
-	protected ServiceConnection mConnection = new ServiceConnection() {
+        // Init Crashlytics only in production
+        if (!BuildConfig.DEBUG) Fabric.with(this, new Crashlytics());
 
-		private boolean mAudioServiceIsBound;
+        analysisManager = new BYBAnalysisManager(getApplicationContext());
+        //startAudioService();
+    }
 
-		// Sets a reference in this activity to the {@link AudioService}, which
-		// allows for {@link ByteBuffer}s full of audio information to be passed
-		// from the {@link AudioService} down into the local
-		// {@link OscilloscopeGLSurfaceView}
-		//
-		// @see
-		// android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
-		// android.os.IBinder)
-		@Override
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			// We've bound to LocalService, cast the IBinder and get
-			// LocalService instance
-			AudioServiceBinder binder = (AudioServiceBinder) service;
-			mAudioService = binder.getService();
-			mAudioServiceIsBound = true;
-		}
+    /**
+     * Make sure we stop the {@link AudioService} when we exit
+     */
+    @Override public void onTerminate() {
+        super.onTerminate();
+        analysisManager.close();
+        stopAudioService();
+    }
 
-		@Override
-		public void onServiceDisconnected(ComponentName arg0) {
-			mAudioService = null;
-			mAudioServiceIsBound = false;
-		}
-	};
+    // ----------------------------------------------------------------------------------------
+    protected void bindAudioService(boolean on) {
+        if (on) {
+            Intent intent = new Intent(this, AudioService.class);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        } else {
+            unbindService(mConnection);
+        }
+    }
 
-	// ----------------------------------------------------------------------------------------
-	public AudioService getmAudioService() {
-		return mAudioService;
-	}
-	public BYBAnalysisManager getAnalysisManager(){
-		return analysisManager;
-	}
-	
+    // ----------------------------------------------------------------------------------------
+    protected ServiceConnection mConnection = new ServiceConnection() {
+
+        private boolean mAudioServiceIsBound;
+
+        // Sets a reference in this activity to the {@link AudioService}, which
+        // allows for {@link ByteBuffer}s full of audio information to be passed
+        // from the {@link AudioService} down into the local
+        // {@link OscilloscopeGLSurfaceView}
+        //
+        // @see
+        // android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+        // android.os.IBinder)
+        @Override public void onServiceConnected(ComponentName className, IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get
+            // LocalService instance
+            AudioServiceBinder binder = (AudioServiceBinder) service;
+            mAudioService = binder.getService();
+            mAudioServiceIsBound = true;
+        }
+
+        @Override public void onServiceDisconnected(ComponentName arg0) {
+            mAudioService = null;
+            mAudioServiceIsBound = false;
+        }
+    };
+
+    // ----------------------------------------------------------------------------------------
+    public AudioService getmAudioService() {
+        return mAudioService;
+    }
+
+    public BYBAnalysisManager getAnalysisManager() {
+        return analysisManager;
+    }
 }

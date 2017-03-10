@@ -19,55 +19,35 @@
 
 package com.backyardbrains.drawing;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.text.DecimalFormat;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 import android.content.Context;
-import android.content.Intent;
-import android.opengl.GLSurfaceView;
-import android.os.SystemClock;
-import android.util.Log;
-
-import com.backyardbrains.BYBUtils;
-import com.backyardbrains.BackyardBrainsMain;
-import com.backyardbrains.audio.AudioService;
+import android.support.annotation.NonNull;
+import com.backyardbrains.utls.LogUtils;
+import java.nio.FloatBuffer;
+import javax.microedition.khronos.opengles.GL10;
 
 public class WaveformRenderer extends BYBBaseRenderer {
 
-	private static final String TAG = "WaveformRenderer";
+    private static final String TAG = LogUtils.makeLogTag(WaveformRenderer.class);
 
-	//----------------------------------------------------------------------------------------
-	public WaveformRenderer(){
-		super();
-		Log.d(TAG,"Constructor");
-	}
-	public WaveformRenderer(Context context) {
-		super(context);
-		Log.d(TAG, "Constructor(context)");
-	}
-	//----------------------------------------------------------------------------------------
-	@Override
-	protected void drawingHandler(GL10 gl) {
+    public WaveformRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
+        super(context, preparedBuffer);
+    }
 
-		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
-		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
+    //----------------------------------------------------------------------------------------
+    @Override protected void drawingHandler(GL10 gl) {
+        setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+        FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
 
-		//firstBufferDrawnCheck();
-		autoScaleCheck();
+        autoScaleCheck();
 
-		gl.glMatrixMode(GL10.GL_MODELVIEW);
-		gl.glLoadIdentity();
+        gl.glMatrixMode(GL10.GL_MODELVIEW);
+        gl.glLoadIdentity();
 
-		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-		gl.glLineWidth(1f);
-		gl.glColor4f(0f, 1f, 0f, 1f);
-		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
-		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
-		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-	}
+        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+        gl.glLineWidth(1f);
+        gl.glColor4f(0f, 1f, 0f, 1f);
+        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
+        gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
+        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+    }
 }
