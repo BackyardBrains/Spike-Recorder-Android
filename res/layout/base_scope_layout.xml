@@ -80,15 +80,12 @@
                 android:visibility="gone"
                 tools:ignore="RtlHardcoded"/>
 
-            <ImageView
+            <View
                 android:id="@+id/millisecondsViewLine"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
                 android:layout_gravity="center"
-                android:src="@drawable/msline"
-                android:scaleType="center"
-                android:adjustViewBounds="false"
-                android:cropToPadding="false"/>
+                android:background="@color/gray_dark"/>
 
             <ImageButton
                 android:id="@+id/zoomOutButtonH"

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_scope"
+        android:enabled="true"
+        android:icon="@drawable/ic_scope"
+        android:title="@string/menu_item_scope"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_threshold"
+        android:enabled="true"
+        android:icon="@drawable/ic_threshold"
+        android:title="@string/menu_item_threshold"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_recordings"
+        android:enabled="true"
+        android:icon="@drawable/ic_recordings"
+        android:title="@string/menu_item_recordings"
+        app:showAsAction="ifRoom"/>
+</menu>

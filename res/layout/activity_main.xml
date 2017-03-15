@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <LinearLayout
+    <!--<LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="42dp"
@@ -35,13 +36,24 @@
             android:textColorHighlight="@color/naranja"
             android:text="@string/recordings_view"
             android:id="@+id/buttonRecordings"/>
-    </LinearLayout>
+    </LinearLayout>-->
 
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:layout_weight="1">
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 
-    </FrameLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="@color/gray_darker"/>
+
+    <android.support.design.widget.BottomNavigationView
+        android:id="@+id/bottom_menu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:itemIconTint="@color/selector_bottom_menu_item"
+        app:itemTextColor="@color/selector_bottom_menu_item"
+        app:menu="@menu/menu_bottom"/>
 </LinearLayout>

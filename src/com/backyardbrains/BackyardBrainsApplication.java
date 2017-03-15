@@ -29,7 +29,6 @@ import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.AudioService.AudioServiceBinder;
 import com.crashlytics.android.Crashlytics;
-import io.fabric.sdk.android.BuildConfig;
 import io.fabric.sdk.android.Fabric;
 
 public class BackyardBrainsApplication extends Application {

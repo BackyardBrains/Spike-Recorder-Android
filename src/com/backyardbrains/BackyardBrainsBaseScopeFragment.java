@@ -17,7 +17,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
@@ -43,7 +42,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     protected TextView msView;
     protected TextView mVView;
 
-    protected ImageView msLine;
+    protected View msLine;
 
     private BYBBaseRenderer renderer;
 
@@ -174,7 +173,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     public void setupLabels(View v) {
         msView = (TextView) v.findViewById(R.id.millisecondsView);
         mVView = (TextView) v.findViewById(R.id.mVLabelView);
-        msLine = (ImageView) v.findViewById(R.id.millisecondsViewLine);
+        msLine = v.findViewById(R.id.millisecondsViewLine);
     }
 
     // ----------------------------------------------------------------------------------------

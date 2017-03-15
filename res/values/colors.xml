@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="naranja">#ff8d08</color>
-    <color name="grey22">#222222</color>
-    <color name="grey40">#404040</color>
+    <color name="colorPrimary">@color/blue</color>
+    <color name="colorPrimaryDark">@color/blue_dark</color>
+    <color name="colorAccent">@color/orange</color>
+
+    <color name="black">#FF000000</color>
+    <color name="blue">#FF007AFF</color>
+    <color name="blue_dark">#FF00366F</color>
+    <color name="gray">#FF8c8c8c</color>
+    <color name="gray_dark">#FF656666</color>
+    <color name="gray_darker">#FF262626</color>
+    <color name="orange">#FFFF8D08</color>
+    <color name="grey22">#FF222222</color>
+    <color name="grey40">#FF404040</color>
 </resources>

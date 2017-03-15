@@ -8,14 +8,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import com.backyardbrains.view.BYBSlidingView;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -48,23 +50,17 @@ public class BackyardBrainsMain extends AppCompatActivity
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_SETTINGS_SCREEN = 125;
 
+    @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
+
     private Fragment oscilloscopeFragment;
     private Fragment thresholdFragment;
     private Fragment recordingsFragment;
     private Fragment spikesFragment;
     private Fragment analysisFragment;
 
-    protected Button buttonScope;
-    protected Button buttonThresh;
-    protected Button buttonRecordings;
-    protected BYBSlidingView buttonsSlider;
-    protected View buttons;
-    protected View buttonsView;
     protected View recordings_drawer;
     protected BYBSlidingView sliding_drawer;
-    private boolean bShowingButtons;
     private int currentFrag = -1;
-    private List<Button> allButtons;
 
     private boolean bShowScalingInstructions = true;
     private boolean bShowingScalingInstructions = false;
@@ -78,12 +74,12 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startAudioService();
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
-        buttonRecordings = (Button) findViewById(R.id.buttonRecordings);
-        buttonScope = (Button) findViewById(R.id.buttonScope);
-        buttonThresh = (Button) findViewById(R.id.buttonThresh);
+        setupUI();
+
+        startAudioService();
 
         recordings_drawer = findViewById(R.id.fragment_recordings_list);
         if (recordings_drawer != null) {
@@ -94,32 +90,19 @@ public class BackyardBrainsMain extends AppCompatActivity
             showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
                 FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
         }
-        //buttonsView = findViewById(R.id.buttons);
-        buttons = findViewById(R.id.buttons);
-        buttonsSlider = new BYBSlidingView(buttons, this, "top bar buttons");
-        //buttons= new BYBSlidingView(buttonsView, getApplicationContext(),
-        //buttonsView.setVisibility(View.VISIBLE);
-        //		buttonsView.bringToFront();
 
-        //		showButtons(true);
-        bShowingButtons = false;
-
-        buttonRecordings.setOnClickListener(this);
-        buttonScope.setOnClickListener(this);
-        buttonThresh.setOnClickListener(this);
-
-        allButtons = new ArrayList<>();
-        if (buttonScope != null) {
-            allButtons.add(buttonScope);
-        }
-        if (buttonRecordings != null) {
-            allButtons.add(buttonRecordings);
-        }
-        if (buttonThresh != null) {
-            allButtons.add(buttonThresh);
-        }
         hideActionBar();
         loadFragment(OSCILLOSCOPE_VIEW);
+    }
+
+    // Initializes user interface
+    private void setupUI() {
+        bottomMenu.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                loadFragment(item.getItemId());
+                return true;
+            }
+        });
     }
 
     @Override protected void onStart() {
@@ -168,11 +151,11 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadFragment(int fragType) {
-        if (fragType == R.id.buttonRecordings) {
+        if (fragType == R.id.action_recordings) {
             fragType = RECORDINGS_LIST;
-        } else if (fragType == R.id.buttonScope) {
+        } else if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
-        } else if (fragType == R.id.buttonThresh) {
+        } else if (fragType == R.id.action_threshold) {
             fragType = THRESHOLD_VIEW;
         }
         Log.d(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
@@ -424,45 +407,24 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    void setSelectedButton(String tag) {
-        setSelectedButton(getFragmentTypeFromName(tag));
-    }
-
     void setSelectedButton(int select) {
-
-        Button selectedButton = null;
         Intent i = null;
         Log.e(TAG, "setSelectedButton");
         switch (select) {
             case OSCILLOSCOPE_VIEW:
-                selectedButton = buttonScope;
                 i = new Intent();
                 i.putExtra("tab", OSCILLOSCOPE_VIEW);
                 break;
             case THRESHOLD_VIEW:
-                selectedButton = buttonThresh;
                 i = new Intent();
                 i.putExtra("tab", THRESHOLD_VIEW);
                 break;
             case RECORDINGS_LIST:
-                selectedButton = buttonRecordings;
                 i = new Intent();
                 i.putExtra("tab", RECORDINGS_LIST);
                 break;
             default:
                 break;
-        }
-        if (allButtons != null) {
-            for (Button b : allButtons) {
-                boolean bIsSelected = (b == selectedButton) && (selectedButton != null);
-                b.setSelected(bIsSelected);
-                b.setTextColor(bIsSelected ? 0xFFFF8D08 : Color.WHITE);
-            }
-        }
-        showButtons(selectedButton != null);
-        if (recordings_drawer != null && selectedButton != null && sliding_drawer != null) {
-            sliding_drawer.show(selectedButton == buttonRecordings);
-            //			recordings_drawer.setVisibility((selectedButton == buttonRecordings)?View.VISIBLE:View.GONE);
         }
         if (i != null) {
             Log.e(TAG, "setSelectedButton: " + getFragmentNameFromType(i.getIntExtra("tab", -1)));
@@ -472,9 +434,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     void showButtons(boolean bShow) {
-        if (buttonsSlider != null) {
-            buttonsSlider.show(bShow);
-        }
+        if (bottomMenu != null) bottomMenu.setVisibility(bShow ? View.VISIBLE : View.GONE);
     }
 
     private void showScalingInstructions() {
