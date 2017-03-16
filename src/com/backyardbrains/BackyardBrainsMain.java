@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
@@ -26,13 +27,17 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
+
 //*/
 //import android.widget.FrameLayout;
 //*/
 
 public class BackyardBrainsMain extends AppCompatActivity
     implements View.OnClickListener, EasyPermissions.PermissionCallbacks {
-    @SuppressWarnings("unused") private static final String TAG = "BackyardBrainsMain";
+
+    private static final String TAG = makeLogTag(BackyardBrainsMain.class);
 
     public static final int INVALID_VIEW = -1;
     public static final int OSCILLOSCOPE_VIEW = 0;
@@ -52,6 +57,7 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
+    private List<WeakReference<Fragment>> fragList = new ArrayList<WeakReference<Fragment>>();
     private Fragment oscilloscopeFragment;
     private Fragment thresholdFragment;
     private Fragment recordingsFragment;
@@ -65,7 +71,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     private boolean bShowScalingInstructions = true;
     private boolean bShowingScalingInstructions = false;
 
-    public enum FragTransaction {
+    private enum FragTransaction {
         ADD, REPLACE, REMOVE
     }
 
@@ -254,8 +260,6 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    List<WeakReference<Fragment>> fragList = new ArrayList<WeakReference<Fragment>>();
-
     @Override public void onAttachFragment(Fragment fragment) {
         fragList.add(new WeakReference<>(fragment));
     }
@@ -288,126 +292,78 @@ public class BackyardBrainsMain extends AppCompatActivity
     public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
         boolean bAnimate, int animIn, int animOut) {
         showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut, false);
-        //		if(!popFragment(fragName)) {
-        //			android.support.v4.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        //			if(bAnimate) {
-        //				transaction.setCustomAnimations(animIn, animOut);
-        //			}
-        //			if (fragTransaction == FragTransaction.REPLACE) {
-        //				transaction.replace(fragContainer, frag, fragName);
-        //				transaction.addToBackStack(fragName);
-        //			} else if (fragTransaction == FragTransaction.REMOVE) {
-        //				transaction.remove(frag);
-        //			} else if (fragTransaction == FragTransaction.ADD) {
-        //				transaction.add(fragContainer, frag, fragName);
-        //				transaction.addToBackStack(fragName);
-        //			}
-        //			transaction.commit();
-        //		}
-        //		printBackstack();
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //                      Action Bar
     //////////////////////////////////////////////////////////////////////////////
-    public void setActionBarTitle(String title) {
-        getSupportActionBar().setTitle(title);
-    }
 
     public void showActionBar() {
-        //        getSupportActionBar().show();
-        android.support.v7.app.ActionBar bar = getSupportActionBar();
+        ActionBar bar = getSupportActionBar();
         if (bar != null) {
             bar.show();
         } else {
-            Log.d(TAG, "show action bar fail. null action bar.");
+            LOGD(TAG, "Showing action bar failed. Action bar was null.");
         }
     }
 
     public void hideActionBar() {
-        //        getSupportActionBar().hide();
-        android.support.v7.app.ActionBar bar = getSupportActionBar();
+        final ActionBar bar = getSupportActionBar();
         if (bar != null) {
             bar.hide();
         } else {
-            Log.d(TAG, "hide action bar fail. null action bar.");
+            LOGD(TAG, "Hiding action bar failed. Action bar was null.");
         }
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //                      Public Methods
     //////////////////////////////////////////////////////////////////////////////
-    public String getPageTitle(int position) {
-        switch (position) {
-            case OSCILLOSCOPE_VIEW:
-            default:
-                return "Oscilloscope View";
-            case THRESHOLD_VIEW:
-                return "Threshold View";
-            case RECORDINGS_LIST:
-                return "Recordings List";
-            case ANALYSIS_VIEW:
-                return "Analysis";
-            case FIND_SPIKES_VIEW:
-                return "FindSpikes view";
-        }
-    }
 
     public boolean isTouchSupported() {
         return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
     }
 
-    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) public void startAudioService() {
-        if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
-            ((BackyardBrainsApplication) getApplication()).startAudioService();
-        } else {
-            EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
-                Manifest.permission.RECORD_AUDIO);
-        }
-    }
-
     //////////////////////////////////////////////////////////////////////////////
     //                      Private Methods
     //////////////////////////////////////////////////////////////////////////////
-    String getFragmentNameFromType(int fragType) {
+
+    private String getFragmentNameFromType(int fragType) {
         switch (fragType) {
             case RECORDINGS_LIST:
                 return BYB_RECORDINGS_FRAGMENT;
             case THRESHOLD_VIEW:
                 return BYB_THRESHOLD_FRAGMENT;
-
             case FIND_SPIKES_VIEW:
                 return BYB_SPIKES_FRAGMENT;
-
             case ANALYSIS_VIEW:
                 return BYB_ANALYSIS_FRAGMENT;
-
             case OSCILLOSCOPE_VIEW:
                 return BYB_OSCILLOSCOPE_FRAGMENT;
-
             case INVALID_VIEW:
             default:
                 return "";
         }
     }
 
-    int getFragmentTypeFromName(String fragName) {
-        if (fragName.equals(BYB_RECORDINGS_FRAGMENT)) {
-            return RECORDINGS_LIST;
-        } else if (fragName.equals(BYB_THRESHOLD_FRAGMENT)) {
-            return THRESHOLD_VIEW;
-        } else if (fragName.equals(BYB_SPIKES_FRAGMENT)) {
-            return FIND_SPIKES_VIEW;
-        } else if (fragName.equals(BYB_ANALYSIS_FRAGMENT)) {
-            return ANALYSIS_VIEW;
-        } else if (fragName.equals(BYB_OSCILLOSCOPE_FRAGMENT)) {
-            return OSCILLOSCOPE_VIEW;
-        } else {
-            return INVALID_VIEW;
+    private int getFragmentTypeFromName(String fragName) {
+        switch (fragName) {
+            case BYB_RECORDINGS_FRAGMENT:
+                return RECORDINGS_LIST;
+            case BYB_THRESHOLD_FRAGMENT:
+                return THRESHOLD_VIEW;
+            case BYB_SPIKES_FRAGMENT:
+                return FIND_SPIKES_VIEW;
+            case BYB_ANALYSIS_FRAGMENT:
+                return ANALYSIS_VIEW;
+            case BYB_OSCILLOSCOPE_FRAGMENT:
+                return OSCILLOSCOPE_VIEW;
+            default:
+                return INVALID_VIEW;
         }
     }
 
-    void setSelectedButton(int select) {
+    private void setSelectedButton(int select) {
         Intent i = null;
         Log.e(TAG, "setSelectedButton");
         switch (select) {
@@ -433,7 +389,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    void showButtons(boolean bShow) {
+    protected void showButtons(boolean bShow) {
         if (bottomMenu != null) bottomMenu.setVisibility(bShow ? View.VISIBLE : View.GONE);
     }
 
@@ -464,6 +420,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
     //                      Permission Request >= API 23
     //////////////////////////////////////////////////////////////////////////////
+
     @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
         @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -480,13 +437,22 @@ public class BackyardBrainsMain extends AppCompatActivity
         // (Optional) Check whether the user denied any permissions and checked "NEVER ASK AGAIN."
         // This will display a dialog directing them to enable the permission in app settings.
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            new AppSettingsDialog.Builder(this, getString(R.string.rationale_ask_again)).setTitle(
-                getString(R.string.title_settings_dialog))
-                .setPositiveButton(getString(R.string.setting))
-                .setNegativeButton(getString(R.string.cancel), null /* click listener */)
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.setting)
+                .setNegativeButton(R.string.cancel)
                 .setRequestCode(BYB_SETTINGS_SCREEN)
                 .build()
                 .show();
+        }
+    }
+
+    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void startAudioService() {
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
+            ((BackyardBrainsApplication) getApplication()).startAudioService();
+        } else {
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
+                Manifest.permission.RECORD_AUDIO);
         }
     }
 
@@ -511,7 +477,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------------------------------------------------------
     private class AudioPlaybackStartListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            //			getActionBar().setSelectedNavigationItem(0);
             Log.w(TAG, "AudioPlaybackStartListener .onReceive");
             loadFragment(OSCILLOSCOPE_VIEW);
         }
@@ -597,7 +562,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         if (getSettings() != null) {
             final SharedPreferences.Editor editor = getSettings().edit();
             editor.putBoolean(TAG + "_ShowScalingInstructions", bShowScalingInstructions);
-            editor.commit();
+            editor.apply();
         }
     }
 }

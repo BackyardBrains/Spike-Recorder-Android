@@ -75,6 +75,7 @@ ext {
     supportLibVersion = '25.3.0'
     butterknifeVersion = '8.5.1'
     crashlyticsVersion = '2.6.7@aar'
+    easyPermissionsVersion = '0.3.0'
 }
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
@@ -85,6 +86,8 @@ dependencies {
     // view
     compile "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+    // permissions
+    compile "pub.devrel:easypermissions:$easyPermissionsVersion"
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true;

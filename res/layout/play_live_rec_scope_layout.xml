@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:id="@+id/playLiveParentLayout"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent" >
+    android:id="@+id/playLiveParentLayout"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
     <include layout="@layout/base_scope_layout"/>
+
     <LinearLayout
         android:id="@+id/buttonHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="right|top" >
+        android:layout_gravity="right|top">
+
         <ImageButton
             android:id="@+id/pauseButton"
             android:layout_width="match_parent"
@@ -16,7 +19,8 @@
             android:background="#0000"
             android:contentDescription="@string/pause_button"
             android:padding="5sp"
-            android:src="@drawable/pause_button" />
+            android:src="@drawable/pause_button"/>
+
         <ImageButton
             android:id="@+id/playButton"
             android:layout_width="match_parent"
@@ -24,16 +28,18 @@
             android:background="#0000"
             android:contentDescription="@string/play_button"
             android:padding="5sp"
-            android:src="@drawable/play_button" />
+            android:src="@drawable/play_button"/>
+
         <ImageButton
             android:id="@+id/recordButton"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#0000"
+            android:background="@android:color/transparent"
             android:contentDescription="@string/start_recording_button"
             android:padding="5sp"
             android:visibility="gone"
-            android:src="@drawable/record_button" />
+            android:src="@drawable/ic_record"/>
+
         <ImageButton
             android:id="@+id/closeButton"
             android:layout_width="match_parent"
@@ -54,6 +60,6 @@
         android:layout_gravity="top|center_horizontal"
         android:text="@string/tap_to_stop_recording"
         android:textAppearance="@android:style/TextAppearance.Large"
-        android:visibility="gone" >
+        android:visibility="gone">
     </TextView>
 </FrameLayout>
