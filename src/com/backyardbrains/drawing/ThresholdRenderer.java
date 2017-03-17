@@ -32,9 +32,12 @@ import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
+
 public class ThresholdRenderer extends WaveformRenderer {
 
-    private static final String TAG = ThresholdRenderer.class.getCanonicalName();
+    private static final String TAG = makeLogTag(ThresholdRenderer.class);
+
     private float threshold;    // in sample value range, which happens to be also gl values
     private float tempThreshold;
     private boolean bIsFirstFrame;
@@ -83,61 +86,19 @@ public class ThresholdRenderer extends WaveformRenderer {
 
     // ----------------------------------------------------------------------------------------
     @Override public void onDrawFrame(GL10 gl) {
-        if (!getCurrentAverage()) {
-            //Log.d(TAG, "AudioService is null!");
-            return;
-        }
-        if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
-            //Log.d(TAG, "Invalid audio buffer!");
-            return;
-        }
+        if (!getCurrentAverage()) return;
+        if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) return;
+
         preDrawingHandler();
         BYBGlUtils.glClear(gl);
         drawingHandler(gl);
         postDrawingHandler(gl);
     }
 
-    // ----------------------------------------------------------------------------------------
-    @Override protected void drawingHandler(GL10 gl) {
-        super.drawingHandler(gl);
-        //		setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
-        //		FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
-        //
-        //		// firstBufferDrawnCheck();
-        //		autoScaleCheck();
-        //
-        //		gl.glMatrixMode(GL10.GL_MODELVIEW);
-        //		gl.glLoadIdentity();
-        //
-        //		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        //		gl.glLineWidth(1f);
-        //		gl.glColor4f(0f, 1f, 0f, 1f);
-        //		gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
-        //		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
-        //		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // @Override
-    protected void postDrawingHandler(GL10 gl) {
-        final float thresholdLineLength = mBufferToDraws.length;
-        // final float thresholdValue = getThresholdValue();
-        float[] thresholdLine =
-            new float[] { -thresholdLineLength * 2, tempThreshold, thresholdLineLength * 2, tempThreshold };
-        FloatBuffer thl = BYBUtils.getFloatBufferFromFloatArray(thresholdLine, thresholdLine.length);
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-        gl.glLineWidth(2.0f);
-        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, thl);
-        gl.glDrawArrays(GL10.GL_LINES, 0, 2);
-        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-    }
-
     // ---------------------------------------------------------------------------------------------
     @Override protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-        if (glWindowHorizontalSize > shortArrayToDraw.length) {
-            setGlWindowHorizontalSize(shortArrayToDraw.length);
-        }
+        if (glWindowHorizontalSize > shortArrayToDraw.length) setGlWindowHorizontalSize(shortArrayToDraw.length);
+
         float[] arr = new float[getGlWindowHorizontalSize() * 2]; // array to fill
         int j = 0; // index of arr
         try {
@@ -193,6 +154,11 @@ public class ThresholdRenderer extends WaveformRenderer {
                 });
             }
         }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    public void adjustThreshold(float y) {
+        adjustThresholdValue(pixelHeightToGlHeight(y));
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
@@ -250,7 +216,7 @@ public class ThresholdRenderer extends WaveformRenderer {
             Log.w(TAG, "savesetting threshold: " + threshold);
             editor.putFloat(TAG + "_threshold", threshold);
             editor.putBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
-            editor.commit();
+            editor.apply();
         }
     }
 }

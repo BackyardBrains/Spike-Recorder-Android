@@ -1,70 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/spikesParentLayout"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent" >
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
 
     <include layout="@layout/base_scope_layout"/>
 
-    <FrameLayout
-        android:id="@+id/rightThresholdHandleLayout"
-        android:layout_width="wrap_content"
+    <com.backyardbrains.view.BYBThresholdHandle
+        android:id="@+id/threshold_handle_left"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
-        android:layout_gravity="right|center_vertical">
+        android:layout_gravity="end|center_vertical"
+        app:byb_orientation="right"/>
 
-        <ImageView
-            android:id="@+id/rightThresholdHandle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/threshold_handle"
-            android:src="@drawable/handle_white_right" />
-
-    </FrameLayout>
-    <FrameLayout
-        android:id="@+id/leftThresholdHandleLayout"
-        android:layout_width="wrap_content"
+    <com.backyardbrains.view.BYBThresholdHandle
+        android:id="@+id/threshold_handle_right"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentStart="true"
-        android:layout_gravity="left|center_vertical" >
-
-        <ImageView
-            android:id="@+id/leftThresholdHandle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-
-            android:contentDescription="@string/threshold_handle"
-            android:src="@drawable/handle_white_left" />
-
-    </FrameLayout>
+        android:layout_gravity="start|center_vertical"
+        app:byb_orientation="left"/>
 
     <LinearLayout
         android:id="@+id/controlsLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_toLeftOf="@id/rightThresholdHandleLayout"
-        android:layout_toRightOf="@id/leftThresholdHandleLayout"
-        android:paddingTop="10dp" >
+        android:layout_marginStart="@dimen/threshold_drag_surface_w"
+        android:layout_marginEnd="@dimen/threshold_drag_surface_w"
+        android:paddingTop="10dp"
+        android:layout_alignParentTop="true">
 
         <ImageButton
-            android:id="@+id/backButton"
+            android:id="@+id/ibtn_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/back_button"
-            android:src="@drawable/backbtn" />
+            android:src="@drawable/backbtn"/>
 
         <ImageButton
-            android:id="@+id/trash_can"
+            android:id="@+id/ibtn_remove_threshold"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/trash_can"
-            android:src="@drawable/trash" />
+            android:src="@drawable/trash"/>
 
         <ImageButton
             android:id="@+id/threshold0"
@@ -74,7 +60,7 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold0"
-            android:src="@drawable/handle1" />
+            android:src="@drawable/handle1"/>
 
         <ImageButton
             android:id="@+id/threshold1"
@@ -84,7 +70,7 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold1"
-            android:src="@drawable/handle2" />
+            android:src="@drawable/handle2"/>
 
         <ImageButton
             android:id="@+id/threshold2"
@@ -94,17 +80,17 @@
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/threshold2"
-            android:src="@drawable/handle3" />
+            android:src="@drawable/handle3"/>
 
         <ImageButton
-            android:id="@+id/new_threshold"
+            android:id="@+id/ibtn_add_threshold"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
             android:contentDescription="@string/new_threshold"
-            android:src="@drawable/plus" />
+            android:src="@drawable/plus"/>
 
     </LinearLayout>
 
@@ -112,9 +98,9 @@
         android:id="@+id/playheadLayout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_toLeftOf="@+id/rightThresholdHandleLayout"
-        android:layout_toRightOf="@id/leftThresholdHandleLayout" >
+        android:layout_marginStart="@dimen/threshold_drag_surface_w"
+        android:layout_marginEnd="@dimen/threshold_drag_surface_w"
+        android:layout_alignParentBottom="true">
 
         <SeekBar
             android:id="@+id/playheadBar"
@@ -126,7 +112,7 @@
             android:indeterminate="false"
             android:max="100000"
             android:minHeight="10dp"
-            android:visibility="visible" />
+            android:visibility="visible"/>
     </LinearLayout>
 
 </RelativeLayout>

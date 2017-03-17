@@ -1,153 +1,216 @@
 package com.backyardbrains.view;
 
-import com.backyardbrains.R;
-import com.backyardbrains.drawing.BYBColors;
-
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.util.Log;
+import android.content.res.TypedArray;
+import android.support.annotation.AttrRes;
+import android.support.annotation.ColorInt;
+import android.support.annotation.ColorRes;
+import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
+import android.support.v4.content.ContextCompat;
+import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnTouchListener;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import com.backyardbrains.R;
+import com.backyardbrains.utls.Func;
+import com.backyardbrains.utls.ViewUtils;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-public class BYBThresholdHandle {
+import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-	private static final String TAG = "BYBThresholdHandle";
-	
-	protected ImageView					button;
-	public Context							context;
-	protected String						name;
-	private UpdateThresholdHandleListener	updateThresholdHandleListener;
-	protected View layoutView;
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public BYBThresholdHandle(Context context, ImageView button, View view, String name) {
-		this.context = context;
-		this.button = button;// ((ImageButton)
-								// view.findViewById(R.id.thresholdHandle));
-		this.layoutView = view;
-		this.name = name;
-		setButton();
-		//setDefaultYPosition();
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public ImageView getHandlerView() {
-		return button;
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public void setButtonColor(int color){
-		this.button.setColorFilter(color);
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------	
-	private void setButton() {
-		setButtonColor(BYBColors.asARGB(BYBColors.getColorAsHexById(BYBColors.red)));
-		
-		////Log.d(TAG, "RED: " + BYBColors.getColorAsHexById(BYBColors.red) + "  " + 0xff0000ff);
-		
-		OnTouchListener threshTouch = new OnTouchListener() {
-			@Override
-			public boolean onTouch(View v, MotionEvent event) {
-				if (v.getVisibility() == View.VISIBLE) {
-					////Log.d("threshold Handle", "y: " + event.getY() + "  view.y: " + v.getY());
-					if (event.getActionIndex() == 0) {
-						Intent i = new Intent();
-						i.setAction("BYBThresholdHandlePos");
-						i.putExtra("name", name);
-						float pos = (float)setYPosition((int)event.getY());
-						i.putExtra("y", pos);
-						switch (event.getActionMasked()) {
-						case MotionEvent.ACTION_DOWN:
-							i.putExtra("action", "down");
-							break;
-						case MotionEvent.ACTION_MOVE:
-							//setYPosition((int)event.getY());
-//							v.setY(event.getRawY() - v.getHeight() / 2 );
-							i.putExtra("action", "move");
-							break;
-						case MotionEvent.ACTION_CANCEL:
-							i.putExtra("action", "cancel");
-							break;
-						case MotionEvent.ACTION_UP:
-							i.putExtra("action", "up");
-							break;
-						}
-						context.sendBroadcast(i);
-					}
-					return true;
-				}
-				return false;
-			}
-		};
-		this.layoutView.setOnTouchListener(threshTouch);
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	public void setDefaultYPosition(){
-		float y = layoutView.getHeight()/4;
-		Intent i = new Intent();
-		i.setAction("BYBThresholdHandlePos");
-		i.putExtra("name", name);
-		i.putExtra("y", y);
-		i.putExtra("action", "up");
-		context.sendBroadcast(i);
-		setYPosition((int)y);
-		}
-	public int setYPosition(int pos){
-		//Log.d(TAG, "setYPosition " + pos);
-		int buttonHalf = (button.getHeight() / 2);
-		int p = pos;
-//		if(p < buttonHalf){
-//			p = buttonHalf;
-//		}
-//		int hiPos = layoutView.getHeight() - buttonHalf;
-//		if(p > hiPos){
-//			p = hiPos;
-//		}
+/**
+ * @author Tihomir Leka <ticapeca at gmail.com>
+ */
+public class BYBThresholdHandle extends ConstraintLayout {
 
-		button.setY(p - buttonHalf);
-		return p;
-	}
-	public void hide(){
-		button.setVisibility(View.GONE);
-	}
-	public void show(){
-		button.setVisibility(View.VISIBLE);
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	// ----------------------------------------- BROADCAST RECEIVERS
-	// -----------------------------------------------------------------------------------------------------------------------------	
-	public void registerUpdateThresholdHandleListener(boolean reg) {
-		////Log.d(TAG, "registerListener " + reg);
-		if (reg) {
-			IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
-			updateThresholdHandleListener = new UpdateThresholdHandleListener();
-			context.registerReceiver(updateThresholdHandleListener, intentFilter);
-		} else {
-			context.unregisterReceiver(updateThresholdHandleListener);
-			updateThresholdHandleListener = null;
-		}
-	}
-	// -----------------------------------------------------------------------------------------------------------------------------
-	private class UpdateThresholdHandleListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			////Log.d(TAG, "updateTheshold onReceive");
-			if (intent.hasExtra("name")) {
-				////Log.d(TAG, "---------------------- intent name: " + intent.getStringExtra("name") + "  object name: " + name);
-				if (name.equals(intent.getStringExtra("name"))) {
-					if (intent.hasExtra("pos")) {
-						int pos = intent.getIntExtra("pos", 0);
-				//		//Log.d(TAG, "---------------------- pos: " + pos);
-						// ImageButton b = thresholdHandle.getImageButton();//
-						// (ImageButton)getView().findViewById(R.id.thresholdHandle);
-						setYPosition(pos);
-						// 	button.setY(pos - (button.getHeight() / 2));
-					}
-				}
-			}
-		}
-	}
+    private static final String TAG = makeLogTag(BYBThresholdHandle.class);
 
+    private static final int HANDLE_PADDING = 5;
+
+    @Retention(RetentionPolicy.SOURCE) @IntDef({
+        Orientation.LEFT, Orientation.RIGHT
+    }) @interface Orientation {
+        /**
+         * Handle is aligned left.
+         */
+        int LEFT = 0;
+        /**
+         * Handle is aligned right.
+         */
+        int RIGHT = 1;
+    }
+
+    @BindView(R.id.v_threshold_drag_surface) View vDragSurface;
+    @BindView(R.id.iv_threshold_handle) ImageView ivHandle;
+    @BindView(R.id.v_threshold_ruler) View vRuler;
+
+    private @ColorInt int handleColor;
+    private @Orientation int handleOrientation;
+    private float handlePosition;
+    private int handlePadding;
+
+    /**
+     * Interface definition for a callback to be invoked when threshold handle changes position.
+     */
+    public interface OnThresholdChangeListener {
+        void onChange(@NonNull View view, float y);
+    }
+
+    private OnThresholdChangeListener listener;
+
+    public BYBThresholdHandle(@NonNull Context context) {
+        this(context, null);
+    }
+
+    public BYBThresholdHandle(@NonNull Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public BYBThresholdHandle(@NonNull Context context, @Nullable AttributeSet attrs, @AttrRes int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+
+        init(attrs);
+    }
+
+    /**
+     * Register a callback to be invoked when threshold handle position is changed.
+     */
+    public void setOnHandlePositionChangeListener(@Nullable OnThresholdChangeListener listener) {
+        this.listener = listener;
+    }
+
+    /**
+     * Sets color of the threshold handle.
+     */
+    public void setColor(@ColorInt int color) {
+        if (handleColor == color) return;
+
+        LOGD(TAG, "Handle color set: " + color);
+
+        handleColor = color;
+        ivHandle.setColorFilter(color);
+        vRuler.setBackgroundColor(color);
+    }
+
+    /**
+     * Set orientation of the threshold handle.
+     */
+    public void setOrientation(@Orientation int orientation) {
+        if (handleOrientation == orientation) return;
+
+        LOGD(TAG, "Handle orientation set: " + (orientation == Orientation.LEFT ? "left" : "right"));
+
+        handleOrientation = orientation;
+
+        ConstraintLayout.LayoutParams lp = (LayoutParams) vDragSurface.getLayoutParams();
+        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : ivHandle.getId();
+        lp.rightToRight = orientation == Orientation.LEFT ? ivHandle.getId() : LayoutParams.PARENT_ID;
+        vDragSurface.setLayoutParams(lp);
+
+        lp = (LayoutParams) ivHandle.getLayoutParams();
+        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : LayoutParams.UNSET;
+        lp.rightToRight = orientation == Orientation.LEFT ? LayoutParams.UNSET : LayoutParams.PARENT_ID;
+        ivHandle.setImageResource(
+            orientation == Orientation.LEFT ? R.drawable.handle_white_left : R.drawable.handle_white_right);
+        ivHandle.setLayoutParams(lp);
+    }
+
+    /**
+     * Sets Y position of the handle.
+     */
+    public float setPosition(float position) {
+        LOGD(TAG, "Handle position set: " + position);
+
+        handlePosition = position;
+        updateUI();
+
+        return handlePosition;
+    }
+
+    // Initializes the view
+    private void init(@Nullable AttributeSet attrs) {
+        LayoutInflater.from(getContext()).inflate(R.layout.view_threshold_handle, this);
+        ButterKnife.bind(this);
+
+        setVisibility(INVISIBLE);
+
+        // calculate handle padding
+        handlePadding = (int) (HANDLE_PADDING * getResources().getDisplayMetrics().density);
+
+        if (attrs != null) {
+            final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.BYBThresholdHandle);
+            try {
+                final @ColorRes int colorResId =
+                    a.getResourceId(R.styleable.BYBThresholdHandle_byb_color, R.color.white);
+                setColor(ContextCompat.getColor(getContext(), colorResId));
+                final int orientationInt = a.getInt(R.styleable.BYBThresholdHandle_byb_orientation, Orientation.LEFT);
+                setOrientation(orientationInt == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
+            } finally {
+                a.recycle();
+            }
+        }
+
+        setupUI();
+    }
+
+    // Initializes view's children
+    private void setupUI() {
+        vDragSurface.setOnTouchListener(new OnTouchListener() {
+
+            @Override public boolean onTouch(View v, MotionEvent event) {
+                if (v.getVisibility() == View.VISIBLE) {
+                    // only always track the first pointer
+                    if (event.getActionIndex() == 0) invokeCallback(setPosition(event.getY()));
+
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        ViewUtils.playAfterNextLayout(this, new Func<View, Void>() {
+            @Nullable @Override public Void apply(@Nullable View source) {
+                updateUI();
+                post(new Runnable() {
+                    @Override public void run() {
+                        setVisibility(VISIBLE);
+                    }
+                });
+                return null;
+            }
+        });
+    }
+
+    // Updates view's children
+    private void updateUI() {
+        if (handlePosition < 0) {
+            ivHandle.setRotation(handleOrientation == Orientation.LEFT ? -90 : 90);
+            ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
+                : vDragSurface.getX() - ivHandle.getWidth() / 2);
+            ivHandle.setY(handlePadding);
+        } else if (handlePosition > vDragSurface.getHeight()) {
+            ivHandle.setRotation(handleOrientation == Orientation.LEFT ? 90 : -90);
+            ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
+                : vDragSurface.getX() - ivHandle.getWidth() / 2);
+            ivHandle.setY(vDragSurface.getHeight() - ivHandle.getHeight() - handlePadding);
+        } else {
+            ivHandle.setRotation(0);
+            ivHandle.setX(handleOrientation == Orientation.LEFT ? 0 : vDragSurface.getX());
+            ivHandle.setY(handlePosition - ivHandle.getHeight() / 2);
+        }
+        vRuler.setY(handlePosition - vRuler.getHeight());
+    }
+
+    // Invokes OnThresholdChangeListener.onChange() callback is set.
+    private void invokeCallback(float pos) {
+        if (listener != null) listener.onChange(this, pos);
+    }
 }

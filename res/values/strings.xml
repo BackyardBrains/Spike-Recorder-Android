@@ -33,7 +33,7 @@
     <string name="start_recording_button">Start Recording Button</string>
     <string name="default_threshold_amount">1 x</string>
     <string name="close_view_button">Close</string>
-    <string name="threshold_handle">Threshold</string>
+    <string name="cd_threshold_handle">Threshold</string>
     <string name="average_num_slider">Num Samples Averaged</string>
     <string name="back_button"> Back to previous page</string>
     <string name="trash_can">Remove current</string>
@@ -54,6 +54,7 @@
     <string name="zoom_in_button_v">select to zoom in vertically</string>
     <string name="zoom_out_button_v">select to zoom out vertically</string>
     <string name="scaling_instructions">You can zoom in or zoom out by either clicking again the highlighted zoom button, click over the waveform for zooming that specific point or click and drag over the waveform to select the area to zoom.\nShould I show this message again?</string>
+    <string name="label_n_times">%dx</string>
 
 
     <string name="rationale_record_audio">This app needs access to your microphone/sound input to be able to work.</string>

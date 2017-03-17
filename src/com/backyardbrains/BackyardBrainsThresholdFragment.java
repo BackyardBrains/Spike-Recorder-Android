@@ -4,28 +4,48 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 import com.backyardbrains.audio.TriggerAverager;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsThresholdFragment.class);
 
-    private BYBThresholdHandle thresholdHandle;
+    @BindView(R.id.threshold_handle) BYBThresholdHandle thresholdHandle;
+    @BindView(R.id.triggerViewSampleChangerLayout) LinearLayout llAvgSamplesContainer;
+    @BindView(R.id.samplesSeekBar) SeekBar sbAvgSamplesCount;
+    @BindView(R.id.numberOfSamplesAveraged) TextView tvAvgSamplesCount;
 
-    @Override public void onStart() {
-        super.onStart();
-        setThresholdGuiVisibility(true);
+    private Unbinder unbinder;
+
+    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        final View view = super.onCreateView(inflater, container, savedInstanceState);
+        if (view != null) {
+            unbinder = ButterKnife.bind(this, view);
+            setupUI();
+        }
+
+        return view;
+    }
+
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
@@ -40,36 +60,27 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         return true;
     }
 
+    @Override protected ThresholdRenderer getRenderer() {
+        return (ThresholdRenderer) super.getRenderer();
+    }
+
+    @Override protected boolean canRecord() {
+        return false;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GUI
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    protected void setViewVisibility(View view, boolean bVisible) {
-        if (view != null) {
-            view.setVisibility(bVisible ? View.VISIBLE : View.GONE);
-        }
-    }
 
-    private void setThresholdGuiVisibility(boolean bVisible) {
-        LOGD(TAG, "setThresholdGuiVisibility: " + (bVisible ? "TRUE" : "FaLSE"));
-        if (getView() != null) {
-            setViewVisibility(thresholdHandle.getHandlerView(), bVisible);
-            setViewVisibility(getView().findViewById(R.id.triggerViewSampleChangerLayout), bVisible);
-            setViewVisibility(getView().findViewById(R.id.samplesSeekBar), bVisible);
-        }
-    }
+    private void setupUI() {
+        thresholdHandle.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
+            @Override public void onChange(@NonNull View view, float y) {
+                getRenderer().adjustThreshold(y);
+            }
+        });
 
-    @Override
-    // ---------------------------------------------------------------------------------------------
-    public void setupButtons(View view) {
-        LOGD(TAG, "setupButtons");
-        super.setupButtons(view);
-
-        thresholdHandle = new BYBThresholdHandle(context, ((ImageView) view.findViewById(R.id.thresholdHandle)),
-            view.findViewById(R.id.thresholdHandleLayout), "OsciloscopeHandle"); // .setOnTouchListener(threshTouch);
-
-        final SeekBar sk = (SeekBar) view.findViewById(R.id.samplesSeekBar);
-
-        sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        sbAvgSamplesCount.setProgress(TriggerAverager.defaultSize);
+        sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
             }
@@ -79,9 +90,8 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
 
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (getView() != null) {
-                    TextView tx = ((TextView) getView().findViewById(R.id.numberOfSamplesAveraged));
-                    if (tx != null) {
-                        tx.setText(progress + "x");
+                    if (tvAvgSamplesCount != null) {
+                        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                     }
                 }
                 if (fromUser && getContext() != null) {
@@ -92,9 +102,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
                 }
             }
         });
-        ((TextView) view.findViewById(R.id.numberOfSamplesAveraged)).setText(TriggerAverager.defaultSize + "x");
-        sk.setProgress(TriggerAverager.defaultSize);
-        //        ((RelativeLayout.LayoutParams)(view.findViewById(R.id.millisecondsViewLayout)).getLayoutParams()).addRule(RelativeLayout.ABOVE, R.id.triggerViewSampleChangerLayout);
+        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), TriggerAverager.defaultSize));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,20 +111,39 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     // -----------------------------------------  BROADCAST RECEIVERS CLASS
     private class SetAverageSliderListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
-            if (intent.hasExtra("maxSize")) {
-                ((SeekBar) getView().findViewById(R.id.samplesSeekBar)).setProgress(intent.getIntExtra("maxSize", 32));
+            if (intent.hasExtra("maxSize")) sbAvgSamplesCount.setProgress(intent.getIntExtra("maxSize", 32));
+        }
+    }
+
+    private class UpdateThresholdHandleListener extends BroadcastReceiver {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (intent.hasExtra("name") && intent.hasExtra("pos") && "OsciloscopeHandle".equals(
+                intent.getStringExtra("name"))) {
+                thresholdHandle.setPosition(intent.getIntExtra("pos", 0));
             }
         }
     }
 
     // ----------------------------------------- RECEIVERS INSTANCES
     private SetAverageSliderListener setAverageSliderListener;
+    private UpdateThresholdHandleListener updateThresholdHandleListener;
 
     // ----------------------------------------- REGISTER RECEIVERS
-    public void registerReceivers(boolean bRegister) {
+    @Override public void registerReceivers(boolean bRegister) {
         super.registerReceivers(bRegister);
         registerReceiverSetAverageSlider(bRegister);
-        thresholdHandle.registerUpdateThresholdHandleListener(bRegister);
+        registerUpdateThresholdHandleListener(bRegister);
+    }
+
+    public void registerUpdateThresholdHandleListener(boolean reg) {
+        if (reg) {
+            IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
+            updateThresholdHandleListener = new UpdateThresholdHandleListener();
+            context.registerReceiver(updateThresholdHandleListener, intentFilter);
+        } else {
+            context.unregisterReceiver(updateThresholdHandleListener);
+            updateThresholdHandleListener = null;
+        }
     }
 
     private void registerReceiverSetAverageSlider(boolean reg) {

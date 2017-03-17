@@ -61,7 +61,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
         mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.analysisGlContainer);
         waitingView = rootView.findViewById(R.id.waitingLayout);
         title = (TextView) rootView.findViewById(R.id.analysis_title);
-        backButton = (ImageButton) rootView.findViewById(R.id.backButton);
+        backButton = (ImageButton) rootView.findViewById(R.id.ibtn_back);
 
         backButton.setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
@@ -218,8 +218,8 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
             }
             currentRenderer = renderer;
             mAndroidSurface = new TouchGLSurfaceView(context, renderer);
-            //mAndroidSurface.setEGLContextClientVersion(2);
-            //			mAndroidSurface.setRenderer(renderer);
+            //glSurface.setEGLContextClientVersion(2);
+            //			glSurface.setRenderer(renderer);
             if (bSetOnDemand) {
                 mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
             }

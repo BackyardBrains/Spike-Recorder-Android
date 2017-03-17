@@ -5,19 +5,19 @@
     android:layout_height="fill_parent">
 
     <FrameLayout
-        android:id="@+id/glContainer"
+        android:id="@+id/fl_container"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent">
     </FrameLayout>
 
     <ImageView
-        android:id="@+id/tickmarkImageView"
+        android:id="@+id/iv_signal_scale"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
-        android:layout_alignBottom="@id/glContainer"
-        android:layout_alignTop="@id/glContainer"
+        android:layout_alignBottom="@id/fl_container"
+        android:layout_alignTop="@id/fl_container"
         android:scaleType="fitXY"
-        android:src="@drawable/tickmarks"
+        android:src="@drawable/signal_scale"
         android:contentDescription="@string/tickmarks_on_left_side_of_screen">
     </ImageView>
 
@@ -39,12 +39,12 @@
         android:layout_alignParentLeft="true">
 
         <ImageView
-            android:id="@+id/thresholdHandle"
+            android:id="@+id/iv_threshold_handle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/threshold_handle"
+            android:contentDescription="@string/cd_threshold_handle"
             android:src="@drawable/handle_white_left"/>
 
     </LinearLayout>
@@ -56,7 +56,7 @@
         android:layout_alignParentRight="true">
 
         <ImageButton
-            android:id="@+id/pauseButton"
+            android:id="@+id/ibtn_pause"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -66,7 +66,7 @@
             android:src="@drawable/pause_button"/>
 
         <ImageButton
-            android:id="@+id/playButton"
+            android:id="@+id/ibtn_play"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -76,7 +76,7 @@
             android:src="@drawable/play_button"/>
 
         <ImageButton
-            android:id="@+id/recordButton"
+            android:id="@+id/ibtn_record"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -86,7 +86,7 @@
             android:src="@drawable/ic_record"/>
 
         <ImageButton
-            android:id="@+id/closeButton"
+            android:id="@+id/ibtn_close"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -98,7 +98,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/TapToStopRecordingTextView"
+        android:id="@+id/tv_stop_recording"
         android:layout_width="match_parent"
         android:layout_height="50sp"
         android:background="#ffff0000"
@@ -109,7 +109,7 @@
     </TextView>
 
     <TextView
-        android:id="@+id/DebugTextView"
+        android:id="@+id/tv_debug"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#ffffffff"
@@ -117,10 +117,10 @@
     </TextView>
 
     <TextView
-        android:id="@+id/mVLabelView"
+        android:id="@+id/tv_signal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:layout_toRightOf="@+id/iv_signal_scale"
         android:layout_alignParentTop="true"
         android:gravity="center_vertical"
         android:text="@string/default_milliseconds"/>
@@ -130,7 +130,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/tickmarkImageView"
+        android:layout_toRightOf="@+id/iv_signal_scale"
         android:visibility="gone">
 
         <SeekBar
@@ -161,7 +161,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/millisecondsView"
+        android:id="@+id/tv_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/triggerViewSampleChangerLayout"

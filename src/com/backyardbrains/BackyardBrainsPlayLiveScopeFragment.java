@@ -11,6 +11,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.view.BYBSlidingView;
@@ -19,33 +22,48 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.LOGW;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment
+public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment
     implements EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(BackyardBrainsPlayLiveScopeFragment.class);
 
+    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
+    @BindView(R.id.tv_stop_recording) View tvStopRecording;
+    @BindView(R.id.ibtn_close) ImageButton ibtnClose;
+    @BindView(R.id.ibtn_play) ImageButton ibtnPlay;
+    @BindView(R.id.ibtn_pause) ImageButton ibtnPause;
+
+    private Unbinder unbinder;
+
     BYBSlidingView stopRecButton;
-    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
     private static final int BYB_SETTINGS_SCREEN = 121;
+    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------------------------------------------------------
+
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = super.onCreateView(inflater, container, savedInstanceState);
-        setupButtons(rootView);
-        ((BackyardBrainsMain) getActivity()).showButtons(true);
-        return rootView;
+        final View view = super.onCreateView(inflater, container, savedInstanceState);
+        if (view != null) {
+            unbinder = ButterKnife.bind(this, view);
+            setupUI();
+        }
+
+        return view;
     }
 
-    @Override public void onStart() {
-        super.onStart();
-        showUIForMode();
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
+
+    protected abstract boolean canRecord();
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
         return new WaveformRenderer(getContext(), preparedBuffer);
@@ -58,20 +76,36 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- OTHER METHODS
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
     public boolean getIsRecording() {
-        if (getAudioService() != null) {
-            return getAudioService().isRecording();
-        }
-        return false;
+        return getAudioService() != null && getAudioService().isRecording();
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //                      Permission Request >= API 23
     //////////////////////////////////////////////////////////////////////////////
+
     @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
         @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
+        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    }
+
+    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.setting)
+                .setNegativeButton(R.string.cancel)
+                .setRequestCode(BYB_SETTINGS_SCREEN)
+                .build()
+                .show();
+        }
     }
 
     @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) private void startRecording() {
@@ -86,58 +120,100 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
         }
     }
 
-    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
-        //LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
-    }
-
-    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
-        //LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            new AppSettingsDialog.Builder(this, getString(R.string.rationale_ask_again)).setTitle(
-                getString(R.string.title_settings_dialog))
-                .setPositiveButton(getString(R.string.setting))
-                .setNegativeButton(getString(R.string.cancel), null /* click listener */)
-                .setRequestCode(BYB_SETTINGS_SCREEN)
-                .build()
-                .show();
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UI
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public void showUIForMode() {
+
+    protected void showPauseButton(boolean show) {
+        showButton(ibtnPause, show);
+    }
+
+    protected void showPlayButton(boolean show) {
+        showButton(ibtnPlay, show);
+    }
+
+    protected void showCloseButton(boolean show) {
+        showButton(ibtnClose, show);
+    }
+
+    protected void showRecButton(boolean show) {
+        showButton(ibtnRecord, show);
+    }
+
+    private void setupUI() {
+        setupButtons();
+        showUIForMode();
+        ((BackyardBrainsMain) getActivity()).showButtons(true);
+    }
+
+    private void setupButtons() {
+        // record button
+        ibtnRecord.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startRecording();
+            }
+        });
+        // stop record button
+        stopRecButton = new BYBSlidingView(tvStopRecording, getContext(), "tapToStopRec");
+        tvStopRecording.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (getAudioService() != null) getAudioService().stopRecording();
+            }
+        });
+        // close button
+        ibtnClose.setVisibility(View.GONE);
+        ibtnClose.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                ibtnClose.setVisibility(View.GONE);
+                if (getContext() != null) {
+                    Intent i = new Intent();
+                    i.setAction("BYBCloseButton");
+                    context.sendBroadcast(i);
+                }
+            }
+        });
+        // play button
+        ibtnPlay.setVisibility(View.GONE);
+        ibtnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (getAudioService() != null) getAudioService().togglePlayback(true);
+            }
+        });
+        // pause button
+        ibtnPause.setVisibility(View.GONE);
+        ibtnPause.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (getAudioService() != null) getAudioService().togglePlayback(false);
+            }
+        });
+    }
+
+    private void showUIForMode() {
         boolean bPlaybackMode = getIsPlaybackMode();
         showPlaybackButtons(bPlaybackMode);
         showRecordingButtons(!bPlaybackMode);
     }
 
-    public void showCloseButton(boolean bShow) {
-        showButton(getView().findViewById(R.id.closeButton), bShow);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void showPlaybackButtons(boolean bShow) {
+    private void showPlaybackButtons(boolean show) {
         boolean bIsPlaying = getIsPlaying();
-        showPauseButton(bIsPlaying && bShow);
-        showPlayButton(!bIsPlaying && bShow);
-        showCloseButton(bShow);
+        showPauseButton(bIsPlaying && show);
+        showPlayButton(!bIsPlaying && show);
+        showCloseButton(show);
     }
 
-    // ----------------------------------------------------------------------------------------
-    public void showPauseButton(boolean bShow) {
-        showButton(getView().findViewById(R.id.pauseButton), bShow);
+    private void showRecordingButtons(boolean show) {
+        boolean bIsRecording = getIsRecording();
+        showRecButton(show && canRecord() && !bIsRecording);
+        showRecBar(show && canRecord() && bIsRecording);
     }
 
-    // ----------------------------------------------------------------------------------------
-    public void showPlayButton(boolean bShow) {
-        showButton(getView().findViewById(R.id.playButton), bShow);
+    private void showRecBar(boolean show) {
+        if (stopRecButton != null) stopRecButton.show(show && canRecord() && getIsRecording());
     }
 
-    // ---------------------------------------------------------------------------------------------
-    public void showButton(View view, boolean bShow) {
+    private void showButton(View view, boolean show) {
         if (view != null) {
-            if (bShow) {
+            if (show) {
                 view.setVisibility(View.VISIBLE);
             } else {
                 if (view.getVisibility() == View.VISIBLE) {
@@ -145,84 +221,6 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
                 }
             }
         }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void showRecButton(boolean bShow) {
-        showButton(getView().findViewById(R.id.recordButton), bShow);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    // ----------------------------------------------------------------------------------------
-    public void showRecordingButtons(boolean bShow) {
-        boolean bIsRecording = getIsRecording();
-        showRecButton(bShow && !bIsRecording);
-        showRecBar(bShow && bIsRecording);
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void showRecBar(boolean bShow) {
-        if (stopRecButton != null) {
-            stopRecButton.show(bShow && getIsRecording());
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void setupButtons(View view) {
-        ImageButton mRecordButton = (ImageButton) view.findViewById(R.id.recordButton);
-        mRecordButton.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startRecording();
-            }
-        });
-        // ------------------------------------
-        View tapToStopRecView = view.findViewById(R.id.TapToStopRecordingTextView);
-        tapToStopRecView.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) {
-                    getAudioService().stopRecording();
-                }
-            }
-        });
-        stopRecButton = new BYBSlidingView(tapToStopRecView, getContext(), "tapToStopRec");
-        // ------------------------------------
-        View.OnClickListener closeButtonListener = new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                ((ImageButton) v.findViewById(R.id.closeButton)).setVisibility(View.GONE);
-                if (getContext() != null) {
-                    Intent i = new Intent();
-                    i.setAction("BYBCloseButton");
-                    context.sendBroadcast(i);
-                }
-                // //LOGD("UIFactory", "Close Button Pressed!");
-            }
-        };
-        ImageButton mCloseButton = (ImageButton) view.findViewById(R.id.closeButton);
-        mCloseButton.setOnClickListener(closeButtonListener);
-        mCloseButton.setVisibility(View.GONE);
-        // ------------------------------------
-        View.OnClickListener playButtonListener = new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) {
-                    getAudioService().togglePlayback(true);
-                }
-            }
-        };
-        ImageButton mPlayButton = (ImageButton) view.findViewById(R.id.playButton);
-        mPlayButton.setOnClickListener(playButtonListener);
-        mPlayButton.setVisibility(View.GONE);
-        // ------------------------------------
-        View.OnClickListener pauseButtonListener = new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) {
-                    getAudioService().togglePlayback(false);
-                }
-            }
-        };
-        ImageButton mPauseButton = (ImageButton) view.findViewById(R.id.pauseButton);
-        mPauseButton.setOnClickListener(pauseButtonListener);
-        mPauseButton.setVisibility(View.GONE);
-        // ------------------------------------
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,7 +246,7 @@ public class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScope
     private UpdateUIListener updateUIListener;
 
     // ----------------------------------------- REGISTER RECEIVERS
-    public void registerReceivers(boolean bRegister) {
+    @Override public void registerReceivers(boolean bRegister) {
         super.registerReceivers(bRegister);
         registerAudioPlaybackStartReceiver(bRegister);
         registerUpdateUIReceiver(bRegister);

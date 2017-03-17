@@ -9,25 +9,26 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.view.BYBSlidingView;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.List;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utls.LogUtils.LOGI;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 //*/
@@ -46,6 +47,8 @@ public class BackyardBrainsMain extends AppCompatActivity
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
 
+    private static final int BACK_STACK_MAX_ITEMS = 2;
+
     public static final String BYB_RECORDINGS_FRAGMENT = "BackyardBrainsRecordingsFragment";
     public static final String BYB_THRESHOLD_FRAGMENT = "BackyardBrainsThresholdFragment";
     public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment";
@@ -55,16 +58,9 @@ public class BackyardBrainsMain extends AppCompatActivity
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_SETTINGS_SCREEN = 125;
 
+    @Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
-    private List<WeakReference<Fragment>> fragList = new ArrayList<WeakReference<Fragment>>();
-    private Fragment oscilloscopeFragment;
-    private Fragment thresholdFragment;
-    private Fragment recordingsFragment;
-    private Fragment spikesFragment;
-    private Fragment analysisFragment;
-
-    protected View recordings_drawer;
     protected BYBSlidingView sliding_drawer;
     private int currentFrag = -1;
 
@@ -75,6 +71,14 @@ public class BackyardBrainsMain extends AppCompatActivity
         ADD, REPLACE, REMOVE
     }
 
+    private BottomNavigationView.OnNavigationItemSelectedListener bottomMenuListener =
+        new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                loadFragment(item.getItemId());
+                return true;
+            }
+        };
+
     //////////////////////////////////////////////////////////////////////////////
     //                       LIFECYCLE OVERRIDES
     //////////////////////////////////////////////////////////////////////////////
@@ -84,31 +88,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         ButterKnife.bind(this);
 
         setupUI();
-
         startAudioService();
-
-        recordings_drawer = findViewById(R.id.fragment_recordings_list);
-        if (recordings_drawer != null) {
-            sliding_drawer =
-                new BYBSlidingView(recordings_drawer, this, "recordings sliding drawer", R.anim.slide_in_right,
-                    R.anim.slide_out_right);
-            //recordings_drawer.setVisibility(View.GONE);
-            showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
-                FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
-        }
-
-        hideActionBar();
         loadFragment(OSCILLOSCOPE_VIEW);
-    }
-
-    // Initializes user interface
-    private void setupUI() {
-        bottomMenu.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                loadFragment(item.getItemId());
-                return true;
-            }
-        });
     }
 
     @Override protected void onStart() {
@@ -141,7 +122,7 @@ public class BackyardBrainsMain extends AppCompatActivity
             }
         }
         if (bShouldPop) {
-            popFragment();
+            if (!popFragment()) finish();
         }
     }
 
@@ -157,14 +138,14 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadFragment(int fragType) {
-        if (fragType == R.id.action_recordings) {
-            fragType = RECORDINGS_LIST;
-        } else if (fragType == R.id.action_scope) {
+        if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
         } else if (fragType == R.id.action_threshold) {
             fragType = THRESHOLD_VIEW;
+        } else if (fragType == R.id.action_recordings) {
+            fragType = RECORDINGS_LIST;
         }
-        Log.d(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
+        LOGD(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
         if (fragType != currentFrag) {
             currentFrag = fragType;
             Fragment frag;
@@ -172,50 +153,41 @@ public class BackyardBrainsMain extends AppCompatActivity
             switch (fragType) {
                 //------------------------------
                 case RECORDINGS_LIST:
-                    if (recordingsFragment == null) recordingsFragment = new BackyardBrainsRecordingsFragment();
-                    frag = recordingsFragment;
+                    frag = new BackyardBrainsRecordingsFragment();
                     fragName = BYB_RECORDINGS_FRAGMENT;
                     break;
                 //------------------------------
                 case THRESHOLD_VIEW:
-                    if (thresholdFragment == null) thresholdFragment = new BackyardBrainsThresholdFragment();
-                    frag = thresholdFragment;
+                    frag = new BackyardBrainsThresholdFragment();
                     fragName = BYB_THRESHOLD_FRAGMENT;
                     break;
                 //------------------------------
                 case FIND_SPIKES_VIEW:
-                    if (spikesFragment == null) spikesFragment = new BackyardBrainsSpikesFragment();
-                    frag = spikesFragment;
+                    frag = new BackyardBrainsSpikesFragment();
                     fragName = BYB_SPIKES_FRAGMENT;
                     break;
                 //------------------------------
                 case ANALYSIS_VIEW:
-                    if (analysisFragment == null) analysisFragment = new BackyardBrainsAnalysisFragment();
-                    frag = analysisFragment;
+                    frag = new BackyardBrainsAnalysisFragment();
                     fragName = BYB_ANALYSIS_FRAGMENT;
                     break;
                 //------------------------------
                 case OSCILLOSCOPE_VIEW:
                 default:
-                    if (oscilloscopeFragment == null) oscilloscopeFragment = new BackyardBrainsOscilloscopeFragment();
-                    frag = oscilloscopeFragment;
+                    frag = new BackyardBrainsOscilloscopeFragment();
                     fragName = BYB_OSCILLOSCOPE_FRAGMENT;
                     break;
                 //------------------------------
             }
 
             setSelectedButton(fragType);
-            if (recordings_drawer != null && fragType == RECORDINGS_LIST) {
+            if (flRecordingsContainer != null && fragType == RECORDINGS_LIST) {
                 Intent i = new Intent();
                 i.setAction("BYBRescanFiles");
                 getApplicationContext().sendBroadcast(i);
-                //showFragment(frag, fragName, R.id.fragment_recordings_list, FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
-                //	sliding_drawer.show(true);
             } else {
-                if (frag != null) {
-                    showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false,
-                        R.anim.slide_in_right, R.anim.slide_out_left);
-                }
+                showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false,
+                    R.anim.slide_in_right, R.anim.slide_out_left);
             }
         }
     }
@@ -224,15 +196,15 @@ public class BackyardBrainsMain extends AppCompatActivity
         boolean bPopped = false;
         if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
             bPopped = getSupportFragmentManager().popBackStackImmediate(fragName, 0);
-            Log.w(TAG, "popFragment name: " + fragName);
+            LOGD(TAG, "popFragment name: " + fragName);
             int fragType = getFragmentTypeFromName(fragName);
             if (fragType != INVALID_VIEW) {
-                Log.w(TAG, "popFragment type: " + fragType);
+                LOGD(TAG, "popFragment type: " + fragType);
                 setSelectedButton(fragType);
                 currentFrag = fragType;
             }
         } else {
-            Log.i(TAG, "popFragment noStack");
+            LOGI(TAG, "popFragment noStack");
         }
         return bPopped;
     }
@@ -243,7 +215,7 @@ public class BackyardBrainsMain extends AppCompatActivity
             String lastFragName = getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
             return popFragment(lastFragName);
         } else {
-            Log.i(TAG, "popFragment noStack");
+            LOGI(TAG, "popFragment noStack");
             return false;
         }
     }
@@ -254,14 +226,10 @@ public class BackyardBrainsMain extends AppCompatActivity
             for (int i = 0; i < getSupportFragmentManager().getBackStackEntryCount(); i++) {
                 s += getSupportFragmentManager().getBackStackEntryAt(i).getName() + "\n";
             }
-            Log.e(TAG, s);
+            LOGD(TAG, s);
         } else {
-            Log.i(TAG, "printBackStack noStack");
+            LOGI(TAG, "printBackStack noStack");
         }
-    }
-
-    @Override public void onAttachFragment(Fragment fragment) {
-        fragList.add(new WeakReference<>(fragment));
     }
 
     public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
@@ -291,21 +259,13 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
         boolean bAnimate, int animIn, int animOut) {
-        showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut, false);
+        showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut,
+            getSupportFragmentManager().getBackStackEntryCount() < 2);
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //                      Action Bar
     //////////////////////////////////////////////////////////////////////////////
-
-    public void showActionBar() {
-        ActionBar bar = getSupportActionBar();
-        if (bar != null) {
-            bar.show();
-        } else {
-            LOGD(TAG, "Showing action bar failed. Action bar was null.");
-        }
-    }
 
     public void hideActionBar() {
         final ActionBar bar = getSupportActionBar();
@@ -327,6 +287,22 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
     //                      Private Methods
     //////////////////////////////////////////////////////////////////////////////
+
+    // Initializes user interface
+    private void setupUI() {
+        // we don't need action bar
+        hideActionBar();
+        // we will have recordings container only if in landscape mode
+        if (flRecordingsContainer != null) {
+            sliding_drawer =
+                new BYBSlidingView(flRecordingsContainer, this, "recordings sliding drawer", R.anim.slide_in_right,
+                    R.anim.slide_out_right);
+            showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
+                FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
+        }
+        // init bottom menu clicks
+        bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
+    }
 
     private String getFragmentNameFromType(int fragType) {
         switch (fragType) {
@@ -365,17 +341,21 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     private void setSelectedButton(int select) {
         Intent i = null;
-        Log.e(TAG, "setSelectedButton");
+        @IdRes int selectedButton = -1;
+        LOGD(TAG, "setSelectedButton");
         switch (select) {
             case OSCILLOSCOPE_VIEW:
+                selectedButton = R.id.action_scope;
                 i = new Intent();
                 i.putExtra("tab", OSCILLOSCOPE_VIEW);
                 break;
             case THRESHOLD_VIEW:
+                selectedButton = R.id.action_threshold;
                 i = new Intent();
                 i.putExtra("tab", THRESHOLD_VIEW);
                 break;
             case RECORDINGS_LIST:
+                selectedButton = R.id.action_recordings;
                 i = new Intent();
                 i.putExtra("tab", RECORDINGS_LIST);
                 break;
@@ -383,7 +363,11 @@ public class BackyardBrainsMain extends AppCompatActivity
                 break;
         }
         if (i != null) {
-            Log.e(TAG, "setSelectedButton: " + getFragmentNameFromType(i.getIntExtra("tab", -1)));
+            bottomMenu.setOnNavigationItemSelectedListener(null);
+            bottomMenu.setSelectedItemId(selectedButton);
+            bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
+
+            LOGD(TAG, "setSelectedButton: " + getFragmentNameFromType(i.getIntExtra("tab", -1)));
             i.setAction("BYBonTabSelected");
             getApplicationContext().sendBroadcast(i);
         }
@@ -428,14 +412,12 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
-        Log.d(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
     @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
-        Log.d(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
 
-        // (Optional) Check whether the user denied any permissions and checked "NEVER ASK AGAIN."
-        // This will display a dialog directing them to enable the permission in app settings.
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
                 .setTitle(R.string.title_settings_dialog)
@@ -477,7 +459,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------------------------------------------------------
     private class AudioPlaybackStartListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            Log.w(TAG, "AudioPlaybackStartListener .onReceive");
+            LOGD(TAG, "AudioPlaybackStartListener .onReceive");
             loadFragment(OSCILLOSCOPE_VIEW);
         }
     }
@@ -493,7 +475,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     // -------------------------------------------------------------------------------------------------
     // ----------------------------------------------------------------------------------------
     private void registerAudioPlaybackStartReceiver(boolean reg) {
-        Log.w(TAG, "registerAudioPlaybackStartReceiver");
+        LOGD(TAG, "registerAudioPlaybackStartReceiver");
         if (reg) {
             IntentFilter intentFilter = new IntentFilter("BYBAudioPlaybackStart");
             audioPlaybackStartListener = new AudioPlaybackStartListener();

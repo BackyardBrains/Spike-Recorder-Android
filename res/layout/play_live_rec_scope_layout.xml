@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/playLiveParentLayout"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <include layout="@layout/base_scope_layout"/>
 
@@ -10,51 +10,52 @@
         android:id="@+id/buttonHolderLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="right|top">
+        android:layout_gravity="end|top"
+        android:orientation="horizontal">
 
         <ImageButton
-            android:id="@+id/pauseButton"
+            android:id="@+id/ibtn_pause"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#0000"
             android:contentDescription="@string/pause_button"
-            android:padding="5sp"
+            android:padding="5dp"
             android:src="@drawable/pause_button"/>
 
         <ImageButton
-            android:id="@+id/playButton"
+            android:id="@+id/ibtn_play"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#0000"
             android:contentDescription="@string/play_button"
-            android:padding="5sp"
+            android:padding="5dp"
             android:src="@drawable/play_button"/>
 
         <ImageButton
-            android:id="@+id/recordButton"
+            android:id="@+id/ibtn_record"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
             android:contentDescription="@string/start_recording_button"
-            android:padding="5sp"
+            android:padding="5dp"
             android:visibility="gone"
             android:src="@drawable/ic_record"/>
 
         <ImageButton
-            android:id="@+id/closeButton"
+            android:id="@+id/ibtn_close"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#0000"
-            android:padding="5sp"
+            android:padding="5dp"
             android:src="@drawable/close_button"
             android:contentDescription="@string/close_view_button">
         </ImageButton>
     </LinearLayout>
 
     <TextView
-        android:id="@+id/TapToStopRecordingTextView"
+        android:id="@+id/tv_stop_recording"
         android:layout_width="match_parent"
-        android:layout_height="50sp"
+        android:layout_height="50dp"
         android:background="#ffff0000"
         android:gravity="center"
         android:layout_gravity="top|center_horizontal"

@@ -6,18 +6,23 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.SeekBar;
+import butterknife.BindView;
+import butterknife.BindViews;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
+import java.util.List;
 
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
@@ -25,12 +30,18 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
 
     private static final String TAG = makeLogTag(BackyardBrainsSpikesFragment.class);
 
-    private BYBThresholdHandle leftThresholdHandle, rightThresholdHandle;
-    private ImageButton[] thresholdButtons;
-    private ImageButton backButton, addButton, trashButton;
+    @BindView(R.id.threshold_handle_left) BYBThresholdHandle thresholdHandleLeft;
+    @BindView(R.id.threshold_handle_right) BYBThresholdHandle thresholdHandleRight;
+    @BindView(R.id.ibtn_back) ImageButton ibtnBack;
+    @BindView(R.id.ibtn_remove_threshold) ImageButton ibtnRemoveThreshold;
+    @BindViews({ R.id.threshold0, R.id.threshold1, R.id.threshold2 }) List<ImageButton> thresholdButtons;
+    @BindView(R.id.ibtn_add_threshold) ImageButton ibtnAddThreshold;
+    @BindView(R.id.playheadBar) SeekBar sbAudioSeeker;
+
+    private Unbinder unbinder;
 
     private float[][] handleColors;
-    private static final int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ffff };
+    private int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ffff };
 
     // ----------------------------------------------------------------------------------------
     public BackyardBrainsSpikesFragment() {
@@ -65,63 +76,22 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
         return R.layout.backyard_spikes;
     }
 
-    // ----------------------------------------------------------------------------------------
-    public void updateThresholdHandles() {
-        if (getRenderer() != null && leftThresholdHandle != null && rightThresholdHandle != null
-            && getAnalysisManager() != null) {
-            int thresholdsSize = getAnalysisManager().getThresholdsSize();
-            int maxThresholds = getAnalysisManager().getMaxThresholds();
-            int selectedThreshold = getAnalysisManager().getSelectedThresholdIndex();
-            if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < maxThresholds) {
-                int[] t = getAnalysisManager().getSelectedThresholds();
-                for (int i = 0; i < 2; i++) {
-                    getRenderer().setThreshold(t[i], i);
-                }
-                int l = getRenderer().getThresholdScreenValue(FindSpikesRenderer.LEFT_THRESH_INDEX);
-                int r = getRenderer().getThresholdScreenValue(FindSpikesRenderer.RIGHT_THRESH_INDEX);
-                leftThresholdHandle.setYPosition(l);
-                rightThresholdHandle.setYPosition(r);
-                float[] currentColor = handleColors[selectedThreshold];
-
-                getRenderer().setCurrentColor(currentColor);
-                leftThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-                rightThresholdHandle.setButtonColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-            }
-            if (thresholdsSize < maxThresholds) {
-                addButton.setVisibility(View.VISIBLE);
-            } else {
-                addButton.setVisibility(View.GONE);
-            }
-            for (int i = 0; i < maxThresholds; i++) {
-                if (i < thresholdsSize) {
-                    thresholdButtons[i].setVisibility(View.VISIBLE);
-                } else {
-                    thresholdButtons[i].setVisibility(View.GONE);
-                }
-            }
-        }
-    }
-
-    private BYBAnalysisManager getAnalysisManager() {
-        if (getContext() != null) {
-            return ((BackyardBrainsApplication) getContext()).getAnalysisManager();
-        }
-        return null;
-    }
-
     // ---------------------------------------------------------------------------------------------
     // ----------------------------------------- FRAGMENT LIFECYCLE
     // ---------------------------------------------------------------------------------------------
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = super.onCreateView(inflater, container, savedInstanceState);
-        setupButtons(rootView);
-        ((BackyardBrainsMain) getActivity()).showButtons(false);
-        if (getAnalysisManager() != null) {
-            if (!getAnalysisManager().spikesFound()) {
-                addThreshold();
-            }
+        final View view = super.onCreateView(inflater, container, savedInstanceState);
+        if (view != null) {
+            unbinder = ButterKnife.bind(this, view);
+            setupUI();
         }
-        return rootView;
+
+        return view;
+    }
+
+    @Override public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
 
     // ----------------------------------------------------------------------------------------
@@ -130,14 +100,25 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
         updateThresholdHandles();
     }
 
-    protected void reassignSurfaceView() {
+    // ---------------------------------------------------------------------------------------------
+    // ----------------------------------------- GL
+    // ---------------------------------------------------------------------------------------------
+
+    @Override protected void reassignSurfaceView() {
         super.reassignSurfaceView();
         updateThresholdHandles();
+    }
+
+    @Nullable private BYBAnalysisManager getAnalysisManager() {
+        if (getContext() != null) return ((BackyardBrainsApplication) getContext()).getAnalysisManager();
+
+        return null;
     }
 
     // ---------------------------------------------------------------------------------------------
     // ----------------------------------------- THRESHOLDS
     // ---------------------------------------------------------------------------------------------
+
     protected void selectThreshold(int index) {
         if (getAnalysisManager() != null) {
             getAnalysisManager().selectThreshold(index);
@@ -161,31 +142,47 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
     // ---------------------------------------------------------------------------------------------
     // ----------------------------------------- UI SETUPS
     // ---------------------------------------------------------------------------------------------
-    public void setupButtons(View view) {
-        if (thresholdButtons != null) {
-            for (int i = 0; i < thresholdButtons.length; i++) {
-                thresholdButtons[i] = null;
+
+    private void setupUI() {
+        setupButtons();
+        ((BackyardBrainsMain) getActivity()).showButtons(false);
+
+        if (getAnalysisManager() != null && !getAnalysisManager().spikesFound()) addThreshold();
+    }
+
+    // ----------------------------------------------------------------------------------------
+    public void setupButtons() {
+        // left threshold
+        thresholdHandleLeft.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
+            @Override public void onChange(@NonNull View view, float y) {
+                if (getAnalysisManager() != null) {
+                    int thresholdsSize = getAnalysisManager().getThresholdsSize();
+                    if (thresholdsSize > 0) {
+                        int t = (int) getRenderer().pixelHeightToGlHeight(y);
+                        getRenderer().setThreshold(t, FindSpikesRenderer.LEFT_THRESH_INDEX);
+                        getAnalysisManager().setThreshold(thresholdsSize - 1, FindSpikesRenderer.LEFT_THRESH_INDEX, t);
+                    }
+                }
             }
-            thresholdButtons = null;
+        });
+        // right threshold
+        thresholdHandleRight.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
+            @Override public void onChange(@NonNull View view, float y) {
+                if (getAnalysisManager() != null) {
+                    int thresholdsSize = getAnalysisManager().getThresholdsSize();
+                    if (thresholdsSize > 0) {
+                        int t = (int) getRenderer().pixelHeightToGlHeight(y);
+                        getRenderer().setThreshold(t, FindSpikesRenderer.RIGHT_THRESH_INDEX);
+                        getAnalysisManager().setThreshold(thresholdsSize - 1, FindSpikesRenderer.RIGHT_THRESH_INDEX, t);
+                    }
+                }
+            }
+        });
+        // threshold selection buttons
+        for (int i = 0; i < thresholdButtons.size(); i++) {
+            thresholdButtons.get(i).setColorFilter(handleColorsHex[i]);
         }
-        thresholdButtons = new ImageButton[3];
-        thresholdButtons[0] = ((ImageButton) view.findViewById(R.id.threshold0));
-        thresholdButtons[1] = ((ImageButton) view.findViewById(R.id.threshold1));
-        thresholdButtons[2] = ((ImageButton) view.findViewById(R.id.threshold2));
-
-        backButton = ((ImageButton) view.findViewById(R.id.backButton));
-        addButton = ((ImageButton) view.findViewById(R.id.new_threshold));
-        trashButton = ((ImageButton) view.findViewById(R.id.trash_can));
-        if (getContext() != null) {
-            leftThresholdHandle =
-                new BYBThresholdHandle(context, ((ImageView) view.findViewById(R.id.leftThresholdHandle)),
-                    view.findViewById(R.id.leftThresholdHandleLayout), "LeftSpikesHandle");
-            rightThresholdHandle =
-                new BYBThresholdHandle(context, ((ImageView) view.findViewById(R.id.rightThresholdHandle)),
-                    view.findViewById(R.id.rightThresholdHandleLayout), "RightSpikesHandle");
-        }
-
-        thresholdButtons[0].setOnTouchListener(new OnTouchListener() {
+        thresholdButtons.get(0).setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -198,8 +195,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-
-        thresholdButtons[1].setOnTouchListener(new OnTouchListener() {
+        thresholdButtons.get(1).setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -212,8 +208,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-
-        thresholdButtons[2].setOnTouchListener(new OnTouchListener() {
+        thresholdButtons.get(2).setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -226,17 +221,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-
-        // }
-        for (int i = 0; i < thresholdButtons.length; i++) {
-            float[] c = new float[4];
-            for (int k = 0; k < 4; k++) {
-                c[k] = handleColors[i][k];
-            }
-            thresholdButtons[i].setColorFilter(handleColorsHex[i]);
-        }
-
-        backButton.setOnTouchListener(new OnTouchListener() {
+        // back button
+        ibtnBack.setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -254,8 +240,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-
-        addButton.setOnTouchListener(new OnTouchListener() {
+        // add threshold
+        ibtnAddThreshold.setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -268,7 +254,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-        trashButton.setOnTouchListener(new OnTouchListener() {
+        // remove threshold
+        ibtnRemoveThreshold.setOnTouchListener(new OnTouchListener() {
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
                     if (event.getActionIndex() == 0) {
@@ -281,9 +268,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 return false;
             }
         });
-        final SeekBar sk = (SeekBar) view.findViewById(R.id.playheadBar);
-
-        sk.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        // audio controls
+        sbAudioSeeker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
             }
 
@@ -293,13 +279,52 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     if (getRenderer() != null) {
-                        getRenderer().setStartSample((float) sk.getProgress() / (float) sk.getMax());
+                        getRenderer().setStartSample(
+                            (float) BackyardBrainsSpikesFragment.this.sbAudioSeeker.getProgress()
+                                / (float) BackyardBrainsSpikesFragment.this.sbAudioSeeker.getMax());
                     }
                 }
             }
         });
-        sk.setProgress(0);
+        sbAudioSeeker.setProgress(0);
     }
+
+    // ----------------------------------------------------------------------------------------
+    private void updateThresholdHandles() {
+        if (getAnalysisManager() != null) {
+            int thresholdsSize = getAnalysisManager().getThresholdsSize();
+            int maxThresholds = getAnalysisManager().getMaxThresholds();
+            int selectedThreshold = getAnalysisManager().getSelectedThresholdIndex();
+            if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < maxThresholds) {
+                int[] t = getAnalysisManager().getSelectedThresholds();
+                for (int i = 0; i < 2; i++) {
+                    getRenderer().setThreshold(t[i], i);
+                }
+                thresholdHandleLeft.setPosition(
+                    getRenderer().getThresholdScreenValue(FindSpikesRenderer.LEFT_THRESH_INDEX));
+                thresholdHandleRight.setPosition(
+                    getRenderer().getThresholdScreenValue(FindSpikesRenderer.RIGHT_THRESH_INDEX));
+
+                float[] currentColor = handleColors[selectedThreshold];
+                getRenderer().setCurrentColor(currentColor);
+                thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
+                thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
+            }
+            if (thresholdsSize < maxThresholds) {
+                ibtnAddThreshold.setVisibility(View.VISIBLE);
+            } else {
+                ibtnAddThreshold.setVisibility(View.GONE);
+            }
+            for (int i = 0; i < maxThresholds; i++) {
+                if (i < thresholdsSize) {
+                    thresholdButtons.get(i).setVisibility(View.VISIBLE);
+                } else {
+                    thresholdButtons.get(i).setVisibility(View.GONE);
+                }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // --------------------------------------------------- LISTENERS
     // ---------------------------------------------------------------------------------------------
@@ -311,6 +336,19 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
     // ------------------------------------------------------------------------ BROADCAST RECEIVERS CLASS
     private class UpdateThresholdHandleListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            if (intent.hasExtra("name") && intent.hasExtra("pos")) {
+                BYBThresholdHandle handle = null;
+                if ("LeftSpikesHandle".equals(intent.getStringExtra("name"))) {
+                    handle = thresholdHandleLeft;
+                } else if ("RightSpikesHandle".equals(intent.getStringExtra("name"))) {
+                    handle = thresholdHandleRight;
+                }
+                if (handle != null) {
+                    if (handle.getVisibility() == View.GONE) handle.setVisibility(View.VISIBLE);
+                    handle.setPosition(intent.getIntExtra("pos", 0));
+                }
+            }
+
             updateThresholdHandles();
         }
     }
@@ -323,28 +361,23 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 if (intent.hasExtra("name")) {
                     if (getRenderer() != null) {
                         int index = -1;
-                        if (intent.getStringExtra("name").equals("LeftSpikesHandle")) {
+                        if ("LeftSpikesHandle".equals(intent.getStringExtra("name"))) {
                             index = FindSpikesRenderer.LEFT_THRESH_INDEX;
-                        } else if (intent.getStringExtra("name").equals("RightSpikesHandle")) {
+                        } else if ("RightSpikesHandle".equals(intent.getStringExtra("name"))) {
                             index = FindSpikesRenderer.RIGHT_THRESH_INDEX;
                         }
                         if (getAnalysisManager() != null) {
-
                             int thresholdsSize = getAnalysisManager().getThresholdsSize();
                             if (thresholdsSize > 0 && index >= 0) {
                                 int t = (int) getRenderer().pixelHeightToGlHeight(pos);
-                                //									((BackyardBrainsApplication) (context)).
                                 getAnalysisManager().setThreshold(thresholdsSize - 1, index, t);
                                 getRenderer().setThreshold(t, index);
                             }
-                            //							}
                         }
                     }
                 }
             }
         }
-
-        ;
     }
 
     // ------------------------------------------------------------------------ BROADCAST RECEIVERS TOGGLES
@@ -379,13 +412,6 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
     @Override public void registerReceivers(boolean bReg) {
         super.registerReceivers(bReg);
         registerThresholdHandlePosListener(bReg);
-        leftThresholdHandle.registerUpdateThresholdHandleListener(bReg);
-        rightThresholdHandle.registerUpdateThresholdHandleListener(bReg);
         registerUpdateThresholdHandleListener(bReg);
-    }
-
-    // ------------------------------------------------------------------------ UNREGISTER RECEIVERS
-    public void unregisterReceivers() {
-        registerReceivers(false);
     }
 }
