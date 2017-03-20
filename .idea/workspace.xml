@@ -16,26 +16,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1d8a8fa-a0d6-4a9a-8411-8347c69de4a8" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/res/layout-w600dp/activity_main.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/res/layout-w600dp/thresh_scope_layout.xml" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/activity_main.xml" afterPath="$PROJECT_DIR$/res/layout/activity_main.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/backyard_spikes.xml" afterPath="$PROJECT_DIR$/res/layout/backyard_spikes.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml" afterPath="$PROJECT_DIR$/res/layout/play_live_rec_scope_layout.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/layout/thresh_scope_layout.xml" afterPath="$PROJECT_DIR$/res/layout/thresh_scope_layout.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/values/colors.xml" afterPath="$PROJECT_DIR$/res/values/colors.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/res/values/dimens.xml" afterPath="$PROJECT_DIR$/res/values/dimens.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/utls/Func.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/utls/Func.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/utls/ViewUtils.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/utls/ViewUtils.java" />
     </list>
     <ignored path="Spike-Recorder-Android.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -75,7 +58,7 @@
       <file leaf-file-name="BackyardBrainsMain.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
+            <state relative-caret-position="1275">
               <caret line="103" column="82" selection-start-line="103" selection-start-column="82" selection-end-line="103" selection-end-column="82" />
               <folding />
             </state>
@@ -85,7 +68,7 @@
       <file leaf-file-name="build.gradle" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/build.gradle">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1037">
+            <state relative-caret-position="622">
               <caret line="64" column="30" selection-start-line="64" selection-start-column="30" selection-end-line="64" selection-end-column="30" />
               <folding />
             </state>
@@ -95,7 +78,7 @@
       <file leaf-file-name="BackyardBrainsApplication.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
+            <state relative-caret-position="799">
               <caret line="78" column="27" selection-start-line="78" selection-start-column="27" selection-end-line="78" selection-end-column="27" />
               <folding />
             </state>
@@ -105,7 +88,7 @@
       <file leaf-file-name="BackyardBrainsBaseScopeFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="323">
+            <state relative-caret-position="782">
               <caret line="73" column="30" selection-start-line="73" selection-start-column="30" selection-end-line="73" selection-end-column="30" />
               <folding />
             </state>
@@ -115,7 +98,7 @@
       <file leaf-file-name="BackyardBrainsPlayLiveScopeFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
+            <state relative-caret-position="1173">
               <caret line="94" column="35" selection-start-line="94" selection-start-column="35" selection-end-line="94" selection-end-column="35" />
               <folding />
             </state>
@@ -125,7 +108,7 @@
       <file leaf-file-name="BackyardBrainsThresholdFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="98">
+            <state relative-caret-position="969">
               <caret line="78" column="24" selection-start-line="78" selection-start-column="24" selection-end-line="78" selection-end-column="24" />
               <folding>
                 <element signature="e#2513#2514#0" expanded="true" />
@@ -151,7 +134,7 @@
       <file leaf-file-name="AudioService.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="613">
+            <state relative-caret-position="6018">
               <caret line="379" column="51" selection-start-line="379" selection-start-column="51" selection-end-line="379" selection-end-column="51" />
               <folding>
                 <element signature="imports" expanded="true" />
@@ -163,7 +146,7 @@
       <file leaf-file-name="MicListener.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="561">
+            <state relative-caret-position="1734">
               <caret line="135" column="34" selection-start-line="135" selection-start-column="34" selection-end-line="135" selection-end-column="34" />
               <folding />
             </state>
@@ -193,7 +176,7 @@
       <file leaf-file-name="BYBBaseRenderer.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
+            <state relative-caret-position="1649">
               <caret line="115" column="5" selection-start-line="115" selection-start-column="5" selection-end-line="115" selection-end-column="5" />
               <folding />
             </state>
@@ -215,13 +198,7 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="374">
               <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
-              <folding>
-                <element signature="imports" expanded="false" />
-                <element signature="e#2673#2674#0" expanded="false" />
-                <element signature="e#2718#2719#0" expanded="false" />
-                <element signature="e#4625#4626#0" expanded="false" />
-                <element signature="e#4685#4686#0" expanded="false" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -1567,7 +1544,7 @@
     <option name="modificationStamps">
       <map>
         <entry key="D:\projects\BackyardBrains\signal generator\Spike-Recorder-Android" value="1488905805031" />
-        <entry key="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android" value="1490031599749" />
+        <entry key="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android" value="1490031892825" />
       </map>
     </option>
     <option name="projectBuildClasspath">
@@ -2020,9 +1997,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="AndroidView">
-        <subPane />
-      </pane>
       <pane id="Scope">
         <subPane subId="Project Files">
           <PATH>
@@ -2032,6 +2006,9 @@
             </PATH_ELEMENT>
           </PATH>
         </subPane>
+      </pane>
+      <pane id="AndroidView">
+        <subPane />
       </pane>
       <pane id="ProjectPane">
         <subPane>
@@ -2539,33 +2516,33 @@
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32951945" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32819384" sideWeight="0.4948097" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12846482" sideWeight="0.34361234" order="3" side_tool="true" content_ui="tabs" />
+      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12846482" sideWeight="0.34911895" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32599118" sideWeight="0.5051903" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.6563877" sideWeight="0.49573562" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27878466" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.67048055" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32599118" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.67048055" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32929516" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12846482" sideWeight="0.6563877" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5936123" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.12846482" sideWeight="0.65088105" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Dynamic Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296328" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5011013" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5011013" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Dynamic Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27878466" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5936123" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -2655,13 +2632,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="374">
           <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
-          <folding>
-            <element signature="imports" expanded="false" />
-            <element signature="e#2673#2674#0" expanded="false" />
-            <element signature="e#2718#2719#0" expanded="false" />
-            <element signature="e#4625#4626#0" expanded="false" />
-            <element signature="e#4685#4686#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -2758,7 +2729,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
           <caret line="20" column="13" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2843,13 +2813,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="561">
+        <state relative-caret-position="1734">
           <caret line="135" column="34" selection-start-line="135" selection-start-column="34" selection-end-line="135" selection-end-column="34" />
           <folding />
         </state>
@@ -2857,7 +2826,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
+        <state relative-caret-position="1649">
           <caret line="115" column="5" selection-start-line="115" selection-start-column="5" selection-end-line="115" selection-end-column="5" />
           <folding />
         </state>
@@ -2873,7 +2842,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="613">
+        <state relative-caret-position="6018">
           <caret line="379" column="51" selection-start-line="379" selection-start-column="51" selection-end-line="379" selection-end-column="51" />
           <folding>
             <element signature="imports" expanded="true" />
@@ -2883,7 +2852,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
+        <state relative-caret-position="1173">
           <caret line="94" column="35" selection-start-line="94" selection-start-column="35" selection-end-line="94" selection-end-column="35" />
           <folding />
         </state>
@@ -2902,7 +2871,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
+        <state relative-caret-position="799">
           <caret line="78" column="27" selection-start-line="78" selection-start-column="27" selection-end-line="78" selection-end-column="27" />
           <folding />
         </state>
@@ -2910,26 +2879,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="323">
+        <state relative-caret-position="782">
           <caret line="73" column="30" selection-start-line="73" selection-start-column="30" selection-end-line="73" selection-end-column="30" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/thresh_scope_layout.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="22" column="36" selection-start-line="22" selection-start-column="36" selection-end-line="22" selection-end-column="36" />
-          <folding />
-        </state>
-      </provider>
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/thresh_scope_layout.xml" />
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="98">
+        <state relative-caret-position="969">
           <caret line="78" column="24" selection-start-line="78" selection-start-column="24" selection-end-line="78" selection-end-column="24" />
           <folding>
             <element signature="e#2513#2514#0" expanded="true" />
@@ -2949,17 +2908,7 @@
         <state />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/activity_main.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="50" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout-w600dp/activity_main.xml" />
     <entry file="file://$PROJECT_DIR$/res/values/colors.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="340">
@@ -2977,7 +2926,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="34">
           <caret line="2" column="55" selection-start-line="2" selection-start-column="55" selection-end-line="2" selection-end-column="55" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3016,7 +2964,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
+        <state relative-caret-position="1275">
           <caret line="103" column="82" selection-start-line="103" selection-start-column="82" selection-end-line="103" selection-end-column="82" />
           <folding />
         </state>
@@ -3024,7 +2972,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1037">
+        <state relative-caret-position="622">
           <caret line="64" column="30" selection-start-line="64" selection-start-column="30" selection-end-line="64" selection-end-column="30" />
           <folding />
         </state>
