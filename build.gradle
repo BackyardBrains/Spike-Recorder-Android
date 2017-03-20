@@ -46,7 +46,7 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 25
-        versionCode 17
+        versionCode 19
     }
     buildTypes {
         release {
@@ -62,7 +62,7 @@ android {
     }
     productFlavors {
         prod {
-            versionName '1.4.1'
+            versionName '1.4.2'
         }
         dev {
             minSdkVersion 21

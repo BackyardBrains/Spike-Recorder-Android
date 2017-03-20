@@ -2,10 +2,12 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    >
+    android:layout_height="match_parent">
 
-    <include layout="@layout/base_scope_layout"/>
+    <include
+        layout="@layout/base_scope_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 
     <com.backyardbrains.view.BYBThresholdHandle
         android:id="@+id/threshold_handle_left"
@@ -91,7 +93,6 @@
             android:background="#0000"
             android:contentDescription="@string/new_threshold"
             android:src="@drawable/plus"/>
-
     </LinearLayout>
 
     <LinearLayout
@@ -100,6 +101,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/threshold_drag_surface_w"
         android:layout_marginEnd="@dimen/threshold_drag_surface_w"
+        android:layout_marginBottom="60dp"
         android:layout_alignParentBottom="true">
 
         <SeekBar

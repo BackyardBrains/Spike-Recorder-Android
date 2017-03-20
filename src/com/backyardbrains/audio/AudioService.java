@@ -32,6 +32,9 @@ import android.widget.Toast;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
+
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data
  * to bound activities.
@@ -41,7 +44,8 @@ import java.nio.ShortBuffer;
  */
 
 public class AudioService extends Service implements ReceivesAudio {
-    private static final String TAG = AudioService.class.getCanonicalName();
+
+    private static final String TAG = makeLogTag(AudioService.class);
 
     private static final int RING_BUFFER_NUM_SAMPLES = 44100 * 6; // 6 seconds
 
@@ -102,16 +106,16 @@ public class AudioService extends Service implements ReceivesAudio {
         return false;
     }
 
+    public boolean isPlaybackMode() {
+        return audioPlayer != null;
+    }
+
     /**
      * return a byte array with in the appropriate order representing the last
      * 1.5 seconds of audio or so
      *
      * @return a ordinate-corrected version of the audio buffer
      */
-    public boolean isPlaybackMode() {
-        return audioPlayer != null;
-    }
-
     public short[] getAudioBuffer() {
         if (isPlaybackMode()) {// && !isAudioPlayerPlaying()){
             return audioPlayer.getBuffer();
@@ -153,6 +157,7 @@ public class AudioService extends Service implements ReceivesAudio {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     @Override public void onCreate() {
         super.onCreate();
+        LOGD(TAG, "onCreate()");
         appContext = this.getApplicationContext();
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         audioBuffer.zeroFill();
@@ -166,6 +171,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     @Override public void onDestroy() {
+        LOGD(TAG, "onDestroy()");
         registerReceivers(false);
         turnOffMicThread();
         turnOffAudioPlayerThread();
@@ -210,6 +216,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     protected void turnOnAudioPlayerThread() {
+        LOGD(TAG, "turnOnAudioPlayerThread()");
         if (audioPlayer != null) {
             turnOffMicThread();
             audioPlayer.play();
@@ -219,6 +226,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     protected void turnOffAudioPlayerThread() {
+        LOGD(TAG, "turnOffAudioPlayerThread()");
         String msg = "turnOffAudioPlayerThread";
         if (audioPlayer != null) {
             msg += "\naudioPlayer not null. Stopping.";
@@ -231,11 +239,12 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     protected void turnOnMicThread() {
+        LOGD(TAG, "turnOnMicThread()");
         turnOffAudioPlayerThread();
         if (micThread == null) {
             micThread = null;
-            micThread = new MicListener();
-            micThread.start(AudioService.this);
+            micThread = new MicListener(this);
+            micThread.start();
             //Log.d(TAG, "Mic thread started");
         }
         //		mode = LIVE_MODE;
@@ -243,6 +252,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     protected void turnOffMicThread() {
+        LOGD(TAG, "turnOffMicThread()");
         stopRecording();
         if (micThread != null) {
             micThread.requestStop();
@@ -349,6 +359,7 @@ public class AudioService extends Service implements ReceivesAudio {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private class ToggleRecordingListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            LOGD(TAG, "BYBToggleRecording broadcast received!");
             if (!startRecording()) {
                 if (!stopRecording()) {
                     Log.w(TAG, "There was an error recording properly");
@@ -361,7 +372,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private class PlayAudioFileListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
-            //Log.d("PlayAudioFileListener", "onReceive");
+            LOGD(TAG, "BYBPlayAudioFile broadcast received!");
             if (appContext != null) {
                 if (intent.hasExtra("filePath")) {
                     String path = intent.getStringExtra("filePath");
@@ -386,6 +397,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private class CloseButtonListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBCloseButton broadcast received!");
             //turnOffAudioPlayerThread();
             turnOnMicThread();
         }
@@ -393,6 +405,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private class OnTabSelectedListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBonTabSelected broadcast received!");
             if (intent.hasExtra("tab")) {
                 int currentTab = intent.getIntExtra("tab", 0);
                 if (currentTab < 2 && audioPlayer == null) {
@@ -404,6 +417,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private class AveragesNumListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBThresholdNumAverages broadcast received!");
             if (intent.hasExtra("num")) {
                 averager.setMaxsize(intent.getIntExtra("num", TriggerAverager.defaultSize));//, false);
             }
@@ -412,6 +426,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private class AudioFilePlaybackEndedListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBAudioFilePlaybackEnded broadcast received!");
             broadcastUpdateUI();
         }
     }
@@ -420,6 +435,7 @@ public class AudioService extends Service implements ReceivesAudio {
     // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private void registerReceivers(boolean reg) {
+        LOGD(TAG, "registerReceivers()");
         registerRecordingToggleReceiver(reg);
         registerPlayAudioFileReceiver(reg);
         registerOnTabSelectedReceiver(reg);

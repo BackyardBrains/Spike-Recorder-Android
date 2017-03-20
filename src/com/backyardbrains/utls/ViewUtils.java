@@ -17,7 +17,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 /**
- * @author Tihomir Leka <tihomir.leka at yanado.com>.
+ * @author Tihomir Leka <ticapeca at gmail.com>.
  */
 public class ViewUtils {
 

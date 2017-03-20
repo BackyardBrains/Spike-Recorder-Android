@@ -11,17 +11,14 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.FrameLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.backyardbrains.view.BYBSlidingView;
 import java.util.List;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
@@ -31,12 +28,7 @@ import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.LOGI;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-//*/
-//import android.widget.FrameLayout;
-//*/
-
-public class BackyardBrainsMain extends AppCompatActivity
-    implements View.OnClickListener, EasyPermissions.PermissionCallbacks {
+public class BackyardBrainsMain extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(BackyardBrainsMain.class);
 
@@ -47,7 +39,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
 
-    private static final int BACK_STACK_MAX_ITEMS = 2;
+    //private static final int BACK_STACK_MAX_ITEMS = 2;
 
     public static final String BYB_RECORDINGS_FRAGMENT = "BackyardBrainsRecordingsFragment";
     public static final String BYB_THRESHOLD_FRAGMENT = "BackyardBrainsThresholdFragment";
@@ -58,10 +50,10 @@ public class BackyardBrainsMain extends AppCompatActivity
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_SETTINGS_SCREEN = 125;
 
-    @Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
+    //@Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
-    protected BYBSlidingView sliding_drawer;
+    //protected BYBSlidingView sliding_drawer;
     private int currentFrag = -1;
 
     private boolean bShowScalingInstructions = true;
@@ -127,13 +119,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     //////////////////////////////////////////////////////////////////////////////
-    //                       OnClickListener methods
-    //////////////////////////////////////////////////////////////////////////////
-    @Override public void onClick(View view) {
-        loadFragment(view.getId());
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
     //                      Fragment managment
     //////////////////////////////////////////////////////////////////////////////
 
@@ -181,14 +166,14 @@ public class BackyardBrainsMain extends AppCompatActivity
             }
 
             setSelectedButton(fragType);
-            if (flRecordingsContainer != null && fragType == RECORDINGS_LIST) {
-                Intent i = new Intent();
-                i.setAction("BYBRescanFiles");
-                getApplicationContext().sendBroadcast(i);
-            } else {
-                showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false,
-                    R.anim.slide_in_right, R.anim.slide_out_left);
-            }
+            //if (flRecordingsContainer != null && fragType == RECORDINGS_LIST) {
+            //    Intent i = new Intent();
+            //    i.setAction("BYBRescanFiles");
+            //    getApplicationContext().sendBroadcast(i);
+            //} else {
+            showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false, R.anim.slide_in_right,
+                R.anim.slide_out_left);
+            //}
         }
     }
 
@@ -259,8 +244,7 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
         boolean bAnimate, int animIn, int animOut) {
-        showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut,
-            getSupportFragmentManager().getBackStackEntryCount() < 2);
+        showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut, true);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -293,13 +277,13 @@ public class BackyardBrainsMain extends AppCompatActivity
         // we don't need action bar
         hideActionBar();
         // we will have recordings container only if in landscape mode
-        if (flRecordingsContainer != null) {
-            sliding_drawer =
-                new BYBSlidingView(flRecordingsContainer, this, "recordings sliding drawer", R.anim.slide_in_right,
-                    R.anim.slide_out_right);
-            showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
-                FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
-        }
+        //if (flRecordingsContainer != null) {
+        //    sliding_drawer =
+        //        new BYBSlidingView(flRecordingsContainer, this, "recordings sliding drawer", R.anim.slide_in_right,
+        //            R.anim.slide_out_right);
+        //    showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
+        //        FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
+        //}
         // init bottom menu clicks
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
     }

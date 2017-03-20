@@ -20,6 +20,7 @@ import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment {
@@ -35,6 +36,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
 
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = super.onCreateView(inflater, container, savedInstanceState);
+        LOGD(TAG, "onCreateView()");
         if (view != null) {
             unbinder = ButterKnife.bind(this, view);
             setupUI();
@@ -43,8 +45,29 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         return view;
     }
 
+    @Override public void onStart() {
+        super.onStart();
+        LOGD(TAG, "onStart()");
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        LOGD(TAG, "onResume()");
+    }
+
+    @Override public void onPause() {
+        super.onPause();
+        LOGD(TAG, "onPause()");
+    }
+
+    @Override public void onStop() {
+        super.onStop();
+        LOGD(TAG, "onStop()");
+    }
+
     @Override public void onDestroyView() {
         super.onDestroyView();
+        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
     }
 
@@ -111,12 +134,14 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     // -----------------------------------------  BROADCAST RECEIVERS CLASS
     private class SetAverageSliderListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBSetAveragerSlider broadcast received!");
             if (intent.hasExtra("maxSize")) sbAvgSamplesCount.setProgress(intent.getIntExtra("maxSize", 32));
         }
     }
 
     private class UpdateThresholdHandleListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBSetAveragerSlider broadcast received! Name: " + intent.getStringExtra("name"));
             if (intent.hasExtra("name") && intent.hasExtra("pos") && "OsciloscopeHandle".equals(
                 intent.getStringExtra("name"))) {
                 thresholdHandle.setPosition(intent.getIntExtra("pos", 0));
@@ -131,6 +156,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     // ----------------------------------------- REGISTER RECEIVERS
     @Override public void registerReceivers(boolean bRegister) {
         super.registerReceivers(bRegister);
+        LOGD(TAG, "registerReceivers()");
         registerReceiverSetAverageSlider(bRegister);
         registerUpdateThresholdHandleListener(bRegister);
     }

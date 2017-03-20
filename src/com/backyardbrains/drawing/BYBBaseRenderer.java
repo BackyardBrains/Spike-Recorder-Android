@@ -112,7 +112,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
             }
             this.glWindowHorizontalSize = newX;
         }
-        Log.d(TAG, "SetGLHorizontalSize " + glWindowHorizontalSize);
+        //Log.d(TAG, "SetGLHorizontalSize " + glWindowHorizontalSize);
     }
 
     // ----------------------------------------------------------------------------------------

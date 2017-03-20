@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -12,32 +12,17 @@
         android:layout_height="match_parent"
         android:layout_gravity="start|center_vertical"
         app:byb_color="@color/red"/>
-    <!--<FrameLayout-->
-    <!--android:id="@+id/thresholdHandleLayout"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="match_parent"-->
-    <!--android:layout_gravity="start|center_vertical">-->
-
-    <!--<ImageButton-->
-    <!--android:id="@+id/ibth_threshold_handle"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:src="@drawable/handle_white_left"-->
-    <!--android:background="@android:color/transparent"-->
-    <!--android:contentDescription="@string/cd_threshold_handle"/>-->
-    <!--</FrameLayout>-->
 
     <LinearLayout
         android:id="@+id/triggerViewSampleChangerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
         android:layout_marginStart="@dimen/threshold_drag_surface_w"
         android:layout_marginTop="14dp"
-        android:layout_marginEnd="100dp"
+        android:layout_marginEnd="@dimen/threshold_drag_surface_w"
+        android:layout_gravity="top"
         android:orientation="horizontal"
-        android:visibility="visible"
-        android:layout_alignParentTop="true">
+        android:visibility="visible">
 
         <SeekBar
             android:id="@+id/samplesSeekBar"
@@ -59,8 +44,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="0"
             android:text="@string/default_threshold_amount"
-            android:textColor="#00ff00"
+            android:textColor="@color/green"
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="10dp"/>
+
+        <android.support.v4.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
     </LinearLayout>
-</RelativeLayout>
+</FrameLayout>

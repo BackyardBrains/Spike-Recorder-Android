@@ -56,6 +56,8 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     // ----------------------------------------- FRAGMENT LIFECYCLE
     ////////////////////////////////////////////////////////////////////////////////////////////////
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        LOGD(TAG, "onCreateView()");
+
         getContext();
 
         final View rootView = inflater.inflate(getLayoutID(), container, false);
@@ -70,34 +72,40 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
 
     @Override public void onDestroyView() {
         super.onDestroyView();
+        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
     }
 
     @Override public void onStart() {
         super.onStart();
+        LOGD(TAG, "onStart()");
         if (glSurface != null) glSurface.onResume();
     }
 
     @Override public void onResume() {
         super.onResume();
+        LOGD(TAG, "onResume()");
         registerReceivers(true);
         readSettings();
     }
 
     @Override public void onPause() {
         super.onPause();
+        LOGD(TAG, "onPause()");
         registerReceivers(false);
         saveSettings();
     }
 
     @Override public void onStop() {
         super.onStop();
+        LOGD(TAG, "onStop()");
         saveSettings();
         if (glSurface != null) glSurface.onPause();
         glSurface = null;
     }
 
     @Override public void onDestroy() {
+        LOGD(TAG, "onDestroy()");
         destroyRenderer();
         super.onDestroy();
     }
@@ -253,32 +261,37 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     private class UpdateMillisecondsReceiver extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            //LOGD(TAG, "BYBUpdateMillisecondsReciever broadcast received!");
             tvTime.setText(intent.getStringExtra("millisecondsDisplayedString"));
         }
     }
 
     private class UpdateMillivoltReceiver extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            //LOGD(TAG, "BYBUpdateMillivoltReciever broadcast received!");
             tvSignal.setText(intent.getStringExtra("millivoltsDisplayedString"));
         }
     }
 
     private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            LOGD(TAG, "BYBMillivoltsViewSize broadcast received");
             tvSignal.setHeight(intent.getIntExtra("millivoltsViewNewSize", tvSignal.getHeight()));
         }
     }
 
     private class UpdateDebugTextViewListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
-            //            if(intent.hasExtra("text")) {
-            //                debugText.setText(intent.getStringExtra("text"));
-            //            }
+            LOGD(TAG, "updateDebugView broadcast received!");
+            //if(intent.hasExtra("text")) {
+            //    debugText.setText(intent.getStringExtra("text"));
+            //}
         }
     }
 
     private class AudioServiceBindListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
+            LOGD(TAG, "BYBAudioServiceBind broadcast received!");
             if (intent.hasExtra("isBind")) {
                 if (!intent.getBooleanExtra("isBind", true)) {
                     destroyRenderer();
@@ -289,6 +302,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
 
     private class ShowZoomUIListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            LOGD(TAG, "BYBShowZoomUI broadcast received!");
             if (intent.hasExtra("showUI")) {
                 boolean bShow = intent.getBooleanExtra("showUI", false);
                 showZoomUI(bShow);
@@ -306,6 +320,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
 
     // ----------------------------------------- REGISTER RECEIVERS
     public void registerReceivers(boolean bRegister) {
+        LOGD(TAG, "registerReceivers()");
         registerReceiverUpdateMilliseconds(bRegister);
         registerReceiverUpdateMillivolts(bRegister);
         registerReceiverMillivoltsViewSize(bRegister);

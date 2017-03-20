@@ -50,6 +50,7 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
 
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = super.onCreateView(inflater, container, savedInstanceState);
+        LOGD(TAG, "onCreateView()");
         if (view != null) {
             unbinder = ButterKnife.bind(this, view);
             setupUI();
@@ -58,8 +59,29 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
         return view;
     }
 
+    @Override public void onStart() {
+        super.onStart();
+        LOGD(TAG, "onStart()");
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+        LOGD(TAG, "onResume()");
+    }
+
+    @Override public void onPause() {
+        super.onPause();
+        LOGD(TAG, "onPause()");
+    }
+
+    @Override public void onStop() {
+        super.onStop();
+        LOGD(TAG, "onStop()");
+    }
+
     @Override public void onDestroyView() {
         super.onDestroyView();
+        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
     }
 
@@ -229,14 +251,14 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     private class AudioPlaybackStartListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGW(TAG, "AudioPlaybackStartListener");
+            LOGD(TAG, "BYBAudioPlaybackStart broadcast received!");
             showUIForMode();
         }
     }
 
     private class UpdateUIListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGW(TAG, "UpdateUIListener");
+            LOGD(TAG, "BYBUpdateUI broadcast received!");
             showUIForMode();
         }
     }
@@ -248,6 +270,7 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
     // ----------------------------------------- REGISTER RECEIVERS
     @Override public void registerReceivers(boolean bRegister) {
         super.registerReceivers(bRegister);
+        LOGD(TAG, "registerReceivers()");
         registerAudioPlaybackStartReceiver(bRegister);
         registerUpdateUIReceiver(bRegister);
     }
