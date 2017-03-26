@@ -49,7 +49,7 @@ public class FileListActivity extends ListActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.file_list);
+		setContentView(R.layout.fragment_recordings);
 
 		bybDirectory = new File(Environment.getExternalStorageDirectory()
 				+ "/BackyardBrains/");
@@ -67,7 +67,7 @@ public class FileListActivity extends ListActivity {
 
 		if(files != null) {
 			ListAdapter adapter = new FileListAdapter(this,
-				R.layout.file_list_row_layout, files);
+				R.layout.item_recording, files);
 			setListAdapter(adapter);
 		}
 	}
@@ -196,15 +196,15 @@ public class FileListActivity extends ListActivity {
 			View rowView = convertView;
 			if (rowView == null) {
 				LayoutInflater balloon = mContext.getLayoutInflater();
-				rowView = balloon.inflate(R.layout.file_list_row_layout, null,
+				rowView = balloon.inflate(R.layout.item_recording, null,
 						true);
 				holder = new FileListViewHolder();
 				holder.filenameView = (TextView) rowView
-						.findViewById(R.id.filename);
+						.findViewById(R.id.tv_file_name);
 				holder.filesizeView = (TextView) rowView
-						.findViewById(R.id.filesize);
+						.findViewById(R.id.tv_file_size);
 				holder.filedateView = (TextView) rowView
-						.findViewById(R.id.file_date);
+						.findViewById(R.id.tv_file_last_modified);
 				rowView.setTag(holder);
 			} else {
 				holder = (FileListViewHolder) rowView.getTag();

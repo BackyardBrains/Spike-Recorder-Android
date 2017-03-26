@@ -18,10 +18,14 @@ package com.backyardbrains.utls;
 
 import android.util.Log;
 
-public class LogUtils {
+public final class LogUtils {
     private static final String LOG_PREFIX = "bb_";
     private static final int LOG_PREFIX_LENGTH = LOG_PREFIX.length();
     private static final int MAX_LOG_TAG_LENGTH = 23;
+
+    private LogUtils() {
+        // Utility class, hide the constructor.
+    }
 
     public static boolean LOGGING_ENABLED = true;
 
@@ -106,8 +110,5 @@ public class LogUtils {
         if (LOGGING_ENABLED) {
             Log.e(tag, message, cause);
         }
-    }
-
-    private LogUtils() {
     }
 }

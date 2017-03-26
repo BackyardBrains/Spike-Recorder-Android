@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:padding="10dp">
+
+    <TextView
+        android:id="@+id/tv_file_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/tv_file_size"
+        app:layout_constraintBottom_toTopOf="@+id/tv_file_last_modified"
+        tools:text="BYB_17_Mar_2017_12_06_43_a.m..wav"/>
+
+    <TextView
+        android:id="@+id/tv_file_last_modified"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:textSize="14sp"
+        android:textColor="#e0e0e0"
+        app:layout_constraintLeft_toLeftOf="@+id/tv_file_name"
+        app:layout_constraintTop_toBottomOf="@+id/tv_file_name"
+        app:layout_constraintRight_toRightOf="@+id/tv_file_name"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="Mar 17, 2017 12:06 a.m."/>
+
+    <TextView
+        android:id="@+id/tv_file_size"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        android:drawableEnd="@android:drawable/ic_media_play"
+        app:layout_constraintLeft_toRightOf="@+id/tv_file_name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="8s"/>
+</android.support.constraint.ConstraintLayout>
