@@ -2,7 +2,6 @@ package com.backyardbrains;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -87,8 +86,9 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
 
     protected abstract boolean canRecord();
 
-    @Override protected BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        return new WaveformRenderer(getContext(), preparedBuffer);
+    @Override
+    protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        return new WaveformRenderer(fragment, preparedBuffer);
     }
 
     @Override protected int getLayoutID() {
@@ -132,9 +132,7 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
 
     @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) private void startRecording() {
         if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            if (getAudioService() != null) {
-                getAudioService().startRecording();
-            }
+            if (getAudioService() != null) getAudioService().startRecording();
         } else {
             // Request one permission
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage),
@@ -190,7 +188,7 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
                 if (getContext() != null) {
                     Intent i = new Intent();
                     i.setAction("BYBCloseButton");
-                    context.sendBroadcast(i);
+                    getContext().sendBroadcast(i);
                 }
             }
         });
@@ -281,9 +279,9 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBAudioPlaybackStart");
                 audioPlaybackStartListener = new AudioPlaybackStartListener();
-                context.registerReceiver(audioPlaybackStartListener, intentFilter);
+                getContext().registerReceiver(audioPlaybackStartListener, intentFilter);
             } else {
-                context.unregisterReceiver(audioPlaybackStartListener);
+                getContext().unregisterReceiver(audioPlaybackStartListener);
             }
         }
     }
@@ -293,9 +291,9 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBUpdateUI");
                 updateUIListener = new UpdateUIListener();
-                context.registerReceiver(updateUIListener, intentFilter);
+                getContext().registerReceiver(updateUIListener, intentFilter);
             } else {
-                context.unregisterReceiver(updateUIListener);
+                getContext().unregisterReceiver(updateUIListener);
             }
         }
     }

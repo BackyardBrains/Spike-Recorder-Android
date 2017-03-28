@@ -3,14 +3,18 @@ package com.backyardbrains;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
@@ -19,6 +23,8 @@ import android.view.MenuItem;
 import android.view.View;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.audio.AudioService;
 import java.util.List;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
@@ -28,7 +34,8 @@ import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.LOGI;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class BackyardBrainsMain extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
+public class BackyardBrainsMain extends AppCompatActivity
+    implements BackyardBrainsBaseScopeFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(BackyardBrainsMain.class);
 
@@ -52,6 +59,10 @@ public class BackyardBrainsMain extends AppCompatActivity implements EasyPermiss
 
     //@Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
+
+    private boolean bAudioServiceRunning = false;
+    protected AudioService mAudioService;
+    protected BYBAnalysisManager analysisManager;
 
     //protected BYBSlidingView sliding_drawer;
     private int currentFrag = -1;
@@ -80,21 +91,25 @@ public class BackyardBrainsMain extends AppCompatActivity implements EasyPermiss
         ButterKnife.bind(this);
 
         setupUI();
-        startAudioService();
+        //startAudioService();
         loadFragment(OSCILLOSCOPE_VIEW);
     }
 
     @Override protected void onStart() {
-        super.onStart();
+        startAudioService();
         readSettings();
         hideActionBar();
         registerReceivers();
+
+        super.onStart();
     }
 
     @Override protected void onStop() {
         super.onStop();
-        saveSettings();
+
         unregisterReceivers();
+        saveSettings();
+        stopAudioService();
     }
 
     @Override protected void onDestroy() {
@@ -415,11 +430,103 @@ public class BackyardBrainsMain extends AppCompatActivity implements EasyPermiss
 
     @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void startAudioService() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
-            ((BackyardBrainsApplication) getApplication()).startAudioService();
+            startAnalysisManager();
+            startService();
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
                 Manifest.permission.RECORD_AUDIO);
         }
+    }
+
+    private void stopAudioService() {
+        stopAnalysisManager();
+        stopService();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // ----------------------------------------- ANALYSIS MANAGER AND AUDIO SERVICE
+    // ---------------------------------------------------------------------------------------------
+
+    @Nullable @Override public AudioService audioService() {
+        return mAudioService;
+    }
+
+    @Nullable @Override public BYBAnalysisManager analysisManager() {
+        return analysisManager;
+    }
+
+    public boolean isAudioServiceRunning() {
+        return bAudioServiceRunning;
+    }
+
+    public void startService() {
+        if (!bAudioServiceRunning) {
+            startService(new Intent(this, AudioService.class));
+            bAudioServiceRunning = true;
+            bindAudioService(true);
+        }
+    }
+
+    public void stopService() {
+        if (bAudioServiceRunning) {
+            bindAudioService(false);
+            stopService(new Intent(this, AudioService.class));
+            bAudioServiceRunning = false;
+        }
+    }
+
+    public void startAnalysisManager() {
+        analysisManager = new BYBAnalysisManager(getApplicationContext());
+    }
+
+    public void stopAnalysisManager() {
+        analysisManager.close();
+    }
+
+    // ----------------------------------------------------------------------------------------
+    protected void bindAudioService(boolean on) {
+        if (on) {
+            Intent intent = new Intent(this, AudioService.class);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        } else {
+            unbindService(mConnection);
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------
+    protected ServiceConnection mConnection = new ServiceConnection() {
+
+        private boolean mAudioServiceIsBound;
+
+        // Sets a reference in this activity to the {@link AudioService}, which
+        // allows for {@link ByteBuffer}s full of audio information to be passed
+        // from the {@link AudioService} down into the local
+        // {@link OscilloscopeGLSurfaceView}
+        //
+        // @see
+        // android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
+        // android.os.IBinder)
+        @Override public void onServiceConnected(ComponentName className, IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get
+            // LocalService instance
+            AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
+            mAudioService = binder.getService();
+            mAudioServiceIsBound = true;
+        }
+
+        @Override public void onServiceDisconnected(ComponentName arg0) {
+            mAudioService = null;
+            mAudioServiceIsBound = false;
+        }
+    };
+
+    // ----------------------------------------------------------------------------------------
+    public AudioService getAudioService() {
+        return mAudioService;
+    }
+
+    public BYBAnalysisManager getAnalysisManager() {
+        return analysisManager;
     }
 
     // ---------------------------------------------------------------------------------------------

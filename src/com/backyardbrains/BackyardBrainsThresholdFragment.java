@@ -71,8 +71,8 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         unbinder.unbind();
     }
 
-    @Override protected BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        return new ThresholdRenderer(context, preparedBuffer);
+    @Override protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        return new ThresholdRenderer(fragment, preparedBuffer);
     }
 
     @Override protected int getLayoutID() {
@@ -121,7 +121,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
                     Intent i = new Intent();
                     i.setAction("BYBThresholdNumAverages");
                     i.putExtra("num", progress);
-                    context.sendBroadcast(i);
+                    getContext().sendBroadcast(i);
                 }
             }
         });
@@ -162,13 +162,15 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
     }
 
     public void registerUpdateThresholdHandleListener(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
-            updateThresholdHandleListener = new UpdateThresholdHandleListener();
-            context.registerReceiver(updateThresholdHandleListener, intentFilter);
-        } else {
-            context.unregisterReceiver(updateThresholdHandleListener);
-            updateThresholdHandleListener = null;
+        if (getContext() != null) {
+            if (reg) {
+                IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
+                updateThresholdHandleListener = new UpdateThresholdHandleListener();
+                getContext().registerReceiver(updateThresholdHandleListener, intentFilter);
+            } else {
+                getContext().unregisterReceiver(updateThresholdHandleListener);
+                updateThresholdHandleListener = null;
+            }
         }
     }
 
@@ -177,9 +179,9 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
             if (reg) {
                 IntentFilter intentSetAverageSliderFilter = new IntentFilter("BYBSetAveragerSlider");
                 setAverageSliderListener = new SetAverageSliderListener();
-                context.registerReceiver(setAverageSliderListener, intentSetAverageSliderFilter);
+                getContext().registerReceiver(setAverageSliderListener, intentSetAverageSliderFilter);
             } else {
-                context.unregisterReceiver(setAverageSliderListener);
+                getContext().unregisterReceiver(setAverageSliderListener);
             }
         }
     }

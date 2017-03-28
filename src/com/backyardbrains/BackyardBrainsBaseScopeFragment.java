@@ -8,8 +8,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,7 +27,7 @@ import static com.backyardbrains.utls.LogUtils.LOGE;
 import static com.backyardbrains.utls.LogUtils.LOGW;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
+public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
 
     private String TAG = makeLogTag(BackyardBrainsBaseScopeFragment.class);
 
@@ -42,7 +40,6 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     @BindView(R.id.ibtn_zoom_in_v) ImageButton ibtnZoomInVertically;
     @BindView(R.id.ibtn_zoom_out_v) ImageButton ibtnZoomOutVertically;
 
-    protected Context context;
     private Unbinder unbinder;
     private BYBBaseRenderer renderer;
     protected SharedPreferences settings = null;
@@ -55,17 +52,16 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- FRAGMENT LIFECYCLE
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
-
-        getContext();
 
         final View rootView = inflater.inflate(getLayoutID(), container, false);
         unbinder = ButterKnife.bind(this, rootView);
 
-        readSettings();
-
         setupUI();
+
+        readSettings();
 
         return rootView;
     }
@@ -101,7 +97,6 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
         LOGD(TAG, "onStop()");
         saveSettings();
         if (glSurface != null) glSurface.onPause();
-        glSurface = null;
     }
 
     @Override public void onDestroy() {
@@ -117,7 +112,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
         }
     }
 
-    protected abstract BYBBaseRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer);
+    protected abstract BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer);
 
     protected BYBBaseRenderer getRenderer() {
         return renderer;
@@ -135,13 +130,13 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     protected void reassignSurfaceView() {
         LOGD(TAG, "reassignSurfaceView");
         if (getContext() != null) {
-            AudioService as = ((BackyardBrainsApplication) context).getmAudioService();
             glSurface = null;
 
             if (flGL != null) {
                 flGL.removeAllViews();
-                if (as != null) {
-                    as.setUseAverager(shouldUseAverager());
+                final AudioService provider = getAudioService();
+                if (provider != null) {
+                    provider.setUseAverager(shouldUseAverager());
                 } else {
                     LOGW(TAG, "AudioService is null");
                 }
@@ -149,17 +144,13 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
                     saveSettings();
                     renderer = null;
                 }
-                long start = System.currentTimeMillis();
-                LOGD(TAG, "START");
                 try {
-                    renderer = createRenderer(context, bufferWithXs);//(BYBBaseRenderer) rendererClass.newInstance();
-                    LOGD(TAG, "AFTER createRenderer():" + (System.currentTimeMillis() - start));
+                    renderer = createRenderer(this, bufferWithXs);
                 } catch (Exception ex) {
                     LOGE(TAG, "Renderer creation failed - " + ex.getMessage());
                 }
                 if (glSurface != null) glSurface = null;
-                glSurface = new InteractiveGLSurfaceView(context, renderer);
-                LOGD(TAG, "AFTER new InteractiveGLSurfaceView():" + (System.currentTimeMillis() - start));
+                glSurface = new InteractiveGLSurfaceView(getContext(), renderer);
                 flGL.addView(glSurface);
             }
             readSettings();
@@ -199,15 +190,6 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UTILS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public AudioService getAudioService() {
-        if (getContext() != null) {
-            BackyardBrainsApplication app = ((BackyardBrainsApplication) getContext());
-            if (app != null) {
-                return app.mAudioService;
-            }
-        }
-        return null;
-    }
 
     public boolean getIsPlaybackMode() {
         return getAudioService() != null && getAudioService().isPlaybackMode();
@@ -217,42 +199,25 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
         return getAudioService() != null && getAudioService().isAudioPlayerPlaying();
     }
 
-    @Override public Context getContext() {
-        if (context == null) {
-            FragmentActivity act = getActivity();
-            if (act == null) {
-                return null;
-            }
-            context = act.getApplicationContext();
-        }
-        return context;
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////
     protected void getSettings() {
-        if (settings == null) {
-            settings = getActivity().getPreferences(BackyardBrainsMain.MODE_PRIVATE);
-        }
+        if (settings == null) settings = getActivity().getPreferences(BackyardBrainsMain.MODE_PRIVATE);
     }
 
     // ----------------------------------------------------------------------------------------
     protected void readSettings() {
         getSettings();
         if (settings != null) {
-            if (renderer != null) {
-                renderer.readSettings(settings, TAG);
-            }
+            if (renderer != null) renderer.readSettings(settings, TAG);
         }
     }
 
     // ----------------------------------------------------------------------------------------
     protected void saveSettings() {
         getSettings();
-        if (settings != null) {
-            renderer.saveSettings(settings, TAG);
-        }
+        if (settings != null) renderer.saveSettings(settings, TAG);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,21 +225,21 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     private class UpdateMillisecondsReceiver extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             //LOGD(TAG, "BYBUpdateMillisecondsReciever broadcast received!");
             tvTime.setText(intent.getStringExtra("millisecondsDisplayedString"));
         }
     }
 
     private class UpdateMillivoltReceiver extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             //LOGD(TAG, "BYBUpdateMillivoltReciever broadcast received!");
             tvSignal.setText(intent.getStringExtra("millivoltsDisplayedString"));
         }
     }
 
     private class SetMillivoltViewSizeReceiver extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             LOGD(TAG, "BYBMillivoltsViewSize broadcast received");
             tvSignal.setHeight(intent.getIntExtra("millivoltsViewNewSize", tvSignal.getHeight()));
         }
@@ -301,7 +266,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
     }
 
     private class ShowZoomUIListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             LOGD(TAG, "BYBShowZoomUI broadcast received!");
             if (intent.hasExtra("showUI")) {
                 boolean bShow = intent.getBooleanExtra("showUI", false);
@@ -334,9 +299,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBUpdateMillisecondsReciever");
                 upmillirec = new UpdateMillisecondsReceiver();
-                context.registerReceiver(upmillirec, intentFilter);
+                getContext().registerReceiver(upmillirec, intentFilter);
             } else {
-                context.unregisterReceiver(upmillirec);
+                getContext().unregisterReceiver(upmillirec);
             }
         }
     }
@@ -346,9 +311,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilterVolts = new IntentFilter("BYBUpdateMillivoltReciever");
                 upmillivolt = new UpdateMillivoltReceiver();
-                context.registerReceiver(upmillivolt, intentFilterVolts);
+                getContext().registerReceiver(upmillivolt, intentFilterVolts);
             } else {
-                context.unregisterReceiver(upmillivolt);
+                getContext().unregisterReceiver(upmillivolt);
             }
         }
     }
@@ -358,9 +323,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilterVoltSize = new IntentFilter("BYBMillivoltsViewSize");
                 milliVoltSize = new SetMillivoltViewSizeReceiver();
-                context.registerReceiver(milliVoltSize, intentFilterVoltSize);
+                getContext().registerReceiver(milliVoltSize, intentFilterVoltSize);
             } else {
-                context.unregisterReceiver(milliVoltSize);
+                getContext().unregisterReceiver(milliVoltSize);
             }
         }
     }
@@ -370,9 +335,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentUpdateDebugTextFilter = new IntentFilter("updateDebugView");
                 updateDebugTextViewListener = new UpdateDebugTextViewListener();
-                context.registerReceiver(updateDebugTextViewListener, intentUpdateDebugTextFilter);
+                getContext().registerReceiver(updateDebugTextViewListener, intentUpdateDebugTextFilter);
             } else {
-                context.unregisterReceiver(updateDebugTextViewListener);
+                getContext().unregisterReceiver(updateDebugTextViewListener);
             }
         }
     }
@@ -382,9 +347,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentAudioServiceBindFilter = new IntentFilter("BYBAudioServiceBind");
                 audioServiceBindListener = new AudioServiceBindListener();
-                context.registerReceiver(audioServiceBindListener, intentAudioServiceBindFilter);
+                getContext().registerReceiver(audioServiceBindListener, intentAudioServiceBindFilter);
             } else {
-                context.unregisterReceiver(audioServiceBindListener);
+                getContext().unregisterReceiver(audioServiceBindListener);
             }
         }
     }
@@ -394,9 +359,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBShowZoomUI");
                 showZoomUIListener = new ShowZoomUIListener();
-                context.registerReceiver(showZoomUIListener, intentFilter);
+                getContext().registerReceiver(showZoomUIListener, intentFilter);
             } else {
-                context.unregisterReceiver(showZoomUIListener);
+                getContext().unregisterReceiver(showZoomUIListener);
             }
         }
     }

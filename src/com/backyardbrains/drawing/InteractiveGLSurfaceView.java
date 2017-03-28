@@ -19,7 +19,6 @@
 
 package com.backyardbrains.drawing;
 
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +28,6 @@ import android.opengl.GLSurfaceView;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
-
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.view.BYBZoomButton;
 import com.backyardbrains.view.BybScaleListener;
@@ -46,9 +44,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     protected ScaleGestureDetector.OnScaleGestureListener mScaleListener;
     protected SingleFingerGestureDetector singleFingerGestureDetector = null;
 
-
-    @SuppressWarnings("unused")
-    private static final String TAG = InteractiveGLSurfaceView.class.getCanonicalName();
+    @SuppressWarnings("unused") private static final String TAG = InteractiveGLSurfaceView.class.getCanonicalName();
 
     BYBBaseRenderer renderer;
 
@@ -58,7 +54,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     public static final int MODE_MOVE = 2;
     public static final int MODE_ZOOM_IN_V = 3;
     public static final int MODE_ZOOM_OUT_V = 4;
-
 
     //	protected int nonTouchMode = -1;
     float startTouchX;
@@ -85,7 +80,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
         getHolder().setFormat(PixelFormat.RGBA_8888);
         setRenderer(renderer);
-        
+
         if (mContext != null) {
             boolean bHasTouch = ((BackyardBrainsApplication) mContext.getApplicationContext()).isTouchSupported();
             enableZoomButtons(!bHasTouch);
@@ -93,14 +88,12 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     //*
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    @Override public void surfaceCreated(SurfaceHolder holder) {
         super.surfaceCreated(holder);
         setKeepScreenOn(true);
     }
 
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
+    @Override public void surfaceDestroyed(SurfaceHolder holder) {
         setKeepScreenOn(false);
         if (bZoomButtonsEnabled) {
             bZoomButtonsEnabled = false;
@@ -109,8 +102,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         super.surfaceDestroyed(holder);
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    @Override public boolean onTouchEvent(MotionEvent event) {
         if (event.getPointerCount() > 0) {
             switch (event.getToolType(0)) {
                 case TOOL_TYPE_UNKNOWN:
@@ -123,7 +115,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                     break;
             }
         }
-//		Log.d(TAG, "onTouchEvent " + event.toString());
+        //		Log.d(TAG, "onTouchEvent " + event.toString());
         if (renderer != null) {
             if (singleFingerGestureDetector != null) {
                 singleFingerGestureDetector.onTouchEvent(event);
@@ -246,15 +238,14 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     //	protected void showScalingInstructions() {
-//		if (mContext != null && isScalingMode()) {
-//			Intent i = new Intent();
-//			i.setAction("showScalingInstructions");
-//			mContext.sendBroadcast(i);
-//		}
-//	}
+    //		if (mContext != null && isScalingMode()) {
+    //			Intent i = new Intent();
+    //			i.setAction("showScalingInstructions");
+    //			mContext.sendBroadcast(i);
+    //		}
+    //	}
     private class ZoomButtonsListener extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             if (intent.hasExtra("zoomMode")) {
                 int zoomMode = intent.getIntExtra("zoomMode", MODE_ZOOM_IN_H);
                 scaleRenderer(zoomMode);

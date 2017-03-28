@@ -3,15 +3,12 @@ package com.backyardbrains;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,14 +29,13 @@ import com.backyardbrains.drawing.WaitRenderer;
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class BackyardBrainsAnalysisFragment extends Fragment {
+public class BackyardBrainsAnalysisFragment extends BaseFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsAnalysisFragment.class);
 
     protected TouchGLSurfaceView mAndroidSurface = null;
     private FrameLayout mainscreenGLLayout;
     private SharedPreferences settings = null;
-    private Context context = null;
     private BYBAnalysisBaseRenderer currentRenderer = null;
     private View waitingView = null;
     protected int currentAnalyzer = BYBAnalysisType.BYB_ANALYSIS_NONE;
@@ -85,7 +81,7 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
     @Override public void onStart() {
         super.onStart();
         LOGD(TAG, "onStart");
-        if (context != null) {
+        if (getContext() != null) {
             reassignSurfaceView(currentAnalyzer);
             Intent i = new Intent();
             i.setAction("BYBAnalysisFragmentReady");
@@ -156,30 +152,28 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
     // ----------------------------------------------------------------------------------------
     protected void reassignSurfaceView(int renderer) {
         LOGD(TAG, "reassignSurfaceView  renderer: " + getRendererTitle(renderer) + "  " + renderer);
-        context = getContext();
-
         showWaiting(renderer == BYBAnalysisType.BYB_ANALYSIS_NONE && waitingView != null);
 
         if (mainscreenGLLayout != null) {
 
-            if (context != null) {
+            if (getContext() != null) {
                 mAndroidSurface = null;
                 mainscreenGLLayout.removeAllViews();
                 switch (renderer) {
                     case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-                        setGlSurface(new AutoCorrelationRenderer(context), true);
+                        setGlSurface(new AutoCorrelationRenderer(this), true);
                         break;
                     case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-                        setGlSurface(new CrossCorrelationRenderer(context), true);
+                        setGlSurface(new CrossCorrelationRenderer(this), true);
                         break;
                     case BYBAnalysisType.BYB_ANALYSIS_ISI:
-                        setGlSurface(new ISIRenderer(context), true);
+                        setGlSurface(new ISIRenderer(this), true);
                         break;
                     case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-                        setGlSurface(new AverageSpikeRenderer(context), true);
+                        setGlSurface(new AverageSpikeRenderer(this), true);
                         break;
                     case BYBAnalysisType.BYB_ANALYSIS_NONE:
-                        setGlSurface(new WaitRenderer(context), true);
+                        setGlSurface(new WaitRenderer(this), true);
                         break;
                 }
             }
@@ -211,13 +205,12 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
 
     // ----------------------------------------------------------------------------------------
     protected void setGlSurface(final BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
-        context = getContext();
-        if (context != null && renderer != null) {
+        if (getContext() != null && renderer != null) {
             if (mAndroidSurface != null) {
                 mAndroidSurface = null;
             }
             currentRenderer = renderer;
-            mAndroidSurface = new TouchGLSurfaceView(context, renderer);
+            mAndroidSurface = new TouchGLSurfaceView(getContext(), renderer);
             //glSurface.setEGLContextClientVersion(2);
             //			glSurface.setRenderer(renderer);
             if (bSetOnDemand) {
@@ -226,17 +219,6 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
         } else {
             //LOGD(TAG, "setGLSurface failed. Context == null.");
         }
-    }
-
-    @Override public Context getContext() {
-        if (context == null) {
-            FragmentActivity act = getActivity();
-            if (act == null) {
-                return null;
-            }
-            context = act.getApplicationContext();
-        }
-        return context;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -316,13 +298,9 @@ public class BackyardBrainsAnalysisFragment extends Fragment {
         if (reg) {
             IntentFilter intentFilter = new IntentFilter("BYBRenderAnalysis");
             renderAnalysisListener = new RenderAnalysisListener();
-            if (getContext() != null) {
-                context.registerReceiver(renderAnalysisListener, intentFilter);
-            }
+            if (getContext() != null) getContext().registerReceiver(renderAnalysisListener, intentFilter);
         } else {
-            if (getContext() != null) {
-                context.unregisterReceiver(renderAnalysisListener);
-            }
+            if (getContext() != null) getContext().unregisterReceiver(renderAnalysisListener);
             renderAnalysisListener = null;
         }
     }

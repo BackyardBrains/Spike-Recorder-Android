@@ -11,8 +11,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -25,12 +23,11 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.utls.ApacheCommonsLang3Utils;
 import com.backyardbrains.utls.DateUtils;
 import com.backyardbrains.utls.EventUtils;
 import com.backyardbrains.utls.ViewUtils;
-import com.backyardbrains.utls.WaveUtils;
+import com.backyardbrains.utls.WavUtils;
 import com.backyardbrains.view.BybEmptyRecyclerView;
 import com.backyardbrains.view.BybEmptyView;
 import java.io.File;
@@ -45,7 +42,7 @@ import static com.backyardbrains.utls.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class BackyardBrainsRecordingsFragment extends Fragment {
+public class BackyardBrainsRecordingsFragment extends BaseFragment {
 
     public static final String TAG = makeLogTag(BackyardBrainsMain.class);
 
@@ -53,7 +50,6 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     @BindView(R.id.empty_view) BybEmptyView emptyView;
     @BindView(R.id.btn_privacy_policy) Button btnPrivacyPolicy;
 
-    private Context context;
     private Unbinder unbinder;
 
     private File bybDirectory;
@@ -64,17 +60,6 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     // -------------------------------------------------------------------------------------------------
     public BackyardBrainsRecordingsFragment() {
         super();
-    }
-
-    @Override public Context getContext() {
-        if (context == null) {
-            FragmentActivity act = getActivity();
-            if (act == null) {
-                return null;
-            }
-            context = act.getApplicationContext();
-        }
-        return context;
     }
 
     // -------------------------------------------------------------------------------------------------
@@ -134,21 +119,15 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     }
 
     // ----------------------------------------------------------------------------------------
-    @Nullable private BYBAnalysisManager getAnalysisManger() {
-        if (getContext() != null) {
-            return ((BackyardBrainsApplication) getContext()).getAnalysisManager();
-        }
-        return null;
-    }
 
     private boolean isFindSpikesDone() {
-        return getAnalysisManger() != null && getAnalysisManger().spikesFound();
+        return getAnalysisManager() != null && getAnalysisManager().spikesFound();
     }
 
     private void fileDetails(File f) {
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        details += "Duration: " + WaveUtils.getWaveLengthString(f.length());
+        details += "Duration: " + WavUtils.getWavLengthString(f.length());
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
@@ -159,7 +138,7 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
             Intent i = new Intent();
             i.setAction("BYBPlayAudioFile");
             i.putExtra("filePath", f.getAbsolutePath());
-            context.sendBroadcast(i);
+            getContext().sendBroadcast(i);
         }
     }
 
@@ -170,11 +149,11 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
                 Intent i = new Intent();
                 i.setAction("BYBAnalizeFile");
                 i.putExtra("filePath", f.getAbsolutePath());
-                context.sendBroadcast(i);
+                getContext().sendBroadcast(i);
                 Intent j = new Intent();
                 j.setAction("BYBChangePage");
                 j.putExtra("page", BackyardBrainsMain.FIND_SPIKES_VIEW);
-                context.sendBroadcast(j);
+                getContext().sendBroadcast(j);
             }
         }
     }
@@ -202,22 +181,22 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     // ----------------------------------------------------------------------------------------
     private void doAnalysis(File f, String process, String render) {
         //noinspection ConstantConditions
-        if (isFindSpikesDone() && getAnalysisManger().checkCurrentFilePath(f.getAbsolutePath())) {
+        if (isFindSpikesDone() && getAnalysisManager().checkCurrentFilePath(f.getAbsolutePath())) {
             if (getContext() != null) {
                 if (f.exists()) {
                     Intent j = new Intent();
                     j.setAction("BYBChangePage");
                     j.putExtra("page", BackyardBrainsMain.ANALYSIS_VIEW);
-                    context.sendBroadcast(j);
+                    getContext().sendBroadcast(j);
                     Intent i = new Intent();
                     i.setAction("BYBAnalizeFile");
                     i.putExtra("filePath", f.getAbsolutePath());
                     i.putExtra(process, true);
-                    context.sendBroadcast(i);
+                    getContext().sendBroadcast(i);
                     Intent k = new Intent();
                     k.setAction("BYBRenderAnalysis");
                     k.putExtra(render, true);
-                    context.sendBroadcast(k);
+                    getContext().sendBroadcast(k);
                 }
             }
         } else {
@@ -305,7 +284,7 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     private void setupUI() {
         ((BackyardBrainsMain) getActivity()).showButtons(true);
 
-        adapter = new FilesAdapter(context, null, new FilesAdapter.Callback() {
+        adapter = new FilesAdapter(getContext(), null, new FilesAdapter.Callback() {
             @Override public void onClick(@NonNull File file) {
                 showRecordingOptions(file);
             }
@@ -335,7 +314,7 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
     void showRecordingOptions(@NonNull final File file) {
         //noinspection ConstantConditions
         final boolean canAnalyze =
-            isFindSpikesDone() && getAnalysisManger().checkCurrentFilePath(file.getAbsolutePath());
+            isFindSpikesDone() && getAnalysisManager().checkCurrentFilePath(file.getAbsolutePath());
         new AlertDialog.Builder(this.getActivity()).setTitle("Choose an action")
             .setCancelable(true)
             .setItems(canAnalyze ? R.array.options_recording : R.array.options_recording_no_spikes,
@@ -455,7 +434,7 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
                 LOGD(TAG, "Binding file " + file.getName());
 
                 tvFileName.setText(file.getName());
-                tvFileSize.setText(WaveUtils.getWaveLengthString(file.length()));
+                tvFileSize.setText(WavUtils.getWavLengthString(file.length()));
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
             }
         }
@@ -503,9 +482,9 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBRecordingSaverSuccessfulSave");
                 successfulSaveListener = new SuccessfulSaveListener();
-                context.registerReceiver(successfulSaveListener, intentFilter);
+                getContext().registerReceiver(successfulSaveListener, intentFilter);
             } else {
-                context.unregisterReceiver(successfulSaveListener);
+                getContext().unregisterReceiver(successfulSaveListener);
             }
         }
     }
@@ -515,9 +494,9 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
                 toggleRecorder = new ToggleRecordingListener();
-                context.registerReceiver(toggleRecorder, intentFilter);
+                getContext().registerReceiver(toggleRecorder, intentFilter);
             } else {
-                context.unregisterReceiver(toggleRecorder);
+                getContext().unregisterReceiver(toggleRecorder);
             }
         }
     }
@@ -527,9 +506,9 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
             if (reg) {
                 IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
                 readReceiver = new FileReadReceiver();
-                context.registerReceiver(readReceiver, fileReadIntent);
+                getContext().registerReceiver(readReceiver, fileReadIntent);
             } else {
-                context.unregisterReceiver(readReceiver);
+                getContext().unregisterReceiver(readReceiver);
             }
         }
     }
@@ -539,9 +518,9 @@ public class BackyardBrainsRecordingsFragment extends Fragment {
             if (reg) {
                 IntentFilter intent = new IntentFilter("BYBRescanFiles");
                 rescanFilesListener = new RescanFilesListener();
-                context.registerReceiver(rescanFilesListener, intent);
+                getContext().registerReceiver(rescanFilesListener, intent);
             } else {
-                context.unregisterReceiver(rescanFilesListener);
+                getContext().unregisterReceiver(rescanFilesListener);
             }
         }
     }

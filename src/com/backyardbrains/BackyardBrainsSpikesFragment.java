@@ -1,12 +1,10 @@
 package com.backyardbrains;
 
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,7 +16,6 @@ import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
@@ -64,8 +61,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
         handleColors[2][3] = 1.0f;
     }
 
-    @Override protected FindSpikesRenderer createRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        return new FindSpikesRenderer(context, preparedBuffer);
+    @Override protected FindSpikesRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        return new FindSpikesRenderer(fragment, preparedBuffer);
     }
 
     @Override protected FindSpikesRenderer getRenderer() {
@@ -107,12 +104,6 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
     @Override protected void reassignSurfaceView() {
         super.reassignSurfaceView();
         updateThresholdHandles();
-    }
-
-    @Nullable private BYBAnalysisManager getAnalysisManager() {
-        if (getContext() != null) return ((BackyardBrainsApplication) getContext()).getAnalysisManager();
-
-        return null;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -231,7 +222,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                                 Intent j = new Intent();
                                 j.setAction("BYBChangePage");
                                 j.putExtra("page", BackyardBrainsMain.RECORDINGS_LIST);
-                                context.sendBroadcast(j);
+                                getContext().sendBroadcast(j);
                             }
                         }
                     }
@@ -387,9 +378,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
                 IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
                 updateThresholdHandleListener = new UpdateThresholdHandleListener();
 
-                context.registerReceiver(updateThresholdHandleListener, intentFilter);
+                getContext().registerReceiver(updateThresholdHandleListener, intentFilter);
             } else {
-                context.unregisterReceiver(updateThresholdHandleListener);
+                getContext().unregisterReceiver(updateThresholdHandleListener);
                 updateThresholdHandleListener = null;
             }
         }
@@ -400,9 +391,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter("BYBThresholdHandlePos");
                 thresholdHandlePosListener = new ThresholdHandlePosListener();
-                context.registerReceiver(thresholdHandlePosListener, intentFilter);
+                getContext().registerReceiver(thresholdHandlePosListener, intentFilter);
             } else {
-                context.unregisterReceiver(thresholdHandlePosListener);
+                getContext().unregisterReceiver(thresholdHandlePosListener);
                 thresholdHandlePosListener = null;
             }
         }

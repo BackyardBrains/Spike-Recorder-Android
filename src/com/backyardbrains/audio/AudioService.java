@@ -27,6 +27,7 @@ import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 import java.nio.ByteBuffer;
@@ -132,7 +133,7 @@ public class AudioService extends Service implements ReceivesAudio {
         }
     }
 
-    public Handler getTriggerHandler() {
+    @Nullable public Handler getTriggerHandler() {
         if (averager != null) {
             return averager.getHandler();
         } else {
@@ -161,7 +162,7 @@ public class AudioService extends Service implements ReceivesAudio {
         appContext = this.getApplicationContext();
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         audioBuffer.zeroFill();
-        averager = new TriggerAverager(TriggerAverager.defaultSize, appContext);
+        averager = new TriggerAverager(TriggerAverager.defaultSize);
         registerReceivers(true);
         turnOnMicThread();
     }
@@ -271,7 +272,6 @@ public class AudioService extends Service implements ReceivesAudio {
      * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
      */
     @Override public void receiveAudio(ByteBuffer audioInfo) {
-        //		receiveAudio(audioInfo.asShortBuffer());
         if (!bUseAverager) {
             audioBuffer.add(audioInfo);
         } else {
@@ -284,11 +284,9 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     @Override public void receiveAudio(ShortBuffer audioInfo) {
-
         if (!bUseAverager) {
             audioBuffer.add(audioInfo);
         } else {
-            //averager.update(audioBuffer);
             averager.push(audioInfo);
         }
         lastSamplesReceivedTimestamp = System.currentTimeMillis();
@@ -320,7 +318,7 @@ public class AudioService extends Service implements ReceivesAudio {
         }
         try {
             turnOnMicThread();
-            mRecordingSaverInstance = new RecordingSaver("BYB", this.getApplicationContext());// theTime.toString());
+            mRecordingSaverInstance = new RecordingSaver(this.getApplicationContext(), "BYB_");// theTime.toString());
             broadcastUpdateUI();
         } catch (IllegalStateException e) {
             Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG)

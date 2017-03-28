@@ -1,16 +1,14 @@
 package com.backyardbrains.drawing;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.opengl.GLSurfaceView;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import com.backyardbrains.BYBConstants;
 import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
-import com.backyardbrains.BackyardBrainsApplication;
-import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.BaseFragment;
 import com.backyardbrains.utls.Formats;
 import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
@@ -20,54 +18,51 @@ import javax.microedition.khronos.opengles.GL10;
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class BYBBaseRenderer implements GLSurfaceView.Renderer {
+public class BYBBaseRenderer extends BaseRenderer {
 
     private static final String TAG = makeLogTag(BYBBaseRenderer.class);
 
-    protected int glWindowHorizontalSize = 4000;
-    protected int glWindowVerticalSize = 10000;
-    protected int prevGlWindowHorizontalSize = 4000;
-    protected int prevGlWindowVerticalSize = 10000;
+    int glWindowHorizontalSize = 4000;
+    private int glWindowVerticalSize = 10000;
+    private int prevGlWindowHorizontalSize = 4000;
+    private int prevGlWindowVerticalSize = 10000;
 
-    protected float focusX = 0;
-    protected float scaledFocusX = 0;
-    protected float normalizedFocusX = 0;
-    protected int focusedSample = 0;
+    private float focusX = 0;
+    private float scaledFocusX = 0;
+    private float normalizedFocusX = 0;
+    private int focusedSample = 0;
 
-    protected boolean bZooming = false;
-    protected boolean bPanning = false;
-    protected float panningDx = 0;
+    private boolean bZooming = false;
+    private boolean bPanning = false;
+    private float panningDx = 0;
 
-    protected short[] mBufferToDraws;
-    protected float[] mTempBufferToDraws;
+    short[] mBufferToDraws;
+    private float[] mTempBufferToDraws;
 
     protected int height;
     protected int width;
-    protected boolean autoScaled = false;
-    public static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
-    public static final int MIN_GL_HORIZONTAL_SIZE = 16;
-    public static final int MIN_GL_VERTICAL_SIZE = 400;
-    public static final int MAX_NUM_SAMPLES = 264600; //6 seconds
-    protected float minimumDetectedPCMValue = -5000000f;
+    private boolean autoScaled = false;
+    private static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
+    private static final int MIN_GL_HORIZONTAL_SIZE = 16;
+    private static final int MIN_GL_VERTICAL_SIZE = 400;
+    private static final int MAX_NUM_SAMPLES = 264600; //6 seconds
+    private float minimumDetectedPCMValue = -5000000f;
 
-    protected int startIndex = 0;
-    protected int endIndex = 0;
-    protected boolean bShowScalingAreaX = false;
-    protected int scalingAreaStartX;
-    protected int scalingAreaEndX;
-    protected boolean bShowScalingAreaY = false;
-    protected int scalingAreaStartY;
-    protected int scalingAreaEndY;
-
-    protected Context context;
+    private int startIndex = 0;
+    private int endIndex = 0;
+    private boolean bShowScalingAreaX = false;
+    private int scalingAreaStartX;
+    private int scalingAreaEndX;
+    private boolean bShowScalingAreaY = false;
+    private int scalingAreaStartY;
+    private int scalingAreaEndY;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- CONSTRUCTOR & SETUP
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public BYBBaseRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        Log.d(TAG, "Constructor (context)");
+    public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        super(fragment);
 
-        this.context = context.getApplicationContext();
         this.mTempBufferToDraws = preparedBuffer;
     }
 
@@ -87,14 +82,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTERS/GETTERS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    public void setGlWindowUnscaledHorizontalSize(float newX) {
-        setGlWindowHorizontalSize((int) (glWindowHorizontalSize * newX / (float) width));
-    }
-
-    public void setGlWindowUnscaledVerticalSize(float newY) {
-        setGlWindowVerticalSize((int) (glWindowVerticalSize * newY / (float) height));
-    }
-
     // ----------------------------------------------------------------------------------------
     public void setGlWindowHorizontalSize(int newX) {
         if (newX < 0) {
@@ -112,7 +99,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
             }
             this.glWindowHorizontalSize = newX;
         }
-        //Log.d(TAG, "SetGLHorizontalSize " + glWindowHorizontalSize);
+        //LOGD(TAG, "SetGLHorizontalSize " + glWindowHorizontalSize);
     }
 
     // ----------------------------------------------------------------------------------------
@@ -142,15 +129,6 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
         return glWindowHorizontalSize;
     }
 
-    void broadcastDebugText(String text) {
-        if (context != null) {
-            Intent i = new Intent();
-            i.setAction("updateDebugView");
-            i.putExtra("text", text);
-            context.sendBroadcast(i);
-        }
-    }
-
     // ----------------------------------------------------------------------------------------
     public int getSurfaceWidth() {
         return width;
@@ -163,12 +141,10 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
 
     // ----------------------------------------------------------------------------------------
     public void addToGlOffset(float dx, float dy) {
-        if (context != null) {
-            if (getIsPlaybackMode() && !getIsPlaying()) {
-                bPanning = true;
-                panningDx = dx;
-                bZooming = false;
-            }
+        if (getIsPlaybackMode() && !getIsPlaying()) {
+            bPanning = true;
+            panningDx = dx;
+            bZooming = false;
         }
     }
 
@@ -202,7 +178,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     private void setStartEndIndex(int arrayLength) {
-        if (getAudioService().isPlaybackMode()) {
+        if (getAudioService() != null && getAudioService().isPlaybackMode()) {
             if (getAudioService().isAudioPlayerPlaying()) {
                 long playbackProgress = getAudioService().getPlaybackProgress();
                 setStartIndex((int) playbackProgress - glWindowHorizontalSize);
@@ -232,8 +208,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-        if (context != null) {
+    @Nullable protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+        if (getContext() != null) {
             //long start = System.currentTimeMillis();
             //Log.d(TAG, "START - " + shortArrayToDraw.length);
             //float[] arr;
@@ -274,12 +250,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    public float getMinimumDetectedPCMValue() {
+    private float getMinimumDetectedPCMValue() {
         return minimumDetectedPCMValue;
     }
 
     // ----------------------------------------------------------------------------------------
-    protected boolean getCurrentAudio() {
+    private boolean getCurrentAudio() {
         if (getAudioService() != null) {
             mBufferToDraws = getAudioService().getAudioBuffer();
             return true;
@@ -288,18 +264,18 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    public boolean isAutoScaled() {
+    private boolean isAutoScaled() {
         return autoScaled;
     }
 
     // ----------------------------------------------------------------------------------------
-    public void setAutoScaled(boolean isScaled) {
+    private void setAutoScaled(boolean isScaled) {
         autoScaled = isScaled;
     }
 
     // ----------------------------------------------------------------------------------------
     // ----------------------------------------- LABELS
-    protected void setLabels(int samplesToShow) {
+    private void setLabels(int samplesToShow) {
         setmVText();
         final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 2;
         setMsText(millisecondsInThisWindow);
@@ -312,24 +288,34 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    public void setMsText(float ms) {
+    private void setMsText(float ms) {
         //String msString = new DecimalFormat("#.#").format(ms);
         broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString", Formats.formatTime(ms));
     }
 
     // ----------------------------------------------------------------------------------------
-    public void setmVText(Float ms) {
+    void setmVText(Float ms) {
         String msString = new DecimalFormat("#.##").format(ms);
         broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
     }
 
     // ----------------------------------------------------------------------------------------
+    private void broadcastTextUpdate(String action, String name, String data) {
+        if (getContext() != null) {
+            Intent i = new Intent();
+            i.setAction(action);
+            i.putExtra(name, data);
+            getContext().sendBroadcast(i);
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------
     private void setMillivoltLabelPosition(int height) {
-        if (context != null) {
+        if (getContext() != null) {
             Intent i = new Intent();
             i.setAction("BYBMillivoltsViewSize");
             i.putExtra("millivoltsViewNewSize", height / 2);
-            context.sendBroadcast(i);
+            getContext().sendBroadcast(i);
         }
     }
 
@@ -353,12 +339,12 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    protected void preDrawingHandler() {
+    void preDrawingHandler() {
         setLabels(glWindowHorizontalSize);
     }
 
     // ----------------------------------------------------------------------------------------
-    protected void postDrawingHandler(GL10 gl) {
+    void postDrawingHandler(GL10 gl) {
         if (getIsPlaybackMode() && !getIsPlaying()) {
             float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
 
@@ -405,7 +391,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GL
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    protected void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
+    void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 
         gl.glViewport(0, 0, width, height);
 
@@ -429,7 +415,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    protected void autoScaleCheck() {
+    void autoScaleCheck() {
         if (!isAutoScaled() && mBufferToDraws != null) {
             if (mBufferToDraws.length > 0) {
                 autoSetFrame(mBufferToDraws);
@@ -438,7 +424,7 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    protected void autoSetFrame(short[] arrayToScaleTo) {
+    private void autoSetFrame(short[] arrayToScaleTo) {
         //	//Log.d(TAG, "autoSetFrame");
         int theMax = 0;
         int theMin = 0;
@@ -471,17 +457,8 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- UTILS
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    private void broadcastTextUpdate(String action, String name, String data) {
-        if (context != null) {
-            Intent i = new Intent();
-            i.setAction(action);
-            i.putExtra(name, data);
-            context.sendBroadcast(i);
-        }
-    }
-
     // ----------------------------------------------------------------------------------------
-    public int glHeightToPixelHeight(float glHeight) {
+    int glHeightToPixelHeight(float glHeight) {
         if (height <= 0) {
             //Log.d(TAG, "Checked height and size was less than or equal to zero");
         }
@@ -514,35 +491,16 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
         return Math.round(44.1 * timeSince);
     }
 
-    public AudioService getAudioService() {
-        if (context != null) {
-            BackyardBrainsApplication app = ((BackyardBrainsApplication) context.getApplicationContext());
-            if (app != null) {
-                return app.getmAudioService();
-            }
-        }
-        return null;
+    private boolean getIsRecording() {
+        return getAudioService() != null && getAudioService().isRecording();
     }
 
-    public boolean getIsRecording() {
-        if (getAudioService() != null) {
-            return getAudioService().isRecording();
-        }
-        return false;
+    private boolean getIsPlaybackMode() {
+        return getAudioService() != null && getAudioService().isPlaybackMode();
     }
 
-    public boolean getIsPlaybackMode() {
-        if (getAudioService() != null) {
-            return getAudioService().isPlaybackMode();
-        }
-        return false;
-    }
-
-    public boolean getIsPlaying() {
-        if (getAudioService() != null) {
-            return getAudioService().isAudioPlayerPlaying();
-        }
-        return false;
+    private boolean getIsPlaying() {
+        return getAudioService() != null && getAudioService().isAudioPlayerPlaying();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -562,14 +520,14 @@ public class BYBBaseRenderer implements GLSurfaceView.Renderer {
     // ----------------------------------------------------------------------------------------
     public void saveSettings(SharedPreferences settings, String TAG) {
         if (settings != null) {
-            final SharedPreferences.Editor editor = settings.edit();
-            editor.putInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize);
-            editor.putInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize);
-            editor.putInt(TAG + "_height", height);
-            editor.putInt(TAG + "_width", width);
-            editor.putBoolean(TAG + "_autoScaled", autoScaled);
-            editor.putFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue);
-            editor.commit();
+            settings.edit()
+                .putInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize)
+                .putInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize)
+                .putInt(TAG + "_height", height)
+                .putInt(TAG + "_width", width)
+                .putBoolean(TAG + "_autoScaled", autoScaled)
+                .putFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue)
+                .apply();
         }
     }
 }

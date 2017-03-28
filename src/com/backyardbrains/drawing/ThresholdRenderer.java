@@ -19,64 +19,49 @@
 
 package com.backyardbrains.drawing;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
+import com.backyardbrains.BaseFragment;
 import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 public class ThresholdRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
-    private float threshold;    // in sample value range, which happens to be also gl values
-    private float tempThreshold;
-    private boolean bIsFirstFrame;
-    AdjustThresholdListener adjustThresholdListener;
+    private float threshold; // in sample value range, which happens to be also gl values
 
-    public ThresholdRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        super(context, preparedBuffer);
-
-        registerAdjustThresholdReceiver(true);
-        bIsFirstFrame = true;
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    @Override public void close() {
-        registerAdjustThresholdReceiver(false);
+    public ThresholdRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        super(fragment, preparedBuffer);
     }
 
     // ---------------------------------------------------------------------------------------------
     @Override public void setGlWindowVerticalSize(int newY) {
         super.setGlWindowVerticalSize(newY);
-        if (bIsFirstFrame) {
-            bIsFirstFrame = false;
-            //			defaultThresholdValue();
-        }
+        LOGD(TAG, "setGlWindowVerticalSize()");
         updateThresholdHandle();
     }
 
-    protected void updateThresholdHandle() {
-        if (context != null) {
+    private void updateThresholdHandle() {
+        if (getContext() != null) {
             Intent i = new Intent();
             i.setAction("BYBUpdateThresholdHandle");
             i.putExtra("pos", getThresholdScreenValue());
             i.putExtra("name", "OsciloscopeHandle");
-            context.sendBroadcast(i);
+            getContext().sendBroadcast(i);
         }
     }
 
     // ----------------------------------------------------------------------------------------
-    protected boolean getCurrentAverage() {
+    private boolean getCurrentAverage() {
         if (getAudioService() != null) {
             mBufferToDraws = getAudioService().getAverageBuffer();
             return true;
@@ -121,78 +106,30 @@ public class ThresholdRenderer extends WaveformRenderer {
     }
 
     // ---------------------------------------------------------------------------------------------
-    public int getThresholdScreenValue() {
-        return glHeightToPixelHeight(threshold); // thresholdPixelHeight;
+    private int getThresholdScreenValue() {
+        return glHeightToPixelHeight(threshold);
     }
 
     // ---------------------------------------------------------------------------------------------
-    //	@Override
-    //	protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-    //		final int size = getGlWindowVerticalSize();
-    //		initGL(gl, (lengthOfSampleSet - samplesToShow) / 2, (lengthOfSampleSet + samplesToShow) / 2, -size / 2, size / 2);
-    //	}
-    // ---------------------------------------------------------------------------------------------
-    public float getThresholdValue() {
-        return threshold;
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void adjustThresholdValue(float dy) {
+    private void adjustThresholdValue(float dy) {
         Log.d(TAG, "adjustThresholdValue " + dy);
         if (dy == 0) {
             return;
         }
         threshold = dy;
-        tempThreshold = dy;
 
-        if (context != null) {
-            if (getAudioService() != null) {
-                getAudioService().getTriggerHandler().post(new Runnable() {
-                    @Override public void run() {
-                        ((TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
-                    }
-                });
-            }
+        if (getAudioService() != null && getAudioService().getTriggerHandler() != null) {
+            getAudioService().getTriggerHandler().post(new Runnable() {
+                @Override public void run() {
+                    ((TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
+                }
+            });
         }
     }
 
     // ---------------------------------------------------------------------------------------------
     public void adjustThreshold(float y) {
         adjustThresholdValue(pixelHeightToGlHeight(y));
-    }
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private class AdjustThresholdListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "AdjustThresholdListener onReceive: ");
-            if (intent.hasExtra("name")) {
-                if (intent.getStringExtra("name").equals("OsciloscopeHandle")) {
-                    if (intent.hasExtra("y")) {
-                        tempThreshold = pixelHeightToGlHeight(intent.getFloatExtra("y", getThresholdScreenValue()));
-                    }
-                    if (intent.hasExtra("action")) {
-                        if (intent.getStringExtra("action").equals("up")) {
-                            adjustThresholdValue(tempThreshold);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    private void registerAdjustThresholdReceiver(boolean reg) {
-        if (reg && context != null) {
-            IntentFilter intentFilter = new IntentFilter("BYBThresholdHandlePos");
-            adjustThresholdListener = new AdjustThresholdListener();
-            context.registerReceiver(adjustThresholdListener, intentFilter);
-        } else {
-            context.unregisterReceiver(adjustThresholdListener);
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,9 +139,7 @@ public class ThresholdRenderer extends WaveformRenderer {
         if (settings != null) {
             super.readSettings(settings, TAG);
             adjustThresholdValue(settings.getFloat(TAG + "_threshold", threshold));
-            //updateThresholdHandle();
             Log.w(TAG, "loadsetting threshold: " + threshold);
-            bIsFirstFrame = settings.getBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
         }
     }
 
@@ -215,7 +150,6 @@ public class ThresholdRenderer extends WaveformRenderer {
             final SharedPreferences.Editor editor = settings.edit();
             Log.w(TAG, "savesetting threshold: " + threshold);
             editor.putFloat(TAG + "_threshold", threshold);
-            editor.putBoolean(TAG + "_bIsFirstFrame", bIsFirstFrame);
             editor.apply();
         }
     }

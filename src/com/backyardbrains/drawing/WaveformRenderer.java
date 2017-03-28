@@ -19,21 +19,17 @@
 
 package com.backyardbrains.drawing;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
-import com.backyardbrains.utls.LogUtils;
+import com.backyardbrains.BaseFragment;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 public class WaveformRenderer extends BYBBaseRenderer {
 
-    private static final String TAG = LogUtils.makeLogTag(WaveformRenderer.class);
-
-    public WaveformRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        super(context, preparedBuffer);
+    public WaveformRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        super(fragment, preparedBuffer);
     }
 
-    //----------------------------------------------------------------------------------------
     @Override protected void drawingHandler(GL10 gl) {
         setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
         FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);

@@ -1,12 +1,11 @@
 package com.backyardbrains.drawing;
 
-import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
-import com.backyardbrains.BackyardBrainsApplication;
+import com.backyardbrains.BaseFragment;
 import com.backyardbrains.analysis.BYBSpike;
 import com.backyardbrains.utls.LogUtils;
 import java.nio.FloatBuffer;
@@ -28,8 +27,8 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
     private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
     private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 
-    public FindSpikesRenderer(@NonNull Context context, @NonNull float[] preparedBuffer) {
-        super(context, preparedBuffer);
+    public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+        super(fragment, preparedBuffer);
 
         updateThresholdHandles();
     }
@@ -56,12 +55,12 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     private void updateThresholdHandle(int threshIndex) {
-        if (threshIndex >= 0 && threshIndex < thresholds.length) {
+        if (threshIndex >= 0 && threshIndex < thresholds.length && getContext() != null) {
             Intent j = new Intent();
             j.setAction("BYBUpdateThresholdHandle");
             j.putExtra("name", THRESHOLDS_NAMES[threshIndex]);
             j.putExtra("pos", glHeightToPixelHeight(thresholds[threshIndex]));
-            context.sendBroadcast(j);
+            getContext().sendBroadcast(j);
         }
     }
 
@@ -97,8 +96,8 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     private boolean getSpikes() {
-        if (((BackyardBrainsApplication) context).getAnalysisManager() != null) {
-            spikes = ((BackyardBrainsApplication) context).getAnalysisManager().getSpikes();
+        if (getAnalysisManager() != null) {
+            spikes = getAnalysisManager().getSpikes();
             if (spikes.length > 0) return true;
         }
         spikes = null;
@@ -108,8 +107,8 @@ public class FindSpikesRenderer extends BYBBaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     private boolean getAudioSamples() {
-        if (((BackyardBrainsApplication) context).getAnalysisManager() != null) {
-            mBufferToDraws = ((BackyardBrainsApplication) context).getAnalysisManager().getReaderSamples();
+        if (getAnalysisManager() != null) {
+            mBufferToDraws = getAnalysisManager().getReaderSamples();
             return true;
         }
         return false;
