@@ -26,6 +26,10 @@ import butterknife.ButterKnife;
 import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import java.util.List;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.NoSubscriberEvent;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -91,7 +95,6 @@ public class BackyardBrainsMain extends AppCompatActivity
         ButterKnife.bind(this);
 
         setupUI();
-        //startAudioService();
         loadFragment(OSCILLOSCOPE_VIEW);
     }
 
@@ -102,9 +105,11 @@ public class BackyardBrainsMain extends AppCompatActivity
         registerReceivers();
 
         super.onStart();
+        if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
 
     @Override protected void onStop() {
+        if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         super.onStop();
 
         unregisterReceivers();
@@ -527,6 +532,10 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     public BYBAnalysisManager getAnalysisManager() {
         return analysisManager;
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
+        // nothing for now
     }
 
     // ---------------------------------------------------------------------------------------------

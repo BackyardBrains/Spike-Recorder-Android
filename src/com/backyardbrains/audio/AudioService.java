@@ -30,8 +30,13 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
+import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.utls.ApacheCommonsLang3Utils;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
@@ -58,7 +63,6 @@ public class AudioService extends Service implements ReceivesAudio {
     private RecordingSaver mRecordingSaverInstance;
 
     private ToggleRecordingListener toggleRecorder;
-    private PlayAudioFileListener playListener;
     private CloseButtonListener closeListener;
     private OnTabSelectedListener tabSelectedListener;
     private AveragesNumListener averagesNumListener;
@@ -163,6 +167,7 @@ public class AudioService extends Service implements ReceivesAudio {
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         audioBuffer.zeroFill();
         averager = new TriggerAverager(TriggerAverager.defaultSize);
+        if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
         registerReceivers(true);
         turnOnMicThread();
     }
@@ -174,6 +179,7 @@ public class AudioService extends Service implements ReceivesAudio {
     @Override public void onDestroy() {
         LOGD(TAG, "onDestroy()");
         registerReceivers(false);
+        if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         turnOffMicThread();
         turnOffAudioPlayerThread();
         averager.close();
@@ -368,28 +374,20 @@ public class AudioService extends Service implements ReceivesAudio {
         ;
     }
 
-    private class PlayAudioFileListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBPlayAudioFile broadcast received!");
-            if (appContext != null) {
-                if (intent.hasExtra("filePath")) {
-                    String path = intent.getStringExtra("filePath");
-                    if (!path.isEmpty()) {
-                        turnOffAudioPlayerThread();
-                        audioPlayer = new AudioFilePlayer(AudioService.this, appContext);
-                        audioPlayer.load(path);
-                        stopRecording();
-                        turnOnAudioPlayerThread();
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
+        LOGD(TAG, "onPlayAudioFileEvent()");
+        if (ApacheCommonsLang3Utils.isNotBlank(event.getFilePath())) {
+            turnOffAudioPlayerThread();
+            audioPlayer = new AudioFilePlayer(AudioService.this, appContext);
+            audioPlayer.load(event.getFilePath());
+            stopRecording();
+            turnOnAudioPlayerThread();
 
-                        Intent i = new Intent();
-                        i.setAction("BYBAudioPlaybackStart");
-                        appContext.sendBroadcast(i);
-                        broadcastUpdateUI();
-                        //Log.d("PlayAudioFileListener","BroadcastReceiver ");
-
-                    }
-                }
-            }
+            Intent i = new Intent();
+            i.setAction("BYBAudioPlaybackStart");
+            appContext.sendBroadcast(i);
+            broadcastUpdateUI();
         }
     }
 
@@ -435,7 +433,6 @@ public class AudioService extends Service implements ReceivesAudio {
     private void registerReceivers(boolean reg) {
         LOGD(TAG, "registerReceivers()");
         registerRecordingToggleReceiver(reg);
-        registerPlayAudioFileReceiver(reg);
         registerOnTabSelectedReceiver(reg);
         registerCloseButtonReceiver(reg);
         registerAveragerSetMaxReceiver(reg);
@@ -469,16 +466,6 @@ public class AudioService extends Service implements ReceivesAudio {
             appContext.registerReceiver(tabSelectedListener, intentFilter);
         } else {
             appContext.unregisterReceiver(tabSelectedListener);
-        }
-    }
-
-    private void registerPlayAudioFileReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBPlayAudioFile");
-            playListener = new PlayAudioFileListener();
-            appContext.registerReceiver(playListener, intentFilter);
-        } else {
-            appContext.unregisterReceiver(playListener);
         }
     }
 

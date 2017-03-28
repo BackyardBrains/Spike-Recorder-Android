@@ -5,6 +5,10 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.NoSubscriberEvent;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
@@ -38,6 +42,16 @@ public class BaseFragment extends Fragment {
         }
     }
 
+    @Override public void onResume() {
+        super.onResume();
+        if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
+    }
+
+    @Override public void onPause() {
+        if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
+        super.onPause();
+    }
+
     @Override public void onDetach() {
         super.onDetach();
         this.provider = null;
@@ -53,5 +67,9 @@ public class BaseFragment extends Fragment {
 
     @Nullable protected BYBAnalysisManager getAnalysisManager() {
         return provider != null ? provider.analysisManager() : null;
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
+        // nothing for now
     }
 }

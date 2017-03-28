@@ -23,6 +23,7 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utls.ApacheCommonsLang3Utils;
 import com.backyardbrains.utls.DateUtils;
 import com.backyardbrains.utls.EventUtils;
@@ -35,6 +36,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
@@ -134,12 +136,13 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
     // ----------------------------------------------------------------------------------------
     private void playAudioFile(File f) {
         //Log.d(TAG, "----------------playAudioFile------------------");
-        if (getContext() != null) {
-            Intent i = new Intent();
-            i.setAction("BYBPlayAudioFile");
-            i.putExtra("filePath", f.getAbsolutePath());
-            getContext().sendBroadcast(i);
-        }
+        EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
+        //if (getContext() != null) {
+        //    Intent i = new Intent();
+        //    i.setAction("BYBPlayAudioFile");
+        //    i.putExtra("filePath", f.getAbsolutePath());
+        //    getContext().sendBroadcast(i);
+        //}
     }
 
     // ----------------------------------------------------------------------------------------

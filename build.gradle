@@ -47,6 +47,11 @@ android {
         minSdkVersion 17
         targetSdkVersion 25
         versionCode 19
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex']
+            }
+        }
     }
     buildTypes {
         release {
@@ -88,6 +93,9 @@ dependencies {
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     // permissions
     compile "pub.devrel:easypermissions:$easyPermissionsVersion"
+    // event bus
+    compile "org.greenrobot:eventbus:3.0.0"
+    annotationProcessor "org.greenrobot:eventbus-annotation-processor:3.0.1"
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true;

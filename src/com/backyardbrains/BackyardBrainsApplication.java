@@ -22,6 +22,7 @@ package com.backyardbrains;
 import android.app.Application;
 import com.crashlytics.android.Crashlytics;
 import io.fabric.sdk.android.Fabric;
+import org.greenrobot.eventbus.EventBus;
 
 public class BackyardBrainsApplication extends Application {
 
@@ -32,7 +33,13 @@ public class BackyardBrainsApplication extends Application {
     @Override public void onCreate() {
         super.onCreate();
 
-        // Init Crashlytics only in production
+        // initialize Crashlytics only in production
         if (!BuildConfig.DEBUG) Fabric.with(this, new Crashlytics());
+        // initialize event bus
+        EventBus.builder()
+            .logNoSubscriberMessages(false)
+            .sendNoSubscriberEvent(false)
+            .throwSubscriberException(BuildConfig.DEBUG)
+            .installDefaultEventBus();
     }
 }
