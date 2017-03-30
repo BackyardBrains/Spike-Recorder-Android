@@ -90,8 +90,8 @@
 
     <TextView
         android:id="@+id/tv_time"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
+        android:layout_width="80dp"
+        android:layout_height="@dimen/min_button_tappable_h"
         android:gravity="center"
         app:layout_constraintLeft_toRightOf="@+id/ibtn_zoom_in_h"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_zoom_out_h"
