@@ -132,6 +132,15 @@ public class ThresholdRenderer extends WaveformRenderer {
         adjustThresholdValue(pixelHeightToGlHeight(y));
     }
 
+    public void saveThreshold(float y) {
+
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    public void refreshThreshold() {
+        adjustThresholdValue(threshold);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- SETTINGS
     ////////////////////////////////////////////////////////////////////////////////////////////////

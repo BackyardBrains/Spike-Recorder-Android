@@ -20,7 +20,10 @@ import butterknife.Unbinder;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.view.BYBZoomButton;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.LOGE;
@@ -49,9 +52,9 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
 
     protected float[] bufferWithXs = BYBBaseRenderer.initTempBuffer();
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- FRAGMENT LIFECYCLE
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //                       Lifecycle overrides
+    //////////////////////////////////////////////////////////////////////////////
 
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
@@ -127,6 +130,10 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GL
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Initializes the surface view for drawing
+     */
     protected void reassignSurfaceView() {
         LOGD(TAG, "reassignSurfaceView");
         if (getContext() != null) {
@@ -134,12 +141,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
 
             if (flGL != null) {
                 flGL.removeAllViews();
-                final AudioService provider = getAudioService();
-                if (provider != null) {
-                    provider.setUseAverager(shouldUseAverager());
-                } else {
-                    LOGW(TAG, "AudioService is null");
-                }
+                setUseAverager();
                 if (renderer != null) {
                     saveSettings();
                     renderer = null;
@@ -154,6 +156,16 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
                 flGL.addView(glSurface);
             }
             readSettings();
+        }
+    }
+
+    // Sets whether audio service should use averager or not
+    private void setUseAverager() {
+        final AudioService provider = getAudioService();
+        if (provider != null) {
+            provider.setUseAverager(shouldUseAverager());
+        } else {
+            LOGW(TAG, "AudioService is null");
         }
     }
 
@@ -187,37 +199,43 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
         zoomOutButtonH.setVisibility(bShow);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- UTILS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //                                  Utils
+    //////////////////////////////////////////////////////////////////////////////
 
-    public boolean getIsPlaybackMode() {
+    protected boolean getIsPlaybackMode() {
         return getAudioService() != null && getAudioService().isPlaybackMode();
     }
 
-    public boolean getIsPlaying() {
+    protected boolean getIsPlaying() {
         return getAudioService() != null && getAudioService().isAudioPlayerPlaying();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTINGS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+    //                                 Settings
+    //////////////////////////////////////////////////////////////////////////////
+
     protected void getSettings() {
         if (settings == null) settings = getActivity().getPreferences(BackyardBrainsMain.MODE_PRIVATE);
     }
 
-    // ----------------------------------------------------------------------------------------
     protected void readSettings() {
         getSettings();
-        if (settings != null) {
-            if (renderer != null) renderer.readSettings(settings, TAG);
-        }
+        if (settings != null && renderer != null) renderer.readSettings(settings, TAG);
     }
 
-    // ----------------------------------------------------------------------------------------
     protected void saveSettings() {
         getSettings();
         if (settings != null) renderer.saveSettings(settings, TAG);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    //                            Event Bus
+    //////////////////////////////////////////////////////////////////////////////
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        if (event.isConnected()) setUseAverager();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.IdRes;
@@ -17,7 +16,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,6 +23,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.utls.PrefUtils;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -78,6 +78,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         ADD, REPLACE, REMOVE
     }
 
+    // Bottom menu navigation listener
     private BottomNavigationView.OnNavigationItemSelectedListener bottomMenuListener =
         new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -87,43 +88,48 @@ public class BackyardBrainsMain extends AppCompatActivity
         };
 
     //////////////////////////////////////////////////////////////////////////////
-    //                       LIFECYCLE OVERRIDES
+    //                       Lifecycle overrides
     //////////////////////////////////////////////////////////////////////////////
+
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
         setupUI();
-        loadFragment(OSCILLOSCOPE_VIEW);
     }
 
     @Override protected void onStart() {
+        // start the audio service for reads mic data, recording and playing recorded files
         startAudioService();
-        readSettings();
-        hideActionBar();
+        // load settings saved from last session
+        loadSettings();
+        // registers all broadcast receivers
         registerReceivers();
 
         super.onStart();
+        // register activity with event bus
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
 
     @Override protected void onStop() {
+        // unregister activity from event bus
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         super.onStop();
 
+        // unregisters all broadcast receivers
         unregisterReceivers();
+        // saves settings set in this session
         saveSettings();
+        // stop audio service
         stopAudioService();
-    }
-
-    @Override protected void onDestroy() {
-        super.onDestroy();
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //                       OnKey methods
     //////////////////////////////////////////////////////////////////////////////
+
     @Override public void onBackPressed() {
         boolean bShouldPop = true;
         if (currentFrag == ANALYSIS_VIEW) {
@@ -139,7 +145,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     //////////////////////////////////////////////////////////////////////////////
-    //                      Fragment managment
+    //                      Fragment management
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadFragment(int fragType) {
@@ -268,19 +274,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     //////////////////////////////////////////////////////////////////////////////
-    //                      Action Bar
-    //////////////////////////////////////////////////////////////////////////////
-
-    public void hideActionBar() {
-        final ActionBar bar = getSupportActionBar();
-        if (bar != null) {
-            bar.hide();
-        } else {
-            LOGD(TAG, "Hiding action bar failed. Action bar was null.");
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
     //                      Public Methods
     //////////////////////////////////////////////////////////////////////////////
 
@@ -294,8 +287,6 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     // Initializes user interface
     private void setupUI() {
-        // we don't need action bar
-        hideActionBar();
         // we will have recordings container only if in landscape mode
         //if (flRecordingsContainer != null) {
         //    sliding_drawer =
@@ -306,6 +297,9 @@ public class BackyardBrainsMain extends AppCompatActivity
         //}
         // init bottom menu clicks
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
+
+        // load initial fragment
+        loadFragment(OSCILLOSCOPE_VIEW);
     }
 
     private String getFragmentNameFromType(int fragType) {
@@ -425,8 +419,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
                 .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.setting)
-                .setNegativeButton(R.string.cancel)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
                 .setRequestCode(BYB_SETTINGS_SCREEN)
                 .build()
                 .show();
@@ -448,9 +442,9 @@ public class BackyardBrainsMain extends AppCompatActivity
         stopService();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- ANALYSIS MANAGER AND AUDIO SERVICE
-    // ---------------------------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////////
+    //                      Analysis Manager and Audio Service
+    //////////////////////////////////////////////////////////////////////////////
 
     @Nullable @Override public AudioService audioService() {
         return mAudioService;
@@ -488,7 +482,6 @@ public class BackyardBrainsMain extends AppCompatActivity
         analysisManager.close();
     }
 
-    // ----------------------------------------------------------------------------------------
     protected void bindAudioService(boolean on) {
         if (on) {
             Intent intent = new Intent(this, AudioService.class);
@@ -498,7 +491,6 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    // ----------------------------------------------------------------------------------------
     protected ServiceConnection mConnection = new ServiceConnection() {
 
         private boolean mAudioServiceIsBound;
@@ -517,15 +509,19 @@ public class BackyardBrainsMain extends AppCompatActivity
             AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
             mAudioService = binder.getService();
             mAudioServiceIsBound = true;
+            // inform interested parties that audio service is successfully connected
+            EventBus.getDefault().post(new AudioServiceConnectionEvent(true));
         }
 
-        @Override public void onServiceDisconnected(ComponentName arg0) {
+        @Override public void onServiceDisconnected(ComponentName className) {
             mAudioService = null;
             mAudioServiceIsBound = false;
+
+            // inform interested parties that audio service successfully disconnected
+            EventBus.getDefault().post(new AudioServiceConnectionEvent(false));
         }
     };
 
-    // ----------------------------------------------------------------------------------------
     public AudioService getAudioService() {
         return mAudioService;
     }
@@ -535,7 +531,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
-        // nothing for now
+        // this is here to avoid EventBus exception
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -625,26 +621,16 @@ public class BackyardBrainsMain extends AppCompatActivity
         registerShowScalingInstructionsReceiver(false);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTINGS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    protected SharedPreferences getSettings() {
-        return getPreferences(BackyardBrainsMain.MODE_PRIVATE);
-    }
+    //////////////////////////////////////////////////////////////////////////////
+    //                                 Settings
+    //////////////////////////////////////////////////////////////////////////////
 
-    public void readSettings() {
-        if (getSettings() != null) {
-            bShowScalingInstructions =
-                getSettings().getBoolean(TAG + "_ShowScalingInstructions", bShowScalingInstructions);
-        }
+    public void loadSettings() {
+        bShowScalingInstructions = PrefUtils.isShowScalingInstructions(this, TAG);
     }
 
     // ----------------------------------------------------------------------------------------
     public void saveSettings() {
-        if (getSettings() != null) {
-            final SharedPreferences.Editor editor = getSettings().edit();
-            editor.putBoolean(TAG + "_ShowScalingInstructions", bShowScalingInstructions);
-            editor.apply();
-        }
+        PrefUtils.setShowScalingInstructions(this, TAG, bShowScalingInstructions);
     }
 }

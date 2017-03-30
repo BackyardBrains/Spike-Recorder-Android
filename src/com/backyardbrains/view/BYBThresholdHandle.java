@@ -61,6 +61,9 @@ public class BYBThresholdHandle extends ConstraintLayout {
      * Interface definition for a callback to be invoked when threshold handle changes position.
      */
     public interface OnThresholdChangeListener {
+        /**
+         * Listener that is invoked while handle is being dragged.
+         */
         void onChange(@NonNull View view, float y);
     }
 
@@ -167,8 +170,11 @@ public class BYBThresholdHandle extends ConstraintLayout {
 
             @Override public boolean onTouch(View v, MotionEvent event) {
                 if (v.getVisibility() == View.VISIBLE) {
-                    // only always track the first pointer
-                    if (event.getActionIndex() == 0) invokeCallback(setPosition(event.getY()));
+                    // always track only the first pointer
+                    if (event.getActionIndex() == 0) {
+                        final float pos = setPosition(event.getY());
+                        if (event.getActionMasked() == MotionEvent.ACTION_UP) invokeCallback(pos);
+                    }
 
                     return true;
                 }

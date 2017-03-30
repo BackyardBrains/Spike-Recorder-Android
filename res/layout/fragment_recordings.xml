@@ -15,9 +15,13 @@
 
     <com.backyardbrains.view.BybEmptyView
         android:id="@+id/empty_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_gravity="center"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:layout_constraintLeft_toLeftOf="@+id/rv_files"
+        app:layout_constraintTop_toTopOf="@+id/rv_files"
+        app:layout_constraintRight_toRightOf="@+id/rv_files"
+        app:layout_constraintBottom_toBottomOf="@+id/rv_files"/>
 
     <Button
         android:id="@+id/btn_privacy_policy"

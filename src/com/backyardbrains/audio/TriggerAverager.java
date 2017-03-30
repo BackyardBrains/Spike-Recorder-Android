@@ -24,21 +24,24 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 
+import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 public class TriggerAverager {
 
     private static final String TAG = makeLogTag(TriggerAverager.class);
 
-    private int maxsize;
-    private short[] averagedSamples;
-    private ArrayList<short[]> sampleBuffersInAverage;
+    public static final int DEFAULT_SIZE = 30;
 
+    private int maxsize;
+    private int[] summedSamples;
+    private short[] averagedSamples;
+
+    private ArrayList<short[]> sampleBuffersInAverage;
     private Handler handler;
     private int triggerValue;
     private int lastTriggeredValue;
     private int lastIncomingBufferSize = 0;
-    public static final int defaultSize = 100;
 
     // ---------------------------------------------------------------------------------------------
     TriggerAverager(int size) {
@@ -55,6 +58,7 @@ public class TriggerAverager {
     // ---------------------------------------------------------------------------------------------
     private void resetBuffers() {
         sampleBuffersInAverage = new ArrayList<>();
+        summedSamples = null;
         averagedSamples = null;
     }
 
@@ -72,36 +76,38 @@ public class TriggerAverager {
 
     // ---------------------------------------------------------------------------------------------
     private void processIncomingData(ShortBuffer sb) {
+        // reset buffers if size  of buffer changed
         if (sb.capacity() != lastIncomingBufferSize) {
             resetBuffers();
             lastIncomingBufferSize = sb.capacity();
         }
+        // reset buffers if threshold changed
+        if (lastTriggeredValue != triggerValue) {
+            resetBuffers();
+            lastTriggeredValue = triggerValue;
+        }
 
+        // initialize incoming array
         short[] incomingAsArray = new short[sb.capacity()];
         sb.get(incomingAsArray, 0, incomingAsArray.length);
 
+        // check if we hit the threshold
         for (int i = 0; i < incomingAsArray.length; i++) {
             short s = incomingAsArray[i];
             if ((triggerValue >= 0 && s > triggerValue) || (triggerValue < 0 && s < triggerValue)) {
-                if (lastTriggeredValue != triggerValue) {
-                    resetBuffers();
-                    lastTriggeredValue = triggerValue;
-                }
+                // we hit the threshold, center the spike and push to buffers
                 incomingAsArray = wrapToCenter(incomingAsArray, i);
                 pushToSampleBuffers(incomingAsArray);
                 break;
             }
         }
-        if (averagedSamples == null) {
-            return;
-        }
-        for (int i = 0; i < averagedSamples.length; i++) {
-            Integer curAvg = 0;
-            for (short[] prev : sampleBuffersInAverage) {
-                curAvg += prev[i];
+        if (summedSamples == null) summedSamples = new int[incomingAsArray.length];
+        if (averagedSamples == null) averagedSamples = new short[summedSamples.length];
+        // save averages only if we have where to read to read from
+        if (sampleBuffersInAverage.size() > 0) {
+            for (int i = 0; i < summedSamples.length; i++) {
+                averagedSamples[i] = (short) (summedSamples[i] / sampleBuffersInAverage.size());
             }
-            curAvg /= sampleBuffersInAverage.size();
-            averagedSamples[i] = curAvg.shortValue();
         }
     }
 
@@ -112,7 +118,6 @@ public class TriggerAverager {
         short[] sampleChunk = new short[incomingAsArray.length];
         int sampleChunkPosition = 0;
         if (index > middleOfArray) {
-            // //Log.d(TAG, "Wrapping from end onto beginning");
             final int samplesToMove = index - middleOfArray;
             for (int i = 0; i < incomingAsArray.length - samplesToMove; i++) {
                 sampleChunk[sampleChunkPosition++] = incomingAsArray[i + samplesToMove];
@@ -122,7 +127,6 @@ public class TriggerAverager {
             }
         } else {
             // it's near beginning, wrap from end on to front
-            // //Log.d(TAG, "Wrapping from beginning onto end");
             final int samplesToMove = middleOfArray - index;
             for (int i = incomingAsArray.length - samplesToMove - 1; i < incomingAsArray.length; i++) {
                 sampleChunk[sampleChunkPosition++] = incomingAsArray[i];
@@ -136,16 +140,29 @@ public class TriggerAverager {
 
     // ---------------------------------------------------------------------------------------------
     private void pushToSampleBuffers(short[] incomingAsArray) {
-        if (averagedSamples == null) {
-            averagedSamples = incomingAsArray;
-            //*
+        // init summed samples array
+        if (summedSamples == null) {
+            summedSamples = new int[incomingAsArray.length];
+            for (int i = 0; i < incomingAsArray.length; i++) {
+                summedSamples[i] = incomingAsArray[i];
+            }
             sampleBuffersInAverage.add(incomingAsArray);
             return;
         }
 
-        while (sampleBuffersInAverage.size() >= maxsize) {
+        if (sampleBuffersInAverage.size() >= maxsize) {
+            // we have more then max samples, subtract values from first sample
+            for (int i = 0; i < sampleBuffersInAverage.get(maxsize - 1).length; i++) {
+                summedSamples[i] -= sampleBuffersInAverage.get(0)[i];
+            }
+            // and remove the first sample
             sampleBuffersInAverage.remove(0);
         }
+        // add values from the last sample
+        for (int i = 0; i < incomingAsArray.length; i++) {
+            summedSamples[i] += incomingAsArray[i];
+        }
+        // and add the last sample
         sampleBuffersInAverage.add(incomingAsArray);
     }
 
@@ -167,6 +184,7 @@ public class TriggerAverager {
     // ---------------------------------------------------------------------------------------------
     public class TriggerHandler extends Handler {
         public void setThreshold(float y) {
+            LOGD(TAG, "setThreshold: " + y);
             triggerValue = (int) y;
         }
     }

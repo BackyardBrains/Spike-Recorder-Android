@@ -15,10 +15,16 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.TriggerAverager;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.ThresholdAverageSampleCountSet;
 import com.backyardbrains.view.BYBThresholdHandle;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
@@ -71,7 +77,8 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         unbinder.unbind();
     }
 
-    @Override protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+    @Override
+    protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         return new ThresholdRenderer(fragment, preparedBuffer);
     }
 
@@ -102,7 +109,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
             }
         });
 
-        sbAvgSamplesCount.setProgress(TriggerAverager.defaultSize);
+        sbAvgSamplesCount.setProgress(TriggerAverager.DEFAULT_SIZE);
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
@@ -112,12 +119,13 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
             }
 
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (getView() != null) {
-                    if (tvAvgSamplesCount != null) {
-                        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
-                    }
+                // update count label
+                if (tvAvgSamplesCount != null) {
+                    tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                 }
-                if (fromUser && getContext() != null) {
+                // and inform interested parties that the average sample count has changed
+                if (fromUser) {
+                    EventBus.getDefault().post(new ThresholdAverageSampleCountSet(progress));
                     Intent i = new Intent();
                     i.setAction("BYBThresholdNumAverages");
                     i.putExtra("num", progress);
@@ -125,7 +133,20 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
                 }
             }
         });
-        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), TriggerAverager.defaultSize));
+        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), TriggerAverager.DEFAULT_SIZE));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    //                            Event Bus
+    //////////////////////////////////////////////////////////////////////////////
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        super.onAudioServiceConnectionEvent(event);
+        if (event.isConnected()) {
+            final AudioService provider = getAudioService();
+            if (provider != null) getRenderer().refreshThreshold();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

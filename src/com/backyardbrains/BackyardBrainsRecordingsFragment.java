@@ -1,5 +1,6 @@
 package com.backyardbrains;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -37,6 +38,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
@@ -44,9 +48,12 @@ import static com.backyardbrains.utls.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class BackyardBrainsRecordingsFragment extends BaseFragment {
+public class BackyardBrainsRecordingsFragment extends BaseFragment implements EasyPermissions.PermissionCallbacks {
 
     public static final String TAG = makeLogTag(BackyardBrainsMain.class);
+
+    private static final int BYB_SETTINGS_SCREEN = 126;
+    private static final int BYB_READ_EXTERNAL_STORAGE_PERM = 127;
 
     @BindView(R.id.rv_files) BybEmptyRecyclerView rvFiles;
     @BindView(R.id.empty_view) BybEmptyView emptyView;
@@ -61,22 +68,21 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
     // ----------------------------------------- CONSTRUCTOR
     // -------------------------------------------------------------------------------------------------
     public BackyardBrainsRecordingsFragment() {
-        super();
+        // empty constructor
     }
 
-    // -------------------------------------------------------------------------------------------------
-    // ----------------------------------------- FRAGMENT LIFECYCLE
-    // -------------------------------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////////
+    //                       Lifecycle overrides
+    //////////////////////////////////////////////////////////////////////////////
+
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
 
-        getContext();
         registerReceivers();
     }
 
-    // ----------------------------------------------------------------------------------------
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_recordings, container, false);
         unbinder = ButterKnife.bind(this, view);
@@ -86,25 +92,71 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
         return view;
     }
 
-    // ----------------------------------------------------------------------------------------
+    @Override public void onStart() {
+        super.onStart();
+
+        // scan files to populate recordings list
+        scanFiles();
+        // update empty view to show loaded files or "empty" tagline
+        updateEmptyView(false);
+    }
+
     @Override public void onDestroyView() {
         super.onDestroyView();
         unbinder.unbind();
     }
 
-    // ----------------------------------------------------------------------------------------
     @Override public void onDestroy() {
         bybDirectory = null;
         unregisterReceivers();
         super.onDestroy();
     }
 
-    // -------------------------------------------------------------------------------------------------
-    // ----------------------------------------- LIST TASKS
-    // -------------------------------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////////
+    //                      Permission Request >= API 23
+    //////////////////////////////////////////////////////////////////////////////
+
+    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+        @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
+        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    }
+
+    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
+                .setRequestCode(BYB_SETTINGS_SCREEN)
+                .build()
+                .show();
+        }
+    }
+
+    @AfterPermissionGranted(BYB_READ_EXTERNAL_STORAGE_PERM) private void scanFiles() {
+        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            rescanFiles();
+        } else {
+            // Request one permission
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_read_external_storage),
+                BYB_READ_EXTERNAL_STORAGE_PERM, Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    //                           List recordings
+    //////////////////////////////////////////////////////////////////////////////
 
     // Rescans BYB directory and updates the files list.
     private void rescanFiles() {
+        LOGD(TAG, "RESCAN FILES!!!!!");
+
         final File[] files = bybDirectory.listFiles();
         if (files != null) {
             if (files.length > 0) {
@@ -115,17 +167,20 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
                 });
             }
 
-            LOGD(TAG, "RESCAN FILES!!!!!");
             adapter.setFiles(files);
         }
     }
 
-    // ----------------------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////////
+    //                         Utility methods
+    //////////////////////////////////////////////////////////////////////////////
 
+    // Returns true if spikes have already been found for the selected recording, false otherwise
     private boolean isFindSpikesDone() {
         return getAnalysisManager() != null && getAnalysisManager().spikesFound();
     }
 
+    // Opens dialog with recording details
     private void fileDetails(File f) {
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
@@ -133,16 +188,9 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
-    // ----------------------------------------------------------------------------------------
+    // Starts playing selected recording
     private void playAudioFile(File f) {
-        //Log.d(TAG, "----------------playAudioFile------------------");
         EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
-        //if (getContext() != null) {
-        //    Intent i = new Intent();
-        //    i.setAction("BYBPlayAudioFile");
-        //    i.putExtra("filePath", f.getAbsolutePath());
-        //    getContext().sendBroadcast(i);
-        //}
     }
 
     // ----------------------------------------------------------------------------------------
@@ -208,7 +256,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
         }
     }
 
-    // ----------------------------------------------------------------------------------------
+    // Initiates sending of the selected recording via email
     private void emailFile(File f) {
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
@@ -217,7 +265,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
         startActivity(Intent.createChooser(sendIntent, "Email file"));
     }
 
-    // ----------------------------------------------------------------------------------------
+    // Triggers renaming of the selected file
     protected void renameFile(final File f) {
         final EditText e = new EditText(this.getActivity());
         e.setText(f.getName().replace(".wav", "")); // remove file extension when renaming
@@ -258,7 +306,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
             .show();
     }
 
-    // ----------------------------------------------------------------------------------------
+    // Triggers deletion of the selected file
     protected void deleteFile(final File f) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
             .setMessage("Are you sure you want to delete " + f.getName() + "?")
@@ -285,6 +333,9 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
+        // update empty view to show loader
+        updateEmptyView(true);
+
         ((BackyardBrainsMain) getActivity()).showButtons(true);
 
         adapter = new FilesAdapter(getContext(), null, new FilesAdapter.Callback() {
@@ -305,11 +356,16 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
                 getActivity().startActivity(browserIntent);
             }
         });
+    }
 
-        rescanFiles();
-        // update empty view to show tagline instead of progress bar
-        emptyView.setEmpty();
-        emptyView.setTagline(getString(R.string.no_files_found));
+    // Update empty view to loading or empty state
+    void updateEmptyView(boolean showLoader) {
+        if (showLoader) {
+            emptyView.setLoading();
+        } else {
+            emptyView.setTagline(getString(R.string.no_files_found));
+            emptyView.setEmpty();
+        }
     }
 
     // Opens available options for a selected recording. Options are different depending on whether spikes have already
@@ -374,9 +430,9 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment {
             .show();
     }
 
-    // ----------------------------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------------------------
+    /**
+     * Adapter for listing all the previously recorded files.
+     */
     static class FilesAdapter extends RecyclerView.Adapter<FilesAdapter.FileViewHolder> {
 
         private final LayoutInflater inflater;

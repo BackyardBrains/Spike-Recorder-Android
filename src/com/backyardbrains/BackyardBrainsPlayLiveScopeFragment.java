@@ -42,10 +42,9 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- FRAGMENT LIFECYCLE
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////////
+    //                       Lifecycle overrides
+    //////////////////////////////////////////////////////////////////////////////
 
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = super.onCreateView(inflater, container, savedInstanceState);
@@ -122,8 +121,8 @@ public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrains
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
                 .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.setting)
-                .setNegativeButton(R.string.cancel)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
                 .setRequestCode(BYB_SETTINGS_SCREEN)
                 .build()
                 .show();

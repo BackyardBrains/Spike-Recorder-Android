@@ -31,6 +31,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.events.ThresholdAverageSampleCountSet;
 import com.backyardbrains.utls.ApacheCommonsLang3Utils;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
@@ -65,7 +66,6 @@ public class AudioService extends Service implements ReceivesAudio {
     private ToggleRecordingListener toggleRecorder;
     private CloseButtonListener closeListener;
     private OnTabSelectedListener tabSelectedListener;
-    private AveragesNumListener averagesNumListener;
     private AudioFilePlaybackEndedListener audioFilePlaybackEndedListener;
 
     private long lastSamplesReceivedTimestamp;
@@ -166,7 +166,7 @@ public class AudioService extends Service implements ReceivesAudio {
         appContext = this.getApplicationContext();
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         audioBuffer.zeroFill();
-        averager = new TriggerAverager(TriggerAverager.defaultSize);
+        averager = new TriggerAverager(TriggerAverager.DEFAULT_SIZE);
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
         registerReceivers(true);
         turnOnMicThread();
@@ -358,20 +358,13 @@ public class AudioService extends Service implements ReceivesAudio {
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    private class ToggleRecordingListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGD(TAG, "BYBToggleRecording broadcast received!");
-            if (!startRecording()) {
-                if (!stopRecording()) {
-                    Log.w(TAG, "There was an error recording properly");
-                }
-            }
-        }
+    //////////////////////////////////////////////////////////////////////////////
+    //                            Event Bus
+    //////////////////////////////////////////////////////////////////////////////
 
-        ;
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.ASYNC)
+    public void onThresholdAverageSampleCountSet(ThresholdAverageSampleCountSet event) {
+        averager.setMaxsize(event.getAverageSampleCount());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.ASYNC)
@@ -389,6 +382,22 @@ public class AudioService extends Service implements ReceivesAudio {
             appContext.sendBroadcast(i);
             broadcastUpdateUI();
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // ----------------------------------------- BROADCAST RECEIVERS CLASS
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    private class ToggleRecordingListener extends BroadcastReceiver {
+        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
+            LOGD(TAG, "BYBToggleRecording broadcast received!");
+            if (!startRecording()) {
+                if (!stopRecording()) {
+                    Log.w(TAG, "There was an error recording properly");
+                }
+            }
+        }
+
+        ;
     }
 
     private class CloseButtonListener extends BroadcastReceiver {
@@ -411,15 +420,6 @@ public class AudioService extends Service implements ReceivesAudio {
         }
     }
 
-    private class AveragesNumListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBThresholdNumAverages broadcast received!");
-            if (intent.hasExtra("num")) {
-                averager.setMaxsize(intent.getIntExtra("num", TriggerAverager.defaultSize));//, false);
-            }
-        }
-    }
-
     private class AudioFilePlaybackEndedListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
             LOGD(TAG, "BYBAudioFilePlaybackEnded broadcast received!");
@@ -435,7 +435,6 @@ public class AudioService extends Service implements ReceivesAudio {
         registerRecordingToggleReceiver(reg);
         registerOnTabSelectedReceiver(reg);
         registerCloseButtonReceiver(reg);
-        registerAveragerSetMaxReceiver(reg);
         registerPlaybackEndReceiver(reg);
     }
 
@@ -466,16 +465,6 @@ public class AudioService extends Service implements ReceivesAudio {
             appContext.registerReceiver(tabSelectedListener, intentFilter);
         } else {
             appContext.unregisterReceiver(tabSelectedListener);
-        }
-    }
-
-    private void registerAveragerSetMaxReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBThresholdNumAverages");
-            averagesNumListener = new AveragesNumListener();
-            appContext.registerReceiver(averagesNumListener, intentFilter);
-        } else {
-            appContext.unregisterReceiver(averagesNumListener);
         }
     }
 
