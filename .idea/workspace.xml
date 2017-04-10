@@ -16,8 +16,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1d8a8fa-a0d6-4a9a-8411-8347c69de4a8" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/ThresholdHelper.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" afterPath="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" />
     </list>
     <ignored path="Spike-Recorder-Android.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -54,21 +60,43 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="BackyardBrainsApplication.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java">
+      <file leaf-file-name="AudioService.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="42" column="38" selection-start-line="42" selection-start-column="38" selection-end-line="42" selection-end-column="38" />
+            <state relative-caret-position="544">
+              <caret line="70" column="46" selection-start-line="70" selection-start-column="46" selection-end-line="70" selection-end-column="46" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AudioService.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
+      <file leaf-file-name="MicListener.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2465">
-              <caret line="67" column="54" selection-start-line="67" selection-start-column="54" selection-end-line="67" selection-end-column="54" />
+            <state relative-caret-position="800">
+              <caret line="141" column="0" selection-start-line="141" selection-start-column="0" selection-end-line="141" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ThresholdHelper.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/ThresholdHelper.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="2941">
+              <caret line="196" column="0" selection-start-line="196" selection-start-column="0" selection-end-line="196" selection-end-column="0" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="TriggerAverager.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="800">
+              <caret line="124" column="22" selection-start-line="124" selection-start-column="22" selection-end-line="124" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -77,9 +105,11 @@
       <file leaf-file-name="BackyardBrainsMain.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="91" column="82" selection-start-line="89" selection-start-column="4" selection-end-line="91" selection-end-column="82" />
-              <folding />
+            <state relative-caret-position="556">
+              <caret line="434" column="16" selection-start-line="434" selection-start-column="16" selection-end-line="434" selection-end-column="16" />
+              <folding>
+                <element signature="e#17535#17565#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -87,28 +117,8 @@
       <file leaf-file-name="BackyardBrainsBaseScopeFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="291">
-              <caret line="178" column="77" selection-start-line="178" selection-start-column="77" selection-end-line="178" selection-end-column="77" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="build.gradle" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/build.gradle">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="74" column="29" selection-start-line="74" selection-start-column="29" selection-end-line="74" selection-end-column="29" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="BackyardBrainsPlayLiveScopeFragment.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="46" column="82" selection-start-line="46" selection-start-column="82" selection-end-line="46" selection-end-column="82" />
+            <state relative-caret-position="3179">
+              <caret line="223" column="63" selection-start-line="223" selection-start-column="63" selection-end-line="223" selection-end-column="63" />
               <folding />
             </state>
           </provider>
@@ -119,58 +129,17 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="3281">
               <caret line="217" column="97" selection-start-line="217" selection-start-column="16" selection-end-line="217" selection-end-column="97" />
-              <folding>
-                <element signature="imports" expanded="false" />
-                <element signature="e#4559#4560#0" expanded="false" />
-                <element signature="e#4602#4603#0" expanded="false" />
-                <element signature="e#4744#4745#0" expanded="false" />
-                <element signature="e#4789#4790#0" expanded="false" />
-                <element signature="e#4921#4922#0" expanded="false" />
-                <element signature="e#4949#4950#0" expanded="false" />
-                <element signature="e#5082#5083#0" expanded="false" />
-                <element signature="e#5111#5112#0" expanded="false" />
-                <element signature="e#9971#9972#0" expanded="false" />
-                <element signature="e#10017#10018#0" expanded="false" />
-                <element signature="e#10457#10458#0" expanded="false" />
-                <element signature="e#10490#10491#0" expanded="false" />
-                <element signature="e#10638#10639#0" expanded="false" />
-                <element signature="e#10675#10676#0" expanded="false" />
-                <element signature="e#13535#13536#0" expanded="false" />
-                <element signature="e#13584#13585#0" expanded="false" />
-                <element signature="e#19556#19557#0" expanded="false" />
-                <element signature="e#19622#19623#0" expanded="false" />
-                <element signature="e#19979#19980#0" expanded="false" />
-                <element signature="e#20030#20031#0" expanded="false" />
-                <element signature="e#20070#20071#0" expanded="false" />
-                <element signature="e#20153#20154#0" expanded="false" />
-                <element signature="e#20196#20197#0" expanded="false" />
-                <element signature="e#20282#20283#0" expanded="false" />
-                <element signature="e#20320#20321#0" expanded="false" />
-                <element signature="e#20412#20413#0" expanded="false" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ThresholdRenderer.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1479">
-              <caret line="118" column="0" selection-start-line="118" selection-start-column="0" selection-end-line="118" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="TriggerAverager.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
+      <file leaf-file-name="BackyardBrainsPlayLiveScopeFragment.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="312">
-              <caret line="175" column="47" selection-start-line="175" selection-start-column="40" selection-end-line="175" selection-end-column="47" />
-              <folding>
-                <element signature="e#7038#7039#0" expanded="true" />
-                <element signature="e#7093#7094#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="2550">
+              <caret line="189" column="50" selection-start-line="189" selection-start-column="50" selection-end-line="189" selection-end-column="50" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -178,12 +147,19 @@
       <file leaf-file-name="BackyardBrainsThresholdFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="128">
+            <state relative-caret-position="1530">
               <caret line="127" column="82" selection-start-line="127" selection-start-column="82" selection-end-line="127" selection-end-column="82" />
-              <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="e#4292#4325#0" expanded="true" />
-              </folding>
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="ThresholdRenderer.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1564">
+              <caret line="123" column="52" selection-start-line="123" selection-start-column="52" selection-end-line="123" selection-end-column="52" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -191,12 +167,9 @@
       <file leaf-file-name="BackyardBrainsRecordingsFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
+            <state relative-caret-position="2618">
               <caret line="203" column="40" selection-start-line="203" selection-start-column="40" selection-end-line="203" selection-end-column="40" />
-              <folding>
-                <element signature="e#7460#7461#0" expanded="true" />
-                <element signature="e#7547#7548#0" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -1542,7 +1515,7 @@
     <option name="modificationStamps">
       <map>
         <entry key="D:\projects\BackyardBrains\signal generator\Spike-Recorder-Android" value="1488905805031" />
-        <entry key="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android" value="1490899167026" />
+        <entry key="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android" value="1491832667010" />
       </map>
     </option>
     <option name="projectBuildClasspath">
@@ -1557,14 +1530,14 @@
                       <ExternalModuleBuildClasspathPojo>
                         <option name="entries">
                           <list>
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle/2.3.0/gradle-2.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle/2.3.1/gradle-2.3.1.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.fabric.tools/gradle/1.22.1/a45cb0acfa010ec924ac742ecc1c5e2997ffa692/gradle-1.22.1.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle-core/2.3.0/gradle-core-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder/2.3.0/builder-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint/25.3.0/lint-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle-core/2.3.1/gradle-core-2.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder/2.3.1/builder-2.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint/25.3.1/lint-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/transform-api/2.0.0-deprecated-use-gradle-api/transform-api-2.0.0-deprecated-use-gradle-api.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle-api/2.3.0/gradle-api-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/databinding/compilerCommon/2.3.0/compilerCommon-2.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/gradle-api/2.3.1/gradle-api-2.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/databinding/compilerCommon/2.3.1/compilerCommon-2.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm/5.0.4/asm-5.0.4-sources.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm/5.0.4/asm-5.0.4.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm-commons/5.0.4/asm-commons-5.0.4.jar" />
@@ -1573,41 +1546,41 @@
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/jacoco/org.jacoco.report/0.7.5.201505241946/org.jacoco.report-0.7.5.201505241946.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/net/sf/jopt-simple/jopt-simple/4.9/jopt-simple-4.9.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/google/protobuf/protobuf-java/3.0.0/protobuf-java-3.0.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder-model/2.3.0/builder-model-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder-test-api/2.3.0/builder-test-api-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/sdklib/25.3.0/sdklib-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/sdk-common/25.3.0/sdk-common-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/common/25.3.0/common-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/manifest-merger/25.3.0/manifest-merger-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/ddms/ddmlib/25.3.0/ddmlib-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder-model/2.3.1/builder-model-2.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder-test-api/2.3.1/builder-test-api-2.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/sdklib/25.3.1/sdklib-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/sdk-common/25.3.1/sdk-common-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/common/25.3.1/common-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/manifest-merger/25.3.1/manifest-merger-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/ddms/ddmlib/25.3.1/ddmlib-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/jack/jack-api/0.13.0/jack-api-0.13.0.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/jill/jill-api/0.10.0/jill-api-0.10.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/protos/25.3.0/protos-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/shared/25.3.0/shared-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/tracker/25.3.0/tracker-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/protos/25.3.1/protos-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/shared/25.3.1/shared-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/analytics-library/tracker/25.3.1/tracker-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/squareup/javawriter/2.5.0/javawriter-2.5.0.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/bouncycastle/bcpkix-jdk15on/1.48/bcpkix-jdk15on-1.48.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/bouncycastle/bcprov-jdk15on/1.48/bcprov-jdk15on-1.48.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm-tree/5.0.4/asm-tree-5.0.4.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint-checks/25.3.0/lint-checks-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint-checks/25.3.1/lint-checks-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/eclipse/jdt/core/compiler/ecj/4.6.1/ecj-4.6.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/google/guava/guava/18.0/guava-18.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/databinding/baseLibrary/2.3.0/baseLibrary-2.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/databinding/baseLibrary/2.3.1/baseLibrary-2.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/antlr/antlr4/4.5.3/antlr4-4.5.3.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/commons-io/commons-io/2.4/commons-io-2.4.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/googlecode/juniversalchardet/juniversalchardet/1.0.3/juniversalchardet-1.0.3.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/annotations/25.3.0/annotations-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/annotations/25.3.1/annotations-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/net/sf/proguard/proguard-base/5.3.2/proguard-base-5.3.2.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm-debug-all/5.0.1/asm-debug-all-5.0.1.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/layoutlib/layoutlib-api/25.3.0/layoutlib-api-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/dvlib/25.3.0/dvlib-25.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/repository/25.3.0/repository-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/layoutlib/layoutlib-api/25.3.1/layoutlib-api-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/dvlib/25.3.1/dvlib-25.3.1.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/repository/25.3.1/repository-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/google/code/gson/gson/2.2.4/gson-2.2.4.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/apache/commons/commons-compress/1.8.1/commons-compress-1.8.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar" />
-                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint-api/25.3.0/lint-api-25.3.0.jar" />
+                            <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/lint/lint-api/25.3.1/lint-api-25.3.1.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/org/ow2/asm/asm-analysis/5.0.4/asm-analysis-5.0.4.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/intellij/annotations/12.0/annotations-12.0.jar" />
                             <option value="$APPLICATION_HOME_DIR$/gradle/m2repository/com/google/jimfs/jimfs/1.1/jimfs-1.1.jar" />
@@ -1778,7 +1751,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BybEmptyRecyclerView.java" />
         <option value="$PROJECT_DIR$/res/drawable/divider_gray_light.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/DividerItemDecoration.java" />
         <option value="$PROJECT_DIR$/../../../Mojsilovic/yanado/android/app/src/main/java/com/yanado/adapters/NotificationsAdapter.java" />
@@ -1790,8 +1762,6 @@
         <option value="$PROJECT_DIR$/src/com/backyardbrains/utls/WaveUtils.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/utls/WavUtils.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/utls/DateUtils.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RecordingSaver1.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RecordingReader.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java" />
@@ -1809,34 +1779,37 @@
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BaseFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/events/AudioServiceConnectionEvent.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
         <option value="$PROJECT_DIR$/res/values/themes.xml" />
         <option value="$PROJECT_DIR$/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/utls/PrefUtils.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsSpikesFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/view/BYBThresholdHandle.java" />
         <option value="$PROJECT_DIR$/res/layout/thresh_scope_layout.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/events/ThresholdAverageSampleCountSet.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
         <option value="$PROJECT_DIR$/res/values/strings.xml" />
         <option value="$PROJECT_DIR$/res/layout/fragment_recordings.xml" />
-        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java" />
         <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java" />
         <option value="$PROJECT_DIR$/res/layout/base_scope_layout.xml" />
         <option value="$PROJECT_DIR$/build.gradle" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java" />
+        <option value="$PROJECT_DIR$/src/com/backyardbrains/audio/ThresholdHelper.java" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="-8" />
     <option name="y" value="-8" />
-    <option name="width" value="1552" />
-    <option name="height" value="850" />
+    <option name="width" value="1936" />
+    <option name="height" value="1066" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -1996,7 +1969,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
       <pane id="Scope">
         <subPane subId="Project Files">
           <PATH>
@@ -2007,6 +1979,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scratches" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -2196,52 +2169,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="res" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="build" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Spike-Recorder-Android" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="build" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="outputs" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="AndroidView">
@@ -2255,28 +2182,28 @@
     <property name="android.sdk.path" value="D:/development/android-sdk" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../../documentation/cert/backyardbrains" />
     <property name="device.picker.selection" value="077ea36100d2c2c4" />
-    <property name="SearchEverywhereHistoryKey" value="playli&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;surfa&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java&#10;thresholdhandle&#9;PSI&#9;JAVA://com.backyardbrains.view.BYBThresholdHandle&#10;thresholdhan&#9;PSI&#9;JAVA://com.backyardbrains.BackyardBrainsSpikesFragment.ThresholdHandlePosListener&#10;logu&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/utls/LogUtils.java&#10;Loguti&#9;PSI&#9;JAVA://com.backyardbrains.utls.LogUtils&#10;thresho&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;playfra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;scopefra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;mani&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/AndroidManifest.xml&#10;manifes&#9;PSI&#9;JAVA://java.util.jar.Manifest&#10;basefra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BaseFragment.java&#10;application&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;applicati&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;main&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsMain.java&#10;basefragme&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;spike&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsSpikesFragment.java&#10;back&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;recordingrea&#9;PSI&#9;JAVA://com.backyardbrains.audio.RecordingReader&#10;recordingsave&#9;PSI&#9;JAVA://com.backyardbrains.audio.RecordingSaver&#10;Recordingsfrag&#9;PSI&#9;JAVA://com.backyardbrains.BackyardBrainsRecordingsFragment&#10;colors&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/colors.xml&#10;spikes&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/backyard_spikes.xml&#10;thres_l&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w640dp/thresh_scope_layout.xml&#10;basescope&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/base_scope_layout.xml&#10;thresholdfrag&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;ViewUti&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/utls/ViewUtils.java&#10;audioser&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/audio/AudioService.java&#10;audios&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/audio/AudioService.java&#10;bybh&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/view/BybThresholdHandle.java&#10;spikeren&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/FindSpikesRenderer.java&#10;thresholdrend&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/ThresholdRenderer.java&#10;attr&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/attrs.xml&#10;BYBCol&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/BYBColors.java&#10;thresh_s&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w600dp/thresh_scope_layout.xml&#10;View.java&#9;FILE&#9;file://D:/development/android-sdk/sources/android-25/android/view/View.java&#10;thresh_sco&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w600dp/thresh_scope_layout.xml&#10;play_&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/play_live_rec_scope_layout.xml&#10;strings&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/strings.xml&#10;activity_main&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/activity_main.xml&#10;color&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/colors.xml&#10;BuildCon&#9;PSI&#9;JAVA://com.backyardbrains.BuildConfig&#10;applica&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;oscil&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java&#10;play&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;thre&#9;FILE&#9;file://D:/projects/BackyardBrains/signal generator/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;twodimen&#9;PSI&#9;JAVA://com.backyardbrains.view.TwoDimensionScaleGestureDetector" />
+    <property name="SearchEverywhereHistoryKey" value="trig&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/audio/TriggerAverager.java&#10;playli&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;surfa&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/InteractiveGLSurfaceView.java&#10;thresholdhandle&#9;PSI&#9;JAVA://com.backyardbrains.view.BYBThresholdHandle&#10;thresholdhan&#9;PSI&#9;JAVA://com.backyardbrains.BackyardBrainsSpikesFragment.ThresholdHandlePosListener&#10;logu&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/utls/LogUtils.java&#10;Loguti&#9;PSI&#9;JAVA://com.backyardbrains.utls.LogUtils&#10;thresho&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;playfra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;scopefra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;mani&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/AndroidManifest.xml&#10;manifes&#9;PSI&#9;JAVA://java.util.jar.Manifest&#10;basefra&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BaseFragment.java&#10;application&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;applicati&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;main&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsMain.java&#10;basefragme&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;spike&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsSpikesFragment.java&#10;back&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java&#10;recordingrea&#9;PSI&#9;JAVA://com.backyardbrains.audio.RecordingReader&#10;recordingsave&#9;PSI&#9;JAVA://com.backyardbrains.audio.RecordingSaver&#10;Recordingsfrag&#9;PSI&#9;JAVA://com.backyardbrains.BackyardBrainsRecordingsFragment&#10;colors&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/colors.xml&#10;spikes&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/backyard_spikes.xml&#10;thres_l&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w640dp/thresh_scope_layout.xml&#10;basescope&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/base_scope_layout.xml&#10;thresholdfrag&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;ViewUti&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/utls/ViewUtils.java&#10;audioser&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/audio/AudioService.java&#10;audios&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/audio/AudioService.java&#10;bybh&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/view/BybThresholdHandle.java&#10;spikeren&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/FindSpikesRenderer.java&#10;thresholdrend&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/ThresholdRenderer.java&#10;attr&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/attrs.xml&#10;BYBCol&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/drawing/BYBColors.java&#10;thresh_s&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w600dp/thresh_scope_layout.xml&#10;View.java&#9;FILE&#9;file://D:/development/android-sdk/sources/android-25/android/view/View.java&#10;thresh_sco&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout-w600dp/thresh_scope_layout.xml&#10;play_&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/play_live_rec_scope_layout.xml&#10;strings&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/strings.xml&#10;activity_main&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/layout/activity_main.xml&#10;color&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/res/values/colors.xml&#10;BuildCon&#9;PSI&#9;JAVA://com.backyardbrains.BuildConfig&#10;applica&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsApplication.java&#10;oscil&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsOscilloscopeFragment.java&#10;play&#9;FILE&#9;file://D:/projects/BackyardBrains/spike recorder/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java&#10;thre&#9;FILE&#9;file://D:/projects/BackyardBrains/signal generator/Spike-Recorder-Android/src/com/backyardbrains/BackyardBrainsThresholdFragment.java&#10;twodimen&#9;PSI&#9;JAVA://com.backyardbrains.view.TwoDimensionScaleGestureDetector" />
     <property name="DEBUGGABLE_DEVICE" value="lge-nexus_5-077ea36100d2c2c4" />
     <property name="DEBUGGABLE_PROCESS" value="com.backyardbrains" />
     <property name="SHOW_ALL_PROCESSES" value="false" />
     <property name="DEBUGGER_ID" value="Auto" />
     <property name="android.project.structure.last.selected" value="SDK Location" />
     <property name="android.project.structure.proportion" value="0.15" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="458" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="362" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="458" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="362" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="459" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="363" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder2" value="2" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="458" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="362" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder3" value="3" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="328" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="260" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder0" value="0" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth1" value="321" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth1" value="255" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="376" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="298" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
-    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="808" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="636" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
     <property name="ExportApk.ApkPath" value="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android" />
     <property name="ExportApk.Flavors" value="prod" />
@@ -2289,8 +2216,8 @@
       <recent name="D:\projects\BackyardBrains\spike recorder\Spike-Recorder-Android\res\color" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="com.backyardbrains.utls" />
       <recent name="com.backyardbrains.audio" />
+      <recent name="com.backyardbrains.utls" />
       <recent name="com.backyardbrains.view" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
@@ -2635,39 +2562,39 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1552" height="850" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32951945" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32819384" sideWeight="0.4948097" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22587131" sideWeight="0.4118497" order="3" side_tool="true" content_ui="tabs" />
+      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26545843" sideWeight="0.44493392" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32599118" sideWeight="0.5051903" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.6546243" sideWeight="0.49573562" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27815014" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32488987" sideWeight="0.5051903" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.6696035" sideWeight="0.49573562" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.6696035" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32599118" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3251445" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32929516" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32929516" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22587131" sideWeight="0.58815026" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.38583815" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26545843" sideWeight="0.5550661" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.38546255" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Fabric" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296328" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
-      <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Fabric" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296328" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.5751445" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Dynamic Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Dynamic Properties" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27815014" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -2700,73 +2627,17 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="232" />
+      <option name="time" value="255" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://D:/development/android-sdk/sources/android-25/android/opengl/GLSurfaceView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="286">
-          <caret line="346" column="16" selection-start-line="346" selection-start-column="16" selection-end-line="346" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/CrossCorrelationRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="30" column="5" selection-start-line="30" selection-start-column="5" selection-end-line="30" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/AutoCorrelationRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="347">
-          <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ISIRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="237">
-          <caret line="21" column="43" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaitRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3393">
-          <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="88">
-          <caret line="141" column="0" selection-start-line="141" selection-start-column="0" selection-end-line="141" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/FindSpikesRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="29" column="93" selection-start-line="29" selection-start-column="30" selection-end-line="29" selection-end-column="93" />
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/WaveformRenderer.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="153">
           <caret line="26" column="48" selection-start-line="26" selection-start-column="48" selection-end-line="26" selection-end-column="48" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2783,7 +2654,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="272">
           <caret line="25" column="28" selection-start-line="25" selection-start-column="28" selection-end-line="25" selection-end-column="58" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2806,7 +2676,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="12" column="33" selection-start-line="12" selection-start-column="33" selection-end-line="12" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2837,7 +2706,7 @@
         <state relative-caret-position="341">
           <caret line="48" column="0" selection-start-line="48" selection-start-column="0" selection-end-line="48" selection-end-column="0" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2855,9 +2724,9 @@
         <state relative-caret-position="323">
           <caret line="21" column="32" selection-start-line="21" selection-start-column="32" selection-end-line="21" selection-end-column="32" />
           <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#647#648#0" expanded="true" />
-            <element signature="e#690#691#0" expanded="true" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#647#648#0" expanded="false" />
+            <element signature="e#690#691#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2877,7 +2746,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="272">
           <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2885,7 +2753,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="286">
           <caret line="687" column="38" selection-start-line="687" selection-start-column="38" selection-end-line="687" selection-end-column="38" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2893,7 +2760,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="303">
           <caret line="163" column="28" selection-start-line="163" selection-start-column="28" selection-end-line="163" selection-end-column="28" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2901,10 +2767,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="303">
           <caret line="5583" column="26" selection-start-line="5583" selection-start-column="26" selection-end-line="5583" selection-end-column="26" />
-          <folding>
-            <element signature="e#237292#237293#0" expanded="false" />
-            <element signature="e#237362#237363#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -2912,7 +2774,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="68">
           <caret line="4" column="45" selection-start-line="4" selection-start-column="45" selection-end-line="4" selection-end-column="45" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2947,14 +2808,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="664">
           <caret line="175" column="96" selection-start-line="175" selection-start-column="96" selection-end-line="175" selection-end-column="96" />
-          <folding>
-            <element signature="e#5739#6304#0" expanded="true" />
-            <element signature="e#6303#6304#0" expanded="true" />
-            <element signature="e#6352#6710#0" expanded="true" />
-            <element signature="e#6709#6710#0" expanded="true" />
-            <element signature="e#7948#7949#0" expanded="true" />
-            <element signature="e#8014#8015#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -2963,43 +2816,7 @@
         <state relative-caret-position="391">
           <caret line="23" column="19" selection-start-line="23" selection-start-column="19" selection-end-line="23" selection-end-column="19" />
           <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3281">
-          <caret line="217" column="97" selection-start-line="217" selection-start-column="16" selection-end-line="217" selection-end-column="97" />
-          <folding>
             <element signature="imports" expanded="false" />
-            <element signature="e#4559#4560#0" expanded="false" />
-            <element signature="e#4602#4603#0" expanded="false" />
-            <element signature="e#4744#4745#0" expanded="false" />
-            <element signature="e#4789#4790#0" expanded="false" />
-            <element signature="e#4921#4922#0" expanded="false" />
-            <element signature="e#4949#4950#0" expanded="false" />
-            <element signature="e#5082#5083#0" expanded="false" />
-            <element signature="e#5111#5112#0" expanded="false" />
-            <element signature="e#9971#9972#0" expanded="false" />
-            <element signature="e#10017#10018#0" expanded="false" />
-            <element signature="e#10457#10458#0" expanded="false" />
-            <element signature="e#10490#10491#0" expanded="false" />
-            <element signature="e#10638#10639#0" expanded="false" />
-            <element signature="e#10675#10676#0" expanded="false" />
-            <element signature="e#13535#13536#0" expanded="false" />
-            <element signature="e#13584#13585#0" expanded="false" />
-            <element signature="e#19556#19557#0" expanded="false" />
-            <element signature="e#19622#19623#0" expanded="false" />
-            <element signature="e#19979#19980#0" expanded="false" />
-            <element signature="e#20030#20031#0" expanded="false" />
-            <element signature="e#20070#20071#0" expanded="false" />
-            <element signature="e#20153#20154#0" expanded="false" />
-            <element signature="e#20196#20197#0" expanded="false" />
-            <element signature="e#20282#20283#0" expanded="false" />
-            <element signature="e#20320#20321#0" expanded="false" />
-            <element signature="e#20412#20413#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -3008,59 +2825,23 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-401">
           <caret line="183" column="48" selection-start-line="183" selection-start-column="48" selection-end-line="183" selection-end-column="48" />
-          <folding>
-            <element signature="e#8340#8341#0" expanded="false" />
-            <element signature="e#8371#8372#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1479">
-          <caret line="118" column="0" selection-start-line="118" selection-start-column="0" selection-end-line="118" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/thresh_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="324">
           <caret line="34" column="41" selection-start-line="34" selection-start-column="41" selection-end-line="34" selection-end-column="41" />
-          <folding />
         </state>
       </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="312">
-          <caret line="175" column="47" selection-start-line="175" selection-start-column="40" selection-end-line="175" selection-end-column="47" />
-          <folding>
-            <element signature="e#7038#7039#0" expanded="true" />
-            <element signature="e#7093#7094#0" expanded="true" />
-          </folding>
-        </state>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/events/ThresholdAverageSampleCountSet.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="85">
           <caret line="5" column="43" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="43" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="128">
-          <caret line="127" column="82" selection-start-line="127" selection-start-column="82" selection-end-line="127" selection-end-column="82" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#4292#4325#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -3068,7 +2849,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="51">
           <caret line="3" column="7" selection-start-line="3" selection-start-column="7" selection-end-line="3" selection-end-column="7" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3076,7 +2856,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="207">
           <caret line="318" column="26" selection-start-line="318" selection-start-column="26" selection-end-line="318" selection-end-column="26" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3084,7 +2863,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="153">
           <caret line="9" column="4" selection-start-line="9" selection-start-column="4" selection-end-line="9" selection-end-column="4" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3092,22 +2870,34 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="214">
           <caret line="619" column="19" selection-start-line="619" selection-start-column="19" selection-end-line="619" selection-end-column="19" />
-          <folding>
-            <element signature="e#22110#22111#0" expanded="true" />
-            <element signature="e#22174#22175#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/fragment_recordings.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="153">
           <caret line="9" column="35" selection-start-line="9" selection-start-column="35" selection-end-line="9" selection-end-column="35" />
-          <folding />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBUtils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="15" column="23" selection-start-line="15" selection-start-column="23" selection-end-line="15" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="93" column="30" selection-start-line="93" selection-start-column="30" selection-end-line="93" selection-end-column="30" />
+        </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsApplication.java">
@@ -3118,74 +2908,140 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2465">
-          <caret line="67" column="54" selection-start-line="67" selection-start-column="54" selection-end-line="67" selection-end-column="54" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="46" column="82" selection-start-line="46" selection-start-column="82" selection-end-line="46" selection-end-column="82" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BYBUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="15" column="23" selection-start-line="15" selection-start-column="23" selection-end-line="15" selection-end-column="23" />
+        <state relative-caret-position="3179">
+          <caret line="223" column="63" selection-start-line="223" selection-start-column="63" selection-end-line="223" selection-end-column="63" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsRecordingsFragment.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
+        <state relative-caret-position="2618">
           <caret line="203" column="40" selection-start-line="203" selection-start-column="40" selection-end-line="203" selection-end-column="40" />
-          <folding>
-            <element signature="e#7460#7461#0" expanded="true" />
-            <element signature="e#7547#7548#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/base_scope_layout.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="93" column="30" selection-start-line="93" selection-start-column="30" selection-end-line="93" selection-end-column="30" />
-          <folding>
-            <element signature="e#3996#4026#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="91" column="82" selection-start-line="89" selection-start-column="4" selection-end-line="91" selection-end-column="82" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsBaseScopeFragment.java">
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/ReceivesAudio.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="291">
-          <caret line="178" column="77" selection-start-line="178" selection-start-column="77" selection-end-line="178" selection-end-column="77" />
+        <state relative-caret-position="357">
+          <caret line="39" column="23" selection-start-line="39" selection-start-column="23" selection-end-line="39" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsPlayLiveScopeFragment.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2550">
+          <caret line="189" column="50" selection-start-line="189" selection-start-column="50" selection-end-line="189" selection-end-column="50" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioFilePlayer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="214">
+          <caret line="36" column="19" selection-start-line="36" selection-start-column="19" selection-end-line="36" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/ThresholdRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1564">
+          <caret line="123" column="52" selection-start-line="123" selection-start-column="52" selection-end-line="123" selection-end-column="52" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/drawing/BYBBaseRenderer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3281">
+          <caret line="217" column="97" selection-start-line="217" selection-start-column="16" selection-end-line="217" selection-end-column="97" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../Mojsilovic/yanado/android/app/src/main/java/com/yanado/util/account/GoogleSignInHelper.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-5457">
+          <caret line="50" column="53" selection-start-line="50" selection-start-column="53" selection-end-line="50" selection-end-column="53" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="74" column="29" selection-start-line="74" selection-start-column="29" selection-end-line="74" selection-end-column="29" />
+        <state relative-caret-position="476">
+          <caret line="28" column="42" selection-start-line="28" selection-start-column="42" selection-end-line="28" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsMain.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="556">
+          <caret line="434" column="16" selection-start-line="434" selection-start-column="16" selection-end-line="434" selection-end-column="16" />
+          <folding>
+            <element signature="e#17535#17565#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/development/android-sdk/sources/android-25/android/util/SparseBooleanArray.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="252">
+          <caret line="129" column="15" selection-start-line="129" selection-start-column="15" selection-end-line="129" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/TriggerAverager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="800">
+          <caret line="124" column="22" selection-start-line="124" selection-start-column="22" selection-end-line="124" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/BackyardBrainsThresholdFragment.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1530">
+          <caret line="127" column="82" selection-start-line="127" selection-start-column="82" selection-end-line="127" selection-end-column="82" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/ThresholdHelper.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2941">
+          <caret line="196" column="0" selection-start-line="196" selection-start-column="0" selection-end-line="196" selection-end-column="0" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/MicListener.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="800">
+          <caret line="141" column="0" selection-start-line="141" selection-start-column="0" selection-end-line="141" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/RingBuffer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="36" column="16" selection-start-line="36" selection-start-column="16" selection-end-line="36" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/backyardbrains/audio/AudioService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="544">
+          <caret line="70" column="46" selection-start-line="70" selection-start-column="46" selection-end-line="70" selection-end-column="46" />
           <folding />
         </state>
       </provider>

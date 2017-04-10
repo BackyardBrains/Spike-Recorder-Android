@@ -23,59 +23,28 @@ import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
 public class RingBuffer {
-	private short[] buffer;
-	private int beginning;
 
-	/**
-	 * @return the beginning
-	 */
-	public int getBeginning() {
-		return beginning;
-	}
+    private short[] buffer;
 
-	/**
-	 * @return the end
-	 */
-	public int getEnd() {
-		return end;
-	}
+    public RingBuffer(int size) {
+        buffer = new short[size];
+    }
 
-	private int end;
-	private int lastIncomingBufferSize;
+    public void add(final ByteBuffer incoming) {
+        add(incoming.asShortBuffer());
+    }
 
-	public RingBuffer(int size) {
-		buffer = new short[size];
-		beginning = end = -1;
-		lastIncomingBufferSize = 0;
-	}
-	public int getLastIncomingBufferSize(){
-		return lastIncomingBufferSize;
-	}
-	public void add(final ByteBuffer incoming) {
-		incoming.clear();
-		final ShortBuffer sb = incoming.asShortBuffer();
-		add(sb);
-//		System.arraycopy(buffer, sb.capacity(), buffer, 0, buffer.length-sb.capacity());
-//		sb.get(buffer, buffer.length-sb.capacity(), sb.capacity());
+    public void add(final ShortBuffer incoming) {
+        incoming.clear();
 
-		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
-	}
-	public void add(final ShortBuffer incoming) {
-		incoming.clear();
-		System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length-incoming.capacity());
-		incoming.get(buffer, buffer.length-incoming.capacity(), incoming.capacity());
-		//System.arraycopy(s, 0, buffer, buffer.length-s.length, s.length);
-		lastIncomingBufferSize = incoming.capacity();
-	}
-	/**
-	 * return an order-adjusted version of the whole buffer
-	 * 
-	 * @return
-	 */
-	public short[] getArray() {
-		return buffer;
-	}
+        System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length - incoming.capacity());
+        incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
+    }
 
-	public void zeroFill() {
-	}
+    /**
+     * @return an order-adjusted version of the whole buffer
+     */
+    public short[] getArray() {
+        return buffer;
+    }
 }

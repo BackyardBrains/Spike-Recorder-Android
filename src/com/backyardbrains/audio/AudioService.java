@@ -71,7 +71,7 @@ public class AudioService extends Service implements ReceivesAudio {
     private long lastSamplesReceivedTimestamp;
     private Context appContext = null;
 
-    private TriggerAverager averager;
+    private ThresholdHelper averager;
     private boolean bUseAverager = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,10 +91,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * @return the micListenerBufferSizeInSamples
      */
     public int getMicListenerBufferSizeInSamples() {
-        if (micThread != null) {
-            return micThread.getBufferSize();
-        }
-        return 0;
+        return micThread != null ? micThread.getBufferSize() : 0;
     }
 
     /**
@@ -105,10 +102,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public boolean isAudioPlayerPlaying() {
-        if (isPlaybackMode()) {
-            return audioPlayer.isPlaying();
-        }
-        return false;
+        return isPlaybackMode() && audioPlayer.isPlaying();
     }
 
     public boolean isPlaybackMode() {
@@ -165,8 +159,7 @@ public class AudioService extends Service implements ReceivesAudio {
         LOGD(TAG, "onCreate()");
         appContext = this.getApplicationContext();
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
-        audioBuffer.zeroFill();
-        averager = new TriggerAverager(TriggerAverager.DEFAULT_SIZE);
+        averager = new ThresholdHelper();
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
         registerReceivers(true);
         turnOnMicThread();

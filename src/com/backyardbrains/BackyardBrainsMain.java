@@ -414,16 +414,17 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
-        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
-
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
-                .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.action_setting)
-                .setNegativeButton(R.string.action_cancel)
-                .setRequestCode(BYB_SETTINGS_SCREEN)
-                .build()
-                .show();
+        if (perms != null && perms.contains(Manifest.permission.RECORD_AUDIO) && requestCode == BYB_RECORD_AUDIO_PERM) {
+            LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+            if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+                new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                    .setTitle(R.string.title_settings_dialog)
+                    .setPositiveButton(R.string.action_setting)
+                    .setNegativeButton(R.string.action_cancel)
+                    .setRequestCode(BYB_SETTINGS_SCREEN)
+                    .build()
+                    .show();
+            }
         }
     }
 

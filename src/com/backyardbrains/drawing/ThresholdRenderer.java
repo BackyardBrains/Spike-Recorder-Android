@@ -26,7 +26,7 @@ import android.util.Log;
 import com.backyardbrains.BYBGlUtils;
 import com.backyardbrains.BYBUtils;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.audio.TriggerAverager.TriggerHandler;
+import com.backyardbrains.audio.ThresholdHelper;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -121,7 +121,7 @@ public class ThresholdRenderer extends WaveformRenderer {
         if (getAudioService() != null && getAudioService().getTriggerHandler() != null) {
             getAudioService().getTriggerHandler().post(new Runnable() {
                 @Override public void run() {
-                    ((TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
+                    ((ThresholdHelper.TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
                 }
             });
         }
@@ -130,10 +130,6 @@ public class ThresholdRenderer extends WaveformRenderer {
     // ---------------------------------------------------------------------------------------------
     public void adjustThreshold(float y) {
         adjustThresholdValue(pixelHeightToGlHeight(y));
-    }
-
-    public void saveThreshold(float y) {
-
     }
 
     // ---------------------------------------------------------------------------------------------

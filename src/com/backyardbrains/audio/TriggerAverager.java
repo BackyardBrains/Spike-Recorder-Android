@@ -33,8 +33,15 @@ public class TriggerAverager {
 
     public static final int DEFAULT_SIZE = 30;
 
+    // Number of samples
     private int maxsize;
+    // Holds sums of all the saved samples by index
+    // summedSamples[0] = sampleBuffersInAverage.get(0)[0] + sampleBuffersInAverage.get(1)[0] + ...
+    //           + sampleBuffersInAverage.get(sampleBuffersInAverage.size() - 1)[0]
     private int[] summedSamples;
+    // Holds averages of all the saved samples by index
+    // averagedSamples[0] = (sampleBuffersInAverage.get(0)[0] + sampleBuffersInAverage.get(1)[0] + ...
+    //           + sampleBuffersInAverage.get(sampleBuffersInAverage.size() - 1)[0]) / sampleBuffersInAverage.size()
     private short[] averagedSamples;
 
     private ArrayList<short[]> sampleBuffersInAverage;
@@ -43,38 +50,52 @@ public class TriggerAverager {
     private int lastTriggeredValue;
     private int lastIncomingBufferSize = 0;
 
-    // ---------------------------------------------------------------------------------------------
+    /**
+     * @param size int Number of chunks to be used for calculation.
+     */
     TriggerAverager(int size) {
-        resetBuffers();
+        // set initial number of chunks to use for calculating average
         setMaxsize(size);
+        // init buffers
+        resetBuffers();
+        // handler used for setting threshold
         handler = new TriggerHandler();
     }
 
+    /**
+     * Clears all data.
+     */
     public void close() {
-        sampleBuffersInAverage.clear();
-        sampleBuffersInAverage = null;
+        resetBuffers();
     }
 
-    // ---------------------------------------------------------------------------------------------
+    /**
+     * Receives new chunk of data from the default input as {@link ByteBuffer}.
+     *
+     * @param incoming Received data.
+     */
+    void push(ByteBuffer incoming) {
+        push(incoming.asShortBuffer());
+    }
+
+    /**
+     * Receives new chunk of data from the default input as {@link ShortBuffer}.
+     *
+     * @param incoming Received data.
+     */
+    void push(ShortBuffer incoming) {
+        incoming.clear();
+        processIncomingData(incoming);
+    }
+
+    // Resets all the collections used for calculations
     private void resetBuffers() {
         sampleBuffersInAverage = new ArrayList<>();
         summedSamples = null;
         averagedSamples = null;
     }
 
-    // ---------------------------------------------------------------------------------------------
-    void push(ShortBuffer incoming) {
-        incoming.clear();
-        processIncomingData(incoming);
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    void push(ByteBuffer incoming) {
-        incoming.clear();
-        processIncomingData(incoming.asShortBuffer());
-    }
-
-    // ---------------------------------------------------------------------------------------------
+    // Processes the incoming data and triggers all necessary calculations.
     private void processIncomingData(ShortBuffer sb) {
         // reset buffers if size  of buffer changed
         if (sb.capacity() != lastIncomingBufferSize) {
@@ -95,15 +116,18 @@ public class TriggerAverager {
         for (int i = 0; i < incomingAsArray.length; i++) {
             short s = incomingAsArray[i];
             if ((triggerValue >= 0 && s > triggerValue) || (triggerValue < 0 && s < triggerValue)) {
-                // we hit the threshold, center the spike and push to buffers
+                // we hit the threshold, center the spike and save new sample
                 incomingAsArray = wrapToCenter(incomingAsArray, i);
+                // if we differed the calculation we will get null here so we wait for next incoming chunk
+                if (incomingAsArray == null) return;
+
                 pushToSampleBuffers(incomingAsArray);
                 break;
             }
         }
         if (summedSamples == null) summedSamples = new int[incomingAsArray.length];
         if (averagedSamples == null) averagedSamples = new short[summedSamples.length];
-        // save averages only if we have where to read to read from
+        // save averages only if we have samples to read from
         if (sampleBuffersInAverage.size() > 0) {
             for (int i = 0; i < summedSamples.length; i++) {
                 averagedSamples[i] = (short) (summedSamples[i] / sampleBuffersInAverage.size());
