@@ -11,11 +11,11 @@ import com.backyardbrains.audio.AudioService;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public abstract class BaseRenderer implements GLSurfaceView.Renderer {
+abstract class BaseRenderer implements GLSurfaceView.Renderer {
 
     private final BaseFragment context;
 
-    public BaseRenderer(@NonNull BaseFragment fragment) {
+    BaseRenderer(@NonNull BaseFragment fragment) {
         this.context = fragment;
     }
 

@@ -61,7 +61,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragmen
         handleColors[2][3] = 1.0f;
     }
 
-    @Override protected FindSpikesRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+    @Override
+    protected FindSpikesRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         return new FindSpikesRenderer(fragment, preparedBuffer);
     }
 

@@ -1,23 +1,49 @@
 package com.backyardbrains.utls;
 
 import android.media.AudioFormat;
+import android.support.annotation.NonNull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
 public class WavUtils {
 
-    public static CharSequence getWavLengthString(long totalAudioLength) {
-        totalAudioLength -= 44;
+    private static final String RIFF_HEADER = "RIFF";
+    private static final String WAVE_HEADER = "WAVE";
+    private static final String FMT_HEADER = "fmt ";
+    private static final String DATA_HEADER = "data";
 
-        long seconds = totalAudioLength / 88200;
-        if (seconds >= 60) {
-            long minutes = seconds / 60;
-            seconds -= minutes * 60;
-            return minutes + "m " + seconds + "s";
-        } else {
-            return seconds + "s";
-        }
+    public static final int HEADER_SIZE = 44;
+
+    private static final String CHARSET = "ASCII";
+
+    /**
+     * Converts specified {@code sampleCount} to wav time progress and returns it formatted as {@code mm:ss}.
+     */
+    public static CharSequence formatWavProgress(int sampleCount) {
+        long byteCount = AudioUtils.getByteCount(sampleCount);
+        byteCount -= HEADER_SIZE;
+
+        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(getSeconds(byteCount)));
+    }
+
+    /**
+     * Returns length of the wav file of specified {@code byteCount} length formatted as "XX s" or "XX m XX s".
+     */
+    public static CharSequence formatWavLength(long byteCount) {
+        byteCount -= HEADER_SIZE;
+
+        return Formats.formatTime_m_s(getSeconds(byteCount));
+    }
+
+    // Converts specified byteCount to seconds
+    private static long getSeconds(long byteCount) {
+        return byteCount / (AudioUtils.SAMPLE_RATE * 2);
     }
 
     public static byte[] getWavHeaderBytes(long totalAudioLength, int sampleRateInHz, int channelConfig,
@@ -30,14 +56,14 @@ public class WavUtils {
             bitsPerSample = 16;
         }
 
-        return wavFileHeader(totalAudioLength - 44, totalAudioLength - 44 + 36, sampleRateInHz, channels,
-            bitsPerSample * sampleRateInHz * channels / 8, bitsPerSample);
+        return writeHeader(totalAudioLength - HEADER_SIZE, totalAudioLength - HEADER_SIZE + 36, sampleRateInHz,
+            channels, bitsPerSample * sampleRateInHz * channels / 8, bitsPerSample);
     }
 
-    private static byte[] wavFileHeader(long totalAudioLen, long totalDataLen, long longSampleRate, int channels,
+    private static byte[] writeHeader(long totalAudioLen, long totalDataLen, long longSampleRate, int channels,
         long byteRate, byte bitsPerSample) {
 
-        byte[] header = new byte[44];
+        byte[] header = new byte[HEADER_SIZE];
 
         header[0] = 'R'; // RIFF/WAVE header
         header[1] = 'I';
@@ -85,5 +111,111 @@ public class WavUtils {
         header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
         header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
         return header;
+    }
+
+    public static byte[] readWavPcm(@NonNull InputStream stream) throws IOException {
+        WavInfo info = readHeader(stream);
+
+        return readWavPcm(info, stream);
+    }
+
+    private static byte[] readWavPcm(@NonNull WavInfo info, @NonNull InputStream stream) throws IOException {
+        byte[] data = new byte[info.getDataSize()];
+        //noinspection ResultOfMethodCallIgnored
+        stream.read(data, 0, data.length);
+
+        return data;
+    }
+
+    /**
+     * Reads a header of the specified {@code wavStream}.
+     *
+     * @throws IOException if specified stream is not a WAV stream
+     */
+    public static WavInfo readHeader(@NonNull InputStream wavStream) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        //noinspection ResultOfMethodCallIgnored
+        wavStream.read(buffer.array(), buffer.arrayOffset(), buffer.capacity());
+
+        buffer.rewind();
+        buffer.position(buffer.position() + 20);
+
+        int format = buffer.getShort();
+
+        check(format == 1, "Unsupported encoding: " + format); // 1 means
+        // Linear
+        // PCM
+        int channels = buffer.getShort();
+
+        check(channels == 1 || channels == 2, "Unsupported channels: " + channels);
+
+        int rate = buffer.getInt();
+
+        check(rate <= 48000 && rate >= 11025, "Unsupported rate: " + rate);
+
+        buffer.position(buffer.position() + 6);
+
+        int bits = buffer.getShort();
+        //check(bits == 16, "Unsupported bits: " + bits);
+
+        int dataSize = 0;
+
+        while (buffer.getInt() != 0x61746164) { // "data" marker
+            int size = buffer.getInt();
+            //noinspection ResultOfMethodCallIgnored
+            wavStream.skip(size);
+
+            buffer.rewind();
+            //noinspection ResultOfMethodCallIgnored
+            wavStream.read(buffer.array(), buffer.arrayOffset(), 8);
+            buffer.rewind();
+        }
+
+        dataSize = buffer.getInt();
+
+        check(dataSize > 0, "wrong data size: " + dataSize);
+
+        return new WavInfo(rate, bits, channels == 2, dataSize);
+    }
+
+    // Convenience method that throws IOException with specified message if assertion is false
+    private static void check(boolean assertion, String message) throws IOException {
+        if (!assertion) throw new IOException(message);
+    }
+
+    /**
+     * VO that holds information for a single WAV file.
+     */
+    public static class WavInfo {
+        private final int sampleRate;
+        private final int bits;
+        private final int dataSize;
+
+        boolean isStereo;
+
+        WavInfo(int rate, int bits, boolean isStereo, int dataSize) {
+            this.sampleRate = rate;
+            this.bits = bits;
+            this.isStereo = isStereo;
+            this.dataSize = dataSize;
+        }
+
+        public int getSampleRate() {
+            return sampleRate;
+        }
+
+        public int getBits() {
+            return bits;
+        }
+
+        public int getDataSize() {
+            return dataSize;
+        }
+
+        public boolean isStereo() {
+            return isStereo;
+        }
     }
 }

@@ -25,6 +25,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.support.annotation.NonNull;
+import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
@@ -37,24 +40,41 @@ import static android.view.MotionEvent.TOOL_TYPE_FINGER;
 import static android.view.MotionEvent.TOOL_TYPE_MOUSE;
 import static android.view.MotionEvent.TOOL_TYPE_STYLUS;
 import static android.view.MotionEvent.TOOL_TYPE_UNKNOWN;
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
 public class InteractiveGLSurfaceView extends GLSurfaceView {
 
-    protected ScaleGestureDetector mScaleDetector;
-    protected ScaleGestureDetector.OnScaleGestureListener mScaleListener;
-    protected SingleFingerGestureDetector singleFingerGestureDetector = null;
+    @SuppressWarnings("unused") private static final String TAG = makeLogTag(InteractiveGLSurfaceView.class);
 
-    @SuppressWarnings("unused") private static final String TAG = InteractiveGLSurfaceView.class.getCanonicalName();
-
-    BYBBaseRenderer renderer;
-
-    private boolean bZoomButtonsEnabled = false;
     public static final int MODE_ZOOM_IN_H = 0;
     public static final int MODE_ZOOM_OUT_H = 1;
     public static final int MODE_MOVE = 2;
     public static final int MODE_ZOOM_IN_V = 3;
     public static final int MODE_ZOOM_OUT_V = 4;
 
+    protected ScaleGestureDetector scaleDetector;
+    protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
+    protected GestureDetector scrollDetector;
+    protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
+
+        @Override public boolean onDown(MotionEvent e) {
+            renderer.startAddToGlOffset();
+            return true;
+        }
+
+        @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            //float viewportOffsetX = distanceX * mCurrentViewport.width() / mContentRect.width();
+            //float viewportOffsetY = -distanceY * mCurrentViewport.height() / mContentRect.height();
+            // Updates the viewport, refreshes the display.
+            renderer.addToGlOffset(-distanceX, distanceY);
+            return true;
+        }
+    };
+    protected SingleFingerGestureDetector singleFingerGestureDetector;
+
+    BYBBaseRenderer renderer;
+
+    private boolean bZoomButtonsEnabled = false;
     //	protected int nonTouchMode = -1;
     float startTouchX;
     float startTouchY;
@@ -63,42 +83,73 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     float scalingFactorOut;
     float scalingFactorIn;
     boolean bIsNonTouchScaling = false;
-    Context mContext;
 
-    public InteractiveGLSurfaceView(Context context, BYBBaseRenderer renderer) {
-        super(context);
-        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
-        scalingFactorIn = 1 - scalingFactor;
-        scalingFactorOut = 1 + scalingFactor;
-
-        this.mContext = context;
-        this.renderer = renderer;
-
-        mScaleListener = new BybScaleListener(renderer);
-        mScaleDetector = new ScaleGestureDetector(context, mScaleListener);
-        singleFingerGestureDetector = new SingleFingerGestureDetector(context);
-
-        getHolder().setFormat(PixelFormat.RGBA_8888);
-        setRenderer(renderer);
-
-        if (mContext != null) {
-            boolean bHasTouch = ((BackyardBrainsApplication) mContext.getApplicationContext()).isTouchSupported();
-            enableZoomButtons(!bHasTouch);
-        }
+    public InteractiveGLSurfaceView(Context context) {
+        this(context, null);
     }
 
-    //*
+    public InteractiveGLSurfaceView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+
+        init();
+    }
+
+    /**
+     * Sets the renderer associated with this view. Also starts the thread that will call the renderer, which in turn
+     * causes the rendering to start.
+     * <p>This method should be called once and only once in the life-cycle of a GLSurfaceView.
+     * <p>The following GLSurfaceView methods can only be called <em>before</em> setRenderer is called:
+     * <ul>
+     * <li>{@link #setEGLConfigChooser(boolean)}
+     * <li>{@link #setEGLConfigChooser(EGLConfigChooser)}
+     * <li>{@link #setEGLConfigChooser(int, int, int, int, int, int)}
+     * </ul>
+     * <p>
+     * The following GLSurfaceView methods can only be called <em>after</em> setRenderer is called:
+     * <ul>
+     * <li>{@link #getRenderMode()}
+     * <li>{@link #onPause()}
+     * <li>{@link #onResume()}
+     * <li>{@link #queueEvent(Runnable)}
+     * <li>{@link #requestRender()}
+     * <li>{@link #setRenderMode(int)}
+     * </ul>
+     *
+     * @param renderer the renderer to use to perform OpenGL drawing.
+     */
+    public void setRenderer(@NonNull BYBBaseRenderer renderer) {
+        this.renderer = renderer;
+
+        scaleListener = new BybScaleListener(renderer);
+        scaleDetector = new ScaleGestureDetector(getContext(), scaleListener);
+        scrollDetector = new GestureDetector(getContext(), scrollListener);
+
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+
+        super.setRenderer(renderer);
+    }
+
+    @Override public final void setRenderer(Renderer renderer) {
+        if (renderer instanceof BYBBaseRenderer) {
+            setRenderer((BYBBaseRenderer) renderer);
+            return;
+        }
+
+        throw new IllegalArgumentException("Renderer needs to be instance of BYBBaseRenderer class");
+    }
+
     @Override public void surfaceCreated(SurfaceHolder holder) {
         super.surfaceCreated(holder);
         setKeepScreenOn(true);
     }
 
     @Override public void surfaceDestroyed(SurfaceHolder holder) {
-        setKeepScreenOn(false);
         if (bZoomButtonsEnabled) {
             bZoomButtonsEnabled = false;
             enableZoomButtonListeners(false);
         }
+
+        setKeepScreenOn(false);
         super.surfaceDestroyed(holder);
     }
 
@@ -115,19 +166,40 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                     break;
             }
         }
-        //		Log.d(TAG, "onTouchEvent " + event.toString());
+        //Log.d(TAG, "onTouchEvent " + event.toString());
         if (renderer != null) {
-            if (singleFingerGestureDetector != null) {
-                singleFingerGestureDetector.onTouchEvent(event);
-                if (singleFingerGestureDetector.hasChanged()) {
-                    renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
-                }
+            //if (singleFingerGestureDetector != null) {
+            //    singleFingerGestureDetector.onTouchEvent(event);
+            //    if (singleFingerGestureDetector.hasChanged()) {
+            //        renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
+            //    }
+            //}
+            if (scaleDetector != null) {
+                scaleDetector.onTouchEvent(event);
+                if (scaleDetector.isInProgress()) return true;
             }
-            if (mScaleDetector != null) {
-                mScaleDetector.onTouchEvent(event);
+            if (scrollDetector != null) {
+                if (!scrollDetector.onTouchEvent(event) && event.getAction() == MotionEvent.ACTION_UP) {
+                    renderer.endAddToGlOffset();
+                }
             }
         }
         return true;
+    }
+
+    // Initializes the view
+    private void init() {
+        //singleFingerGestureDetector = new SingleFingerGestureDetector(getContext());
+
+        scalingFactorIn = 1 - scalingFactor;
+        scalingFactorOut = 1 + scalingFactor;
+
+        getHolder().setFormat(PixelFormat.RGBA_8888);
+
+        if (getContext() != null) {
+            boolean bHasTouch = ((BackyardBrainsApplication) getContext().getApplicationContext()).isTouchSupported();
+            enableZoomButtons(!bHasTouch);
+        }
     }
 
     private void scaleRenderer(int zoomMode) {
@@ -229,19 +301,19 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             enableZoomButtonListeners(false);
             bBroadcast = true;
         }
-        if (mContext != null && bBroadcast) {
+        if (getContext() != null && bBroadcast) {
             Intent i = new Intent();
             i.setAction("BYBShowZoomUI");
             i.putExtra("showUI", bZoomButtonsEnabled);
-            mContext.sendBroadcast(i);
+            getContext().sendBroadcast(i);
         }
     }
 
     //	protected void showScalingInstructions() {
-    //		if (mContext != null && isScalingMode()) {
+    //		if (context != null && isScalingMode()) {
     //			Intent i = new Intent();
     //			i.setAction("showScalingInstructions");
-    //			mContext.sendBroadcast(i);
+    //			context.sendBroadcast(i);
     //		}
     //	}
     private class ZoomButtonsListener extends BroadcastReceiver {
@@ -256,13 +328,13 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     private ZoomButtonsListener zoomButtonsListener;
 
     private void enableZoomButtonListeners(boolean reg) {
-        if (mContext != null) {
+        if (getContext() != null) {
             if (reg) {
                 IntentFilter intentFilter = new IntentFilter(BYBZoomButton.broadcastAction);
                 zoomButtonsListener = new ZoomButtonsListener();
-                mContext.registerReceiver(zoomButtonsListener, intentFilter);
+                getContext().registerReceiver(zoomButtonsListener, intentFilter);
             } else {
-                mContext.unregisterReceiver(zoomButtonsListener);
+                getContext().unregisterReceiver(zoomButtonsListener);
             }
         }
     }

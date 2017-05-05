@@ -1,11 +1,11 @@
-package com.backyardbrains;
+package com.backyardbrains.utls;
 
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.view.ContextThemeWrapper;
-
-import android.util.SparseArray;
+import com.backyardbrains.R;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -15,20 +15,20 @@ public class BYBUtils {
 
     public static void showAlert(Activity activity, String title, String mensage) {
 
-        AlertDialog alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(activity, R.style.BYBAppStyle)).create();
+        AlertDialog alertDialog =
+            new AlertDialog.Builder(new ContextThemeWrapper(activity, R.style.BYBAppStyle)).create();
         alertDialog.setTitle(title);
         alertDialog.setMessage(mensage);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
         alertDialog.show();
     }
 
     // ----------------------------------------------------------------------------------------
-    public static FloatBuffer getFloatBufferFromFloatArray(final float[] array, int length) {
+    @Nullable public static FloatBuffer getFloatBufferFromFloatArray(final float[] array, int length) {
         FloatBuffer buf = null;
         try {
             final ByteBuffer temp = ByteBuffer.allocateDirect(length * 4);
@@ -66,7 +66,6 @@ public class BYBUtils {
         return ((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
     }
 
-
     public static FloatBuffer floatArrayListToFloatBuffer(ArrayList<float[]> arrayList) {
         final FloatBuffer buf;
         int totalArraySize = 0;
@@ -102,7 +101,5 @@ public class BYBUtils {
         }
         return v;
     }
-
-
 }
 

@@ -3,7 +3,7 @@ package com.backyardbrains.drawing;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
-import com.backyardbrains.BYBGlUtils;
+import com.backyardbrains.utls.BYBGlUtils;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.analysis.BYBSpike;
 import com.backyardbrains.view.ofRectangle;

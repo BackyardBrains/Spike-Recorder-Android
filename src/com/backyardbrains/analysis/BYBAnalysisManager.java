@@ -3,7 +3,7 @@ package com.backyardbrains.analysis;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.backyardbrains.BYBUtils;
+import com.backyardbrains.utls.BYBUtils;
 import com.backyardbrains.audio.RecordingReader;
 
 import android.content.BroadcastReceiver;
@@ -12,7 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener, BYBBaseAsyncAnalysis.AnalysisListener {
+public class BYBAnalysisManager implements RecordingReader.AudioFileReadListener, BYBBaseAsyncAnalysis.AnalysisListener {
 	private static final String				TAG									= "BYBAnalysisManager";
 
 	private Context							context;
@@ -811,7 +811,7 @@ public class BYBAnalysisManager implements RecordingReader.AudiofileReadListener
 		}
 		fileToAnalize = file;
 		if (reader == null) {
-			reader = new RecordingReader(fileToAnalize, (RecordingReader.AudiofileReadListener) this);
+			reader = new RecordingReader(fileToAnalize, (RecordingReader.AudioFileReadListener) this);
 			Log.d(TAG, "loading audio file: " + fileToAnalize.getAbsolutePath());
 		}
 		return true;

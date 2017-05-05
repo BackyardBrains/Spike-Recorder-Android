@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.utls.AudioUtils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,9 +19,9 @@ import java.nio.ShortBuffer;
 import static com.backyardbrains.utls.LogUtils.LOGE;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class RecordingReader {
+public class RecordingReader1 {
 
-    public static final String TAG = makeLogTag(RecordingReader.class);
+    public static final String TAG = makeLogTag(RecordingReader1.class);
 
     private final AudioFileReadListener listener;
 
@@ -29,6 +30,7 @@ public class RecordingReader {
     private ReadWaveFileAsyncTask asyncReader;
     private boolean ready;
     private byte[] data;
+    private final int bufferSize;
 
     private int format = 0;
     private int numChannels = 0;
@@ -40,7 +42,8 @@ public class RecordingReader {
         void audioFileRead();
     }
 
-    public RecordingReader(@NonNull File file, @Nullable AudioFileReadListener listener) {
+    public RecordingReader1(@NonNull File file, @Nullable AudioFileReadListener listener) {
+        bufferSize = AudioUtils.OUT_BUFFER_SIZE;
         try {
             loadFile(file);
         } catch (IOException e) {

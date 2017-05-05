@@ -20,18 +20,23 @@
 package com.backyardbrains.audio;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
 public class RingBuffer {
 
+    private final int size;
+
     private short[] buffer;
 
     public RingBuffer(int size) {
+        this.size = size;
+
         buffer = new short[size];
     }
 
     public void add(final ByteBuffer incoming) {
-        add(incoming.asShortBuffer());
+        add(incoming.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer());
     }
 
     public void add(final ShortBuffer incoming) {
@@ -46,5 +51,12 @@ public class RingBuffer {
      */
     public short[] getArray() {
         return buffer;
+    }
+
+    /**
+     * Clears the buffer as sets all values to zeros
+     */
+    public void clear() {
+        buffer = new short[size];
     }
 }

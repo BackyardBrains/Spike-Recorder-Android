@@ -10,6 +10,8 @@
 
     <string name="action_setting">Settings</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
@@ -48,8 +50,6 @@
     <string name="new_threshold">New threshold</string>
     <string name="playhead_slider">Playhead</string>
     <string name="analysis_title">Analysis Name</string>
-    <string name="play_button">Play</string>
-    <string name="pause_button">Pause</string>
     <string name="find_spikes_not_done_title">Warning</string>
     <string name="find_spikes_not_done_message">You need to Find Spikes before perfoming any analysis.</string>
     <string name="analysis_wait_message">Please wait until analysis is finished.</string>

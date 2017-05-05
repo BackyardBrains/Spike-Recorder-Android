@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.content.Context;
+import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import com.backyardbrains.analysis.BYBAnalysisManager;
@@ -42,12 +43,12 @@ public class BaseFragment extends Fragment {
         }
     }
 
-    @Override public void onResume() {
+    @CallSuper @Override public void onResume() {
         super.onResume();
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
 
-    @Override public void onPause() {
+    @CallSuper @Override public void onPause() {
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         super.onPause();
     }
@@ -69,7 +70,8 @@ public class BaseFragment extends Fragment {
         return provider != null ? provider.analysisManager() : null;
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onNoSubscriberEvent(NoSubscriberEvent event) {
         // nothing for now
     }
 }

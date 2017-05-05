@@ -26,6 +26,7 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utls.ApacheCommonsLang3Utils;
+import com.backyardbrains.utls.BYBUtils;
 import com.backyardbrains.utls.DateUtils;
 import com.backyardbrains.utls.EventUtils;
 import com.backyardbrains.utls.ViewUtils;
@@ -184,7 +185,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     private void fileDetails(File f) {
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        details += "Duration: " + WavUtils.getWavLengthString(f.length());
+        details += "Duration: " + WavUtils.formatWavLength(f.length());
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
@@ -493,7 +494,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                 LOGD(TAG, "Binding file " + file.getName());
 
                 tvFileName.setText(file.getName());
-                tvFileSize.setText(WavUtils.getWavLengthString(file.length()));
+                tvFileSize.setText(WavUtils.formatWavLength(file.length()));
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
             }
         }

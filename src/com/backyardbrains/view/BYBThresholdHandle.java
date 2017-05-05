@@ -130,7 +130,7 @@ public class BYBThresholdHandle extends ConstraintLayout {
      * Sets Y position of the handle.
      */
     public float setPosition(float position) {
-        LOGD(TAG, "Handle position set: " + position);
+        //LOGD(TAG, "Handle position set: " + position);
 
         handlePosition = position;
         updateUI();

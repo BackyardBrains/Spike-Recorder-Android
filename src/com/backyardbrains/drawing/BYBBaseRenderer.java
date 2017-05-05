@@ -5,10 +5,11 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import com.backyardbrains.BYBConstants;
-import com.backyardbrains.BYBGlUtils;
-import com.backyardbrains.BYBUtils;
+import com.backyardbrains.utls.BYBConstants;
+import com.backyardbrains.utls.BYBGlUtils;
+import com.backyardbrains.utls.BYBUtils;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utls.AudioUtils;
 import com.backyardbrains.utls.Formats;
 import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
@@ -43,9 +44,9 @@ public class BYBBaseRenderer extends BaseRenderer {
     protected int width;
     private boolean autoScaled = false;
     private static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
-    private static final int MIN_GL_HORIZONTAL_SIZE = 16;
+    private static final int MIN_GL_HORIZONTAL_SIZE = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
     private static final int MIN_GL_VERTICAL_SIZE = 400;
-    private static final int MAX_NUM_SAMPLES = 264600; //6 seconds
+    private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
     private float minimumDetectedPCMValue = -5000000f;
 
     private int startIndex = 0;
@@ -57,6 +58,43 @@ public class BYBBaseRenderer extends BaseRenderer {
     private int scalingAreaStartY;
     private int scalingAreaEndY;
 
+    public interface Callback {
+
+        void onTimeChange(float milliseconds);
+
+        void onSignalChange(float millivolts);
+
+        void onHorizontalDragStart();
+
+        void onHorizontalDrag(float dx);
+
+        void onHorizontalDragEnd();
+    }
+
+    public static class CallbackAdapter implements Callback {
+
+        @Override public void onTimeChange(float milliseconds) {
+        }
+
+        @Override public void onSignalChange(float millivolts) {
+        }
+
+        @Override public void onHorizontalDrag(float dx) {
+        }
+
+        @Override public void onHorizontalDragStart() {
+        }
+
+        @Override public void onHorizontalDragEnd() {
+        }
+    }
+
+    private Callback callback;
+
+    public void setCallback(Callback callback) {
+        this.callback = callback;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- CONSTRUCTOR & SETUP
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +105,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     public static float[] initTempBuffer() {
-        final float[] buffer = new float[MAX_NUM_SAMPLES * 2];
+        final float[] buffer = new float[MAX_SAMPLES_COUNT * 2];
         for (int i = 0; i < buffer.length; i += 2) {
             buffer[i] = i / 2;
         }
@@ -84,13 +122,12 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------------------------------------------------------
     public void setGlWindowHorizontalSize(int newX) {
-        if (newX < 0) {
-            return;
-        }
+        if (newX < 0) return;
+
         prevGlWindowHorizontalSize = glWindowHorizontalSize;
         int maxLength;
         if (mBufferToDraws != null) {
-            maxLength = Math.min(mBufferToDraws.length, MAX_NUM_SAMPLES);
+            maxLength = Math.min(mBufferToDraws.length, MAX_SAMPLES_COUNT);
             if (newX < MIN_GL_HORIZONTAL_SIZE) {
                 newX = MIN_GL_HORIZONTAL_SIZE;
             }
@@ -99,17 +136,14 @@ public class BYBBaseRenderer extends BaseRenderer {
             }
             this.glWindowHorizontalSize = newX;
         }
-        //LOGD(TAG, "SetGLHorizontalSize " + glWindowHorizontalSize);
     }
 
     // ----------------------------------------------------------------------------------------
     public void setGlWindowVerticalSize(int newY) {
-        //Log.d(TAG, "SetGLVerticalSize newY: "+newY);
         if (newY < 0) {
             return;
         }
         prevGlWindowVerticalSize = glWindowVerticalSize;
-        String text = "hsize: " + newY;
         if (newY < MIN_GL_VERTICAL_SIZE) {
             newY = MIN_GL_VERTICAL_SIZE;
         }
@@ -140,18 +174,26 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    public void addToGlOffset(float dx, float dy) {
-        if (getIsPlaybackMode() && !getIsPlaying()) {
-            bPanning = true;
-            panningDx = dx;
-            bZooming = false;
+    public void startAddToGlOffset() {
+        if (getIsPlaybackMode() && !getIsPlaying() && !getIsSeeking()) {
+            if (callback != null) callback.onHorizontalDragStart();
         }
     }
 
-    private void setStartIndex(int si) {
-        startIndex = si;
-        if (startIndex < 0) startIndex = 0;
-        endIndex = startIndex + glWindowHorizontalSize;
+    public void addToGlOffset(float dx, float dy) {
+        if (getIsPlaybackMode() && !getIsPlaying()) {
+            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / width);
+
+            //bPanning = true;
+            //panningDx = dx;
+            //bZooming = false;
+        }
+    }
+
+    public void endAddToGlOffset() {
+        if (getIsPlaybackMode() && !getIsPlaying()) {
+            if (callback != null) callback.onHorizontalDragEnd();
+        }
     }
 
     public void setScaleFocusX(float fx) {
@@ -178,33 +220,18 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     private void setStartEndIndex(int arrayLength) {
-        if (getAudioService() != null && getAudioService().isPlaybackMode()) {
-            if (getAudioService().isAudioPlayerPlaying()) {
-                long playbackProgress = getAudioService().getPlaybackProgress();
-                setStartIndex((int) playbackProgress - glWindowHorizontalSize);
-            } else {
-                if (bZooming) {
-                    bZooming = false;
-                    normalizedFocusX = focusX / (float) width;
-                    scaledFocusX = (float) prevGlWindowHorizontalSize * normalizedFocusX;//(float)width)*focusX;
-                    focusedSample = startIndex + (int) Math.floor(scaledFocusX);
-                    setStartIndex(
-                        startIndex + (int) ((prevGlWindowHorizontalSize - glWindowHorizontalSize) * normalizedFocusX));
-                } else if (bPanning) {
-                    bPanning = false;
-                    setStartIndex(
-                        startIndex - (int) Math.floor(((panningDx * glWindowHorizontalSize) / (float) width)));
-                }
-            }
-        } else {
-            setStartIndex(arrayLength - glWindowHorizontalSize);
-        }
-        if (startIndex < -glWindowHorizontalSize) {
-            setStartIndex(-glWindowHorizontalSize);
-        }
+        setStartIndex(arrayLength - glWindowHorizontalSize);
+
+        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize);
+
         if (startIndex + getGlWindowHorizontalSize() > arrayLength) {
             setStartIndex(arrayLength - getGlWindowHorizontalSize());
         }
+    }
+
+    private void setStartIndex(int si) {
+        startIndex = si;
+        endIndex = startIndex + glWindowHorizontalSize;
     }
 
     // ----------------------------------------------------------------------------------------
@@ -212,34 +239,24 @@ public class BYBBaseRenderer extends BaseRenderer {
         if (getContext() != null) {
             //long start = System.currentTimeMillis();
             //Log.d(TAG, "START - " + shortArrayToDraw.length);
-            //float[] arr;
-            if (getAudioService() != null) {
-                setStartEndIndex(shortArrayToDraw.length);
-                //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
-                //arr = new float[(glWindowHorizontalSize) * 2];
-                int j = 1;
-                int shorter = shortArrayToDraw.length;
-                if (shorter > endIndex) shorter = endIndex;
-                final int s = startIndex < 0 ? 0 : startIndex;
-                try {
-                    for (int i = s; i < shorter; i++) {
+            final boolean clearFront = getIsSeeking();
+            setStartEndIndex(shortArrayToDraw.length);
+            //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
+            int j = 1;
+            final int start = startIndex;
+            final int end = Math.min(endIndex, shortArrayToDraw.length);
+            try {
+                for (int i = start; i < end; i++) {
+                    if (i < 0) {
+                        if (clearFront) mTempBufferToDraws[j] = 0;
+                    } else {
                         mTempBufferToDraws[j] = shortArrayToDraw[i];
-                        j += 2;
                     }
-                    //Log.d(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
-                    //for (int i = startIndex; i < shortArrayToDraw.length && i < endIndex; i++) {
-                    //    arr[j++] = i - startIndex;
-                    //    if (i < 0) {
-                    //        arr[j++] = 0;
-                    //    } else {
-                    //        arr[j++] = shortArrayToDraw[i];
-                    //    }
-                    //                    }
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    Log.e(TAG, "Array size out of sync while building new waveform buffer");
+                    j += 2;
                 }
-            } else {
-                mTempBufferToDraws = new float[0];
+                //Log.d(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
+            } catch (ArrayIndexOutOfBoundsException e) {
+                Log.e(TAG, "Array size out of sync while building new waveform buffer");
             }
             final FloatBuffer fb =
                 BYBUtils.getFloatBufferFromFloatArray(mTempBufferToDraws, glWindowHorizontalSize * 2);
@@ -257,20 +274,11 @@ public class BYBBaseRenderer extends BaseRenderer {
     // ----------------------------------------------------------------------------------------
     private boolean getCurrentAudio() {
         if (getAudioService() != null) {
-            mBufferToDraws = getAudioService().getAudioBuffer();
+            if (mBufferToDraws == null) mBufferToDraws = new short[getAudioService().getAudioBuffer().length];
+            System.arraycopy(getAudioService().getAudioBuffer(), 0, mBufferToDraws, 0, mBufferToDraws.length);
             return true;
         }
         return false;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private boolean isAutoScaled() {
-        return autoScaled;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private void setAutoScaled(boolean isScaled) {
-        autoScaled = isScaled;
     }
 
     // ----------------------------------------------------------------------------------------
@@ -290,12 +298,17 @@ public class BYBBaseRenderer extends BaseRenderer {
     // ----------------------------------------------------------------------------------------
     private void setMsText(float ms) {
         //String msString = new DecimalFormat("#.#").format(ms);
-        broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString", Formats.formatTime(ms));
+        if (callback != null) callback.onTimeChange(ms);
+        // FIXME: 4/11/2017 legacy code, should be removed
+        broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString",
+            Formats.formatTime_s_msec(ms));
     }
 
     // ----------------------------------------------------------------------------------------
-    void setmVText(Float ms) {
-        String msString = new DecimalFormat("#.##").format(ms);
+    void setmVText(float mV) {
+        String msString = new DecimalFormat("#.##").format(mV);
+        if (callback != null) callback.onSignalChange(mV);
+        // FIXME: 4/11/2017 legacy code, should be removed
         broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
     }
 
@@ -322,6 +335,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- DRAWING
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
     @Override public void onDrawFrame(GL10 gl) {
         if (!getCurrentAudio()) {
             LOGD(TAG, "Can't get current audio buffer!");
@@ -344,13 +358,18 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    void postDrawingHandler(GL10 gl) {
-        if (getIsPlaybackMode() && !getIsPlaying()) {
-            float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
+    protected void drawingHandler(GL10 gl) {
+    }
 
-            BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(), playheadDraw, getGlWindowVerticalSize(),
-                0x00FFFFFF);
-        }
+    // ----------------------------------------------------------------------------------------
+    void postDrawingHandler(GL10 gl) {
+        // TODO: 4/19/2017 Code below was drawing a playhead (blue vertical line), playhead should be always right side of screen
+        //if (getIsPlaybackMode() && !getIsPlaying()) {
+        //    float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
+        //
+        //    BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(), playheadDraw, getGlWindowVerticalSize(),
+        //        0x00FFFFFF);
+        //}
         if (bShowScalingAreaX || bShowScalingAreaY) {
             gl.glEnable(GL10.GL_BLEND);
             // Specifies pixel arithmetic
@@ -364,10 +383,6 @@ public class BYBBaseRenderer extends BaseRenderer {
             }
             gl.glDisable(GL10.GL_BLEND);
         }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void drawingHandler(GL10 gl) {
     }
 
     // ----------------------------------------------------------------------------------------
@@ -391,8 +406,13 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------- GL
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
 
+    protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
+        initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+    }
+
+    // ----------------------------------------------------------------------------------------
+    void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
         gl.glViewport(0, 0, width, height);
 
         BYBGlUtils.glClear(gl);
@@ -407,11 +427,17 @@ public class BYBBaseRenderer extends BaseRenderer {
         gl.glDepthFunc(GL10.GL_LEQUAL);
         gl.glEnable(GL10.GL_LINE_SMOOTH);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-        // Enable Blending
-        //		gl.glEnable(GL10.GL_BLEND);
-        //		// Specifies pixel arithmetic
-        //		gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+    }
+
+    // ----------------------------------------------------------------------------------------
+    private boolean isAutoScaled() {
+        return autoScaled;
+    }
+
+    // ----------------------------------------------------------------------------------------
+    private void setAutoScaled(boolean isScaled) {
+        autoScaled = isScaled;
     }
 
     // ----------------------------------------------------------------------------------------
@@ -434,9 +460,8 @@ public class BYBBaseRenderer extends BaseRenderer {
             if (theMin > arrayToScaleTo[i]) theMin = arrayToScaleTo[i];
         }
 
-        int newyMax;
         if (theMax != 0 && theMin != 0) {
-
+            final int newyMax;
             if (Math.abs(theMax) >= Math.abs(theMin)) {
                 newyMax = Math.abs(theMax) * 2;
             } else {
@@ -447,11 +472,6 @@ public class BYBBaseRenderer extends BaseRenderer {
             }
         }
         setAutoScaled(true);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-        initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -500,7 +520,11 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     private boolean getIsPlaying() {
-        return getAudioService() != null && getAudioService().isAudioPlayerPlaying();
+        return getAudioService() != null && getAudioService().isAudioPlaying();
+    }
+
+    private boolean getIsSeeking() {
+        return getAudioService() != null && getAudioService().isAudioSeeking();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

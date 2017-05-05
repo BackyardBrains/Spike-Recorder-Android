@@ -1,15 +1,10 @@
 package com.backyardbrains.drawing;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.*;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import com.backyardbrains.BYBUtils;
-
-import android.util.Log;
+import com.backyardbrains.utls.BYBUtils;
 
 public class BYBMesh {
 

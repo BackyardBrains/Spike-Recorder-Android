@@ -152,7 +152,8 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
                     LOGE(TAG, "Renderer creation failed - " + ex.getMessage());
                 }
                 if (glSurface != null) glSurface = null;
-                glSurface = new InteractiveGLSurfaceView(getContext(), renderer);
+                glSurface = new InteractiveGLSurfaceView(getContext());
+                glSurface.setRenderer(renderer);
                 flGL.addView(glSurface);
             }
             readSettings();
@@ -208,7 +209,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
     }
 
     protected boolean getIsPlaying() {
-        return getAudioService() != null && getAudioService().isAudioPlayerPlaying();
+        return getAudioService() != null && getAudioService().isAudioPlaying();
     }
 
     //////////////////////////////////////////////////////////////////////////////

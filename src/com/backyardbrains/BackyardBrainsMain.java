@@ -17,6 +17,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.view.MenuItem;
 import android.view.View;
 import butterknife.BindView;
@@ -24,6 +25,7 @@ import butterknife.ButterKnife;
 import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utls.PrefUtils;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
@@ -49,6 +51,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     public static final int RECORDINGS_LIST = 2;
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
+    public static final int PLAY_AUDIO_VIEW = 5;
 
     //private static final int BACK_STACK_MAX_ITEMS = 2;
 
@@ -57,9 +60,14 @@ public class BackyardBrainsMain extends AppCompatActivity
     public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment";
     public static final String BYB_ANALYSIS_FRAGMENT = "BackyardBrainsAnalysisFragment";
     public static final String BYB_OSCILLOSCOPE_FRAGMENT = "BackyardBrainsOscilloscopeFragment";
+    public static final String BYB_PLAY_AUDIO_FRAGMENT = "BackyardBrainsPlayAudioFragment";
 
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_SETTINGS_SCREEN = 125;
+
+    static {
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+    }
 
     //@Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
@@ -148,7 +156,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     //                      Fragment management
     //////////////////////////////////////////////////////////////////////////////
 
-    public void loadFragment(int fragType) {
+    public void loadFragment(int fragType, Object... args) {
         if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
         } else if (fragType == R.id.action_threshold) {
@@ -189,6 +197,10 @@ public class BackyardBrainsMain extends AppCompatActivity
                     fragName = BYB_OSCILLOSCOPE_FRAGMENT;
                     break;
                 //------------------------------
+                case PLAY_AUDIO_VIEW:
+                    frag = BackyardBrainsPlayLiveScopeFragment.newInstance();
+                    fragName = BYB_PLAY_AUDIO_FRAGMENT;
+                    break;
             }
 
             setSelectedButton(fragType);
@@ -281,6 +293,15 @@ public class BackyardBrainsMain extends AppCompatActivity
         return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
     }
 
+    //=================================================
+    //  EVENT BUS
+    //=================================================
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
+        loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     //                      Private Methods
     //////////////////////////////////////////////////////////////////////////////
@@ -314,6 +335,8 @@ public class BackyardBrainsMain extends AppCompatActivity
                 return BYB_ANALYSIS_FRAGMENT;
             case OSCILLOSCOPE_VIEW:
                 return BYB_OSCILLOSCOPE_FRAGMENT;
+            case PLAY_AUDIO_VIEW:
+                return BYB_PLAY_AUDIO_FRAGMENT;
             case INVALID_VIEW:
             default:
                 return "";
@@ -332,6 +355,8 @@ public class BackyardBrainsMain extends AppCompatActivity
                 return ANALYSIS_VIEW;
             case BYB_OSCILLOSCOPE_FRAGMENT:
                 return OSCILLOSCOPE_VIEW;
+            case BYB_PLAY_AUDIO_FRAGMENT:
+                return PLAY_AUDIO_VIEW;
             default:
                 return INVALID_VIEW;
         }
@@ -557,7 +582,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     private class AudioPlaybackStartListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
             LOGD(TAG, "AudioPlaybackStartListener .onReceive");
-            loadFragment(OSCILLOSCOPE_VIEW);
+            //loadFragment(OSCILLOSCOPE_VIEW);
         }
     }
 

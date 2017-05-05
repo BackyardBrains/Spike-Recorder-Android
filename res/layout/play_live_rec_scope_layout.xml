@@ -21,7 +21,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#0000"
-            android:contentDescription="@string/pause_button"
+            android:contentDescription="@string/action_pause"
             android:padding="5dp"
             android:src="@drawable/pause_button"/>
 
@@ -30,7 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#0000"
-            android:contentDescription="@string/play_button"
+            android:contentDescription="@string/action_play"
             android:padding="5dp"
             android:src="@drawable/play_button"/>
 

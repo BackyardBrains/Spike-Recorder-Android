@@ -29,7 +29,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import static com.backyardbrains.utls.LogUtils.LOGD;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment {
+public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment1 {
 
     private static final String TAG = makeLogTag(BackyardBrainsThresholdFragment.class);
 

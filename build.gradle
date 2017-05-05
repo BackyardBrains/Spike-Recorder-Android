@@ -47,6 +47,10 @@ android {
         minSdkVersion 17
         targetSdkVersion 25
         versionCode 21
+
+        // Enabling vector drawables
+        vectorDrawables.useSupportLibrary = true
+
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex']

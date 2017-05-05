@@ -1,299 +1,261 @@
 package com.backyardbrains;
 
-import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.view.LayoutInflater;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.drawing.WaveformRenderer;
-import com.backyardbrains.view.BYBSlidingView;
-import java.util.List;
-import pub.devrel.easypermissions.AfterPermissionGranted;
-import pub.devrel.easypermissions.AppSettingsDialog;
-import pub.devrel.easypermissions.EasyPermissions;
+import com.backyardbrains.drawing.SeekableWaveformRenderer;
+import com.backyardbrains.events.AudioPlaybackProgressEvent;
+import com.backyardbrains.events.AudioPlaybackStartedEvent;
+import com.backyardbrains.events.AudioPlaybackStoppedEvent;
+import com.backyardbrains.utls.WavUtils;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGW;
 import static com.backyardbrains.utls.LogUtils.makeLogTag;
 
-public abstract class BackyardBrainsPlayLiveScopeFragment extends BackyardBrainsBaseScopeFragment
-    implements EasyPermissions.PermissionCallbacks {
+public class BackyardBrainsPlayLiveScopeFragment extends BaseWaveformFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsPlayLiveScopeFragment.class);
 
-    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) View tvStopRecording;
-    @BindView(R.id.ibtn_close) ImageButton ibtnClose;
-    @BindView(R.id.ibtn_play) ImageButton ibtnPlay;
-    @BindView(R.id.ibtn_pause) ImageButton ibtnPause;
+    @BindView(R.id.iv_play_pause) ImageView ibtnPlayPause;
+    @BindView(R.id.sb_audio_progress) SeekBar sbAudioProgress;
+    @BindView(R.id.tv_time) TextView tvProgressTime;
 
     private Unbinder unbinder;
 
-    BYBSlidingView stopRecButton;
-    private static final int BYB_SETTINGS_SCREEN = 121;
-    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
-
-    //////////////////////////////////////////////////////////////////////////////
-    //                       Lifecycle overrides
-    //////////////////////////////////////////////////////////////////////////////
-
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = super.onCreateView(inflater, container, savedInstanceState);
-        LOGD(TAG, "onCreateView()");
-        if (view != null) {
-            unbinder = ButterKnife.bind(this, view);
-            setupUI();
-        }
-
-        return view;
+    /**
+     * Factory for creating a new instance of the fragment.
+     *
+     * @return A new instance of fragment {@link BackyardBrainsPlayLiveScopeFragment}.
+     */
+    public static BackyardBrainsPlayLiveScopeFragment newInstance() {
+        return new BackyardBrainsPlayLiveScopeFragment();
     }
 
-    @Override public void onStart() {
-        super.onStart();
-        LOGD(TAG, "onStart()");
-    }
-
-    @Override public void onResume() {
-        super.onResume();
-        LOGD(TAG, "onResume()");
-    }
-
-    @Override public void onPause() {
-        super.onPause();
-        LOGD(TAG, "onPause()");
-    }
+    //=================================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //=================================================
 
     @Override public void onStop() {
         super.onStop();
-        LOGD(TAG, "onStop()");
+        stopPlaying();
     }
 
     @Override public void onDestroyView() {
         super.onDestroyView();
-        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
     }
 
-    protected abstract boolean canRecord();
+    //=================================================
+    //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
+    //=================================================
+
+    @Override protected int getLayoutRes() {
+        return R.layout.fragment_play_live_scope;
+    }
+
+    @Override
+    protected void initView(@NonNull View view, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        unbinder = ButterKnife.bind(this, view);
+
+        setupUI();
+    }
 
     @Override
     protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        return new WaveformRenderer(fragment, preparedBuffer);
+        final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(fragment, preparedBuffer);
+        renderer.setCallback(new BYBBaseRenderer.Callback() {
+            @Override public void onTimeChange(final float milliseconds) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setMilliseconds(milliseconds);
+                        }
+                    });
+                }
+            }
+
+            @Override public void onSignalChange(final float millivolts) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setMillivolts(millivolts);
+                        }
+                    });
+                }
+            }
+
+            @Override public void onHorizontalDragStart() {
+                LOGD(TAG, "Start horizontal drag");
+                startSeek();
+            }
+
+            @Override public void onHorizontalDrag(float dx) {
+                int progress = (int) (sbAudioProgress.getProgress() - dx);
+                if (progress < 0) progress = 0;
+                if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
+                seek(progress);
+                sbAudioProgress.setProgress(progress);
+                updateProgressTime(progress);
+                LOGD(TAG, "Seeking: " + progress);
+            }
+
+            @Override public void onHorizontalDragEnd() {
+                LOGD(TAG, "End horizontal drag");
+                stopSeek();
+            }
+        });
+        return renderer;
     }
 
-    @Override protected int getLayoutID() {
-        return R.layout.play_live_rec_scope_layout;
+    @Override protected SeekableWaveformRenderer getRenderer() {
+        return (SeekableWaveformRenderer) super.getRenderer();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- OTHER METHODS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //=================================================
+    //  PUBLIC AND PROTECTED METHODS
+    //=================================================
 
-    public boolean getIsRecording() {
-        return getAudioService() != null && getAudioService().isRecording();
+    /**
+     * Returns length of the played audio file in samples.
+     */
+    protected int getLength() {
+        if (getAudioService() != null) return (int) getAudioService().getPlaybackLength();
+
+        return 0;
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Permission Request >= API 23
-    //////////////////////////////////////////////////////////////////////////////
-
-    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-        @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    /**
+     * Plays/pauses audio file depending on the {@code play} flag.
+     */
+    protected void toggle(boolean play) {
+        if (getAudioService() != null) getAudioService().togglePlayback(play);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
-        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    /**
+     * Whether audio file is currently being played or not.
+     */
+    protected boolean isPlaying() {
+        return getAudioService() != null && getAudioService().isAudioPlaying();
     }
 
-    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
-        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
-                .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.action_setting)
-                .setNegativeButton(R.string.action_cancel)
-                .setRequestCode(BYB_SETTINGS_SCREEN)
-                .build()
-                .show();
-        }
+    /**
+     * Stops playing audio file.
+     */
+    protected void stopPlaying() {
+        if (getAudioService() != null) getAudioService().stopPlayback();
     }
 
-    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) private void startRecording() {
-        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            if (getAudioService() != null) getAudioService().startRecording();
-        } else {
-            // Request one permission
-            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage),
-                BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
+    /**
+     * Tells audio service that seek is about to start.
+     */
+    protected void startSeek() {
+        if (getAudioService() != null) getAudioService().startPlaybackSeek();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- UI
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    protected void showPauseButton(boolean show) {
-        showButton(ibtnPause, show);
+    /**
+     * Tells audio service to seek to specified {@code position}.
+     */
+    protected void seek(int position) {
+        if (getAudioService() != null) getAudioService().seekPlayback(position);
     }
 
-    protected void showPlayButton(boolean show) {
-        showButton(ibtnPlay, show);
+    /**
+     * Tells audio service that seek should stop.
+     */
+    protected void stopSeek() {
+        if (getAudioService() != null) getAudioService().stopPlaybackSeek();
     }
 
-    protected void showCloseButton(boolean show) {
-        showButton(ibtnClose, show);
+    //=================================================
+    //  EVENT BUS
+    //=================================================
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
+        LOGD(TAG, "Start audio playback - " + event.getLength());
+        if (event.getLength() > 0) sbAudioProgress.setMax((int) event.getLength());
+
+        setupPlayPauseButton();
     }
 
-    protected void showRecButton(boolean show) {
-        showButton(ibtnRecord, show);
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioPlaybackProgressEvent(AudioPlaybackProgressEvent event) {
+        // can be 0 if AudioPlaybackStartedEvent event was sent before onStart()
+        if (sbAudioProgress.getMax() == 0) sbAudioProgress.setMax(getLength());
+
+        sbAudioProgress.setProgress((int) event.getProgress());
+        updateProgressTime((int) event.getProgress());
     }
 
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioPlaybackStoppedEvent(AudioPlaybackStoppedEvent event) {
+        LOGD(TAG, "Stop audio playback - " + (event.isCompleted() ? "end" : "pause"));
+
+        setupPlayPauseButton();
+    }
+
+    //=================================================
+    //  PRIVATE METHODS
+    //=================================================
+
+    // Initializes user interface
     private void setupUI() {
-        setupButtons();
-        showUIForMode();
-        ((BackyardBrainsMain) getActivity()).showButtons(true);
-    }
+        // play/pause button
+        ibtnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                toggle(!isPlaying());
+            }
+        });
+        setupPlayPauseButton();
+        // audio progress
+        sbAudioProgress.setMax(getLength());
+        sbAudioProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {
+                LOGD(TAG, "SeekBar.onStartTrackingTouch()");
+                startSeek();
+            }
 
-    private void setupButtons() {
-        // record button
-        ibtnRecord.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startRecording();
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                LOGD(TAG, "SeekBar.onStopTrackingTouch()");
+                stopSeek();
             }
-        });
-        // stop record button
-        stopRecButton = new BYBSlidingView(tvStopRecording, getContext(), "tapToStopRec");
-        tvStopRecording.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) getAudioService().stopRecording();
-            }
-        });
-        // close button
-        ibtnClose.setVisibility(View.GONE);
-        ibtnClose.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                ibtnClose.setVisibility(View.GONE);
-                if (getContext() != null) {
-                    Intent i = new Intent();
-                    i.setAction("BYBCloseButton");
-                    getContext().sendBroadcast(i);
+
+            @Override public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
+                if (fromUser) {
+                    seekBar.post(new Runnable() {
+                        @Override public void run() {
+                            seek(progress);
+                            updateProgressTime(progress);
+                        }
+                    });
                 }
             }
         });
-        // play button
-        ibtnPlay.setVisibility(View.GONE);
-        ibtnPlay.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) getAudioService().togglePlayback(true);
-            }
-        });
-        // pause button
-        ibtnPause.setVisibility(View.GONE);
-        ibtnPause.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) getAudioService().togglePlayback(false);
-            }
-        });
+        sbAudioProgress.setProgress(0);
     }
 
-    private void showUIForMode() {
-        boolean bPlaybackMode = getIsPlaybackMode();
-        showPlaybackButtons(bPlaybackMode);
-        showRecordingButtons(!bPlaybackMode);
+    // Sets appropriate image on play/pause button
+    private void setupPlayPauseButton() {
+        LOGD(TAG, "setupPlayPauseButton() - isPlaying=" + isPlaying());
+        ibtnPlayPause.setImageResource(
+            isPlaying() ? R.drawable.ic_pause_circle_filled_orange_24dp : R.drawable.ic_play_circle_filled_orange_24dp);
     }
 
-    private void showPlaybackButtons(boolean show) {
-        boolean bIsPlaying = getIsPlaying();
-        showPauseButton(bIsPlaying && show);
-        showPlayButton(!bIsPlaying && show);
-        showCloseButton(show);
-    }
-
-    private void showRecordingButtons(boolean show) {
-        boolean bIsRecording = getIsRecording();
-        showRecButton(show && canRecord() && !bIsRecording);
-        showRecBar(show && canRecord() && bIsRecording);
-    }
-
-    private void showRecBar(boolean show) {
-        if (stopRecButton != null) stopRecButton.show(show && canRecord() && getIsRecording());
-    }
-
-    private void showButton(View view, boolean show) {
-        if (view != null) {
-            if (show) {
-                view.setVisibility(View.VISIBLE);
-            } else {
-                if (view.getVisibility() == View.VISIBLE) {
-                    view.setVisibility(View.GONE);
-                }
-            }
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // -----------------------------------------  BROADCASTING LISTENERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    private class AudioPlaybackStartListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGD(TAG, "BYBAudioPlaybackStart broadcast received!");
-            showUIForMode();
-        }
-    }
-
-    private class UpdateUIListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGD(TAG, "BYBUpdateUI broadcast received!");
-            showUIForMode();
-        }
-    }
-
-    // ----------------------------------------- RECEIVERS INSTANCES
-    private AudioPlaybackStartListener audioPlaybackStartListener;
-    private UpdateUIListener updateUIListener;
-
-    // ----------------------------------------- REGISTER RECEIVERS
-    @Override public void registerReceivers(boolean bRegister) {
-        super.registerReceivers(bRegister);
-        LOGD(TAG, "registerReceivers()");
-        registerAudioPlaybackStartReceiver(bRegister);
-        registerUpdateUIReceiver(bRegister);
-    }
-
-    private void registerAudioPlaybackStartReceiver(boolean reg) {
-        LOGW(TAG, "registerAudioPlaybackStartReceiver: " + (reg ? "true" : "false"));
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBAudioPlaybackStart");
-                audioPlaybackStartListener = new AudioPlaybackStartListener();
-                getContext().registerReceiver(audioPlaybackStartListener, intentFilter);
-            } else {
-                getContext().unregisterReceiver(audioPlaybackStartListener);
-            }
-        }
-    }
-
-    private void registerUpdateUIReceiver(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBUpdateUI");
-                updateUIListener = new UpdateUIListener();
-                getContext().registerReceiver(updateUIListener, intentFilter);
-            } else {
-                getContext().unregisterReceiver(updateUIListener);
-            }
-        }
+    // Updates progress time according to progress
+    private void updateProgressTime(int progress) {
+        tvProgressTime.setText(WavUtils.formatWavProgress(progress));
     }
 }

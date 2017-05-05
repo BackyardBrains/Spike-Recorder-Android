@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_horizontal_margin_half">8dp</dimen>
+    <dimen name="activity_horizontal_margin_quarter">4dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin_half">8dp</dimen>
+
     <dimen name="min_button_tappable_h">48dp</dimen>
+    <dimen name="mid_button_tappable_h">56dp</dimen>
     <dimen name="threshold_drag_surface_w">40dp</dimen>
+
+    <dimen name="font_size_tiny">10sp</dimen>
 </resources>
