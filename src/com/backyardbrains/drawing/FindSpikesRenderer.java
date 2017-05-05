@@ -3,17 +3,18 @@ package com.backyardbrains.drawing;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import com.backyardbrains.utls.BYBGlUtils;
-import com.backyardbrains.utls.BYBUtils;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.analysis.BYBSpike;
-import com.backyardbrains.utls.LogUtils;
+import com.backyardbrains.utls.BYBGlUtils;
+import com.backyardbrains.utls.BYBUtils;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utls.LogUtils.makeLogTag;
+
 public class FindSpikesRenderer extends BYBBaseRenderer {
 
-    private static final String TAG = LogUtils.makeLogTag(FindSpikesRenderer.class);
+    private static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
     public static final int LEFT_THRESH_INDEX = 0;
     public static final int RIGHT_THRESH_INDEX = 1;

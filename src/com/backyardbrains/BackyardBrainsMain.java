@@ -72,15 +72,15 @@ public class BackyardBrainsMain extends AppCompatActivity
     //@Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
-    private boolean bAudioServiceRunning = false;
-    protected AudioService mAudioService;
+    private boolean audioServiceRunning = false;
+    protected AudioService audioService;
     protected BYBAnalysisManager analysisManager;
 
     //protected BYBSlidingView sliding_drawer;
     private int currentFrag = -1;
 
-    private boolean bShowScalingInstructions = true;
-    private boolean bShowingScalingInstructions = false;
+    private boolean showScalingInstructions = true;
+    private boolean showingScalingInstructions = false;
 
     private enum FragTransaction {
         ADD, REPLACE, REMOVE
@@ -110,7 +110,7 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     @Override protected void onStart() {
         // start the audio service for reads mic data, recording and playing recorded files
-        startAudioService();
+        start();
         // load settings saved from last session
         loadSettings();
         // registers all broadcast receivers
@@ -131,7 +131,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         // saves settings set in this session
         saveSettings();
         // stop audio service
-        stopAudioService();
+        stop();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -401,22 +401,22 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     private void showScalingInstructions() {
-        if (bShowScalingInstructions && !bShowingScalingInstructions) {
-            bShowingScalingInstructions = true;
+        if (showScalingInstructions && !showingScalingInstructions) {
+            showingScalingInstructions = true;
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
             alertDialog.setTitle("Instructions");
             alertDialog.setMessage(getString(R.string.scaling_instructions));
             alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "NO", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    bShowScalingInstructions = false;
-                    bShowingScalingInstructions = false;
+                    showScalingInstructions = false;
+                    showingScalingInstructions = false;
                     saveSettings();
                     dialog.dismiss();
                 }
             });
             alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "YES", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    bShowingScalingInstructions = false;
+                    showingScalingInstructions = false;
                     dialog.dismiss();
                 }
             });
@@ -453,19 +453,27 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void startAudioService() {
+    /**
+     * Requests {@link Manifest.permission#RECORD_AUDIO} permission if it's not already allowed and starts {@link
+     * AudioService} and {@link BYBAnalysisManager}.
+     */
+    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void start() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
             startAnalysisManager();
-            startService();
+            startAudioService();
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
                 Manifest.permission.RECORD_AUDIO);
         }
     }
 
-    private void stopAudioService() {
+    /**
+     * Stops {@link AudioService} and {@link BYBAnalysisManager}. Needs to be called in {@link #onStop()} to release
+     * resources.
+     */
+    private void stop() {
         stopAnalysisManager();
-        stopService();
+        stopAudioService();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -473,39 +481,50 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     @Nullable @Override public AudioService audioService() {
-        return mAudioService;
+        return audioService;
     }
 
     @Nullable @Override public BYBAnalysisManager analysisManager() {
         return analysisManager;
     }
 
-    public boolean isAudioServiceRunning() {
-        return bAudioServiceRunning;
-    }
-
-    public void startService() {
-        if (!bAudioServiceRunning) {
+    /**
+     * Starts {@link AudioService}.
+     */
+    public void startAudioService() {
+        if (!audioServiceRunning) {
             startService(new Intent(this, AudioService.class));
-            bAudioServiceRunning = true;
+            audioServiceRunning = true;
             bindAudioService(true);
         }
     }
 
-    public void stopService() {
-        if (bAudioServiceRunning) {
+    /**
+     * Stops {@link AudioService}.
+     */
+    public void stopAudioService() {
+        if (audioServiceRunning) {
             bindAudioService(false);
             stopService(new Intent(this, AudioService.class));
-            bAudioServiceRunning = false;
+            audioServiceRunning = false;
         }
     }
 
+    /**
+     * Starts {@link BYBAnalysisManager}.
+     */
     public void startAnalysisManager() {
-        analysisManager = new BYBAnalysisManager(getApplicationContext());
+        if (analysisManager == null) analysisManager = new BYBAnalysisManager(getApplicationContext());
     }
 
+    /**
+     * Stops {@link BYBAnalysisManager}.
+     */
     public void stopAnalysisManager() {
-        analysisManager.close();
+        if (analysisManager != null) {
+            analysisManager.close();
+            analysisManager = null;
+        }
     }
 
     protected void bindAudioService(boolean on) {
@@ -519,8 +538,6 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     protected ServiceConnection mConnection = new ServiceConnection() {
 
-        private boolean mAudioServiceIsBound;
-
         // Sets a reference in this activity to the {@link AudioService}, which
         // allows for {@link ByteBuffer}s full of audio information to be passed
         // from the {@link AudioService} down into the local
@@ -533,28 +550,18 @@ public class BackyardBrainsMain extends AppCompatActivity
             // We've bound to LocalService, cast the IBinder and get
             // LocalService instance
             AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
-            mAudioService = binder.getService();
-            mAudioServiceIsBound = true;
+            audioService = binder.getService();
             // inform interested parties that audio service is successfully connected
             EventBus.getDefault().post(new AudioServiceConnectionEvent(true));
         }
 
         @Override public void onServiceDisconnected(ComponentName className) {
-            mAudioService = null;
-            mAudioServiceIsBound = false;
+            audioService = null;
 
             // inform interested parties that audio service successfully disconnected
             EventBus.getDefault().post(new AudioServiceConnectionEvent(false));
         }
     };
-
-    public AudioService getAudioService() {
-        return mAudioService;
-    }
-
-    public BYBAnalysisManager getAnalysisManager() {
-        return analysisManager;
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
         // this is here to avoid EventBus exception
@@ -652,11 +659,11 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadSettings() {
-        bShowScalingInstructions = PrefUtils.isShowScalingInstructions(this, TAG);
+        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, TAG);
     }
 
     // ----------------------------------------------------------------------------------------
     public void saveSettings() {
-        PrefUtils.setShowScalingInstructions(this, TAG, bShowScalingInstructions);
+        PrefUtils.setShowScalingInstructions(this, TAG, showScalingInstructions);
     }
 }
