@@ -1,4 +1,4 @@
-package com.backyardbrains.utls;
+package com.backyardbrains.utils;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>

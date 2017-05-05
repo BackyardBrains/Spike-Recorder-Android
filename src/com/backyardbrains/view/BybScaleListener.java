@@ -23,8 +23,8 @@ import android.support.annotation.Nullable;
 import android.view.ScaleGestureDetector;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 
-import static com.backyardbrains.utls.LogUtils.LOGE;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BybScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 

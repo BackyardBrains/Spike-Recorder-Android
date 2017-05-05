@@ -3,7 +3,7 @@ package com.backyardbrains.analysis;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.backyardbrains.utls.BYBUtils;
+import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.audio.RecordingReader;
 
 import android.content.BroadcastReceiver;

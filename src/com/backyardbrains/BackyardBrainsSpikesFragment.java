@@ -21,7 +21,7 @@ import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.view.BYBThresholdHandle;
 import java.util.List;
 
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BackyardBrainsSpikesFragment extends BackyardBrainsBaseScopeFragment {
 

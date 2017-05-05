@@ -3,17 +3,17 @@ package com.backyardbrains.audio;
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.utls.AudioUtils;
-import com.backyardbrains.utls.BufferUtils;
+import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.BufferUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGE;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
@@ -89,7 +89,7 @@ class PlaybackThread {
      * Class constructor.
      *
      * @param service the service that implements the {@link ReceivesAudio}
-     * @see AudioService#turnOnAudioPlayerThread()
+     * @see AudioService#turnOnPlaybackThread()
      */
     PlaybackThread(@NonNull ReceivesAudio service, @NonNull String filePath,
         @Nullable final PlaybackListener listener) {

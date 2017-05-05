@@ -18,13 +18,13 @@ import android.widget.ImageView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
-import com.backyardbrains.utls.Func;
-import com.backyardbrains.utls.ViewUtils;
+import com.backyardbrains.utils.Func;
+import com.backyardbrains.utils.ViewUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>

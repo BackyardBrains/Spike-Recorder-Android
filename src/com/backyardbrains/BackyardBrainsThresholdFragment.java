@@ -16,7 +16,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.TriggerAverager;
+import com.backyardbrains.audio.ThresholdHelper;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
@@ -26,8 +26,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment1 {
 
@@ -109,7 +109,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
             }
         });
 
-        sbAvgSamplesCount.setProgress(TriggerAverager.DEFAULT_SIZE);
+        sbAvgSamplesCount.setProgress(ThresholdHelper.DEFAULT_SIZE);
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
@@ -133,7 +133,7 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
                 }
             }
         });
-        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), TriggerAverager.DEFAULT_SIZE));
+        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), ThresholdHelper.DEFAULT_SIZE));
     }
 
     //////////////////////////////////////////////////////////////////////////////

@@ -25,10 +25,10 @@ import com.backyardbrains.view.BYBZoomButton;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGE;
-import static com.backyardbrains.utls.LogUtils.LOGW;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.LOGW;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
 

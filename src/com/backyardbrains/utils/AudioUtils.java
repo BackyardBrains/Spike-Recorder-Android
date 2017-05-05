@@ -1,4 +1,4 @@
-package com.backyardbrains.utls;
+package com.backyardbrains.utils;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -6,8 +6,8 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>

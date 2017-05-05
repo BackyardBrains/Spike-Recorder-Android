@@ -26,8 +26,8 @@ import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGLSurfaceView;
 import com.backyardbrains.drawing.WaitRenderer;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BackyardBrainsAnalysisFragment extends BaseFragment {
 

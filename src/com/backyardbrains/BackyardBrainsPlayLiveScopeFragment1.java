@@ -21,9 +21,9 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGW;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGW;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BackyardBrainsPlayLiveScopeFragment1 extends BackyardBrainsBaseScopeFragment
     implements EasyPermissions.PermissionCallbacks {

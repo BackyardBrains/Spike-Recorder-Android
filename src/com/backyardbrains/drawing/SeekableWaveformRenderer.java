@@ -5,7 +5,7 @@ import com.backyardbrains.BaseFragment;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class SeekableWaveformRenderer extends BYBBaseRenderer {
 

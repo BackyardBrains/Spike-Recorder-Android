@@ -14,7 +14,7 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
-import com.backyardbrains.utls.ViewUtils;
+import com.backyardbrains.utils.ViewUtils;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>.

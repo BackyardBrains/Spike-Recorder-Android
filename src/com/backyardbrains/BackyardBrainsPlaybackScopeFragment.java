@@ -16,16 +16,16 @@ import com.backyardbrains.drawing.SeekableWaveformRenderer;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
-import com.backyardbrains.utls.WavUtils;
+import com.backyardbrains.utils.WavUtils;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class BackyardBrainsPlayLiveScopeFragment extends BaseWaveformFragment {
+public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
-    private static final String TAG = makeLogTag(BackyardBrainsPlayLiveScopeFragment.class);
+    private static final String TAG = makeLogTag(BackyardBrainsPlaybackScopeFragment.class);
 
     @BindView(R.id.iv_play_pause) ImageView ibtnPlayPause;
     @BindView(R.id.sb_audio_progress) SeekBar sbAudioProgress;
@@ -36,10 +36,10 @@ public class BackyardBrainsPlayLiveScopeFragment extends BaseWaveformFragment {
     /**
      * Factory for creating a new instance of the fragment.
      *
-     * @return A new instance of fragment {@link BackyardBrainsPlayLiveScopeFragment}.
+     * @return A new instance of fragment {@link BackyardBrainsPlaybackScopeFragment}.
      */
-    public static BackyardBrainsPlayLiveScopeFragment newInstance() {
-        return new BackyardBrainsPlayLiveScopeFragment();
+    public static BackyardBrainsPlaybackScopeFragment newInstance() {
+        return new BackyardBrainsPlaybackScopeFragment();
     }
 
     //=================================================
@@ -106,10 +106,15 @@ public class BackyardBrainsPlayLiveScopeFragment extends BaseWaveformFragment {
                 int progress = (int) (sbAudioProgress.getProgress() - dx);
                 if (progress < 0) progress = 0;
                 if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
-                seek(progress);
-                sbAudioProgress.setProgress(progress);
-                updateProgressTime(progress);
-                LOGD(TAG, "Seeking: " + progress);
+                final int finalProgress = progress;
+                sbAudioProgress.post(new Runnable() {
+                    @Override public void run() {
+                        seek(finalProgress);
+                        sbAudioProgress.setProgress(finalProgress);
+                        updateProgressTime(finalProgress);
+                        LOGD(TAG, "Seeking: " + finalProgress);
+                    }
+                });
             }
 
             @Override public void onHorizontalDragEnd() {

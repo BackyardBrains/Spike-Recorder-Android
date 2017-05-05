@@ -15,10 +15,10 @@ import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
-import com.backyardbrains.utls.Formats;
+import com.backyardbrains.utils.Formats;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>

@@ -1,7 +1,7 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.utls.WavUtils;
+import com.backyardbrains.utils.WavUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;

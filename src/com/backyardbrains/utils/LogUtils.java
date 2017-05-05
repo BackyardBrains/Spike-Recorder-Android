@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.backyardbrains.utls;
+package com.backyardbrains.utils;
 
 import android.util.Log;
 

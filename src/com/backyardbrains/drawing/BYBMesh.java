@@ -4,7 +4,7 @@ import java.util.*;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import com.backyardbrains.utls.BYBUtils;
+import com.backyardbrains.utils.BYBUtils;
 
 public class BYBMesh {
 

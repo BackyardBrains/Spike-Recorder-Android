@@ -1,4 +1,4 @@
-package com.backyardbrains.utls;
+package com.backyardbrains.utils;
 
 import android.content.Context;
 import android.support.annotation.NonNull;

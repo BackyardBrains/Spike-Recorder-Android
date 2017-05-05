@@ -15,8 +15,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
-import static com.backyardbrains.utls.LogUtils.LOGE;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class RecordingReader {
 

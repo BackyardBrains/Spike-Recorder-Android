@@ -37,16 +37,16 @@ import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.events.ThresholdAverageSampleCountSet;
-import com.backyardbrains.utls.ApacheCommonsLang3Utils;
-import com.backyardbrains.utls.AudioUtils;
+import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data to bound activities.
@@ -65,13 +65,11 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private MicListener micThread;
     private PlaybackThread playbackThread;
-    private AudioFilePlayer audioPlayer;
     private RingBuffer audioBuffer;
     private RecordingSaver mRecordingSaverInstance;
 
     private ToggleRecordingListener toggleRecorder;
     private CloseButtonListener closeListener;
-    private OnTabSelectedListener tabSelectedListener;
     private AudioFilePlaybackEndedListener audioFilePlaybackEndedListener;
 
     private long lastSamplesReceivedTimestamp;
@@ -108,11 +106,11 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public boolean isPlaybackMode() {
-        return playbackThread != null;//audioPlayer != null;
+        return playbackThread != null;
     }
 
     public boolean isAudioPlaying() {
-        return isPlaybackMode() && playbackThread.isPlaying();//audioPlayer.isPlaying();
+        return isPlaybackMode() && playbackThread.isPlaying();
     }
 
     public boolean isAudioSeeking() {
@@ -126,11 +124,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * @return a ordinate-corrected version of the audio buffer
      */
     public short[] getAudioBuffer() {
-        //if (isPlaybackMode()) {// && !isAudioPlaying()){
-        //    return audioPlayer.getBuffer();
-        //} else {
         return audioBuffer.getArray();
-        //}
     }
 
     public short[] getAverageBuffer() {
@@ -190,7 +184,7 @@ public class AudioService extends Service implements ReceivesAudio {
         registerReceivers(false);
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         turnOffMicThread();
-        turnOffPlaybackThread();//turnOffAudioPlayerThread();
+        turnOffPlaybackThread();
         averager.close();
         averager = null;
         super.onDestroy();
@@ -219,12 +213,19 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     //=================================================
-    //  MICROPHONE LISTENER
+    //  MICROPHONE
     //=================================================
+
+    /**
+     * Start processing default input (Microphone).
+     */
+    public void startMicrophone() {
+        turnOnMicThread();
+    }
 
     private void turnOnMicThread() {
         LOGD(TAG, "turnOnMicThread()");
-        turnOffPlaybackThread();//turnOffAudioPlayerThread();
+        turnOffPlaybackThread();
         if (micThread == null) {
             micThread = null;
             micThread = new MicListener(this);
@@ -233,8 +234,9 @@ public class AudioService extends Service implements ReceivesAudio {
             audioBuffer.clear();
 
             micThread.start();
-            //Log.d(TAG, "Mic thread started");
+            LOGD(TAG, "Microphone thread started");
         }
+        // FIXME: 4/11/2017 legacy code, should be removed
         broadcastUpdateUI();
     }
 
@@ -244,7 +246,7 @@ public class AudioService extends Service implements ReceivesAudio {
         if (micThread != null) {
             micThread.requestStop();
             micThread = null;
-            //Log.d(TAG, "Mic Thread Shut Off");
+            LOGD(TAG, "Microphone Thread stopped");
         }
     }
 
@@ -253,11 +255,11 @@ public class AudioService extends Service implements ReceivesAudio {
     //=================================================
 
     public void togglePlayback(boolean play) {
-        if (playbackThread/*audioPlayer*/ != null) {
+        if (playbackThread != null) {
             if (play) {
-                playbackThread.play();//audioPlayer.play();
+                playbackThread.play();
             } else {
-                playbackThread.pause();//audioPlayer.pause();
+                playbackThread.pause();
             }
         }
         // FIXME: 4/11/2017 legacy code, should be removed
@@ -302,29 +304,6 @@ public class AudioService extends Service implements ReceivesAudio {
         if (playbackThread != null) {
             playbackThread.stop();
             playbackThread = null;
-
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
-        }
-    }
-
-    protected void turnOnAudioPlayerThread() {
-        LOGD(TAG, "turnOnAudioPlayerThread()");
-        if (audioPlayer != null) {
-            turnOffMicThread();
-            audioPlayer.play();
-
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
-        }
-    }
-
-    protected void turnOffAudioPlayerThread() {
-        LOGD(TAG, "turnOffAudioPlayerThread() - audioPlayer " + (audioPlayer != null ? "not null (stopping)" : "null"));
-
-        if (audioPlayer != null) {
-            audioPlayer.stop();
-            audioPlayer = null;
 
             // FIXME: 4/11/2017 legacy code, should be removed
             broadcastUpdateUI();
@@ -475,35 +454,6 @@ public class AudioService extends Service implements ReceivesAudio {
             });
             stopRecording();
             turnOnPlaybackThread();
-            //turnOffAudioPlayerThread();
-            //audioPlayer = new AudioFilePlayer(appContext, AudioService.this, new AudioFilePlayer.PlayerListener() {
-            //    @Override public void onPlaybackStart(int length) {
-            //        // post event that audio playback has started
-            //        EventBus.getDefault().post(new AudioPlaybackStartedEvent(length));
-            //    }
-            //
-            //    @Override public void onResume() {
-            //        // post event that audio playback has started
-            //        EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1));
-            //    }
-            //
-            //    @Override public void onProgress(long progress) {
-            //        EventBus.getDefault().post(new AudioPlaybackProgressEvent(progress));
-            //    }
-            //
-            //    @Override public void onPause() {
-            //        // post event that audio playback has started
-            //        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(false));
-            //    }
-            //
-            //    @Override public void onPlaybackStop() {
-            //        // post event that audio playback has started
-            //        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
-            //    }
-            //});
-            //audioPlayer.load(event.getFilePath());
-            //stopRecording();
-            //turnOnAudioPlayerThread();
 
             // FIXME: 4/11/2017 legacy code, should be removed
             Intent i = new Intent();
@@ -532,20 +482,7 @@ public class AudioService extends Service implements ReceivesAudio {
     private class CloseButtonListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
             LOGD(TAG, "BYBCloseButton broadcast received!");
-            //turnOffAudioPlayerThread();
             turnOnMicThread();
-        }
-    }
-
-    private class OnTabSelectedListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBonTabSelected broadcast received!");
-            if (intent.hasExtra("tab")) {
-                int currentTab = intent.getIntExtra("tab", 0);
-                if (currentTab < 2 && audioPlayer == null) {
-                    turnOnMicThread();
-                }
-            }
         }
     }
 
@@ -562,7 +499,6 @@ public class AudioService extends Service implements ReceivesAudio {
     private void registerReceivers(boolean reg) {
         LOGD(TAG, "registerReceivers()");
         registerRecordingToggleReceiver(reg);
-        registerOnTabSelectedReceiver(reg);
         registerCloseButtonReceiver(reg);
         registerPlaybackEndReceiver(reg);
     }
@@ -584,16 +520,6 @@ public class AudioService extends Service implements ReceivesAudio {
             appContext.registerReceiver(toggleRecorder, intentFilter);
         } else {
             appContext.unregisterReceiver(toggleRecorder);
-        }
-    }
-
-    private void registerOnTabSelectedReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBonTabSelected");
-            tabSelectedListener = new OnTabSelectedListener();
-            appContext.registerReceiver(tabSelectedListener, intentFilter);
-        } else {
-            appContext.unregisterReceiver(tabSelectedListener);
         }
     }
 

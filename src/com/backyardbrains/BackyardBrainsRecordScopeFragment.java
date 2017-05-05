@@ -14,7 +14,6 @@ import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
-import com.backyardbrains.utls.LogUtils;
 import com.backyardbrains.view.BYBSlidingView;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -23,7 +22,8 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
@@ -31,7 +31,7 @@ import static com.backyardbrains.utls.LogUtils.LOGD;
 public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     implements EasyPermissions.PermissionCallbacks {
 
-    private static final String TAG = LogUtils.makeLogTag(BackyardBrainsRecordScopeFragment.class);
+    private static final String TAG = makeLogTag(BackyardBrainsRecordScopeFragment.class);
 
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
@@ -45,6 +45,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
+
+    @Override public void onStart() {
+        super.onStart();
+
+        if (getAudioService() != null) getAudioService().startMicrophone();
+    }
 
     @Override public void onDestroyView() {
         super.onDestroyView();

@@ -25,12 +25,12 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.events.PlayAudioFileEvent;
-import com.backyardbrains.utls.ApacheCommonsLang3Utils;
-import com.backyardbrains.utls.BYBUtils;
-import com.backyardbrains.utls.DateUtils;
-import com.backyardbrains.utls.EventUtils;
-import com.backyardbrains.utls.ViewUtils;
-import com.backyardbrains.utls.WavUtils;
+import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.DateUtils;
+import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.ViewUtils;
+import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BybEmptyRecyclerView;
 import com.backyardbrains.view.BybEmptyView;
 import java.io.File;
@@ -43,8 +43,8 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>

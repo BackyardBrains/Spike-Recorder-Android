@@ -24,13 +24,13 @@ import android.content.SharedPreferences;
 import android.media.AudioRecord;
 import android.support.annotation.NonNull;
 import com.backyardbrains.R;
-import com.backyardbrains.utls.AudioUtils;
+import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGE;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * A specialized thread to manage Android's {@link AudioRecord} objects and

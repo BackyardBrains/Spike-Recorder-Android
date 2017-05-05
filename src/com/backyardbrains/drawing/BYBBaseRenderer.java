@@ -5,19 +5,19 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import com.backyardbrains.utls.BYBConstants;
-import com.backyardbrains.utls.BYBGlUtils;
-import com.backyardbrains.utls.BYBUtils;
+import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.utls.AudioUtils;
-import com.backyardbrains.utls.Formats;
+import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Formats;
 import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BYBBaseRenderer extends BaseRenderer {
 

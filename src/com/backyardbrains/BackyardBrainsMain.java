@@ -26,7 +26,7 @@ import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
-import com.backyardbrains.utls.PrefUtils;
+import com.backyardbrains.utils.PrefUtils;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -36,9 +36,9 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
 
-import static com.backyardbrains.utls.LogUtils.LOGD;
-import static com.backyardbrains.utls.LogUtils.LOGI;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGI;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BackyardBrainsMain extends AppCompatActivity
     implements BackyardBrainsBaseScopeFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
@@ -193,12 +193,12 @@ public class BackyardBrainsMain extends AppCompatActivity
                 //------------------------------
                 case OSCILLOSCOPE_VIEW:
                 default:
-                    frag = new BackyardBrainsOscilloscopeFragment();
+                    frag = BackyardBrainsOscilloscopeFragment.newInstance();
                     fragName = BYB_OSCILLOSCOPE_FRAGMENT;
                     break;
                 //------------------------------
                 case PLAY_AUDIO_VIEW:
-                    frag = BackyardBrainsPlayLiveScopeFragment.newInstance();
+                    frag = BackyardBrainsPlaybackScopeFragment.newInstance();
                     fragName = BYB_PLAY_AUDIO_FRAGMENT;
                     break;
             }
@@ -389,10 +389,6 @@ public class BackyardBrainsMain extends AppCompatActivity
             bottomMenu.setOnNavigationItemSelectedListener(null);
             bottomMenu.setSelectedItemId(selectedButton);
             bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
-
-            LOGD(TAG, "setSelectedButton: " + getFragmentNameFromType(i.getIntExtra("tab", -1)));
-            i.setAction("BYBonTabSelected");
-            getApplicationContext().sendBroadcast(i);
         }
     }
 

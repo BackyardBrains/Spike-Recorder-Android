@@ -40,7 +40,7 @@ import static android.view.MotionEvent.TOOL_TYPE_FINGER;
 import static android.view.MotionEvent.TOOL_TYPE_MOUSE;
 import static android.view.MotionEvent.TOOL_TYPE_STYLUS;
 import static android.view.MotionEvent.TOOL_TYPE_UNKNOWN;
-import static com.backyardbrains.utls.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class InteractiveGLSurfaceView extends GLSurfaceView {
 
