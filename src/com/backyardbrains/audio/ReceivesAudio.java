@@ -25,17 +25,22 @@ import java.nio.ShortBuffer;
 /**
  * A simple interface to attach to services which allows a callback into
  * android's built-in classes from an unrelated thread
- * 
+ *
  * @author Nathan Dotz <nate@backyardbrains.com>
- * 
  */
 public interface ReceivesAudio {
-	/**
-	 * Called by a thread to pass audio {@link ByteBuffer} into a service. The
-	 * service should then do as it sees fit with the data.
-	 * 
-	 * @param audioInfo
-	 */
-	public void receiveAudio(ByteBuffer audioInfo);
-	public void receiveAudio(ShortBuffer audioInfo);
+
+    /**
+     * Called by mic thread to pass audio {@link ByteBuffer} into a service. The service should then do as it sees fit
+     * with the data.
+     */
+    void receiveAudio(ByteBuffer audioInfo);
+
+    /**
+     * Called by playback thread to pass audio {@link ByteBuffer} into a service along with the positions of the last
+     * read byte.
+     */
+    void receiveAudio(ByteBuffer audioInfo, long lastBytePosition);
+
+    void receiveAudio(ShortBuffer audioInfo);
 }

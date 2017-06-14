@@ -59,14 +59,14 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
     @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
 
-        final View rootView = inflater.inflate(getLayoutID(), container, false);
-        unbinder = ButterKnife.bind(this, rootView);
+        final View root = inflater.inflate(getLayoutID(), container, false);
+        unbinder = ButterKnife.bind(this, root);
 
         setupUI();
 
         readSettings();
 
-        return rootView;
+        return root;
     }
 
     @Override public void onDestroyView() {
@@ -227,7 +227,7 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
 
     protected void saveSettings() {
         getSettings();
-        if (settings != null) renderer.saveSettings(settings, TAG);
+        if (settings != null && renderer != null) renderer.saveSettings(settings, TAG);
     }
 
     //////////////////////////////////////////////////////////////////////////////

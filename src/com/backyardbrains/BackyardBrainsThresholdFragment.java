@@ -51,26 +51,6 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         return view;
     }
 
-    @Override public void onStart() {
-        super.onStart();
-        LOGD(TAG, "onStart()");
-    }
-
-    @Override public void onResume() {
-        super.onResume();
-        LOGD(TAG, "onResume()");
-    }
-
-    @Override public void onPause() {
-        super.onPause();
-        LOGD(TAG, "onPause()");
-    }
-
-    @Override public void onStop() {
-        super.onStop();
-        LOGD(TAG, "onStop()");
-    }
-
     @Override public void onDestroyView() {
         super.onDestroyView();
         LOGD(TAG, "onDestroyView()");

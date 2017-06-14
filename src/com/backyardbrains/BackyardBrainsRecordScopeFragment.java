@@ -4,6 +4,7 @@ import android.Manifest;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -36,8 +37,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
-    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) View tvStopRecording;
+    @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
+    @BindView(R.id.tv_stop_recording) protected View tvStopRecording;
 
     private Unbinder unbinder;
     private BYBSlidingView stopRecButton;
@@ -61,15 +62,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  ABSTRACT METHODS IMPLEMENTATIONS
     //==============================================
 
-    @Override protected int getLayoutRes() {
-        return R.layout.fragment_record_scope;
-    }
-
-    @Override
-    protected void initView(@NonNull View view, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    @Override protected View createView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
+        @Nullable Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.fragment_record_scope, container, false);
         unbinder = ButterKnife.bind(this, view);
 
         setupUI();
+
+        return view;
     }
 
     @Override
@@ -99,6 +99,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             }
         });
         return renderer;
+    }
+
+    @Override protected boolean isBackable() {
+        return false;
     }
 
     //==============================================

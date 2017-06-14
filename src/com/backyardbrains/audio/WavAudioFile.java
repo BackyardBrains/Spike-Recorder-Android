@@ -2,6 +2,7 @@ package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
 import com.backyardbrains.utils.WavUtils;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -9,13 +10,37 @@ import java.io.RandomAccessFile;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class WavRandomAccessFile implements BYBRandomAccessFile {
+public class WavAudioFile implements BYBAudioFile {
 
     private final RandomAccessFile raf;
+    private final WavUtils.WavInfo header;
+    private final String absolutePath;
 
-    public WavRandomAccessFile(@NonNull File file) throws IOException {
+    public WavAudioFile(@NonNull File file) throws IOException {
+        // save absolute file path
+        absolutePath = file.getAbsolutePath();
+        // create RandomAccessFile
         this.raf = new RandomAccessFile(file, "r");
-        this.raf.seek(WavUtils.HEADER_SIZE);
+        // read file header
+        final byte[] headerBytes = new byte[WavUtils.HEADER_SIZE];
+        raf.read(headerBytes, 0, headerBytes.length);
+        this.header = WavUtils.readHeader(new ByteArrayInputStream(headerBytes));
+    }
+
+    @Override public String getAbsolutePath() {
+        return absolutePath;
+    }
+
+    @Override public int numChannels() {
+        return header.getNumChannels();
+    }
+
+    @Override public int sampleRate() {
+        return header.getSampleRate();
+    }
+
+    @Override public int bitsPerSample() {
+        return header.getBitsPerSample();
     }
 
     @Override public long length() throws IOException {

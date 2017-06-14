@@ -34,7 +34,6 @@ import android.view.SurfaceHolder;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.view.BYBZoomButton;
 import com.backyardbrains.view.BybScaleListener;
-import com.backyardbrains.view.SingleFingerGestureDetector;
 
 import static android.view.MotionEvent.TOOL_TYPE_FINGER;
 import static android.view.MotionEvent.TOOL_TYPE_MOUSE;
@@ -70,7 +69,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             return true;
         }
     };
-    protected SingleFingerGestureDetector singleFingerGestureDetector;
 
     BYBBaseRenderer renderer;
 
@@ -100,6 +98,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
      * <p>This method should be called once and only once in the life-cycle of a GLSurfaceView.
      * <p>The following GLSurfaceView methods can only be called <em>before</em> setRenderer is called:
      * <ul>
+     *
      * <li>{@link #setEGLConfigChooser(boolean)}
      * <li>{@link #setEGLConfigChooser(EGLConfigChooser)}
      * <li>{@link #setEGLConfigChooser(int, int, int, int, int, int)}
@@ -168,12 +167,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
         //Log.d(TAG, "onTouchEvent " + event.toString());
         if (renderer != null) {
-            //if (singleFingerGestureDetector != null) {
-            //    singleFingerGestureDetector.onTouchEvent(event);
-            //    if (singleFingerGestureDetector.hasChanged()) {
-            //        renderer.addToGlOffset(singleFingerGestureDetector.getDX(), singleFingerGestureDetector.getDY());
-            //    }
-            //}
             if (scaleDetector != null) {
                 scaleDetector.onTouchEvent(event);
                 if (scaleDetector.isInProgress()) return true;
@@ -189,8 +182,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
     // Initializes the view
     private void init() {
-        //singleFingerGestureDetector = new SingleFingerGestureDetector(getContext());
-
         scalingFactorIn = 1 - scalingFactor;
         scalingFactorOut = 1 + scalingFactor;
 

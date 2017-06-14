@@ -23,10 +23,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import com.backyardbrains.utils.BYBGlUtils;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.audio.ThresholdHelper;
+import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.BYBUtils;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 

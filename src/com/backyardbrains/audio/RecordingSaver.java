@@ -100,6 +100,9 @@ public class RecordingSaver implements ReceivesAudio {
         }
     }
 
+    @Override public void receiveAudio(ByteBuffer audioInfo, long lastBytePosition) {
+    }
+
     /**
      * close the stream that our data is being sent to, then convert the array
      * we've been caching to in RAM to a wave file after it's done writing PCM

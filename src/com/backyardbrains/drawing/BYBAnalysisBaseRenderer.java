@@ -1,18 +1,20 @@
 package com.backyardbrains.drawing;
 
-import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
-import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.analysis.BYBSpike;
+import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.view.ofRectangle;
-import java.util.ArrayList;
+import java.util.List;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import org.greenrobot.eventbus.EventBus;
 
 public class BYBAnalysisBaseRenderer extends BaseRenderer {
+
     private static final String TAG = BYBAnalysisBaseRenderer.class.getCanonicalName();
+
     protected int height;
     protected int width;
 
@@ -48,7 +50,7 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    public boolean onTouchEvent(MotionEvent event) {
+    boolean onTouchEvent(MotionEvent event) {
         if (event.getActionIndex() == 0) {
             int insideRect = checkInsideAllThumbRects(event.getX(), event.getY());
             switch (event.getActionMasked()) {
@@ -56,19 +58,15 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
                     touchDownRect = insideRect;
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (insideRect == -1 || insideRect != touchDownRect) {
-                        touchDownRect = -1;
-                    }
+                    if (insideRect == -1 || insideRect != touchDownRect) touchDownRect = -1;
                     break;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_OUTSIDE:
                     touchDownRect = -1;
                     break;
                 case MotionEvent.ACTION_UP:
-                    if (insideRect == touchDownRect) {
-                        //valid clic!!!
-                        thumbRectClicked(insideRect);
-                    }
+                    //valid click!!!
+                    if (insideRect == touchDownRect) thumbRectClicked(insideRect);
                     break;
             }
         }
@@ -94,8 +92,6 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     protected void postDrawingHandler(GL10 gl) {
-        //		gl.glDisable( GL10.GL_BLEND );                  // Disable Alpha Blend
-        //		gl.glDisable( GL10.GL_TEXTURE_2D );
     }
 
     // ----------------------------------------------------------------------------------------
@@ -104,7 +100,6 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
-        //Log.d(TAG, "onSurfaceChanged " + width + ", " + height);
         this.width = width;
         this.height = height;
     }
@@ -116,8 +111,7 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    void initGL(GL10 gl) {/// , float xBegin, float xEnd, float
-        /// scaledYBegin, float scaledYEnd) {
+    void initGL(GL10 gl) {
         // set viewport
         gl.glViewport(0, 0, width, height);
 
@@ -127,44 +121,11 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
         gl.glOrthof(0f, width, height, 0f, -1f, 1f);
         gl.glRotatef(0f, 0f, 0f, 1f);
 
-        // Blackout, then we're ready to draw! \o/
-        //		gl.glEnable(GL10.GL_TEXTURE_2D);
         gl.glClearColor(0f, 0f, 0f, 1.0f);
-        //		gl.glClearDepthf(1.0f);
-        gl.glEnable(GL10.GL_BLEND);                   // Enable Alpha Blend
-        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);  // Set Alpha Blend Function
+        gl.glEnable(GL10.GL_BLEND); // Enable Alpha Blend
+        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA); // Set Alpha Blend Function
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
         gl.glDisable(GL10.GL_DEPTH_TEST);
-        //		gl.glDepthFunc(GL10.GL_LEQUAL);
-        //		gl.glEnable(GL10.GL_LINE_SMOOTH);
-        //		gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-        //		// Enable Blending
-
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void renderSpikeTrain(GL10 gl) {
-        if (getAnalysisManager() != null) {
-            ArrayList<ArrayList<BYBSpike>> spikes = getAnalysisManager().getSpikesTrains();
-            float mn = getAnalysisManager().getMinSpikeValue();
-            float mx = getAnalysisManager().getMaxSpikeValue();
-            int tot = getAnalysisManager().getTotalNumSamples();
-            BYBMesh mesh = new BYBMesh(BYBMesh.LINES);
-            if (spikes != null) {
-                for (int i = 0; i < spikes.size(); i++) {
-                    float[] color = BYBColors.getColorAsGlById(i);
-                    for (int j = 0; j < spikes.get(i).size(); j++) {
-                        float x = ((float) spikes.get(i).get(j).index / (float) tot) * width;
-                        float y = height - (Math.abs(spikes.get(i).get(j).value) / mx) * height;
-                        mesh.addLine(x, y, x, height, color);
-                        //	//Log.d(TAG, "addLine: " + x + " " + y);
-                    }
-                }
-            } else {
-                //Log.d(TAG, "spikes == null");
-            }
-            mesh.draw(gl);
-        }
     }
 
     // ----------------------------------------------------------------------------------------
@@ -212,12 +173,12 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    void graphIntegerList(GL10 gl, ArrayList<Integer> ac, ofRectangle r, float[] color, boolean bDrawBox) {
+    void graphIntegerList(GL10 gl, List<Integer> ac, ofRectangle r, float[] color, boolean bDrawBox) {
         graphIntegerList(gl, ac, r.x, r.y, r.width, r.height, color, bDrawBox);
     }
 
     // ----------------------------------------------------------------------------------------
-    private void graphIntegerList(GL10 gl, ArrayList<Integer> ac, float px, float py, float w, float h, float[] color,
+    private void graphIntegerList(GL10 gl, List<Integer> ac, float px, float py, float w, float h, float[] color,
         boolean bDrawBox) {
         if (ac != null) {
             if (ac.size() > 0) {
@@ -245,11 +206,7 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     private void setSelected(int s) {
         selected = s;
-        if (getContext() != null) {
-            Intent i = new Intent();
-            i.setAction("BYBRenderAnalysis");
-            i.putExtra("requestRender", true);
-            getContext().sendBroadcast(i);
-        }
+
+        EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
     }
 }
