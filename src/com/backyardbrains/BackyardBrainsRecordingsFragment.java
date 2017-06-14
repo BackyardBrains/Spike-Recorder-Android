@@ -24,6 +24,9 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.analysis.BYBAnalysisType;
+import com.backyardbrains.events.AnalyzeAudioFileEvent;
+import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
@@ -65,16 +68,18 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     private File bybDirectory;
     private FilesAdapter adapter;
 
-    // -------------------------------------------------------------------------------------------------
-    // ----------------------------------------- CONSTRUCTOR
-    // -------------------------------------------------------------------------------------------------
-    public BackyardBrainsRecordingsFragment() {
-        // empty constructor
+    /**
+     * Factory for creating a new instance of the fragment.
+     *
+     * @return A new instance of fragment {@link BackyardBrainsRecordingsFragment}.
+     */
+    public static BackyardBrainsRecordingsFragment newInstance() {
+        return new BackyardBrainsRecordingsFragment();
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                       Lifecycle overrides
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //==============================================
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -189,68 +194,41 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
-    // Starts playing selected recording
+    // Starts playing specified audio file
     private void playAudioFile(File f) {
         EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
     }
 
-    // ----------------------------------------------------------------------------------------
+    // Start process of finding spikes for the specified audio file
     private void findSpikes(File f) {
-        if (getContext() != null) {
-            if (f.exists()) {
-                Intent i = new Intent();
-                i.setAction("BYBAnalizeFile");
-                i.putExtra("filePath", f.getAbsolutePath());
-                getContext().sendBroadcast(i);
-                Intent j = new Intent();
-                j.setAction("BYBChangePage");
-                j.putExtra("page", BackyardBrainsMain.FIND_SPIKES_VIEW);
-                getContext().sendBroadcast(j);
-            }
-        }
+        if (f.exists()) EventBus.getDefault().post(new FindSpikesEvent(f.getAbsolutePath()));
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void autocorrelation(File f) {
-        doAnalysis(f, "doAutoCorrelation", "AutoCorrelation");
+    // Start process of autocorrelation analysis for specified audio file
+    private void autocorrelation(@NonNull File f) {
+        startAnalysis(f, BYBAnalysisType.AUTOCORRELATION);
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void ISI(File f) {
-        doAnalysis(f, "doISI", "ISI");
+    // Start process of inter spike interval analysis for specified audio file
+    private void ISI(@NonNull File f) {
+        startAnalysis(f, BYBAnalysisType.ISI);
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void crossCorrelation(File f) {
-        doAnalysis(f, "doCrossCorrelation", "CrossCorrelation");
+    // Start process of cross-correlation analysis for specified audio file
+    private void crossCorrelation(@NonNull File f) {
+        startAnalysis(f, BYBAnalysisType.CROSS_CORRELATION);
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void averageSpike(File f) {
-        doAnalysis(f, "doAverageSpike", "AverageSpike");
+    // Start process of average spike analysis for specified audio file
+    private void averageSpike(@NonNull File f) {
+        startAnalysis(f, BYBAnalysisType.AVERAGE_SPIKE);
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void doAnalysis(File f, String process, String render) {
+    // Starts analysis process for specified type and specified audio file
+    private void startAnalysis(@NonNull File f, @BYBAnalysisType int type) {
         //noinspection ConstantConditions
-        if (isFindSpikesDone() && getAnalysisManager().checkCurrentFilePath(f.getAbsolutePath())) {
-            if (getContext() != null) {
-                if (f.exists()) {
-                    Intent j = new Intent();
-                    j.setAction("BYBChangePage");
-                    j.putExtra("page", BackyardBrainsMain.ANALYSIS_VIEW);
-                    getContext().sendBroadcast(j);
-                    Intent i = new Intent();
-                    i.setAction("BYBAnalizeFile");
-                    i.putExtra("filePath", f.getAbsolutePath());
-                    i.putExtra(process, true);
-                    getContext().sendBroadcast(i);
-                    Intent k = new Intent();
-                    k.setAction("BYBRenderAnalysis");
-                    k.putExtra(render, true);
-                    getContext().sendBroadcast(k);
-                }
-            }
+        if (isFindSpikesDone() && getAnalysisManager().isCurrentFile(f.getAbsolutePath())) {
+            if (f.exists()) EventBus.getDefault().post(new AnalyzeAudioFileEvent(f.getAbsolutePath(), type));
         } else {
             BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
                 getString(R.string.find_spikes_not_done_message));
@@ -267,7 +245,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Triggers renaming of the selected file
-    protected void renameFile(final File f) {
+    private void renameFile(final File f) {
         final EditText e = new EditText(this.getActivity());
         e.setText(f.getName().replace(".wav", "")); // remove file extension when renaming
         e.setSelection(e.getText().length());
@@ -308,7 +286,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Triggers deletion of the selected file
-    protected void deleteFile(final File f) {
+    private void deleteFile(final File f) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
             .setMessage("Are you sure you want to delete " + f.getName() + "?")
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
@@ -373,8 +351,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     // been found or not.
     void showRecordingOptions(@NonNull final File file) {
         //noinspection ConstantConditions
-        final boolean canAnalyze =
-            isFindSpikesDone() && getAnalysisManager().checkCurrentFilePath(file.getAbsolutePath());
+        final boolean canAnalyze = isFindSpikesDone() && getAnalysisManager().isCurrentFile(file.getAbsolutePath());
         new AlertDialog.Builder(this.getActivity()).setTitle("Choose an action")
             .setCancelable(true)
             .setItems(canAnalyze ? R.array.options_recording : R.array.options_recording_no_spikes,

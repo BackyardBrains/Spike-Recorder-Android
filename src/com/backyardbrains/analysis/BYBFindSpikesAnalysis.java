@@ -1,248 +1,217 @@
 package com.backyardbrains.analysis;
 
+import android.support.annotation.NonNull;
+import com.backyardbrains.audio.BYBAudioFile;
+import com.backyardbrains.utils.AnalysisUtils;
+import com.backyardbrains.utils.AudioUtils;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
-import android.content.Context;
-import android.util.Log;
+import static android.R.attr.duration;
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class BYBFindSpikesAnalysis extends BYBBaseAsyncAnalysis {
+class BYBFindSpikesAnalysis extends BYBBaseAnalysis {
 
-	public final static int		BUFFER_SIZE	= 524288;
-	private static final String	TAG			= "BYBFindSpikesAnalysis";
+    private static final String TAG = makeLogTag(BYBFindSpikesAnalysis.class);
 
-	private static final int	kSchmittON	= 1;
-	private static final int	kSchmittOFF	= 2;
+    private static final int SCHMITT_ON = 1;
+    private static final int SCHMITT_OFF = 2;
+    private static final int MIN_TOTAL_SAMPLES = (int) (AudioUtils.SAMPLE_RATE * 0.2);
 
-	private int					sampleRate;
-	private int					numChannels;
+    private final ArrayList<BYBSpike> allSpikes = new ArrayList<>();
+    private final BYBAudioFile audioFile;
+    private final int bufferSize;
 
-	private float				highestPeak	= 0;
-	private float				lowestPeak	= 0;
-	private int					totalSamples;
+    private float highestPeak = 0;
+    private float lowestPeak = 0;
+    private long totalSamples;
 
-	public BYBFindSpikesAnalysis(Context context, short[] data, int sampleRate, int numChannels) {
-		super(context, BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES, true, true);
-		this.numChannels = numChannels;
-		this.sampleRate = sampleRate;
-		allSpikes = new ArrayList<BYBSpike>();
-		execute(data);
-	}
+    BYBFindSpikesAnalysis(@NonNull BYBAudioFile audioFile, @NonNull AnalysisListener listener) {
+        super(listener);
 
-	public BYBFindSpikesAnalysis(AnalysisListener listener, short[] data, int sampleRate, int numChannels) {
-		super(listener, BYBAnalysisType.BYB_ANALYSIS_FIND_SPIKES, true, true);
-		this.numChannels = numChannels;
-		this.sampleRate = sampleRate;
-		allSpikes = new ArrayList<BYBSpike>();
-		execute(data);
-	}
+        this.audioFile = audioFile;
+        this.bufferSize = AudioUtils.OUT_BUFFER_SIZE;
 
-	private ArrayList<BYBSpike> allSpikes;
+        execute();
+    }
 
-	public float getHighestPeak() {
-		return highestPeak;
-	}
+    float getHighestPeak() {
+        return highestPeak;
+    }
 
-	public float getLowestPeak() {
-		return lowestPeak;
-	}
+    float getLowestPeak() {
+        return lowestPeak;
+    }
 
-	public int getTotalSamples() {
-		return totalSamples;
-	}
+    long getTotalSamples() {
+        return totalSamples;
+    }
 
-	public BYBSpike[] getSpikes() {
-		return allSpikes.toArray(new BYBSpike[allSpikes.size()]);
-	}
+    BYBSpike[] getSpikes() {
+        return allSpikes.toArray(new BYBSpike[allSpikes.size()]);
+    }
 
-	@Override
-	public void process(short[] data) {
+    @Override public void process() {
+        try {
+            totalSamples = AudioUtils.getSampleCount(audioFile.length());
+            LOGD(TAG, "Audio file byte count is: " + duration);
 
-		int numberOfSamples = data.length;
-		float killInterval = 0.005f;// 5ms
-		int numberOfBins = 200;
-		int lengthOfBin = numberOfSamples / numberOfBins;
-		int maxLengthOfBin = (BUFFER_SIZE / numChannels);
-		if (lengthOfBin > maxLengthOfBin) {
-			lengthOfBin = maxLengthOfBin;
-			numberOfBins = (int) Math.ceil((float) numberOfSamples / (float) lengthOfBin);
-		}
+            if (totalSamples < MIN_TOTAL_SAMPLES) {
+                LOGD(TAG, "File to short! Don't process!");
+                return;
+            }
 
-		if (lengthOfBin < 50) {
-			//Log.d(TAG, "findSpikes: File too short.");
-			return;
-		}
+            long start = System.currentTimeMillis(); // for measuring execution time
 
-		float[] stdArray = new float[numberOfBins];
+            // 1. FIRST LET'S FIND STANDARD DEVIATIONS FOR EVERY CHUNK
+            final byte[] buffer = new byte[bufferSize];
+            final ArrayList<Float> standardDeviations = new ArrayList<>();
+            short[] shortBuffer;
+            ShortBuffer sb;
+            while (audioFile.read(buffer) > 0) {
+                sb = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+                shortBuffer = new short[sb.capacity()];
+                sb.get(shortBuffer);
+                standardDeviations.add(AnalysisUtils.STD(shortBuffer, 0, shortBuffer.length));
+            }
+            LOGD(TAG, (System.currentTimeMillis() - start) + " - AFTER FINDING DEVIATIONS");
 
-		// calculate STD for each bin
-		int ibin;
-		// TODO: convert to non-interleaved so to process more than 1 channel.
-		for (ibin = 0; ibin < numberOfBins; ibin++) {
-			// [fileReader retrieveFreshAudio:tempCalculationBuffer
-			// numFrames:(UInt32)(lengthOfBin) numChannels:aFile.numChannels];
-			// get only one channel and put it on the begining of buffer in
-			// non-interleaved form
-			/*
-			 * vDSP_vsadd((float *)&tempCalculationBuffer[channelIndex],
-			 * aFile.numChannels, &zero,* tempCalculationBuffer, 1,
-			 * lengthOfBin);//
-			 */
-			stdArray[ibin] = BYBAnalysis.SDT(data, ibin * lengthOfBin, lengthOfBin);
-		}
-		// sort array of STDs
-		Arrays.sort(stdArray);
+            // 2. SORT DEVIATIONS ASCENDING
+            Collections.sort(standardDeviations);
+            Collections.reverse(standardDeviations);
+            LOGD(TAG, (System.currentTimeMillis() - start) + " - AFTER SORTING AND REVERSING DEVIATIONS");
 
-/// std::sort(stdArray, stdArray + numberOfBins, std::greater<float>());
-// take value that is greater than 40% STDs
-		int m = (int) Math.floor((float) stdArray.length / 2.0f);
-		for (int i = 0; i < m; i++) {
-			float tmp = stdArray[i];
-			stdArray[i] = stdArray[stdArray.length - 1 - i];
-			stdArray[stdArray.length - 1 - i] = tmp;
-		}
+            // 3. DETERMINE ACCEPTABLE SPIKE VALUES WHICH ARE VALUES GRATER THEN 40% OF SDTs MULTIPLIED BY 2
+            float sig = 2 * standardDeviations.get((int) Math.ceil(((float) standardDeviations.size()) * 0.4f));
+            float negSig = -1 * sig; // we need it for negative values as well
 
-		float sig = 2 * stdArray[(int) Math.ceil(((float) numberOfBins) * 0.4f)];
-		float negsig = -1 * sig;
+            int schmittPosState = SCHMITT_OFF;
+            int schmittNegState = SCHMITT_OFF;
+            float maxPeakValue = Float.MIN_VALUE;
+            int maxPeakIndex = 0;
+            float minPeakValue = Float.MAX_VALUE;
+            int minPeakIndex = 0;
 
-		// make maximal bins for faster processing
-		lengthOfBin = (BUFFER_SIZE / numChannels);
-		numberOfBins = (int) Math.ceil((float) numberOfSamples / (float) lengthOfBin);
+            ArrayList<BYBSpike> peaksIndexes = new ArrayList<>();
+            ArrayList<BYBSpike> peaksIndexesNeg = new ArrayList<>();
 
-		// find peaks
-		int numberOfFramesRead;
-		int isample;
+            // go to beginning of the file cause we need to run through it again to find spikes
+            audioFile.seek(0);
 
-		int schmitPosState = kSchmittOFF;
-		int schmitNegState = kSchmittOFF;
-		float maxPeakValue = -1000.0f;
-		int maxPeakIndex = 0;
-		float minPeakValue = 1000.0f;
-		int minPeakIndex = 0;
+            // 4. NOW THAT WE HAVE BORDER VALUES LET'S FIND THE SPIKES IMPLEMENTING SCHMITT TRIGGER
+            int index = 0;
+            while (audioFile.read(buffer) > 0) {
+                sb = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+                shortBuffer = new short[sb.capacity()];
+                sb.get(shortBuffer);
 
-		ArrayList<BYBSpike> peaksIndexes = new ArrayList<BYBSpike>();
-		ArrayList<BYBSpike> peaksIndexesNeg = new ArrayList<BYBSpike>();
+                // find peaks
+                for (short aShortBuffer : shortBuffer) {
+                    // determine state of positive schmitt trigger
+                    if (schmittPosState == SCHMITT_OFF && aShortBuffer > sig) {
+                        schmittPosState = SCHMITT_ON;
+                        maxPeakValue = Float.MIN_VALUE;
+                    } else if (schmittPosState == SCHMITT_ON && aShortBuffer < 0) {
+                        schmittPosState = SCHMITT_OFF;
+                        peaksIndexes.add(
+                            new BYBSpike(maxPeakValue, maxPeakIndex, ((float) maxPeakIndex) / audioFile.sampleRate()));
+                    }
 
-		// read lengthOfBin frames except for last one reading where we should
-		// read only what is left
-// numberOfFramesRead = ibin == (numberOfBins-1) ? (numberOfSamples %
-// lengthOfBin):lengthOfBin;
+                    // determine state of negative schmitt trigger
+                    if (schmittNegState == SCHMITT_OFF && aShortBuffer < negSig) {
+                        schmittNegState = SCHMITT_ON;
+                        minPeakValue = Float.MAX_VALUE;
+                    } else if (schmittNegState == SCHMITT_ON && aShortBuffer > 0) {
+                        schmittNegState = SCHMITT_OFF;
+                        peaksIndexesNeg.add(
+                            new BYBSpike(minPeakValue, minPeakIndex, ((float) minPeakIndex) / audioFile.sampleRate()));
+                    }
 
-		// [fileReader retrieveFreshAudio:tempCalculationBuffer
-		// numFrames:(UInt32)(numberOfFramesRead) numChannels:aFile.numChannels
-		// seek:ibin*lengthOfBin];
+                    // find max in positive peak
+                    if (schmittPosState == SCHMITT_ON && aShortBuffer > maxPeakValue) {
+                        maxPeakValue = aShortBuffer;
+                        maxPeakIndex = index;
+                    }
 
-		// get only one channel and put it on the begining of buffer in
-		// non-interleaved form
-// vDSP_vsadd((float *)&tempCalculationBuffer[channelIndex],
-// aFile.numChannels,
-// &zero,
-// tempCalculationBuffer,
-// 1,
-// lengthOfBin);
-//
-		for (isample = 0; isample < data.length; isample++) {
-			// determine state of positive schmitt trigger
-			if (schmitPosState == kSchmittOFF && data[isample] > sig) {
-				schmitPosState = kSchmittON;
-				maxPeakValue = -1000.0f;
-			} else if (schmitPosState == kSchmittON && data[isample] < 0) {
-				schmitPosState = kSchmittOFF;
-				peaksIndexes.add(new BYBSpike(maxPeakValue, maxPeakIndex, ((float) maxPeakIndex) / sampleRate));
-			}
+                    // find min in negative peak
+                    else if (schmittNegState == SCHMITT_ON && aShortBuffer < minPeakValue) {
+                        minPeakValue = aShortBuffer;
+                        minPeakIndex = index;
+                    }
 
-			// determine state of negative schmitt trigger
-			if (schmitNegState == kSchmittOFF && data[isample] < negsig) {
-				schmitNegState = kSchmittON;
-				minPeakValue = 1000.0f;
-			} else if (schmitNegState == kSchmittON && data[isample] > 0) {
-				schmitNegState = kSchmittOFF;
-				peaksIndexesNeg.add(new BYBSpike(minPeakValue, minPeakIndex, ((float) minPeakIndex) / sampleRate));
+                    index++;
+                }
+            }
+            LOGD(TAG, (System.currentTimeMillis() - start) + " - AFTER FINDING SPIKES");
 
-			}
+            // 5. FINALLY WE SHOULD FILTER FOUND SPIKES BY APPLYING KILL INTERVAL OF 5ms
+            int i;
+            final float killInterval = 0.005f;// 5ms
+            if (peaksIndexes.size() > 0) { // Filter positive spikes using kill interval
+                for (i = 0; i < peaksIndexes.size() - 1; i++) { // look on the right
+                    if (peaksIndexes.get(i).value < peaksIndexes.get(i + 1).value) {
+                        if ((peaksIndexes.get(i + 1).time - peaksIndexes.get(i).time) < killInterval) {
+                            peaksIndexes.remove(i);
+                            i--;
+                        }
+                    }
+                }
+                for (i = 1; i < peaksIndexes.size(); i++) { // look on the left neighbor
+                    if (peaksIndexes.get(i).value < peaksIndexes.get(i - 1).value) {
+                        if ((peaksIndexes.get(i).time - peaksIndexes.get(i - 1).time) < killInterval) {
+                            peaksIndexes.remove(i);
+                            i--;
+                        }
+                    }
+                }
+            }
+            if (peaksIndexesNeg.size() > 0) { // Filter positive spikes using kill interval
+                for (i = 0; i < peaksIndexesNeg.size() - 1; i++) { // look on the right
+                    if (peaksIndexesNeg.get(i).value > peaksIndexesNeg.get(i + 1).value) {
+                        if ((peaksIndexesNeg.get(i + 1).time - peaksIndexesNeg.get(i).time) < killInterval) {
+                            peaksIndexesNeg.remove(i);
+                            i--;
+                        }
+                    }
+                }
+                for (i = 1; i < peaksIndexesNeg.size(); i++) { // look on the left neighbor
+                    if (peaksIndexesNeg.get(i).value > peaksIndexesNeg.get(i - 1).value) {
+                        if ((peaksIndexesNeg.get(i).time - peaksIndexesNeg.get(i - 1).time) < killInterval) {
+                            peaksIndexesNeg.remove(i);
+                            i--;
+                        }
+                    }
+                }
+            }
+            LOGD(TAG, (System.currentTimeMillis() - start) + " - AFTER FILTERING SPIKES");
 
-			// find max in positive peak
-			if (schmitPosState == kSchmittON && data[isample] > maxPeakValue) {
-				maxPeakValue = data[isample];
-				maxPeakIndex = isample;
-			}
+            peaksIndexes.addAll(peaksIndexesNeg);
+            Collections.sort(peaksIndexes, new Comparator<BYBSpike>() {
+                @Override public int compare(BYBSpike o1, BYBSpike o2) {
+                    return o1.index - o2.index;
+                }
+            });
 
-			// find min in negative peak
-			else if (schmitNegState == kSchmittON && data[isample] < minPeakValue) {
-				minPeakValue = data[isample];
-				minPeakIndex = isample;
-			}
-		}
+            allSpikes.addAll(peaksIndexes);
 
-		int i;
-		if (peaksIndexes.size() > 0) {
-			// Filter positive spikes using kill interval
-
-			for (i = 0; i < peaksIndexes.size() - 1; i++) // look on the right
-			{
-				if (peaksIndexes.get(i).value < peaksIndexes.get(i + 1).value) {
-					if ((peaksIndexes.get(i + 1).time - peaksIndexes.get(i).time) < killInterval) {
-						peaksIndexes.remove(i);
-						i--;
-					}
-				}
-			}
-
-			for (i = 1; i < peaksIndexes.size(); i++) // look on the left
-														// neighbor
-			{
-				if (peaksIndexes.get(i).value < peaksIndexes.get(i - 1).value) {
-					if ((peaksIndexes.get(i).time - peaksIndexes.get(i - 1).time) < killInterval) {
-						peaksIndexes.remove(i);
-						i--;
-					}
-				}
-			}
-		}
-		if (peaksIndexesNeg.size() > 0) {
-			// Filter positive spikes using kill interval
-
-			for (i = 0; i < peaksIndexesNeg.size() - 1; i++) // look on the
-																// right
-			{
-				if (peaksIndexesNeg.get(i).value > peaksIndexesNeg.get(i + 1).value) {
-					if ((peaksIndexesNeg.get(i + 1).time - peaksIndexesNeg.get(i).time) < killInterval) {
-						peaksIndexesNeg.remove(i);
-						i--;
-					}
-				}
-			}
-
-			for (i = 1; i < peaksIndexesNeg.size(); i++) // look on the left
-															// neighbor
-			{
-				if (peaksIndexesNeg.get(i).value > peaksIndexesNeg.get(i - 1).value) {
-					if ((peaksIndexesNeg.get(i).time - peaksIndexesNeg.get(i - 1).time) < killInterval) {
-						peaksIndexesNeg.remove(i);
-						i--;
-					}
-				}
-			}
-		}
-
-		peaksIndexes.addAll(peaksIndexesNeg);
-		Collections.sort(peaksIndexes, new Comparator<BYBSpike>() {
-			@Override
-			public int compare(BYBSpike o1, BYBSpike o2) {
-				return o1.index - o2.index;
-			}
-		});
-
-		allSpikes.addAll(peaksIndexes);
-
-		highestPeak = Float.MIN_VALUE;
-		lowestPeak = Float.MAX_VALUE;
-		for (int k = 0; k < allSpikes.size(); k++) {
-			if (allSpikes.get(k).value > highestPeak) highestPeak = allSpikes.get(k).value;
-			if (allSpikes.get(k).value < lowestPeak) lowestPeak = allSpikes.get(k).value;
-		}
-		totalSamples = data.length;
-	}
+            highestPeak = Float.MIN_VALUE;
+            lowestPeak = Float.MAX_VALUE;
+            for (int k = 0; k < allSpikes.size(); k++) {
+                if (allSpikes.get(k).value > highestPeak) highestPeak = allSpikes.get(k).value;
+                if (allSpikes.get(k).value < lowestPeak) lowestPeak = allSpikes.get(k).value;
+            }
+        } catch (IOException e) {
+            LOGE(TAG,
+                e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
+                e);
+        }
+    }
 }

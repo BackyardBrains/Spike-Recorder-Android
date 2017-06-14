@@ -1,22 +1,19 @@
 package com.backyardbrains;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.content.BroadcastReceiver;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
+import android.annotation.SuppressLint;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.drawing.AutoCorrelationRenderer;
 import com.backyardbrains.drawing.AverageSpikeRenderer;
@@ -25,6 +22,14 @@ import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGLSurfaceView;
 import com.backyardbrains.drawing.WaitRenderer;
+import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.events.OpenRecordingsEvent;
+import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.ViewUtils;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -33,283 +38,232 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsAnalysisFragment.class);
 
-    protected TouchGLSurfaceView mAndroidSurface = null;
-    private FrameLayout mainscreenGLLayout;
-    private SharedPreferences settings = null;
-    private BYBAnalysisBaseRenderer currentRenderer = null;
-    private View waitingView = null;
-    protected int currentAnalyzer = BYBAnalysisType.BYB_ANALYSIS_NONE;
+    private static final String ARG_FILE_PATH = "bb_file_path";
+    private static final String ARG_ANALYSIS_TYPE = "bb_analysis_type";
 
-    private TextView title;
-    private ImageButton backButton;
+    @BindView(R.id.fl_container) FrameLayout flGL;
+    @BindView(R.id.tv_analysis_title) TextView tvTitle;
+    @BindView(R.id.ibtn_back) ImageButton ibtnBack;
+    @BindView(R.id.pb_waiting) ProgressBar pbWaiting;
+    @BindView(R.id.tv_waiting) TextView tvWaiting;
 
-    //----------------------------------------------------------------------------------------------
-    // ----------------------------------------- FRAGMENT LIFECYCLE
-    // ---------------------------------------------------------------------------------------------
+    private Unbinder unbinder;
+    private TouchGLSurfaceView glSurface;
+    private BYBAnalysisBaseRenderer currentRenderer;
+
+    private String filePath;
+    private int analysisType = BYBAnalysisType.NONE;
+
+    /**
+     * Factory for creating a new instance of the fragment.
+     *
+     * @return A new instance of fragment {@link BackyardBrainsAnalysisFragment}.
+     */
+    public static BackyardBrainsAnalysisFragment newInstance(@Nullable String filePath,
+        @BYBAnalysisType int analysisType) {
+        final BackyardBrainsAnalysisFragment fragment = new BackyardBrainsAnalysisFragment();
+        final Bundle args = new Bundle();
+        args.putString(ARG_FILE_PATH, filePath);
+        args.putInt(ARG_ANALYSIS_TYPE, analysisType);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    //==============================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //==============================================
+
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        registerListeners();
-    }
 
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.analysis_layout, container, false);
-        getSettings();
-        mainscreenGLLayout = (FrameLayout) rootView.findViewById(R.id.analysisGlContainer);
-        waitingView = rootView.findViewById(R.id.waitingLayout);
-        title = (TextView) rootView.findViewById(R.id.analysis_title);
-        backButton = (ImageButton) rootView.findViewById(R.id.ibtn_back);
-
-        backButton.setOnTouchListener(new OnTouchListener() {
-            @Override public boolean onTouch(View v, MotionEvent event) {
-                if (v.getVisibility() == View.VISIBLE) {
-                    if (event.getActionIndex() == 0) {
-                        if (event.getActionMasked() == MotionEvent.ACTION_UP) {
-                            onBackPressed();
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
-        ((BackyardBrainsMain) getActivity()).showButtons(false);
-        LOGD(TAG, "onCreateView");
-
-        return rootView;
-    }
-
-    @Override public void onStart() {
-        super.onStart();
-        LOGD(TAG, "onStart");
-        if (getContext() != null) {
-            reassignSurfaceView(currentAnalyzer);
-            Intent i = new Intent();
-            i.setAction("BYBAnalysisFragmentReady");
-            getContext().sendBroadcast(i);
+        if (getArguments() != null) {
+            filePath = getArguments().getString(ARG_FILE_PATH);
+            analysisType = getArguments().getInt(ARG_ANALYSIS_TYPE);
         }
     }
 
-    @Override public void onResume() {
-        super.onResume();
+    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        LOGD(TAG, "onCreateView()");
+        final View root = inflater.inflate(R.layout.fragment_analysis, container, false);
+        unbinder = ButterKnife.bind(this, root);
+
+        setupUI();
+
+        return root;
     }
 
-    @Override public void onPause() {
-        super.onPause();
-        unregisterListeners();
+    @Override public void onStart() {
+        LOGD(TAG, "onStart()");
+        super.onStart();
+
+        if (glSurface != null) glSurface.onResume();
+
+        if (ApacheCommonsLang3Utils.isBlank(filePath)) {
+            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+            return;
+        }
+
+        if (getAnalysisManager() != null) {
+            // if file hasn't already been analyzed show waiting screen
+            if (getAnalysisManager().analyzeFile(filePath, analysisType)) showWaiting(true);
+        }
     }
 
     @Override public void onStop() {
         super.onStop();
-        destroySurfaceView();
-    }
-
-    @Override public void onDestroy() {
-        super.onDestroy();
+        LOGD(TAG, "onStop()");
+        if (glSurface != null) glSurface.onPause();
     }
 
     @Override public void onDestroyView() {
         super.onDestroyView();
+        unbinder.unbind();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- GL RENDERING
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------------------------------------------------------
-    public void setRenderer(int i) {
-        LOGD(TAG, "setRenderer");
-        if (i >= 0 && i <= 4) {
-            currentAnalyzer = i;
-            reassignSurfaceView(currentAnalyzer);
-        }
+    @Override public void onDestroy() {
+        LOGD(TAG, "onDestroy()");
+        destroyRenderer();
+        super.onDestroy();
     }
 
-    // ----------------------------------------------------------------------------------------
-    protected void destroySurfaceView() {
-        mAndroidSurface = null;
-        if (mainscreenGLLayout != null) {
-            mainscreenGLLayout.removeAllViews();
-            mainscreenGLLayout = null;
-        }
+    //=================================================
+    //  EVENT BUS
+    //=================================================
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioAnalysisDoneEvent(AudioAnalysisDoneEvent event) {
+        LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
+        // if everything is OK set render and request GL surface render
+        if (event.isSuccess()) setRenderer(event.getType());
     }
 
-    private void showWaiting(final boolean show) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-            waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
-            waitingView.animate()
-                .setDuration(shortAnimTime)
-                .alpha(show ? 1 : 0)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override public void onAnimationEnd(Animator animation) {
-                        waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
-                    }
-                });
-        } else {
-            waitingView.setVisibility(show ? View.VISIBLE : View.GONE);
-        }
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onRedrawAudioAnalysisEvent(RedrawAudioAnalysisEvent event) {
+        redraw();
     }
 
-    // ----------------------------------------------------------------------------------------
-    protected void reassignSurfaceView(int renderer) {
-        LOGD(TAG, "reassignSurfaceView  renderer: " + getRendererTitle(renderer) + "  " + renderer);
-        showWaiting(renderer == BYBAnalysisType.BYB_ANALYSIS_NONE && waitingView != null);
-
-        if (mainscreenGLLayout != null) {
-
-            if (getContext() != null) {
-                mAndroidSurface = null;
-                mainscreenGLLayout.removeAllViews();
-                switch (renderer) {
-                    case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-                        setGlSurface(new AutoCorrelationRenderer(this), true);
-                        break;
-                    case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-                        setGlSurface(new CrossCorrelationRenderer(this), true);
-                        break;
-                    case BYBAnalysisType.BYB_ANALYSIS_ISI:
-                        setGlSurface(new ISIRenderer(this), true);
-                        break;
-                    case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-                        setGlSurface(new AverageSpikeRenderer(this), true);
-                        break;
-                    case BYBAnalysisType.BYB_ANALYSIS_NONE:
-                        setGlSurface(new WaitRenderer(this), true);
-                        break;
-                }
-            }
-            mainscreenGLLayout.addView(mAndroidSurface);
-        }
-        if (title != null) {
-            title.setText(getRendererTitle(renderer));
-        }
-
-        LOGD(TAG, "Reassigned AnalysisGLSurfaceView");
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private String getRendererTitle(int renderer) {
-        switch (renderer) {
-            case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-                return "Auto Correlation";
-            case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-                return "Cross Correlation";
-            case BYBAnalysisType.BYB_ANALYSIS_ISI:
-                return "Inter Spike Interval (ISI)";
-            case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-                return "Average Spike";
-            case BYBAnalysisType.BYB_ANALYSIS_NONE:
-                return "Please wait...";
-        }
-        return "";
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void setGlSurface(final BYBAnalysisBaseRenderer renderer, boolean bSetOnDemand) {
-        if (getContext() != null && renderer != null) {
-            if (mAndroidSurface != null) {
-                mAndroidSurface = null;
-            }
-            currentRenderer = renderer;
-            mAndroidSurface = new TouchGLSurfaceView(getContext(), renderer);
-            //glSurface.setEGLContextClientVersion(2);
-            //			glSurface.setRenderer(renderer);
-            if (bSetOnDemand) {
-                mAndroidSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-            }
-        } else {
-            //LOGD(TAG, "setGLSurface failed. Context == null.");
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- TOUCH
-    // ---------------------------------------------------------------------------------------------
-    public boolean onTouchEvent(MotionEvent event) {
-        LOGD(TAG, "onTouchEvent");
-        if (currentRenderer != null) {
-            currentRenderer.onTouchEvent(event);
-        }
-        if (mAndroidSurface != null) {
-            return mAndroidSurface.onTouchEvent(event);
-        }
-        return false;
-    }
+    //=================================================
+    //  PUBLIC METHODS
+    //=================================================
 
     public void onBackPressed() {
-        switch (currentAnalyzer) {
-            case BYBAnalysisType.BYB_ANALYSIS_ISI:
-            case BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE:
-            case BYBAnalysisType.BYB_ANALYSIS_NONE:
-            case BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION:
-                ((BackyardBrainsMain) getActivity()).loadFragment(BackyardBrainsMain.RECORDINGS_LIST);
-                break;
-            case BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION:
-                if (currentRenderer instanceof CrossCorrelationRenderer) {
-                    if (((CrossCorrelationRenderer) currentRenderer).isDrawThumbs()) {
-                        ((BackyardBrainsMain) getActivity()).loadFragment(BackyardBrainsMain.RECORDINGS_LIST);
-                    } else {
-                        ((CrossCorrelationRenderer) currentRenderer).setDrawThumbs(true);
-                    }
-                }
-                break;
+        // if we are currently rendering cross correlation analysis specific train
+        // just redraw to show thumbs view
+        if (currentRenderer instanceof CrossCorrelationRenderer
+            && !((CrossCorrelationRenderer) currentRenderer).isThumbsView()) {
+            ((CrossCorrelationRenderer) currentRenderer).setThumbsView(true);
+            redraw();
+
+            return;
+        }
+
+        // we need to open recordings screen
+        EventBus.getDefault().post(new OpenRecordingsEvent());
+    }
+
+    //=================================================
+    //  RENDERING OF ANALYSIS GRAPHS
+    //=================================================
+
+    // Sets new renderer for the GL surface view
+    private void setRenderer(@BYBAnalysisType int type) {
+        LOGD(TAG, "setRenderer()");
+        if (type >= BYBAnalysisType.FIND_SPIKES && type <= BYBAnalysisType.AVERAGE_SPIKE) {
+            analysisType = type;
+            reassignSurfaceView(analysisType);
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- SETTINGS
-    // ---------------------------------------------------------------------------------------------
-    private void getSettings() {
-        if (settings == null) {
-            // settings = (
-            // context).getPreferences(BackyardBrainsMain.MODE_PRIVATE);
-        }
+    // Redraws the GL surface view
+    private void redraw() {
+        LOGD(TAG, "redraw()");
+
+        if (glSurface != null) glSurface.requestRender();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS INSTANCES
-    // ---------------------------------------------------------------------------------------------
-    private RenderAnalysisListener renderAnalysisListener;
+    // Sets visibility of "Waiting" views.
+    private void showWaiting(final boolean show) {
+        pbWaiting.setVisibility(show ? View.VISIBLE : View.GONE);
+        tvWaiting.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    // ---------------------------------------------------------------------------------------------
-    private class RenderAnalysisListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            if (intent.hasExtra("ISI")) {
-                setRenderer(BYBAnalysisType.BYB_ANALYSIS_ISI);
-            } else if (intent.hasExtra("AutoCorrelation")) {
-                setRenderer(BYBAnalysisType.BYB_ANALYSIS_AUTOCORRELATION);
-            } else if (intent.hasExtra("CrossCorrelation")) {
-                setRenderer(BYBAnalysisType.BYB_ANALYSIS_CROSS_CORRELATION);
-            } else if (intent.hasExtra("AverageSpike")) {
-                setRenderer(BYBAnalysisType.BYB_ANALYSIS_AVERAGE_SPIKE);
-            } else if (intent.hasExtra("requestRender")) {
-                if (mAndroidSurface != null) {
-                    mAndroidSurface.requestRender();
-                }
+    // Initializes GL surface view with the renderer of specified type
+    @SuppressLint("SwitchIntDef") private void reassignSurfaceView(@BYBAnalysisType int rendererType) {
+        LOGD(TAG, "reassignSurfaceView  renderer: " + getTitle(rendererType) + "  " + rendererType);
+        // hide waiting screen
+        showWaiting(false);
+
+        currentRenderer = new WaitRenderer(this);
+        switch (rendererType) {
+            case BYBAnalysisType.AUTOCORRELATION:
+                currentRenderer = new AutoCorrelationRenderer(this);
+                break;
+            case BYBAnalysisType.AVERAGE_SPIKE:
+                currentRenderer = new AverageSpikeRenderer(this);
+                break;
+            case BYBAnalysisType.CROSS_CORRELATION:
+                currentRenderer = new CrossCorrelationRenderer(this);
+                break;
+            case BYBAnalysisType.ISI:
+                currentRenderer = new ISIRenderer(this);
+                break;
+        }
+
+        if (flGL != null) {
+            flGL.removeAllViews();
+            // create new GL surface
+            if (glSurface != null) glSurface = null;
+            glSurface = new TouchGLSurfaceView(getContext());
+            glSurface.setRenderer(currentRenderer);
+            glSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+            // and add GL surface to UI
+            flGL.addView(glSurface);
+        }
+
+        if (tvTitle != null) tvTitle.setText(getTitle(rendererType));
+
+        LOGD(TAG, "Analysis GLSurfaceView reassigned");
+    }
+
+    //=================================================
+    //  PRIVATE METHODS
+    //=================================================
+
+    // Initializes user interface
+    private void setupUI() {
+        reassignSurfaceView(analysisType);
+
+        ibtnBack.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                onBackPressed();
             }
+        });
+    }
+
+    // Returns analysis title depending on the analyisis type
+    private String getTitle(@BYBAnalysisType int analysisType) {
+        switch (analysisType) {
+            case BYBAnalysisType.AUTOCORRELATION:
+                return getString(R.string.analysis_autocorrelation);
+            case BYBAnalysisType.AVERAGE_SPIKE:
+                return getString(R.string.analysis_average_spike);
+            case BYBAnalysisType.CROSS_CORRELATION:
+                return getString(R.string.analysis_cross_correlation);
+            case BYBAnalysisType.ISI:
+                return getString(R.string.analysis_isi);
+            case BYBAnalysisType.NONE:
+                return getString(R.string.analysis_please_wait);
+            case BYBAnalysisType.FIND_SPIKES:
+            default:
+                return "";
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-    // ---------------------------------------------------------------------------------------------
-    private void registerRenderAnalysisReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBRenderAnalysis");
-            renderAnalysisListener = new RenderAnalysisListener();
-            if (getContext() != null) getContext().registerReceiver(renderAnalysisListener, intentFilter);
-        } else {
-            if (getContext() != null) getContext().unregisterReceiver(renderAnalysisListener);
-            renderAnalysisListener = null;
+    // Destroys renderer
+    private void destroyRenderer() {
+        if (currentRenderer != null) {
+            currentRenderer.close();
+            currentRenderer = null;
         }
-    }
-
-    protected void registerListeners() {
-        registerRenderAnalysisReceiver(true);
-    }
-
-    protected void unregisterListeners() {
-        registerRenderAnalysisReceiver(false);
     }
 }

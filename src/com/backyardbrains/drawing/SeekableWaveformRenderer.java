@@ -11,31 +11,22 @@ public class SeekableWaveformRenderer extends BYBBaseRenderer {
 
     private static final String TAG = makeLogTag(SeekableWaveformRenderer.class);
 
+    long fromSample;
+    long toSample;
+
     public SeekableWaveformRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment, preparedBuffer);
     }
 
-    // ----------------------------------------------------------------------------------------
-    //@Override public void onDrawFrame(GL10 gl) {
-    //    if (!getAudioSamples()) return;
-    //    if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) return;
-    //
-    //    preDrawingHandler();
-    //    BYBGlUtils.glClear(gl);
-    //    drawingHandler(gl);
-    //    postDrawingHandler(gl);
-    //}
-    //
-    //// ----------------------------------------------------------------------------------------
-    //private boolean getAudioSamples() {
-    //    if (getAudioService() != null) {
-    //        mBufferToDraws = getAudioService().getAudioBuffer();
-    //        return true;
-    //    }
-    //    return false;
-    //}
+    @Override public void onDrawFrame(GL10 gl) {
+        // let's save start and end samples sample positions that are being drawn before triggering the actual draw
+        toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
+        fromSample = Math.max(0, toSample - glWindowHorizontalSize);
+        //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());
 
-    // ----------------------------------------------------------------------------------------
+        super.onDrawFrame(gl);
+    }
+
     @Override protected void drawingHandler(GL10 gl) {
         setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
 

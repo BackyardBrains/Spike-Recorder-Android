@@ -5,11 +5,11 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
-import com.backyardbrains.BaseFragment;
-import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Formats;
 import java.nio.FloatBuffer;
 import java.text.DecimalFormat;
@@ -17,6 +17,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BYBBaseRenderer extends BaseRenderer {
@@ -49,8 +50,8 @@ public class BYBBaseRenderer extends BaseRenderer {
     private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
     private float minimumDetectedPCMValue = -5000000f;
 
-    private int startIndex = 0;
-    private int endIndex = 0;
+    protected int startIndex = 0;
+    protected int endIndex = 0;
     private boolean bShowScalingAreaX = false;
     private int scalingAreaStartX;
     private int scalingAreaEndX;
@@ -89,7 +90,7 @@ public class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    private Callback callback;
+    protected Callback callback;
 
     public void setCallback(Callback callback) {
         this.callback = callback;
@@ -220,47 +221,59 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     private void setStartEndIndex(int arrayLength) {
-        setStartIndex(arrayLength - glWindowHorizontalSize);
+        setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
 
-        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize);
+        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize, arrayLength);
 
-        if (startIndex + getGlWindowHorizontalSize() > arrayLength) {
-            setStartIndex(arrayLength - getGlWindowHorizontalSize());
+        if (startIndex + glWindowHorizontalSize > arrayLength) {
+            setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
         }
     }
 
-    private void setStartIndex(int si) {
+    private void setStartIndex(int si, int arrayLength) {
         startIndex = si;
-        endIndex = startIndex + glWindowHorizontalSize;
+        //endIndex = startIndex + glWindowHorizontalSize;
+        endIndex = Math.min(startIndex + glWindowHorizontalSize, arrayLength);
     }
 
     // ----------------------------------------------------------------------------------------
     @Nullable protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
         if (getContext() != null) {
             //long start = System.currentTimeMillis();
-            //Log.d(TAG, "START - " + shortArrayToDraw.length);
+            //LOGD(TAG, ".........................................");
+            //LOGD(TAG, "START - " + shortArrayToDraw.length);
             final boolean clearFront = getIsSeeking();
             setStartEndIndex(shortArrayToDraw.length);
             //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
             int j = 1;
-            final int start = startIndex;
-            final int end = Math.min(endIndex, shortArrayToDraw.length);
+
             try {
-                for (int i = start; i < end; i++) {
+                for (int i = startIndex; i < endIndex; i++) {
                     if (i < 0) {
                         if (clearFront) mTempBufferToDraws[j] = 0;
                     } else {
                         mTempBufferToDraws[j] = shortArrayToDraw[i];
                     }
+                    //LOGD(TAG, "currentSample: " + mTempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
+
+                    // give subclass a chance to process current sample
+                    //onCycle(j);
+
                     j += 2;
                 }
-                //Log.d(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
+                //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
             } catch (ArrayIndexOutOfBoundsException e) {
-                Log.e(TAG, "Array size out of sync while building new waveform buffer");
+                LOGE(TAG, "Array size out of sync while building new waveform buffer");
             }
+
+            // subclasses can do some post-processing
+            //postCycle();
+            //Log.d(TAG, "AFTER postCycle():" + (System.currentTimeMillis() - start));
+
             final FloatBuffer fb =
                 BYBUtils.getFloatBufferFromFloatArray(mTempBufferToDraws, glWindowHorizontalSize * 2);
             //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
+            //LOGD(TAG, ".........................................");
             return fb;
         }
         return null;
@@ -337,19 +350,29 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override public void onDrawFrame(GL10 gl) {
+        long start = System.currentTimeMillis();
+        //LOGD(TAG, "START");
         if (!getCurrentAudio()) {
             LOGD(TAG, "Can't get current audio buffer!");
             return;
         }
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER getCurrentAudio()");
         if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
             LOGD(TAG, "Invalid audio buffer!");
             return;
         }
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER isValidAudioBuffer()");
 
         preDrawingHandler();
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER preDrawingHandler()");
         BYBGlUtils.glClear(gl);
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER glClear()");
         drawingHandler(gl);
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER drawingHandler()");
         postDrawingHandler(gl);
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER postDrawingHandler()");
+        //LOGD(TAG, "END");
+        //LOGD(TAG, "================================================");
     }
 
     // ----------------------------------------------------------------------------------------

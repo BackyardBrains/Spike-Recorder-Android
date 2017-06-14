@@ -28,6 +28,8 @@ class PlaybackThread {
     private PlaybackListener listener;
     // Path to the audio file
     private final String filePath;
+    // Whether file should start playing right away
+    private boolean autoPlay;
     // Size of buffer (chunk) for the audio file reading
     private final int bufferSize;
     // Size of buffer (chunk) to read when seeking (6 seconds)
@@ -36,7 +38,7 @@ class PlaybackThread {
     // Audio playback thread
     private Thread thread;
     // Random access file stream that holds audio file that's being played
-    private BYBRandomAccessFile raf;
+    private BYBAudioFile raf;
     // True if audio is currently being played, false if it's paused or stopped
     private boolean playing;
     // Whether audio is currently being sought.
@@ -91,10 +93,11 @@ class PlaybackThread {
      * @param service the service that implements the {@link ReceivesAudio}
      * @see AudioService#turnOnPlaybackThread()
      */
-    PlaybackThread(@NonNull ReceivesAudio service, @NonNull String filePath,
+    PlaybackThread(@NonNull ReceivesAudio service, @NonNull String filePath, boolean autoPlay,
         @Nullable final PlaybackListener listener) {
         this.service = service;
         this.filePath = filePath;
+        this.autoPlay = autoPlay;
         this.listener = listener;
 
         bufferSize = AudioUtils.OUT_BUFFER_SIZE;
@@ -171,28 +174,14 @@ class PlaybackThread {
      * Stops playback and cleans up {@link InputStream} before exiting thread.
      */
     void stop() {
-        if (thread == null) return;
         thread = null;
 
         playing = false;
         done = true;
-        if (raf != null) closeRaf();
 
         LOGD(TAG, "Playback stopped");
 
         if (listener != null) listener.onStop();
-    }
-
-    // Closes InputStream
-    private void closeRaf() {
-        try {
-            raf.close();
-        } catch (IOException e) {
-            LOGE(TAG, "IOException while stopping random access file: " + e.toString());
-        } finally {
-            raf = null;
-        }
-        LOGD(TAG, "RandomAccessFile closed");
     }
 
     /**
@@ -215,7 +204,7 @@ class PlaybackThread {
 
         if (start && playing) pause();
 
-        // if we are entering seeking set flag right away, if we are existing,
+        // if we are entering seeking set flag right away, if we are exiting,
         // we should check whether thread entered seeking loop at least once and if not call the loop manually
         if (start) {
             seeking = true;
@@ -236,9 +225,78 @@ class PlaybackThread {
         }
     }
 
-    /**
-     * Rewinds audio file.
-     */
+    // Reads the audio file chunk by chunk while control flag is
+    private void start() {
+        try {
+            raf = newRandomAccessFile();
+            LOGD(TAG, "RandomAccessFile created");
+
+            duration = (int) raf.length();
+            LOGD(TAG, "Audio file byte count is: " + duration);
+
+            // setup audio track
+            final AudioTrack track = AudioUtils.createAudioTrack();
+            track.play();
+            LOGD(TAG, "AudioTrack created");
+
+            if (autoPlay) playing = true;
+
+            LOGD(TAG, "Playback started");
+
+            if (listener != null) listener.onStart(duration);
+
+            final byte[] buffer = new byte[bufferSize];
+            while (!done && raf != null) {
+                if (playing) {
+                    // if we are playing after seek we need to fix it because of the different buffer sizes
+                    // when playing and seeking
+                    if (Math.abs(raf.getFilePointer() - progress) > bufferSize) raf.seek(progress);
+
+                    if (raf.read(buffer) < 0) { // audio playback reached end
+                        // reset input stream
+                        rewind();
+
+                        LOGD(TAG, "Playback completed");
+
+                        if (listener != null) listener.onStop();
+
+                        continue;
+                    }
+
+                    // save progress
+                    progress = (int) raf.getFilePointer();
+
+                    synchronized (service) {
+                        service.receiveAudio(ByteBuffer.wrap(buffer), progress);
+                    }
+
+                    // trigger progress listener
+                    if (listener != null) listener.onProgress(progress);
+
+                    // play audio data if we're not seeking
+                    track.write(buffer, 0, buffer.length);
+                } else if (seeking) {
+                     seekingStarted = true;
+
+                    seekToPosition(new byte[seekBufferSize]);
+                }
+            }
+
+            // release resources
+            if (raf != null) closeRaf();
+            track.release();
+
+            LOGD(TAG, "AudioTrack released");
+        } catch (IOException e) {
+            LOGE(TAG,
+                e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
+                e);
+
+            stop();
+        }
+    }
+
+    // Rewinds audio file.
     private void rewind() throws IOException {
         if (thread == null) return;
         if (seeking) return; // we can't rewind while seeking
@@ -254,98 +312,42 @@ class PlaybackThread {
         LOGD(TAG, "Audio file rewind");
     }
 
-    // Reads the audio file chunk by chunk while control flag is
-    private void start() {
-        try {
-            raf = newRandomAccessFile();
-            LOGD(TAG, "RandomAccessFile created");
-
-            duration = (int) raf.length();
-            LOGD(TAG, "Audio file byte count is: " + duration);
-
-            // setup audio track
-            final AudioTrack track = AudioUtils.createAudioTrack();
-            track.play();
-            LOGD(TAG, "AudioTrack created");
-
-            playing = true;
-
-            LOGD(TAG, "Playback started");
-
-            if (listener != null) listener.onStart(duration);
-
-            final byte[] buffer = new byte[bufferSize];
-            while (!done && raf != null) {
-                if (playing) {
-                    // if we are playing after progress we need to fix it because of the different buffer sizes
-                    // when playing and seeking
-                    if (Math.abs(raf.getFilePointer() - progress) > bufferSize) raf.seek(progress);
-
-                    if (raf.read(buffer) < 0) { // audio playback reached end
-                        // reset input stream
-                        rewind();
-
-                        LOGD(TAG, "Playback completed");
-
-                        if (listener != null) listener.onStop();
-
-                        continue;
-                    }
-
-                    synchronized (service) {
-                        service.receiveAudio(ByteBuffer.wrap(buffer));
-                    }
-
-                    // save progress and trigger progress listener
-                    progress = (int) raf.getFilePointer();
-                    if (listener != null) listener.onProgress(progress);
-
-                    // play audio data if we're not seeking
-                    track.write(buffer, 0, buffer.length);
-                } else if (seeking) {
-                    seekingStarted = true;
-
-                    seekToPosition(new byte[seekBufferSize]);
-                }
-            }
-
-            track.release();
-
-            LOGD(TAG, "AudioTrack released");
-        } catch (IOException e) {
-            LOGE(TAG,
-                e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
-                e);
-
-            stop();
-        }
-    }
-
     // This represents a single seek loop.
     private void seekToPosition(byte[] seekBuffer) throws IOException {
         final long zerosPrependCount = progress - seekBufferSize;
         final long seekPosition = Math.max(0, zerosPrependCount);
         raf.seek(seekPosition);
         int readBytesCount = raf.read(seekBuffer);
+        long lastBytePosition = raf.getFilePointer();
         if (readBytesCount > 0) {
             if (zerosPrependCount < 0) {
-                seekBuffer = BufferUtils.shift(seekBuffer, (int) Math.abs(zerosPrependCount));
+                final int zerosPrependCountAbs = (int) Math.abs(zerosPrependCount);
+                lastBytePosition -= zerosPrependCountAbs;
+                seekBuffer = BufferUtils.shift(seekBuffer, zerosPrependCountAbs);
             }
             synchronized (service) {
-                service.receiveAudio(ByteBuffer.wrap(seekBuffer));
+                service.receiveAudio(ByteBuffer.wrap(seekBuffer), lastBytePosition);
             }
         }
     }
 
-    /**
-     * Convenience function for creating new {@link BYBRandomAccessFile} object from the audio file.
-     *
-     * @return an {@link BYBRandomAccessFile} that wraps audio file we're playing
-     */
-    @Nullable private BYBRandomAccessFile newRandomAccessFile() throws IOException {
+    // Closes InputStream
+    private void closeRaf() {
+        try {
+            raf.close();
+        } catch (IOException e) {
+            LOGE(TAG, "IOException while stopping random access file: " + e.toString());
+        } finally {
+            raf = null;
+        }
+        LOGD(TAG, "RandomAccessFile closed");
+    }
+
+    // Convenience function for creating new {@link BYBAudioFile} object from the audio file.
+    @Nullable private BYBAudioFile newRandomAccessFile() throws IOException {
         final File file = new File(filePath);
         if (file.exists()) {
-            return new WavRandomAccessFile(file);
+            return new WavAudioFile(file);
         } else {
             stop();
             LOGE(TAG, "Cant load file " + filePath + ", it doesn't exist!!");

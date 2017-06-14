@@ -41,7 +41,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/back_button"
+            android:contentDescription="@string/content_desc_back"
             android:src="@drawable/backbtn"/>
 
         <ImageButton
@@ -51,7 +51,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/trash_can"
+            android:contentDescription="@string/content_desc_threshold_remove"
             android:src="@drawable/trash"/>
 
         <ImageButton
@@ -61,7 +61,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/threshold0"
+            android:contentDescription="@string/content_desc_threshold_select_one"
             android:src="@drawable/handle1"/>
 
         <ImageButton
@@ -71,7 +71,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/threshold1"
+            android:contentDescription="@string/content_desc_threshold_select_two"
             android:src="@drawable/handle2"/>
 
         <ImageButton
@@ -81,7 +81,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/threshold2"
+            android:contentDescription="@string/content_desc_threshold_select_three"
             android:src="@drawable/handle3"/>
 
         <ImageButton
@@ -91,7 +91,7 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="#0000"
-            android:contentDescription="@string/new_threshold"
+            android:contentDescription="@string/content_desc_threshold_new"
             android:src="@drawable/plus"/>
     </LinearLayout>
 

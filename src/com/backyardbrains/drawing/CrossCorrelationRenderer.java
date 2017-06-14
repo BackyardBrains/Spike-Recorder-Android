@@ -1,57 +1,52 @@
 package com.backyardbrains.drawing;
 
-import android.content.Intent;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.view.ofRectangle;
-import java.util.ArrayList;
+import java.util.List;
 import javax.microedition.khronos.opengles.GL10;
+
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
-    private static final String TAG = "CrossCorrelationRenderer";
+    private static final String TAG = makeLogTag(CrossCorrelationRenderer.class);
 
-    private boolean bDrawThumbs = true;
+    private boolean thumbsView = true;
 
-    // ----------------------------------------------------------------------------------------
     public CrossCorrelationRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
     }
 
-    // ----------------------------------------------------------------------------------------
-    // ----------------------------------------------------------------------------------------
-    public void setDrawThumbs(boolean b) {
-        if (bDrawThumbs != b && getContext() != null) {
-            Intent i = new Intent();
-            i.setAction("BYBRenderAnalysis");
-            i.putExtra("requestRender", true);
-            getContext().sendBroadcast(i);
-            bDrawThumbs = b;
-        }
+    /**
+     * Whether thumbs view is currently rendered or not
+     */
+    public boolean isThumbsView() {
+        return thumbsView;
+    }
+
+    /**
+     * Sets whether thumbs view should be rendered or not
+     */
+    public void setThumbsView(boolean thumbsView) {
+        if (this.thumbsView != thumbsView) this.thumbsView = thumbsView;
     }
 
     @Override protected void thumbRectClicked(int i) {
-        if (bDrawThumbs) {
-            bDrawThumbs = false;
+        if (thumbsView) {
+            thumbsView = false;
             super.thumbRectClicked(i);
         }
     }
 
-    ;
-
-    public boolean isDrawThumbs() {
-        return bDrawThumbs;
-    }
-
-    // ----------------------------------------------------------------------------------------
     @Override protected void drawingHandler(GL10 gl) {
         initGL(gl);
         int margin = 20;
         int maxSpikeTrains = 3;
         if (getAnalysisManager() != null) {
-            ArrayList<ArrayList<Integer>> CC = getAnalysisManager().getCrossCorrelation();
-            if (CC != null) {
-                if (bDrawThumbs) {
+            List<List<Integer>> cc = getAnalysisManager().getCrossCorrelation();
+            if (cc != null) {
+                if (thumbsView) {
 
                     float d = (Math.min(width, height) / (float) (maxSpikeTrains + 1)) * 0.2f;
                     if (d < margin) {
@@ -70,16 +65,16 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                         }
                     }
 
-                    for (int i = 0; i < CC.size(); i++) {
-                        graphIntegerList(gl, CC.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);
+                    for (int i = 0; i < cc.size(); i++) {
+                        graphIntegerList(gl, cc.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);
                     }
                 } else {
                     int s = selected;
-                    if (selected < 0 || selected >= maxSpikeTrains * maxSpikeTrains || selected >= CC.size()) {
+                    if (selected < 0 || selected >= maxSpikeTrains * maxSpikeTrains || selected >= cc.size()) {
                         s = 0;
                     }
                     mainRect = new ofRectangle(margin, margin, width - 2 * margin, height - 2 * margin);
-                    graphIntegerList(gl, CC.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
+                    graphIntegerList(gl, cc.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
                 }
             }
         }

@@ -2,13 +2,13 @@ package com.backyardbrains;
 
 import android.os.Bundle;
 import android.support.annotation.CallSuper;
-import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewStub;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.view.WaveformLayout;
@@ -25,24 +25,29 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     private String TAG = makeLogTag(BaseWaveformFragment.class);
 
     private WaveformLayout waveform;
+    private ImageButton ibtnBack;
+
     private BYBBaseRenderer renderer;
 
     protected float[] bufferWithXs = BYBBaseRenderer.initTempBuffer();
+
+    //==============================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //==============================================
 
     @Override public final View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
 
-        final View root = inflater.inflate(R.layout.fragment_base, container, false);
+        final ViewGroup root = (ViewGroup) inflater.inflate(R.layout.fragment_base, container, false);
         waveform = (WaveformLayout) root.findViewById(R.id.waveform);
-
-        // inflate subclass defined content view instead of the view stub
-        final ViewStub contentStub = (ViewStub) root.findViewById(R.id.content_container);
-        contentStub.setLayoutResource(getLayoutRes());
-        final View content = contentStub.inflate();
-        initView(content, container, savedInstanceState);
+        ibtnBack = (ImageButton) root.findViewById(R.id.ibtn_back);
 
         setupUI();
+
+        // inflate subclass defined content view instead of the view stub
+        final FrameLayout contentContainer = (FrameLayout) root.findViewById(R.id.fl_content_container);
+        contentContainer.addView(createView(inflater, contentContainer, savedInstanceState));
 
         return root;
     }
@@ -65,34 +70,79 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onDestroy();
     }
 
-    protected abstract @LayoutRes int getLayoutRes();
+    //==============================================
+    //  ABSTRACT METHODS DEFINITION
+    //==============================================
 
-    protected abstract void initView(@NonNull View view, @Nullable ViewGroup container,
+    protected abstract View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState);
 
     protected abstract BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer);
 
+    protected abstract boolean isBackable();
+
+    //==============================================
+    //  PUBLIC AND PROTECTED METHODS
+    //==============================================
+
+    /**
+     * Update millivolts UI.
+     */
     protected void setMillivolts(float millivolts) {
         waveform.setMillivolts(millivolts);
     }
 
+    /**
+     * Updates milliseconds UI.
+     */
     protected void setMilliseconds(float milliseconds) {
         waveform.setMilliseconds(milliseconds);
     }
 
+    /**
+     * Returns renderer for the surface view.
+     */
     protected BYBBaseRenderer getRenderer() {
         return renderer;
     }
 
+    /**
+     * Whether renderer should use averager when doing calculations.
+     */
     protected boolean shouldUseAverager() {
         return false;
     }
+
+    /**
+     *
+     */
+    protected void readSettings() {
+
+    }
+
+    protected void saveSettings() {
+
+    }
+
+    //==============================================
+    //  PRIVATE METHODS
+    //==============================================
 
     // Initializes user interface
     private void setupUI() {
         setUseAverager();
         this.renderer = createRenderer(this, bufferWithXs);
         waveform.setRenderer(renderer);
+
+        if (isBackable()) {
+            ibtnBack.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (getActivity() != null) getActivity().onBackPressed();
+                }
+            });
+        } else {
+            ibtnBack.setVisibility(View.GONE);
+        }
     }
 
     // Sets whether audio service should use averager or not

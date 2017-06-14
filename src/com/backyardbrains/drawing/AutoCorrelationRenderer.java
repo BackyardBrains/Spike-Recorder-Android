@@ -2,7 +2,7 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
-import java.util.ArrayList;
+import java.util.List;
 import javax.microedition.khronos.opengles.GL10;
 
 public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
@@ -17,7 +17,7 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
         initGL(gl);
         makeThumbAndMainRectangles();
         if (getAnalysisManager() != null) {
-            ArrayList<ArrayList<Integer>> AC = getAnalysisManager().getAutoCorrelation();
+            List<List<Integer>> AC = getAnalysisManager().getAutocorrelation();
             if (AC != null) {
                 for (int i = 0; i < AC.size(); i++) {
                     graphIntegerList(gl, AC.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);

@@ -5,7 +5,27 @@ import java.io.IOException;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public interface BYBRandomAccessFile {
+public interface BYBAudioFile {
+
+    /**
+     * Returns absolute path to the underlying audio file.
+     */
+    String getAbsolutePath();
+
+    /**
+     * Number of channels.
+     */
+    int numChannels();
+
+    /**
+     * Audio sample rate.
+     */
+    int sampleRate();
+
+    /**
+     * Number of bits per audio sample.
+     */
+    int bitsPerSample();
 
     /**
      * Length of the file in bytes.

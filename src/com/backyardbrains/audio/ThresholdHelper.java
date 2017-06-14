@@ -151,9 +151,9 @@ public class ThresholdHelper {
 
     // Processes the incoming data and triggers all necessary calculations.
     private void processIncomingData(ShortBuffer sb) {
-        long start = System.currentTimeMillis();
-        LOGD(TAG, "==========================================");
-        LOGD(TAG, "START - " + samplesForCalculation.size());
+        //long start = System.currentTimeMillis();
+        //LOGD(TAG, "==========================================");
+        //LOGD(TAG, "START - " + samplesForCalculation.size());
 
         // reset buffers if size  of buffer changed
         if (sb.capacity() != lastIncomingBufferSize) {
@@ -165,7 +165,7 @@ public class ThresholdHelper {
             reset();
             lastTriggeredValue = triggerValue;
         }
-        LOGD(TAG, "1. AFTER resetting buffers:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "1. AFTER resetting buffers:" + (System.currentTimeMillis() - start));
 
         // initialize incoming array
         short[] incomingAsArray = new short[sb.capacity()];
@@ -174,7 +174,7 @@ public class ThresholdHelper {
         for (Samples samples : unfinishedSamplesForCalculation) {
             samples.append(incomingAsArray);
         }
-        LOGD(TAG, "2. AFTER appending samples:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "2. AFTER appending samples:" + (System.currentTimeMillis() - start));
 
         short currentSample;
         // check if we hit the threshold
@@ -208,18 +208,18 @@ public class ThresholdHelper {
 
             prevSample = currentSample;
         }
-        LOGD(TAG, "3. AFTER adding current samples:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "3. AFTER adding current samples:" + (System.currentTimeMillis() - start));
 
         buffer.add(sb);
-        LOGD(TAG, "4. AFTER adding to buffer:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "4. AFTER adding to buffer:" + (System.currentTimeMillis() - start));
 
         int len = unfinishedSamplesForCalculation.size();
-        if (len > 0) LOGD(TAG, "     ==========================================");
+        //if (len > 0) LOGD(TAG, "     ==========================================");
         for (int i = 0; i < len; i++) {
             addSamplesToCalculations(unfinishedSamplesForCalculation.get(i), i);
         }
-        if (len > 0) LOGD(TAG, "     ==========================================");
-        LOGD(TAG, "5. AFTER adding samples to calculation:" + (System.currentTimeMillis() - start));
+        //if (len > 0) LOGD(TAG, "     ==========================================");
+        //LOGD(TAG, "5. AFTER adding samples to calculation:" + (System.currentTimeMillis() - start));
 
         final Iterator<Samples> iterator = unfinishedSamplesForCalculation.iterator();
         while (iterator.hasNext()) {
@@ -230,7 +230,7 @@ public class ThresholdHelper {
                 iterator.remove();
             }
         }
-        LOGD(TAG, "6. AFTER removing finished samples:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "6. AFTER removing finished samples:" + (System.currentTimeMillis() - start));
 
         //if (summedSamples == null) summedSamples = new int[SAMPLE_COUNT];
         //if (summedSamplesCounts == null) summedSamplesCounts = new int[SAMPLE_COUNT];
@@ -260,7 +260,7 @@ public class ThresholdHelper {
             }
             samples.lastAveragedIndex = samples.nextSampleIndex;
 
-            LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
+            //LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
 
             return;
         }
@@ -284,7 +284,7 @@ public class ThresholdHelper {
 
         samples.lastAveragedIndex = samples.nextSampleIndex;
 
-        LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
     }
 
     // ---------------------------------------------------------------------------------------------
