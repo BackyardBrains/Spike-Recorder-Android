@@ -1,8 +1,6 @@
 package com.backyardbrains.analysis;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.BYBAudioFile;
@@ -25,7 +23,6 @@ public class BYBAnalysisManager {
 
     private static final int MAX_THRESHOLDS = 3;
 
-    private Context context;
     private BYBAudioFile audioFile;
 
     private BYBFindSpikesAnalysis spikesAnalysis;
@@ -55,9 +52,7 @@ public class BYBAnalysisManager {
     private boolean bProcessAverageSpike = false;
     private boolean bAverageSpikeDone = false;
 
-    public BYBAnalysisManager(Context context) {
-        this.context = context.getApplicationContext();
-
+    public BYBAnalysisManager() {
         // init thresholds, we have one pair of thresholds by default
         thresholds = new ArrayList<>();
         thresholds.add(new int[2]);
@@ -430,7 +425,8 @@ public class BYBAnalysisManager {
                         bProcessCrossCorrelation = false;
 
                         // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
+                        EventBus.getDefault()
+                            .post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
                     }
                 });
         }
@@ -470,7 +466,8 @@ public class BYBAnalysisManager {
                             bProcessAverageSpike = false;
 
                             // post event that audio file analysis is successfully finished
-                            EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AVERAGE_SPIKE));
+                            EventBus.getDefault()
+                                .post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AVERAGE_SPIKE));
                         }
                     });
             }
@@ -481,18 +478,30 @@ public class BYBAnalysisManager {
     //  THRESHOLDS
     //=================================================
 
+    /**
+     * Returns maximum number of thresholds.
+     */
     public int getMaxThresholds() {
         return MAX_THRESHOLDS;
     }
 
+    /**
+     * Returns currently available number of thresholds.
+     */
     public int getThresholdsSize() {
         return thresholds.size();
     }
 
+    /**
+     * Returns index of currently selected thresholds.
+     */
     public int getSelectedThresholdIndex() {
         return selectedThreshold;
     }
 
+    /**
+     * Returns values for currently selected thresholds.
+     */
     public int[] getSelectedThresholds() {
         if (selectedThreshold >= 0 && selectedThreshold < thresholds.size()) {
             return thresholds.get(selectedThreshold);
@@ -500,11 +509,14 @@ public class BYBAnalysisManager {
         return new int[2];
     }
 
+    /**
+     * Selects thresholds at specified {@code index} as current thresholds.
+     */
     public void selectThreshold(int index) {
         if (index >= 0 && index < MAX_THRESHOLDS) {
             selectedThreshold = index;
 
-            updateThresholdHandles();
+            bThresholdsChanged = true;
         }
     }
 
@@ -516,30 +528,27 @@ public class BYBAnalysisManager {
             thresholds.add(new int[2]);
             selectedThreshold = thresholds.size() - 1;
 
-            updateThresholdHandles();
+            bThresholdsChanged = true;
             resetAnalysisFlags();
         }
     }
 
+    /**
+     * Removes currently selected thresholds
+     */
     public void removeSelectedThreshold() {
         if (thresholds.size() > 0 && thresholds.size() > selectedThreshold) {
             thresholds.remove(selectedThreshold);
             selectedThreshold = thresholds.size() - 1;
-
-            updateThresholdHandles();
-            resetAnalysisFlags();
-        }
-    }
-
-    public void setThreshold(int group, int index, int value) {
-        if (thresholds.size() > 0 && thresholds.size() > group && index < 2) {
-            thresholds.get(group)[index] = value;
 
             bThresholdsChanged = true;
             resetAnalysisFlags();
         }
     }
 
+    /**
+     * Sets specified {@code value} for the current threshold with specified {@code orientation}.
+     */
     public void setThreshold(@ThresholdOrientation int orientation, int value) {
         if (thresholds.size() > 0 && thresholds.size() > selectedThreshold) {
             thresholds.get(selectedThreshold)[orientation] = value;
@@ -549,20 +558,11 @@ public class BYBAnalysisManager {
         }
     }
 
+    // Clears all thresholds.
     private void clearThresholds() {
         thresholds.clear();
         selectedThreshold = 0;
 
-        updateThresholdHandles();
-    }
-
-    private void updateThresholdHandles() {
-        if (context != null) {
-            Intent i = new Intent();
-            i.setAction("BYBUpdateThresholdHandle");
-            context.getApplicationContext().sendBroadcast(i);
-
-            bThresholdsChanged = true;
-        }
+        bThresholdsChanged = true;
     }
 }

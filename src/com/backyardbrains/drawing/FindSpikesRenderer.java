@@ -33,10 +33,28 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
-    // ----------------------------------------------------------------------------------------
-    @Override public void setGlWindowVerticalSize(int newY) {
-        super.setGlWindowVerticalSize(Math.abs(newY));
+    //=================================================
+    //  PUBLIC AND PROTECTED METHODS
+    //=================================================
 
+    public int getThresholdScreenValue(@ThresholdOrientation int threshold) {
+        if (threshold >= 0 && threshold < 2) return glHeightToPixelHeight(thresholds[threshold]);
+
+        return 0;
+    }
+
+    public void setThreshold(int t, @ThresholdOrientation int orientation) {
+        setThreshold(t, orientation, false);
+    }
+
+    public void setCurrentColor(float[] color) {
+        if (currentColor.length == color.length && currentColor.length == 4) {
+            System.arraycopy(color, 0, currentColor, 0, currentColor.length);
+        }
+    }
+
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        super.onSurfaceChanged(gl, width, height);
         updateThresholdHandles();
     }
 
@@ -48,65 +66,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         super.setCallback(callback);
     }
 
-    private Callback getCallback() {
-        return (Callback) callback;
-    }
+    @Override public void setGlWindowVerticalSize(int newY) {
+        super.setGlWindowVerticalSize(Math.abs(newY));
 
-    // ----------------------------------------------------------------------------------------
-    private void updateThresholdHandles() {
-        updateThresholdHandle(ThresholdOrientation.LEFT);
-        updateThresholdHandle(ThresholdOrientation.RIGHT);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public int getThresholdScreenValue(@ThresholdOrientation int threshold) {
-        if (threshold >= 0 && threshold < 2) return glHeightToPixelHeight(thresholds[threshold]);
-
-        return 0;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private void updateThresholdHandle(@ThresholdOrientation int threshold) {
-        if (threshold >= 0 && threshold < thresholds.length) {
-            if (getCallback() != null) {
-                getCallback().onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
-            }
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void setThreshold(int t, @ThresholdOrientation int orientation) {
-        setThreshold(t, orientation, false);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private void setThreshold(int t, @ThresholdOrientation int orientation, boolean bBroadcast) {
-        if (orientation == ThresholdOrientation.LEFT || orientation == ThresholdOrientation.RIGHT) {
-            thresholds[orientation] = t;
-            if (bBroadcast) updateThresholdHandle(orientation);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-
-    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
-        super.onSurfaceChanged(gl, width, height);
         updateThresholdHandles();
     }
 
-    // ----------------------------------------------------------------------------------------
-    private boolean getSpikes() {
-        if (getAnalysisManager() != null) {
-            spikes = getAnalysisManager().getSpikes();
-
-            if (spikes.length > 0) return true;
-        }
-        spikes = null;
-
-        return false;
-    }
-
-    // ----------------------------------------------------------------------------------------
     @Override protected void drawingHandler(GL10 gl) {
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
@@ -144,14 +109,45 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------
-    public void setCurrentColor(float[] color) {
-        if (currentColor.length == color.length && currentColor.length == 4) {
-            System.arraycopy(color, 0, currentColor, 0, currentColor.length);
+    //=================================================
+    //  PRIVATE METHODS
+    //=================================================
+
+    private Callback getCallback() {
+        return (Callback) callback;
+    }
+
+    private void updateThresholdHandles() {
+        updateThresholdHandle(ThresholdOrientation.LEFT);
+        updateThresholdHandle(ThresholdOrientation.RIGHT);
+    }
+
+    private void updateThresholdHandle(@ThresholdOrientation int threshold) {
+        if (threshold >= 0 && threshold < thresholds.length) {
+            if (getCallback() != null) {
+                getCallback().onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
+            }
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------
+    private void setThreshold(int t, @ThresholdOrientation int orientation, boolean bBroadcast) {
+        if (orientation == ThresholdOrientation.LEFT || orientation == ThresholdOrientation.RIGHT) {
+            thresholds[orientation] = t;
+            if (bBroadcast) updateThresholdHandle(orientation);
+        }
+    }
+
+    private boolean getSpikes() {
+        if (getAnalysisManager() != null) {
+            spikes = getAnalysisManager().getSpikes();
+
+            if (spikes.length > 0) return true;
+        }
+        spikes = null;
+
+        return false;
+    }
+
     private void constructSpikesAndColorsBuffers() {
         float[] arr;
         float[] spikeArr = null;

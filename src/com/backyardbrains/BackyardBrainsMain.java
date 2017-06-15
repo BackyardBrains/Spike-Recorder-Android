@@ -22,8 +22,8 @@ import android.view.MenuItem;
 import android.view.View;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
@@ -179,7 +179,7 @@ public class BackyardBrainsMain extends AppCompatActivity
                     break;
                 //------------------------------
                 case THRESHOLD_VIEW:
-                    frag = new BackyardBrainsThresholdFragment();
+                    frag = BackyardBrainsThresholdFragment.newInstance();
                     fragName = BYB_THRESHOLD_FRAGMENT;
                     break;
                 //------------------------------
@@ -340,26 +340,6 @@ public class BackyardBrainsMain extends AppCompatActivity
 
         // load initial fragment
         loadFragment(OSCILLOSCOPE_VIEW);
-    }
-
-    private String getFragmentNameFromType(int fragType) {
-        switch (fragType) {
-            case RECORDINGS_VIEW:
-                return BYB_RECORDINGS_FRAGMENT;
-            case THRESHOLD_VIEW:
-                return BYB_THRESHOLD_FRAGMENT;
-            case FIND_SPIKES_VIEW:
-                return BYB_SPIKES_FRAGMENT;
-            case ANALYSIS_VIEW:
-                return BYB_ANALYSIS_FRAGMENT;
-            case OSCILLOSCOPE_VIEW:
-                return BYB_OSCILLOSCOPE_FRAGMENT;
-            case PLAY_AUDIO_VIEW:
-                return BYB_PLAY_AUDIO_FRAGMENT;
-            case INVALID_VIEW:
-            default:
-                return "";
-        }
     }
 
     private int getFragmentTypeFromName(String fragName) {
@@ -529,7 +509,7 @@ public class BackyardBrainsMain extends AppCompatActivity
      * Starts {@link BYBAnalysisManager}.
      */
     public void startAnalysisManager() {
-        if (analysisManager == null) analysisManager = new BYBAnalysisManager(getApplicationContext());
+        if (analysisManager == null) analysisManager = new BYBAnalysisManager();
     }
 
     /**

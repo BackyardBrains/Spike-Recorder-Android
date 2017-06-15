@@ -1,15 +1,11 @@
 package com.backyardbrains;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import butterknife.BindView;
@@ -20,50 +16,110 @@ import com.backyardbrains.audio.ThresholdHelper;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
-import com.backyardbrains.events.ThresholdAverageSampleCountSet;
 import com.backyardbrains.view.BYBThresholdHandle;
-import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScopeFragment1 {
+public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsThresholdFragment.class);
 
     @BindView(R.id.threshold_handle) BYBThresholdHandle thresholdHandle;
-    @BindView(R.id.triggerViewSampleChangerLayout) LinearLayout llAvgSamplesContainer;
-    @BindView(R.id.samplesSeekBar) SeekBar sbAvgSamplesCount;
-    @BindView(R.id.numberOfSamplesAveraged) TextView tvAvgSamplesCount;
+    @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
+    @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
 
     private Unbinder unbinder;
 
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = super.onCreateView(inflater, container, savedInstanceState);
-        LOGD(TAG, "onCreateView()");
-        if (view != null) {
-            unbinder = ButterKnife.bind(this, view);
-            setupUI();
-        }
+    /**
+     * Factory for creating a new instance of the fragment.
+     *
+     * @return A new instance of fragment {@link BackyardBrainsThresholdFragment}.
+     */
+    public static BackyardBrainsThresholdFragment newInstance() {
+        return new BackyardBrainsThresholdFragment();
+    }
 
-        return view;
+    //==============================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //==============================================
+
+    @Override public void onStart() {
+        super.onStart();
+
+        if (getAudioService() != null) getAudioService().startMicrophone();
+    }
+
+    @Override public void onStop() {
+        super.onStop();
+
+        if (getAudioService() != null) getAudioService().stopMicrophone();
     }
 
     @Override public void onDestroyView() {
         super.onDestroyView();
-        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
+    }
+
+    //==============================================
+    //  ABSTRACT METHODS IMPLEMENTATIONS
+    //==============================================
+
+    @Override protected View createView(LayoutInflater inflater, @NonNull ViewGroup container,
+        @Nullable Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.fragmnet_threshold, container, false);
+        unbinder = ButterKnife.bind(this, view);
+
+        setupUI();
+
+        return view;
     }
 
     @Override
     protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        return new ThresholdRenderer(fragment, preparedBuffer);
+        final ThresholdRenderer renderer = new ThresholdRenderer(fragment, preparedBuffer);
+        renderer.setCallback(new ThresholdRenderer.CallbackAdapter() {
+
+            @Override public void onThresholdUpdate(final int value) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setThreshold(value);
+                        }
+                    });
+                }
+            }
+
+            @Override public void onTimeChange(final float milliseconds) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setMilliseconds(milliseconds);
+                        }
+                    });
+                }
+            }
+
+            @Override public void onSignalChange(final float millivolts) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            setMillivolts(millivolts);
+                        }
+                    });
+                }
+            }
+        });
+        return renderer;
     }
 
-    @Override protected int getLayoutID() {
-        return R.layout.thresh_scope_layout;
+    @Override protected boolean isBackable() {
+        return false;
     }
 
     @Override protected boolean shouldUseAverager() {
@@ -74,14 +130,21 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
         return (ThresholdRenderer) super.getRenderer();
     }
 
-    @Override protected boolean canRecord() {
-        return false;
+    //==============================================
+    //  EVENT BUS
+    //==============================================
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        LOGD(TAG, "Audio serviced connected. Refresh threshold for initial value");
+        if (event.isConnected()) refreshThreshold();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- GUI
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  PRIVATE METHODS
+    //==============================================
 
+    // Initializes user interface
     private void setupUI() {
         thresholdHandle.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
@@ -103,87 +166,19 @@ public class BackyardBrainsThresholdFragment extends BackyardBrainsPlayLiveScope
                 if (tvAvgSamplesCount != null) {
                     tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                 }
-                // and inform interested parties that the average sample count has changed
-                if (fromUser) {
-                    EventBus.getDefault().post(new ThresholdAverageSampleCountSet(progress));
-                    Intent i = new Intent();
-                    i.setAction("BYBThresholdNumAverages");
-                    i.putExtra("num", progress);
-                    getContext().sendBroadcast(i);
-                }
             }
         });
         tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), ThresholdHelper.DEFAULT_SIZE));
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                            Event Bus
-    //////////////////////////////////////////////////////////////////////////////
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        super.onAudioServiceConnectionEvent(event);
-        if (event.isConnected()) {
-            final AudioService provider = getAudioService();
-            if (provider != null) getRenderer().refreshThreshold();
-        }
+    // Sets the specified value for the threshold
+    private void setThreshold(int value) {
+        thresholdHandle.setPosition(value);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // -----------------------------------------  BROADCASTING LISTENERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // -----------------------------------------  BROADCAST RECEIVERS CLASS
-    private class SetAverageSliderListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBSetAveragerSlider broadcast received!");
-            if (intent.hasExtra("maxSize")) sbAvgSamplesCount.setProgress(intent.getIntExtra("maxSize", 32));
-        }
-    }
-
-    private class UpdateThresholdHandleListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBSetAveragerSlider broadcast received! Name: " + intent.getStringExtra("name"));
-            if (intent.hasExtra("name") && intent.hasExtra("pos") && "OsciloscopeHandle".equals(
-                intent.getStringExtra("name"))) {
-                thresholdHandle.setPosition(intent.getIntExtra("pos", 0));
-            }
-        }
-    }
-
-    // ----------------------------------------- RECEIVERS INSTANCES
-    private SetAverageSliderListener setAverageSliderListener;
-    private UpdateThresholdHandleListener updateThresholdHandleListener;
-
-    // ----------------------------------------- REGISTER RECEIVERS
-    @Override public void registerReceivers(boolean bRegister) {
-        super.registerReceivers(bRegister);
-        LOGD(TAG, "registerReceivers()");
-        registerReceiverSetAverageSlider(bRegister);
-        registerUpdateThresholdHandleListener(bRegister);
-    }
-
-    public void registerUpdateThresholdHandleListener(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBUpdateThresholdHandle");
-                updateThresholdHandleListener = new UpdateThresholdHandleListener();
-                getContext().registerReceiver(updateThresholdHandleListener, intentFilter);
-            } else {
-                getContext().unregisterReceiver(updateThresholdHandleListener);
-                updateThresholdHandleListener = null;
-            }
-        }
-    }
-
-    private void registerReceiverSetAverageSlider(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentSetAverageSliderFilter = new IntentFilter("BYBSetAveragerSlider");
-                setAverageSliderListener = new SetAverageSliderListener();
-                getContext().registerReceiver(setAverageSliderListener, intentSetAverageSliderFilter);
-            } else {
-                getContext().unregisterReceiver(setAverageSliderListener);
-            }
-        }
+    // Refreshes renderer thresholds
+    private void refreshThreshold() {
+        final AudioService provider = getAudioService();
+        if (provider != null) getRenderer().refreshThreshold();
     }
 }

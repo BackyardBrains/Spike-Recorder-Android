@@ -19,7 +19,6 @@
 
 package com.backyardbrains.drawing;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -30,7 +29,6 @@ import com.backyardbrains.utils.BYBUtils;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class ThresholdRenderer extends WaveformRenderer {
@@ -39,37 +37,46 @@ public class ThresholdRenderer extends WaveformRenderer {
 
     private float threshold; // in sample value range, which happens to be also gl values
 
+    interface Callback extends BYBBaseRenderer.Callback {
+        void onThresholdUpdate(int value);
+    }
+
+    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
+        @Override public void onThresholdUpdate(int value) {
+        }
+    }
+
     public ThresholdRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment, preparedBuffer);
     }
 
-    // ---------------------------------------------------------------------------------------------
+    @Override public void setCallback(BYBBaseRenderer.Callback callback) {
+        if (!(callback instanceof Callback)) {
+            throw new RuntimeException("Callback needs to be of type ThresholdRenderer.Callback!");
+        }
+
+        super.setCallback(callback);
+    }
+
+    /**
+     * Resets threshold to last saved value.
+     */
+    public void refreshThreshold() {
+        adjustThresholdValue(threshold);
+    }
+
+    /**
+     * Sets threshold to specified {@code y} value.
+     */
+    public void adjustThreshold(float y) {
+        adjustThresholdValue(pixelHeightToGlHeight(y));
+    }
+
     @Override public void setGlWindowVerticalSize(int newY) {
         super.setGlWindowVerticalSize(newY);
-        LOGD(TAG, "setGlWindowVerticalSize()");
         updateThresholdHandle();
     }
 
-    private void updateThresholdHandle() {
-        if (getContext() != null) {
-            Intent i = new Intent();
-            i.setAction("BYBUpdateThresholdHandle");
-            i.putExtra("pos", getThresholdScreenValue());
-            i.putExtra("name", "OsciloscopeHandle");
-            getContext().sendBroadcast(i);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private boolean getCurrentAverage() {
-        if (getAudioService() != null) {
-            mBufferToDraws = getAudioService().getAverageBuffer();
-            return true;
-        }
-        return false;
-    }
-
-    // ----------------------------------------------------------------------------------------
     @Override public void onDrawFrame(GL10 gl) {
         if (!getCurrentAverage()) return;
         if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) return;
@@ -80,7 +87,6 @@ public class ThresholdRenderer extends WaveformRenderer {
         postDrawingHandler(gl);
     }
 
-    // ---------------------------------------------------------------------------------------------
     @Override protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
         if (glWindowHorizontalSize > shortArrayToDraw.length) setGlWindowHorizontalSize(shortArrayToDraw.length);
 
@@ -99,23 +105,26 @@ public class ThresholdRenderer extends WaveformRenderer {
         return BYBUtils.getFloatBufferFromFloatArray(arr, arr.length);
     }
 
-    // ---------------------------------------------------------------------------------------------
-    @Override protected void setmVText() {
-        final float yPerDiv = threshold;
-        super.setmVText(yPerDiv);
+    private Callback getCallback() {
+        return (Callback) callback;
     }
 
-    // ---------------------------------------------------------------------------------------------
-    private int getThresholdScreenValue() {
-        return glHeightToPixelHeight(threshold);
+    private void updateThresholdHandle() {
+        if (getCallback() != null) getCallback().onThresholdUpdate(glHeightToPixelHeight(threshold));
     }
 
-    // ---------------------------------------------------------------------------------------------
+    private boolean getCurrentAverage() {
+        if (getAudioService() != null) {
+            mBufferToDraws = getAudioService().getAverageBuffer();
+            return true;
+        }
+        return false;
+    }
+
     private void adjustThresholdValue(float dy) {
         Log.d(TAG, "adjustThresholdValue " + dy);
-        if (dy == 0) {
-            return;
-        }
+        if (dy == 0) return;
+
         threshold = dy;
 
         if (getAudioService() != null && getAudioService().getTriggerHandler() != null) {
@@ -125,16 +134,6 @@ public class ThresholdRenderer extends WaveformRenderer {
                 }
             });
         }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void adjustThreshold(float y) {
-        adjustThresholdValue(pixelHeightToGlHeight(y));
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public void refreshThreshold() {
-        adjustThresholdValue(threshold);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
