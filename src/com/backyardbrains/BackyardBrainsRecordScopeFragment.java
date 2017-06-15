@@ -53,6 +53,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         if (getAudioService() != null) getAudioService().startMicrophone();
     }
 
+    @Override public void onStop() {
+        super.onStop();
+
+        if (getAudioService() != null) getAudioService().stopMicrophone();
+    }
+
     @Override public void onDestroyView() {
         super.onDestroyView();
         unbinder.unbind();

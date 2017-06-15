@@ -134,7 +134,7 @@
         android:visibility="gone">
 
         <SeekBar
-            android:id="@+id/samplesSeekBar"
+            android:id="@+id/sb_averaged_sample_count"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
@@ -148,7 +148,7 @@
             android:visibility="visible"/>
 
         <TextView
-            android:id="@+id/numberOfSamplesAveraged"
+            android:id="@+id/tv_averaged_sample_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"

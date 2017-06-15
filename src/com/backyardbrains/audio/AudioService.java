@@ -220,10 +220,17 @@ public class AudioService extends Service implements ReceivesAudio {
     //=================================================
 
     /**
-     * Start processing default input (Microphone).
+     * Starts processing default input (Microphone).
      */
     public void startMicrophone() {
         turnOnMicThread();
+    }
+
+    /**
+     * Stops processing default input (Microphone).
+     */
+    public void stopMicrophone() {
+        turnOffMicThread();
     }
 
     private void turnOnMicThread() {
