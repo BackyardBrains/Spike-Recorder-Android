@@ -166,6 +166,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 if (tvAvgSamplesCount != null) {
                     tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                 }
+                // and inform interested parties that the average sample count has changed
+                if (fromUser && getAudioService() != null) getAudioService().setThresholdAveragedSampleCount(progress);
             }
         });
         tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), ThresholdHelper.DEFAULT_SIZE));
