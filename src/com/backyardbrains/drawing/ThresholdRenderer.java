@@ -35,7 +35,9 @@ public class ThresholdRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
-    private float threshold; // in sample value range, which happens to be also gl values
+    private float threshold; // in samples, which is also gl width
+
+    private Callback callback;
 
     interface Callback extends BYBBaseRenderer.Callback {
         void onThresholdUpdate(int value);
@@ -50,12 +52,10 @@ public class ThresholdRenderer extends WaveformRenderer {
         super(fragment, preparedBuffer);
     }
 
-    @Override public void setCallback(BYBBaseRenderer.Callback callback) {
-        if (!(callback instanceof Callback)) {
-            throw new RuntimeException("Callback needs to be of type ThresholdRenderer.Callback!");
-        }
-
+    public void setCallback(Callback callback) {
         super.setCallback(callback);
+
+        this.callback = callback;
     }
 
     /**
@@ -105,12 +105,8 @@ public class ThresholdRenderer extends WaveformRenderer {
         return BYBUtils.getFloatBufferFromFloatArray(arr, arr.length);
     }
 
-    private Callback getCallback() {
-        return (Callback) callback;
-    }
-
     private void updateThresholdHandle() {
-        if (getCallback() != null) getCallback().onThresholdUpdate(glHeightToPixelHeight(threshold));
+        if (callback != null) callback.onThresholdUpdate(glHeightToPixelHeight(threshold));
     }
 
     private boolean getCurrentAverage() {

@@ -45,10 +45,10 @@
         android:id="@+id/tv_signal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
         android:visibility="invisible"
         app:layout_constraintLeft_toRightOf="@+id/iv_signal_scale"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/iv_signal_scale"
+        app:layout_constraintBottom_toBottomOf="@+id/iv_signal_scale"
         tools:text="0 ms"/>
 
     <android.support.constraint.Guideline

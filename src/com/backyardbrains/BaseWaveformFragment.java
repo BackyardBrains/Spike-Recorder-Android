@@ -131,7 +131,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     // Initializes user interface
     private void setupUI() {
         setUseAverager();
-        this.renderer = createRenderer(this, bufferWithXs);
+        renderer = createRenderer(this, bufferWithXs);
         waveform.setRenderer(renderer);
 
         if (isBackable()) {

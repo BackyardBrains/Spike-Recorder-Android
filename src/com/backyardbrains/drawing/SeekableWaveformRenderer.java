@@ -19,7 +19,7 @@ public class SeekableWaveformRenderer extends BYBBaseRenderer {
     }
 
     @Override public void onDrawFrame(GL10 gl) {
-        // let's save start and end samples sample positions that are being drawn before triggering the actual draw
+        // let's save start and end sample positions that are being drawn before triggering the actual draw
         toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
         fromSample = Math.max(0, toSample - glWindowHorizontalSize);
         //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());

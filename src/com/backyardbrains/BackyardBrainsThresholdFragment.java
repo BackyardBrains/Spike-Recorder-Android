@@ -16,6 +16,7 @@ import com.backyardbrains.audio.ThresholdHelper;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.BYBThresholdHandle;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -93,23 +94,17 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 }
             }
 
-            @Override public void onTimeChange(final float milliseconds) {
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
 
-            @Override public void onSignalChange(final float millivolts) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMillivolts(millivolts);
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }

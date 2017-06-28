@@ -16,6 +16,7 @@ import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import org.greenrobot.eventbus.EventBus;
@@ -103,23 +104,18 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(fragment, preparedBuffer);
         renderer.setCallback(new BYBBaseRenderer.Callback() {
-            @Override public void onTimeChange(final float milliseconds) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
 
-            @Override public void onSignalChange(final float millivolts) {
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setMillivolts(millivolts);
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
+
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }
