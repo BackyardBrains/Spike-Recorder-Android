@@ -19,7 +19,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.2'
+    buildToolsVersion '25.0.3'
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -81,25 +81,28 @@ android {
     }
 }
 ext {
-    supportLibVersion = '25.3.0'
-    butterknifeVersion = '8.5.1'
-    crashlyticsVersion = '2.6.7@aar'
-    easyPermissionsVersion = '0.3.0'
+    supportLibVersion = '25.3.1'
+    butterknifeVersion = '8.6.0'
+    crashlyticsVersion = '2.6.8@aar'
+    easyPermissionsVersion = '0.4.2'
+    constraintLayoutVersion = '1.0.2'
+    eventBusVersion = '3.0.0'
+    eventBusAnnotationProcessorVersion = '3.0.1'
 }
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     // support libraries
     compile "com.android.support:appcompat-v7:$supportLibVersion"
     compile "com.android.support:design:$supportLibVersion"
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
     // view
     compile "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     // permissions
     compile "pub.devrel:easypermissions:$easyPermissionsVersion"
     // event bus
-    compile "org.greenrobot:eventbus:3.0.0"
-    annotationProcessor "org.greenrobot:eventbus-annotation-processor:3.0.1"
+    compile "org.greenrobot:eventbus:$eventBusVersion"
+    annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true;
