@@ -201,18 +201,6 @@ public abstract class BackyardBrainsBaseScopeFragment extends BaseFragment {
     }
 
     //////////////////////////////////////////////////////////////////////////////
-    //                                  Utils
-    //////////////////////////////////////////////////////////////////////////////
-
-    protected boolean getIsPlaybackMode() {
-        return getAudioService() != null && getAudioService().isPlaybackMode();
-    }
-
-    protected boolean getIsPlaying() {
-        return getAudioService() != null && getAudioService().isAudioPlaying();
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
     //                                 Settings
     //////////////////////////////////////////////////////////////////////////////
 

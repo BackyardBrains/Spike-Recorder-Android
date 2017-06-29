@@ -62,8 +62,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
 
         @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            //float viewportOffsetX = distanceX * mCurrentViewport.width() / mContentRect.width();
-            //float viewportOffsetY = -distanceY * mCurrentViewport.height() / mContentRect.height();
             // Updates the viewport, refreshes the display.
             renderer.addToGlOffset(-distanceX, distanceY);
             return true;
@@ -73,14 +71,9 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     BYBBaseRenderer renderer;
 
     private boolean bZoomButtonsEnabled = false;
-    //	protected int nonTouchMode = -1;
-    float startTouchX;
-    float startTouchY;
-    float minScalingDistance = 5;
     float scalingFactor = 0.5f;
     float scalingFactorOut;
     float scalingFactorIn;
-    boolean bIsNonTouchScaling = false;
 
     public InteractiveGLSurfaceView(Context context) {
         this(context, null);
@@ -165,7 +158,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                     break;
             }
         }
-        //Log.d(TAG, "onTouchEvent " + event.toString());
         if (renderer != null) {
             if (scaleDetector != null) {
                 scaleDetector.onTouchEvent(event);
@@ -179,6 +171,10 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
         return true;
     }
+
+    //==============================================
+    //  PRIVATE METHODS
+    //==============================================
 
     // Initializes the view
     private void init() {
@@ -232,55 +228,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         return (mode == MODE_ZOOM_IN_H || mode == MODE_ZOOM_OUT_H);
     }
 
-    /*
-        private void nonTouchScaling(MotionEvent event) {
-            if(bZoomButtonsEnabled && renderer != null && isScalingMode()){
-                final int action = event.getAction();
-                float distanceX=0;
-                float distanceY=0;
-                if(bIsNonTouchScaling) {
-                    distanceX = Math.abs(event.getX() - startTouchX);
-                    distanceY = Math.abs(event.getY() - startTouchY);
-                }
-                switch (action & MotionEvent.ACTION_MASK) {
-                    case MotionEvent.ACTION_DOWN:
-                        bIsNonTouchScaling = true;
-                        startTouchX = event.getX();
-                        startTouchY = event.getY();
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        if(bIsNonTouchScaling) {
-                            if (isScalingHorizontally() && distanceX > minScalingDistance) {
-                                    renderer.setGlWindowUnscaledHorizontalSize(distanceX);
-                                    renderer.setScaleFocusX(distanceX / 2 + Math.min(event.getX(), startTouchX));
-                            }else if (!isScalingHorizontally() && distanceY > minScalingDistance) {
-                                    renderer.setGlWindowUnscaledVerticalSize(distanceY);
-                            }else{
-    //							renderer.setGlWindowHorizontalSize((int)(renderer.getGlWindowHorizontalSize()*zoomFactor));
-    //							renderer.setScaleFocusX(startTouchX);
-                                scaleRenderer(startTouchX);
-                            }
-                        }
-                        renderer.hideScalingArea();
-                        bIsNonTouchScaling = false;
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        if(bIsNonTouchScaling) {
-                            if (isScalingHorizontally() && distanceX > minScalingDistance) {
-                                renderer.showScalingAreaX(startTouchX, event.getX());
-                            }else if (!isScalingHorizontally() && distanceY > minScalingDistance) {
-                                renderer.showScalingAreaY(startTouchY, event.getY());
-                            }
-                        }
-                        break;
-                    case MotionEvent.ACTION_CANCEL:
-                        renderer.hideScalingArea();
-                        bIsNonTouchScaling = false;
-                        break;
-                }
-            }
-        }
-        //*/
     public void enableZoomButtons(boolean bEnable) {
         boolean bBroadcast = false;
         if (bEnable && !bZoomButtonsEnabled) {
@@ -300,13 +247,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
     }
 
-    //	protected void showScalingInstructions() {
-    //		if (context != null && isScalingMode()) {
-    //			Intent i = new Intent();
-    //			i.setAction("showScalingInstructions");
-    //			context.sendBroadcast(i);
-    //		}
-    //	}
     private class ZoomButtonsListener extends BroadcastReceiver {
         @Override public void onReceive(Context context, Intent intent) {
             if (intent.hasExtra("zoomMode")) {

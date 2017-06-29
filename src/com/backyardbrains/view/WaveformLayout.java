@@ -119,7 +119,7 @@ public class WaveformLayout extends ConstraintLayout {
 
     // Initializes the view
     private void init() {
-        LayoutInflater.from(getContext()).inflate(R.layout.layout_base_scope, this);
+        LayoutInflater.from(getContext()).inflate(R.layout.layout_waveform, this);
         ButterKnife.bind(this);
 
         setupUI();

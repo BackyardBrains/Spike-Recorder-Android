@@ -95,7 +95,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     @Override
     protected FindSpikesRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(fragment, preparedBuffer);
-        renderer.setCallback(new FindSpikesRenderer.Callback() {
+        renderer.setCallback(new FindSpikesRenderer.CallbackAdapter() {
 
             @Override public void onThresholdUpdate(@ThresholdOrientation final int threshold, final int value) {
                 // we need to call it on UI thread because renderer is drawing on background thread
@@ -103,28 +103,6 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             setThreshold(threshold, value);
-                        }
-                    });
-                }
-            }
-
-            @Override public void onTimeChange(final float milliseconds) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
-
-            @Override public void onSignalChange(final float millivolts) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMillivolts(millivolts);
                         }
                     });
                 }

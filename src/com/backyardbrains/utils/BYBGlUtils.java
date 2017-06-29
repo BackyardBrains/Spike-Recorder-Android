@@ -7,6 +7,10 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class BYBGlUtils {
 
+    public static final int DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000;
+    public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
+    public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
+
     // ----------------------------------------------------------------------------------------
     public static void glClear(GL10 gl) {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);

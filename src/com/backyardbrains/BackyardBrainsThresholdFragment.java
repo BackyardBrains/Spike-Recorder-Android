@@ -16,6 +16,7 @@ import com.backyardbrains.audio.ThresholdHelper;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.BYBThresholdHandle;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -93,23 +94,17 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 }
             }
 
-            @Override public void onTimeChange(final float milliseconds) {
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
 
-            @Override public void onSignalChange(final float millivolts) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMillivolts(millivolts);
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }
@@ -152,7 +147,6 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             }
         });
 
-        sbAvgSamplesCount.setProgress(ThresholdHelper.DEFAULT_SIZE);
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
@@ -162,15 +156,23 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             }
 
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // minimum sample count is 1
+                if (progress <= 0) progress = 1;
+
                 // update count label
                 if (tvAvgSamplesCount != null) {
                     tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                 }
+
                 // and inform interested parties that the average sample count has changed
-                if (fromUser && getAudioService() != null) getAudioService().setThresholdAveragedSampleCount(progress);
+                if (fromUser && getAudioService() != null) {
+                    getAudioService().setThresholdAveragedSampleCount(progress);
+                }
             }
         });
-        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), ThresholdHelper.DEFAULT_SIZE));
+        sbAvgSamplesCount.setProgress(getAudioService() != null ? getAudioService().getThresholdAveragedSampleCount()
+            : ThresholdHelper.DEFAULT_SIZE);
+        //tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), avgSampleCount));
     }
 
     // Sets the specified value for the threshold

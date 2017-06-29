@@ -72,6 +72,6 @@ public class BaseFragment extends Fragment {
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNoSubscriberEvent(NoSubscriberEvent event) {
-        // nothing for now
+        // we need this to avoid EventBusException exception thrown by EventBus
     }
 }

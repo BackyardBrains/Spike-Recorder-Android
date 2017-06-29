@@ -1,18 +1,16 @@
 package com.backyardbrains.drawing;
 
-import android.content.Intent;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
-import com.backyardbrains.utils.Formats;
+import com.backyardbrains.utils.PrefUtils;
 import java.nio.FloatBuffer;
-import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -24,46 +22,44 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     private static final String TAG = makeLogTag(BYBBaseRenderer.class);
 
-    int glWindowHorizontalSize = 4000;
-    private int glWindowVerticalSize = 10000;
-    private int prevGlWindowHorizontalSize = 4000;
-    private int prevGlWindowVerticalSize = 10000;
+    private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
+    private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
 
-    private float focusX = 0;
-    private float scaledFocusX = 0;
-    private float normalizedFocusX = 0;
-    private int focusedSample = 0;
+    private float focusX;
+    private float scaledFocusX;
+    private float normalizedFocusX;
+    private int focusedSample;
 
-    private boolean bZooming = false;
-    private boolean bPanning = false;
-    private float panningDx = 0;
+    private boolean bZooming;
+    private boolean bPanning;
+    private float panningDx;
 
-    short[] mBufferToDraws;
-    private float[] mTempBufferToDraws;
+    short[] drawingBuffer;
+    private float[] tempBufferToDraws;
 
     protected int height;
     protected int width;
-    private boolean autoScaled = false;
+    private boolean autoScaled;
     private static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
     private static final int MIN_GL_HORIZONTAL_SIZE = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
-    private float minimumDetectedPCMValue = -5000000f;
+    private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
-    protected int startIndex = 0;
-    protected int endIndex = 0;
-    private boolean bShowScalingAreaX = false;
+    private int startIndex;
+    private int endIndex;
+    private boolean bShowScalingAreaX;
     private int scalingAreaStartX;
     private int scalingAreaEndX;
-    private boolean bShowScalingAreaY = false;
+    private boolean bShowScalingAreaY;
     private int scalingAreaStartY;
     private int scalingAreaEndY;
 
+    private Callback callback;
+
     public interface Callback {
 
-        void onTimeChange(float milliseconds);
-
-        void onSignalChange(float millivolts);
+        void onDraw(int drawSurfaceWidth, int drawSurfaceHeight);
 
         void onHorizontalDragStart();
 
@@ -74,10 +70,7 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     public static class CallbackAdapter implements Callback {
 
-        @Override public void onTimeChange(float milliseconds) {
-        }
-
-        @Override public void onSignalChange(float millivolts) {
+        @Override public void onDraw(int drawSurfaceWidth, int drawSurfaceHeight) {
         }
 
         @Override public void onHorizontalDrag(float dx) {
@@ -90,19 +83,14 @@ public class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    protected Callback callback;
+    //==============================================
+    //  CONSTRUCTOR & SETUP
+    //==============================================
 
-    public void setCallback(Callback callback) {
-        this.callback = callback;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- CONSTRUCTOR & SETUP
-    ////////////////////////////////////////////////////////////////////////////////////////////////
     public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment);
 
-        this.mTempBufferToDraws = preparedBuffer;
+        this.tempBufferToDraws = preparedBuffer;
     }
 
     public static float[] initTempBuffer() {
@@ -114,87 +102,53 @@ public class BYBBaseRenderer extends BaseRenderer {
         return buffer;
     }
 
-    // ----------------------------------------------------------------------------------------
+    /**
+     * Cleans any occupied resources.
+     */
     public void close() {
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTERS/GETTERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------------------------------------------------------
-    public void setGlWindowHorizontalSize(int newX) {
-        if (newX < 0) return;
+    //==============================================
+    //  PUBLIC AND PROTECTED METHODS
+    //==============================================
 
-        prevGlWindowHorizontalSize = glWindowHorizontalSize;
-        int maxLength;
-        if (mBufferToDraws != null) {
-            maxLength = Math.min(mBufferToDraws.length, MAX_SAMPLES_COUNT);
-            if (newX < MIN_GL_HORIZONTAL_SIZE) {
-                newX = MIN_GL_HORIZONTAL_SIZE;
-            }
-            if (maxLength > 0 && newX > maxLength) {
-                newX = maxLength;
-            }
-            this.glWindowHorizontalSize = newX;
-        }
+    public void setCallback(Callback callback) {
+        this.callback = callback;
     }
 
-    // ----------------------------------------------------------------------------------------
-    public void setGlWindowVerticalSize(int newY) {
-        if (newY < 0) {
-            return;
+    public void setGlWindowHorizontalSize(int newSize) {
+        if (newSize < 0 || newSize == glWindowHorizontalSize) return;
+
+        if (newSize < MIN_GL_HORIZONTAL_SIZE) newSize = MIN_GL_HORIZONTAL_SIZE;
+        if (drawingBuffer != null) {
+            final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
+            if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
         }
-        prevGlWindowVerticalSize = glWindowVerticalSize;
-        if (newY < MIN_GL_VERTICAL_SIZE) {
-            newY = MIN_GL_VERTICAL_SIZE;
-        }
-        if (newY > PCM_MAXIMUM_VALUE) {
-            newY = PCM_MAXIMUM_VALUE;
-        }
-        glWindowVerticalSize = newY;
+        glWindowHorizontalSize = newSize;
     }
 
-    // ----------------------------------------------------------------------------------------
-    public int getGlWindowVerticalSize() {
-        return glWindowVerticalSize;
-    }
-
-    // ----------------------------------------------------------------------------------------
     public int getGlWindowHorizontalSize() {
         return glWindowHorizontalSize;
     }
 
-    // ----------------------------------------------------------------------------------------
+    public void setGlWindowVerticalSize(int newSize) {
+        if (newSize < 0 || newSize == glWindowVerticalSize) return;
+        if (newSize < MIN_GL_VERTICAL_SIZE) newSize = MIN_GL_VERTICAL_SIZE;
+        if (newSize > PCM_MAXIMUM_VALUE) newSize = PCM_MAXIMUM_VALUE;
+
+        glWindowVerticalSize = newSize;
+    }
+
+    public int getGlWindowVerticalSize() {
+        return glWindowVerticalSize;
+    }
+
     public int getSurfaceWidth() {
         return width;
     }
 
-    // ----------------------------------------------------------------------------------------
     public int getSurfaceHeight() {
         return height;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void startAddToGlOffset() {
-        if (getIsPlaybackMode() && !getIsPlaying() && !getIsSeeking()) {
-            if (callback != null) callback.onHorizontalDragStart();
-        }
-    }
-
-    public void addToGlOffset(float dx, float dy) {
-        if (getIsPlaybackMode() && !getIsPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / width);
-
-            //bPanning = true;
-            //panningDx = dx;
-            //bZooming = false;
-        }
-    }
-
-    public void endAddToGlOffset() {
-        if (getIsPlaybackMode() && !getIsPlaying()) {
-            if (callback != null) callback.onHorizontalDragEnd();
-        }
     }
 
     public void setScaleFocusX(float fx) {
@@ -203,161 +157,82 @@ public class BYBBaseRenderer extends BaseRenderer {
         bPanning = false;
     }
 
-    public void showScalingAreaX(float start, float end) {
-        bShowScalingAreaX = true;
-        scalingAreaStartX = screenToSampleScale(start);
-        scalingAreaEndX = screenToSampleScale(end);
-    }
-
-    public void showScalingAreaY(float start, float end) {
-        bShowScalingAreaY = true;
-        scalingAreaStartY = (int) pixelHeightToGlHeight(start);
-        scalingAreaEndY = (int) pixelHeightToGlHeight(end);
-    }
-
-    public void hideScalingArea() {
-        bShowScalingAreaX = false;
-        bShowScalingAreaY = false;
-    }
-
-    private void setStartEndIndex(int arrayLength) {
-        setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
-
-        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize, arrayLength);
-
-        if (startIndex + glWindowHorizontalSize > arrayLength) {
-            setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
-        }
-    }
-
-    private void setStartIndex(int si, int arrayLength) {
-        startIndex = si;
-        //endIndex = startIndex + glWindowHorizontalSize;
-        endIndex = Math.min(startIndex + glWindowHorizontalSize, arrayLength);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    @Nullable protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-        if (getContext() != null) {
-            //long start = System.currentTimeMillis();
-            //LOGD(TAG, ".........................................");
-            //LOGD(TAG, "START - " + shortArrayToDraw.length);
-            final boolean clearFront = getIsSeeking();
-            setStartEndIndex(shortArrayToDraw.length);
-            //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
-            int j = 1;
-
-            try {
-                for (int i = startIndex; i < endIndex; i++) {
-                    if (i < 0) {
-                        if (clearFront) mTempBufferToDraws[j] = 0;
-                    } else {
-                        mTempBufferToDraws[j] = shortArrayToDraw[i];
-                    }
-                    //LOGD(TAG, "currentSample: " + mTempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
-
-                    // give subclass a chance to process current sample
-                    //onCycle(j);
-
-                    j += 2;
-                }
-                //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
-            } catch (ArrayIndexOutOfBoundsException e) {
-                LOGE(TAG, "Array size out of sync while building new waveform buffer");
-            }
-
-            // subclasses can do some post-processing
-            //postCycle();
-            //Log.d(TAG, "AFTER postCycle():" + (System.currentTimeMillis() - start));
-
-            final FloatBuffer fb =
-                BYBUtils.getFloatBufferFromFloatArray(mTempBufferToDraws, glWindowHorizontalSize * 2);
-            //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
-            //LOGD(TAG, ".........................................");
-            return fb;
-        }
-        return null;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private float getMinimumDetectedPCMValue() {
-        return minimumDetectedPCMValue;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private boolean getCurrentAudio() {
+    /**
+     * Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
+     */
+    protected boolean fillBuffer() {
         if (getAudioService() != null) {
-            if (mBufferToDraws == null) mBufferToDraws = new short[getAudioService().getAudioBuffer().length];
-            System.arraycopy(getAudioService().getAudioBuffer(), 0, mBufferToDraws, 0, mBufferToDraws.length);
+            if (drawingBuffer == null) drawingBuffer = new short[getAudioService().getAudioBuffer().length];
+            System.arraycopy(getAudioService().getAudioBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
             return true;
         }
         return false;
     }
 
-    // ----------------------------------------------------------------------------------------
-    // ----------------------------------------- LABELS
-    private void setLabels(int samplesToShow) {
-        setmVText();
-        final float millisecondsInThisWindow = samplesToShow / 44100.0f * 1000 / 2;
-        setMsText(millisecondsInThisWindow);
+    //==============================================
+    //  SETTINGS
+    //==============================================
+
+    /**
+     * Called to ask renderer to load it's local settings so it can render inital state correctly. It is the counterpart
+     * to {@link #onSaveSettings(Context)}.
+     *
+     * This method should typically be called in {@link android.app.Activity#onStart Activity.onStart}. Subclasses
+     * should override this method if they need to load any renderer specific settings.
+     */
+    @CallSuper public void onLoadSettings(@NonNull Context context) {
+        setGlWindowHorizontalSize(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
+        setGlWindowVerticalSize(PrefUtils.getGlWindowVerticalSize(context, getClass()));
+        width = PrefUtils.getViewportWidth(context, getClass());
+        height = PrefUtils.getViewportHeight(context, getClass());
+        setAutoScaled(PrefUtils.getAutoScale(context, getClass()));
+        minimumDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
 
-    // ----------------------------------------------------------------------------------------
-    protected void setmVText() {
-        float yPerDiv = (float) getGlWindowVerticalSize() / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
-        setmVText(yPerDiv);
+    /**
+     * Called to ask renderer to save it's local settings so they can be retrieved when renderer is recreated. It is the
+     * counterpart to {@link #onLoadSettings(Context)}.
+     *
+     * This method should typically be called in {@link android.app.Activity#onStart Activity.onStop}. Subclasses
+     * should override this method if they need to save any renderer specific settings.
+     */
+    @CallSuper public void onSaveSettings(@NonNull Context context) {
+        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowHorizontalSize);
+        PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowVerticalSize);
+        PrefUtils.setViewportWidth(context, getClass(), width);
+        PrefUtils.setViewportHeight(context, getClass(), height);
+        PrefUtils.setAutoScale(context, getClass(), autoScaled);
+        PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minimumDetectedPCMValue);
     }
 
-    // ----------------------------------------------------------------------------------------
-    private void setMsText(float ms) {
-        //String msString = new DecimalFormat("#.#").format(ms);
-        if (callback != null) callback.onTimeChange(ms);
-        // FIXME: 4/11/2017 legacy code, should be removed
-        broadcastTextUpdate("BYBUpdateMillisecondsReciever", "millisecondsDisplayedString",
-            Formats.formatTime_s_msec(ms));
+    //==============================================
+    //  Renderer INTERFACE IMPLEMENTATIONS
+    //==============================================
+
+    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        LOGD(TAG, "onSurfaceCreated()");
+
+        gl.glDisable(GL10.GL_DITHER);
+        gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
+        gl.glEnable(GL10.GL_DEPTH_TEST);
     }
 
-    // ----------------------------------------------------------------------------------------
-    void setmVText(float mV) {
-        String msString = new DecimalFormat("#.##").format(mV);
-        if (callback != null) callback.onSignalChange(mV);
-        // FIXME: 4/11/2017 legacy code, should be removed
-        broadcastTextUpdate("BYBUpdateMillivoltReciever", "millivoltsDisplayedString", msString + " mV");
-    }
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        LOGD(TAG, "onSurfaceCreated()");
 
-    // ----------------------------------------------------------------------------------------
-    private void broadcastTextUpdate(String action, String name, String data) {
-        if (getContext() != null) {
-            Intent i = new Intent();
-            i.setAction(action);
-            i.putExtra(name, data);
-            getContext().sendBroadcast(i);
-        }
+        this.width = width;
+        this.height = height;
     }
-
-    // ----------------------------------------------------------------------------------------
-    private void setMillivoltLabelPosition(int height) {
-        if (getContext() != null) {
-            Intent i = new Intent();
-            i.setAction("BYBMillivoltsViewSize");
-            i.putExtra("millivoltsViewNewSize", height / 2);
-            getContext().sendBroadcast(i);
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- DRAWING
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override public void onDrawFrame(GL10 gl) {
         long start = System.currentTimeMillis();
         //LOGD(TAG, "START");
-        if (!getCurrentAudio()) {
-            LOGD(TAG, "Can't get current audio buffer!");
+        if (!fillBuffer()) {
+            LOGD(TAG, "Can't fill audio buffer!");
             return;
         }
         //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER getCurrentAudio()");
-        if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) {
+        if (!BYBUtils.isValidAudioBuffer(drawingBuffer)) {
             LOGD(TAG, "Invalid audio buffer!");
             return;
         }
@@ -375,17 +250,14 @@ public class BYBBaseRenderer extends BaseRenderer {
         //LOGD(TAG, "================================================");
     }
 
-    // ----------------------------------------------------------------------------------------
-    void preDrawingHandler() {
-        setLabels(glWindowHorizontalSize);
+    protected void preDrawingHandler() {
+        if (callback != null) callback.onDraw(glWindowHorizontalSize, glWindowVerticalSize);
     }
 
-    // ----------------------------------------------------------------------------------------
     protected void drawingHandler(GL10 gl) {
     }
 
-    // ----------------------------------------------------------------------------------------
-    void postDrawingHandler(GL10 gl) {
+    protected void postDrawingHandler(GL10 gl) {
         // TODO: 4/19/2017 Code below was drawing a playhead (blue vertical line), playhead should be always right side of screen
         //if (getIsPlaybackMode() && !getIsPlaying()) {
         //    float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
@@ -408,22 +280,86 @@ public class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    // ----------------------------------------------------------------------------------------
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SURFACE LISTENERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
-        this.width = width;
-        this.height = height;
-        setMillivoltLabelPosition(height);
+    //==============================================
+    //  PRIVATE AND PACKAGE-PRIVATE METHODS
+    //==============================================
+
+    void startAddToGlOffset() {
+        if (getIsPlaybackMode() && !getIsPlaying() && !getIsSeeking()) {
+            if (callback != null) callback.onHorizontalDragStart();
+        }
     }
 
-    // ----------------------------------------------------------------------------------------
-    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        Log.d(TAG, "onSurfaceCreated");
-        gl.glDisable(GL10.GL_DITHER);
-        gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-        gl.glEnable(GL10.GL_DEPTH_TEST);
+    void addToGlOffset(float dx, float dy) {
+        if (getIsPlaybackMode() && !getIsPlaying()) {
+            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / width);
+
+            //bPanning = true;
+            //panningDx = dx;
+            //bZooming = false;
+        }
+    }
+
+    void endAddToGlOffset() {
+        if (getIsPlaybackMode() && !getIsPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    }
+
+    private void setStartEndIndex(int arrayLength) {
+        setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
+
+        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize, arrayLength);
+
+        if (startIndex + glWindowHorizontalSize > arrayLength) {
+            setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
+        }
+    }
+
+    private void setStartIndex(int si, int arrayLength) {
+        startIndex = si;
+        //endIndex = startIndex + glWindowHorizontalSize;
+        endIndex = Math.min(startIndex + glWindowHorizontalSize, arrayLength);
+    }
+
+    @Nullable protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+        //long start = System.currentTimeMillis();
+        //LOGD(TAG, ".........................................");
+        //LOGD(TAG, "START - " + shortArrayToDraw.length);
+        final boolean clearFront = getIsSeeking();
+        setStartEndIndex(shortArrayToDraw.length);
+        //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
+        int j = 1;
+
+        try {
+            for (int i = startIndex; i < endIndex; i++) {
+                if (i < 0) {
+                    if (clearFront) tempBufferToDraws[j] = 0;
+                } else {
+                    tempBufferToDraws[j] = shortArrayToDraw[i];
+                }
+                //LOGD(TAG, "currentSample: " + tempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
+
+                // give subclass a chance to process current sample
+                //onCycle(j);
+
+                j += 2;
+            }
+            //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            LOGE(TAG, "Array size out of sync while building new waveform buffer");
+        }
+
+        // subclasses can do some post-processing
+        //postCycle();
+        //Log.d(TAG, "AFTER postCycle():" + (System.currentTimeMillis() - start));
+
+        final FloatBuffer fb = BYBUtils.getFloatBufferFromFloatArray(tempBufferToDraws, glWindowHorizontalSize * 2);
+        //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, ".........................................");
+        return fb;
+    }
+
+    private float getMinimumDetectedPCMValue() {
+        return minimumDetectedPCMValue;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -465,9 +401,9 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     void autoScaleCheck() {
-        if (!isAutoScaled() && mBufferToDraws != null) {
-            if (mBufferToDraws.length > 0) {
-                autoSetFrame(mBufferToDraws);
+        if (!isAutoScaled() && drawingBuffer != null) {
+            if (drawingBuffer.length > 0) {
+                autoSetFrame(drawingBuffer);
             }
         }
     }
@@ -502,12 +438,9 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------------------------------------------------------
     int glHeightToPixelHeight(float glHeight) {
-        if (height <= 0) {
-            //Log.d(TAG, "Checked height and size was less than or equal to zero");
-        }
-        int ret = BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
+        if (height <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
 
-        return ret;
+        return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
     }
 
     // ----------------------------------------------------------------------------------------

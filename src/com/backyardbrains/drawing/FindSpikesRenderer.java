@@ -1,6 +1,7 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.analysis.BYBSpike;
@@ -23,8 +24,15 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
     private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 
-    public interface Callback extends BYBBaseRenderer.Callback {
+    private Callback callback;
+
+    interface Callback extends BYBBaseRenderer.Callback {
         void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
+    }
+
+    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
+        @Override public void onThresholdUpdate(@ThresholdOrientation int threshold, int value) {
+        }
     }
 
     public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
@@ -36,6 +44,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     //=================================================
     //  PUBLIC AND PROTECTED METHODS
     //=================================================
+
+    public void setCallback(@Nullable Callback callback) {
+        super.setCallback(callback);
+
+        this.callback = callback;
+    }
 
     public int getThresholdScreenValue(@ThresholdOrientation int threshold) {
         if (threshold >= 0 && threshold < 2) return glHeightToPixelHeight(thresholds[threshold]);
@@ -58,16 +72,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
-    @Override public void setCallback(BYBBaseRenderer.Callback callback) {
-        if (!(callback instanceof Callback)) {
-            throw new RuntimeException("Callback needs to be of type FindSpikesRenderer.Callback!");
-        }
-
-        super.setCallback(callback);
-    }
-
-    @Override public void setGlWindowVerticalSize(int newY) {
-        super.setGlWindowVerticalSize(Math.abs(newY));
+    @Override public void setGlWindowVerticalSize(int newSize) {
+        super.setGlWindowVerticalSize(Math.abs(newSize));
 
         updateThresholdHandles();
     }
@@ -76,9 +82,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
 
-            setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+            setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
 
-            final FloatBuffer linesBuffer = getWaveformBuffer(mBufferToDraws);
+            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer);
             constructSpikesAndColorsBuffers();
 
             if (linesBuffer != null && spikesBuffer != null && colorsBuffer != null) {
@@ -113,10 +119,6 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     //  PRIVATE METHODS
     //=================================================
 
-    private Callback getCallback() {
-        return (Callback) callback;
-    }
-
     private void updateThresholdHandles() {
         updateThresholdHandle(ThresholdOrientation.LEFT);
         updateThresholdHandle(ThresholdOrientation.RIGHT);
@@ -124,9 +126,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     private void updateThresholdHandle(@ThresholdOrientation int threshold) {
         if (threshold >= 0 && threshold < thresholds.length) {
-            if (getCallback() != null) {
-                getCallback().onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
-            }
+            if (callback != null) callback.onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
         }
     }
 

@@ -631,11 +631,11 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadSettings() {
-        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, TAG);
+        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, BackyardBrainsMain.class);
     }
 
     // ----------------------------------------------------------------------------------------
     public void saveSettings() {
-        PrefUtils.setShowScalingInstructions(this, TAG, showScalingInstructions);
+        PrefUtils.setShowScalingInstructions(this, BackyardBrainsMain.class, showScalingInstructions);
     }
 }
