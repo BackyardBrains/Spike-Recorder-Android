@@ -72,8 +72,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
-    @Override public void setGlWindowVerticalSize(int newY) {
-        super.setGlWindowVerticalSize(Math.abs(newY));
+    @Override public void setGlWindowVerticalSize(int newSize) {
+        super.setGlWindowVerticalSize(Math.abs(newSize));
 
         updateThresholdHandles();
     }
@@ -82,9 +82,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
 
-            setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+            setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
 
-            final FloatBuffer linesBuffer = getWaveformBuffer(mBufferToDraws);
+            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer);
             constructSpikesAndColorsBuffers();
 
             if (linesBuffer != null && spikesBuffer != null && colorsBuffer != null) {

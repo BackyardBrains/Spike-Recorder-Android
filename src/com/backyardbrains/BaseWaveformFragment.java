@@ -56,12 +56,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onStart();
         LOGD(TAG, "onStart()");
         waveform.resumeGL();
+        renderer.onLoadSettings(getContext());
     }
 
     @CallSuper @Override public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
         waveform.pauseGL();
+        renderer.onSaveSettings(getContext());
     }
 
     @Override public void onDestroy() {
@@ -111,17 +113,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
      */
     protected boolean shouldUseAverager() {
         return false;
-    }
-
-    /**
-     *
-     */
-    protected void readSettings() {
-
-    }
-
-    protected void saveSettings() {
-
     }
 
     //==============================================

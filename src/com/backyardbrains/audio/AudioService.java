@@ -126,6 +126,10 @@ public class AudioService extends Service implements ReceivesAudio {
         averager.setMaxsize(averagedSampleCount);
     }
 
+    public int getThresholdAveragedSampleCount() {
+        return averager.getMaxsize();
+    }
+
     public long getPlaybackProgress() {
         if (isPlaybackMode()) return AudioUtils.getSampleCount(lastBytePosition);
 

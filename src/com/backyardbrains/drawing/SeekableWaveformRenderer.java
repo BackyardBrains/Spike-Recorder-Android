@@ -21,16 +21,16 @@ public class SeekableWaveformRenderer extends BYBBaseRenderer {
     @Override public void onDrawFrame(GL10 gl) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
-        fromSample = Math.max(0, toSample - glWindowHorizontalSize);
+        fromSample = Math.max(0, toSample - getGlWindowHorizontalSize());
         //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());
 
         super.onDrawFrame(gl);
     }
 
     @Override protected void drawingHandler(GL10 gl) {
-        setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+        setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
 
-        final FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
+        final FloatBuffer mVertexBuffer = getWaveformBuffer(drawingBuffer);
         if (mVertexBuffer != null) {
             gl.glMatrixMode(GL10.GL_MODELVIEW);
             gl.glLoadIdentity();

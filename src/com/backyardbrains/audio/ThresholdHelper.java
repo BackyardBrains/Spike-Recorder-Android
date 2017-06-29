@@ -297,6 +297,10 @@ public class ThresholdHelper {
         if (maxsize > 0) this.maxsize = maxsize;
     }
 
+    int getMaxsize() {
+        return maxsize;
+    }
+
     // ---------------------------------------------------------------------------------------------
     Handler getHandler() {
         return handler;

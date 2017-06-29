@@ -19,13 +19,13 @@
 
 package com.backyardbrains.drawing;
 
-import android.content.SharedPreferences;
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.audio.ThresholdHelper;
-import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.PrefUtils;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -72,23 +72,41 @@ public class ThresholdRenderer extends WaveformRenderer {
         adjustThresholdValue(pixelHeightToGlHeight(y));
     }
 
-    @Override public void setGlWindowVerticalSize(int newY) {
-        super.setGlWindowVerticalSize(newY);
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        super.onSurfaceChanged(gl, width, height);
+
         updateThresholdHandle();
     }
 
-    @Override public void onDrawFrame(GL10 gl) {
-        if (!getCurrentAverage()) return;
-        if (!BYBUtils.isValidAudioBuffer(mBufferToDraws)) return;
+    @Override public void setGlWindowVerticalSize(int newSize) {
+        super.setGlWindowVerticalSize(newSize);
 
-        preDrawingHandler();
-        BYBGlUtils.glClear(gl);
-        drawingHandler(gl);
-        postDrawingHandler(gl);
+        updateThresholdHandle();
+    }
+
+    @Override protected boolean fillBuffer() {
+        if (getAudioService() != null) {
+            if (drawingBuffer == null) drawingBuffer = new short[getAudioService().getAverageBuffer().length];
+            System.arraycopy(getAudioService().getAverageBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
+            return true;
+        }
+        return false;
+    }
+
+    @Override public void onLoadSettings(@NonNull Context context) {
+        adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
+
+        super.onLoadSettings(context);
+    }
+
+    @Override public void onSaveSettings(@NonNull Context context) {
+        super.onSaveSettings(context);
+
+        PrefUtils.setThreshold(context, getClass(), threshold);
     }
 
     @Override protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-        if (glWindowHorizontalSize > shortArrayToDraw.length) setGlWindowHorizontalSize(shortArrayToDraw.length);
+        if (getGlWindowHorizontalSize() > shortArrayToDraw.length) setGlWindowHorizontalSize(shortArrayToDraw.length);
 
         float[] arr = new float[getGlWindowHorizontalSize() * 2]; // array to fill
         int j = 0; // index of arr
@@ -109,14 +127,6 @@ public class ThresholdRenderer extends WaveformRenderer {
         if (callback != null) callback.onThresholdUpdate(glHeightToPixelHeight(threshold));
     }
 
-    private boolean getCurrentAverage() {
-        if (getAudioService() != null) {
-            mBufferToDraws = getAudioService().getAverageBuffer();
-            return true;
-        }
-        return false;
-    }
-
     private void adjustThresholdValue(float dy) {
         Log.d(TAG, "adjustThresholdValue " + dy);
         if (dy == 0) return;
@@ -129,28 +139,6 @@ public class ThresholdRenderer extends WaveformRenderer {
                     ((ThresholdHelper.TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
                 }
             });
-        }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTINGS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    @Override public void readSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            super.readSettings(settings, TAG);
-            adjustThresholdValue(settings.getFloat(TAG + "_threshold", threshold));
-            Log.w(TAG, "loadsetting threshold: " + threshold);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    @Override public void saveSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            super.saveSettings(settings, TAG);
-            final SharedPreferences.Editor editor = settings.edit();
-            Log.w(TAG, "savesetting threshold: " + threshold);
-            editor.putFloat(TAG + "_threshold", threshold);
-            editor.apply();
         }
     }
 }
