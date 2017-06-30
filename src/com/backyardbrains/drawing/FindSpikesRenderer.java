@@ -15,6 +15,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     private static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
+    private long fromSample;
+    private long toSample;
+
     private FloatBuffer spikesBuffer;
     private FloatBuffer colorsBuffer;
 
@@ -69,7 +72,17 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
+
         updateThresholdHandles();
+    }
+
+    @Override public void onDrawFrame(GL10 gl) {
+        // let's save start and end sample positions that are being drawn before triggering the actual draw
+        toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
+        fromSample = Math.max(0, toSample - getGlWindowHorizontalSize());
+        //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());
+
+        super.onDrawFrame(gl);
     }
 
     @Override public void setGlWindowVerticalSize(int newSize) {
@@ -84,8 +97,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
             setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
 
-            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer);
             constructSpikesAndColorsBuffers();
+            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer);
 
             if (linesBuffer != null && spikesBuffer != null && colorsBuffer != null) {
                 gl.glMatrixMode(GL10.GL_MODELVIEW);
@@ -155,14 +168,14 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         float[] colorsArr = null;
         if (spikes != null) {
             if (spikes.length > 0) {
+                final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
+                final int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
+
                 arr = new float[spikes.length * 2];
                 arr1 = new float[spikes.length * 4];
-                int j = 0; // index of arr
-                int k = 0; // index of arr1
-                int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
-                int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
+                int j = 0, k = 0; // j as index of arr, k as index of arr1
                 try {
-                    long index = 0;
+                    long index;
                     for (BYBSpike spike : spikes) {
                         if (fromSample < spike.index && spike.index < toSample) {
                             index = toSample - fromSample < getGlWindowHorizontalSize() ?

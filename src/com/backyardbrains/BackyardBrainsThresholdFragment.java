@@ -172,7 +172,6 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         });
         sbAvgSamplesCount.setProgress(getAudioService() != null ? getAudioService().getThresholdAveragedSampleCount()
             : ThresholdHelper.DEFAULT_SIZE);
-        //tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), avgSampleCount));
     }
 
     // Sets the specified value for the threshold

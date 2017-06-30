@@ -9,19 +9,17 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class ISIRenderer extends BYBAnalysisBaseRenderer {
 
-    // ----------------------------------------------------------------------------------------
     public ISIRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
     }
 
-    // ----------------------------------------------------------------------------------------
     @Override protected void drawingHandler(GL10 gl) {
         initGL(gl);
 
         makeThumbAndMainRectangles();
         if (getAnalysisManager() != null) {
             List<List<BYBInterSpikeInterval>> isi = getAnalysisManager().getISI();
-            if (isi != null) {
+            if (isi != null && isi.size() > 0) {
                 for (int i = 0; i < isi.size(); i++) {
                     drawISI(gl, isi.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);
                 }
@@ -34,12 +32,10 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         }
     }
 
-    // ----------------------------------------------------------------------------------------
     private void drawISI(GL10 gl, List<BYBInterSpikeInterval> ISI, ofRectangle r, float[] color, boolean bDrawBox) {
         drawISI(gl, ISI, r.x, r.y, r.width, r.height, color, bDrawBox);
     }
 
-    // ----------------------------------------------------------------------------------------
     private void drawISI(GL10 gl, List<BYBInterSpikeInterval> ISI, float px, float py, float w, float h, float[] color,
         boolean bDrawBox) {
         if (ISI != null) {

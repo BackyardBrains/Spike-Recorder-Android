@@ -66,10 +66,6 @@ public class AudioService extends Service implements ReceivesAudio {
     private ThresholdHelper averager;
     private boolean bUseAverager = false;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- GETTERS SETTERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
      */
@@ -78,6 +74,10 @@ public class AudioService extends Service implements ReceivesAudio {
             return AudioService.this;
         }
     }
+
+    //=================================================
+    //  PUBLIC METHODS
+    //=================================================
 
     public boolean isPlaybackMode() {
         return playbackThread != null;
@@ -91,6 +91,10 @@ public class AudioService extends Service implements ReceivesAudio {
         return isPlaybackMode() && playbackThread.isSeeking();
     }
 
+    //=================================================
+    //  RING BUFFER
+    //=================================================
+
     /**
      * return a byte array with in the appropriate order representing the last
      * 1.5 seconds of audio or so
@@ -98,7 +102,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * @return a ordinate-corrected version of the audio buffer
      */
     public short[] getAudioBuffer() {
-        return audioBuffer.getArray();
+        return audioBuffer != null ? audioBuffer.getArray() : new short[0];
     }
 
     public short[] getAverageBuffer() {
@@ -108,6 +112,43 @@ public class AudioService extends Service implements ReceivesAudio {
             return new short[0];
         }
     }
+
+    // Adds specified audio data to ring buffer and saves position of the last added byte (progress)
+    private void addToBuffer(ByteBuffer audioInfo, long lastBytePosition) {
+        // add audio data to buffer
+        addToBuffer(audioInfo);
+        // last played byte position
+        this.lastBytePosition = lastBytePosition;
+    }
+
+    // Adds specified audio data to ring buffer
+    private void addToBuffer(ByteBuffer audioInfo) {
+        // add audio data to buffer
+        if (!bUseAverager) {
+            audioBuffer.add(audioInfo);
+        } else {
+            averager.push(audioInfo);
+        }
+    }
+
+    // Adds specified audio data to ring buffer
+    private void addToBuffer(ShortBuffer audioInfo) {
+        if (!bUseAverager) {
+            audioBuffer.add(audioInfo);
+        } else {
+            averager.push(audioInfo);
+        }
+    }
+
+    // Clears the ring buffer and resets last read byte position (progress)
+    private void clearBuffer() {
+        audioBuffer.clear();
+        lastBytePosition = 0;
+    }
+
+    //=================================================
+    //  THRESHOLD
+    //=================================================
 
     @Nullable public Handler getTriggerHandler() {
         if (averager != null) {
@@ -127,19 +168,7 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public int getThresholdAveragedSampleCount() {
-        return averager.getMaxsize();
-    }
-
-    public long getPlaybackProgress() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(lastBytePosition);
-
-        return 0;
-    }
-
-    public long getPlaybackLength() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getLength());
-
-        return 0;
+        return averager != null ? averager.getMaxsize() : ThresholdHelper.DEFAULT_SIZE;
     }
 
     //=================================================
@@ -211,7 +240,7 @@ public class AudioService extends Service implements ReceivesAudio {
             micThread = new MicListener(this);
 
             // we should clear buffer
-            audioBuffer.clear();
+            clearBuffer();
 
             micThread.start();
             LOGD(TAG, "Microphone thread started");
@@ -227,7 +256,7 @@ public class AudioService extends Service implements ReceivesAudio {
             LOGD(TAG, "Microphone Thread stopped");
 
             // we should clear buffer so that next buffer user doesn't have any residue
-            audioBuffer.clear();
+            clearBuffer();
         }
     }
 
@@ -269,6 +298,18 @@ public class AudioService extends Service implements ReceivesAudio {
         if (playbackThread != null) playbackThread.seek(false);
     }
 
+    public long getPlaybackProgress() {
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(lastBytePosition);
+
+        return 0;
+    }
+
+    public long getPlaybackLength() {
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getLength());
+
+        return 0;
+    }
+
     private void turnOnPlaybackThread() {
         LOGD(TAG, "turnOnPlaybackThread()");
         if (playbackThread != null) {
@@ -287,7 +328,7 @@ public class AudioService extends Service implements ReceivesAudio {
             playbackThread = null;
 
             // we should clear buffer so that next buffer user doesn't have any residue
-            audioBuffer.clear();
+            clearBuffer();
         }
     }
 
@@ -317,7 +358,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
                 @Override public void onStop() {
                     // we should clear buffer
-                    audioBuffer.clear();
+                    clearBuffer();
                     // post event that audio playback has started
                     EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                 }
@@ -331,36 +372,27 @@ public class AudioService extends Service implements ReceivesAudio {
     //=================================================
 
     /**
-     * On receiving audio, add it to the RingBuffer. If we're recording, also
-     * dispatch it to the RecordingSaver instance.
+     * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
      * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
      */
     @Override public void receiveAudio(ByteBuffer audioInfo) {
-        if (!bUseAverager) {
-            audioBuffer.add(audioInfo);
-        } else {
-            averager.push(audioInfo);
-        }
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
+        // pass audio data to RecordingSaver
         if (mRecordingSaverInstance != null) recordAudio(audioInfo);
     }
 
     @Override public void receiveAudio(ByteBuffer audioInfo, long lastBytePosition) {
-        if (!bUseAverager) {
-            audioBuffer.add(audioInfo);
-        } else {
-            averager.push(audioInfo);
-        }
-        this.lastBytePosition = lastBytePosition;
+        // add audio to ring buffer
+        addToBuffer(audioInfo, lastBytePosition);
+        // pass audio data to RecordingSaver
         if (mRecordingSaverInstance != null) recordAudio(audioInfo);
     }
 
     @Override public void receiveAudio(ShortBuffer audioInfo) {
-        if (!bUseAverager) {
-            audioBuffer.add(audioInfo);
-        } else {
-            averager.push(audioInfo);
-        }
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

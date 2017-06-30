@@ -43,8 +43,6 @@ class PlaybackThread {
     private boolean playing;
     // Whether audio is currently being sought.
     private boolean seeking;
-    // Whether thread entered seeking loop, we need this so we are sure to enter seeking loop at least once
-    private boolean seekingStarted;
     // Flag that indicates whether thread should be running
     private boolean done;
     // Position of the playback head
@@ -191,6 +189,12 @@ class PlaybackThread {
         if (thread == null) return;
 
         progress = position;
+
+        try {
+            seekToPosition(new byte[seekBufferSize]);
+        } catch (IOException e) {
+            LOGE(TAG, "Error reading random access file stream", e);
+        }
     }
 
     /**
@@ -200,28 +204,14 @@ class PlaybackThread {
     void seek(boolean start) {
         if (thread == null) return;
 
-        LOGD(TAG, "Seek " + (start ? "start" : "end"));
-
         if (start && playing) pause();
 
-        // if we are entering seeking set flag right away, if we are exiting,
-        // we should check whether thread entered seeking loop at least once and if not call the loop manually
-        if (start) {
-            seeking = true;
-        } else {
-            if (seekingStarted) {
-                seeking = false;
-                seekingStarted = false;
-            } else {
-                try {
-                    seekToPosition(new byte[seekBufferSize]);
-                } catch (IOException e) {
-                    LOGE(TAG, "Error reading random access file stream", e);
-                } finally {
-                    seeking = false;
-                    seekingStarted = false;
-                }
-            }
+        seeking = start;
+
+        try {
+            seekToPosition(new byte[seekBufferSize]);
+        } catch (IOException e) {
+            LOGE(TAG, "Error reading random access file stream", e);
         }
     }
 
@@ -276,8 +266,6 @@ class PlaybackThread {
                     // play audio data if we're not seeking
                     track.write(buffer, 0, buffer.length);
                 } else if (seeking) {
-                     seekingStarted = true;
-
                     seekToPosition(new byte[seekBufferSize]);
                 }
             }
@@ -313,21 +301,17 @@ class PlaybackThread {
     }
 
     // This represents a single seek loop.
-    private void seekToPosition(byte[] seekBuffer) throws IOException {
-        final long zerosPrependCount = progress - seekBufferSize;
+    private synchronized void seekToPosition(byte[] seekBuffer) throws IOException {
+        final long zerosPrependCount = progress - seekBuffer.length;
         final long seekPosition = Math.max(0, zerosPrependCount);
         raf.seek(seekPosition);
         int readBytesCount = raf.read(seekBuffer);
-        long lastBytePosition = raf.getFilePointer();
         if (readBytesCount > 0) {
             if (zerosPrependCount < 0) {
                 final int zerosPrependCountAbs = (int) Math.abs(zerosPrependCount);
-                lastBytePosition -= zerosPrependCountAbs;
                 seekBuffer = BufferUtils.shift(seekBuffer, zerosPrependCountAbs);
             }
-            synchronized (service) {
-                service.receiveAudio(ByteBuffer.wrap(seekBuffer), lastBytePosition);
-            }
+            service.receiveAudio(ByteBuffer.wrap(seekBuffer), progress);
         }
     }
 

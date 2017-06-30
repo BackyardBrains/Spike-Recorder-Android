@@ -250,7 +250,7 @@ public class BYBBaseRenderer extends BaseRenderer {
         //LOGD(TAG, "================================================");
     }
 
-    protected void preDrawingHandler() {
+    @CallSuper protected void preDrawingHandler() {
         if (callback != null) callback.onDraw(glWindowHorizontalSize, glWindowVerticalSize);
     }
 

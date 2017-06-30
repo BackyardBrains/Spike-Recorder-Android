@@ -176,8 +176,8 @@ class BYBAverageSpikeAnalysis extends BYBBaseAnalysis {
 
             int count = 0;
             for (AverageSpikeData asd : tmpAvr) {
-                avr[count++] =
-                    new BYBAverageSpike(asd.averageSpike, asd.normAverageSpike, asd.normTopSTDLine, asd.normBottomSTDLine);
+                avr[count++] = new BYBAverageSpike(asd.averageSpike, asd.normAverageSpike, asd.normTopSTDLine,
+                    asd.normBottomSTDLine);
             }
         } catch (IOException e) {
             LOGE(TAG,

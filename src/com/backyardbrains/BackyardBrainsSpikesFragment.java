@@ -15,6 +15,7 @@ import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.BYBThresholdHandle;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -103,6 +104,22 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             setThreshold(threshold, value);
+                        }
+                    });
+                }
+            }
+
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
+
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }
