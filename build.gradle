@@ -71,7 +71,7 @@ android {
     }
     productFlavors {
         prod {
-            versionName '1.4.4.1'
+            versionName '1.4.5'
         }
         dev {
             minSdkVersion 21
