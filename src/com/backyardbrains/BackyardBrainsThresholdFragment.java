@@ -129,10 +129,15 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     //  EVENT BUS
     //==============================================
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @Override @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        super.onAudioServiceConnectionEvent(event);
+
         LOGD(TAG, "Audio serviced connected. Refresh threshold for initial value");
-        if (event.isConnected()) refreshThreshold();
+        if (event.isConnected()) {
+            if (getAudioService() != null) getAudioService().startMicrophone();
+            refreshThreshold();
+        }
     }
 
     //==============================================

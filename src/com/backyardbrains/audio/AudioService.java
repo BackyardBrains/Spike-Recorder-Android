@@ -67,6 +67,8 @@ public class AudioService extends Service implements ReceivesAudio {
     private ThresholdHelper averager;
     private boolean useAverager;
 
+    private boolean created;
+
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
      */
@@ -182,6 +184,8 @@ public class AudioService extends Service implements ReceivesAudio {
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         averager = new ThresholdHelper();
         turnOnMicThread();
+
+        created = true;
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -189,6 +193,8 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     @Override public void onDestroy() {
+        created = false;
+
         LOGD(TAG, "onDestroy()");
         turnOffMicThread();
         turnOffPlaybackThread();
@@ -249,14 +255,14 @@ public class AudioService extends Service implements ReceivesAudio {
      * Starts processing default input (Microphone).
      */
     public void startMicrophone() {
-        turnOnMicThread();
+        if (created) turnOnMicThread();
     }
 
     /**
      * Stops processing default input (Microphone).
      */
     public void stopMicrophone() {
-        turnOffMicThread();
+        if (created) turnOffMicThread();
     }
 
     private void turnOnMicThread() {
@@ -296,11 +302,11 @@ public class AudioService extends Service implements ReceivesAudio {
      * starts playing as soon as first samples are loaded, if it's {@code false} file is initially paused.
      */
     public void startPlayback(@NonNull String filePath, boolean autoPlay) {
-        startPlaybackThread(filePath, autoPlay);
+        if (created) startPlaybackThread(filePath, autoPlay);
     }
 
     public void togglePlayback(boolean play) {
-        if (playbackThread != null) {
+        if (created && playbackThread != null) {
             if (play) {
                 playbackThread.play();
             } else {
@@ -310,19 +316,19 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public void stopPlayback() {
-        turnOffPlaybackThread();
+        if (created) turnOffPlaybackThread();
     }
 
     public void startPlaybackSeek() {
-        if (playbackThread != null) playbackThread.seek(true);
+        if (created && playbackThread != null) playbackThread.seek(true);
     }
 
     public void seekPlayback(int position) {
-        if (playbackThread != null) playbackThread.seek(AudioUtils.getByteCount(position));
+        if (created && playbackThread != null) playbackThread.seek(AudioUtils.getByteCount(position));
     }
 
     public void stopPlaybackSeek() {
-        if (playbackThread != null) playbackThread.seek(false);
+        if (created && playbackThread != null) playbackThread.seek(false);
     }
 
     public long getPlaybackProgress() {
@@ -357,6 +363,9 @@ public class AudioService extends Service implements ReceivesAudio {
             // we should clear buffer so that next buffer user doesn't have any residue
             clearBuffer();
         }
+
+        // post event that audio playback has started
+        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
     }
 
     private void startPlaybackThread(@NonNull String filePath, boolean autoPlay) {

@@ -17,6 +17,7 @@ import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
@@ -54,6 +55,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Override public void onStart() {
         super.onStart();
 
+        // this will start microphone if we are switching from another fragment
         if (getAudioService() != null) getAudioService().startMicrophone();
     }
 
@@ -121,6 +123,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //==============================================
     //  EVENT BUS
     //==============================================
+
+    @Override @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        super.onAudioServiceConnectionEvent(event);
+
+        // this will start microphone if we are coming from background
+        if (getAudioService() != null) getAudioService().startMicrophone();
+    }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {

@@ -11,7 +11,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.view.WaveformLayout;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGW;
@@ -113,6 +116,16 @@ public abstract class BaseWaveformFragment extends BaseFragment {
      */
     protected boolean shouldUseAverager() {
         return false;
+    }
+
+    //==============================================
+    //  EVENT BUS
+    //==============================================
+
+    @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        // we should set whether AudioService should use averager after audio service is connected
+        setUseAverager();
     }
 
     //==============================================

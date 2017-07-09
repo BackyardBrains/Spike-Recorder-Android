@@ -86,7 +86,7 @@ public class ThresholdRenderer extends WaveformRenderer {
 
     @Override protected boolean fillBuffer() {
         if (getAudioService() != null) {
-            if (drawingBuffer == null) drawingBuffer = new short[getAudioService().getAverageBuffer().length];
+            drawingBuffer = new short[getAudioService().getAverageBuffer().length];
             System.arraycopy(getAudioService().getAverageBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
             return true;
         }

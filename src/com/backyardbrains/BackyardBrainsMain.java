@@ -488,6 +488,8 @@ public class BackyardBrainsMain extends AppCompatActivity
      */
     public void startAudioService() {
         if (!audioServiceRunning) {
+            LOGD(TAG, "Starting AudioService");
+
             startService(new Intent(this, AudioService.class));
             audioServiceRunning = true;
             bindAudioService(true);
@@ -499,6 +501,8 @@ public class BackyardBrainsMain extends AppCompatActivity
      */
     public void stopAudioService() {
         if (audioServiceRunning) {
+            LOGD(TAG, "Stopping AudioService");
+
             bindAudioService(false);
             stopService(new Intent(this, AudioService.class));
             audioServiceRunning = false;
@@ -509,14 +513,22 @@ public class BackyardBrainsMain extends AppCompatActivity
      * Starts {@link BYBAnalysisManager}.
      */
     public void startAnalysisManager() {
-        if (analysisManager == null) analysisManager = new BYBAnalysisManager();
+        if (analysisManager == null) {
+            LOGD(TAG, "Starting AnalysisManager");
+
+            analysisManager = new BYBAnalysisManager();
+        }
     }
 
     /**
      * Stops {@link BYBAnalysisManager}.
      */
     public void stopAnalysisManager() {
-        if (analysisManager != null) analysisManager = null;
+        if (analysisManager != null) {
+            LOGD(TAG, "Stopping AnalysisManager");
+
+            analysisManager = null;
+        }
     }
 
     protected void bindAudioService(boolean on) {
@@ -539,6 +551,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         // android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
         // android.os.IBinder)
         @Override public void onServiceConnected(ComponentName className, IBinder service) {
+            LOGD(TAG, "AudioService connected!");
             // We've bound to LocalService, cast the IBinder and get
             // LocalService instance
             AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
@@ -548,6 +561,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
 
         @Override public void onServiceDisconnected(ComponentName className) {
+            LOGD(TAG, "AudioService disconnected!");
+
             audioService = null;
 
             // inform interested parties that audio service successfully disconnected
