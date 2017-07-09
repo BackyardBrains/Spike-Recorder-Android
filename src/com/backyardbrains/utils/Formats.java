@@ -13,7 +13,6 @@ public class Formats {
     private static final String UNIT_SECS = "s";
     private static final String UNIT_MILLIVOLTS = "mV";
     private static final String FORMAT_MM_SS = "%02d:%02d";
-    private static final int MINUTE = 60; // secs
 
     private static final DecimalFormat timeFormat = new DecimalFormat("#.0");
     private static final DecimalFormat signalFormat = new DecimalFormat("#.##");
@@ -41,9 +40,10 @@ public class Formats {
      * @param s seconds that need to be formatted.
      */
     public static String formatTime_m_s(long s) {
-        if (s >= MINUTE) {
-            long minutes = s / MINUTE;
-            s -= minutes * MINUTE;
+        final long minute = TimeUnit.MINUTES.toSeconds(1);
+        if (s >= minute) {
+            long minutes = s / minute;
+            s -= minutes * minute;
             return minutes + "m " + s + "s";
         } else {
             return s + "s";

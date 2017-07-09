@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.DividerItemDecoration;
@@ -32,6 +31,7 @@ import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.DateUtils;
 import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BybEmptyRecyclerView;
@@ -65,7 +65,6 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
 
     private Unbinder unbinder;
 
-    private File bybDirectory;
     private FilesAdapter adapter;
 
     /**
@@ -83,8 +82,6 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        bybDirectory = new File(Environment.getExternalStorageDirectory() + "/BackyardBrains/");
 
         registerReceivers();
     }
@@ -113,7 +110,6 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     @Override public void onDestroy() {
-        bybDirectory = null;
         unregisterReceivers();
         super.onDestroy();
     }
@@ -163,7 +159,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     private void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
-        final File[] files = bybDirectory.listFiles();
+        final File[] files = RecordingUtils.BYB_DIRECTORY.listFiles();
         if (files != null) {
             if (files.length > 0) {
                 Arrays.sort(files, new Comparator<File>() {

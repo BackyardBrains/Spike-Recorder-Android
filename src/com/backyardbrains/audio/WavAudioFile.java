@@ -1,9 +1,11 @@
 package com.backyardbrains.audio;
 
+import android.media.AudioFormat;
 import android.support.annotation.NonNull;
 import com.backyardbrains.utils.WavUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -20,11 +22,39 @@ public class WavAudioFile implements BYBAudioFile {
         // save absolute file path
         absolutePath = file.getAbsolutePath();
         // create RandomAccessFile
-        this.raf = new RandomAccessFile(file, "r");
-        // read file header
+        raf = new RandomAccessFile(file, "r");
+        // read header
         final byte[] headerBytes = new byte[WavUtils.HEADER_SIZE];
         raf.read(headerBytes, 0, headerBytes.length);
-        this.header = WavUtils.readHeader(new ByteArrayInputStream(headerBytes));
+        header = WavUtils.readHeader(new ByteArrayInputStream(headerBytes));
+    }
+
+    /**
+     * Saves specified {@code file} as a WAV file and closes it.
+     *
+     * @throws IOException
+     */
+    public static boolean save(@NonNull File file) throws IOException {
+        // create RandomAccessFile
+        final RandomAccessFile raf;
+        try {
+            raf = new RandomAccessFile(file, "rw");
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+
+        try {
+            raf.seek(0);
+            raf.write(WavUtils.writeHeader(file.length(), 44100, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT));
+            raf.close();
+        } catch (IOException e) {
+            return false;
+        } finally {
+            raf.close();
+        }
+
+        return true;
     }
 
     @Override public String getAbsolutePath() {

@@ -29,6 +29,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
+import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
@@ -57,14 +58,14 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private final IBinder mBinder = new AudioServiceBinder();
 
+    private RingBuffer audioBuffer;
     private MicListener micThread;
     private PlaybackThread playbackThread;
     private long lastBytePosition;
-    private RingBuffer audioBuffer;
-    private RecordingSaver mRecordingSaverInstance;
+    private RecordingSaver recordingSaver;
 
     private ThresholdHelper averager;
-    private boolean bUseAverager = false;
+    private boolean useAverager;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -124,7 +125,7 @@ public class AudioService extends Service implements ReceivesAudio {
     // Adds specified audio data to ring buffer
     private void addToBuffer(ByteBuffer audioInfo) {
         // add audio data to buffer
-        if (!bUseAverager) {
+        if (!useAverager) {
             audioBuffer.add(audioInfo);
         } else {
             averager.push(audioInfo);
@@ -133,7 +134,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     // Adds specified audio data to ring buffer
     private void addToBuffer(ShortBuffer audioInfo) {
-        if (!bUseAverager) {
+        if (!useAverager) {
             audioBuffer.add(audioInfo);
         } else {
             averager.push(audioInfo);
@@ -160,7 +161,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
     public void setUseAverager(boolean bUse) {
         LOGD(TAG, "setUseAverager: " + (bUse ? "TRUE" : "FALSE"));
-        bUseAverager = bUse;
+        useAverager = bUse;
     }
 
     public void setThresholdAveragedSampleCount(int averagedSampleCount) {
@@ -212,6 +213,32 @@ public class AudioService extends Service implements ReceivesAudio {
 
     @Override public boolean onUnbind(Intent intent) {
         return super.onUnbind(intent);
+    }
+
+    //=================================================
+    //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
+    //=================================================
+
+    /**
+     * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
+     *
+     * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
+     */
+    @Override public void receiveAudio(ByteBuffer audioInfo) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
+        // pass audio data to RecordingSaver
+        if (recordingSaver != null) recordAudio(audioInfo);
+    }
+
+    @Override public void receiveAudio(ByteBuffer audioInfo, long lastBytePosition) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo, lastBytePosition);
+    }
+
+    @Override public void receiveAudio(ShortBuffer audioInfo) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
     }
 
     //=================================================
@@ -368,36 +395,8 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     //=================================================
-    //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
+    //  AUDIO RECORDING
     //=================================================
-
-    /**
-     * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
-     *
-     * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
-     */
-    @Override public void receiveAudio(ByteBuffer audioInfo) {
-        // add audio to ring buffer
-        addToBuffer(audioInfo);
-        // pass audio data to RecordingSaver
-        if (mRecordingSaverInstance != null) recordAudio(audioInfo);
-    }
-
-    @Override public void receiveAudio(ByteBuffer audioInfo, long lastBytePosition) {
-        // add audio to ring buffer
-        addToBuffer(audioInfo, lastBytePosition);
-        // pass audio data to RecordingSaver
-        if (mRecordingSaverInstance != null) recordAudio(audioInfo);
-    }
-
-    @Override public void receiveAudio(ShortBuffer audioInfo) {
-        // add audio to ring buffer
-        addToBuffer(audioInfo);
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- RECORD AUDIO
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * dispatch audio to the active RecordingSaver instance
@@ -405,7 +404,11 @@ public class AudioService extends Service implements ReceivesAudio {
     private void recordAudio(ByteBuffer audioInfo) {
         audioInfo.clear();
         try {
-            mRecordingSaverInstance.receiveAudio(audioInfo);
+            recordingSaver.writeAudio(audioInfo);
+
+            // post current recording progress
+            EventBus.getDefault()
+                .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength())));
         } catch (IllegalStateException e) {
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
         }
@@ -413,11 +416,11 @@ public class AudioService extends Service implements ReceivesAudio {
 
     public boolean startRecording() {
         LOGW(TAG, "start recording");
-        if (mRecordingSaverInstance != null) return false;
+        if (recordingSaver != null) return false;
 
         try {
             turnOnMicThread();
-            mRecordingSaverInstance = new RecordingSaver(this.getApplicationContext(), "BYB_");// theTime.toString());
+            recordingSaver = new RecordingSaver();
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStartedEvent());
@@ -429,10 +432,10 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public boolean stopRecording() {
-        if (mRecordingSaverInstance != null) {
+        if (recordingSaver != null) {
             LOGW(TAG, "stop recording");
-            mRecordingSaverInstance.finishRecording();
-            mRecordingSaverInstance = null;
+            recordingSaver.stopRecording();
+            recordingSaver = null;
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStoppedEvent());
@@ -444,6 +447,6 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public boolean isRecording() {
-        return (mRecordingSaverInstance != null);
+        return (recordingSaver != null);
     }
 }

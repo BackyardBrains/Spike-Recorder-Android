@@ -8,14 +8,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
+import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -39,7 +42,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) protected View tvStopRecording;
+    @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
 
     private Unbinder unbinder;
     private BYBSlidingView stopRecButton;
@@ -122,6 +125,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
         setupButtons(true);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
+        tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
+            WavUtils.formatWavProgress((int) event.getProgress())));
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
