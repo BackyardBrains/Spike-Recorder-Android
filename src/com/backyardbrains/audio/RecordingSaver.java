@@ -29,23 +29,25 @@ import java.nio.ByteBuffer;
 
 class RecordingSaver {
 
-    private File file;
-    private OutputStream outputStream;
+    private final File file;
+    private final OutputStream outputStream;
 
-    RecordingSaver() {
+    RecordingSaver() throws IOException {
         file = RecordingUtils.createRecordingFile();
 
         try {
             outputStream = new FileOutputStream(file);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException("could not build OutputStream from this file: " + file.getName(), e);
+            throw new IOException("could not build OutputStream from this file: " + file.getAbsolutePath(), e);
         }
     }
 
     /**
      * Writes specified {@code audioInfo} to the audio stream.
+     *
+     * @throws IllegalStateException
      */
-    void writeAudio(ByteBuffer audioInfo) {
+    void writeAudio(ByteBuffer audioInfo) throws IllegalStateException {
         try {
             outputStream.write(audioInfo.array());
         } catch (IOException e) {
@@ -62,8 +64,10 @@ class RecordingSaver {
 
     /**
      * Closes the audio stream and save the audio file to storage.
+     *
+     * @throws IllegalStateException
      */
-    void stopRecording() {
+    void stopRecording() throws IllegalStateException {
         try {
             outputStream.flush();
             outputStream.close();

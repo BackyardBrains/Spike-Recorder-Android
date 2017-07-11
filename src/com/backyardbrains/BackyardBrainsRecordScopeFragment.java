@@ -59,6 +59,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         if (getAudioService() != null) getAudioService().startMicrophone();
     }
 
+    @Override public void onResume() {
+        super.onResume();
+
+        setupButtons(false);
+    }
+
     @Override public void onStop() {
         super.onStop();
 

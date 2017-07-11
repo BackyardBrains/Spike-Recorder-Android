@@ -35,6 +35,7 @@ import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ViewUtils;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import org.greenrobot.eventbus.EventBus;
@@ -436,23 +437,33 @@ public class AudioService extends Service implements ReceivesAudio {
         } catch (IllegalStateException e) {
             ViewUtils.toast(getApplicationContext(), "No SD Card is available. Recording is disabled");
             stopRecording();
+        } catch (IOException e) {
+            ViewUtils.toast(getApplicationContext(),
+                "Error occurred while trying to initiate recording. Please try again.");
+            stopRecording();
         }
+
         return true;
     }
 
     public boolean stopRecording() {
-        if (recordingSaver != null) {
-            LOGW(TAG, "stop recording");
+        LOGW(TAG, "stop recording");
+        if (recordingSaver == null) return false;
+
+        try {
             recordingSaver.stopRecording();
             recordingSaver = null;
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStoppedEvent());
+        } catch (IllegalStateException e) {
+            ViewUtils.toast(getApplicationContext(),
+                "Error occurred while trying to stop recording. Please check if your file recorded correctly.");
 
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     public boolean isRecording() {
