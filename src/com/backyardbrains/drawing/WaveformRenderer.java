@@ -31,11 +31,11 @@ public class WaveformRenderer extends BYBBaseRenderer {
     }
 
     @Override protected void drawingHandler(GL10 gl) {
-        setGlWindow(gl, getGlWindowHorizontalSize(), mBufferToDraws.length);
+        setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
 
         autoScaleCheck();
 
-        final FloatBuffer mVertexBuffer = getWaveformBuffer(mBufferToDraws);
+        final FloatBuffer mVertexBuffer = getWaveformBuffer(drawingBuffer);
         if (mVertexBuffer != null) {
             gl.glMatrixMode(GL10.GL_MODELVIEW);
             gl.glLoadIdentity();

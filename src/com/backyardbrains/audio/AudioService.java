@@ -20,32 +20,28 @@
 package com.backyardbrains.audio;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
-import android.widget.Toast;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
+import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
-import com.backyardbrains.events.PlayAudioFileEvent;
-import com.backyardbrains.events.ThresholdAverageSampleCountSet;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.ViewUtils;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGW;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -63,24 +59,16 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private final IBinder mBinder = new AudioServiceBinder();
 
+    private RingBuffer audioBuffer;
     private MicListener micThread;
     private PlaybackThread playbackThread;
-    private RingBuffer audioBuffer;
-    private RecordingSaver mRecordingSaverInstance;
-
-    private ToggleRecordingListener toggleRecorder;
-    private CloseButtonListener closeListener;
-    private AudioFilePlaybackEndedListener audioFilePlaybackEndedListener;
-
-    private long lastSamplesReceivedTimestamp;
-    private Context appContext = null;
+    private long lastBytePosition;
+    private RecordingSaver recordingSaver;
 
     private ThresholdHelper averager;
-    private boolean bUseAverager = false;
+    private boolean useAverager;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- GETTERS SETTERS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    private boolean created;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -91,19 +79,9 @@ public class AudioService extends Service implements ReceivesAudio {
         }
     }
 
-    /**
-     * @return the micListenerBufferSizeInSamples
-     */
-    public int getMicListenerBufferSizeInSamples() {
-        return micThread != null ? micThread.getBufferSize() : 0;
-    }
-
-    /**
-     * @return the lastSamplesReceivedTimestamp
-     */
-    public long getLastSamplesReceivedTimestamp() {
-        return lastSamplesReceivedTimestamp;
-    }
+    //=================================================
+    //  PUBLIC METHODS
+    //=================================================
 
     public boolean isPlaybackMode() {
         return playbackThread != null;
@@ -117,6 +95,10 @@ public class AudioService extends Service implements ReceivesAudio {
         return isPlaybackMode() && playbackThread.isSeeking();
     }
 
+    //=================================================
+    //  RING BUFFER
+    //=================================================
+
     /**
      * return a byte array with in the appropriate order representing the last
      * 1.5 seconds of audio or so
@@ -124,7 +106,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * @return a ordinate-corrected version of the audio buffer
      */
     public short[] getAudioBuffer() {
-        return audioBuffer.getArray();
+        return audioBuffer != null ? audioBuffer.getArray() : new short[0];
     }
 
     public short[] getAverageBuffer() {
@@ -135,6 +117,43 @@ public class AudioService extends Service implements ReceivesAudio {
         }
     }
 
+    // Adds specified audio data to ring buffer and saves position of the last added byte (progress)
+    private void addToBuffer(ByteBuffer audioInfo, long lastBytePosition) {
+        // add audio data to buffer
+        addToBuffer(audioInfo);
+        // last played byte position
+        this.lastBytePosition = lastBytePosition;
+    }
+
+    // Adds specified audio data to ring buffer
+    private void addToBuffer(ByteBuffer audioInfo) {
+        // add audio data to buffer
+        if (!useAverager) {
+            audioBuffer.add(audioInfo);
+        } else {
+            averager.push(audioInfo);
+        }
+    }
+
+    // Adds specified audio data to ring buffer
+    private void addToBuffer(ShortBuffer audioInfo) {
+        if (!useAverager) {
+            audioBuffer.add(audioInfo);
+        } else {
+            averager.push(audioInfo);
+        }
+    }
+
+    // Clears the ring buffer and resets last read byte position (progress)
+    private void clearBuffer() {
+        audioBuffer.clear();
+        lastBytePosition = 0;
+    }
+
+    //=================================================
+    //  THRESHOLD
+    //=================================================
+
     @Nullable public Handler getTriggerHandler() {
         if (averager != null) {
             return averager.getHandler();
@@ -144,20 +163,16 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     public void setUseAverager(boolean bUse) {
-        Log.d(TAG, "setUseAverager: " + (bUse ? "TRUE" : "FALSE"));
-        bUseAverager = bUse;
+        LOGD(TAG, "setUseAverager: " + (bUse ? "TRUE" : "FALSE"));
+        useAverager = bUse;
     }
 
-    public long getPlaybackProgress() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getProgress());
-
-        return 0;
+    public void setThresholdAveragedSampleCount(int averagedSampleCount) {
+        averager.setMaxsize(averagedSampleCount);
     }
 
-    public long getPlaybackLength() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getLength());
-
-        return 0;
+    public int getThresholdAveragedSampleCount() {
+        return averager != null ? averager.getMaxsize() : ThresholdHelper.DEFAULT_SIZE;
     }
 
     //=================================================
@@ -167,12 +182,11 @@ public class AudioService extends Service implements ReceivesAudio {
     @Override public void onCreate() {
         super.onCreate();
         LOGD(TAG, "onCreate()");
-        appContext = this.getApplicationContext();
         audioBuffer = new RingBuffer(RING_BUFFER_NUM_SAMPLES);
         averager = new ThresholdHelper();
-        if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
-        registerReceivers(true);
         turnOnMicThread();
+
+        created = true;
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -180,9 +194,9 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     @Override public void onDestroy() {
+        created = false;
+
         LOGD(TAG, "onDestroy()");
-        registerReceivers(false);
-        if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
         turnOffMicThread();
         turnOffPlaybackThread();
         averager.close();
@@ -201,15 +215,37 @@ public class AudioService extends Service implements ReceivesAudio {
      * @see android.app.Service#onBind(android.content.Intent)
      */
     @Override public IBinder onBind(Intent arg0) {
-        // mBindingsCount++;
-        // //Log.d(TAG, "Bound to service: " + mBindingsCount + " instances");
         return mBinder;
     }
 
     @Override public boolean onUnbind(Intent intent) {
-        // mBindingsCount--;
-        // //Log.d(TAG, "Unbound from service: " + mBindingsCount + " instances");
         return super.onUnbind(intent);
+    }
+
+    //=================================================
+    //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
+    //=================================================
+
+    /**
+     * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
+     *
+     * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
+     */
+    @Override public void receiveAudio(ByteBuffer audioInfo) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
+        // pass audio data to RecordingSaver
+        if (recordingSaver != null) recordAudio(audioInfo);
+    }
+
+    @Override public void receiveAudio(ByteBuffer audioInfo, long lastBytePosition) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo, lastBytePosition);
+    }
+
+    @Override public void receiveAudio(ShortBuffer audioInfo) {
+        // add audio to ring buffer
+        addToBuffer(audioInfo);
     }
 
     //=================================================
@@ -217,10 +253,17 @@ public class AudioService extends Service implements ReceivesAudio {
     //=================================================
 
     /**
-     * Start processing default input (Microphone).
+     * Starts processing default input (Microphone).
      */
     public void startMicrophone() {
-        turnOnMicThread();
+        if (created) turnOnMicThread();
+    }
+
+    /**
+     * Stops processing default input (Microphone).
+     */
+    public void stopMicrophone() {
+        if (created) turnOffMicThread();
     }
 
     private void turnOnMicThread() {
@@ -231,13 +274,11 @@ public class AudioService extends Service implements ReceivesAudio {
             micThread = new MicListener(this);
 
             // we should clear buffer
-            audioBuffer.clear();
+            clearBuffer();
 
             micThread.start();
             LOGD(TAG, "Microphone thread started");
         }
-        // FIXME: 4/11/2017 legacy code, should be removed
-        broadcastUpdateUI();
     }
 
     private void turnOffMicThread() {
@@ -247,6 +288,9 @@ public class AudioService extends Service implements ReceivesAudio {
             micThread.requestStop();
             micThread = null;
             LOGD(TAG, "Microphone Thread stopped");
+
+            // we should clear buffer so that next buffer user doesn't have any residue
+            clearBuffer();
         }
     }
 
@@ -254,50 +298,62 @@ public class AudioService extends Service implements ReceivesAudio {
     //  AUDIO PLAYBACK
     //=================================================
 
+    /**
+     * Triggers loading and playback of the file at specified {@code filePath}. If {@code autoPlay} is {@code true} file
+     * starts playing as soon as first samples are loaded, if it's {@code false} file is initially paused.
+     */
+    public void startPlayback(@NonNull String filePath, boolean autoPlay) {
+        if (created) startPlaybackThread(filePath, autoPlay);
+    }
+
     public void togglePlayback(boolean play) {
-        if (playbackThread != null) {
+        if (created && playbackThread != null) {
             if (play) {
                 playbackThread.play();
             } else {
                 playbackThread.pause();
             }
         }
-        // FIXME: 4/11/2017 legacy code, should be removed
-        broadcastUpdateUI();
     }
 
     public void stopPlayback() {
-        turnOffPlaybackThread();
+        if (created) turnOffPlaybackThread();
     }
 
     public void startPlaybackSeek() {
-        if (playbackThread != null) playbackThread.seek(true);
+        if (created && playbackThread != null) playbackThread.seek(true);
     }
 
     public void seekPlayback(int position) {
-        if (playbackThread != null) playbackThread.seek(AudioUtils.getByteCount(position));
+        if (created && playbackThread != null) playbackThread.seek(AudioUtils.getByteCount(position));
     }
 
     public void stopPlaybackSeek() {
-        if (playbackThread != null) playbackThread.seek(false);
+        if (created && playbackThread != null) playbackThread.seek(false);
     }
 
-    protected void turnOnPlaybackThread() {
+    public long getPlaybackProgress() {
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(lastBytePosition);
+
+        return 0;
+    }
+
+    public long getPlaybackLength() {
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getLength());
+
+        return 0;
+    }
+
+    private void turnOnPlaybackThread() {
         LOGD(TAG, "turnOnPlaybackThread()");
         if (playbackThread != null) {
             turnOffMicThread();
 
-            // we should clear buffer
-            audioBuffer.clear();
-
             playbackThread.play();
-
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
         }
     }
 
-    protected void turnOffPlaybackThread() {
+    private void turnOffPlaybackThread() {
         LOGD(TAG,
             "turnOffPlaybackThread() - playbackThread " + (playbackThread != null ? "not null (stopping)" : "null"));
 
@@ -305,130 +361,22 @@ public class AudioService extends Service implements ReceivesAudio {
             playbackThread.stop();
             playbackThread = null;
 
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
+            // we should clear buffer so that next buffer user doesn't have any residue
+            clearBuffer();
         }
+
+        // post event that audio playback has started
+        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
     }
 
-    //=================================================
-    //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
-    //=================================================
-
-    /**
-     * On receiving audio, add it to the RingBuffer. If we're recording, also
-     * dispatch it to the RecordingSaver instance.
-     *
-     * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer)
-     */
-    @Override public void receiveAudio(ByteBuffer audioInfo) {
-        if (!bUseAverager) {
-            audioBuffer.add(audioInfo);
-        } else {
-            averager.push(audioInfo);
-        }
-        lastSamplesReceivedTimestamp = System.currentTimeMillis();
-        if (mRecordingSaverInstance != null) {
-            recordAudio(audioInfo);
-        }
-    }
-
-    @Override public void receiveAudio(ShortBuffer audioInfo) {
-        if (!bUseAverager) {
-            audioBuffer.add(audioInfo);
-        } else {
-            averager.push(audioInfo);
-        }
-        lastSamplesReceivedTimestamp = System.currentTimeMillis();
-        //		if (mRecordingSaverInstance != null) {
-        //			recordAudio(audioInfo);
-        //		}
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- RECORD AUDIO
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * dispatch audio to the active RecordingSaver instance
-     */
-    private void recordAudio(ByteBuffer audioInfo) {
-        audioInfo.clear();
-        try {
-            mRecordingSaverInstance.receiveAudio(audioInfo);
-        } catch (IllegalStateException e) {
-            Log.w(getClass().getCanonicalName(), "Ignoring bytes received while not synced: " + e.getMessage());
-        }
-    }
-
-    public boolean startRecording() {
-        Log.w(TAG, "start recording");
-        if (mRecordingSaverInstance != null) {
-            broadcastUpdateUI();
-            return false;
-        }
-        try {
-            turnOnMicThread();
-            mRecordingSaverInstance = new RecordingSaver(this.getApplicationContext(), "BYB_");// theTime.toString());
-
-            // post that recording of audio has started
-            EventBus.getDefault().post(new AudioRecordingStartedEvent());
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
-        } catch (IllegalStateException e) {
-            Toast.makeText(getApplicationContext(), "No SD Card is available. Recording is disabled", Toast.LENGTH_LONG)
-                .show();
-            stopRecording();
-        }
-        return true;
-    }
-
-    public boolean stopRecording() {
-        if (mRecordingSaverInstance != null) {
-            Log.w(TAG, "stop recording");
-            mRecordingSaverInstance.finishRecording();
-            mRecordingSaverInstance = null;
-
-            // post that recording of audio has started
-            EventBus.getDefault().post(new AudioRecordingStoppedEvent());
-            // FIXME: 4/11/2017 legacy code, should be removed
-            broadcastUpdateUI();
-
-            return true;
-        }
-        broadcastUpdateUI();
-        return false;
-    }
-
-    public boolean isRecording() {
-        return (mRecordingSaverInstance != null);
-    }
-
-    private void broadcastUpdateUI() {
-        if (appContext != null) {
-            Intent i = new Intent();
-            i.setAction("BYBUpdateUI");
-            appContext.sendBroadcast(i);
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
-    //                            Event Bus
-    //////////////////////////////////////////////////////////////////////////////
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.ASYNC)
-    public void onThresholdAverageSampleCountSet(ThresholdAverageSampleCountSet event) {
-        averager.setMaxsize(event.getAverageSampleCount());
-    }
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.ASYNC)
-    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
-        LOGD(TAG, "onPlayAudioFileEvent()");
-        if (ApacheCommonsLang3Utils.isNotBlank(event.getFilePath())) {
+    private void startPlaybackThread(@NonNull String filePath, boolean autoPlay) {
+        if (ApacheCommonsLang3Utils.isNotBlank(filePath)) {
             turnOffPlaybackThread();
-            playbackThread = new PlaybackThread(this, event.getFilePath(), new PlaybackThread.PlaybackListener() {
+            playbackThread = new PlaybackThread(this, filePath, autoPlay, new PlaybackThread.PlaybackListener() {
                 @Override public void onStart(long length) {
-                    // post event that audio playback has started
-                    EventBus.getDefault().post(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length)));
+                    // post event that audio playback has started, but post a sticky event
+                    // because the view might sill not be initialized
+                    EventBus.getDefault().postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length)));
                 }
 
                 @Override public void onResume() {
@@ -447,89 +395,78 @@ public class AudioService extends Service implements ReceivesAudio {
 
                 @Override public void onStop() {
                     // we should clear buffer
-                    audioBuffer.clear();
+                    clearBuffer();
                     // post event that audio playback has started
                     EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                 }
             });
-            stopRecording();
-            turnOnPlaybackThread();
-
-            // FIXME: 4/11/2017 legacy code, should be removed
-            Intent i = new Intent();
-            i.setAction("BYBAudioPlaybackStart");
-            appContext.sendBroadcast(i);
-            broadcastUpdateUI();
+            turnOnPlaybackThread(); // this will stop the microphone and in progress recording if any
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    private class ToggleRecordingListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGD(TAG, "BYBToggleRecording broadcast received!");
-            if (!startRecording()) {
-                if (!stopRecording()) {
-                    Log.w(TAG, "There was an error recording properly");
-                }
-            }
-        }
+    //=================================================
+    //  AUDIO RECORDING
+    //=================================================
 
-        ;
+    /**
+     * dispatch audio to the active RecordingSaver instance
+     */
+    private void recordAudio(ByteBuffer audioInfo) {
+        audioInfo.clear();
+        try {
+            recordingSaver.writeAudio(audioInfo);
+
+            // post current recording progress
+            EventBus.getDefault()
+                .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength())));
+        } catch (IllegalStateException e) {
+            LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
+        }
     }
 
-    private class CloseButtonListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBCloseButton broadcast received!");
+    public boolean startRecording() {
+        LOGW(TAG, "start recording");
+        if (recordingSaver != null) return false;
+
+        try {
             turnOnMicThread();
+            recordingSaver = new RecordingSaver();
+
+            // post that recording of audio has started
+            EventBus.getDefault().post(new AudioRecordingStartedEvent());
+        } catch (IllegalStateException e) {
+            ViewUtils.toast(getApplicationContext(), "No SD Card is available. Recording is disabled");
+            stopRecording();
+        } catch (IOException e) {
+            ViewUtils.toast(getApplicationContext(),
+                "Error occurred while trying to initiate recording. Please try again.");
+            stopRecording();
         }
+
+        return true;
     }
 
-    private class AudioFilePlaybackEndedListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            LOGD(TAG, "BYBAudioFilePlaybackEnded broadcast received!");
-            broadcastUpdateUI();
+    public boolean stopRecording() {
+        LOGW(TAG, "stop recording");
+        if (recordingSaver == null) return false;
+
+        try {
+            recordingSaver.stopRecording();
+            recordingSaver = null;
+
+            // post that recording of audio has started
+            EventBus.getDefault().post(new AudioRecordingStoppedEvent());
+        } catch (IllegalStateException e) {
+            ViewUtils.toast(getApplicationContext(),
+                "Error occurred while trying to stop recording. Please check if your file recorded correctly.");
+
+            return false;
         }
+
+        return true;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    private void registerReceivers(boolean reg) {
-        LOGD(TAG, "registerReceivers()");
-        registerRecordingToggleReceiver(reg);
-        registerCloseButtonReceiver(reg);
-        registerPlaybackEndReceiver(reg);
-    }
-
-    private void registerCloseButtonReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBCloseButton");
-            closeListener = new CloseButtonListener();
-            appContext.registerReceiver(closeListener, intentFilter);
-        } else {
-            appContext.unregisterReceiver(closeListener);
-        }
-    }
-
-    private void registerRecordingToggleReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
-            toggleRecorder = new ToggleRecordingListener();
-            appContext.registerReceiver(toggleRecorder, intentFilter);
-        } else {
-            appContext.unregisterReceiver(toggleRecorder);
-        }
-    }
-
-    private void registerPlaybackEndReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBAudioFilePlaybackEnded");
-            audioFilePlaybackEndedListener = new AudioFilePlaybackEndedListener();
-            appContext.registerReceiver(audioFilePlaybackEndedListener, intentFilter);
-        } else {
-            appContext.unregisterReceiver(audioFilePlaybackEndedListener);
-        }
+    public boolean isRecording() {
+        return (recordingSaver != null);
     }
 }

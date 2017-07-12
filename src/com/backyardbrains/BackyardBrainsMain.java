@@ -23,8 +23,12 @@ import android.view.View;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.FindSpikesEvent;
+import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.PrefUtils;
 import java.util.List;
@@ -41,14 +45,14 @@ import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class BackyardBrainsMain extends AppCompatActivity
-    implements BackyardBrainsBaseScopeFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
+    implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(BackyardBrainsMain.class);
 
     public static final int INVALID_VIEW = -1;
     public static final int OSCILLOSCOPE_VIEW = 0;
     public static final int THRESHOLD_VIEW = 1;
-    public static final int RECORDINGS_LIST = 2;
+    public static final int RECORDINGS_VIEW = 2;
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
     public static final int PLAY_AUDIO_VIEW = 5;
@@ -57,7 +61,7 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     public static final String BYB_RECORDINGS_FRAGMENT = "BackyardBrainsRecordingsFragment";
     public static final String BYB_THRESHOLD_FRAGMENT = "BackyardBrainsThresholdFragment";
-    public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment";
+    public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment1";
     public static final String BYB_ANALYSIS_FRAGMENT = "BackyardBrainsAnalysisFragment";
     public static final String BYB_OSCILLOSCOPE_FRAGMENT = "BackyardBrainsOscilloscopeFragment";
     public static final String BYB_PLAY_AUDIO_FRAGMENT = "BackyardBrainsPlayAudioFragment";
@@ -147,9 +151,7 @@ public class BackyardBrainsMain extends AppCompatActivity
                 ((BackyardBrainsAnalysisFragment) frag).onBackPressed();
             }
         }
-        if (bShouldPop) {
-            if (!popFragment()) finish();
-        }
+        if (bShouldPop && !popFragment()) finish();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -162,7 +164,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         } else if (fragType == R.id.action_threshold) {
             fragType = THRESHOLD_VIEW;
         } else if (fragType == R.id.action_recordings) {
-            fragType = RECORDINGS_LIST;
+            fragType = RECORDINGS_VIEW;
         }
         LOGD(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
         if (fragType != currentFrag) {
@@ -171,23 +173,24 @@ public class BackyardBrainsMain extends AppCompatActivity
             String fragName;
             switch (fragType) {
                 //------------------------------
-                case RECORDINGS_LIST:
-                    frag = new BackyardBrainsRecordingsFragment();
+                case RECORDINGS_VIEW:
+                    frag = BackyardBrainsRecordingsFragment.newInstance();
                     fragName = BYB_RECORDINGS_FRAGMENT;
                     break;
                 //------------------------------
                 case THRESHOLD_VIEW:
-                    frag = new BackyardBrainsThresholdFragment();
+                    frag = BackyardBrainsThresholdFragment.newInstance();
                     fragName = BYB_THRESHOLD_FRAGMENT;
                     break;
                 //------------------------------
                 case FIND_SPIKES_VIEW:
-                    frag = new BackyardBrainsSpikesFragment();
+                    frag = BackyardBrainsSpikesFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = BYB_SPIKES_FRAGMENT;
                     break;
                 //------------------------------
                 case ANALYSIS_VIEW:
-                    frag = new BackyardBrainsAnalysisFragment();
+                    frag = BackyardBrainsAnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null,
+                        args.length > 0 ? (int) args[1] : BYBAnalysisType.NONE);
                     fragName = BYB_ANALYSIS_FRAGMENT;
                     break;
                 //------------------------------
@@ -198,13 +201,14 @@ public class BackyardBrainsMain extends AppCompatActivity
                     break;
                 //------------------------------
                 case PLAY_AUDIO_VIEW:
-                    frag = BackyardBrainsPlaybackScopeFragment.newInstance();
+                    frag = BackyardBrainsPlaybackScopeFragment.newInstance(
+                        args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = BYB_PLAY_AUDIO_FRAGMENT;
                     break;
             }
 
             setSelectedButton(fragType);
-            //if (flRecordingsContainer != null && fragType == RECORDINGS_LIST) {
+            //if (flRecordingsContainer != null && fragType == RECORDINGS_VIEW) {
             //    Intent i = new Intent();
             //    i.setAction("BYBRescanFiles");
             //    getApplicationContext().sendBroadcast(i);
@@ -302,9 +306,24 @@ public class BackyardBrainsMain extends AppCompatActivity
         loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Private Methods
-    //////////////////////////////////////////////////////////////////////////////
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onFindSpikesEvent(FindSpikesEvent event) {
+        loadFragment(FIND_SPIKES_VIEW, event.getFilePath());
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
+        loadFragment(ANALYSIS_VIEW, event.getFilePath(), event.getType());
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
+        loadFragment(RECORDINGS_VIEW);
+    }
+
+    //=================================================
+    // PRIVATE METHODS
+    //=================================================
 
     // Initializes user interface
     private void setupUI() {
@@ -323,30 +342,10 @@ public class BackyardBrainsMain extends AppCompatActivity
         loadFragment(OSCILLOSCOPE_VIEW);
     }
 
-    private String getFragmentNameFromType(int fragType) {
-        switch (fragType) {
-            case RECORDINGS_LIST:
-                return BYB_RECORDINGS_FRAGMENT;
-            case THRESHOLD_VIEW:
-                return BYB_THRESHOLD_FRAGMENT;
-            case FIND_SPIKES_VIEW:
-                return BYB_SPIKES_FRAGMENT;
-            case ANALYSIS_VIEW:
-                return BYB_ANALYSIS_FRAGMENT;
-            case OSCILLOSCOPE_VIEW:
-                return BYB_OSCILLOSCOPE_FRAGMENT;
-            case PLAY_AUDIO_VIEW:
-                return BYB_PLAY_AUDIO_FRAGMENT;
-            case INVALID_VIEW:
-            default:
-                return "";
-        }
-    }
-
     private int getFragmentTypeFromName(String fragName) {
         switch (fragName) {
             case BYB_RECORDINGS_FRAGMENT:
-                return RECORDINGS_LIST;
+                return RECORDINGS_VIEW;
             case BYB_THRESHOLD_FRAGMENT:
                 return THRESHOLD_VIEW;
             case BYB_SPIKES_FRAGMENT:
@@ -377,10 +376,10 @@ public class BackyardBrainsMain extends AppCompatActivity
                 i = new Intent();
                 i.putExtra("tab", THRESHOLD_VIEW);
                 break;
-            case RECORDINGS_LIST:
+            case RECORDINGS_VIEW:
                 selectedButton = R.id.action_recordings;
                 i = new Intent();
-                i.putExtra("tab", RECORDINGS_LIST);
+                i.putExtra("tab", RECORDINGS_VIEW);
                 break;
             default:
                 break;
@@ -489,6 +488,8 @@ public class BackyardBrainsMain extends AppCompatActivity
      */
     public void startAudioService() {
         if (!audioServiceRunning) {
+            LOGD(TAG, "Starting AudioService");
+
             startService(new Intent(this, AudioService.class));
             audioServiceRunning = true;
             bindAudioService(true);
@@ -500,6 +501,8 @@ public class BackyardBrainsMain extends AppCompatActivity
      */
     public void stopAudioService() {
         if (audioServiceRunning) {
+            LOGD(TAG, "Stopping AudioService");
+
             bindAudioService(false);
             stopService(new Intent(this, AudioService.class));
             audioServiceRunning = false;
@@ -510,7 +513,11 @@ public class BackyardBrainsMain extends AppCompatActivity
      * Starts {@link BYBAnalysisManager}.
      */
     public void startAnalysisManager() {
-        if (analysisManager == null) analysisManager = new BYBAnalysisManager(getApplicationContext());
+        if (analysisManager == null) {
+            LOGD(TAG, "Starting AnalysisManager");
+
+            analysisManager = new BYBAnalysisManager();
+        }
     }
 
     /**
@@ -518,7 +525,8 @@ public class BackyardBrainsMain extends AppCompatActivity
      */
     public void stopAnalysisManager() {
         if (analysisManager != null) {
-            analysisManager.close();
+            LOGD(TAG, "Stopping AnalysisManager");
+
             analysisManager = null;
         }
     }
@@ -543,6 +551,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         // android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
         // android.os.IBinder)
         @Override public void onServiceConnected(ComponentName className, IBinder service) {
+            LOGD(TAG, "AudioService connected!");
             // We've bound to LocalService, cast the IBinder and get
             // LocalService instance
             AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
@@ -552,6 +561,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
 
         @Override public void onServiceDisconnected(ComponentName className) {
+            LOGD(TAG, "AudioService disconnected!");
+
             audioService = null;
 
             // inform interested parties that audio service successfully disconnected
@@ -567,7 +578,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------- BROADCAST RECEIVERS CLASS
     // ---------------------------------------------------------------------------------------------
     private ChangePageListener changePageListener;
-    private AudioPlaybackStartListener audioPlaybackStartListener;
 
     private ShowScalingInstructionsListener showScalingInstructionsListener;
 
@@ -582,13 +592,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     // ----------------------------------------------------------------------------------------
-    private class AudioPlaybackStartListener extends BroadcastReceiver {
-        @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
-            LOGD(TAG, "AudioPlaybackStartListener .onReceive");
-            //loadFragment(OSCILLOSCOPE_VIEW);
-        }
-    }
-
     private class ShowScalingInstructionsListener extends BroadcastReceiver {
         @Override public void onReceive(android.content.Context context, android.content.Intent intent) {
             showScalingInstructions();
@@ -599,16 +602,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
     // -------------------------------------------------------------------------------------------------
     // ----------------------------------------------------------------------------------------
-    private void registerAudioPlaybackStartReceiver(boolean reg) {
-        LOGD(TAG, "registerAudioPlaybackStartReceiver");
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBAudioPlaybackStart");
-            audioPlaybackStartListener = new AudioPlaybackStartListener();
-            getApplicationContext().registerReceiver(audioPlaybackStartListener, intentFilter);
-        } else {
-            getApplicationContext().unregisterReceiver(audioPlaybackStartListener);
-        }
-    }
 
     // ----------------------------------------------------------------------------------------
     private void registerChangePageReceiver(boolean reg) {
@@ -636,7 +629,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------- REGISTER RECEIVERS
     // ---------------------------------------------------------------------------------------------
     public void registerReceivers() {
-        registerAudioPlaybackStartReceiver(true);
         registerChangePageReceiver(true);
         registerShowScalingInstructionsReceiver(true);
     }
@@ -645,7 +637,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     // ----------------------------------------- UNREGISTER RECEIVERS
     // ---------------------------------------------------------------------------------------------
     public void unregisterReceivers() {
-        registerAudioPlaybackStartReceiver(false);
         registerChangePageReceiver(false);
         registerShowScalingInstructionsReceiver(false);
     }
@@ -655,11 +646,11 @@ public class BackyardBrainsMain extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     public void loadSettings() {
-        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, TAG);
+        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, BackyardBrainsMain.class);
     }
 
     // ----------------------------------------------------------------------------------------
     public void saveSettings() {
-        PrefUtils.setShowScalingInstructions(this, TAG, showScalingInstructions);
+        PrefUtils.setShowScalingInstructions(this, BackyardBrainsMain.class, showScalingInstructions);
     }
 }

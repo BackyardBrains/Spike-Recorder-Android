@@ -22,7 +22,7 @@ public class BaseFragment extends Fragment {
      * This interface needs to be implemented by the activities which contain this fragment so that it can have access
      * to active {@link AudioService} and {@link BYBAnalysisManager}.
      */
-    public interface ResourceProvider {
+    @SuppressWarnings("WeakerAccess") public interface ResourceProvider {
         /**
          * Reference to active {@link AudioService}.
          */
@@ -72,6 +72,6 @@ public class BaseFragment extends Fragment {
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNoSubscriberEvent(NoSubscriberEvent event) {
-        // nothing for now
+        // we need this to avoid EventBusException exception thrown by EventBus
     }
 }

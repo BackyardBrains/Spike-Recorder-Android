@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.backyardbrains.view.BYBThresholdHandle
+        android:id="@+id/threshold_handle"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:byb_color="@color/red"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <SeekBar
+        android:id="@+id/sb_averaged_sample_count"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:minHeight="10dp"
+        android:layout_marginStart="@dimen/threshold_drag_surface_w"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="@dimen/threshold_drag_surface_w"
+        android:contentDescription="@string/average_num_slider"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tv_averaged_sample_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/default_threshold_amount"
+        android:textColor="@color/green"
+        app:layout_constraintLeft_toRightOf="@+id/sb_averaged_sample_count"
+        app:layout_constraintTop_toTopOf="@+id/sb_averaged_sample_count"
+        app:layout_constraintBottom_toBottomOf="@+id/sb_averaged_sample_count"/>
+</android.support.constraint.ConstraintLayout>

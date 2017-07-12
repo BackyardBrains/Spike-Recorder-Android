@@ -13,9 +13,22 @@
     <string name="action_play">Play</string>
     <string name="action_pause">Pause</string>
 
+    <string name="analysis_isi">Inter Spike Interval (ISI)</string>
+    <string name="analysis_autocorrelation">Autocorrelation</string>
+    <string name="analysis_cross_correlation">Cross Correlation</string>
+    <string name="analysis_average_spike">Average Spike</string>
+    <string name="analysis_please_wait">Please wait…</string>
+
+    <string name="content_desc_back">Back to previous screen</string>
+    <string name="content_desc_threshold_remove">Remove current</string>
+    <string name="content_desc_threshold_select_one">Select threshold 1</string>
+    <string name="content_desc_threshold_select_two">Select threshold 2</string>
+    <string name="content_desc_threshold_select_three">Select threshold 3</string>
+    <string name="content_desc_threshold_new">New threshold</string>
+
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
-    <string name="tap_to_stop_recording">Tap to stop recording</string>
+    <string name="tap_to_stop_recording">Tap to stop recording\n%s</string>
     <string name="read_speed_multiplier_label">Audio speed multiplier</string>
     <string-array name="speeds_array">
         <item>1</item>
@@ -42,12 +55,6 @@
     <string name="close_view_button">Close</string>
     <string name="cd_threshold_handle">Threshold</string>
     <string name="average_num_slider">Num Samples Averaged</string>
-    <string name="back_button"> Back to previous page</string>
-    <string name="trash_can">Remove current</string>
-    <string name="threshold0">Select threshold 0</string>
-    <string name="threshold1">Select threshold 1</string>
-    <string name="threshold2">Select threshold 2</string>
-    <string name="new_threshold">New threshold</string>
     <string name="playhead_slider">Playhead</string>
     <string name="analysis_title">Analysis Name</string>
     <string name="find_spikes_not_done_title">Warning</string>

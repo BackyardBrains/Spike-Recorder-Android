@@ -6,11 +6,20 @@
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/mid_button_tappable_h">
 
+    <FrameLayout
+        android:id="@+id/playback_scope_content_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
     <ImageView
         android:id="@+id/iv_play_pause"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:layout_marginStart="@dimen/threshold_drag_surface_w"
         android:contentDescription="@string/action_play"
         android:background="@android:color/transparent"
         app:srcCompat="@drawable/ic_play_circle_filled_orange_24dp"
@@ -21,21 +30,22 @@
     <SeekBar
         android:id="@+id/sb_audio_progress"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/min_button_tappable_h"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
+        app:layout_goneMarginStart="@dimen/threshold_drag_surface_w_with_padding"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        app:layout_goneMarginEnd="@dimen/threshold_drag_surface_w_with_padding"
         android:contentDescription="@string/playhead_slider"
         android:indeterminate="false"
         app:layout_constraintLeft_toRightOf="@+id/iv_play_pause"
-        app:layout_constraintTop_toTopOf="@+id/iv_play_pause"
-        app:layout_constraintRight_toLeftOf="@+id/tv_time"
-        app:layout_constraintBottom_toBottomOf="@+id/iv_play_pause"/>
+        app:layout_constraintRight_toLeftOf="@+id/tv_progress_time"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <TextView
-        android:id="@+id/tv_time"
+        android:id="@+id/tv_progress_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        android:layout_marginEnd="@dimen/threshold_drag_surface_w"
         app:layout_constraintLeft_toRightOf="@+id/sb_audio_progress"
         app:layout_constraintTop_toTopOf="@+id/iv_play_pause"
         app:layout_constraintRight_toRightOf="parent"

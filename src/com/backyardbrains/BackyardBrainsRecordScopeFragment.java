@@ -4,16 +4,22 @@ import android.Manifest;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
+import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -36,8 +42,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
-    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) View tvStopRecording;
+    @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
+    @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
 
     private Unbinder unbinder;
     private BYBSlidingView stopRecButton;
@@ -49,7 +55,20 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Override public void onStart() {
         super.onStart();
 
+        // this will start microphone if we are switching from another fragment
         if (getAudioService() != null) getAudioService().startMicrophone();
+    }
+
+    @Override public void onResume() {
+        super.onResume();
+
+        setupButtons(false);
+    }
+
+    @Override public void onStop() {
+        super.onStop();
+
+        if (getAudioService() != null) getAudioService().stopMicrophone();
     }
 
     @Override public void onDestroyView() {
@@ -61,44 +80,42 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  ABSTRACT METHODS IMPLEMENTATIONS
     //==============================================
 
-    @Override protected int getLayoutRes() {
-        return R.layout.fragment_record_scope;
-    }
-
-    @Override
-    protected void initView(@NonNull View view, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    @Override protected View createView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
+        @Nullable Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.fragment_record_scope, container, false);
         unbinder = ButterKnife.bind(this, view);
 
         setupUI();
+
+        return view;
     }
 
     @Override
     protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         final WaveformRenderer renderer = new WaveformRenderer(fragment, preparedBuffer);
         renderer.setCallback(new BYBBaseRenderer.CallbackAdapter() {
-            @Override public void onTimeChange(final float milliseconds) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
 
-            @Override public void onSignalChange(final float millivolts) {
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setMillivolts(millivolts);
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
+
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }
             }
         });
         return renderer;
+    }
+
+    @Override protected boolean isBackable() {
+        return false;
     }
 
     //==============================================
@@ -113,9 +130,23 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  EVENT BUS
     //==============================================
 
+    @Override @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        super.onAudioServiceConnectionEvent(event);
+
+        // this will start microphone if we are coming from background
+        if (getAudioService() != null) getAudioService().startMicrophone();
+    }
+
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
         setupButtons(true);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
+        tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
+            WavUtils.formatWavProgress((int) event.getProgress())));
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)

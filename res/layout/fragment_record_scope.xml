@@ -19,8 +19,9 @@
     <TextView
         android:id="@+id/tv_stop_recording"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:background="#ffff0000"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/activity_vertical_margin"
+        android:background="@color/red_orange"
         android:gravity="center"
         android:text="@string/tap_to_stop_recording"
         android:textAppearance="@android:style/TextAppearance.Large"

@@ -1,22 +1,27 @@
 package com.backyardbrains;
 
 import android.os.Bundle;
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.SeekableWaveformRenderer;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
+import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -27,78 +32,98 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     private static final String TAG = makeLogTag(BackyardBrainsPlaybackScopeFragment.class);
 
-    @BindView(R.id.iv_play_pause) ImageView ibtnPlayPause;
-    @BindView(R.id.sb_audio_progress) SeekBar sbAudioProgress;
-    @BindView(R.id.tv_time) TextView tvProgressTime;
+    private static final String ARG_FILE_PATH = "bb_file_path";
 
-    private Unbinder unbinder;
+    protected ImageView ibtnPlayPause;
+    protected SeekBar sbAudioProgress;
+    protected TextView tvProgressTime;
+
+    protected String filePath;
 
     /**
      * Factory for creating a new instance of the fragment.
      *
      * @return A new instance of fragment {@link BackyardBrainsPlaybackScopeFragment}.
      */
-    public static BackyardBrainsPlaybackScopeFragment newInstance() {
-        return new BackyardBrainsPlaybackScopeFragment();
+    public static BackyardBrainsPlaybackScopeFragment newInstance(@Nullable String filePath) {
+        final BackyardBrainsPlaybackScopeFragment fragment = new BackyardBrainsPlaybackScopeFragment();
+        final Bundle args = new Bundle();
+        args.putString(ARG_FILE_PATH, filePath);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     //=================================================
     //  LIFECYCLE IMPLEMENTATIONS
     //=================================================
 
-    @Override public void onStop() {
-        super.onStop();
-        stopPlaying();
+    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) filePath = getArguments().getString(ARG_FILE_PATH);
     }
 
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        unbinder.unbind();
+    @Override public void onStart() {
+        super.onStart();
+
+        if (ApacheCommonsLang3Utils.isBlank(filePath)) {
+            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+            return;
+        }
+
+        // everything good, start playback if it hasn't already been started
+        startPlaying(true);
+    }
+
+    @Override public void onStop() {
+        super.onStop();
+
+        stopPlaying();
     }
 
     //=================================================
     //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
     //=================================================
 
-    @Override protected int getLayoutRes() {
-        return R.layout.fragment_play_live_scope;
-    }
-
-    @Override
-    protected void initView(@NonNull View view, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        unbinder = ButterKnife.bind(this, view);
+    @Override protected final View createView(LayoutInflater inflater, @NonNull ViewGroup container,
+        @Nullable Bundle savedInstanceState) {
+        final View view = inflater.inflate(R.layout.fragment_playback_scope, container, false);
+        ibtnPlayPause = (ImageView) view.findViewById(R.id.iv_play_pause);
+        sbAudioProgress = (SeekBar) view.findViewById(R.id.sb_audio_progress);
+        tvProgressTime = (TextView) view.findViewById(R.id.tv_progress_time);
 
         setupUI();
+
+        // subclass content
+        final FrameLayout flContent = (FrameLayout) view.findViewById(R.id.playback_scope_content_container);
+        final View content = createPlaybackView(inflater, flContent);
+        if (content != null) flContent.addView(content);
+
+        return view;
     }
 
     @Override
     protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(fragment, preparedBuffer);
         renderer.setCallback(new BYBBaseRenderer.Callback() {
-            @Override public void onTimeChange(final float milliseconds) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setMilliseconds(milliseconds);
-                        }
-                    });
-                }
-            }
 
-            @Override public void onSignalChange(final float millivolts) {
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setMillivolts(millivolts);
+                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
+                            setMilliseconds(millisecondsInThisWindow);
+
+                            float yPerDiv =
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
+                            setMillivolts(yPerDiv);
                         }
                     });
                 }
             }
 
             @Override public void onHorizontalDragStart() {
-                LOGD(TAG, "Start horizontal drag");
                 startSeek();
             }
 
@@ -112,17 +137,19 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                         seek(finalProgress);
                         sbAudioProgress.setProgress(finalProgress);
                         updateProgressTime(finalProgress);
-                        LOGD(TAG, "Seeking: " + finalProgress);
                     }
                 });
             }
 
             @Override public void onHorizontalDragEnd() {
-                LOGD(TAG, "End horizontal drag");
                 stopSeek();
             }
         });
         return renderer;
+    }
+
+    @Override protected boolean isBackable() {
+        return true;
     }
 
     @Override protected SeekableWaveformRenderer getRenderer() {
@@ -132,6 +159,15 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     //=================================================
     //  PUBLIC AND PROTECTED METHODS
     //=================================================
+
+    /**
+     * Subclasses should override this method if they want to provide addition UI elements that will be placed inside a
+     * {@link FrameLayout} that matches parent's width and height and is places behind all the UI elements from this
+     * view.
+     */
+    protected View createPlaybackView(LayoutInflater inflater, @NonNull ViewGroup container) {
+        return null;
+    }
 
     /**
      * Returns length of the played audio file in samples.
@@ -154,6 +190,13 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
      */
     protected boolean isPlaying() {
         return getAudioService() != null && getAudioService().isAudioPlaying();
+    }
+
+    /**
+     * Starts playing audio file.
+     */
+    protected void startPlaying(boolean autoPlay) {
+        if (getAudioService() != null) getAudioService().startPlayback(filePath, autoPlay);
     }
 
     /**
@@ -188,10 +231,21 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     //  EVENT BUS
     //=================================================
 
+    @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
+        super.onAudioServiceConnectionEvent(event);
+
+        // this will start playback if we are coming from background
+        startPlaying(false);
+    }
+
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         LOGD(TAG, "Start audio playback - " + event.getLength());
-        if (event.getLength() > 0) sbAudioProgress.setMax((int) event.getLength());
+        if (event.getLength() > 0) {
+            sbAudioProgress.setMax((int) event.getLength());
+            EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
+        }
 
         setupPlayPauseButton();
     }
@@ -209,6 +263,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     public void onAudioPlaybackStoppedEvent(AudioPlaybackStoppedEvent event) {
         LOGD(TAG, "Stop audio playback - " + (event.isCompleted() ? "end" : "pause"));
 
+        if (event.isCompleted()) sbAudioProgress.setProgress(0);
         setupPlayPauseButton();
     }
 
@@ -219,12 +274,12 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     // Initializes user interface
     private void setupUI() {
         // play/pause button
+        setupPlayPauseButton();
         ibtnPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 toggle(!isPlaying());
             }
         });
-        setupPlayPauseButton();
         // audio progress
         sbAudioProgress.setMax(getLength());
         sbAudioProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
