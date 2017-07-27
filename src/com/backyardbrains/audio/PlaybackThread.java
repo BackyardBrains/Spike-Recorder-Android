@@ -302,6 +302,9 @@ class PlaybackThread {
 
     // This represents a single seek loop.
     private synchronized void seekToPosition(byte[] seekBuffer) throws IOException {
+        // if we don't have file we can't seek
+        if (raf != null) return;
+
         final long zerosPrependCount = progress - seekBuffer.length;
         final long seekPosition = Math.max(0, zerosPrependCount);
         raf.seek(seekPosition);

@@ -11,7 +11,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.ThresholdProcessor;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
@@ -54,10 +53,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @Override public void onStart() {
         super.onStart();
 
-        if (getAudioService() != null) {
-            getAudioService().setDataProcessor(DATA_PROCESSOR);
-            getAudioService().startMicrophone();
-        }
+        startMicAndSetupDataProcessing();
     }
 
     @Override public void onStop() {
@@ -98,14 +94,21 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setThreshold(position);
+                            setThresholdHandlePosition(position);
                         }
                     });
                 }
             }
 
-            @Override public void onThresholdValueChange(float value) {
-                DATA_PROCESSOR.setThreshold(value);
+            @Override public void onThresholdValueChange(final float value) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            updateDataProcessorThreshold(value);
+                        }
+                    });
+                }
             }
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
@@ -143,7 +146,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         LOGD(TAG, "Audio serviced connected. Refresh threshold for initial value");
         if (event.isConnected()) {
-            if (getAudioService() != null) getAudioService().startMicrophone();
+            startMicAndSetupDataProcessing();
             refreshThreshold();
         }
     }
@@ -184,14 +187,28 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
     }
 
-    // Sets the specified value for the threshold
-    private void setThreshold(int value) {
-        thresholdHandle.setPosition(value);
+    private void startMicAndSetupDataProcessing() {
+        if (getAudioService() != null) {
+            getAudioService().setDataProcessor(DATA_PROCESSOR);
+            getAudioService().startMicrophone();
+        }
+    }
+
+    // Sets the specified value for the threshold.
+    private void setThresholdHandlePosition(int value) {
+        // can be null if callback is called after activity has finished
+        if (thresholdHandle != null) thresholdHandle.setPosition(value);
+    }
+
+    // Updates data processor with the newly set threshold.
+    private void updateDataProcessorThreshold(float value) {
+        // can be null if callback is called after activity has finished
+        //noinspection ConstantConditions
+        if (DATA_PROCESSOR != null) DATA_PROCESSOR.setThreshold(value);
     }
 
     // Refreshes renderer thresholds
     private void refreshThreshold() {
-        final AudioService provider = getAudioService();
-        if (provider != null) getRenderer().refreshThreshold();
+        if (getAudioService() != null) getRenderer().refreshThreshold();
     }
 }

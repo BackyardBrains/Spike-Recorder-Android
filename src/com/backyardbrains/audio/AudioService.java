@@ -25,6 +25,7 @@ import android.hardware.usb.UsbDevice;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataManager;
 import com.backyardbrains.data.DataProcessor;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
@@ -39,6 +40,7 @@ import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ViewUtils;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import org.greenrobot.eventbus.EventBus;
 
@@ -61,7 +63,8 @@ public class AudioService extends Service implements ReceivesAudio {
 
     // Reference to the data manager that stores and processes the data
     private DataManager dataManager;
-    private DataProcessor dataProcessor;
+    // Reference to the data processor that will additionally process the data
+    private WeakReference<DataProcessor> dataProcessorRef;
 
     // Reference to the microphone data source
     private MicListener micThread;
@@ -137,18 +140,29 @@ public class AudioService extends Service implements ReceivesAudio {
     //  DATA PROCESSING
     //=================================================
 
+    // Returns the activity reference and if reference is lost, logs the calling method.
+    @Nullable @SuppressWarnings("WeakerAccess") DataProcessor getProcessor(@NonNull String methodName) {
+        // case if data processor is not set at all
+        if (dataProcessorRef == null) return null;
+
+        final DataProcessor processor = dataProcessorRef.get();
+        if (processor == null) LOGD(TAG, "Service doesn't have DataProcessor reference, ignoring (" + methodName + ")");
+
+        return processor;
+    }
+
     /**
      * Sets the data processor that will be used to additionally process incoming data.
      */
     public void setDataProcessor(@NonNull DataProcessor dataProcessor) {
-        this.dataProcessor = dataProcessor;
+        dataProcessorRef = new WeakReference<>(dataProcessor);
     }
 
     /**
      * Clears data processor.
      */
     public void clearDataProcessor() {
-        this.dataProcessor = null;
+        dataProcessorRef = null;
     }
 
     //=================================================
@@ -162,9 +176,10 @@ public class AudioService extends Service implements ReceivesAudio {
      */
     @Override public void receiveAudio(@NonNull ByteBuffer audioData) {
         if (dataManager != null) {
-            if (dataProcessor != null) {
+            if (getProcessor("receiveAudio(ByteBuffer)") != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                dataManager.addToBuffer(dataProcessor.processData(audioData));
+                //noinspection ConstantConditions
+                dataManager.addToBuffer(getProcessor("receiveAudio(ByteBuffer)").processData(audioData));
             } else {
                 // pass data to data manager
                 dataManager.addToBuffer(audioData);
@@ -179,14 +194,15 @@ public class AudioService extends Service implements ReceivesAudio {
      *
      * @see com.backyardbrains.audio.ReceivesAudio#receiveAudio(ByteBuffer, long)
      */
-    @Override public void receiveAudio(@NonNull ByteBuffer a, long lastBytePosition) {
+    @Override public void receiveAudio(@NonNull ByteBuffer audioData, long lastBytePosition) {
         if (dataManager != null) {
-            if (dataProcessor != null) {
+            if (getProcessor("receiveAudio(ByteBuffer, long)") != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                dataManager.addToBuffer(dataProcessor.processData(a));
+                //noinspection ConstantConditions
+                dataManager.addToBuffer(getProcessor("receiveAudio(ByteBuffer, long)").processData(audioData));
             } else {
                 // pass data to data manager
-                dataManager.addToBuffer(a, lastBytePosition);
+                dataManager.addToBuffer(audioData, lastBytePosition);
             }
         }
     }
