@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.Manifest;
+import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,7 +19,10 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.UsbDeviceConnectionEvent;
+import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
 import java.util.List;
@@ -42,15 +46,20 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
+    @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
     @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
 
-    private Unbinder unbinder;
     private BYBSlidingView stopRecButton;
+    private Unbinder unbinder;
 
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
+
+    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 
     @Override public void onStart() {
         super.onStart();
@@ -130,28 +139,46 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  EVENT BUS
     //==============================================
 
-    @Override @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        super.onAudioServiceConnectionEvent(event);
-
         // this will start microphone if we are coming from background
         if (getAudioService() != null) getAudioService().startMicrophone();
+        // update usb button visibility
+        ibtnUsb.setVisibility(
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
         setupButtons(true);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
             WavUtils.formatWavProgress((int) event.getProgress())));
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStoppedEvent(AudioRecordingStoppedEvent event) {
         setupButtons(true);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
+        ibtnUsb.setVisibility(event.isAttached() ? View.VISIBLE : View.GONE);
+
+        // usb is detached, we should start listening to microphone again
+        if (!event.isAttached()) if (getAudioService() != null) getAudioService().startMicrophone();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
+        if (!event.isGranted()) {
+            ViewUtils.toast(getContext(), "Permission not granted!!!");
+
+            if (getAudioService() != null) getAudioService().startMicrophone();
+        } else {
+            if (getAudioService() != null) getAudioService().stopMicrophone();
+        }
     }
 
     //==============================================
@@ -160,6 +187,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     // Initializes user interface
     private void setupUI() {
+        // usb button
+        ibtnUsb.setVisibility(
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+        ibtnUsb.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                openDeviceListDialog();
+            }
+        });
         // record button
         ibtnRecord.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
@@ -175,6 +210,31 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         });
         // set initial visibility
         setupButtons(false);
+    }
+
+    void openDeviceListDialog() {
+        // TODO: 7/19/2017 This method should open dialog with all available BYB devices
+        if (getAudioService() != null && getAudioService().getDeviceCount() > 0) {
+            final UsbDevice device = getAudioService().getDevice(0);
+            if (device != null) connectWithDevice(device.getDeviceName());
+            return;
+        }
+
+        ViewUtils.toast(getContext(), "No connected devices!");
+    }
+
+    private void connectWithDevice(@NonNull String deviceName) {
+        if (getAudioService() != null) {
+            try {
+                getAudioService().connectToUsbDevice(deviceName);
+            } catch (IllegalArgumentException e) {
+                ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+            }
+
+            return;
+        }
+
+        ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
     }
 
     // Set buttons visibility depending on whether audio is currently being recorded or not

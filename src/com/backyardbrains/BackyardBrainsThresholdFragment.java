@@ -12,7 +12,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.audio.ThresholdHelper;
+import com.backyardbrains.audio.ThresholdProcessor;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
@@ -32,6 +32,10 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
 
+    private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
+
+    private static final ThresholdProcessor DATA_PROCESSOR = new ThresholdProcessor(DEFAULT_AVERAGED_SAMPLE_COUNT);
+
     private Unbinder unbinder;
 
     /**
@@ -50,13 +54,19 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @Override public void onStart() {
         super.onStart();
 
-        if (getAudioService() != null) getAudioService().startMicrophone();
+        if (getAudioService() != null) {
+            getAudioService().setDataProcessor(DATA_PROCESSOR);
+            getAudioService().startMicrophone();
+        }
     }
 
     @Override public void onStop() {
         super.onStop();
 
-        if (getAudioService() != null) getAudioService().stopMicrophone();
+        if (getAudioService() != null) {
+            getAudioService().stopMicrophone();
+            getAudioService().clearDataProcessor();
+        }
     }
 
     @Override public void onDestroyView() {
@@ -83,15 +93,19 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         final ThresholdRenderer renderer = new ThresholdRenderer(fragment, preparedBuffer);
         renderer.setCallback(new ThresholdRenderer.CallbackAdapter() {
 
-            @Override public void onThresholdUpdate(final int value) {
+            @Override public void onThresholdPositionChange(final int position) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            setThreshold(value);
+                            setThreshold(position);
                         }
                     });
                 }
+            }
+
+            @Override public void onThresholdValueChange(float value) {
+                DATA_PROCESSOR.setThreshold(value);
             }
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
@@ -117,10 +131,6 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         return false;
     }
 
-    @Override protected boolean shouldUseAverager() {
-        return true;
-    }
-
     @Override protected ThresholdRenderer getRenderer() {
         return (ThresholdRenderer) super.getRenderer();
     }
@@ -129,10 +139,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     //  EVENT BUS
     //==============================================
 
-    @Override @Subscribe(threadMode = ThreadMode.MAIN)
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        super.onAudioServiceConnectionEvent(event);
-
         LOGD(TAG, "Audio serviced connected. Refresh threshold for initial value");
         if (event.isConnected()) {
             if (getAudioService() != null) getAudioService().startMicrophone();
@@ -170,13 +178,10 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 }
 
                 // and inform interested parties that the average sample count has changed
-                if (fromUser && getAudioService() != null) {
-                    getAudioService().setThresholdAveragedSampleCount(progress);
-                }
+                if (fromUser) DATA_PROCESSOR.setAveragedSampleCount(progress);
             }
         });
-        sbAvgSamplesCount.setProgress(getAudioService() != null ? getAudioService().getThresholdAveragedSampleCount()
-            : ThresholdHelper.DEFAULT_SIZE);
+        sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
     }
 
     // Sets the specified value for the threshold

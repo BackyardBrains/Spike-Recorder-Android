@@ -2,6 +2,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
+        maven { url "https://jitpack.io" }
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
@@ -12,6 +13,7 @@ buildscript {
 repositories {
     jcenter()
     mavenCentral()
+    maven { url "https://jitpack.io" }
     maven { url 'https://maven.fabric.io/public' }
 }
 
@@ -103,6 +105,8 @@ dependencies {
     // event bus
     compile "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+    // serial communication
+    compile 'com.github.felHR85:UsbSerial:4.5'
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true;

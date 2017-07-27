@@ -46,6 +46,11 @@ public class RingBuffer {
         incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
     }
 
+    public void add(final short[] incoming) {
+        System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
+        System.arraycopy(incoming, 0, buffer, buffer.length - incoming.length, incoming.length);
+    }
+
     /**
      * @return an order-adjusted version of the whole buffer
      */

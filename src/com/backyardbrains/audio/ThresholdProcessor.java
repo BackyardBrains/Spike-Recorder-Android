@@ -21,6 +21,9 @@ package com.backyardbrains.audio;
 
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import com.backyardbrains.data.DataProcessor;
+import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -29,20 +32,20 @@ import java.util.Iterator;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class ThresholdHelper {
+public class ThresholdProcessor implements DataProcessor {
 
-    private static final String TAG = makeLogTag(ThresholdHelper.class);
+    private static final String TAG = makeLogTag(ThresholdProcessor.class);
 
-    public static final int DEFAULT_SIZE = 30;
+    private static final int DEFAULT_SIZE = 1;
 
-    private static final int SAMPLE_COUNT = (int) (44100 * 0.68 * 2); // 680 ms
-    private static final int DEAD_PERIOD = (int) (44100 * 0.005 * 2); // 5 ms
+    public static final int SAMPLE_COUNT = (int) (AudioUtils.SAMPLE_RATE * 0.68 * 2); // 680 ms
+    private static final int DEAD_PERIOD = (int) (AudioUtils.SAMPLE_RATE * 0.005 * 2); // 5 ms
     private static final int BUFFER_SAMPLE_COUNT = SAMPLE_COUNT / 2; // 340 ms
 
     // Buffer that holds most recent 680 ms of audio
     private RingBuffer buffer;
     // Number of samples
-    private int maxsize;
+    private int averagedSampleCount = DEFAULT_SIZE;
     // Holds sums of all the saved samples by index
     // summedSamples[0] = sampleBuffersInAverage.get(0)[0] + sampleBuffersInAverage.get(1)[0] + ...
     //           + sampleBuffersInAverage.get(sampleBuffersInAverage.size() - 1)[0]
@@ -64,20 +67,28 @@ public class ThresholdHelper {
     private int deadPeriodSampleCounter;
     private boolean deadPeriod;
 
-    ThresholdHelper() {
-        this(DEFAULT_SIZE);
-    }
-
     /**
-     * @param size int Number of chunks to be used for calculation of average spike.
+     * Creates new {@link ThresholdProcessor} that uses {@code size} number of sample sequences for average spike
+     * calculation.
      */
-    @SuppressWarnings("WeakerAccess") ThresholdHelper(int size) {
+    public ThresholdProcessor(int size) {
         // set initial number of chunks to use for calculating average
-        setMaxsize(size);
+        setAveragedSampleCount(size);
         // init buffers
         reset();
         // handler used for setting threshold
-        handler = new TriggerHandler();
+        handler = new Handler();
+    }
+
+    @Nullable @Override public short[] processData(@NonNull ByteBuffer data) {
+        if (data.capacity() >= 1) {
+            data.clear();
+            processIncomingData(data.asShortBuffer());
+
+            return averagedSamples;
+        }
+
+        return new short[0];
     }
 
     /**
@@ -88,35 +99,35 @@ public class ThresholdHelper {
     }
 
     /**
-     * Receives new chunk of data from the default input as {@link ByteBuffer}.
-     *
-     * @param incoming Received data.
+     * Sets the number of sample sequences that should be summed to get the average spike value.
      */
-    void push(@NonNull ByteBuffer incoming) {
-        if (incoming.capacity() < 1) return;
-
-        incoming.clear();
-        push(incoming.asShortBuffer());
+    public void setAveragedSampleCount(int averagedSampleCount) {
+        if (averagedSampleCount > 0) this.averagedSampleCount = averagedSampleCount;
     }
 
     /**
-     * Receives new chunk of data from the default input as {@link ShortBuffer}.
-     *
-     * @param incoming Received data.
+     * Returns the number of sample sequences that should be summed to get the average spike value.
      */
-    void push(@NonNull ShortBuffer incoming) {
-        if (incoming.capacity() < 1) return;
+    public int getAveragedSampleCount() {
+        return averagedSampleCount;
+    }
 
-        //buffer.add(incoming);
-
-        incoming.clear();
-        processIncomingData(incoming);
+    /**
+     * Set's the sample frequency threshold.
+     */
+    public void setThreshold(final float threshold) {
+        handler.post(new Runnable() {
+            @Override public void run() {
+                LOGD(TAG, "setThreshold: " + threshold);
+                triggerValue = (int) threshold;
+            }
+        });
     }
 
     // Resets all the fields used for calculations
     private void reset() {
         buffer = new RingBuffer(BUFFER_SAMPLE_COUNT);
-        samplesForCalculation = new ArrayList<>(maxsize * 2);
+        samplesForCalculation = new ArrayList<>(averagedSampleCount * 2);
         summedSamples = null;
         summedSamplesCounts = null;
         averagedSamples = new short[SAMPLE_COUNT];
@@ -124,29 +135,6 @@ public class ThresholdHelper {
         prevSample = 0;
         deadPeriodSampleCounter = 0;
         deadPeriod = false;
-    }
-
-    private class Samples {
-        private short[] samples;
-        private int lastAveragedIndex;
-        private int nextSampleIndex;
-
-        private Samples(@NonNull short[] samples, int nextSampleIndex) {
-            this.samples = samples;
-            this.lastAveragedIndex = 0;
-            this.nextSampleIndex = nextSampleIndex;
-        }
-
-        boolean isPopulated() {
-            return nextSampleIndex == samples.length;
-        }
-
-        boolean append(short[] samples) {
-            final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, samples.length);
-            System.arraycopy(samples, 0, this.samples, nextSampleIndex, samplesToCopy);
-            nextSampleIndex += samplesToCopy;
-            return isPopulated();
-        }
     }
 
     // Processes the incoming data and triggers all necessary calculations.
@@ -181,30 +169,30 @@ public class ThresholdHelper {
         for (int i = 0; i < incomingAsArray.length; i++) {
             currentSample = incomingAsArray[i];
 
-            //if (!deadPeriod) {
-            if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (triggerValue < 0
-                && currentSample < triggerValue && prevSample >= triggerValue)) {
-                //LOGD(TAG, "Threshold: " + triggerValue + ", prev: " + prevSample + ", current: " + currentSample);
-                //deadPeriod = true;
+            if (!deadPeriod) {
+                if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (
+                    triggerValue < 0 && currentSample < triggerValue && prevSample >= triggerValue)) {
+                    //LOGD(TAG, "Threshold: " + triggerValue + ", prev: " + prevSample + ", current: " + currentSample);
+                    deadPeriod = true;
 
-                // create new samples for current threshold
-                final short[] centeredWave = new short[SAMPLE_COUNT];
-                final int copyLength = Math.min(BUFFER_SAMPLE_COUNT, incomingAsArray.length);
-                System.arraycopy(buffer.getArray(), i, centeredWave, 0, buffer.getArray().length - i);
-                System.arraycopy(incomingAsArray, 0, centeredWave, buffer.getArray().length - i, copyLength);
-                final Samples samples = new Samples(centeredWave, buffer.getArray().length - i + copyLength);
+                    // create new samples for current threshold
+                    final short[] centeredWave = new short[SAMPLE_COUNT];
+                    final int copyLength = Math.min(BUFFER_SAMPLE_COUNT, incomingAsArray.length);
+                    System.arraycopy(buffer.getArray(), i, centeredWave, 0, buffer.getArray().length - i);
+                    System.arraycopy(incomingAsArray, 0, centeredWave, buffer.getArray().length - i, copyLength);
+                    final Samples samples = new Samples(centeredWave, buffer.getArray().length - i + copyLength);
 
-                unfinishedSamplesForCalculation.add(samples);
+                    unfinishedSamplesForCalculation.add(samples);
 
-                break;
+                    break;
+                }
+            } else {
+                //LOGD(TAG, "Dead period");
+                if (++deadPeriodSampleCounter > DEAD_PERIOD) {
+                    deadPeriodSampleCounter = 0;
+                    deadPeriod = false;
+                }
             }
-            //} else {
-            //    //LOGD(TAG, "Dead period");
-            //    if (++deadPeriodSampleCounter > DEAD_PERIOD) {
-            //        deadPeriodSampleCounter = 0;
-            //        deadPeriod = false;
-            //    }
-            //}
 
             prevSample = currentSample;
         }
@@ -225,7 +213,7 @@ public class ThresholdHelper {
         while (iterator.hasNext()) {
             final Samples samples = iterator.next();
             if (samples.isPopulated()) {
-                if (samplesForCalculation.size() >= maxsize) samplesForCalculation.remove(0);
+                if (samplesForCalculation.size() >= averagedSampleCount) samplesForCalculation.remove(0);
                 samplesForCalculation.add(samples.samples);
                 iterator.remove();
             }
@@ -266,10 +254,10 @@ public class ThresholdHelper {
         }
 
         for (int i = samples.lastAveragedIndex + 1; i < samples.nextSampleIndex; i++) {
-            if (summedSamplesCounts[i] >= maxsize) {
+            if (summedSamplesCounts[i] >= averagedSampleCount) {
                 final short toSubtract;
-                if (maxsize < unfinishedSamplesForCalculation.size()) {
-                    toSubtract = unfinishedSamplesForCalculation.get(samplesIndex - maxsize).samples[i];
+                if (averagedSampleCount < unfinishedSamplesForCalculation.size()) {
+                    toSubtract = unfinishedSamplesForCalculation.get(samplesIndex - averagedSampleCount).samples[i];
                 } else {
                     toSubtract = samplesForCalculation.get(samplesIndex)[i];
                 }
@@ -287,30 +275,26 @@ public class ThresholdHelper {
         //LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
     }
 
-    // ---------------------------------------------------------------------------------------------
-    short[] getAveragedSamples() {
-        return averagedSamples;
-    }
+    private class Samples {
+        private short[] samples;
+        private int lastAveragedIndex;
+        private int nextSampleIndex;
 
-    // ---------------------------------------------------------------------------------------------
-    void setMaxsize(int maxsize) {
-        if (maxsize > 0) this.maxsize = maxsize;
-    }
+        private Samples(@NonNull short[] samples, int nextSampleIndex) {
+            this.samples = samples;
+            this.lastAveragedIndex = 0;
+            this.nextSampleIndex = nextSampleIndex;
+        }
 
-    int getMaxsize() {
-        return maxsize;
-    }
+        boolean isPopulated() {
+            return nextSampleIndex == samples.length;
+        }
 
-    // ---------------------------------------------------------------------------------------------
-    Handler getHandler() {
-        return handler;
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    public class TriggerHandler extends Handler {
-        public void setThreshold(float y) {
-            LOGD(TAG, "setThreshold: " + y);
-            triggerValue = (int) y;
+        boolean append(short[] samples) {
+            final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, samples.length);
+            System.arraycopy(samples, 0, this.samples, nextSampleIndex, samplesToCopy);
+            nextSampleIndex += samplesToCopy;
+            return isPopulated();
         }
     }
 }

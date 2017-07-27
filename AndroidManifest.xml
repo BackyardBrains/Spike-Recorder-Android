@@ -12,6 +12,9 @@
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false"/>
 
     <application
         android:icon="@drawable/ic_launcher_byb"
@@ -30,7 +33,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
         <service android:name="com.backyardbrains.audio.AudioService"/>
+
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="03339903a5ebeb0ce572431bcfc3c9dd25e5b2cc"/>

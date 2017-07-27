@@ -1,11 +1,11 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.data.DataManager;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
@@ -33,6 +33,8 @@ public class BYBBaseRenderer extends BaseRenderer {
     private boolean bZooming;
     private boolean bPanning;
     private float panningDx;
+
+    private DataManager dataManager;
 
     short[] drawingBuffer;
     private float[] tempBufferToDraws;
@@ -89,6 +91,8 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment);
+
+        dataManager = DataManager.get(getBufferSize());
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -158,15 +162,11 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     /**
-     * Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
+     * Returns size of the buffer that {@link DataManager} should use. Default buffer size is 6 seconds. Subclasses
+     * should override this method and return buffer size that suits their need.
      */
-    protected boolean fillBuffer() {
-        if (getAudioService() != null) {
-            if (drawingBuffer == null) drawingBuffer = new short[getAudioService().getAudioBuffer().length];
-            System.arraycopy(getAudioService().getAudioBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
-            return true;
-        }
-        return false;
+    protected int getBufferSize() {
+        return DataManager.DEFAULT_BUFFER_SIZE;
     }
 
     //==============================================
@@ -258,13 +258,6 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     protected void postDrawingHandler(GL10 gl) {
-        // TODO: 4/19/2017 Code below was drawing a playhead (blue vertical line), playhead should be always right side of screen
-        //if (getIsPlaybackMode() && !getIsPlaying()) {
-        //    float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
-        //
-        //    BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(), playheadDraw, getGlWindowVerticalSize(),
-        //        0x00FFFFFF);
-        //}
         if (bShowScalingAreaX || bShowScalingAreaY) {
             gl.glEnable(GL10.GL_BLEND);
             // Specifies pixel arithmetic
@@ -302,6 +295,13 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     void endAddToGlOffset() {
         if (getIsPlaybackMode() && !getIsPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    }
+
+    // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
+    private boolean fillBuffer() {
+        if (drawingBuffer == null) drawingBuffer = new short[dataManager.getData().length];
+        System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
+        return true;
     }
 
     private void setStartEndIndex(int arrayLength) {
@@ -462,15 +462,6 @@ public class BYBBaseRenderer extends BaseRenderer {
         return normalizedScreenPos * width;
     }
 
-    // ----------------------------------------------------------------------------------------
-    protected long msToSamples(long timeSince) {
-        return Math.round(44.1 * timeSince);
-    }
-
-    private boolean getIsRecording() {
-        return getAudioService() != null && getAudioService().isRecording();
-    }
-
     private boolean getIsPlaybackMode() {
         return getAudioService() != null && getAudioService().isPlaybackMode();
     }
@@ -481,33 +472,5 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     private boolean getIsSeeking() {
         return getAudioService() != null && getAudioService().isAudioSeeking();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTINGS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    public void readSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            setGlWindowHorizontalSize(settings.getInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize));
-            setGlWindowVerticalSize(settings.getInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize));
-            height = settings.getInt(TAG + "_height", height);
-            width = settings.getInt(TAG + "_width", width);
-            setAutoScaled(settings.getBoolean(TAG + "_autoScaled", autoScaled));
-            minimumDetectedPCMValue = settings.getFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void saveSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            settings.edit()
-                .putInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize)
-                .putInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize)
-                .putInt(TAG + "_height", height)
-                .putInt(TAG + "_width", width)
-                .putBoolean(TAG + "_autoScaled", autoScaled)
-                .putFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue)
-                .apply();
-        }
     }
 }

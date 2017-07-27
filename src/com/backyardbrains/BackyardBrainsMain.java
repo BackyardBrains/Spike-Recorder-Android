@@ -57,8 +57,6 @@ public class BackyardBrainsMain extends AppCompatActivity
     public static final int FIND_SPIKES_VIEW = 4;
     public static final int PLAY_AUDIO_VIEW = 5;
 
-    //private static final int BACK_STACK_MAX_ITEMS = 2;
-
     public static final String BYB_RECORDINGS_FRAGMENT = "BackyardBrainsRecordingsFragment";
     public static final String BYB_THRESHOLD_FRAGMENT = "BackyardBrainsThresholdFragment";
     public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment1";
@@ -73,12 +71,11 @@ public class BackyardBrainsMain extends AppCompatActivity
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
     }
 
-    //@Nullable @BindView(R.id.fragment_recordings_list) FrameLayout flRecordingsContainer;
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
     private boolean audioServiceRunning = false;
-    protected AudioService audioService;
-    protected BYBAnalysisManager analysisManager;
+    private AudioService audioService;
+    private BYBAnalysisManager analysisManager;
 
     //protected BYBSlidingView sliding_drawer;
     private int currentFrag = -1;
@@ -121,6 +118,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         registerReceivers();
 
         super.onStart();
+
         // register activity with event bus
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
@@ -128,6 +126,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     @Override protected void onStop() {
         // unregister activity from event bus
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
+
         super.onStop();
 
         // unregisters all broadcast receivers
@@ -208,14 +207,8 @@ public class BackyardBrainsMain extends AppCompatActivity
             }
 
             setSelectedButton(fragType);
-            //if (flRecordingsContainer != null && fragType == RECORDINGS_VIEW) {
-            //    Intent i = new Intent();
-            //    i.setAction("BYBRescanFiles");
-            //    getApplicationContext().sendBroadcast(i);
-            //} else {
             showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false, R.anim.slide_in_right,
                 R.anim.slide_out_left);
-            //}
         }
     }
 
@@ -301,24 +294,24 @@ public class BackyardBrainsMain extends AppCompatActivity
     //  EVENT BUS
     //=================================================
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
         loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onFindSpikesEvent(FindSpikesEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onFindSpikesEvent(FindSpikesEvent event) {
         loadFragment(FIND_SPIKES_VIEW, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
         loadFragment(ANALYSIS_VIEW, event.getFilePath(), event.getType());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
         loadFragment(RECORDINGS_VIEW);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
+        // this is here to avoid EventBus exception
     }
 
     //=================================================
@@ -419,9 +412,9 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Permission Request >= API 23
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    // RECORD_AUDIO PERMISSION
+    //==============================================
 
     @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
         @NonNull int[] grantResults) {
@@ -471,9 +464,9 @@ public class BackyardBrainsMain extends AppCompatActivity
         stopAudioService();
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Analysis Manager and Audio Service
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  AUDIO SERVICE
+    //==============================================
 
     @Nullable @Override public AudioService audioService() {
         return audioService;
@@ -483,10 +476,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         return analysisManager;
     }
 
-    /**
-     * Starts {@link AudioService}.
-     */
-    public void startAudioService() {
+    // Starts AudioService
+    private void startAudioService() {
         if (!audioServiceRunning) {
             LOGD(TAG, "Starting AudioService");
 
@@ -496,10 +487,8 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    /**
-     * Stops {@link AudioService}.
-     */
-    public void stopAudioService() {
+    // Stops AudioService
+    private void stopAudioService() {
         if (audioServiceRunning) {
             LOGD(TAG, "Stopping AudioService");
 
@@ -509,38 +498,16 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     }
 
-    /**
-     * Starts {@link BYBAnalysisManager}.
-     */
-    public void startAnalysisManager() {
-        if (analysisManager == null) {
-            LOGD(TAG, "Starting AnalysisManager");
-
-            analysisManager = new BYBAnalysisManager();
-        }
-    }
-
-    /**
-     * Stops {@link BYBAnalysisManager}.
-     */
-    public void stopAnalysisManager() {
-        if (analysisManager != null) {
-            LOGD(TAG, "Stopping AnalysisManager");
-
-            analysisManager = null;
-        }
-    }
-
     protected void bindAudioService(boolean on) {
         if (on) {
             Intent intent = new Intent(this, AudioService.class);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+            bindService(intent, audioServiceConnection, Context.BIND_AUTO_CREATE);
         } else {
-            unbindService(mConnection);
+            unbindService(audioServiceConnection);
         }
     }
 
-    protected ServiceConnection mConnection = new ServiceConnection() {
+    protected ServiceConnection audioServiceConnection = new ServiceConnection() {
 
         // Sets a reference in this activity to the {@link AudioService}, which
         // allows for {@link ByteBuffer}s full of audio information to be passed
@@ -554,8 +521,9 @@ public class BackyardBrainsMain extends AppCompatActivity
             LOGD(TAG, "AudioService connected!");
             // We've bound to LocalService, cast the IBinder and get
             // LocalService instance
-            AudioService.AudioServiceBinder binder = (AudioService.AudioServiceBinder) service;
+            AudioService.ServiceBinder binder = (AudioService.ServiceBinder) service;
             audioService = binder.getService();
+
             // inform interested parties that audio service is successfully connected
             EventBus.getDefault().post(new AudioServiceConnectionEvent(true));
         }
@@ -570,8 +538,26 @@ public class BackyardBrainsMain extends AppCompatActivity
         }
     };
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
-        // this is here to avoid EventBus exception
+    //==============================================
+    // ANALYSIS MANAGER AND
+    //==============================================
+
+    // Starts BYBAnalysisManager
+    private void startAnalysisManager() {
+        if (analysisManager == null) {
+            LOGD(TAG, "Starting AnalysisManager");
+
+            analysisManager = new BYBAnalysisManager();
+        }
+    }
+
+    // Stops BYBAnalysisManager
+    private void stopAnalysisManager() {
+        if (analysisManager != null) {
+            LOGD(TAG, "Stopping AnalysisManager");
+
+            analysisManager = null;
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

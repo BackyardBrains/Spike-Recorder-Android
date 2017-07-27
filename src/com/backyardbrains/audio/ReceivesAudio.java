@@ -19,8 +19,8 @@
 
 package com.backyardbrains.audio;
 
+import android.support.annotation.NonNull;
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 
 /**
  * A simple interface to attach to services which allows a callback into
@@ -34,13 +34,11 @@ public interface ReceivesAudio {
      * Called by mic thread to pass audio {@link ByteBuffer} into a service. The service should then do as it sees fit
      * with the data.
      */
-    void receiveAudio(ByteBuffer audioInfo);
+    void receiveAudio(@NonNull ByteBuffer audioData);
 
     /**
      * Called by playback thread to pass audio {@link ByteBuffer} into a service along with the positions of the last
      * read byte.
      */
-    void receiveAudio(ByteBuffer audioInfo, long lastBytePosition);
-
-    void receiveAudio(ShortBuffer audioInfo);
+    void receiveAudio(@NonNull ByteBuffer audioData, long lastBytePosition);
 }
