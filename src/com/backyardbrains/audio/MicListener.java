@@ -131,13 +131,15 @@ class MicListener extends Thread {
     }
 
     private void stopRecorder() {
-        try {
-            recorder.stop();
-            recorder.release();
-        } catch (IllegalStateException e) {
-            LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
+        if (recorder != null) {
+            try {
+                recorder.stop();
+                recorder.release();
+            } catch (IllegalStateException e) {
+                LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
+            }
+            recorder = null;
         }
-        recorder = null;
         LOGD(TAG, "Recorder Released");
     }
 
@@ -152,6 +154,5 @@ class MicListener extends Thread {
             }
             recorder = null;
         }
-        // @TODO - figure out why joining here causes service to not stop.
     }
 }
