@@ -42,17 +42,13 @@ public class ThresholdProcessor implements SampleProcessor {
     // We need to buffer half of samples total count up to the sample that hit's threshold
     private static final int BUFFER_SAMPLE_COUNT = SAMPLE_COUNT / 2; // 680 ms
 
-    // Buffer that holds most recent 680 ms of audio
+    // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
     private RingBuffer buffer;
     // Number of samples that needs to be summed to get the averaged sample
     private int averagedSampleCount = DEFAULT_SIZE;
     // Holds sums of all the saved samples by index
-    // summedSamples[0] = sampleBuffersInAverage.get(0)[0] + sampleBuffersInAverage.get(1)[0] + ...
-    //           + sampleBuffersInAverage.get(sampleBuffersInAverage.size() - 1)[0]
     private int[] summedSamples;
     // Holds averages of all the saved samples by index
-    // averagedSamples[0] = (sampleBuffersInAverage.get(0)[0] + sampleBuffersInAverage.get(1)[0] + ...
-    //           + sampleBuffersInAverage.get(sampleBuffersInAverage.size() - 1)[0]) / sampleBuffersInAverage.size()
     private short[] averagedSamples;
     // Holds samples counts summed at specified position
     private int[] summedSamplesCounts;
@@ -90,16 +86,6 @@ public class ThresholdProcessor implements SampleProcessor {
 
         return new short[0];
     }
-    //
-    //@Nullable @Override public short[] process(@NonNull byte[] data) {
-    //    if (data.length >= 1) {
-    //        processIncomingData(ByteBuffer.wrap(data).order(ByteOrder.nativeOrder()).asShortBuffer());
-    //
-    //        return averagedSamples;
-    //    }
-    //
-    //    return new short[0];
-    //}
 
     /**
      * Clears all data.
@@ -149,10 +135,6 @@ public class ThresholdProcessor implements SampleProcessor {
 
     // Processes the incoming data and triggers all necessary calculations.
     private void processIncomingData(short[] incomingSamples) {
-        //long start = System.currentTimeMillis();
-        //LOGD(TAG, "==========================================");
-        //LOGD(TAG, "START - " + samplesForCalculation.size());
-
         // reset buffers if size  of buffer changed
         if (incomingSamples.length != lastIncomingBufferSize) {
             reset();
@@ -168,19 +150,15 @@ public class ThresholdProcessor implements SampleProcessor {
             reset();
             lastAveragedSampleCount = averagedSampleCount;
         }
-        //LOGD(TAG, "1. AFTER resetting buffers:" + (System.currentTimeMillis() - start));
 
-        // initialize incoming array
-        //short[] incomingAsArray = new short[sb.capacity()];
-        //sb.get(incomingAsArray, 0, incomingAsArray.length);
-
+        // append unfinished sample buffers whit incoming samples
         for (Samples samples : unfinishedSamplesForCalculation) {
             samples.append(incomingSamples);
         }
-        //LOGD(TAG, "2. AFTER appending samples:" + (System.currentTimeMillis() - start));
 
         short currentSample;
         int copyLength;
+        // loop through incoming samples and listen for the threshold hit
         for (int i = 0; i < incomingSamples.length; i++) {
             currentSample = incomingSamples[i];
 
@@ -188,7 +166,7 @@ public class ThresholdProcessor implements SampleProcessor {
                 // check if we hit the threshold
                 if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (
                     triggerValue < 0 && currentSample < triggerValue && prevSample >= triggerValue)) {
-                    //LOGD(TAG, "Threshold: " + triggerValue + ", prev: " + prevSample + ", current: " + currentSample);
+                    // we hit the threshold, turn on dead period of 5ms
                     deadPeriod = true;
 
                     // create new samples for current threshold
@@ -203,7 +181,6 @@ public class ThresholdProcessor implements SampleProcessor {
                     break;
                 }
             } else {
-                //LOGD(TAG, "Dead period");
                 if (++deadPeriodSampleCounter > DEAD_PERIOD) {
                     deadPeriodSampleCounter = 0;
                     deadPeriod = false;
@@ -212,19 +189,17 @@ public class ThresholdProcessor implements SampleProcessor {
 
             prevSample = currentSample;
         }
-        //LOGD(TAG, "3. AFTER adding current samples:" + (System.currentTimeMillis() - start));
 
+        // add samples to local buffer
         buffer.add(incomingSamples);
-        //LOGD(TAG, "4. AFTER adding to buffer:" + (System.currentTimeMillis() - start));
 
+        // add incoming samples to calculation of averages
         int len = unfinishedSamplesForCalculation.size();
-        //if (len > 0) LOGD(TAG, "     ==========================================");
         for (int i = 0; i < len; i++) {
             addSamplesToCalculations(unfinishedSamplesForCalculation.get(i), i);
         }
-        //if (len > 0) LOGD(TAG, "     ==========================================");
-        //LOGD(TAG, "5. AFTER adding samples to calculation:" + (System.currentTimeMillis() - start));
 
+        // move filled sample buffers from unfinished samples collection to finished samples collection
         final Iterator<Samples> iterator = unfinishedSamplesForCalculation.iterator();
         while (iterator.hasNext()) {
             final Samples samples = iterator.next();
@@ -234,24 +209,11 @@ public class ThresholdProcessor implements SampleProcessor {
                 iterator.remove();
             }
         }
-        //LOGD(TAG, "6. AFTER removing finished samples:" + (System.currentTimeMillis() - start));
 
-        //if (summedSamples == null) summedSamples = new int[SAMPLE_COUNT];
-        //if (summedSamplesCounts == null) summedSamplesCounts = new int[SAMPLE_COUNT];
-        //// save averages only if we have samples to read from
-        //final int sLen = summedSamples.length;
-        //if (draw) {
-        //    for (int i = 0; i < sLen; i++) {
-        //        if (summedSamplesCounts[i] > 0) {
-        //            averagedSamples[i] = (short) (summedSamples[i] / summedSamplesCounts[i]);
-        //        }
-        //    }
-        //}
-        //LOGD(TAG, "7. AFTER calculating averages:" + (System.currentTimeMillis() - start));
+        // TODO: 9/20/2017 We should dump unnecessary finished samples to release the memory
     }
 
     private void addSamplesToCalculations(@NonNull Samples samples, int samplesIndex) {
-        //long start = System.currentTimeMillis();
         // init summed samples array
         if (summedSamples == null || summedSamplesCounts == null) {
             summedSamples = new int[SAMPLE_COUNT];
@@ -264,22 +226,20 @@ public class ThresholdProcessor implements SampleProcessor {
             }
             samples.lastAveragedIndex = samples.nextSampleIndex;
 
-            //LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
-
             return;
         }
 
         for (int i = samples.lastAveragedIndex; i < samples.nextSampleIndex; i++) {
             // if we are calculating averagedSampleCount + 1. sample we should subtract the oldest one in the sum
             if (summedSamplesCounts[i] >= averagedSampleCount) {
-                final short toSubtract;
-                if (averagedSampleCount <= samplesIndex) { // we look for the oldest one in the unfinished samples
-                    toSubtract = unfinishedSamplesForCalculation.get(samplesIndex - averagedSampleCount).samples[i];
-                } else { // we look for the oldest one in the already collected and calculated samples
-                    toSubtract = samplesForCalculation.get(samplesIndex)[i];
-                }
                 // subtract the value and decrease summed samples count for current position
-                summedSamples[i] -= toSubtract;
+                if (averagedSampleCount <= samplesIndex) { // we look for the oldest one in the unfinished samples
+                    summedSamples[i] -=
+                        unfinishedSamplesForCalculation.get(samplesIndex - averagedSampleCount).samples[i];
+                } else { // we look for the oldest one in the already collected and calculated samples
+                    summedSamples[i] -=
+                        samplesForCalculation.get(samplesForCalculation.size() - averagedSampleCount + samplesIndex)[i];
+                }
                 summedSamplesCounts[i]--;
             }
             // add new value and increase summed samples count for current position
@@ -289,13 +249,15 @@ public class ThresholdProcessor implements SampleProcessor {
             averagedSamples[i] = (short) (summedSamples[i] / summedSamplesCounts[i]);
         }
         samples.lastAveragedIndex = samples.nextSampleIndex;
-
-        //LOGD(TAG, "     5.1. AFTER looping through all the samples:" + (System.currentTimeMillis() - start));
     }
 
+    // Represents a buffer for samples that are collected and included in averages calculation
     private class Samples {
+        // Array of received samples
         private short[] samples;
+        // Index of last sample that was included in averages calculations before new samples arrived
         private int lastAveragedIndex;
+        // Index of first "empty slot" at which future arriving samples will be appended
         private int nextSampleIndex;
 
         private Samples(@NonNull short[] samples, int nextSampleIndex) {
@@ -304,10 +266,16 @@ public class ThresholdProcessor implements SampleProcessor {
             this.nextSampleIndex = nextSampleIndex;
         }
 
+        /**
+         * Returns whether all sample slots are populated (whether the buffer is full).
+         */
         boolean isPopulated() {
             return nextSampleIndex == samples.length;
         }
 
+        /**
+         * Appends newly received samples and returns {@code true} if buffer is full, {@code false} otherwise.
+         */
         boolean append(short[] samples) {
             final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, samples.length);
             System.arraycopy(samples, 0, this.samples, nextSampleIndex, samplesToCopy);
