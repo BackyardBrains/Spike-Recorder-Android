@@ -3,6 +3,7 @@ package com.backyardbrains.audio;
 import android.media.AudioFormat;
 import android.support.annotation.NonNull;
 import com.backyardbrains.utils.WavUtils;
+import com.crashlytics.android.Crashlytics;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +41,7 @@ public class WavAudioFile implements BYBAudioFile {
         try {
             raf = new RandomAccessFile(file, "rw");
         } catch (FileNotFoundException e) {
+            Crashlytics.logException(e);
             return false;
         }
 
@@ -49,6 +51,7 @@ public class WavAudioFile implements BYBAudioFile {
                 AudioFormat.ENCODING_PCM_16BIT));
             raf.close();
         } catch (IOException e) {
+            Crashlytics.logException(e);
             return false;
         } finally {
             raf.close();

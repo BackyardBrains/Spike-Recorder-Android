@@ -25,6 +25,7 @@ import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
+import com.crashlytics.android.Crashlytics;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -143,9 +144,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will start microphone if we are coming from background
         if (getAudioService() != null) getAudioService().startMicrophone();
+
         // update usb button visibility
-        ibtnUsb.setVisibility(
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+        ibtnUsb.setVisibility(/*
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -165,10 +167,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
-        ibtnUsb.setVisibility(event.isAttached() ? View.VISIBLE : View.GONE);
+        ibtnUsb.setVisibility(/*event.isAttached() ? View.VISIBLE : */View.GONE);
 
         // usb is detached, we should start listening to microphone again
-        if (!event.isAttached()) if (getAudioService() != null) getAudioService().startMicrophone();
+        if (!event.isAttached() && getAudioService() != null) getAudioService().startMicrophone();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
@@ -189,7 +191,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private void setupUI() {
         // usb button
         ibtnUsb.setVisibility(
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
         ibtnUsb.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 openDeviceListDialog();
@@ -228,6 +230,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             try {
                 getAudioService().connectToUsbDevice(deviceName);
             } catch (IllegalArgumentException e) {
+                Crashlytics.logException(e);
                 ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
             }
 

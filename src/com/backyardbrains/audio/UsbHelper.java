@@ -13,10 +13,11 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
+import com.backyardbrains.data.DataProcessor;
+import com.backyardbrains.utils.RingByteBuffer;
+import com.backyardbrains.utils.UsbUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,11 +35,9 @@ public class UsbHelper {
 
     private static final String ACTION_USB_PERMISSION = "com.backyardbrains.usb.USB_PERMISSION";
 
-    private static final byte[] MESSAGE_START_SEQUENCE =
-        new byte[] { (byte) 0xFF, (byte) 0xFF, 0x01, 0x01, (byte) 0x80, (byte) 0xFF };
-    private static final byte[] MESSAGE_END_SEQUENCE = new byte[] {
-        (byte) 0xFF, (byte) 0xFF, 0x01, 0x01, (byte) 0x81, (byte) 0xFF
-    };
+    private static final SampleStreamProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor();
+    private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE * 6; // 6 secs
+
     private static String MSG_START_STREAM = "start:;";
     private static String MSG_STOP_STREAM = "h:;";
     private static String MSG_INFO = "?:;";
@@ -115,6 +114,8 @@ public class UsbHelper {
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
 
+    private final RingByteBuffer buffer = new RingByteBuffer(BUFFER_SIZE);
+
     public UsbHelper(@NonNull Context context, @NonNull AudioService service, @Nullable UsbListener listener) {
         this.service = service;
         this.manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
@@ -171,6 +172,25 @@ public class UsbHelper {
         return devices.get(index);
     }
 
+    private class ReadThread extends Thread {
+
+        byte[] data;
+
+        @Override public void run() {
+            while (done) {
+                synchronized (service) {
+                    data = new byte[buffer.size()];
+                    for (int i = 0; i < data.length; i++) data[i] = buffer.pop();
+                    service.receiveSampleStream(data);
+                }
+            }
+        }
+    }
+
+    private boolean done = false;
+    private DataProcessor processor = new SampleStreamProcessor();
+    private ReadThread readThread;
+
     @SuppressWarnings("WeakerAccess") void openDevice(@NonNull UsbDevice device) {
         final UsbDeviceConnection connection = manager.openDevice(device);
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
@@ -183,13 +203,32 @@ public class UsbHelper {
                 serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
                 serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
                 serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
+                readThread = new ReadThread();
+                readThread.start();
+
                 serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
-                    @Override public void onReceivedData(byte[] bytes) {
-                        synchronized (service) {
-                            service.receiveAudio(ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()));
-                        }
+                    @Override public void onReceivedData(byte[] data) {
+                        for (int i = 0; i < data.length; i++) buffer.push(data[i]);
                     }
                 });
+
+                //serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
+                //    @Override public void onReceivedData(byte[] bytes) {
+                //        if (bytes != null && bytes.length > 0) {
+                //            LOGD(TAG, "==============================");
+                //            //LOGD(TAG, "BYTES: " + Arrays.toString(bytes));
+                //            //LOGD(TAG, "1. USB - BEFORE sync");
+                //            synchronized (service) {
+                //                //LOGD(TAG, "2. USB - BEFORE receive");
+                //                //LOGD(TAG, "BYTES: " + Arrays.toString(bytes));
+                //                service.receiveAudio(ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()));
+                //                //LOGD(TAG, "8. USB - AFTER receive");
+                //            }
+                //            //LOGD(TAG, "9. USB - AFTER sync");
+                //        }
+                //    }
+                //});
             } else {
                 LOGD("SERIAL", "PORT NOT OPEN");
             }
@@ -199,7 +238,11 @@ public class UsbHelper {
     }
 
     public void disconnect() {
-        if (serialDevice != null) serialDevice.close();
+        if (serialDevice != null) {
+            done = true;
+            serialDevice.close();
+            readThread = null;
+        }
     }
 
     // Refreshes the connected devices list with only the serial communication capable ones.

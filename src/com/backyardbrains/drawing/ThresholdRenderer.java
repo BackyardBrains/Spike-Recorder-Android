@@ -23,9 +23,9 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.audio.ThresholdProcessor;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -90,10 +90,6 @@ public class ThresholdRenderer extends WaveformRenderer {
         updateThresholdHandle();
     }
 
-    @Override protected int getBufferSize() {
-        return ThresholdProcessor.SAMPLE_COUNT;
-    }
-
     @Override public void onLoadSettings(@NonNull Context context) {
         adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
 
@@ -120,6 +116,7 @@ public class ThresholdRenderer extends WaveformRenderer {
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             Log.e(TAG, e.getMessage());
+            Crashlytics.logException(e);
         }
         return BYBUtils.getFloatBufferFromFloatArray(arr, arr.length);
     }

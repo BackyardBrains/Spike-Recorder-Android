@@ -60,8 +60,9 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         super.onStop();
 
         if (getAudioService() != null) {
+            getAudioService().clearSampleProcessor();
+            getAudioService().clearBufferSize();
             getAudioService().stopMicrophone();
-            getAudioService().clearDataProcessor();
         }
     }
 
@@ -189,7 +190,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     private void startMicAndSetupDataProcessing() {
         if (getAudioService() != null) {
-            getAudioService().setDataProcessor(DATA_PROCESSOR);
+            getAudioService().setSampleProcessor(DATA_PROCESSOR);
+            getAudioService().setBufferSize(ThresholdProcessor.SAMPLE_COUNT);
             getAudioService().startMicrophone();
         }
     }

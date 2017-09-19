@@ -3,6 +3,7 @@ package com.backyardbrains.data;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.RingBuffer;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.LogUtils;
 import java.nio.ByteBuffer;
 
 /**
@@ -10,9 +11,11 @@ import java.nio.ByteBuffer;
  */
 public class DataManager {
 
-    public static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
+    private static final String TAG = LogUtils.makeLogTag(DataManager.class);
 
-    private static RingBuffer dataBuffer;
+    private static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
+
+    private RingBuffer dataBuffer;
     private long lastBytePosition;
 
     private static DataManager manager;
@@ -31,21 +34,29 @@ public class DataManager {
         return manager;
     }
 
-    /**
-     * Returns singleton instance of {@link DataManager} with the buffer set to {@code bufferSize} size.
-     */
-    public static DataManager get(int bufferSize) {
-        if (manager == null) manager = new DataManager();
-
-        dataBuffer.clear();
-        dataBuffer = new RingBuffer(bufferSize);
-
-        return manager;
-    }
-
     //=================================================
     //  PUBLIC METHODS
     //=================================================
+
+    /**
+     * Sets buffer size of the {@link RingBuffer}.
+     */
+    public void setBufferSize(int bufferSize) {
+        if (bufferSize <= 0) throw new IllegalArgumentException("Buffer can't be 0 or negative value!");
+
+        dataBuffer.clear();
+        // if buffer size is negative or zero use default buffer size
+        dataBuffer = new RingBuffer(bufferSize);
+    }
+
+    /**
+     * Sets buffer size of the {@link RingBuffer} to default value (6 sec)
+     */
+    public void resetBufferSize() {
+        dataBuffer.clear();
+        // if buffer size is negative or zero use default buffer size
+        dataBuffer = new RingBuffer(DEFAULT_BUFFER_SIZE);
+    }
 
     /**
      * Returns an array of shorts that are representing the sample data.
@@ -60,21 +71,14 @@ public class DataManager {
      * Adds specified {@code data} to ring buffer and saves position of the last added byte
      */
     public void addToBuffer(@Nullable ByteBuffer data, long lastBytePosition) {
-        // add audio data to buffer
-        addToBuffer(data);
-        // last played byte position
-        this.lastBytePosition = lastBytePosition;
-    }
-
-    /**
-     * Adds specified {@code data} to ring buffer
-     */
-    public void addToBuffer(@Nullable ByteBuffer data) {
         // just return if data is null
         if (data == null) return;
 
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
+
+        // last played byte position
+        this.lastBytePosition = lastBytePosition;
     }
 
     /**
@@ -86,6 +90,10 @@ public class DataManager {
 
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
+    }
+
+    public void addToBuffer(short sample) {
+        if (dataBuffer != null) dataBuffer.add(sample);
     }
 
     /**

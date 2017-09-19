@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
+import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -193,6 +194,7 @@ class PlaybackThread {
         try {
             seekToPosition(new byte[seekBufferSize]);
         } catch (IOException e) {
+            Crashlytics.logException(e);
             LOGE(TAG, "Error reading random access file stream", e);
         }
     }
@@ -211,6 +213,7 @@ class PlaybackThread {
         try {
             seekToPosition(new byte[seekBufferSize]);
         } catch (IOException e) {
+            Crashlytics.logException(e);
             LOGE(TAG, "Error reading random access file stream", e);
         }
     }
@@ -279,6 +282,7 @@ class PlaybackThread {
             LOGE(TAG,
                 e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
                 e);
+            Crashlytics.logException(e);
 
             stop();
         }
@@ -303,7 +307,7 @@ class PlaybackThread {
     // This represents a single seek loop.
     private synchronized void seekToPosition(byte[] seekBuffer) throws IOException {
         // if we don't have file we can't seek
-        if (raf != null) return;
+        if (raf == null) return;
 
         final long zerosPrependCount = progress - seekBuffer.length;
         final long seekPosition = Math.max(0, zerosPrependCount);
@@ -324,6 +328,7 @@ class PlaybackThread {
             raf.close();
         } catch (IOException e) {
             LOGE(TAG, "IOException while stopping random access file: " + e.toString());
+            Crashlytics.logException(e);
         } finally {
             raf = null;
         }

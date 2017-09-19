@@ -10,6 +10,7 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -42,7 +43,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     protected int height;
     protected int width;
     private boolean autoScaled;
-    private static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
+    private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_HORIZONTAL_SIZE = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
@@ -92,7 +93,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment);
 
-        dataManager = DataManager.get(getBufferSize());
+        dataManager = DataManager.get();
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -159,14 +160,6 @@ public class BYBBaseRenderer extends BaseRenderer {
         focusX = fx;
         bZooming = true;
         bPanning = false;
-    }
-
-    /**
-     * Returns size of the buffer that {@link DataManager} should use. Default buffer size is 6 seconds. Subclasses
-     * should override this method and return buffer size that suits their need.
-     */
-    protected int getBufferSize() {
-        return DataManager.DEFAULT_BUFFER_SIZE;
     }
 
     //==============================================
@@ -346,6 +339,7 @@ public class BYBBaseRenderer extends BaseRenderer {
             //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, "Array size out of sync while building new waveform buffer");
+            Crashlytics.logException(e);
         }
 
         // subclasses can do some post-processing

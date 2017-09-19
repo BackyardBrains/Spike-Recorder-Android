@@ -6,6 +6,7 @@ import android.util.Log;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.analysis.BYBSpike;
 import com.backyardbrains.utils.BYBUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -199,6 +200,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     System.arraycopy(arr1, 0, colorsArr, 0, colorsArr.length);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     Log.e(TAG, e.getMessage());
+                    Crashlytics.logException(e);
                 }
             }
         }
