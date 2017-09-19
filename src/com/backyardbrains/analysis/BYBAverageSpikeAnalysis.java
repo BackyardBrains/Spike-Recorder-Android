@@ -3,6 +3,7 @@ package com.backyardbrains.analysis;
 import android.support.annotation.NonNull;
 import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.utils.BYBUtils;
+import com.crashlytics.android.Crashlytics;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -183,6 +184,7 @@ class BYBAverageSpikeAnalysis extends BYBBaseAnalysis {
             LOGE(TAG,
                 e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
                 e);
+            Crashlytics.logException(e);
         }
     }
 

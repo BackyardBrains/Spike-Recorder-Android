@@ -25,6 +25,8 @@
     <string name="content_desc_threshold_select_two">Select threshold 2</string>
     <string name="content_desc_threshold_select_three">Select threshold 3</string>
     <string name="content_desc_threshold_new">New threshold</string>
+    <string name="content_desc_usb_connect">Connect to SpikerBox via USB</string>
+    <string name="content_desc_usb_disconnect">Disconnect from SpikerBox</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>

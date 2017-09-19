@@ -23,9 +23,9 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.audio.ThresholdHelper;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -35,16 +35,22 @@ public class ThresholdRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
-    private float threshold; // in samples, which is also gl width
+    private float threshold;
 
     private Callback callback;
 
     interface Callback extends BYBBaseRenderer.Callback {
-        void onThresholdUpdate(int value);
+        void onThresholdPositionChange(int position);
+
+        void onThresholdValueChange(float value);
     }
 
     public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
-        @Override public void onThresholdUpdate(int value) {
+        @Override public void onThresholdPositionChange(int position) {
+        }
+
+        @Override public void onThresholdValueChange(float value) {
+
         }
     }
 
@@ -84,15 +90,6 @@ public class ThresholdRenderer extends WaveformRenderer {
         updateThresholdHandle();
     }
 
-    @Override protected boolean fillBuffer() {
-        if (getAudioService() != null) {
-            drawingBuffer = new short[getAudioService().getAverageBuffer().length];
-            System.arraycopy(getAudioService().getAverageBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
-            return true;
-        }
-        return false;
-    }
-
     @Override public void onLoadSettings(@NonNull Context context) {
         adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
 
@@ -119,12 +116,13 @@ public class ThresholdRenderer extends WaveformRenderer {
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             Log.e(TAG, e.getMessage());
+            Crashlytics.logException(e);
         }
         return BYBUtils.getFloatBufferFromFloatArray(arr, arr.length);
     }
 
     private void updateThresholdHandle() {
-        if (callback != null) callback.onThresholdUpdate(glHeightToPixelHeight(threshold));
+        if (callback != null) callback.onThresholdPositionChange(glHeightToPixelHeight(threshold));
     }
 
     private void adjustThresholdValue(float dy) {
@@ -133,12 +131,6 @@ public class ThresholdRenderer extends WaveformRenderer {
 
         threshold = dy;
 
-        if (getAudioService() != null && getAudioService().getTriggerHandler() != null) {
-            getAudioService().getTriggerHandler().post(new Runnable() {
-                @Override public void run() {
-                    ((ThresholdHelper.TriggerHandler) getAudioService().getTriggerHandler()).setThreshold(threshold);
-                }
-            });
-        }
+        if (callback != null) callback.onThresholdValueChange(threshold);
     }
 }

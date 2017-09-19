@@ -9,15 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.view.WaveformLayout;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGW;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -111,30 +106,12 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         return renderer;
     }
 
-    /**
-     * Whether renderer should use averager when doing calculations.
-     */
-    protected boolean shouldUseAverager() {
-        return false;
-    }
-
-    //==============================================
-    //  EVENT BUS
-    //==============================================
-
-    @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        // we should set whether AudioService should use averager after audio service is connected
-        setUseAverager();
-    }
-
     //==============================================
     //  PRIVATE METHODS
     //==============================================
 
     // Initializes user interface
     private void setupUI() {
-        setUseAverager();
         renderer = createRenderer(this, bufferWithXs);
         waveform.setRenderer(renderer);
 
@@ -146,16 +123,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
             });
         } else {
             ibtnBack.setVisibility(View.GONE);
-        }
-    }
-
-    // Sets whether audio service should use averager or not
-    private void setUseAverager() {
-        final AudioService provider = getAudioService();
-        if (provider != null) {
-            provider.setUseAverager(shouldUseAverager());
-        } else {
-            LOGW(TAG, "AudioService is null");
         }
     }
 

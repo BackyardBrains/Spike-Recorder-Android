@@ -1,15 +1,16 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.data.DataManager;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -34,13 +35,15 @@ public class BYBBaseRenderer extends BaseRenderer {
     private boolean bPanning;
     private float panningDx;
 
+    private DataManager dataManager;
+
     short[] drawingBuffer;
     private float[] tempBufferToDraws;
 
     protected int height;
     protected int width;
     private boolean autoScaled;
-    private static final int PCM_MAXIMUM_VALUE = (Short.MAX_VALUE * 40);
+    private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_HORIZONTAL_SIZE = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
@@ -89,6 +92,8 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment);
+
+        dataManager = DataManager.get();
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -155,18 +160,6 @@ public class BYBBaseRenderer extends BaseRenderer {
         focusX = fx;
         bZooming = true;
         bPanning = false;
-    }
-
-    /**
-     * Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
-     */
-    protected boolean fillBuffer() {
-        if (getAudioService() != null) {
-            if (drawingBuffer == null) drawingBuffer = new short[getAudioService().getAudioBuffer().length];
-            System.arraycopy(getAudioService().getAudioBuffer(), 0, drawingBuffer, 0, drawingBuffer.length);
-            return true;
-        }
-        return false;
     }
 
     //==============================================
@@ -258,13 +251,6 @@ public class BYBBaseRenderer extends BaseRenderer {
     }
 
     protected void postDrawingHandler(GL10 gl) {
-        // TODO: 4/19/2017 Code below was drawing a playhead (blue vertical line), playhead should be always right side of screen
-        //if (getIsPlaybackMode() && !getIsPlaying()) {
-        //    float playheadDraw = getAudioService().getPlaybackProgress() - startIndex;
-        //
-        //    BYBGlUtils.drawGlLine(gl, playheadDraw, -getGlWindowVerticalSize(), playheadDraw, getGlWindowVerticalSize(),
-        //        0x00FFFFFF);
-        //}
         if (bShowScalingAreaX || bShowScalingAreaY) {
             gl.glEnable(GL10.GL_BLEND);
             // Specifies pixel arithmetic
@@ -302,6 +288,13 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     void endAddToGlOffset() {
         if (getIsPlaybackMode() && !getIsPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    }
+
+    // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
+    private boolean fillBuffer() {
+        if (drawingBuffer == null) drawingBuffer = new short[dataManager.getData().length];
+        System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
+        return true;
     }
 
     private void setStartEndIndex(int arrayLength) {
@@ -346,6 +339,7 @@ public class BYBBaseRenderer extends BaseRenderer {
             //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, "Array size out of sync while building new waveform buffer");
+            Crashlytics.logException(e);
         }
 
         // subclasses can do some post-processing
@@ -462,15 +456,6 @@ public class BYBBaseRenderer extends BaseRenderer {
         return normalizedScreenPos * width;
     }
 
-    // ----------------------------------------------------------------------------------------
-    protected long msToSamples(long timeSince) {
-        return Math.round(44.1 * timeSince);
-    }
-
-    private boolean getIsRecording() {
-        return getAudioService() != null && getAudioService().isRecording();
-    }
-
     private boolean getIsPlaybackMode() {
         return getAudioService() != null && getAudioService().isPlaybackMode();
     }
@@ -481,33 +466,5 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     private boolean getIsSeeking() {
         return getAudioService() != null && getAudioService().isAudioSeeking();
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- SETTINGS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    public void readSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            setGlWindowHorizontalSize(settings.getInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize));
-            setGlWindowVerticalSize(settings.getInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize));
-            height = settings.getInt(TAG + "_height", height);
-            width = settings.getInt(TAG + "_width", width);
-            setAutoScaled(settings.getBoolean(TAG + "_autoScaled", autoScaled));
-            minimumDetectedPCMValue = settings.getFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void saveSettings(SharedPreferences settings, String TAG) {
-        if (settings != null) {
-            settings.edit()
-                .putInt(TAG + "_glWindowHorizontalSize", glWindowHorizontalSize)
-                .putInt(TAG + "_glWindowVerticalSize", glWindowVerticalSize)
-                .putInt(TAG + "_height", height)
-                .putInt(TAG + "_width", width)
-                .putBoolean(TAG + "_autoScaled", autoScaled)
-                .putFloat(TAG + "_minimumDetectedPCMValue", minimumDetectedPCMValue)
-                .apply();
-        }
     }
 }

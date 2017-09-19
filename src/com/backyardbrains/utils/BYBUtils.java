@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.view.ContextThemeWrapper;
 import com.backyardbrains.R;
+import com.crashlytics.android.Crashlytics;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -37,6 +38,7 @@ public class BYBUtils {
             buf.put(array, 0, length);
             buf.position(0);
         } catch (Exception e) {
+            Crashlytics.logException(e);
         }
         return buf;
     }

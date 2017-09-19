@@ -25,6 +25,7 @@ import android.media.AudioRecord;
 import android.support.annotation.NonNull;
 import com.backyardbrains.R;
 import com.backyardbrains.utils.AudioUtils;
+import com.crashlytics.android.Crashlytics;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -45,13 +46,13 @@ class MicListener extends Thread {
 
     private final ReceivesAudio service;
     private final int bufferSize;
-    private final ByteBuffer audioInfo;
+    private final ByteBuffer buffer;
 
     private AudioRecord recorder;
     private boolean done;
 
     /**
-     * Find the appropriate buffer size for working on this device and allocate space for the audioInfo {@link
+     * Find the appropriate buffer size for working on this device and allocate space for the buffer {@link
      * ByteBuffer} based on that size, then tell Android we'll be using high-priority audio-processing.
      *
      * @param service the service that implements the {@link ReceivesAudio}
@@ -61,8 +62,8 @@ class MicListener extends Thread {
         this.service = service;
 
         bufferSize = AudioUtils.IN_BUFFER_SIZE;
-        audioInfo = ByteBuffer.allocateDirect(bufferSize);
-        audioInfo.order(ByteOrder.nativeOrder());
+        buffer = ByteBuffer.allocateDirect(bufferSize);
+        buffer.order(ByteOrder.nativeOrder());
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
     }
 
@@ -110,34 +111,35 @@ class MicListener extends Thread {
 
             recorder.startRecording();
             LOGD(TAG, "Recorder Started");
-            int readAmt = audioInfo.limit() / readSpeedDivisor;
+            int readAmt = buffer.limit() / readSpeedDivisor;
             //((AudioService) service).setMicListenerBufferSizeInSamples(readAmt/2);
-            while (!done && recorder.read(audioInfo, readAmt) > 0) {
-                audioInfo.clear();
-                byte[] swapper = new byte[readAmt];
-                audioInfo.get(swapper);
-                ByteBuffer derp = ByteBuffer.wrap(swapper);
-                derp.order(ByteOrder.nativeOrder());
+            while (!done && recorder.read(buffer, readAmt) > 0) {
+                buffer.clear();
+                short[] samples = new short[readAmt / 2];
+                buffer.asShortBuffer().get(samples);
                 synchronized (service) {
-                    service.receiveAudio(derp);
+                    service.receiveAudio(samples);
                 }
-                audioInfo.clear();
             }
         } catch (Throwable e) {
             LOGE(TAG, "Could not open audio source", e);
+            Crashlytics.logException(e);
         } finally {
             if (!done) requestStop();
         }
     }
 
     private void stopRecorder() {
-        try {
-            recorder.stop();
-            recorder.release();
-        } catch (IllegalStateException e) {
-            LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
+        if (recorder != null) {
+            try {
+                recorder.stop();
+                recorder.release();
+            } catch (IllegalStateException e) {
+                LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
+                Crashlytics.logException(e);
+            }
+            recorder = null;
         }
-        recorder = null;
         LOGD(TAG, "Recorder Released");
     }
 
@@ -152,6 +154,5 @@ class MicListener extends Thread {
             }
             recorder = null;
         }
-        // @TODO - figure out why joining here causes service to not stop.
     }
 }

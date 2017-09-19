@@ -233,8 +233,6 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        super.onAudioServiceConnectionEvent(event);
-
         // this will start playback if we are coming from background
         startPlaying(false);
     }
