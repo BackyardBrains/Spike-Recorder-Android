@@ -19,28 +19,29 @@
 
 package com.backyardbrains.audio;
 
+import android.support.annotation.NonNull;
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 
 /**
- * A simple interface to attach to services which allows a callback into
- * android's built-in classes from an unrelated thread
+ * A simple interface to attach to services which allows a callback into android's built-in classes from an unrelated
+ * thread.
  *
  * @author Nathan Dotz <nate@backyardbrains.com>
  */
 public interface ReceivesAudio {
 
     /**
-     * Called by mic thread to pass audio {@link ByteBuffer} into a service. The service should then do as it sees fit
-     * with the data.
+     * Called by microphone thread to pass audio data to the service.
      */
-    void receiveAudio(ByteBuffer audioInfo);
+    void receiveAudio(@NonNull short[] data);
 
     /**
-     * Called by playback thread to pass audio {@link ByteBuffer} into a service along with the positions of the last
-     * read byte.
+     * Called by playback thread to pass audio data to the service along with the positions of the last read byte.
      */
-    void receiveAudio(ByteBuffer audioInfo, long lastBytePosition);
+    void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition);
 
-    void receiveAudio(ShortBuffer audioInfo);
+    /**
+     * Called by USB read thread to pass serial {@link byte[]} into a service.
+     */
+    void receiveSampleStream(@NonNull byte[] data);
 }

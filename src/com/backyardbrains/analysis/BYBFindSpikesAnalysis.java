@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.AudioUtils;
+import com.crashlytics.android.Crashlytics;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -212,6 +213,7 @@ class BYBFindSpikesAnalysis extends BYBBaseAnalysis {
             LOGE(TAG,
                 e instanceof FileNotFoundException ? "Error loading file" : "Error reading random access file stream",
                 e);
+            Crashlytics.logException(e);
         }
     }
 }

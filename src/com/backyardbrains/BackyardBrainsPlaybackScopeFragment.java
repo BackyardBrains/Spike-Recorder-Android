@@ -88,14 +88,14 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     @Override protected final View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_playback_scope, container, false);
-        ibtnPlayPause = (ImageView) view.findViewById(R.id.iv_play_pause);
-        sbAudioProgress = (SeekBar) view.findViewById(R.id.sb_audio_progress);
-        tvProgressTime = (TextView) view.findViewById(R.id.tv_progress_time);
+        ibtnPlayPause = view.findViewById(R.id.iv_play_pause);
+        sbAudioProgress = view.findViewById(R.id.sb_audio_progress);
+        tvProgressTime = view.findViewById(R.id.tv_progress_time);
 
         setupUI();
 
         // subclass content
-        final FrameLayout flContent = (FrameLayout) view.findViewById(R.id.playback_scope_content_container);
+        final FrameLayout flContent = view.findViewById(R.id.playback_scope_content_container);
         final View content = createPlaybackView(inflater, flContent);
         if (content != null) flContent.addView(content);
 
@@ -233,8 +233,6 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        super.onAudioServiceConnectionEvent(event);
-
         // this will start playback if we are coming from background
         startPlaying(false);
     }

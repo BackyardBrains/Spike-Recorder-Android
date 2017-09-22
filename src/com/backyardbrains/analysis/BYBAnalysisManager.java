@@ -7,6 +7,7 @@ import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.drawing.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -108,6 +109,7 @@ public class BYBAnalysisManager {
             return load(new File(filePath));
         } catch (IOException e) {
             LOGE(TAG, "Error while loading " + filePath);
+            Crashlytics.logException(e);
             return false;
         }
     }
@@ -168,6 +170,7 @@ public class BYBAnalysisManager {
                 LOGD(TAG, "RandomAccessFile closed");
             } catch (IOException e) {
                 LOGE(TAG, "IOException while stopping random access file: " + e.toString());
+                Crashlytics.logException(e);
             } finally {
                 audioFile = null;
             }

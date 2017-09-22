@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -235,7 +236,8 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     private void emailFile(File f) {
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
-        sendIntent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + f.getAbsolutePath()));
+        sendIntent.putExtra(Intent.EXTRA_STREAM,
+            FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
         sendIntent.setType("audio/wav");
         startActivity(Intent.createChooser(sendIntent, "Email file"));
     }

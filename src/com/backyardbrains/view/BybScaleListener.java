@@ -22,6 +22,7 @@ package com.backyardbrains.view;
 import android.support.annotation.Nullable;
 import android.view.ScaleGestureDetector;
 import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.crashlytics.android.Crashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -89,10 +90,12 @@ public class BybScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureL
             return true;
         } catch (IllegalStateException e) {
             LOGE(TAG, "Got invalid values back from Scale listener!");
+            Crashlytics.logException(e);
 
             return false;
         } catch (NullPointerException e) {
             LOGE(TAG, "NPE while monitoring scale.");
+            Crashlytics.logException(e);
 
             return false;
         }
