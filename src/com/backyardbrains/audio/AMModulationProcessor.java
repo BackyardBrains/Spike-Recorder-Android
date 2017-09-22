@@ -80,8 +80,8 @@ public class AMModulationProcessor implements SampleProcessor {
 
                 // calculate average sample
                 average = 0.00001 * filteredSamples[i] + 0.99999 * average;
-                // use average to remove offset and flip sample (undoing hardware flip)
-                filteredSamples[i] = (short) ((filteredSamples[i] - average) * -1);
+                // use average to remove offset
+                filteredSamples[i] = (short) (filteredSamples[i] - average);
             }
 
             return Arrays.copyOfRange(filteredSamples, 0, sampleCount);

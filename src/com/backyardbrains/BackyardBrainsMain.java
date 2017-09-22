@@ -31,6 +31,8 @@ import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.PrefUtils;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -59,7 +61,7 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     public static final String BYB_RECORDINGS_FRAGMENT = "BackyardBrainsRecordingsFragment";
     public static final String BYB_THRESHOLD_FRAGMENT = "BackyardBrainsThresholdFragment";
-    public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment1";
+    public static final String BYB_SPIKES_FRAGMENT = "BackyardBrainsSpikesFragment";
     public static final String BYB_ANALYSIS_FRAGMENT = "BackyardBrainsAnalysisFragment";
     public static final String BYB_OSCILLOSCOPE_FRAGMENT = "BackyardBrainsOscilloscopeFragment";
     public static final String BYB_PLAY_AUDIO_FRAGMENT = "BackyardBrainsPlayAudioFragment";
@@ -205,6 +207,9 @@ public class BackyardBrainsMain extends AppCompatActivity
                     fragName = BYB_PLAY_AUDIO_FRAGMENT;
                     break;
             }
+            // Log with Fabric Answers what view did the user opened
+            Answers.getInstance()
+                .logContentView(new ContentViewEvent().putContentName(fragName).putContentType("Screen View"));
 
             setSelectedButton(fragType);
             showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false, R.anim.slide_in_right,
