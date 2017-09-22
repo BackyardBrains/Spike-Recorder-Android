@@ -52,7 +52,7 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 26
-        versionCode 29
+        versionCode 30
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
@@ -77,7 +77,7 @@ android {
     }
     productFlavors {
         prod {
-            versionName '1.4.6.1'
+            versionName '1.4.6.2'
         }
         dev {
             minSdkVersion 21
@@ -95,6 +95,9 @@ ext {
     constraintLayoutVersion = '1.0.2'
     eventBusVersion = '3.0.0'
     eventBusAnnotationProcessorVersion = '3.0.1'
+    usbSerialVersion = '4.5'
+    iirFiltersVersion = '1.0.4'
+    commonsMathVersion = '3.6.1'
 }
 
 dependencies {
@@ -113,10 +116,10 @@ dependencies {
     compile "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
     // serial communication
-    compile 'com.github.felHR85:UsbSerial:4.5'
+    compile "com.github.felHR85:UsbSerial:$usbSerialVersion"
     // filtering
-    compile 'com.github.berndporr:iirj:v1.0.4'
-    compile 'org.apache.commons:commons-math3:3.6.1'
+    compile "com.github.berndporr:iirj:v$iirFiltersVersion"
+    compile "org.apache.commons:commons-math3:$commonsMathVersion"
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true;
