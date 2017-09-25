@@ -13,8 +13,8 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
+import com.angrygoat.buffer.CircularByteBuffer;
 import com.backyardbrains.data.DataProcessor;
-import com.backyardbrains.utils.RingByteBuffer;
 import com.backyardbrains.utils.UsbUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
@@ -35,14 +35,13 @@ public class UsbHelper {
 
     private static final String ACTION_USB_PERMISSION = "com.backyardbrains.usb.USB_PERMISSION";
 
-    private static final SampleStreamProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor();
-    private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE * 6; // 6 secs
+    private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE; // 1 sec
 
     private static String MSG_START_STREAM = "start:;";
     private static String MSG_STOP_STREAM = "h:;";
     private static String MSG_INFO = "?:;";
     private static String MSG_MAX_ = "max:;";
-    private static int BAUD_RATE = 230400;
+    private static final int BAUD_RATE = 230400;
 
     private static final IntentFilter USB_INTENT_FILTER;
 
@@ -114,7 +113,7 @@ public class UsbHelper {
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
 
-    private final RingByteBuffer buffer = new RingByteBuffer(BUFFER_SIZE);
+    private final CircularByteBuffer circBuffer = new CircularByteBuffer(BUFFER_SIZE);
 
     public UsbHelper(@NonNull Context context, @NonNull AudioService service, @Nullable UsbListener listener) {
         this.service = service;
@@ -177,17 +176,17 @@ public class UsbHelper {
         byte[] data;
 
         @Override public void run() {
-            while (done) {
+            while (!done) {
                 synchronized (service) {
-                    data = new byte[buffer.size()];
-                    for (int i = 0; i < data.length; i++) data[i] = buffer.pop();
+                    data = new byte[circBuffer.peekSize()];
+                    circBuffer.read(data, data.length, false);
                     service.receiveSampleStream(data);
                 }
             }
         }
     }
 
-    private boolean done = false;
+    private boolean done;
     private DataProcessor processor = new SampleStreamProcessor();
     private ReadThread readThread;
 
@@ -204,14 +203,16 @@ public class UsbHelper {
                 serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
                 serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
 
+                serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
+                    @Override public void onReceivedData(byte[] data) {
+                        circBuffer.write(data);
+                    }
+                });
+
                 readThread = new ReadThread();
                 readThread.start();
 
-                serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
-                    @Override public void onReceivedData(byte[] data) {
-                        for (int i = 0; i < data.length; i++) buffer.push(data[i]);
-                    }
-                });
+                if (done) done = false;
 
                 //serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
                 //    @Override public void onReceivedData(byte[] bytes) {

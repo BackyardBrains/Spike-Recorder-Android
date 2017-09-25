@@ -39,6 +39,7 @@ import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.UsbUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.IOException;
@@ -75,12 +76,14 @@ public class AudioService extends Service implements ReceivesAudio {
     private MicListener micThread;
     // Reference to the playback data source
     private PlaybackThread playbackThread;
-    //
+    // Reference to the USB serial data source
     private UsbHelper usbHelper;
     // Reference to the audio recorder
     private RecordingSaver recordingSaver;
 
     private boolean created;
+    // Current sample rate
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -180,9 +183,16 @@ public class AudioService extends Service implements ReceivesAudio {
     /**
      * Sets the of the buffer that stores incoming data to it's default value.
      */
-    public void clearBufferSize() {
-        LOGD(TAG, "clearBufferSize()");
+    public void resetBufferSize() {
+        LOGD(TAG, "resetBufferSize()");
         if (dataManager != null) dataManager.resetBufferSize();
+    }
+
+    /**
+     * Returns current sample rate.
+     */
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     //=================================================
@@ -270,6 +280,8 @@ public class AudioService extends Service implements ReceivesAudio {
             micThread = null;
             micThread = new MicListener(this);
 
+            // set sample rate for audio
+            sampleRate = AudioUtils.SAMPLE_RATE;
             // we should clear buffer
             if (dataManager != null) dataManager.clearBuffer();
 
@@ -336,6 +348,9 @@ public class AudioService extends Service implements ReceivesAudio {
                 }
 
                 @Override public void onDataTransferStart() {
+                    // set sample rate for usb
+                    sampleRate = UsbUtils.SAMPLE_RATE;
+
                     EventBus.getDefault().post(new UsbPermissionEvent(true));
                 }
 
@@ -433,6 +448,9 @@ public class AudioService extends Service implements ReceivesAudio {
         LOGD(TAG, "turnOnPlaybackThread()");
         if (playbackThread != null) {
             turnOffMicThread();
+
+            // set sample rate for audio
+            sampleRate = AudioUtils.SAMPLE_RATE;
 
             playbackThread.play();
         }
