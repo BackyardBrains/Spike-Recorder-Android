@@ -13,6 +13,7 @@ public class DataManager {
 
     private static final String TAG = LogUtils.makeLogTag(DataManager.class);
 
+    //
     private static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
 
     private RingBuffer dataBuffer;
@@ -50,7 +51,7 @@ public class DataManager {
     }
 
     /**
-     * Sets buffer size of the {@link RingBuffer} to default value (6 sec)
+     * Sets buffer size of the {@link RingBuffer} to default value (6 sec of audio at 44.1 kHz)
      */
     public void resetBufferSize() {
         dataBuffer.clear();
