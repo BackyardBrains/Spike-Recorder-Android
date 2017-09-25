@@ -88,8 +88,9 @@ android {
 }
 
 ext {
-    supportLibVersion = '26.1.0'
+    supportLibVersion = '26.0.1'
     butterknifeVersion = '8.6.0'
+    materialDialogsVersion = '0.9.4.7'
     crashlyticsVersion = '2.6.8@aar'
     easyPermissionsVersion = '0.4.2'
     constraintLayoutVersion = '1.0.2'
@@ -107,9 +108,11 @@ dependencies {
     compile "com.android.support:support-compat:$supportLibVersion"
     compile "com.android.support:design:$supportLibVersion"
     compile "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
-    // view
+    // view binding
     compile "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+    // material dialogs
+    compile "com.afollestad.material-dialogs:core:$materialDialogsVersion"
     // permissions
     compile "pub.devrel:easypermissions:$easyPermissionsVersion"
     // event bus
@@ -117,7 +120,7 @@ dependencies {
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
     // serial communication
     compile "com.github.felHR85:UsbSerial:$usbSerialVersion"
-    // filtering
+    // signal filtering
     compile "com.github.berndporr:iirj:v$iirFiltersVersion"
     compile "org.apache.commons:commons-math3:$commonsMathVersion"
     // crashlytics

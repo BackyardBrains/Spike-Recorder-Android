@@ -29,6 +29,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataManager;
 import com.backyardbrains.data.DataProcessor;
 import com.backyardbrains.data.SampleProcessor;
+import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
@@ -37,6 +38,7 @@ import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.UsbUtils;
@@ -62,7 +64,18 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private static final String TAG = makeLogTag(AudioService.class);
 
-    private static final SampleProcessor AM_MODULATION_DATA_PROCESSOR = new AMModulationProcessor();
+    private static final AmModulationProcessor.AmModulationDetectionListener AM_MODULATION_DETECTION_LISTENER =
+        new AmModulationProcessor.AmModulationDetectionListener() {
+            @Override public void onAmModulationStart() {
+                EventBus.getDefault().post(new AmModulationDetectionEvent(true));
+            }
+
+            @Override public void onAmModulationEnd() {
+                EventBus.getDefault().post(new AmModulationDetectionEvent(false));
+            }
+        };
+    private static final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
+        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER);
     private static final DataProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor();
 
     private final IBinder mBinder = new ServiceBinder();
@@ -301,6 +314,31 @@ public class AudioService extends Service implements ReceivesAudio {
             // we should clear buffer so that next buffer user doesn't have any residue
             if (dataManager != null) dataManager.clearBuffer();
         }
+    }
+
+    //=================================================
+    //  AM MODULATION
+    //=================================================
+
+    /**
+     * Whether AM modulation is currently detected.
+     */
+    public boolean isAmModulationDetected() {
+        return AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
+    }
+
+    /**
+     * Returns filter that is additionally applied when AM modulation is detected.
+     */
+    public Filter getFilter() {
+        return AM_MODULATION_DATA_PROCESSOR.getFilter();
+    }
+
+    /**
+     * Sets predefined filters to be applied when AM modulation is detected.
+     */
+    public void setFilter(@NonNull Filter filter) {
+        AM_MODULATION_DATA_PROCESSOR.setFilter(filter);
     }
 
     //=================================================

@@ -1,10 +1,12 @@
 package com.backyardbrains.utils;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.os.Build;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -52,8 +54,22 @@ public class AudioUtils {
      */
     public static AudioTrack createAudioTrack() {
         LOGD(TAG, "Create new AudioTrack");
-        return new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT,
-            OUT_BUFFER_SIZE, AudioTrack.MODE_STREAM);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            //noinspection deprecation
+            return new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT,
+                OUT_BUFFER_SIZE, AudioTrack.MODE_STREAM);
+        } else {
+            return new AudioTrack.Builder().setAudioAttributes(
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build())
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(AUDIO_FORMAT)
+                    .setSampleRate(SAMPLE_RATE)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                    .build())
+                .setBufferSizeInBytes(OUT_BUFFER_SIZE)
+                .build();
+        }
     }
 
     /**
