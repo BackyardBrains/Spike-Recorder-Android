@@ -8,6 +8,7 @@
 
     <dimen name="min_button_tappable_h">48dp</dimen>
     <dimen name="mid_button_tappable_h">56dp</dimen>
+    <dimen name="max_button_tappable_h">72dp</dimen>
 
     <dimen name="threshold_drag_surface_w">40dp</dimen>
     <dimen name="threshold_drag_surface_w_with_padding">56dp</dimen>

@@ -8,7 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="blue">#FF007AFF</color>
     <color name="blue_dark">#FF00366F</color>
-    <color name="gray">#FF8c8c8c</color>
+    <color name="gray_light">#FF8c8c8c</color>
     <color name="gray_dark">#FF656666</color>
     <color name="gray_darker">#FF262626</color>
     <color name="orange">#FFf77f03</color>

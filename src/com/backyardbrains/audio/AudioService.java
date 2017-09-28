@@ -337,7 +337,7 @@ public class AudioService extends Service implements ReceivesAudio {
     /**
      * Sets predefined filters to be applied when AM modulation is detected.
      */
-    public void setFilter(@NonNull Filter filter) {
+    public void setFilter(@Nullable Filter filter) {
         AM_MODULATION_DATA_PROCESSOR.setFilter(filter);
     }
 

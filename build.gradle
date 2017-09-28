@@ -91,6 +91,7 @@ ext {
     supportLibVersion = '26.0.1'
     butterknifeVersion = '8.6.0'
     materialDialogsVersion = '0.9.4.7'
+    simpleRangeBarVersion = '0.1.1'
     crashlyticsVersion = '2.6.8@aar'
     easyPermissionsVersion = '0.4.2'
     constraintLayoutVersion = '1.0.2'
@@ -113,6 +114,8 @@ dependencies {
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     // material dialogs
     compile "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+    // range bar
+    compile "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
     // permissions
     compile "pub.devrel:easypermissions:$easyPermissionsVersion"
     // event bus

@@ -19,15 +19,19 @@ public class AmModulationProcessor implements SampleProcessor {
 
     private static final String TAG = makeLogTag(AmModulationProcessor.class);
 
+    // Buffer size of temporary buffer that's used while processing incoming samples
     private static final int BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 2; // 2 secs
-
+    // Order used the all filters
     private static final int FILTER_ORDER = 2;
+    // Carrier frequency for AM modulation detection
     private static final int FREQ_CARRIER = 5000;
     private static final int WIDTH_IN_FREQ = 2500;
+    // Cut-off frequency for AM demodulation
     private static final int FREQ_CUTOFF_LOW_PASS_AM_MODULATION = 500;
 
-    // Holds samples after filtering
+    // Buffer that holds samples after filtering (buffer size is larger than number of incomming samples)
     private final short[] filteredSamples = new short[BUFFER_SIZE];
+    // Actual number of incoming samples
     @SuppressWarnings("FieldCanBeLocal") private int sampleCount;
 
     // Whether we are in AM modulation or not
@@ -48,6 +52,9 @@ public class AmModulationProcessor implements SampleProcessor {
     // Current filter
     private Filter filter;
 
+    /**
+     * Listens for AM modulation detection and informs interested parties about it's start and end.
+     */
     interface AmModulationDetectionListener {
         void onAmModulationStart();
 
@@ -72,7 +79,7 @@ public class AmModulationProcessor implements SampleProcessor {
      * Whether we are currently in AM modulation.
      */
     public boolean isAmModulationDetected() {
-        return amModulationDetected;
+        return true;// amModulationDetected;
     }
 
     /**
@@ -88,32 +95,35 @@ public class AmModulationProcessor implements SampleProcessor {
     public void setFilter(@Nullable Filter filter) {
         if (!ObjectUtils.equals(this.filter, filter)) {
             if (filter != null) {
-                // if both cut-off frequencies are negative we should kill not use filter
-                if (filter.getHighCutOffFrequency() == Filter.FREQ_NO_CUT_OFF
-                    && filter.getLowCutOffFrequency() == Filter.FREQ_NO_CUT_OFF) {
+                // if both cut-off frequencies are negative, or if low cut-off is minimum cut-off value
+                // and high cut-off is maximum cut-off value we should kill not use filter
+                if ((filter.getLowCutOffFrequency() == Filter.FREQ_NO_CUT_OFF
+                    && filter.getHighCutOffFrequency() == Filter.FREQ_NO_CUT_OFF) || (
+                    filter.getLowCutOffFrequency() == Filter.FREQ_MIN_CUT_OFF
+                        && filter.getHighCutOffFrequency() == Filter.FREQ_MAX_CUT_OFF)) {
                     this.filter = null;
                     return;
                 }
 
-                setCustomFilter(filter.getHighCutOffFrequency(), filter.getLowCutOffFrequency());
+                setFilterCutOffFrequencies(filter.getLowCutOffFrequency(), filter.getHighCutOffFrequency());
             }
 
             this.filter = filter;
         }
     }
 
-    // Sets custom filter to be applied when in AM modulation.
-    private void setCustomFilter(int highCutOffFreq, int lowCutOffFreq) {
-        // low cut-off frequency cannot be lower then high cut off frequency
-        if (lowCutOffFreq < highCutOffFreq) return;
+    // Sets filter cut-off frequencies to be applied when in AM modulation.
+    private void setFilterCutOffFrequencies(int lowCutOffFreq, int highCutOffFreq) {
+        // high cut-off frequency cannot be lower then low cut off frequency
+        if (highCutOffFreq < lowCutOffFreq) return;
         // both cut-off frequencies cannot be negative
-        if (highCutOffFreq == Filter.FREQ_NO_CUT_OFF && lowCutOffFreq == Filter.FREQ_NO_CUT_OFF) return;
+        if (lowCutOffFreq == Filter.FREQ_NO_CUT_OFF && highCutOffFreq == Filter.FREQ_NO_CUT_OFF) return;
 
         // reset custom filter
         customFilter.reset();
-        if (highCutOffFreq != Filter.FREQ_NO_CUT_OFF && lowCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // band pass
-            int freq = lowCutOffFreq - highCutOffFreq;
-            customFilter.bandPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, freq / 2 + highCutOffFreq, freq);
+        if (lowCutOffFreq != Filter.FREQ_NO_CUT_OFF && highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // band pass
+            int freq = Math.abs(highCutOffFreq - lowCutOffFreq);
+            customFilter.bandPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, freq / 2 + lowCutOffFreq, freq);
         } else if (highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // low pass
             customFilter.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, highCutOffFreq);
         } else { // high pass
@@ -154,7 +164,7 @@ public class AmModulationProcessor implements SampleProcessor {
             for (int i = 0; i < sampleCount; i++) {
                 filteredSamples[i] = (short) amLowPassFilter1.filter(Math.abs(samples[i]));
                 filteredSamples[i] = (short) amLowPassFilter2.filter(Math.abs(filteredSamples[i]));
-                //filteredSamples[i] = (short) amLowPassFilter3.filter(Math.abs(filteredSamples[i]));
+                filteredSamples[i] = (short) amLowPassFilter3.filter(Math.abs(filteredSamples[i]));
 
                 // calculate average sample
                 average = 0.00001 * filteredSamples[i] + 0.99999 * average;

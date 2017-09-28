@@ -198,7 +198,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             ibtnAmModulation.setVisibility(View.VISIBLE);
         } else {
             ibtnAmModulation.setVisibility(View.GONE);
-            if (filterSettingsDialog != null) filterSettingsDialog.dismiss();
+            if (filterSettingsDialog != null) {
+                filterSettingsDialog.dismiss();
+                filterSettingsDialog = null;
+            }
         }
     }
 
@@ -242,17 +245,15 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     private void openFilterDialog() {
-        if (filterSettingsDialog == null) {
-            filterSettingsDialog =
-                new FilterSettingsDialog(getContext(), getAudioService() != null ? getAudioService().getFilter() : null,
-                    new FilterSettingsDialog.FilterSelectionListener() {
-                        @Override public void onFilterSelected(@NonNull Filter filter) {
-                            setFilter(filter);
-                        }
-                    });
-        }
-        // show the dialog
-        filterSettingsDialog.show();
+        filterSettingsDialog =
+            new FilterSettingsDialog(getContext(), new FilterSettingsDialog.FilterSelectionListener() {
+                @Override public void onFilterSelected(@NonNull Filter filter) {
+                    setFilter(filter);
+                }
+            });
+        filterSettingsDialog.show(
+            getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
+                : new Filter());
     }
 
     private void setFilter(@NonNull Filter filter) {

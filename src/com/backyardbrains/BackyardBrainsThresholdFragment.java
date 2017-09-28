@@ -77,7 +77,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     @Override protected View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragmnet_threshold, container, false);
+        final View view = inflater.inflate(R.layout.fragment_threshold, container, false);
         unbinder = ButterKnife.bind(this, view);
 
         setupUI();

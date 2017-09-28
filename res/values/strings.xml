@@ -13,6 +13,7 @@
     <string name="action_play">Play</string>
     <string name="action_pause">Pause</string>
     <string name="action_close">Close</string>
+    <string name="action_set">Set</string>
 
     <string name="analysis_isi">Inter Spike Interval (ISI)</string>
     <string name="analysis_autocorrelation">Autocorrelation</string>
@@ -29,6 +30,10 @@
     <string name="content_desc_usb_connect">Connect to SpikerBox via USB</string>
     <string name="content_desc_usb_disconnect">Disconnect from SpikerBox</string>
     <string name="content_desc_am_modulation_filters">Apply filter</string>
+
+    <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
+    <string name="label_custom_filter_low">Low</string>
+    <string name="label_custom_filter_high">High</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
@@ -71,8 +76,6 @@
     <string name="zoom_out_button_v">select to zoom out vertically</string>
     <string name="scaling_instructions">You can zoom in or zoom out by either clicking again the highlighted zoom button, click over the waveform for zooming that specific point or click and drag over the waveform to select the area to zoom.\nShould I show this message again?</string>
     <string name="label_n_times">%dx</string>
-
-    <string name="title_filter_settings_dialog">Filter settings</string>
 
     <string name="rationale_record_audio">This app needs access to your microphone/sound input to be able to work.</string>
     <string name="rationale_read_external_storage">This app needs to have read access to be able to list existing recordings.</string>
