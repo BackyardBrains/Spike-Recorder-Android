@@ -118,7 +118,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             if (getAudioService() != null) {
-                                setMilliseconds(drawSurfaceWidth / getAudioService().getSampleRate() * 1000 / 2);
+                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
                             }
 
                             setMillivolts(
