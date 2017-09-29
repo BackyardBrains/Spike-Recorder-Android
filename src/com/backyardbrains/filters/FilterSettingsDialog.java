@@ -31,14 +31,10 @@ import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
  */
 public class FilterSettingsDialog {
 
-    // Low cut-off frequency for EKG
-    private static final int FREQ_LOW_CUTOFF_HEART = 1;
     // High cut-off frequency for EKG
-    private static final int FREQ_HIGH_CUTOFF_HEART = 11;
-    // Low cut-off frequency for EEG
-    private static final int FREQ_LOW_CUTOFF_BRAIN = 1;
+    private static final int FREQ_HIGH_CUTOFF_HEART = 50;
     // High cut-off frequency for EEG
-    private static final int FREQ_HIGH_CUTOFF_BRAIN = 40;
+    private static final int FREQ_HIGH_CUTOFF_BRAIN = 100;
     // High cut-off frequency for Plant
     private static final int FREQ_HIGH_CUTOFF_PLANT = 5;
     // Array of predefined filters (Raw, EKG, EEG, Plant, Custom filter)
@@ -51,8 +47,8 @@ public class FilterSettingsDialog {
     static {
         FILTERS = new Filter[5];
         FILTERS[0] = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
-        FILTERS[1] = new Filter(FREQ_LOW_CUTOFF_HEART, FREQ_HIGH_CUTOFF_HEART);
-        FILTERS[2] = new Filter(FREQ_LOW_CUTOFF_BRAIN, FREQ_HIGH_CUTOFF_BRAIN);
+        FILTERS[1] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_HEART);
+        FILTERS[2] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_BRAIN);
         FILTERS[3] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_PLANT);
         FILTERS[4] = new Filter(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
     }

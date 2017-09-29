@@ -79,7 +79,7 @@ public class AmModulationProcessor implements SampleProcessor {
      * Whether we are currently in AM modulation.
      */
     public boolean isAmModulationDetected() {
-        return true;// amModulationDetected;
+        return amModulationDetected;
     }
 
     /**
