@@ -1,7 +1,5 @@
 package com.backyardbrains.filters;
 
-import com.backyardbrains.utils.AudioUtils;
-
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
@@ -12,7 +10,7 @@ public class Filter {
      */
     public static final int FREQ_NO_CUT_OFF = -1;
     public static final int FREQ_MIN_CUT_OFF = 0;
-    public static final int FREQ_MAX_CUT_OFF = AudioUtils.SAMPLE_RATE / 2;
+    public static final int FREQ_MAX_CUT_OFF = 500;
 
     private final int lowCutOffFrequency;
     private final int highCutOffFrequency;

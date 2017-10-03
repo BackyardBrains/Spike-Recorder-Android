@@ -66,6 +66,18 @@ public class FilterSettingsDialog {
     // Dialog for setting custom filter
     private MaterialDialog customFilterDialog;
 
+    private final SimpleRangeBarOnChangeListener rangeBarOnChangeListener = new SimpleRangeBarOnChangeListener() {
+        @Override public void leftThumbValueChanged(long value) {
+            // we need to handle 0 separately
+            etLowCutOff.setText(String.valueOf(value == 0 ? 0 : Math.round(thumbToCutOff(value))));
+        }
+
+        @Override public void rightThumbValueChanged(long value) {
+            // we need to handle 0 separately
+            etHighCutOff.setText(String.valueOf(value == 0 ? 0 : Math.round(thumbToCutOff(value))));
+        }
+    };
+
     /**
      * Listens for selection of one of predefined filters or setting of a custom filter.
      */
@@ -103,7 +115,7 @@ public class FilterSettingsDialog {
     }
 
     /**
-     * Shows the filter settings dialog with all predefined filters. Specified {@link filter} is preselected.
+     * Shows the filter settings dialog with all predefined filters. Specified {@code filter} is preselected.
      */
     public void show(@NonNull Filter filter) {
         selectedFilter = filter;
@@ -133,8 +145,8 @@ public class FilterSettingsDialog {
         if (selectedFilter != null) {
             etLowCutOff.setText(String.valueOf(selectedFilter.getLowCutOffFrequency()));
             etHighCutOff.setText(String.valueOf(selectedFilter.getHighCutOffFrequency()));
-            srbCutOffs.setThumbValues(cutOffToSlider(selectedFilter.getLowCutOffFrequency()),
-                cutOffToSlider(selectedFilter.getHighCutOffFrequency()));
+            srbCutOffs.setThumbValues(cutOffToThumb(selectedFilter.getLowCutOffFrequency()),
+                cutOffToThumb(selectedFilter.getHighCutOffFrequency()));
         }
         customFilterDialog.show();
     }
@@ -149,7 +161,7 @@ public class FilterSettingsDialog {
         etLowCutOff.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    setLowCutOffThumbValue();
+                    updateLowCutOff();
                     ViewUtils.hideSoftKeyboard(textView);
                     return true;
                 }
@@ -160,7 +172,7 @@ public class FilterSettingsDialog {
         etHighCutOff.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    setHighCutOffThumbValue();
+                    updateHighCutOff();
                     ViewUtils.hideSoftKeyboard(textView);
                     return true;
                 }
@@ -169,60 +181,73 @@ public class FilterSettingsDialog {
         });
         // range bar
         srbCutOffs.setRanges(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
-        srbCutOffs.setOnSimpleRangeBarChangeListener(new SimpleRangeBarOnChangeListener() {
-            @Override public void leftThumbValueChanged(long value) {
-                // we need to handle 0 separately
-                etLowCutOff.setText(String.valueOf(value == 0 ? 0 : Math.round(sliderToCutOff(value))));
-            }
-
-            @Override public void rightThumbValueChanged(long value) {
-                // we need to handle 0 separately
-                etHighCutOff.setText(String.valueOf(value == 0 ? 0 : Math.round(sliderToCutOff(value))));
-            }
-        });
+        srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
-    private void setLowCutOffThumbValue() {
+    private void updateLowCutOff() {
         int lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
         int highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
-        // min value can be 0
-        if (lowCutOff < Filter.FREQ_MIN_CUT_OFF) lowCutOff = Filter.FREQ_MIN_CUT_OFF;
-        // max value can be SAMPLE_RATE/2
-        if (lowCutOff > Filter.FREQ_MAX_CUT_OFF) lowCutOff = Filter.FREQ_MAX_CUT_OFF;
+
+        // fix cut-off value if it's lower than minimum and higher than maximum
+        lowCutOff = validateCutOffMinMax(lowCutOff);
         // if low cut-off is higher that high one increase the high one to that value
         if (lowCutOff > highCutOff) highCutOff = lowCutOff;
 
-        srbCutOffs.setThumbValues(cutOffToSlider(lowCutOff), cutOffToSlider(highCutOff));
+        // set thumbs values
+        updateUI(lowCutOff, highCutOff);
     }
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
-    private void setHighCutOffThumbValue() {
+    private void updateHighCutOff() {
         int lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
         int highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
-        // min value can be 0
-        if (highCutOff < Filter.FREQ_MIN_CUT_OFF) highCutOff = Filter.FREQ_MIN_CUT_OFF;
-        // max value can be SAMPLE_RATE/2
-        if (highCutOff > Filter.FREQ_MAX_CUT_OFF) highCutOff = Filter.FREQ_MAX_CUT_OFF;
+
+        // fix cut-off value if it's lower than minimum and higher than maximum
+        highCutOff = validateCutOffMinMax(highCutOff);
         // if high cut-off is lower that low one decrease the low one to that value
         if (highCutOff < lowCutOff) lowCutOff = highCutOff;
 
-        // HACK!!! we first increase right thumb value by 1 because right thumb is always set first (inside library)
-        // and it can't be set in front of the left one
-        srbCutOffs.setThumbValues(cutOffToSlider(lowCutOff), cutOffToSlider(highCutOff) + 1);
-        // now we can set the right thumb to it's right value
-        srbCutOffs.setThumbValues(cutOffToSlider(lowCutOff), cutOffToSlider(highCutOff));
+        // set thumbs values
+        updateUI(lowCutOff, highCutOff);
     }
 
-    // Converts slider value to a corresponding value withing logarithmic scale
-    private double sliderToCutOff(long sliderValue) {
+    // Validates the passed cut-off value and corrects it if it goes below min or above max.
+    private int validateCutOffMinMax(int cutOff) {
+        // min value can be 0
+        if (cutOff < Filter.FREQ_MIN_CUT_OFF) cutOff = Filter.FREQ_MIN_CUT_OFF;
+        // max value can be SAMPLE_RATE/2
+        if (cutOff > Filter.FREQ_MAX_CUT_OFF) cutOff = Filter.FREQ_MAX_CUT_OFF;
+
+        return cutOff;
+    }
+
+    // Updates the UI of the input fields and range bar
+    private void updateUI(int lowCutOff, int highCutOff) {
+        // we need to remove range bar change listener so it doesn't trigger setting of input fields
+        srbCutOffs.setOnSimpleRangeBarChangeListener(null);
+        // this is kind of a hack because thumb values can only be set both at once and right thumb is always set first
+        // within the library, so when try to set a value for both thumbs and the value is lower then the current left
+        // thumb value, right thumb value is set at the current left thumb value, and that's why we always set the left
+        // thumb value first
+        srbCutOffs.setThumbValues(cutOffToThumb(lowCutOff), srbCutOffs.getRightThumbValue());
+        srbCutOffs.setThumbValues(srbCutOffs.getLeftThumbValue(), cutOffToThumb(highCutOff));
+        // also update input fields
+        etLowCutOff.setText(String.valueOf(lowCutOff));
+        etHighCutOff.setText(String.valueOf(highCutOff));
+        // add the listener again
+        srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
+    }
+
+    // Converts range value to a corresponding value withing logarithmic scale
+    private double thumbToCutOff(long thumbValue) {
         return Math.exp(
-            MIN_CUT_OFF_LOG + (sliderValue - Filter.FREQ_MIN_CUT_OFF) * (MAX_CUT_OFF_LOG - MIN_CUT_OFF_LOG) / (
+            MIN_CUT_OFF_LOG + (thumbValue - Filter.FREQ_MIN_CUT_OFF) * (MAX_CUT_OFF_LOG - MIN_CUT_OFF_LOG) / (
                 Filter.FREQ_MAX_CUT_OFF - Filter.FREQ_MIN_CUT_OFF));
     }
 
-    // Converts value from logarithmic scale to a corresponding slider value
-    private long cutOffToSlider(double cutOffValue) {
+    // Converts value from logarithmic scale to a corresponding range value
+    private long cutOffToThumb(double cutOffValue) {
         return (long) (
             ((Math.log(cutOffValue) - MIN_CUT_OFF_LOG) * (Filter.FREQ_MAX_CUT_OFF - Filter.FREQ_MIN_CUT_OFF) / (
                 MAX_CUT_OFF_LOG - MIN_CUT_OFF_LOG)) + Filter.FREQ_MIN_CUT_OFF);

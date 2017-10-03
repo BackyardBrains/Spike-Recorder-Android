@@ -25,9 +25,11 @@ public class AmModulationProcessor implements SampleProcessor {
     private static final int FILTER_ORDER = 2;
     // Carrier frequency for AM modulation detection
     private static final int FREQ_CARRIER = 5000;
+    // Cut off frequency that is applied before the detection
+    private static final int FREQ_CUT_OFF_LOW_PASS_AM_DETECTION = 6000;
     private static final int WIDTH_IN_FREQ = 2500;
     // Cut-off frequency for AM demodulation
-    private static final int FREQ_CUTOFF_LOW_PASS_AM_MODULATION = 500;
+    private static final int FREQ_CUT_OFF_LOW_PASS_AM_MODULATION = 500;
 
     // Buffer that holds samples after filtering (buffer size is larger than number of incomming samples)
     private final short[] filteredSamples = new short[BUFFER_SIZE];
@@ -36,8 +38,10 @@ public class AmModulationProcessor implements SampleProcessor {
 
     // Whether we are in AM modulation or not
     private boolean amModulationDetected;
-    // Band stop filter
-    private Butterworth bandStopFilter;
+    // Low pass
+    // Band stop filters used for detection
+    private Butterworth detectionLowPassFilter;
+    private Butterworth detectionBandStopFilter;
     // Low pass filter used for AM demodulation
     private Butterworth amLowPassFilter1;
     private Butterworth amLowPassFilter2;
@@ -134,14 +138,16 @@ public class AmModulationProcessor implements SampleProcessor {
     // Initializes all filters.
     private void init() {
         LOGD(TAG, "init()");
-        bandStopFilter = new Butterworth();
-        bandStopFilter.bandStop(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CARRIER, WIDTH_IN_FREQ);
+        detectionLowPassFilter = new Butterworth();
+        detectionLowPassFilter.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_DETECTION);
+        detectionBandStopFilter = new Butterworth();
+        detectionBandStopFilter.bandStop(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CARRIER, WIDTH_IN_FREQ);
         amLowPassFilter1 = new Butterworth();
-        amLowPassFilter1.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUTOFF_LOW_PASS_AM_MODULATION);
+        amLowPassFilter1.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_MODULATION);
         amLowPassFilter2 = new Butterworth();
-        amLowPassFilter2.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUTOFF_LOW_PASS_AM_MODULATION);
+        amLowPassFilter2.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_MODULATION);
         amLowPassFilter3 = new Butterworth();
-        amLowPassFilter3.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUTOFF_LOW_PASS_AM_MODULATION);
+        amLowPassFilter3.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_MODULATION);
         customFilter = new Butterworth();
     }
 
@@ -150,8 +156,9 @@ public class AmModulationProcessor implements SampleProcessor {
         sampleCount = samples.length;
 
         for (int i = 0; i < sampleCount; i++) {
-            rmsOfOriginalSignal = 0.0001 * Math.pow(samples[i], 2) + 0.9999 * rmsOfOriginalSignal;
-            filteredSamples[i] = (short) bandStopFilter.filter(samples[i]);
+            filteredSamples[i] = (short) detectionLowPassFilter.filter(samples[i]);
+            rmsOfOriginalSignal = 0.0001 * Math.pow(filteredSamples[i], 2) + 0.9999 * rmsOfOriginalSignal;
+            filteredSamples[i] = (short) detectionBandStopFilter.filter(filteredSamples[i]);
             rmsOfNotchedAMSignal = 0.0001 * Math.pow(filteredSamples[i], 2) + 0.9999 * rmsOfNotchedAMSignal;
         }
 
