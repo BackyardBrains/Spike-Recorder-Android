@@ -61,7 +61,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
         if (getAudioService() != null) {
             getAudioService().clearSampleProcessor();
-            getAudioService().clearBufferSize();
+            getAudioService().resetBufferSize();
             getAudioService().stopMicrophone();
         }
     }
@@ -77,7 +77,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     @Override protected View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragmnet_threshold, container, false);
+        final View view = inflater.inflate(R.layout.fragment_threshold, container, false);
         unbinder = ButterKnife.bind(this, view);
 
         setupUI();
@@ -117,12 +117,12 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
-                            setMilliseconds(millisecondsInThisWindow);
+                            if (getAudioService() != null) {
+                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
+                            }
 
-                            float yPerDiv =
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
-                            setMillivolts(yPerDiv);
+                            setMillivolts(
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
                         }
                     });
                 }

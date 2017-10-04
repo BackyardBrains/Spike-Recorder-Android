@@ -29,6 +29,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataManager;
 import com.backyardbrains.data.DataProcessor;
 import com.backyardbrains.data.SampleProcessor;
+import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
@@ -37,8 +38,10 @@ import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.UsbUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.IOException;
@@ -61,7 +64,18 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private static final String TAG = makeLogTag(AudioService.class);
 
-    private static final SampleProcessor AM_MODULATION_DATA_PROCESSOR = new AMModulationProcessor();
+    private static final AmModulationProcessor.AmModulationDetectionListener AM_MODULATION_DETECTION_LISTENER =
+        new AmModulationProcessor.AmModulationDetectionListener() {
+            @Override public void onAmModulationStart() {
+                EventBus.getDefault().post(new AmModulationDetectionEvent(true));
+            }
+
+            @Override public void onAmModulationEnd() {
+                EventBus.getDefault().post(new AmModulationDetectionEvent(false));
+            }
+        };
+    private static final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
+        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER);
     private static final DataProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor();
 
     private final IBinder mBinder = new ServiceBinder();
@@ -75,12 +89,14 @@ public class AudioService extends Service implements ReceivesAudio {
     private MicListener micThread;
     // Reference to the playback data source
     private PlaybackThread playbackThread;
-    //
+    // Reference to the USB serial data source
     private UsbHelper usbHelper;
     // Reference to the audio recorder
     private RecordingSaver recordingSaver;
 
     private boolean created;
+    // Current sample rate
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -180,9 +196,16 @@ public class AudioService extends Service implements ReceivesAudio {
     /**
      * Sets the of the buffer that stores incoming data to it's default value.
      */
-    public void clearBufferSize() {
-        LOGD(TAG, "clearBufferSize()");
+    public void resetBufferSize() {
+        LOGD(TAG, "resetBufferSize()");
         if (dataManager != null) dataManager.resetBufferSize();
+    }
+
+    /**
+     * Returns current sample rate.
+     */
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     //=================================================
@@ -266,10 +289,13 @@ public class AudioService extends Service implements ReceivesAudio {
     private void turnOnMicThread() {
         LOGD(TAG, "turnOnMicThread()");
         turnOffPlaybackThread();
+
+        // set sample rate for audio
+        sampleRate = AudioUtils.SAMPLE_RATE;
+
         if (micThread == null) {
             micThread = null;
             micThread = new MicListener(this);
-
             // we should clear buffer
             if (dataManager != null) dataManager.clearBuffer();
 
@@ -289,6 +315,31 @@ public class AudioService extends Service implements ReceivesAudio {
             // we should clear buffer so that next buffer user doesn't have any residue
             if (dataManager != null) dataManager.clearBuffer();
         }
+    }
+
+    //=================================================
+    //  AM MODULATION
+    //=================================================
+
+    /**
+     * Whether AM modulation is currently detected.
+     */
+    public boolean isAmModulationDetected() {
+        return AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
+    }
+
+    /**
+     * Returns filter that is additionally applied when AM modulation is detected.
+     */
+    public Filter getFilter() {
+        return AM_MODULATION_DATA_PROCESSOR.getFilter();
+    }
+
+    /**
+     * Sets predefined filters to be applied when AM modulation is detected.
+     */
+    public void setFilter(@Nullable Filter filter) {
+        AM_MODULATION_DATA_PROCESSOR.setFilter(filter);
     }
 
     //=================================================
@@ -336,6 +387,9 @@ public class AudioService extends Service implements ReceivesAudio {
                 }
 
                 @Override public void onDataTransferStart() {
+                    // set sample rate for usb
+                    sampleRate = UsbUtils.SAMPLE_RATE;
+
                     EventBus.getDefault().post(new UsbPermissionEvent(true));
                 }
 
@@ -431,6 +485,10 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private void turnOnPlaybackThread() {
         LOGD(TAG, "turnOnPlaybackThread()");
+
+        // set sample rate for audio
+        sampleRate = AudioUtils.SAMPLE_RATE;
+        
         if (playbackThread != null) {
             turnOffMicThread();
 

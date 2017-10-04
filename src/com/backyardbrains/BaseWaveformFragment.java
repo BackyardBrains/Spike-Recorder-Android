@@ -37,14 +37,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         @Nullable Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
 
-        final ViewGroup root = (ViewGroup) inflater.inflate(R.layout.fragment_base, container, false);
-        waveform = (WaveformLayout) root.findViewById(R.id.waveform);
-        ibtnBack = (ImageButton) root.findViewById(R.id.ibtn_back);
+        final View root = inflater.inflate(R.layout.fragment_base, container, false);
+        waveform = root.findViewById(R.id.waveform);
+        ibtnBack = root.findViewById(R.id.ibtn_back);
 
         setupUI();
 
         // inflate subclass defined content view instead of the view stub
-        final FrameLayout contentContainer = (FrameLayout) root.findViewById(R.id.fl_content_container);
+        final FrameLayout contentContainer = root.findViewById(R.id.fl_content_container);
         contentContainer.addView(createView(inflater, contentContainer, savedInstanceState));
 
         return root;

@@ -114,12 +114,12 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
-                            setMilliseconds(millisecondsInThisWindow);
+                            if (getAudioService() != null) {
+                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
+                            }
 
-                            float yPerDiv =
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
-                            setMillivolts(yPerDiv);
+                            setMillivolts(
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
                         }
                     });
                 }

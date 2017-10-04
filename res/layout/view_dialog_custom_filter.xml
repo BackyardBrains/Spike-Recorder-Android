@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/activity_horizontal_margin">
+
+    <TextView
+        android:id="@+id/tv_cut_off_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_custom_filter_cut_offs"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tv_low_cut_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/et_low_cut_off"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:text="@string/label_custom_filter_low"
+        app:layout_constraintLeft_toLeftOf="@+id/et_low_cut_off"
+        app:layout_constraintTop_toBottomOf="@+id/tv_cut_off_label"
+        app:layout_constraintRight_toRightOf="@+id/et_low_cut_off"
+        tools:text="Low"/>
+
+    <EditText
+        android:id="@+id/et_low_cut_off"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:digits="0123456789"
+        android:imeOptions="actionDone"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_low_cut_off"
+        android:inputType="number"/>
+
+    <TextView
+        android:id="@+id/tv_high_cut_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/et_high_cut_off"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:text="@string/label_custom_filter_high"
+        app:layout_constraintLeft_toLeftOf="@+id/et_high_cut_off"
+        app:layout_constraintTop_toBottomOf="@+id/tv_cut_off_label"
+        app:layout_constraintRight_toRightOf="@+id/et_high_cut_off"/>
+
+    <EditText
+        android:id="@+id/et_high_cut_off"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:digits="0123456789"
+        android:gravity="center"
+        android:imeOptions="actionDone"
+        app:layout_constraintTop_toBottomOf="@+id/tv_high_cut_off"
+        app:layout_constraintRight_toRightOf="parent"
+        android:inputType="number"/>
+
+    <com.example.roman.thesimplerangebar.SimpleRangeBar
+        android:id="@+id/rb_cut_offs"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/mid_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:padding="@dimen/activity_horizontal_margin"
+        app:roundCorners="true"
+        app:thickness="3dp"
+        app:radiusThumb="10dp"
+        app:colorRangeBar="@color/gray_darker"
+        app:colorRange="@color/orange"
+        app:colorThumb="@color/orange"
+        app:colorThumbPressed="@color/orange"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/et_low_cut_off"
+        app:layout_constraintRight_toRightOf="parent"/>
+</android.support.constraint.ConstraintLayout>

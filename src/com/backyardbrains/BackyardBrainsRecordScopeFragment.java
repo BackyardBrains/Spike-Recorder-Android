@@ -15,12 +15,15 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
+import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
@@ -47,10 +50,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
+    @BindView(R.id.ibtn_am_modulation) ImageButton ibtnAmModulation;
     @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
     @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
 
+    private FilterSettingsDialog filterSettingsDialog;
     private BYBSlidingView stopRecButton;
     private Unbinder unbinder;
 
@@ -110,12 +115,13 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            final float millisecondsInThisWindow = drawSurfaceWidth / 44100.0f * 1000 / 2;
-                            setMilliseconds(millisecondsInThisWindow);
+                            if (getAudioService() != null) {
+                                setMilliseconds(
+                                    drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
+                            }
 
-                            float yPerDiv =
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale;
-                            setMillivolts(yPerDiv);
+                            setMillivolts(
+                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
                         }
                     });
                 }
@@ -145,9 +151,12 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         // this will start microphone if we are coming from background
         if (getAudioService() != null) getAudioService().startMicrophone();
 
+        // update am modulation button visibility
+        ibtnAmModulation.setVisibility(
+            getAudioService() != null && getAudioService().isAmModulationDetected() ? View.VISIBLE : View.GONE);
         // update usb button visibility
-        ibtnUsb.setVisibility(/*
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
+        ibtnUsb.setVisibility(
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -167,7 +176,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
-        ibtnUsb.setVisibility(/*event.isAttached() ? View.VISIBLE : */View.GONE);
+        ibtnUsb.setVisibility(event.isAttached() ? View.VISIBLE : View.GONE);
 
         // usb is detached, we should start listening to microphone again
         if (!event.isAttached() && getAudioService() != null) getAudioService().startMicrophone();
@@ -183,15 +192,36 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
+        if (event.isStart()) {
+            ibtnAmModulation.setVisibility(View.VISIBLE);
+        } else {
+            ibtnAmModulation.setVisibility(View.GONE);
+            if (filterSettingsDialog != null) {
+                filterSettingsDialog.dismiss();
+                filterSettingsDialog = null;
+            }
+        }
+    }
+
     //==============================================
     //  PRIVATE METHODS
     //==============================================
 
     // Initializes user interface
     private void setupUI() {
+        // am modulation button
+        ibtnAmModulation.setVisibility(
+            getAudioService() != null && getAudioService().isAmModulationDetected() ? View.VISIBLE : View.GONE);
+        ibtnAmModulation.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                openFilterDialog();
+            }
+        });
         // usb button
         ibtnUsb.setVisibility(
-            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
         ibtnUsb.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 openDeviceListDialog();
@@ -212,6 +242,22 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         });
         // set initial visibility
         setupButtons(false);
+    }
+
+    private void openFilterDialog() {
+        filterSettingsDialog =
+            new FilterSettingsDialog(getContext(), new FilterSettingsDialog.FilterSelectionListener() {
+                @Override public void onFilterSelected(@NonNull Filter filter) {
+                    setFilter(filter);
+                }
+            });
+        filterSettingsDialog.show(
+            getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
+                : new Filter());
+    }
+
+    private void setFilter(@NonNull Filter filter) {
+        if (getAudioService() != null) getAudioService().setFilter(filter);
     }
 
     void openDeviceListDialog() {

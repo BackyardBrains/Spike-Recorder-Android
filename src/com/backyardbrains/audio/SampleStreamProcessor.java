@@ -52,25 +52,8 @@ public class SampleStreamProcessor implements DataProcessor {
     }
 
     private void processIncomingData(@NonNull byte[] data) {
-        //LOGD(TAG, "4. USB - BEFORE processing");
-        //long start = System.currentTimeMillis();
-        //LOGD(TAG, "==========================================");
-        //LOGD(TAG, "START - " + samplesForCalculation.size());
-
-        // reset buffers if size  of buffer changed
-        //if (sb.capacity() != lastIncomingBufferSize) {
-        //    reset();
-        //    lastIncomingBufferSize = sb.capacity();
-        //}
-        //LOGD(TAG, "1. AFTER resetting buffers:" + (System.currentTimeMillis() - start));
-
-        // initialize incoming array
-        //byte[] incomingAsArray = new byte[sb.capacity()];
-        //sb.get(incomingAsArray, 0, incomingAsArray.length);
-
         // Max number of samples can be number of incoming bytes divided by 2 +1
         short[] samples = new short[data.length / 2 + 1];
-        short[] orgSamples = new short[data.length / 2 + 1];
         int sampleCounter = 0;
         int lsb, msb; // less significant and most significant bytes
         for (byte b : data) {
@@ -92,13 +75,7 @@ public class SampleStreamProcessor implements DataProcessor {
 
                         unfinishedSample.setLsb(lsb);
 
-                        int smpl = unfinishedSample.getSample();
-                        orgSamples[sampleCounter] = (short) smpl;
-                        //samples[sampleCounter++] = (short) printLineCounter++;
-                        //if (printLineCounter == 1024) printLineCounter = 0;
-                        samples[sampleCounter++] = (short) normalize(smpl);
-                        //LOGD(TAG, "ADDED NEW SAMPLE " + (sampleCounter - 1) + " org: " + smpl + ", norm: " + samples[
-                        //    sampleCounter - 1]);
+                        samples[sampleCounter++] = (short) normalize(unfinishedSample.getSample());
 
                         unfinishedSample = null;
                     } else {
@@ -120,9 +97,6 @@ public class SampleStreamProcessor implements DataProcessor {
                 }
             }
         }
-
-        short[] smpls = Arrays.copyOfRange(orgSamples, 0, sampleCounter);
-        //LOGD(TAG, printLineCounter++ + ". " + smpls.length + " >> " + Arrays.toString(smpls));
 
         buffer.add(Arrays.copyOfRange(samples, 0, sampleCounter));
 
