@@ -156,7 +156,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             getAudioService() != null && getAudioService().isAmModulationDetected() ? View.VISIBLE : View.GONE);
         // update usb button visibility
         ibtnUsb.setVisibility(
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -176,7 +176,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
-        ibtnUsb.setVisibility(event.isAttached() ? View.VISIBLE : View.GONE);
+        ibtnUsb.setVisibility(/*event.isAttached() ? View.VISIBLE : */View.GONE);
 
         // usb is detached, we should start listening to microphone again
         if (!event.isAttached() && getAudioService() != null) getAudioService().startMicrophone();
@@ -221,7 +221,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         });
         // usb button
         ibtnUsb.setVisibility(
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
         ibtnUsb.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 openDeviceListDialog();

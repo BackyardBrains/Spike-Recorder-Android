@@ -250,9 +250,7 @@ public class AudioService extends Service implements ReceivesAudio {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
                 //noinspection ConstantConditions
-                //LOGD(TAG, "3. USB - BEFORE adding to buffer");
                 dataManager.addToBuffer(getProcessor().process(data));
-                //LOGD(TAG, "7. USB - AFTER adding to buffer");
             } else {
                 // pass data to data manager
                 dataManager.addToBuffer(data);
@@ -488,7 +486,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
         // set sample rate for audio
         sampleRate = AudioUtils.SAMPLE_RATE;
-        
+
         if (playbackThread != null) {
             turnOffMicThread();
 
