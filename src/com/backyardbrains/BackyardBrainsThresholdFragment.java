@@ -77,7 +77,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     @Override protected View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragmnet_threshold, container, false);
+        final View view = inflater.inflate(R.layout.fragment_threshold, container, false);
         unbinder = ButterKnife.bind(this, view);
 
         setupUI();
@@ -118,7 +118,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             if (getAudioService() != null) {
-                                setMilliseconds(drawSurfaceWidth / getAudioService().getSampleRate() * 1000 / 2);
+                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
                             }
 
                             setMillivolts(
