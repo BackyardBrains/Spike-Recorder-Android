@@ -34,13 +34,13 @@ public class ThresholdProcessor implements SampleProcessor {
     private static final String TAG = makeLogTag(ThresholdProcessor.class);
 
     // Number of samples that we collect for one sample stream
-    public static final int SAMPLE_COUNT = (int) (AudioUtils.SAMPLE_RATE * 2.4); // 2 sec, 400 ms
+    public static final int SAMPLE_COUNT = (int) (AudioUtils.SAMPLE_RATE * 2.4); // 2.4 s
     // Default averaged sample count
     private static final int DEFAULT_SIZE = 1;
     // Dead period when we don't check for threshold after hitting one
     private static final int DEAD_PERIOD = (int) (AudioUtils.SAMPLE_RATE * 0.005); // 5 ms
     // We need to buffer half of samples total count up to the sample that hit's threshold
-    private static final int BUFFER_SAMPLE_COUNT = SAMPLE_COUNT / 2; // 680 ms
+    private static final int BUFFER_SAMPLE_COUNT = SAMPLE_COUNT / 2; // 1.2 s
 
     // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
     private RingBuffer buffer;
