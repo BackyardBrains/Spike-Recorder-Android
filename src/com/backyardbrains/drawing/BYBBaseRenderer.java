@@ -175,9 +175,9 @@ public class BYBBaseRenderer extends BaseRenderer {
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
         setGlWindowHorizontalSize(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowVerticalSize(PrefUtils.getGlWindowVerticalSize(context, getClass()));
+        setGlWindowVerticalSize(PrefUtils.getGlWindowVerticalSize(context, BYBBaseRenderer.class));
         width = PrefUtils.getViewportWidth(context, getClass());
-        height = PrefUtils.getViewportHeight(context, getClass());
+        height = PrefUtils.getViewportHeight(context, BYBBaseRenderer.class);
         setAutoScaled(PrefUtils.getAutoScale(context, getClass()));
         minimumDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
@@ -191,9 +191,9 @@ public class BYBBaseRenderer extends BaseRenderer {
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowHorizontalSize);
-        PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowVerticalSize);
+        PrefUtils.setGlWindowVerticalSize(context, BYBBaseRenderer.class, glWindowVerticalSize);
         PrefUtils.setViewportWidth(context, getClass(), width);
-        PrefUtils.setViewportHeight(context, getClass(), height);
+        PrefUtils.setViewportHeight(context, BYBBaseRenderer.class, height);
         PrefUtils.setAutoScale(context, getClass(), autoScaled);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minimumDetectedPCMValue);
     }

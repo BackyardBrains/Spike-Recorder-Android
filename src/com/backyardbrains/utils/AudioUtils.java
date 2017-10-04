@@ -65,7 +65,7 @@ public class AudioUtils {
                     .build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AUDIO_FORMAT)
                     .setSampleRate(SAMPLE_RATE)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build())
                 .setBufferSizeInBytes(OUT_BUFFER_SIZE)
                 .build();

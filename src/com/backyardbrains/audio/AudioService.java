@@ -289,12 +289,13 @@ public class AudioService extends Service implements ReceivesAudio {
     private void turnOnMicThread() {
         LOGD(TAG, "turnOnMicThread()");
         turnOffPlaybackThread();
+
+        // set sample rate for audio
+        sampleRate = AudioUtils.SAMPLE_RATE;
+
         if (micThread == null) {
             micThread = null;
             micThread = new MicListener(this);
-
-            // set sample rate for audio
-            sampleRate = AudioUtils.SAMPLE_RATE;
             // we should clear buffer
             if (dataManager != null) dataManager.clearBuffer();
 
@@ -484,11 +485,12 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private void turnOnPlaybackThread() {
         LOGD(TAG, "turnOnPlaybackThread()");
+
+        // set sample rate for audio
+        sampleRate = AudioUtils.SAMPLE_RATE;
+        
         if (playbackThread != null) {
             turnOffMicThread();
-
-            // set sample rate for audio
-            sampleRate = AudioUtils.SAMPLE_RATE;
 
             playbackThread.play();
         }
