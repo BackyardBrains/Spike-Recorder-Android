@@ -30,7 +30,18 @@ public class SampleStreamProcessor implements DataProcessor {
 
     private int printLineCounter;
 
-    public SampleStreamProcessor() {
+    /**
+     * Listens for responses sent by connected device as a response to custom messages sent by the application.
+     */
+    interface SampleStreamListener {
+        void onMessageResponseReceived(byte[] message);
+    }
+
+    private SampleStreamListener listener;
+
+    public SampleStreamProcessor(@Nullable SampleStreamListener listener) {
+        this.listener = listener;
+
         // init buffers
         reset();
     }
@@ -91,6 +102,7 @@ public class SampleStreamProcessor implements DataProcessor {
                 escapeSequence.reset();
             } else {
                 if (escapeSequence.isCompleted()) {
+                    if (listener != null) listener.onMessageResponseReceived(escapeSequence.getMessage());
                     // TODO: 7/29/2017 Process message
                     // clear the escape sequence instance so we can start detecting the next one
                     escapeSequence.reset();
@@ -139,9 +151,9 @@ public class SampleStreamProcessor implements DataProcessor {
         private final String TAG = makeLogTag(EscapeSequence.class);
 
         private final byte[] MESSAGE_START_SEQUENCE =
-            new byte[] { (byte) 0xFF, (byte) 0xFF, 0x01, 0x01, (byte) 0x80, (byte) 0xFF };
+            new byte[] { (byte) 255, (byte) 255, (byte) 1, (byte) 1, (byte) 128, (byte) 255 };
         private final byte[] MESSAGE_END_SEQUENCE = new byte[] {
-            (byte) 0xFF, (byte) 0xFF, 0x01, 0x01, (byte) 0x81, (byte) 0xFF
+            (byte) 255, (byte) 255, (byte) 1, (byte) 1, (byte) 129, (byte) 255
         };
         private final int MAX_MESSAGE_LENGTH = 5000;
 
@@ -167,6 +179,8 @@ public class SampleStreamProcessor implements DataProcessor {
             sequence[index++] = b;
 
             if (!started && MESSAGE_START_SEQUENCE[tmpIndex] == b) {
+                LOGD(TAG, "Detected " + tmpIndex + " byte of escape sequence START!");
+
                 start[tmpIndex++] = b;
                 result = true;
             }
@@ -178,6 +192,8 @@ public class SampleStreamProcessor implements DataProcessor {
                 result = true;
             }
             if (started && !ended && MESSAGE_END_SEQUENCE[tmpIndex] == b) {
+                LOGD(TAG, "Detected " + tmpIndex + " byte of escape sequence END!");
+
                 end[tmpIndex++] = b;
                 result = true;
             }

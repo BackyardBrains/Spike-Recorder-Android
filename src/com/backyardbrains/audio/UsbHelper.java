@@ -14,13 +14,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 import com.angrygoat.buffer.CircularByteBuffer;
-import com.backyardbrains.data.DataProcessor;
 import com.backyardbrains.utils.UsbUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -37,10 +37,19 @@ public class UsbHelper {
 
     private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE; // 1 sec
 
-    private static String MSG_START_STREAM = "start:;";
-    private static String MSG_STOP_STREAM = "h:;";
-    private static String MSG_INFO = "?:;";
-    private static String MSG_MAX_ = "max:;";
+    private static final String MSG_CONFIG_PREFIX = "conf ";
+    private static final String MSG_SAMPLE_RATE = "s:%d;";
+    private static final String MSG_CHANNELS = "c:%d;";
+
+    private static final String MSG_BOARD_TYPE = "b:;\n";
+    private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
+
+    static {
+        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
+            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, UsbUtils.SAMPLE_RATE)
+                + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
+    }
+
     private static final int BAUD_RATE = 230400;
 
     private static final IntentFilter USB_INTENT_FILTER;
@@ -58,6 +67,8 @@ public class UsbHelper {
             if (ACTION_USB_PERMISSION.equals(action)) {
                 boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
                 if (granted) {
+                    if (listener != null) listener.onPermissionGranted();
+
                     openDevice((UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE));
                 } else {
                     if (listener != null) listener.onPermissionDenied();
@@ -97,6 +108,16 @@ public class UsbHelper {
          *
          */
         void onDataTransferStart();
+
+        /**
+         *
+         */
+        void onDataTransferEnd();
+
+        /**
+         *
+         */
+        void onPermissionGranted();
 
         /**
          *
@@ -187,7 +208,6 @@ public class UsbHelper {
     }
 
     private boolean done;
-    private DataProcessor processor = new SampleStreamProcessor();
     private ReadThread readThread;
 
     @SuppressWarnings("WeakerAccess") void openDevice(@NonNull UsbDevice device) {
@@ -203,6 +223,10 @@ public class UsbHelper {
                 serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
                 serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
 
+                // check which board are we connected to
+                serialDevice.write(MSG_BOARD_TYPE.getBytes());
+                // set sample rate and number of channels (into the void)
+                serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
                 serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
                     @Override public void onReceivedData(byte[] data) {
                         circBuffer.write(data);
@@ -244,6 +268,8 @@ public class UsbHelper {
             serialDevice.close();
             readThread = null;
         }
+
+        if (listener != null) listener.onDataTransferEnd();
     }
 
     // Refreshes the connected devices list with only the serial communication capable ones.

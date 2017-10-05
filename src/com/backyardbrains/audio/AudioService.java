@@ -36,7 +36,9 @@ import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
+import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
+import com.backyardbrains.events.UsbMessageEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
@@ -76,7 +78,13 @@ public class AudioService extends Service implements ReceivesAudio {
         };
     private static final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
         new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER);
-    private static final DataProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor();
+    private static final SampleStreamProcessor.SampleStreamListener SAMPLE_STREAM_LISTENER =
+        new SampleStreamProcessor.SampleStreamListener() {
+            @Override public void onMessageResponseReceived(byte[] message) {
+                EventBus.getDefault().post(new UsbMessageEvent(new String(message)));
+            }
+        };
+    private static final DataProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor(SAMPLE_STREAM_LISTENER);
 
     private final IBinder mBinder = new ServiceBinder();
 
@@ -384,15 +392,24 @@ public class AudioService extends Service implements ReceivesAudio {
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(false));
                 }
 
-                @Override public void onDataTransferStart() {
-                    // set sample rate for usb
-                    sampleRate = UsbUtils.SAMPLE_RATE;
+                @Override public void onPermissionGranted() {
 
                     EventBus.getDefault().post(new UsbPermissionEvent(true));
                 }
 
                 @Override public void onPermissionDenied() {
                     EventBus.getDefault().post(new UsbPermissionEvent(false));
+                }
+
+                @Override public void onDataTransferStart() {
+                    // set sample rate for usb
+                    sampleRate = UsbUtils.SAMPLE_RATE;
+
+                    EventBus.getDefault().post(new UsbCommunicationEvent(true));
+                }
+
+                @Override public void onDataTransferEnd() {
+                    EventBus.getDefault().post(new UsbCommunicationEvent(false));
                 }
             });
 

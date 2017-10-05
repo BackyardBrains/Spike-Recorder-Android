@@ -20,7 +20,9 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
+import com.backyardbrains.events.UsbMessageEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
@@ -156,7 +158,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             getAudioService() != null && getAudioService().isAmModulationDetected() ? View.VISIBLE : View.GONE);
         // update usb button visibility
         ibtnUsb.setVisibility(
-            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -176,20 +178,41 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
-        ibtnUsb.setVisibility(/*event.isAttached() ? View.VISIBLE : */View.GONE);
+        // setup USB button visibility
+        ibtnUsb.setVisibility(event.isConnected() ? View.VISIBLE : View.GONE);
+        if (!event.isConnected()) {
+            // setup USB button icon and click
+            setupUsbButton(false);
 
-        // usb is detached, we should start listening to microphone again
-        if (!event.isAttached() && getAudioService() != null) getAudioService().startMicrophone();
+            // usb is detached, we should start listening to microphone again
+            if (getAudioService() != null) getAudioService().startMicrophone();
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
         if (!event.isGranted()) {
-            ViewUtils.toast(getContext(), "Permission not granted!!!");
+            // setup USB button icon and click
+            setupUsbButton(false);
 
+            ViewUtils.toast(getContext(), "Please grant permission to start the communication");
+
+            // user didn't get , we should start listening to microphone again
+            if (getAudioService() != null) getAudioService().startMicrophone();
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
+        if (!event.isStarted()) {
             if (getAudioService() != null) getAudioService().startMicrophone();
         } else {
             if (getAudioService() != null) getAudioService().stopMicrophone();
         }
+        // setup USB button
+        setupUsbButton(event.isStarted());
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbMessageEvent(UsbMessageEvent event) {
+        ViewUtils.toast(getContext(), event.getMessage());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -210,6 +233,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //==============================================
 
     // Initializes user interface
+
     private void setupUI() {
         // am modulation button
         ibtnAmModulation.setVisibility(
@@ -221,7 +245,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         });
         // usb button
         ibtnUsb.setVisibility(
-            /*getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : */View.GONE);
+            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
         ibtnUsb.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 openDeviceListDialog();
@@ -242,6 +266,25 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         });
         // set initial visibility
         setupButtons(false);
+    }
+
+    // Updates up the USB connection button depending on whether USB is connected or not.
+    private void setupUsbButton(boolean connected) {
+        if (connected) {
+            ibtnUsb.setImageResource(R.drawable.ic_usb_off);
+            ibtnUsb.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    disconnectFromDevice();
+                }
+            });
+        } else {
+            ibtnUsb.setImageResource(R.drawable.ic_usb);
+            ibtnUsb.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    openDeviceListDialog();
+                }
+            });
+        }
     }
 
     private void openFilterDialog() {
@@ -284,6 +327,21 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         }
 
         ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+    }
+
+    private void disconnectFromDevice() {
+        if (getAudioService() != null) {
+            try {
+                getAudioService().disconnectFromUsbDevice();
+            } catch (IllegalArgumentException e) {
+                Crashlytics.logException(e);
+                ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+            }
+
+            return;
+        }
+
+        ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
     }
 
     // Set buttons visibility depending on whether audio is currently being recorded or not
