@@ -27,6 +27,7 @@ import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.UsbUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
@@ -52,6 +53,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
+    // Maximum time that should be processed in any given moment (in seconds)
+    private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
+
     @BindView(R.id.ibtn_am_modulation) ImageButton ibtnAmModulation;
     @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
@@ -73,7 +77,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         super.onStart();
 
         // this will start microphone if we are switching from another fragment
-        if (getAudioService() != null) getAudioService().startMicrophone();
+        if (getAudioService() != null) {
+            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
+            getAudioService().startActiveInputSource();
+        }
     }
 
     @Override public void onResume() {
@@ -85,7 +92,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Override public void onStop() {
         super.onStop();
 
-        if (getAudioService() != null) getAudioService().stopMicrophone();
+        if (getAudioService() != null) getAudioService().stopActiveInputSource();
     }
 
     @Override public void onDestroyView() {
@@ -151,14 +158,18 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will start microphone if we are coming from background
-        if (getAudioService() != null) getAudioService().startMicrophone();
+        if (getAudioService() != null) {
+            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
+            getAudioService().startActiveInputSource();
+        }
 
         // update am modulation button visibility
         ibtnAmModulation.setVisibility(
             getAudioService() != null && getAudioService().isAmModulationDetected() ? View.VISIBLE : View.GONE);
-        // update usb button visibility
+        // update usb button visibility and state
         ibtnUsb.setVisibility(
             getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+        setupUsbButton(getAudioService() != null && getAudioService().isUsbActiveInput());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -212,7 +223,24 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbMessageEvent(UsbMessageEvent event) {
-        ViewUtils.toast(getContext(), event.getMessage());
+        final String spikerShieldBoard;
+        switch (event.getMessage()) {
+            case UsbUtils.BOARD_TYPE_PLANT:
+                spikerShieldBoard = getString(R.string.board_type_plant);
+                break;
+            case UsbUtils.BOARD_TYPE_MUSCLE:
+                spikerShieldBoard = getString(R.string.board_type_muscle);
+                break;
+            case UsbUtils.BOARD_TYPE_HEART:
+                spikerShieldBoard = getString(R.string.board_type_heart);
+                break;
+            default:
+                spikerShieldBoard = "UNKNOWN";
+                break;
+        }
+
+        ViewUtils.toast(getContext(),
+            String.format(getString(R.string.template_connected_to_board), spikerShieldBoard));
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -233,7 +261,6 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //==============================================
 
     // Initializes user interface
-
     private void setupUI() {
         // am modulation button
         ibtnAmModulation.setVisibility(
@@ -246,11 +273,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         // usb button
         ibtnUsb.setVisibility(
             getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
-        ibtnUsb.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                openDeviceListDialog();
-            }
-        });
+        setupUsbButton(getAudioService() != null && getAudioService().isUsbActiveInput());
         // record button
         ibtnRecord.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {

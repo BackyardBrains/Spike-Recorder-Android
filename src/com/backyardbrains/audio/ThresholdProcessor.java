@@ -33,23 +33,36 @@ public class ThresholdProcessor implements SampleProcessor {
 
     private static final String TAG = makeLogTag(ThresholdProcessor.class);
 
-    // Number of samples that we collect for one sample stream
-    public static final int SAMPLE_COUNT = (int) (AudioUtils.SAMPLE_RATE * 2.4); // 2.4 s
-    // Default averaged sample count
-    private static final int DEFAULT_SIZE = 1;
-    // Dead period when we don't check for threshold after hitting one
-    private static final int DEAD_PERIOD = (int) (AudioUtils.SAMPLE_RATE * 0.005); // 5 ms
-    // We need to buffer half of samples total count up to the sample that hit's threshold
-    private static final int BUFFER_SAMPLE_COUNT = SAMPLE_COUNT / 2; // 1.2 s
+    // We shouldn't process more than 2.4 seconds of samples in any given moment
+    private static final double DEFAULT_MAX_PROCESSED_SECONDS = 1;
+    // When threshold is hit we should have a dead period of 5ms before checking for next threshold hit
+    private static final double DEFAULT_DEAD_PERIOD_SECONDS = 0.005;
+    // Default number of sample streams that should be summed to get averaged samples
+    private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 1;
+    // Default sample rate used when processing incoming data
+    private static final int DEFAULT_SAMPLE_RATE = AudioUtils.SAMPLE_RATE;
+
+    // Max number of seconds that can be processed at any given moment
+    private double maxProcessedSeconds = DEFAULT_MAX_PROCESSED_SECONDS;
+    // Dead period in seconds during which incoming samples shouldn't be processed
+    private double deadPeriod = DEFAULT_DEAD_PERIOD_SECONDS;
+    // Number of samples that needs to be summed to get the averaged sample
+    private int averagedSampleCount = DEFAULT_AVERAGED_SAMPLE_COUNT;
+    // Sample rate that should be used when processing incoming data
+    private int sampleRate = DEFAULT_SAMPLE_RATE;
 
     // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
     private RingBuffer buffer;
-    // Number of samples that needs to be summed to get the averaged sample
-    private int averagedSampleCount = DEFAULT_SIZE;
-    // Holds sums of all the saved samples by index
-    private int[] summedSamples;
+    // Number of samples that we collect for one sample stream
+    private int sampleCount = (int) (sampleRate * maxProcessedSeconds);
+    // We need to buffer half of samples total count up to the sample that hit's threshold
+    private int bufferSampleCount = sampleCount / 2;
+    // Dead period when we don't check for threshold after hitting one
+    private int deadPeriodCount = (int) (sampleRate * deadPeriod);
     // Holds averages of all the saved samples by index
     private short[] averagedSamples;
+    // Holds sums of all the saved samples by index
+    private int[] summedSamples;
     // Holds samples counts summed at specified position
     private int[] summedSamplesCounts;
 
@@ -59,16 +72,23 @@ public class ThresholdProcessor implements SampleProcessor {
     private int triggerValue = Integer.MAX_VALUE;
     private int lastTriggeredValue;
     private int lastIncomingBufferSize;
+    private double lastMaxProcessedSeconds;
+    private double lastDeadPeriod;
     private int lastAveragedSampleCount;
+    private int lastSampleRate;
     private short prevSample;
     private int deadPeriodSampleCounter;
-    private boolean deadPeriod;
+    private boolean inDeadPeriod;
 
     /**
      * Creates new {@link ThresholdProcessor} that uses {@code size} number of sample sequences for average spike
      * calculation.
      */
-    public ThresholdProcessor(int size) {
+    public ThresholdProcessor(int size, double maxProcessedSeconds, double deadPeriod) {
+        // set initial max processing time
+        setMaxProcessedSeconds(maxProcessedSeconds);
+        // set initial number of seconds for dead period
+        setDeadPeriod(deadPeriod);
         // set initial number of chunks to use for calculating average
         setAveragedSampleCount(size);
         // init buffers
@@ -95,10 +115,35 @@ public class ThresholdProcessor implements SampleProcessor {
     }
 
     /**
-     * Sets the number of sample sequences that should be summed to get the average spike value.
+     * Returns the maximum number of seconds that can be processed at any given moment.
      */
-    public void setAveragedSampleCount(int averagedSampleCount) {
-        if (averagedSampleCount > 0) this.averagedSampleCount = averagedSampleCount;
+    public double getMaxProcessedSeconds() {
+        return maxProcessedSeconds;
+    }
+
+    /**
+     * Sets the maximum number of seconds that can be processed at any given moment.
+     */
+    public void setMaxProcessedSeconds(double maxProcessedSeconds) {
+        LOGD(TAG, "setMaxProcessedSeconds(" + maxProcessedSeconds + ")");
+
+        if (maxProcessedSeconds > 0) this.maxProcessedSeconds = maxProcessedSeconds;
+    }
+
+    /**
+     * Returns the number of seconds dead period time during which incoming samples are not processed.
+     */
+    public double getDeadPeriod() {
+        return deadPeriod;
+    }
+
+    /**
+     * Sets the number of seconds for dead period time during which incoming samples will not processed.
+     */
+    public void setDeadPeriod(double deadPeriod) {
+        LOGD(TAG, "setDeadPeriod(" + deadPeriod + ")");
+
+        if (deadPeriod > 0) this.deadPeriod = deadPeriod;
     }
 
     /**
@@ -106,6 +151,31 @@ public class ThresholdProcessor implements SampleProcessor {
      */
     public int getAveragedSampleCount() {
         return averagedSampleCount;
+    }
+
+    /**
+     * Sets the number of sample sequences that should be summed to get the average spike value.
+     */
+    public void setAveragedSampleCount(int averagedSampleCount) {
+        LOGD(TAG, "setAveragedSampleCount(" + averagedSampleCount + ")");
+
+        if (averagedSampleCount > 0) this.averagedSampleCount = averagedSampleCount;
+    }
+
+    /**
+     * Sets sample rate to be used when processing incoming samples.
+     */
+    public void setSampleRate(int sampleRate) {
+        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
+
+        this.sampleRate = sampleRate;
+    }
+
+    /**
+     * Returns current sample count.
+     */
+    public int getSampleCount() {
+        return sampleCount;
     }
 
     /**
@@ -122,15 +192,19 @@ public class ThresholdProcessor implements SampleProcessor {
 
     // Resets all the fields used for calculations
     private void reset() {
-        buffer = new RingBuffer(BUFFER_SAMPLE_COUNT);
+        sampleCount = (int) (sampleRate * maxProcessedSeconds);
+        bufferSampleCount = sampleCount / 2;
+        deadPeriodCount = (int) (sampleRate * deadPeriod);
+
+        buffer = new RingBuffer(bufferSampleCount);
         samplesForCalculation = new ArrayList<>(averagedSampleCount * 2);
         summedSamples = null;
         summedSamplesCounts = null;
-        averagedSamples = new short[SAMPLE_COUNT];
+        averagedSamples = new short[sampleCount];
         unfinishedSamplesForCalculation = new ArrayList<>();
         prevSample = 0;
         deadPeriodSampleCounter = 0;
-        deadPeriod = false;
+        inDeadPeriod = false;
     }
 
     // Processes the incoming data and triggers all necessary calculations.
@@ -145,10 +219,26 @@ public class ThresholdProcessor implements SampleProcessor {
             reset();
             lastTriggeredValue = triggerValue;
         }
+        // reset buffers if max processed seconds changed
+        if (lastMaxProcessedSeconds != maxProcessedSeconds) {
+            reset();
+            lastMaxProcessedSeconds = maxProcessedSeconds;
+        }
+        // reset buffers if dead period changed
+        if (lastDeadPeriod != deadPeriod) {
+            reset();
+            lastDeadPeriod = deadPeriod;
+        }
+
         // reset buffers if averages sample count changed
         if (lastAveragedSampleCount != averagedSampleCount) {
             reset();
             lastAveragedSampleCount = averagedSampleCount;
+        }
+        // reset buffers if sample rate changed
+        if (lastSampleRate != sampleRate) {
+            reset();
+            lastSampleRate = sampleRate;
         }
 
         // append unfinished sample buffers whit incoming samples
@@ -162,16 +252,16 @@ public class ThresholdProcessor implements SampleProcessor {
         for (int i = 0; i < incomingSamples.length; i++) {
             currentSample = incomingSamples[i];
 
-            if (!deadPeriod) {
+            if (!inDeadPeriod) {
                 // check if we hit the threshold
                 if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (
                     triggerValue < 0 && currentSample < triggerValue && prevSample >= triggerValue)) {
                     // we hit the threshold, turn on dead period of 5ms
-                    deadPeriod = true;
+                    inDeadPeriod = true;
 
                     // create new samples for current threshold
-                    final short[] centeredWave = new short[SAMPLE_COUNT];
-                    copyLength = Math.min(BUFFER_SAMPLE_COUNT, incomingSamples.length);
+                    final short[] centeredWave = new short[sampleCount];
+                    copyLength = Math.min(bufferSampleCount, incomingSamples.length);
                     System.arraycopy(buffer.getArray(), i, centeredWave, 0, buffer.getArray().length - i);
                     System.arraycopy(incomingSamples, 0, centeredWave, buffer.getArray().length - i, copyLength);
 
@@ -181,9 +271,9 @@ public class ThresholdProcessor implements SampleProcessor {
                     break;
                 }
             } else {
-                if (++deadPeriodSampleCounter > DEAD_PERIOD) {
+                if (++deadPeriodSampleCounter > deadPeriodCount) {
                     deadPeriodSampleCounter = 0;
-                    deadPeriod = false;
+                    inDeadPeriod = false;
                 }
             }
 
@@ -216,8 +306,8 @@ public class ThresholdProcessor implements SampleProcessor {
     private void addSamplesToCalculations(@NonNull Samples samples, int samplesIndex) {
         // init summed samples array
         if (summedSamples == null || summedSamplesCounts == null) {
-            summedSamples = new int[SAMPLE_COUNT];
-            summedSamplesCounts = new int[SAMPLE_COUNT];
+            summedSamples = new int[sampleCount];
+            summedSamplesCounts = new int[sampleCount];
 
             for (int i = samples.lastAveragedIndex; i < samples.nextSampleIndex; i++) {
                 summedSamples[i] = samples.samples[i];

@@ -23,6 +23,10 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     private static final String TAG = makeLogTag(BYBBaseRenderer.class);
 
+    private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
+    private static final int MIN_GL_VERTICAL_SIZE = 400;
+    private static final int SECONDS_TO_RENDER = 6;
+
     private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
     private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
 
@@ -43,10 +47,10 @@ public class BYBBaseRenderer extends BaseRenderer {
     protected int height;
     protected int width;
     private boolean autoScaled;
-    private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
-    private static final int MIN_GL_HORIZONTAL_SIZE = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
-    private static final int MIN_GL_VERTICAL_SIZE = 400;
-    private static final int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * 6; // 6 sec
+
+    private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 6 sec
+
+    private int min_gl_horizontal_size = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
     private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
     private int startIndex;
@@ -121,10 +125,28 @@ public class BYBBaseRenderer extends BaseRenderer {
         this.callback = callback;
     }
 
+    /**
+     * Sets current sample rate that should be used when calculating rendering parameters.
+     */
+    public void setSampleRate(int sampleRate) {
+        MAX_SAMPLES_COUNT = sampleRate * SECONDS_TO_RENDER;
+        min_gl_horizontal_size = sampleRate / 5000;
+        tempBufferToDraws = initTempBuffer();
+
+        // recalculate GlWindowHorizontalSize
+        int newSize = glWindowHorizontalSize;
+        if (glWindowHorizontalSize < min_gl_horizontal_size) newSize = min_gl_horizontal_size;
+        if (drawingBuffer != null) {
+            final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
+            if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
+        }
+        glWindowHorizontalSize = newSize;
+    }
+
     public void setGlWindowHorizontalSize(int newSize) {
         if (newSize < 0 || newSize == glWindowHorizontalSize) return;
 
-        if (newSize < MIN_GL_HORIZONTAL_SIZE) newSize = MIN_GL_HORIZONTAL_SIZE;
+        if (newSize < min_gl_horizontal_size) newSize = min_gl_horizontal_size;
         if (drawingBuffer != null) {
             final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
             if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
@@ -292,7 +314,8 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
     private boolean fillBuffer() {
-        if (drawingBuffer == null) drawingBuffer = new short[dataManager.getData().length];
+        /*if (drawingBuffer == null) */
+        drawingBuffer = new short[dataManager.getData().length];
         System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
     }

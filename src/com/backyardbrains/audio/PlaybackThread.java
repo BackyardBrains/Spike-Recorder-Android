@@ -223,7 +223,7 @@ class PlaybackThread {
         try {
             raf = newRandomAccessFile();
             if (raf == null) return;
-            
+
             LOGD(TAG, "RandomAccessFile created");
 
             duration = (int) raf.length();

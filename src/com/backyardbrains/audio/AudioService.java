@@ -27,7 +27,6 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataManager;
-import com.backyardbrains.data.DataProcessor;
 import com.backyardbrains.data.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
@@ -36,6 +35,7 @@ import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
+import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbMessageEvent;
@@ -66,6 +66,10 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private static final String TAG = makeLogTag(AudioService.class);
 
+    private enum InputSource {
+        NONE, MICROPHONE, USB, PLAYBACK
+    }
+
     private static final AmModulationProcessor.AmModulationDetectionListener AM_MODULATION_DETECTION_LISTENER =
         new AmModulationProcessor.AmModulationDetectionListener() {
             @Override public void onAmModulationStart() {
@@ -84,9 +88,10 @@ public class AudioService extends Service implements ReceivesAudio {
                 EventBus.getDefault().post(new UsbMessageEvent(new String(message)));
             }
         };
-    private static final DataProcessor SAMPLE_STREAM_PROCESSOR = new SampleStreamProcessor(SAMPLE_STREAM_LISTENER);
+    private static final SampleStreamProcessor SAMPLE_STREAM_PROCESSOR =
+        new SampleStreamProcessor(SAMPLE_STREAM_LISTENER);
 
-    private final IBinder mBinder = new ServiceBinder();
+    private final IBinder binder = new ServiceBinder();
 
     // Reference to the data manager that stores and processes the data
     private DataManager dataManager;
@@ -95,16 +100,21 @@ public class AudioService extends Service implements ReceivesAudio {
 
     // Reference to the microphone data source
     private MicListener micThread;
-    // Reference to the playback data source
-    private PlaybackThread playbackThread;
     // Reference to the USB serial data source
     private UsbHelper usbHelper;
+    // Reference to the playback data source
+    private PlaybackThread playbackThread;
     // Reference to the audio recorder
     private RecordingSaver recordingSaver;
 
+    // Whether servise is created
     private boolean created;
     // Current sample rate
-    private int sampleRate = AudioUtils.SAMPLE_RATE;
+    private int sampleRate;
+    // Maximum number of seconds data manager should hold at any time
+    private double maxTime;
+    // Current input source
+    private InputSource source = InputSource.NONE;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -125,7 +135,10 @@ public class AudioService extends Service implements ReceivesAudio {
 
         dataManager = DataManager.get();
         // we need to listen for USB attach/detach
-        turnOnUsb();
+        startUsb();
+
+        // set current sample rate
+        setSampleRate(AudioUtils.SAMPLE_RATE);
 
         created = true;
     }
@@ -139,7 +152,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
         LOGD(TAG, "onDestroy()");
         turnOffMicThread();
-        turnOffUsb();
+        stopUsb();
         turnOffPlaybackThread();
 
         dataManager = null;
@@ -158,7 +171,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * @see android.app.Service#onBind(android.content.Intent)
      */
     @Override public IBinder onBind(Intent arg0) {
-        return mBinder;
+        return binder;
     }
 
     @Override public boolean onUnbind(Intent intent) {
@@ -194,19 +207,16 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     /**
-     * Sets the of the buffer that stores incoming data.
+     * Sets the maximum time of incoming data to be processed at any given moment in seconds.
      */
-    public void setBufferSize(int bufferSize) {
-        LOGD(TAG, "setBufferSize() - " + bufferSize);
-        if (dataManager != null) dataManager.setBufferSize(bufferSize);
-    }
+    public void setMaxProcessingTimeInSeconds(double maxSeconds) {
+        LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
+        if (this.maxTime == maxSeconds) return;
+        if (maxSeconds <= 0) return; // max time needs to be positive
 
-    /**
-     * Sets the of the buffer that stores incoming data to it's default value.
-     */
-    public void resetBufferSize() {
-        LOGD(TAG, "resetBufferSize()");
-        if (dataManager != null) dataManager.resetBufferSize();
+        if (dataManager != null) dataManager.setBufferSize((int) (maxSeconds * sampleRate));
+
+        this.maxTime = maxSeconds;
     }
 
     /**
@@ -214,6 +224,22 @@ public class AudioService extends Service implements ReceivesAudio {
      */
     public int getSampleRate() {
         return sampleRate;
+    }
+
+    // Set's current sample rate
+    private void setSampleRate(int sampleRate) {
+        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
+
+        if (this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return; // sample rate needs to be positive
+
+        // recalculate max render time
+        setMaxProcessingTimeInSeconds(maxTime);
+
+        this.sampleRate = sampleRate;
+
+        // inform all interested parties that sample rate has changed
+        EventBus.getDefault().post(new SampleRateChangeEvent(sampleRate));
     }
 
     //=================================================
@@ -275,18 +301,60 @@ public class AudioService extends Service implements ReceivesAudio {
     }
 
     //=================================================
+    //  CURRENT INPUT SOURCE
+    //=================================================
+
+    /**
+     * Starts processing active input or Microphone if there is no active input.
+     */
+    public void startActiveInputSource() {
+        if (created) {
+            switch (source) {
+                case NONE:
+                case MICROPHONE:
+                    turnOnMicThread();
+                    break;
+                case USB:
+                    turnOnUsb();
+                    break;
+                case PLAYBACK:
+                    turnOnPlaybackThread();
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Stops processing active input.
+     */
+    public void stopActiveInputSource() {
+        if (created) {
+            turnOffMicThread();
+            turnOffUsb();
+            turnOffPlaybackThread();
+        }
+    }
+
+    /**
+     * Whether USB is active input source.
+     */
+    public boolean isUsbActiveInput() {
+        return source == InputSource.USB;
+    }
+
+    //=================================================
     //  MICROPHONE
     //=================================================
 
     /**
-     * Starts processing default input (Microphone).
+     * Starts processing Microphone input. (Default)
      */
     public void startMicrophone() {
         if (created) turnOnMicThread();
     }
 
     /**
-     * Stops processing default input (Microphone).
+     * Stops processing Microphone input (Default).
      */
     public void stopMicrophone() {
         if (created) turnOffMicThread();
@@ -294,12 +362,12 @@ public class AudioService extends Service implements ReceivesAudio {
 
     private void turnOnMicThread() {
         LOGD(TAG, "turnOnMicThread()");
+        turnOffUsb();
         turnOffPlaybackThread();
 
-        // set sample rate for audio
-        sampleRate = AudioUtils.SAMPLE_RATE;
-
         if (micThread == null) {
+            source = InputSource.MICROPHONE;
+
             micThread = null;
             micThread = new MicListener(this);
             // we should clear buffer
@@ -380,8 +448,29 @@ public class AudioService extends Service implements ReceivesAudio {
         return usbHelper.getDevice(index);
     }
 
+    // Turns on USB input processing
     private void turnOnUsb() {
         LOGD(TAG, "turnOnUsb()");
+        turnOffMicThread();
+        turnOffPlaybackThread();
+
+        source = InputSource.USB;
+
+        // set data manager buffer
+        setSampleRate(UsbUtils.SAMPLE_RATE);
+    }
+
+    // Turns off USB input processing
+    private void turnOffUsb() {
+        LOGD(TAG, "turnOffUsb()");
+        stopRecording();
+
+        // set data manager buffer
+        setSampleRate(AudioUtils.SAMPLE_RATE);
+    }
+
+    private void startUsb() {
+        LOGD(TAG, "startUsb()");
         if (usbHelper == null) {
             usbHelper = new UsbHelper(getApplicationContext(), this, new UsbHelper.UsbListener() {
                 @Override public void onDeviceAttached() {
@@ -393,7 +482,6 @@ public class AudioService extends Service implements ReceivesAudio {
                 }
 
                 @Override public void onPermissionGranted() {
-
                     EventBus.getDefault().post(new UsbPermissionEvent(true));
                 }
 
@@ -402,35 +490,33 @@ public class AudioService extends Service implements ReceivesAudio {
                 }
 
                 @Override public void onDataTransferStart() {
-                    // set sample rate for usb
-                    sampleRate = UsbUtils.SAMPLE_RATE;
+                    LOGD(TAG, "onDataTransferStart()");
+                    turnOnUsb();
 
                     EventBus.getDefault().post(new UsbCommunicationEvent(true));
                 }
 
                 @Override public void onDataTransferEnd() {
+                    LOGD(TAG, "onDataTransferEnd()");
+                    turnOffUsb();
+
                     EventBus.getDefault().post(new UsbCommunicationEvent(false));
                 }
             });
-
-            // we should clear buffer
-            if (dataManager != null) dataManager.clearBuffer();
 
             usbHelper.start(getApplicationContext());
             LOGD(TAG, "USB helper started");
         }
     }
 
-    private void turnOffUsb() {
-        LOGD(TAG, "turnOffUsb()");
+    private void stopUsb() {
+        LOGD(TAG, "stopUsb()");
+        stopRecording();
         if (usbHelper != null) {
             usbHelper.disconnect();
             usbHelper.stop(getApplicationContext());
             usbHelper = null;
             LOGD(TAG, "USB helper stopped");
-
-            // we should clear buffer so that next buffer user doesn't have any residue
-            if (dataManager != null) dataManager.clearBuffer();
         }
     }
 
@@ -501,14 +587,10 @@ public class AudioService extends Service implements ReceivesAudio {
     private void turnOnPlaybackThread() {
         LOGD(TAG, "turnOnPlaybackThread()");
 
-        // set sample rate for audio
-        sampleRate = AudioUtils.SAMPLE_RATE;
+        turnOffMicThread();
+        turnOffUsb();
 
-        if (playbackThread != null) {
-            turnOffMicThread();
-
-            playbackThread.play();
-        }
+        if (playbackThread != null) playbackThread.play();
     }
 
     private void turnOffPlaybackThread() {
@@ -516,6 +598,8 @@ public class AudioService extends Service implements ReceivesAudio {
             "turnOffPlaybackThread() - playbackThread " + (playbackThread != null ? "not null (stopping)" : "null"));
 
         if (playbackThread != null) {
+            source = InputSource.PLAYBACK;
+
             playbackThread.stop();
             playbackThread = null;
 

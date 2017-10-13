@@ -31,9 +31,12 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
 
-    private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
+    private static final int AVERAGED_SAMPLE_COUNT = 30;
+    private static final double MAX_PROCESSING_TIME = 2.4; // 2.4 seconds
+    private static final double DEAD_PERIOD_TIME = 0.005; // 5 millis
 
-    private static final ThresholdProcessor DATA_PROCESSOR = new ThresholdProcessor(DEFAULT_AVERAGED_SAMPLE_COUNT);
+    private static final ThresholdProcessor DATA_PROCESSOR =
+        new ThresholdProcessor(AVERAGED_SAMPLE_COUNT, MAX_PROCESSING_TIME, DEAD_PERIOD_TIME);
 
     private Unbinder unbinder;
 
@@ -61,8 +64,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
         if (getAudioService() != null) {
             getAudioService().clearSampleProcessor();
-            getAudioService().resetBufferSize();
-            getAudioService().stopMicrophone();
+            getAudioService().stopActiveInputSource();
         }
     }
 
@@ -140,6 +142,10 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         return (ThresholdRenderer) super.getRenderer();
     }
 
+    @Override protected void onSampleRateChange(int sampleRate) {
+        DATA_PROCESSOR.setSampleRate(sampleRate);
+    }
+
     //==============================================
     //  EVENT BUS
     //==============================================
@@ -191,9 +197,11 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     private void startMicAndSetupDataProcessing() {
         if (getAudioService() != null) {
+            getAudioService().startActiveInputSource();
+
+            DATA_PROCESSOR.setSampleRate(getAudioService().getSampleRate());
             getAudioService().setSampleProcessor(DATA_PROCESSOR);
-            getAudioService().setBufferSize(ThresholdProcessor.SAMPLE_COUNT);
-            getAudioService().startMicrophone();
+            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         }
     }
 

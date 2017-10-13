@@ -112,6 +112,8 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     @Override protected void onStart() {
+        LOGD(TAG, "onStart()");
+
         // start the audio service for reads mic data, recording and playing recorded files
         start();
         // load settings saved from last session
@@ -126,6 +128,8 @@ public class BackyardBrainsMain extends AppCompatActivity
     }
 
     @Override protected void onStop() {
+        LOGD(TAG, "onStop()");
+
         // unregister activity from event bus
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
 

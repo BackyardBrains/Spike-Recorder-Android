@@ -221,7 +221,7 @@ public class UsbHelper {
                 serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
                 serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
                 serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-                serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+                serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_DSR_DTR);
 
                 // check which board are we connected to
                 serialDevice.write(MSG_BOARD_TYPE.getBytes());
@@ -237,23 +237,6 @@ public class UsbHelper {
                 readThread.start();
 
                 if (done) done = false;
-
-                //serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
-                //    @Override public void onReceivedData(byte[] bytes) {
-                //        if (bytes != null && bytes.length > 0) {
-                //            LOGD(TAG, "==============================");
-                //            //LOGD(TAG, "BYTES: " + Arrays.toString(bytes));
-                //            //LOGD(TAG, "1. USB - BEFORE sync");
-                //            synchronized (service) {
-                //                //LOGD(TAG, "2. USB - BEFORE receive");
-                //                //LOGD(TAG, "BYTES: " + Arrays.toString(bytes));
-                //                service.receiveAudio(ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()));
-                //                //LOGD(TAG, "8. USB - AFTER receive");
-                //            }
-                //            //LOGD(TAG, "9. USB - AFTER sync");
-                //        }
-                //    }
-                //});
             } else {
                 LOGD("SERIAL", "PORT NOT OPEN");
             }

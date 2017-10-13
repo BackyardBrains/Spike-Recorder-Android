@@ -10,7 +10,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.view.WaveformLayout;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -104,6 +107,21 @@ public abstract class BaseWaveformFragment extends BaseFragment {
      */
     protected BYBBaseRenderer getRenderer() {
         return renderer;
+    }
+
+    /**
+     * Subclasses should override this method if they need to do some work when sample rate changes.
+     */
+    protected void onSampleRateChange(int sampleRate) {
+    }
+
+    //==============================================
+    //  EVENT BUS
+    //==============================================
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+        if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
+        onSampleRateChange(event.getSampleRate());
     }
 
     //==============================================

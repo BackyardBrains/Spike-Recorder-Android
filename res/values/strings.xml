@@ -35,6 +35,11 @@
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
 
+    <string name="template_connected_to_board">Connected to %s board</string>
+    <string name="board_type_plant">Plant SpikerShield</string>
+    <string name="board_type_muscle">Muscle SpikerShield</string>
+    <string name="board_type_heart">Heart &amp; Brain SpikerShield</string>
+
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
     <string name="tap_to_stop_recording">Tap to stop recording\n%s</string>
