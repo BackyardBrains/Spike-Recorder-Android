@@ -21,6 +21,7 @@ import butterknife.ButterKnife;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
+import com.backyardbrains.audio.Filters;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.example.roman.thesimplerangebar.SimpleRangeBar;
@@ -31,12 +32,6 @@ import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
  */
 public class FilterSettingsDialog {
 
-    // High cut-off frequency for EKG
-    private static final int FREQ_HIGH_CUTOFF_HEART = 50;
-    // High cut-off frequency for EEG
-    private static final int FREQ_HIGH_CUTOFF_BRAIN = 100;
-    // High cut-off frequency for Plant
-    private static final int FREQ_HIGH_CUTOFF_PLANT = 5;
     // Array of predefined filters (Raw, EKG, EEG, Plant, Custom filter)
     private static final Filter[] FILTERS;
     // Array of predefined filter names
@@ -47,9 +42,9 @@ public class FilterSettingsDialog {
     static {
         FILTERS = new Filter[5];
         FILTERS[0] = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
-        FILTERS[1] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_HEART);
-        FILTERS[2] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_BRAIN);
-        FILTERS[3] = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_PLANT);
+        FILTERS[1] = Filters.FILTER_HEART;
+        FILTERS[2] = Filters.FILTER_BRAIN;
+        FILTERS[3] = Filters.FILTER_PLANT;
         FILTERS[4] = new Filter(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
     }
 

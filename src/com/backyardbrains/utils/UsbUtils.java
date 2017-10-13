@@ -1,5 +1,7 @@
 package com.backyardbrains.utils;
 
+import android.support.annotation.NonNull;
+
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -9,23 +11,34 @@ public class UsbUtils {
 
     private static final String TAG = makeLogTag(UsbUtils.class);
 
+    // Board type SpikerShield reply message prefix.
+    private static final String BOARD_TYPE_PREFIX = "HWT:";
+    // Plant SpikerShield reply message for board type inquiry.
+    private static final String BOARD_TYPE_PLANT = BOARD_TYPE_PREFIX + "PLANTSS;";
+    // Muscle SpikerShield reply message for board type inquiry.
+    private static final String BOARD_TYPE_MUSCLE = BOARD_TYPE_PREFIX + "MUSCLESS;";
+    // Brain & Heart SpikerShield reply message for board type inquiry.
+    private static final String BOARD_TYPE_HEART = BOARD_TYPE_PREFIX + "HEARTSS;";
+
     /**
      * Sample rate used throughout the app.
      */
     public static final int SAMPLE_RATE = 10000;
 
     /**
-     * Plant SpikerShield reply message for board type inquiry.
+     * Whether specified {@code msg} sent from SpikerShield is a board type message.
      */
-    public static final String BOARD_TYPE_PLANT = "HWT:PLANTSS;";
+    public static boolean isBoardTypeMsg(@NonNull String msg) {
+        return msg.startsWith(BOARD_TYPE_PREFIX);
+    }
 
     /**
-     * Muscle SpikerShield reply message for board type inquiry.
+     * Returns SpikerShield board type depending on the specified {@code message}.
      */
-    public static final String BOARD_TYPE_MUSCLE = "HWT:MUSCLESS;";
-
-    /**
-     * Brain & Heart SpikerShield reply message for board type inquiry.
-     */
-    public static final String BOARD_TYPE_HEART = "HWT:HEARTSS;";
+    public static @SpikerShieldBoardType int getBoardType(@NonNull String message) {
+        if (ObjectUtils.equals(BOARD_TYPE_PLANT, message)) return SpikerShieldBoardType.PLANT;
+        if (ObjectUtils.equals(BOARD_TYPE_MUSCLE, message)) return SpikerShieldBoardType.MUSCLE;
+        if (ObjectUtils.equals(BOARD_TYPE_HEART, message)) return SpikerShieldBoardType.HEART;
+        return SpikerShieldBoardType.UNKNOWN;
+    }
 }

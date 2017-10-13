@@ -3,6 +3,8 @@ package com.backyardbrains.audio;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataProcessor;
+import com.backyardbrains.utils.SpikerShieldBoardType;
+import com.backyardbrains.utils.UsbUtils;
 import java.util.Arrays;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -24,26 +26,28 @@ public class SampleStreamProcessor implements DataProcessor {
 
     // Buffer that holds most recent 680 ms of audio
     private Sample unfinishedSample;
+    // Additional filtering that should be applied
+    private Filters filters;
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
      */
     interface SampleStreamListener {
-        void onMessageResponseReceived(byte[] message);
+        /**
+         * Triggered when SpikerShield sends board type message as a result of inquiry.
+         */
+        void onBoardTypeDetected(@SpikerShieldBoardType int boardType);
     }
 
     private SampleStreamListener listener;
 
-    public SampleStreamProcessor(@Nullable SampleStreamListener listener) {
+    public SampleStreamProcessor(@Nullable SampleStreamListener listener, @Nullable Filters filters) {
         this.listener = listener;
+        this.filters = filters;
     }
 
-    @Nullable @Override public short[] process(@NonNull byte[] data) {
-        if (data.length >= 1) {
-            return processIncomingData(data);
-
-            //return buffer.getArray();
-        }
+    @Override public short[] process(@NonNull byte[] data) {
+        if (data.length > 0) return processIncomingData(data);
 
         return new short[0];
     }
@@ -76,7 +80,10 @@ public class SampleStreamProcessor implements DataProcessor {
 
                         unfinishedSample.setLsb(lsb);
 
-                        samples[sampleCounter++] = (short) normalize(unfinishedSample.getSample());
+                        samples[sampleCounter] = (short) normalize(unfinishedSample.getSample());
+                        // apply additional filtering if necessary
+                        if (filters != null) samples[sampleCounter] = filters.apply(samples[sampleCounter]);
+                        sampleCounter++;
 
                         unfinishedSample = null;
                     } else {
@@ -92,8 +99,8 @@ public class SampleStreamProcessor implements DataProcessor {
                 escapeSequence.reset();
             } else {
                 if (escapeSequence.isCompleted()) {
-                    if (listener != null) listener.onMessageResponseReceived(escapeSequence.getMessage());
-                    // TODO: 7/29/2017 Process message
+                    // let's process incoming message
+                    processEscapeSequenceMessage(escapeSequence.getMessage());
                     // clear the escape sequence instance so we can start detecting the next one
                     LOGD(TAG, "Escape sequence is completed!");
                     escapeSequence.reset();
@@ -111,6 +118,15 @@ public class SampleStreamProcessor implements DataProcessor {
 
     private int normalize(int sample) {
         return (sample - 512) * 30;
+    }
+
+    // Processes escape sequence message and triggers appropriate listener
+    private void processEscapeSequenceMessage(byte[] messageBytes) {
+        final String message = new String(messageBytes);
+        // check if it's board type message
+        if (listener != null) {
+            if (UsbUtils.isBoardTypeMsg(message)) listener.onBoardTypeDetected(UsbUtils.getBoardType(message));
+        }
     }
 
     private class Frame {
@@ -196,9 +212,6 @@ public class SampleStreamProcessor implements DataProcessor {
 
                     return true;
                 } else {
-                    // sequence start not complete, we should reset
-                    //LOGD(TAG, "Sequence start started but didn't complete. RESET!!!");
-
                     index++;
 
                     return false;
@@ -207,9 +220,6 @@ public class SampleStreamProcessor implements DataProcessor {
                 // populate sequence end test array with last 6 bytes
                 System.arraycopy(sequence, index - MESSAGE_END_SEQUENCE.length + 1, end, 0,
                     MESSAGE_END_SEQUENCE.length);
-
-                //LOGD(TAG, "INDEX: " + index);
-                //LOGD(TAG, "Escape sequence end test array: " + Arrays.toString(end));
 
                 if (Arrays.equals(MESSAGE_END_SEQUENCE, end)) {
                     LOGD(TAG, "Escape sequence ended!");

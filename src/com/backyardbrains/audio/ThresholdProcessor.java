@@ -98,7 +98,7 @@ public class ThresholdProcessor implements SampleProcessor {
     }
 
     @Override public short[] process(@NonNull short[] samples) {
-        if (samples.length >= 1) {
+        if (samples.length > 0) {
             processIncomingData(samples);
 
             return averagedSamples;
@@ -115,32 +115,18 @@ public class ThresholdProcessor implements SampleProcessor {
     }
 
     /**
-     * Returns the maximum number of seconds that can be processed at any given moment.
-     */
-    public double getMaxProcessedSeconds() {
-        return maxProcessedSeconds;
-    }
-
-    /**
      * Sets the maximum number of seconds that can be processed at any given moment.
      */
-    public void setMaxProcessedSeconds(double maxProcessedSeconds) {
+    @SuppressWarnings("WeakerAccess") public void setMaxProcessedSeconds(double maxProcessedSeconds) {
         LOGD(TAG, "setMaxProcessedSeconds(" + maxProcessedSeconds + ")");
 
         if (maxProcessedSeconds > 0) this.maxProcessedSeconds = maxProcessedSeconds;
     }
 
     /**
-     * Returns the number of seconds dead period time during which incoming samples are not processed.
-     */
-    public double getDeadPeriod() {
-        return deadPeriod;
-    }
-
-    /**
      * Sets the number of seconds for dead period time during which incoming samples will not processed.
      */
-    public void setDeadPeriod(double deadPeriod) {
+    @SuppressWarnings("WeakerAccess") public void setDeadPeriod(double deadPeriod) {
         LOGD(TAG, "setDeadPeriod(" + deadPeriod + ")");
 
         if (deadPeriod > 0) this.deadPeriod = deadPeriod;
@@ -168,14 +154,7 @@ public class ThresholdProcessor implements SampleProcessor {
     public void setSampleRate(int sampleRate) {
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
-        this.sampleRate = sampleRate;
-    }
-
-    /**
-     * Returns current sample count.
-     */
-    public int getSampleCount() {
-        return sampleCount;
+        if (deadPeriod > 0) this.sampleRate = sampleRate;
     }
 
     /**
@@ -209,34 +188,33 @@ public class ThresholdProcessor implements SampleProcessor {
 
     // Processes the incoming data and triggers all necessary calculations.
     private void processIncomingData(short[] incomingSamples) {
-        // reset buffers if size  of buffer changed
-        if (incomingSamples.length != lastIncomingBufferSize) {
-            reset();
-            lastIncomingBufferSize = incomingSamples.length;
-        }
         // reset buffers if threshold changed
         if (lastTriggeredValue != triggerValue) {
+            LOGD(TAG, "Resetting because trigger value has changed");
             reset();
             lastTriggeredValue = triggerValue;
         }
         // reset buffers if max processed seconds changed
         if (lastMaxProcessedSeconds != maxProcessedSeconds) {
+            LOGD(TAG, "Resetting because max number of processed seconds has changed");
             reset();
             lastMaxProcessedSeconds = maxProcessedSeconds;
         }
         // reset buffers if dead period changed
         if (lastDeadPeriod != deadPeriod) {
+            LOGD(TAG, "Resetting because dead period has changed");
             reset();
             lastDeadPeriod = deadPeriod;
         }
-
         // reset buffers if averages sample count changed
         if (lastAveragedSampleCount != averagedSampleCount) {
+            LOGD(TAG, "Resetting because last averaged sample count has changed");
             reset();
             lastAveragedSampleCount = averagedSampleCount;
         }
         // reset buffers if sample rate changed
         if (lastSampleRate != sampleRate) {
+            LOGD(TAG, "Resetting because sample rate has changed");
             reset();
             lastSampleRate = sampleRate;
         }

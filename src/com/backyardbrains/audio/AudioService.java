@@ -36,13 +36,14 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.SampleRateChangeEvent;
+import com.backyardbrains.events.SpikerShieldBoardTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
-import com.backyardbrains.events.UsbMessageEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.SpikerShieldBoardType;
 import com.backyardbrains.utils.UsbUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
@@ -70,6 +71,7 @@ public class AudioService extends Service implements ReceivesAudio {
         NONE, MICROPHONE, USB, PLAYBACK
     }
 
+    private static final Filters FILTERS = new Filters();
     private static final AmModulationProcessor.AmModulationDetectionListener AM_MODULATION_DETECTION_LISTENER =
         new AmModulationProcessor.AmModulationDetectionListener() {
             @Override public void onAmModulationStart() {
@@ -81,15 +83,15 @@ public class AudioService extends Service implements ReceivesAudio {
             }
         };
     private static final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
-        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER);
+        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
     private static final SampleStreamProcessor.SampleStreamListener SAMPLE_STREAM_LISTENER =
         new SampleStreamProcessor.SampleStreamListener() {
-            @Override public void onMessageResponseReceived(byte[] message) {
-                EventBus.getDefault().post(new UsbMessageEvent(new String(message)));
+            @Override public void onBoardTypeDetected(@SpikerShieldBoardType int boardType) {
+                EventBus.getDefault().post(new SpikerShieldBoardTypeDetectionEvent(boardType));
             }
         };
     private static final SampleStreamProcessor SAMPLE_STREAM_PROCESSOR =
-        new SampleStreamProcessor(SAMPLE_STREAM_LISTENER);
+        new SampleStreamProcessor(SAMPLE_STREAM_LISTENER, FILTERS);
 
     private final IBinder binder = new ServiceBinder();
 
@@ -235,11 +237,31 @@ public class AudioService extends Service implements ReceivesAudio {
 
         // recalculate max render time
         setMaxProcessingTimeInSeconds(maxTime);
+        // reset filters
+        FILTERS.setSampleRate(sampleRate);
 
         this.sampleRate = sampleRate;
 
         // inform all interested parties that sample rate has changed
         EventBus.getDefault().post(new SampleRateChangeEvent(sampleRate));
+    }
+
+    //=================================================
+    //  FILTERS
+    //=================================================
+
+    /**
+     * Returns filter that is additionally applied when processing incoming data.
+     */
+    public Filter getFilter() {
+        return FILTERS.getFilter();
+    }
+
+    /**
+     * Sets predefined filters to be applied when processing incoming data.
+     */
+    public void setFilter(@Nullable Filter filter) {
+        FILTERS.setFilter(filter);
     }
 
     //=================================================
@@ -400,20 +422,6 @@ public class AudioService extends Service implements ReceivesAudio {
      */
     public boolean isAmModulationDetected() {
         return AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
-    }
-
-    /**
-     * Returns filter that is additionally applied when AM modulation is detected.
-     */
-    public Filter getFilter() {
-        return AM_MODULATION_DATA_PROCESSOR.getFilter();
-    }
-
-    /**
-     * Sets predefined filters to be applied when AM modulation is detected.
-     */
-    public void setFilter(@Nullable Filter filter) {
-        AM_MODULATION_DATA_PROCESSOR.setFilter(filter);
     }
 
     //=================================================
@@ -671,7 +679,9 @@ public class AudioService extends Service implements ReceivesAudio {
         if (recordingSaver != null) return false;
 
         try {
-            turnOnMicThread();
+            // if there is not input source start the mic otherwise use the currently active input
+            if (source == InputSource.NONE) turnOnMicThread();
+
             recordingSaver = new RecordingSaver();
 
             // post that recording of audio has started

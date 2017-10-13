@@ -3,9 +3,7 @@ package com.backyardbrains.audio;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.SampleProcessor;
-import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.ObjectUtils;
 import java.util.Arrays;
 import uk.me.berndporr.iirj.Butterworth;
 
@@ -46,15 +44,13 @@ public class AmModulationProcessor implements SampleProcessor {
     private Butterworth amLowPassFilter1;
     private Butterworth amLowPassFilter2;
     private Butterworth amLowPassFilter3;
-    // Filter used for additional filtering
-    private Butterworth customFilter;
     // Both below are used to detect whether signal is modulated or not
     private double rmsOfOriginalSignal;
     private double rmsOfNotchedAMSignal;
     // Average signal which we use to avoid signal offset
     private double average;
-    // Current filter
-    private Filter filter;
+    // Additional filtering that should be applied when AM modulation is detected
+    private Filters filters;
 
     /**
      * Listens for AM modulation detection and informs interested parties about it's start and end.
@@ -67,13 +63,14 @@ public class AmModulationProcessor implements SampleProcessor {
 
     private AmModulationDetectionListener listener;
 
-    AmModulationProcessor(@Nullable AmModulationDetectionListener listener) {
+    AmModulationProcessor(@Nullable AmModulationDetectionListener listener, @Nullable Filters filters) {
         this.listener = listener;
+        this.filters = filters;
 
         init();
     }
 
-    @Nullable @Override public short[] process(@NonNull short[] data) {
+    @Override public short[] process(@NonNull short[] data) {
         if (data.length > 0) return processIncomingData(data);
 
         return new short[0];
@@ -84,55 +81,6 @@ public class AmModulationProcessor implements SampleProcessor {
      */
     public boolean isAmModulationDetected() {
         return amModulationDetected;
-    }
-
-    /**
-     * Returns currently applied filter.
-     */
-    public Filter getFilter() {
-        return filter;
-    }
-
-    /**
-     * Sets filter that should be additionally applied during AM modulation.
-     */
-    public void setFilter(@Nullable Filter filter) {
-        if (!ObjectUtils.equals(this.filter, filter)) {
-            if (filter != null) {
-                // if both cut-off frequencies are negative, or if low cut-off is minimum cut-off value
-                // and high cut-off is maximum cut-off value we should kill not use filter
-                if ((filter.getLowCutOffFrequency() == Filter.FREQ_NO_CUT_OFF
-                    && filter.getHighCutOffFrequency() == Filter.FREQ_NO_CUT_OFF) || (
-                    filter.getLowCutOffFrequency() == Filter.FREQ_MIN_CUT_OFF
-                        && filter.getHighCutOffFrequency() == Filter.FREQ_MAX_CUT_OFF)) {
-                    this.filter = null;
-                    return;
-                }
-
-                setFilterCutOffFrequencies(filter.getLowCutOffFrequency(), filter.getHighCutOffFrequency());
-            }
-
-            this.filter = filter;
-        }
-    }
-
-    // Sets filter cut-off frequencies to be applied when in AM modulation.
-    private void setFilterCutOffFrequencies(int lowCutOffFreq, int highCutOffFreq) {
-        // high cut-off frequency cannot be lower then low cut off frequency
-        if (highCutOffFreq < lowCutOffFreq) return;
-        // both cut-off frequencies cannot be negative
-        if (lowCutOffFreq == Filter.FREQ_NO_CUT_OFF && highCutOffFreq == Filter.FREQ_NO_CUT_OFF) return;
-
-        // reset custom filter
-        customFilter.reset();
-        if (lowCutOffFreq != Filter.FREQ_NO_CUT_OFF && highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // band pass
-            int freq = Math.abs(highCutOffFreq - lowCutOffFreq);
-            customFilter.bandPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, freq / 2 + lowCutOffFreq, freq);
-        } else if (highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // low pass
-            customFilter.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, highCutOffFreq);
-        } else { // high pass
-            customFilter.highPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, lowCutOffFreq);
-        }
     }
 
     // Initializes all filters.
@@ -148,7 +96,6 @@ public class AmModulationProcessor implements SampleProcessor {
         amLowPassFilter2.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_MODULATION);
         amLowPassFilter3 = new Butterworth();
         amLowPassFilter3.lowPass(FILTER_ORDER, AudioUtils.SAMPLE_RATE, FREQ_CUT_OFF_LOW_PASS_AM_MODULATION);
-        customFilter = new Butterworth();
     }
 
     // Does actual processing of incoming samples.
@@ -179,7 +126,7 @@ public class AmModulationProcessor implements SampleProcessor {
                 filteredSamples[i] = (short) (filteredSamples[i] - average);
 
                 // apply additional filtering if necessary
-                if (filter != null) filteredSamples[i] = (short) customFilter.filter(filteredSamples[i]);
+                if (filters != null) filteredSamples[i] = filters.apply(filteredSamples[i]);
             }
 
             return Arrays.copyOfRange(filteredSamples, 0, sampleCount);
