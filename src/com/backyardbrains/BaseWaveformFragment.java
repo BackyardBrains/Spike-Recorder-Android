@@ -120,6 +120,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //==============================================
 
     @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+        LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
         onSampleRateChange(event.getSampleRate());
     }

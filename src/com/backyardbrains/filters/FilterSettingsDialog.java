@@ -175,14 +175,14 @@ public class FilterSettingsDialog {
             }
         });
         // range bar
-        srbCutOffs.setRanges(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
+        srbCutOffs.setRanges((long) Filter.FREQ_MIN_CUT_OFF, (long) Filter.FREQ_MAX_CUT_OFF);
         srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
     private void updateLowCutOff() {
-        int lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
-        int highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
+        double lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
+        double highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
 
         // fix cut-off value if it's lower than minimum and higher than maximum
         lowCutOff = validateCutOffMinMax(lowCutOff);
@@ -195,8 +195,8 @@ public class FilterSettingsDialog {
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
     private void updateHighCutOff() {
-        int lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
-        int highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
+        double lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
+        double highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
 
         // fix cut-off value if it's lower than minimum and higher than maximum
         highCutOff = validateCutOffMinMax(highCutOff);
@@ -208,7 +208,7 @@ public class FilterSettingsDialog {
     }
 
     // Validates the passed cut-off value and corrects it if it goes below min or above max.
-    private int validateCutOffMinMax(int cutOff) {
+    private double validateCutOffMinMax(double cutOff) {
         // min value can be 0
         if (cutOff < Filter.FREQ_MIN_CUT_OFF) cutOff = Filter.FREQ_MIN_CUT_OFF;
         // max value can be SAMPLE_RATE/2
@@ -218,7 +218,7 @@ public class FilterSettingsDialog {
     }
 
     // Updates the UI of the input fields and range bar
-    private void updateUI(int lowCutOff, int highCutOff) {
+    private void updateUI(double lowCutOff, double highCutOff) {
         // we need to remove range bar change listener so it doesn't trigger setting of input fields
         srbCutOffs.setOnSimpleRangeBarChangeListener(null);
         // this is kind of a hack because thumb values can only be set both at once and right thumb is always set first
@@ -250,8 +250,8 @@ public class FilterSettingsDialog {
 
     // Returns a new Filter with cut-off values currently set inside input fields
     private Filter constructCustomFilter() {
-        int lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
-        int highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
+        double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
+        double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
         return new Filter(lowCutOff, highCutOff);
     }
 

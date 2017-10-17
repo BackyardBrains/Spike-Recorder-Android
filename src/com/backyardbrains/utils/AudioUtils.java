@@ -23,10 +23,6 @@ public class AudioUtils {
      */
     public static final int SAMPLE_RATE = 44100;
     /**
-     * Buffer size used for audio output throughout the app.
-     */
-    public static final int OUT_BUFFER_SIZE;
-    /**
      * Buffer size used for audio input throughout the app.
      */
     public static final int IN_BUFFER_SIZE;
@@ -38,38 +34,43 @@ public class AudioUtils {
 
     static {
         // in buffer size
-        final int inBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE, OUT_CHANNEL_CONFIG, AUDIO_FORMAT);
-        OUT_BUFFER_SIZE =
-            inBufferSize == AudioTrack.ERROR || inBufferSize == AudioTrack.ERROR_BAD_VALUE ? SAMPLE_RATE * 2
-                : inBufferSize;
-        // out buffer size
-        final int outBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, IN_CHANNEL_CONFIG, AUDIO_FORMAT);
+        final int intBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, IN_CHANNEL_CONFIG, AUDIO_FORMAT);
         IN_BUFFER_SIZE =
-            outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? SAMPLE_RATE * 2
-                : outBufferSize;
+            intBufferSize == AudioTrack.ERROR || intBufferSize == AudioTrack.ERROR_BAD_VALUE ? SAMPLE_RATE * 2
+                : intBufferSize;
     }
 
     /**
      * Creates and returns configured {@link AudioTrack} for playing recorded audio files.
      */
-    public static AudioTrack createAudioTrack() {
+    public static AudioTrack createAudioTrack(int sampleRate) {
         LOGD(TAG, "Create new AudioTrack");
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             //noinspection deprecation
-            return new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT,
-                OUT_BUFFER_SIZE, AudioTrack.MODE_STREAM);
+            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO, AUDIO_FORMAT,
+                getOutBufferSize(sampleRate), AudioTrack.MODE_STREAM);
         } else {
             return new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(AUDIO_FORMAT)
-                    .setSampleRate(SAMPLE_RATE)
+                    .setSampleRate(sampleRate)
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build())
-                .setBufferSizeInBytes(OUT_BUFFER_SIZE)
+                .setBufferSizeInBytes(getOutBufferSize(sampleRate))
                 .build();
         }
+    }
+
+    /**
+     * Returns estimated minimum buffer size required for an {@link AudioTrack} object to be created.
+     */
+    public static int getOutBufferSize(int sampleRate) {
+        // out buffer size
+        final int outBufferSize = AudioTrack.getMinBufferSize(sampleRate, OUT_CHANNEL_CONFIG, AUDIO_FORMAT);
+        return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
+            : outBufferSize;
     }
 
     /**

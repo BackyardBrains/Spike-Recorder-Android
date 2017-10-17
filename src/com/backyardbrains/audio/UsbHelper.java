@@ -15,6 +15,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 import com.angrygoat.buffer.CircularByteBuffer;
 import com.backyardbrains.utils.UsbUtils;
+import com.crashlytics.android.Crashlytics;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public class UsbHelper {
                 }
             } else {
                 final boolean attached = UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action);
-                if (!attached) disconnect();
+                if (!attached) close();
 
                 refreshDevices();
 
@@ -134,7 +135,28 @@ public class UsbHelper {
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
 
-    private final CircularByteBuffer circBuffer = new CircularByteBuffer(BUFFER_SIZE);
+    private final CircularByteBuffer circularBuffer = new CircularByteBuffer(BUFFER_SIZE);
+
+    private boolean done, paused;
+    private ReadThread readThread;
+
+    // Thread used for reading data received from connected USB serial device
+    private class ReadThread extends Thread {
+
+        byte[] data;
+
+        @Override public void run() {
+            while (!done) {
+                if (!paused) {
+                    synchronized (service) {
+                        data = new byte[circularBuffer.peekSize()];
+                        circularBuffer.read(data, data.length, false);
+                        service.receiveSampleStream(data);
+                    }
+                }
+            }
+        }
+    }
 
     public UsbHelper(@NonNull Context context, @NonNull AudioService service, @Nullable UsbListener listener) {
         this.service = service;
@@ -158,13 +180,6 @@ public class UsbHelper {
         context.unregisterReceiver(usbConnectionReceiver);
     }
 
-    /**
-     * Returns number of currently connected serial communication capable devices.
-     */
-    public int getDevicesCount() {
-        return devicesMap.size();
-    }
-
     public Map<String, UsbDevice> listDevices() {
         if (manager == null) return devicesMap;
 
@@ -174,7 +189,27 @@ public class UsbHelper {
         return devicesMap;
     }
 
-    public void connect(@NonNull Context context, @NonNull String deviceName) throws IllegalArgumentException {
+    @Nullable public UsbDevice getDevice(int index) {
+        if (index < 0 || index >= devices.size()) return null;
+
+        return devices.get(index);
+    }
+
+    /**
+     * Returns number of currently connected serial communication capable devices.
+     */
+    public int getDevicesCount() {
+        return devicesMap.size();
+    }
+
+    /**
+     * Initiates communication with usb device with specified {@code deviceName} by requesting a permission to access
+     * the device. If request is granted by the user the communication with the device will automatically be opened.
+     *
+     * @throws IllegalArgumentException if the device with specified {@code deviceName} is not connected.
+     */
+    public void requestPermission(@NonNull Context context, @NonNull String deviceName)
+        throws IllegalArgumentException {
         final UsbDevice device = devicesMap.get(deviceName);
         if (device != null) {
             final PendingIntent pi = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
@@ -186,37 +221,44 @@ public class UsbHelper {
         throw new IllegalArgumentException("Device " + deviceName + " is not connected!");
     }
 
-    @Nullable public UsbDevice getDevice(int index) {
-        if (index < 0 || index >= devices.size()) return null;
-
-        return devices.get(index);
-    }
-
-    private class ReadThread extends Thread {
-
-        byte[] data;
-
-        @Override public void run() {
-            while (!done) {
-                synchronized (service) {
-                    data = new byte[circBuffer.peekSize()];
-                    circBuffer.read(data, data.length, false);
-                    service.receiveSampleStream(data);
-                }
-            }
+    /**
+     * Closes the communication with the currently connected usb device if any is connected. After calling this method
+     * user will need to request permission to connect with the device.
+     */
+    public void close() {
+        if (serialDevice != null) {
+            done = true;
+            serialDevice.close();
+            readThread = null;
+            serialDevice = null;
         }
+
+        if (listener != null) listener.onDataTransferEnd();
     }
 
-    private boolean done;
-    private ReadThread readThread;
+    /**
+     * Stops reading incoming data from the connected usb device. Communication with the device is not finished, just
+     * paused until {@link #resume()} is called.
+     */
+    public void pause() {
+        paused = true;
+    }
+
+    /**
+     * Starts reading incoming data from the connected usb device.
+     */
+    public void resume() {
+        paused = false;
+    }
 
     @SuppressWarnings("WeakerAccess") void openDevice(@NonNull UsbDevice device) {
         final UsbDeviceConnection connection = manager.openDevice(device);
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
         if (serialDevice != null) {
-            if (serialDevice.open()) { //Set Serial Connection Parameters.
+            if (serialDevice.open()) {
                 if (listener != null) listener.onDataTransferStart();
 
+                // set serial connection parameters.
                 serialDevice.setBaudRate(BAUD_RATE);
                 serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
                 serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -229,7 +271,7 @@ public class UsbHelper {
                 serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
                 serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
                     @Override public void onReceivedData(byte[] data) {
-                        circBuffer.write(data);
+                        circularBuffer.write(data);
                     }
                 });
 
@@ -238,21 +280,13 @@ public class UsbHelper {
 
                 if (done) done = false;
             } else {
-                LOGD("SERIAL", "PORT NOT OPEN");
+                LOGD(TAG, "PORT NOT OPEN");
+                Crashlytics.logException(new RuntimeException("Failed to open USB serial communication port!"));
             }
         } else {
-            LOGD("SERIAL", "PORT IS NULL");
+            LOGD(TAG, "PORT IS NULL");
+            Crashlytics.logException(new RuntimeException("Failed to create USB serial device!"));
         }
-    }
-
-    public void disconnect() {
-        if (serialDevice != null) {
-            done = true;
-            serialDevice.close();
-            readThread = null;
-        }
-
-        if (listener != null) listener.onDataTransferEnd();
     }
 
     // Refreshes the connected devices list with only the serial communication capable ones.

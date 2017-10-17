@@ -28,6 +28,8 @@ public class SampleStreamProcessor implements DataProcessor {
     private Sample unfinishedSample;
     // Additional filtering that should be applied
     private Filters filters;
+    // Average signal which we use to avoid signal offset
+    private double average;
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
@@ -52,11 +54,18 @@ public class SampleStreamProcessor implements DataProcessor {
         return new short[0];
     }
 
+    //private int first = 3;
+
     private short[] processIncomingData(@NonNull byte[] data) {
         // Max number of samples can be number of incoming bytes divided by 2 +1
         short[] samples = new short[data.length / 2 + 1];
         int sampleCounter = 0;
         int lsb, msb; // less significant and most significant bytes
+
+        //if (first != 0) {
+        //    LOGD(TAG, Arrays.toString(data));
+        //    first--;
+        //}
 
         //LOGD(TAG, "START processing new batch of " + data.length + " bytes!");
 
@@ -81,8 +90,15 @@ public class SampleStreamProcessor implements DataProcessor {
                         unfinishedSample.setLsb(lsb);
 
                         samples[sampleCounter] = (short) normalize(unfinishedSample.getSample());
+
+                        // calculate average sample
+                        average = 0.0001 * samples[sampleCounter] + 0.9999 * average;
+                        // use average to remove offset
+                        samples[sampleCounter] = (short) (samples[sampleCounter] - average);
+
                         // apply additional filtering if necessary
                         if (filters != null) samples[sampleCounter] = filters.apply(samples[sampleCounter]);
+
                         sampleCounter++;
 
                         unfinishedSample = null;
@@ -127,10 +143,6 @@ public class SampleStreamProcessor implements DataProcessor {
         if (listener != null) {
             if (UsbUtils.isBoardTypeMsg(message)) listener.onBoardTypeDetected(UsbUtils.getBoardType(message));
         }
-    }
-
-    private class Frame {
-        Sample[] samples;
     }
 
     private class Sample {

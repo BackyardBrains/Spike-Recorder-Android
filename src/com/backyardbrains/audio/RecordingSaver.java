@@ -19,6 +19,7 @@
 
 package com.backyardbrains.audio;
 
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
@@ -39,6 +40,7 @@ class RecordingSaver {
 
     private WriteThread writeThread;
     private boolean done;
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
 
     private class WriteThread extends Thread {
 
@@ -100,6 +102,16 @@ class RecordingSaver {
     }
 
     /**
+     * Sets the sample rate tha will be used when saving WAV file.
+     */
+    void setSampleRate(int sampleRate) {
+        if (this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return; // sample rate need to be positive
+
+        this.sampleRate = sampleRate;
+    }
+
+    /**
      * Returns currently recorder length.
      */
     long getAudioLength() {
@@ -120,7 +132,7 @@ class RecordingSaver {
             outputStream.close();
             writeThread = null;
 
-            WavAudioFile.save(file);
+            WavAudioFile.save(file, sampleRate);
         } catch (IOException e) {
             Crashlytics.logException(e);
         }

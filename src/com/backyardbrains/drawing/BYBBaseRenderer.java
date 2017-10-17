@@ -129,6 +129,7 @@ public class BYBBaseRenderer extends BaseRenderer {
      * Sets current sample rate that should be used when calculating rendering parameters.
      */
     public void setSampleRate(int sampleRate) {
+        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         MAX_SAMPLES_COUNT = sampleRate * SECONDS_TO_RENDER;
         min_gl_horizontal_size = sampleRate / 5000;
         tempBufferToDraws = initTempBuffer();

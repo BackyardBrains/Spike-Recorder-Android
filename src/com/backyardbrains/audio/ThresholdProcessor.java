@@ -71,7 +71,6 @@ public class ThresholdProcessor implements SampleProcessor {
     private Handler handler;
     private int triggerValue = Integer.MAX_VALUE;
     private int lastTriggeredValue;
-    private int lastIncomingBufferSize;
     private double lastMaxProcessedSeconds;
     private double lastDeadPeriod;
     private int lastAveragedSampleCount;

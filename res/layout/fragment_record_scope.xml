@@ -28,7 +28,7 @@
         android:background="@android:color/transparent"
         android:visibility="gone"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_record"
-        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <ImageButton
         android:id="@+id/ibtn_record"

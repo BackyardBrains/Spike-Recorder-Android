@@ -32,9 +32,9 @@ class PlaybackThread {
     // Whether file should start playing right away
     private boolean autoPlay;
     // Size of buffer (chunk) for the audio file reading
-    private final int bufferSize;
+    private int bufferSize;
     // Size of buffer (chunk) to read when seeking (6 seconds)
-    private final int seekBufferSize;
+    private int seekBufferSize;
 
     // Audio playback thread
     private Thread thread;
@@ -60,20 +60,24 @@ class PlaybackThread {
          * Triggered on playback start.
          *
          * @param length Length of the playback in bytes.
+         * @param sampleRate Sample rate of the played file.
          */
-        void onStart(long length);
+        void onStart(long length, int sampleRate);
 
         /**
          * Triggered when playback resumes after pause.
+         *
+         * @param sampleRate Sample rate of the played file.
          */
-        void onResume();
+        void onResume(int sampleRate);
 
         /**
          * Triggered constantly during playback progress.
          *
          * @param progress Current byte being played
+         * @param sampleRate Sample rate of the played file.
          */
-        void onProgress(long progress);
+        void onProgress(long progress, int sampleRate);
 
         /**
          * Triggered when playback pauses.
@@ -98,9 +102,6 @@ class PlaybackThread {
         this.filePath = filePath;
         this.autoPlay = autoPlay;
         this.listener = listener;
-
-        bufferSize = AudioUtils.OUT_BUFFER_SIZE;
-        seekBufferSize = AudioUtils.SAMPLE_RATE * 6 * 2;
     }
 
     /**
@@ -142,7 +143,7 @@ class PlaybackThread {
 
             LOGD(TAG, "Playback resumed");
 
-            if (listener != null) listener.onResume();
+            if (listener != null) listener.onResume(raf.sampleRate());
         } else {
             // Start streaming in a thread
             done = false;
@@ -230,7 +231,7 @@ class PlaybackThread {
             LOGD(TAG, "Audio file byte count is: " + duration);
 
             // setup audio track
-            final AudioTrack track = AudioUtils.createAudioTrack();
+            final AudioTrack track = AudioUtils.createAudioTrack(raf.sampleRate());
             track.play();
             LOGD(TAG, "AudioTrack created");
 
@@ -238,7 +239,11 @@ class PlaybackThread {
 
             LOGD(TAG, "Playback started");
 
-            if (listener != null) listener.onStart(duration);
+            if (listener != null) listener.onStart(duration, raf.sampleRate());
+
+            // calulate sizes of buffers used for playback
+            bufferSize = AudioUtils.getOutBufferSize(raf.sampleRate());
+            seekBufferSize = raf.sampleRate() * 6 * 2;
 
             final byte[] buffer = new byte[bufferSize];
             while (!done && raf != null) {
@@ -266,7 +271,7 @@ class PlaybackThread {
                     }
 
                     // trigger progress listener
-                    if (listener != null) listener.onProgress(progress);
+                    if (listener != null) listener.onProgress(progress, raf.sampleRate());
 
                     // play audio data if we're not seeking
                     track.write(buffer, 0, buffer.length);
@@ -301,7 +306,7 @@ class PlaybackThread {
         if (raf != null) raf.seek(0);
         // update progress to 0 and trigger listener
         progress = 0;
-        if (listener != null) listener.onProgress(progress);
+        if (listener != null) listener.onProgress(progress, raf != null ? raf.sampleRate() : 0);
 
         LOGD(TAG, "Audio file rewind");
     }

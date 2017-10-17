@@ -6,12 +6,18 @@ package com.backyardbrains.events;
 public class AudioPlaybackStartedEvent {
 
     private final long length;
+    private final int sampleRate;
 
-    public AudioPlaybackStartedEvent(long length) {
+    public AudioPlaybackStartedEvent(long length, int sampleRate) {
         this.length = length;
+        this.sampleRate = sampleRate;
     }
 
     public long getLength() {
         return length;
+    }
+
+    public int getSampleRate() {
+        return sampleRate;
     }
 }

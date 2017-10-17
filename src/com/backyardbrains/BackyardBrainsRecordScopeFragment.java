@@ -152,6 +152,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         return getAudioService() != null && getAudioService().isRecording();
     }
 
+    protected boolean usbDetected() {
+        return getAudioService() != null && getAudioService().getDeviceCount() > 0;
+    }
+
     //==============================================
     //  EVENT BUS
     //==============================================
@@ -178,7 +182,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
-            WavUtils.formatWavProgress((int) event.getProgress())));
+            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate())));
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -205,11 +209,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
-        if (!event.isStarted()) {
-            if (getAudioService() != null) getAudioService().startMicrophone();
-        } else {
-            if (getAudioService() != null) getAudioService().stopMicrophone();
-        }
+        if (!event.isStarted()) if (getAudioService() != null) getAudioService().startMicrophone();
+
         // update filters button
         setupFiltersButton();
         // setup USB button
@@ -317,8 +318,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     // Sets up the USB connection button depending on whether USB is connected and whether it's active input source.
     private void setupUsbButton() {
-        ibtnUsb.setVisibility(
-            getAudioService() != null && getAudioService().getDeviceCount() > 0 ? View.VISIBLE : View.GONE);
+        ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
         if (getAudioService() != null && getAudioService().isUsbActiveInput()) {
             ibtnUsb.setImageResource(R.drawable.ic_usb_off);
             ibtnUsb.setOnClickListener(new View.OnClickListener() {
@@ -338,7 +338,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     void openDeviceListDialog() {
         // TODO: 7/19/2017 This method should open dialog with all available BYB devices
-        if (getAudioService() != null && getAudioService().getDeviceCount() > 0) {
+        if (usbDetected()) {
+            //noinspection ConstantConditions
             final UsbDevice device = getAudioService().getDevice(0);
             if (device != null) connectWithDevice(device.getDeviceName());
             return;
@@ -350,7 +351,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private void connectWithDevice(@NonNull String deviceName) {
         if (getAudioService() != null) {
             try {
-                getAudioService().connectToUsbDevice(deviceName);
+                getAudioService().startUsb(deviceName);
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
                 ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
@@ -365,7 +366,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private void disconnectFromDevice() {
         if (getAudioService() != null) {
             try {
-                getAudioService().disconnectFromUsbDevice();
+                getAudioService().stopUsb();
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
                 ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");

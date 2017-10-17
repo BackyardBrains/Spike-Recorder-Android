@@ -12,11 +12,11 @@ import uk.me.berndporr.iirj.Butterworth;
 public class Filters {
 
     // High cut-off frequency for EKG
-    private static final int FREQ_HIGH_CUTOFF_HEART = 50;
+    private static final double FREQ_HIGH_CUTOFF_HEART = 50d;
     // High cut-off frequency for EEG
-    private static final int FREQ_HIGH_CUTOFF_BRAIN = 100;
+    private static final double FREQ_HIGH_CUTOFF_BRAIN = 100d;
     // High cut-off frequency for Plant
-    private static final int FREQ_HIGH_CUTOFF_PLANT = 5;
+    private static final double FREQ_HIGH_CUTOFF_PLANT = 5d;
     // Order used the all filters
     private static final int FILTER_ORDER = 2;
 
@@ -55,6 +55,9 @@ public class Filters {
         return sample;
     }
 
+    /**
+     * Sets sample rate to be used when configuring filters.
+     */
     public void setSampleRate(int sampleRate) {
         if (this.sampleRate == sampleRate) return;
         if (sampleRate <= 0) return; // sample rate needs to be positive
@@ -78,12 +81,12 @@ public class Filters {
         setFilter(filter, false);
     }
 
-    //
+    // Actually sets up the filter that's applied during processing of incoming data.
     private void setFilter(@Nullable Filter filter, boolean internal) {
         if (internal || !ObjectUtils.equals(this.filter, filter)) {
             if (filter != null) {
                 // if both cut-off frequencies are negative, or if low cut-off is minimum cut-off value
-                // and high cut-off is maximum cut-off value we should kill not use filter
+                // and high cut-off is maximum cut-off value we should not use filter
                 if ((filter.getLowCutOffFrequency() == Filter.FREQ_NO_CUT_OFF
                     && filter.getHighCutOffFrequency() == Filter.FREQ_NO_CUT_OFF) || (
                     filter.getLowCutOffFrequency() == Filter.FREQ_MIN_CUT_OFF
@@ -100,7 +103,7 @@ public class Filters {
     }
 
     // Sets filter cut-off frequencies to be applied when processing of incoming data.
-    private void setFilterCutOffFrequencies(int lowCutOffFreq, int highCutOffFreq) {
+    private void setFilterCutOffFrequencies(double lowCutOffFreq, double highCutOffFreq) {
         // high cut-off frequency cannot be lower then low cut off frequency
         if (highCutOffFreq < lowCutOffFreq) return;
         // both cut-off frequencies cannot be negative
@@ -109,7 +112,7 @@ public class Filters {
         // reset custom filter
         customFilter.reset();
         if (lowCutOffFreq != Filter.FREQ_NO_CUT_OFF && highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // band pass
-            int freq = Math.abs(highCutOffFreq - lowCutOffFreq);
+            double freq = Math.abs(highCutOffFreq - lowCutOffFreq);
             customFilter.bandPass(FILTER_ORDER, sampleRate, freq / 2 + lowCutOffFreq, freq);
         } else if (highCutOffFreq != Filter.FREQ_NO_CUT_OFF) { // low pass
             customFilter.lowPass(FILTER_ORDER, sampleRate, highCutOffFreq);

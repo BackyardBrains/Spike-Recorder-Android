@@ -20,7 +20,7 @@ public class WavAudioFile implements BYBAudioFile {
     private final String absolutePath;
 
     public WavAudioFile(@NonNull File file) throws IOException {
-        // save absolute file path
+        // save name and absolute file path
         absolutePath = file.getAbsolutePath();
         // create RandomAccessFile
         raf = new RandomAccessFile(file, "r");
@@ -35,7 +35,7 @@ public class WavAudioFile implements BYBAudioFile {
      *
      * @throws IOException
      */
-    public static boolean save(@NonNull File file) throws IOException {
+    public static boolean save(@NonNull File file, int sampleRate) throws IOException {
         // create RandomAccessFile
         final RandomAccessFile raf;
         try {
@@ -47,7 +47,7 @@ public class WavAudioFile implements BYBAudioFile {
 
         try {
             raf.seek(0);
-            raf.write(WavUtils.writeHeader(file.length(), 44100, AudioFormat.CHANNEL_IN_MONO,
+            raf.write(WavUtils.writeHeader(file.length(), sampleRate, AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT));
             raf.close();
         } catch (IOException e) {
