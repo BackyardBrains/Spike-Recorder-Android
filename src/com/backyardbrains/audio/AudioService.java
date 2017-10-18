@@ -297,7 +297,7 @@ public class AudioService extends Service implements ReceivesAudio {
         passToDataManager(SAMPLE_STREAM_PROCESSOR.process(data));
     }
 
-    // Passes data
+    // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(short[] data) {
         // data -> DataManager up to 2 secs
         if (dataManager != null) {
@@ -311,11 +311,11 @@ public class AudioService extends Service implements ReceivesAudio {
             }
         }
 
-        // data -> RecordingSaver up to 5 millis
         // pass data to RecordingSaver
         passToRecorder(data);
     }
 
+    // Passes data to audio recorder
     private void passToRecorder(short[] data) {
         if (recordingSaver != null) recordAudio(data);
     }

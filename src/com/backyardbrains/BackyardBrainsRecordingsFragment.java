@@ -246,7 +246,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         sendIntent.putExtra(Intent.EXTRA_STREAM,
             FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
         sendIntent.setType("audio/wav");
-        startActivity(Intent.createChooser(sendIntent, "Email file"));
+        startActivity(Intent.createChooser(sendIntent, "Share file"));
     }
 
     // Triggers renaming of the selected file

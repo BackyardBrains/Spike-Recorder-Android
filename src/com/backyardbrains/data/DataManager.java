@@ -52,7 +52,6 @@ public class DataManager {
         if (bufferSize <= 0) return;
 
         dataBuffer.clear();
-        // if buffer size is negative or zero use default buffer size
         dataBuffer = new RingBuffer(bufferSize);
 
         this.bufferSize = bufferSize;
@@ -90,10 +89,6 @@ public class DataManager {
 
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
-    }
-
-    public void addToBuffer(short sample) {
-        if (dataBuffer != null) dataBuffer.add(sample);
     }
 
     /**

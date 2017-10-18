@@ -25,7 +25,7 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
-    private static final int SECONDS_TO_RENDER = 6;
+    private static final int SECONDS_TO_RENDER = 12;
 
     private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
     private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
@@ -315,9 +315,9 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
     private boolean fillBuffer() {
-        /*if (drawingBuffer == null) */
-        drawingBuffer = new short[dataManager.getData().length];
-        System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
+        drawingBuffer = dataManager.getData();
+        //new short[dataManager.getData().length];
+        //System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
     }
 

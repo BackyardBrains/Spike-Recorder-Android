@@ -70,7 +70,10 @@ public class UsbHelper {
                 if (granted) {
                     if (listener != null) listener.onPermissionGranted();
 
-                    openDevice((UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE));
+                    device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    communicationThread = new CommunicationThread();
+                    communicationThread.start();
+                    //openDevice((UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE));
                 } else {
                     if (listener != null) listener.onPermissionDenied();
                 }
@@ -131,6 +134,7 @@ public class UsbHelper {
     private final UsbHelper.UsbListener listener;
 
     private UsbSerialDevice serialDevice;
+    private UsbDevice device;
 
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
@@ -139,6 +143,7 @@ public class UsbHelper {
 
     private boolean done, paused;
     private ReadThread readThread;
+    private CommunicationThread communicationThread;
 
     // Thread used for reading data received from connected USB serial device
     private class ReadThread extends Thread {
@@ -230,6 +235,7 @@ public class UsbHelper {
             done = true;
             serialDevice.close();
             readThread = null;
+            communicationThread = null;
             serialDevice = null;
         }
 
@@ -251,41 +257,106 @@ public class UsbHelper {
         paused = false;
     }
 
+    private class CommunicationThread extends Thread {
+
+        @Override public void run() {
+            final UsbDeviceConnection connection = manager.openDevice(device);
+            if (UsbSerialDevice.isSupported(device)) {
+                serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
+                if (serialDevice != null) {
+                    if (serialDevice.open()) {
+                        if (listener != null) listener.onDataTransferStart();
+
+                        // set serial connection parameters.
+                        serialDevice.setBaudRate(BAUD_RATE);
+                        serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+                        serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+                        serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+                        serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
+                        readThread = new ReadThread();
+                        readThread.start();
+                        if (done) done = false;
+
+                        try {
+                            Thread.sleep(1500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        // start reading data
+                        serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
+                            @Override public void onReceivedData(byte[] data) {
+                                circularBuffer.write(data);
+                            }
+                        });
+
+                        // set sample rate and number of channels (into the void)
+                        serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+                        // check which board are we connected to
+                        serialDevice.write(MSG_BOARD_TYPE.getBytes());
+                    } else {
+                        LOGD(TAG, "PORT NOT OPEN");
+                        Crashlytics.logException(new RuntimeException("Failed to open USB serial communication port!"));
+                    }
+                } else {
+                    LOGD(TAG, "PORT IS NULL");
+                    Crashlytics.logException(new RuntimeException("Failed to create USB serial device!"));
+                }
+            } else {
+                LOGD(TAG, "DEVICE NOT SUPPORTED");
+                Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
+            }
+        }
+    }
+
     @SuppressWarnings("WeakerAccess") void openDevice(@NonNull UsbDevice device) {
         final UsbDeviceConnection connection = manager.openDevice(device);
-        serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
-        if (serialDevice != null) {
-            if (serialDevice.open()) {
-                if (listener != null) listener.onDataTransferStart();
+        if (UsbSerialDevice.isSupported(device)) {
+            serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
+            if (serialDevice != null) {
+                if (serialDevice.open()) {
+                    if (listener != null) listener.onDataTransferStart();
 
-                // set serial connection parameters.
-                serialDevice.setBaudRate(BAUD_RATE);
-                serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-                serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_DSR_DTR);
+                    // set serial connection parameters.
+                    serialDevice.setBaudRate(BAUD_RATE);
+                    serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+                    serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+                    serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+                    serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
 
-                // check which board are we connected to
-                serialDevice.write(MSG_BOARD_TYPE.getBytes());
-                // set sample rate and number of channels (into the void)
-                serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
-                serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
-                    @Override public void onReceivedData(byte[] data) {
-                        circularBuffer.write(data);
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                });
 
-                readThread = new ReadThread();
-                readThread.start();
+                    readThread = new ReadThread();
+                    readThread.start();
+                    if (done) done = false;
 
-                if (done) done = false;
+                    // start reading data
+                    serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
+                        @Override public void onReceivedData(byte[] data) {
+                            circularBuffer.write(data);
+                        }
+                    });
+
+                    // set sample rate and number of channels (into the void)
+                    serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+                    // check which board are we connected to
+                    serialDevice.write(MSG_BOARD_TYPE.getBytes());
+                } else {
+                    LOGD(TAG, "PORT NOT OPEN");
+                    Crashlytics.logException(new RuntimeException("Failed to open USB serial communication port!"));
+                }
             } else {
-                LOGD(TAG, "PORT NOT OPEN");
-                Crashlytics.logException(new RuntimeException("Failed to open USB serial communication port!"));
+                LOGD(TAG, "PORT IS NULL");
+                Crashlytics.logException(new RuntimeException("Failed to create USB serial device!"));
             }
         } else {
-            LOGD(TAG, "PORT IS NULL");
-            Crashlytics.logException(new RuntimeException("Failed to create USB serial device!"));
+            LOGD(TAG, "DEVICE NOT SUPPORTED");
+            Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
         }
     }
 

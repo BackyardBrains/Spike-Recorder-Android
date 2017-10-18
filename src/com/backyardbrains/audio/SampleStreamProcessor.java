@@ -54,20 +54,11 @@ public class SampleStreamProcessor implements DataProcessor {
         return new short[0];
     }
 
-    //private int first = 3;
-
     private short[] processIncomingData(@NonNull byte[] data) {
         // Max number of samples can be number of incoming bytes divided by 2 +1
         short[] samples = new short[data.length / 2 + 1];
         int sampleCounter = 0;
         int lsb, msb; // less significant and most significant bytes
-
-        //if (first != 0) {
-        //    LOGD(TAG, Arrays.toString(data));
-        //    first--;
-        //}
-
-        //LOGD(TAG, "START processing new batch of " + data.length + " bytes!");
 
         for (byte b : data) {
             // 1. check if we are inside escape sequence or not
@@ -124,12 +115,7 @@ public class SampleStreamProcessor implements DataProcessor {
             }
         }
 
-        //LOGD(TAG, "END processing new batch of bytes!");
-
-        //buffer.add(Arrays.copyOfRange(samples, 0, sampleCounter));
         return Arrays.copyOfRange(samples, 0, sampleCounter);
-
-        //LOGD(TAG, "5. USB - AFTER processing");
     }
 
     private int normalize(int sample) {

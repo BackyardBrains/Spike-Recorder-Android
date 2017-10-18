@@ -94,7 +94,7 @@
         <item>File Details</item>
         <item>Play this file</item>
         <item>Find Spikes</item>
-        <item>Email this file</item>
+        <item>Share</item>
         <item>Rename this file</item>
         <item>Delete this file</item>
     </string-array>
@@ -106,7 +106,7 @@
         <item>ISI</item>
         <item>Cross Correlation</item>
         <item>Average Spike</item>
-        <item>Email this file</item>
+        <item>Share</item>
         <item>Rename this file</item>
         <item>Delete this file</item>
     </string-array>

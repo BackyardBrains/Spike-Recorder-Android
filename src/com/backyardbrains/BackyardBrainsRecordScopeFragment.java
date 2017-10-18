@@ -13,6 +13,7 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
@@ -55,7 +56,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
     // Maximum time that should be processed in any given moment (in seconds)
-    private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
+    private static final double MAX_AUDIO_PROCESSING_TIME = 6; // 6 seconds
+    private static final double MAX_USB_PROCESSING_TIME = 12; // 12 seconds
 
     @BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
     @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
@@ -78,10 +80,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         super.onStart();
 
         // this will start microphone if we are switching from another fragment
-        if (getAudioService() != null) {
-            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
-            getAudioService().startActiveInputSource();
-        }
+        if (getAudioService() != null) startActiveInput(getAudioService());
     }
 
     @Override public void onResume() {
@@ -163,10 +162,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will start microphone if we are coming from background
-        if (getAudioService() != null) {
-            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
-            getAudioService().startActiveInputSource();
-        }
+        if (getAudioService() != null) startActiveInput(getAudioService());
 
         // update filters button
         setupFiltersButton();
@@ -192,7 +188,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
-        if (!event.isConnected() && getAudioService() != null) getAudioService().startMicrophone();
+        if (!event.isConnected() && getAudioService() != null) startMicrophone(getAudioService());
         // setup USB button
         setupUsbButton();
     }
@@ -202,14 +198,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             ViewUtils.toast(getContext(), "Please grant permission to start the communication");
 
             // user didn't get , we should start listening to microphone again
-            if (getAudioService() != null) getAudioService().startMicrophone();
+            if (getAudioService() != null) startMicrophone(getAudioService());
         }
         // setup USB button
         setupUsbButton();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
-        if (!event.isStarted()) if (getAudioService() != null) getAudioService().startMicrophone();
+        if (!event.isStarted()) if (getAudioService() != null) startMicrophone(getAudioService());
 
         // update filters button
         setupFiltersButton();
@@ -351,7 +347,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private void connectWithDevice(@NonNull String deviceName) {
         if (getAudioService() != null) {
             try {
-                getAudioService().startUsb(deviceName);
+                startUsb(getAudioService(), deviceName);
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
                 ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
@@ -376,6 +372,22 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         }
 
         ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+    }
+
+    private void startActiveInput(@NonNull AudioService audioService) {
+        audioService.startActiveInputSource();
+        audioService.setMaxProcessingTimeInSeconds(
+            audioService.isUsbActiveInput() ? MAX_USB_PROCESSING_TIME : MAX_AUDIO_PROCESSING_TIME);
+    }
+
+    private void startMicrophone(@NonNull AudioService audioService) {
+        audioService.setMaxProcessingTimeInSeconds(MAX_AUDIO_PROCESSING_TIME);
+        audioService.startMicrophone();
+    }
+
+    private void startUsb(@NonNull AudioService audioService, @NonNull String deviceName) {
+        audioService.setMaxProcessingTimeInSeconds(MAX_USB_PROCESSING_TIME);
+        audioService.startUsb(deviceName);
     }
 
     // Set buttons visibility depending on whether audio is currently being recorded or not
