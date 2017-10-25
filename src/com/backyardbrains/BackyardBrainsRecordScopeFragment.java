@@ -26,8 +26,10 @@ import com.backyardbrains.events.SpikerShieldBoardTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.filters.AmModulationFilterSettingsDialog;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
+import com.backyardbrains.filters.UsbFilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.SpikerShieldBoardType;
 import com.backyardbrains.utils.ViewUtils;
@@ -67,6 +69,13 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private FilterSettingsDialog filterSettingsDialog;
     private BYBSlidingView stopRecButton;
     private Unbinder unbinder;
+
+    private final FilterSettingsDialog.FilterSelectionListener FILTER_SELECTION_LISTENER =
+        new FilterSettingsDialog.FilterSelectionListener() {
+            @Override public void onFilterSelected(@NonNull Filter filter) {
+                setFilter(filter);
+            }
+        };
 
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
@@ -224,6 +233,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
                 break;
             case SpikerShieldBoardType.MUSCLE:
                 spikerShieldBoard = getString(R.string.board_type_muscle);
+                filter = Filters.FILTER_MUSCLE;
                 break;
             case SpikerShieldBoardType.PLANT:
                 spikerShieldBoard = getString(R.string.board_type_plant);
@@ -296,18 +306,17 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             || getAudioService().isAmModulationDetected());
     }
 
+    // Opens a dialog with predefined filters that can be applied while processing incoming data
     private void openFilterDialog() {
-        filterSettingsDialog =
-            new FilterSettingsDialog(getContext(), new FilterSettingsDialog.FilterSelectionListener() {
-                @Override public void onFilterSelected(@NonNull Filter filter) {
-                    setFilter(filter);
-                }
-            });
+        filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
+            ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+            : new UsbFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
         filterSettingsDialog.show(
             getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
                 : new Filter());
     }
 
+    // Sets a filter that should be applied while processing incoming data
     void setFilter(@NonNull Filter filter) {
         if (getAudioService() != null) getAudioService().setFilter(filter);
     }

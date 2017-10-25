@@ -11,27 +11,38 @@ import uk.me.berndporr.iirj.Butterworth;
  */
 public class Filters {
 
+    // Low cut-off frequency for ECG and EEG
+    private static final double FREQ_LOW_CUTOFF_HEART_AND_BRAIN = 1d;
     // High cut-off frequency for EKG
     private static final double FREQ_HIGH_CUTOFF_HEART = 50d;
     // High cut-off frequency for EEG
     private static final double FREQ_HIGH_CUTOFF_BRAIN = 100d;
     // High cut-off frequency for Plant
     private static final double FREQ_HIGH_CUTOFF_PLANT = 5d;
+    // Low cut-off frequency for EMG
+    private static final double FREQ_LOW_CUTOFF_MUSCLE = 300d;
+    // High cut-off frequency for EMG
+    private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2500d;
     // Order used the all filters
     private static final int FILTER_ORDER = 2;
 
     /**
      * Predefined filter configured for EKG.
      */
-    public static final Filter FILTER_HEART = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_HEART);
+    public static final Filter FILTER_HEART = new Filter(FREQ_LOW_CUTOFF_HEART_AND_BRAIN, FREQ_HIGH_CUTOFF_HEART);
     /**
      * Predefined filter configured for EEG.
      */
-    public static final Filter FILTER_BRAIN = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_BRAIN);
+    public static final Filter FILTER_BRAIN = new Filter(FREQ_LOW_CUTOFF_HEART_AND_BRAIN, FREQ_HIGH_CUTOFF_BRAIN);
     /**
      * Predefined filter configured for Plan.
      */
     public static final Filter FILTER_PLANT = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_PLANT);
+
+    /**
+     * Predefined filter configured for EMG.
+     */
+    public static final Filter FILTER_MUSCLE = new Filter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
 
     // Filter used for additional filtering
     private Butterworth customFilter;
@@ -87,8 +98,7 @@ public class Filters {
             if (filter != null) {
                 // if both cut-off frequencies are negative, or if low cut-off is minimum cut-off value
                 // and high cut-off is maximum cut-off value we should not use filter
-                if ((filter.getLowCutOffFrequency() == Filter.FREQ_NO_CUT_OFF
-                    && filter.getHighCutOffFrequency() == Filter.FREQ_NO_CUT_OFF) || (
+                if ((!filter.isLowCutOffFrequencySet() && !filter.isHighCutOffFrequencySet()) || (
                     filter.getLowCutOffFrequency() == Filter.FREQ_MIN_CUT_OFF
                         && filter.getHighCutOffFrequency() == Filter.FREQ_MAX_CUT_OFF)) {
                     this.filter = null;

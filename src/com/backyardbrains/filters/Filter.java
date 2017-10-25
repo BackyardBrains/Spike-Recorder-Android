@@ -25,8 +25,16 @@ public class Filter {
         this.highCutOffFrequency = highCutOffFrequency;
     }
 
+    public boolean isLowCutOffFrequencySet() {
+        return lowCutOffFrequency != FREQ_NO_CUT_OFF;
+    }
+
     public double getLowCutOffFrequency() {
         return lowCutOffFrequency;
+    }
+
+    public boolean isHighCutOffFrequencySet() {
+        return highCutOffFrequency != FREQ_NO_CUT_OFF;
     }
 
     public double getHighCutOffFrequency() {

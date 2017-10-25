@@ -21,7 +21,6 @@ import butterknife.ButterKnife;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
-import com.backyardbrains.audio.Filters;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.example.roman.thesimplerangebar.SimpleRangeBar;
@@ -30,27 +29,9 @@ import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class FilterSettingsDialog {
+public abstract class FilterSettingsDialog {
 
-    // Array of predefined filters (Raw, EKG, EEG, Plant, Custom filter)
-    private static final Filter[] FILTERS;
-    // Array of predefined filter names
-    private static final String[] FILTER_NAMES = new String[] {
-        "Raw (No filter)", "Heart (EKG)", "Brain (EEG)", "Plant", "Custom filter"
-    };
-
-    static {
-        FILTERS = new Filter[5];
-        FILTERS[0] = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
-        FILTERS[1] = Filters.FILTER_HEART;
-        FILTERS[2] = Filters.FILTER_BRAIN;
-        FILTERS[3] = Filters.FILTER_PLANT;
-        FILTERS[4] = new Filter(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
-    }
-
-    // Min and max logarithmic values used for simulation of logarithmic scale
-    private static final double MIN_CUT_OFF_LOG = Math.log(1);
-    private static final double MAX_CUT_OFF_LOG = Math.log(Filter.FREQ_MAX_CUT_OFF);
+    private static final Filter NO_FILTER = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
 
     @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
     @BindView(R.id.et_high_cut_off) EditText etHighCutOff;
@@ -81,14 +62,21 @@ public class FilterSettingsDialog {
     }
 
     private final FilterSelectionListener listener;
+    private final double minCutOffLog;
+    private final double maxCutOffLog;
 
+    private Filter customFilter;
     private Filter selectedFilter;
 
     public FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
         this.listener = listener;
+        this.minCutOffLog = Math.log(1);
+        this.maxCutOffLog = Math.log(getMaxCutOff());
+        this.customFilter = new Filter(getMinCutOff(), getMaxCutOff());
 
-        filterSettingsDialog = new MaterialDialog.Builder(context).adapter(new AmModulationFilterAdapter(context),
-            new LinearLayoutManager(context)).build();
+        filterSettingsDialog =
+            new MaterialDialog.Builder(context).adapter(new FiltersAdapter(context), new LinearLayoutManager(context))
+                .build();
 
         customFilterDialog = new MaterialDialog.Builder(context).
             customView(R.layout.view_dialog_custom_filter, true).
@@ -109,20 +97,28 @@ public class FilterSettingsDialog {
         setupCustomFilterUI(customFilterDialog.getCustomView());
     }
 
+    protected abstract double getMinCutOff();
+
+    protected abstract double getMaxCutOff();
+
+    protected abstract Filter[] getFilters();
+
+    protected abstract String[] getFilterNames();
+
     /**
      * Shows the filter settings dialog with all predefined filters. Specified {@code filter} is preselected.
      */
     public void show(@NonNull Filter filter) {
         selectedFilter = filter;
 
-        boolean isCustom = true;
-        for (Filter FILTER : FILTERS) {
-            if (ObjectUtils.equals(filter, FILTER)) {
+        boolean isCustom = !ObjectUtils.equals(filter, NO_FILTER);
+        for (Filter f : getFilters()) {
+            if (ObjectUtils.equals(filter, f)) {
                 isCustom = false;
                 break;
             }
         }
-        if (isCustom) FILTERS[FILTERS.length - 1] = filter;
+        if (isCustom) customFilter = filter;
 
         if (!filterSettingsDialog.isShowing()) filterSettingsDialog.show();
     }
@@ -175,7 +171,7 @@ public class FilterSettingsDialog {
             }
         });
         // range bar
-        srbCutOffs.setRanges((long) Filter.FREQ_MIN_CUT_OFF, (long) Filter.FREQ_MAX_CUT_OFF);
+        srbCutOffs.setRanges((long) getMinCutOff(), (long) getMaxCutOff());
         srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
     }
 
@@ -210,9 +206,9 @@ public class FilterSettingsDialog {
     // Validates the passed cut-off value and corrects it if it goes below min or above max.
     private double validateCutOffMinMax(double cutOff) {
         // min value can be 0
-        if (cutOff < Filter.FREQ_MIN_CUT_OFF) cutOff = Filter.FREQ_MIN_CUT_OFF;
+        if (cutOff < getMinCutOff()) cutOff = getMinCutOff();
         // max value can be SAMPLE_RATE/2
-        if (cutOff > Filter.FREQ_MAX_CUT_OFF) cutOff = Filter.FREQ_MAX_CUT_OFF;
+        if (cutOff > getMaxCutOff()) cutOff = getMaxCutOff();
 
         return cutOff;
     }
@@ -236,16 +232,15 @@ public class FilterSettingsDialog {
 
     // Converts range value to a corresponding value withing logarithmic scale
     private double thumbToCutOff(long thumbValue) {
-        return Math.exp(
-            MIN_CUT_OFF_LOG + (thumbValue - Filter.FREQ_MIN_CUT_OFF) * (MAX_CUT_OFF_LOG - MIN_CUT_OFF_LOG) / (
-                Filter.FREQ_MAX_CUT_OFF - Filter.FREQ_MIN_CUT_OFF));
+        return Math.exp(minCutOffLog + (thumbValue - getMinCutOff()) * (maxCutOffLog - minCutOffLog) / (getMaxCutOff()
+            - getMinCutOff()));
     }
 
     // Converts value from logarithmic scale to a corresponding range value
     private long cutOffToThumb(double cutOffValue) {
         return (long) (
-            ((Math.log(cutOffValue) - MIN_CUT_OFF_LOG) * (Filter.FREQ_MAX_CUT_OFF - Filter.FREQ_MIN_CUT_OFF) / (
-                MAX_CUT_OFF_LOG - MIN_CUT_OFF_LOG)) + Filter.FREQ_MIN_CUT_OFF);
+            ((Math.log(cutOffValue) - minCutOffLog) * (getMaxCutOff() - getMinCutOff()) / (maxCutOffLog - minCutOffLog))
+                + getMinCutOff());
     }
 
     // Returns a new Filter with cut-off values currently set inside input fields
@@ -258,13 +253,11 @@ public class FilterSettingsDialog {
     /**
      * Adapter for predefined signal filters (Raw, EKG, EEG, Plant, Custom filter).
      */
-    class AmModulationFilterAdapter extends RecyclerView.Adapter<AmModulationFilterAdapter.FilterViewHolder> {
-
-        private static final int POSITION_CUSTOM_FILTER = 4;
+    class FiltersAdapter extends RecyclerView.Adapter<FiltersAdapter.FilterViewHolder> {
 
         private final LayoutInflater inflater;
 
-        AmModulationFilterAdapter(@NonNull Context context) {
+        FiltersAdapter(@NonNull Context context) {
             this.inflater = LayoutInflater.from(context);
         }
 
@@ -273,11 +266,11 @@ public class FilterSettingsDialog {
         }
 
         @Override public void onBindViewHolder(FilterViewHolder holder, int position) {
-            holder.setFilter(FILTERS[position]);
+            holder.setFilter(getFilter(position));
         }
 
         @Override public int getItemCount() {
-            return FILTERS.length;
+            return getFilters().length + 2; // for No filter and Custom filter
         }
 
         final class FilterViewHolder extends RecyclerView.ViewHolder {
@@ -296,11 +289,11 @@ public class FilterSettingsDialog {
                         // set selected filter
                         selectedFilter = filter;
                         // if custom filter is clicked open custom filter dialog
-                        if (getAdapterPosition() == POSITION_CUSTOM_FILTER) {
+                        if (ObjectUtils.equals(customFilter, filter)) {
                             showCustomFilterDialog();
                         } else {
                             // if non-custom filter is selected we need to reset custom filter
-                            FILTERS[FILTERS.length - 1] = new Filter(Filter.FREQ_MIN_CUT_OFF, Filter.FREQ_MAX_CUT_OFF);
+                            customFilter = new Filter(getMinCutOff(), getMaxCutOff());
                             if (listener != null) listener.onFilterSelected(filter);
                         }
 
@@ -312,9 +305,29 @@ public class FilterSettingsDialog {
             void setFilter(@NonNull Filter filter) {
                 this.filter = filter;
 
-                tvFilterName.setText(FILTER_NAMES[getAdapterPosition()]);
+                tvFilterName.setText(getFilterName(getAdapterPosition()));
                 tvFilterName.setBackgroundColor(
                     ObjectUtils.equals(filter, selectedFilter) ? selectedColor : Color.TRANSPARENT);
+            }
+        }
+
+        private Filter getFilter(int position) {
+            if (position == 0) {
+                return NO_FILTER;
+            } else if (position == getFilters().length + 1) {
+                return customFilter;
+            } else {
+                return getFilters()[position - 1]; // -1 because of "No filter"
+            }
+        }
+
+        private String getFilterName(int position) {
+            if (position == 0) {
+                return "Raw (No filter)";
+            } else if (position == getFilters().length + 1) {
+                return "Custom filter";
+            } else {
+                return getFilterNames()[position - 1]; // -1 because of "No filter"
             }
         }
     }
