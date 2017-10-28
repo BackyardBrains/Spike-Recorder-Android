@@ -37,6 +37,8 @@ public class ThresholdProcessor implements SampleProcessor {
     private static final double DEFAULT_MAX_PROCESSED_SECONDS = 1;
     // When threshold is hit we should have a dead period of 5ms before checking for next threshold hit
     private static final double DEFAULT_DEAD_PERIOD_SECONDS = 0.005;
+    // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
+    private static final double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
     // Default number of sample streams that should be summed to get averaged samples
     private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 1;
     // Default sample rate used when processing incoming data
@@ -45,20 +47,22 @@ public class ThresholdProcessor implements SampleProcessor {
     // Max number of seconds that can be processed at any given moment
     private double maxProcessedSeconds = DEFAULT_MAX_PROCESSED_SECONDS;
     // Dead period in seconds during which incoming samples shouldn't be processed
-    private double deadPeriod = DEFAULT_DEAD_PERIOD_SECONDS;
+    private double deadPeriodSeconds = DEFAULT_DEAD_PERIOD_SECONDS;
+    // Period in seconds that should pass without new heartbeat before resetting the heartbeat helper
+    private double minBpmResetPeriodSeconds = DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS;
     // Number of samples that needs to be summed to get the averaged sample
     private int averagedSampleCount = DEFAULT_AVERAGED_SAMPLE_COUNT;
     // Sample rate that should be used when processing incoming data
     private int sampleRate = DEFAULT_SAMPLE_RATE;
 
-    // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
-    private RingBuffer buffer;
     // Number of samples that we collect for one sample stream
     private int sampleCount = (int) (sampleRate * maxProcessedSeconds);
     // We need to buffer half of samples total count up to the sample that hit's threshold
     private int bufferSampleCount = sampleCount / 2;
     // Dead period when we don't check for threshold after hitting one
-    private int deadPeriodCount = (int) (sampleRate * deadPeriod);
+    private int deadPeriodCount = (int) (sampleRate * deadPeriodSeconds);
+    // Period without heartbeat that we wait for before reseting the heartbeat helper
+    private int minBpmResetPeriodCount = (int) (sampleRate * minBpmResetPeriodSeconds);
     // Holds averages of all the saved samples by index
     private short[] averagedSamples;
     // Holds sums of all the saved samples by index
@@ -66,6 +70,8 @@ public class ThresholdProcessor implements SampleProcessor {
     // Holds samples counts summed at specified position
     private int[] summedSamplesCounts;
 
+    // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
+    private RingBuffer buffer;
     private ArrayList<short[]> samplesForCalculation;
     private ArrayList<Samples> unfinishedSamplesForCalculation;
     private Handler handler;
@@ -76,18 +82,25 @@ public class ThresholdProcessor implements SampleProcessor {
     private int lastAveragedSampleCount;
     private int lastSampleRate;
     private short prevSample;
+    // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
+    private HeartbeatHelper heartbeatHelper = new HeartbeatHelper(sampleRate);
+    // Index of the sample that triggered the threshold hit
+    private int lastTriggerSampleCounter;
+    // Counts samples between two resets that need to be passed to heartbeat helper
+    private int sampleCounter;
     private int deadPeriodSampleCounter;
     private boolean inDeadPeriod;
+    private boolean processBpm;
 
     /**
      * Creates new {@link ThresholdProcessor} that uses {@code size} number of sample sequences for average spike
      * calculation.
      */
-    public ThresholdProcessor(int size, double maxProcessedSeconds, double deadPeriod) {
+    public ThresholdProcessor(int size, double maxProcessedSeconds, double deadPeriodSeconds) {
         // set initial max processing time
         setMaxProcessedSeconds(maxProcessedSeconds);
         // set initial number of seconds for dead period
-        setDeadPeriod(deadPeriod);
+        setDeadPeriodSeconds(deadPeriodSeconds);
         // set initial number of chunks to use for calculating average
         setAveragedSampleCount(size);
         // init buffers
@@ -125,10 +138,10 @@ public class ThresholdProcessor implements SampleProcessor {
     /**
      * Sets the number of seconds for dead period time during which incoming samples will not processed.
      */
-    @SuppressWarnings("WeakerAccess") public void setDeadPeriod(double deadPeriod) {
-        LOGD(TAG, "setDeadPeriod(" + deadPeriod + ")");
+    @SuppressWarnings("WeakerAccess") public void setDeadPeriodSeconds(double deadPeriodSeconds) {
+        LOGD(TAG, "setDeadPeriodSeconds(" + deadPeriodSeconds + ")");
 
-        if (deadPeriod > 0) this.deadPeriod = deadPeriod;
+        if (deadPeriodSeconds > 0) this.deadPeriodSeconds = deadPeriodSeconds;
     }
 
     /**
@@ -153,7 +166,7 @@ public class ThresholdProcessor implements SampleProcessor {
     public void setSampleRate(int sampleRate) {
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
-        if (deadPeriod > 0) this.sampleRate = sampleRate;
+        if (sampleRate > 0) this.sampleRate = sampleRate;
     }
 
     /**
@@ -168,11 +181,30 @@ public class ThresholdProcessor implements SampleProcessor {
         });
     }
 
+    /**
+     * Starts/stops processing heartbeat
+     */
+    public void setBpmProcessing(boolean processBpm) {
+        if (this.processBpm == processBpm) return;
+        // reset BPM if we stopped processing heartbeat
+        if (!processBpm) resetBpm();
+
+        this.processBpm = processBpm;
+    }
+
+    // Resets all local variables used for the heartbeat processing
+    private void resetBpm() {
+        if (heartbeatHelper != null) heartbeatHelper.reset("resetBpm()");
+        sampleCounter = 0;
+        lastTriggerSampleCounter = 0;
+    }
+
     // Resets all the fields used for calculations
     private void reset() {
         sampleCount = (int) (sampleRate * maxProcessedSeconds);
         bufferSampleCount = sampleCount / 2;
-        deadPeriodCount = (int) (sampleRate * deadPeriod);
+        deadPeriodCount = (int) (sampleRate * deadPeriodSeconds);
+        minBpmResetPeriodCount = (int) (sampleRate * minBpmResetPeriodSeconds);
 
         buffer = new RingBuffer(bufferSampleCount);
         samplesForCalculation = new ArrayList<>(averagedSampleCount * 2);
@@ -181,6 +213,10 @@ public class ThresholdProcessor implements SampleProcessor {
         averagedSamples = new short[sampleCount];
         unfinishedSamplesForCalculation = new ArrayList<>();
         prevSample = 0;
+        heartbeatHelper.reset("reset()");
+        heartbeatHelper.setSampleRate(sampleRate);
+        lastTriggerSampleCounter = 0;
+        sampleCounter = 0;
         deadPeriodSampleCounter = 0;
         inDeadPeriod = false;
     }
@@ -200,10 +236,10 @@ public class ThresholdProcessor implements SampleProcessor {
             lastMaxProcessedSeconds = maxProcessedSeconds;
         }
         // reset buffers if dead period changed
-        if (lastDeadPeriod != deadPeriod) {
+        if (lastDeadPeriod != deadPeriodSeconds) {
             LOGD(TAG, "Resetting because dead period has changed");
             reset();
-            lastDeadPeriod = deadPeriod;
+            lastDeadPeriod = deadPeriodSeconds;
         }
         // reset buffers if averages sample count changed
         if (lastAveragedSampleCount != averagedSampleCount) {
@@ -229,6 +265,16 @@ public class ThresholdProcessor implements SampleProcessor {
         for (int i = 0; i < incomingSamples.length; i++) {
             currentSample = incomingSamples[i];
 
+            // heartbeat processing
+            if (processBpm) {
+                sampleCounter++;
+                lastTriggerSampleCounter++;
+
+                // check if minimum BPM reset period passed after last threshold hit and reset if necessary
+                if (lastTriggerSampleCounter > minBpmResetPeriodCount) resetBpm();
+            }
+            // end of heartbeat processing
+
             if (!inDeadPeriod) {
                 // check if we hit the threshold
                 if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (
@@ -244,6 +290,16 @@ public class ThresholdProcessor implements SampleProcessor {
 
                     unfinishedSamplesForCalculation.add(
                         new Samples(centeredWave, buffer.getArray().length - i + copyLength));
+
+                    // heartbeat processing
+                    if (processBpm) {
+                        // pass data to heartbeat helper
+                        heartbeatHelper.beat(sampleCounter);
+                        // reset the last triggered sample counter
+                        // and start counting for next heartbeat reset period
+                        lastTriggerSampleCounter = 0;
+                    }
+                    // end of heartbeat processing
 
                     break;
                 }

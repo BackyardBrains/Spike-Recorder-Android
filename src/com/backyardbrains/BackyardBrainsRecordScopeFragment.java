@@ -81,10 +81,6 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
-    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
     @Override public void onStart() {
         super.onStart();
 
@@ -248,7 +244,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         // preset filter for the connected board
         if (getAudioService() != null && filter != null) getAudioService().setFilter(filter);
         // show what boar is connected in toast
-        ViewUtils.toast(getContext(),
+        ViewUtils.customToast(getActivity(),
             String.format(getString(R.string.template_connected_to_board), spikerShieldBoard));
     }
 

@@ -7,7 +7,7 @@ buildscript {
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0-rc2'
+        classpath 'com.android.tools.build:gradle:3.0.0'
         classpath "io.fabric.tools:gradle:1.24.2"
     }
 }
@@ -52,8 +52,8 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 26
-        versionCode 45
-        versionName '1.5.4'
+        versionCode 46
+        versionName '1.5.5'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true

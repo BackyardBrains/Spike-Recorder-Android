@@ -1,12 +1,16 @@
 package com.backyardbrains.utils;
 
+import android.content.Context;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.media.SoundPool;
 import android.os.Build;
+import android.support.annotation.NonNull;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -27,7 +31,6 @@ public class AudioUtils {
      */
     public static final int IN_BUFFER_SIZE;
 
-    //
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     private static final int IN_CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int OUT_CHANNEL_CONFIG = AudioFormat.CHANNEL_OUT_MONO;
@@ -80,6 +83,43 @@ public class AudioUtils {
         LOGD(TAG, "Create new AudioRecorder");
         return new AudioRecord(MediaRecorder.AudioSource.DEFAULT, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
             AUDIO_FORMAT, IN_BUFFER_SIZE);
+    }
+
+    /**
+     * Creates and returns configured {@link SoundPool} for playing short audio files.
+     */
+    public static SoundPool createSoundPool() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            return new SoundPool.Builder().setMaxStreams(1)
+                .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setLegacyStreamType(AudioManager.STREAM_RING)
+                    .build())
+                .build();
+        } else {
+            //noinspection deprecation
+            return new SoundPool(1, AudioManager.STREAM_RING, 0);
+        }
+    }
+
+    /**
+     * Returns whether wired headset is plugged in into the device.
+     */
+    public static boolean isWiredHeadsetOn(@NonNull Context context) {
+        AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (am != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                final AudioDeviceInfo[] audioDevices = am.getDevices(AudioManager.GET_DEVICES_INPUTS);
+                for (AudioDeviceInfo aui : audioDevices) {
+                    if (aui.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET) return true;
+                }
+            } else {
+                //noinspection deprecation
+                return am.isWiredHeadsetOn();
+            }
+        }
+
+        return false;
     }
 
     /**

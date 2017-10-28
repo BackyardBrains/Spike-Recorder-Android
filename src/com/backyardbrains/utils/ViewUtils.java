@@ -9,12 +9,18 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.AppCompatDrawableManager;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.TextView;
 import android.widget.Toast;
+import com.backyardbrains.R;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>.
@@ -24,14 +30,35 @@ public class ViewUtils {
     private static final int SOFT_KEYBOARD_DEFAULT_DELAY = 200;
 
     /**
+     * Shows system default toast with the specified {@code message}. If formatted string needs to be shown, caller can
+     * pass {@code args} that will be used when formatting the message.
+     */
+    @SuppressWarnings("UnusedReturnValue") public static Toast toast(@NonNull Context context,
+        @NonNull String message) {
+        final Toast toast = Toast.makeText(context, message, Toast.LENGTH_SHORT);
+        toast.show();
+
+        return toast;
+    }
+
+    /**
      * Shows toast with the specified {@code message}. If formatted string needs to be shown, caller can pass {@code
      * args} that will be used when formatting the message.
      */
-    public static Toast toast(@NonNull Context context, @NonNull String message, String... args) {
-        String toastMsg = message;
-        if (args.length > 0) toastMsg = String.format(message, args);
+    @SuppressWarnings("UnusedReturnValue") public static Toast customToast(@NonNull FragmentActivity context,
+        @NonNull String message) {
+        final View layout = LayoutInflater.from(context)
+            .inflate(R.layout.layout_toast, (ViewGroup) (context).findViewById(R.id.toast_container));
 
-        final Toast toast = Toast.makeText(context, toastMsg, Toast.LENGTH_LONG);
+        // set a message
+        final TextView text = layout.findViewById(R.id.text);
+        text.setText(message);
+
+        // Toast...
+        Toast toast = new Toast(context);
+        toast.setGravity(Gravity.CENTER, 0, 0);
+        toast.setDuration(Toast.LENGTH_SHORT);
+        toast.setView(layout);
         toast.show();
 
         return toast;

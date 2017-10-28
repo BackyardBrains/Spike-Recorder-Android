@@ -11,12 +11,18 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.audio.Filters;
 import com.backyardbrains.audio.ThresholdProcessor;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
+import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.HeartbeatEvent;
+import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.view.BYBThresholdHandle;
+import com.backyardbrains.view.HeartbeatView;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -30,6 +36,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @BindView(R.id.threshold_handle) BYBThresholdHandle thresholdHandle;
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
+    @BindView(R.id.hv_heartbeat) HeartbeatView vHeartbeat;
+    @BindView(R.id.tv_beats_per_minute) TextView tvBeatsPerMinute;
 
     private static final int AVERAGED_SAMPLE_COUNT = 30;
     private static final double MAX_PROCESSING_TIME = 2.4; // 2.4 seconds
@@ -156,6 +164,29 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         if (event.isConnected()) {
             startMicAndSetupDataProcessing();
             refreshThreshold();
+            // setup BPM UI
+            setupBpm();
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
+        // update BPM label
+        setupBpm();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
+        // update BPM UI
+        setupBpm();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onHeartbeatEvent(HeartbeatEvent event) {
+        tvBeatsPerMinute.setText(
+            String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
+        if (event.getBeatsPerMinute() > 0) {
+            vHeartbeat.beep();
+        } else {
+            vHeartbeat.off();
         }
     }
 
@@ -165,12 +196,13 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     // Initializes user interface
     private void setupUI() {
+        // threshold handle
         thresholdHandle.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
                 getRenderer().adjustThreshold(y);
             }
         });
-
+        // average sample count
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
@@ -193,8 +225,29 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             }
         });
         sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
+        // BPM UI
+        setupBpm();
     }
 
+    // Sets up BPM label and heartbeat animation
+    private void setupBpm() {
+        DATA_PROCESSOR.setBpmProcessing(shouldShowBpm());
+        vHeartbeat.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.off();
+        tvBeatsPerMinute.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        tvBeatsPerMinute.setText(String.format(getString(R.string.template_beats_per_minute), 0));
+    }
+
+    // Whether BPM label should be visible or not
+    private boolean shouldShowBpm() {
+        // BPM should be shown if either usb is active input source or we are in AM modulation,
+        // and if current filter is default EKG filter
+        return getAudioService() != null && (getAudioService().isUsbActiveInput()
+            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getFilter(),
+            Filters.FILTER_HEART);
+    }
+
+    // Starts the active input source and sets up data processor
     private void startMicAndSetupDataProcessing() {
         if (getAudioService() != null) {
             getAudioService().startActiveInputSource();
