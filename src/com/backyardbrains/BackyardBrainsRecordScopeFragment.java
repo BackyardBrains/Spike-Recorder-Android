@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.Manifest;
+import android.content.res.Configuration;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -81,8 +82,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
+    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+
     @Override public void onStart() {
         super.onStart();
+        LOGD(TAG, "onStart()");
 
         // this will start microphone if we are switching from another fragment
         if (getAudioService() != null) startActiveInput(getAudioService());
@@ -90,18 +97,21 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @Override public void onResume() {
         super.onResume();
+        LOGD(TAG, "onResume()");
 
         setupButtons(false);
     }
 
     @Override public void onStop() {
         super.onStop();
+        LOGD(TAG, "onStop()");
 
         if (getAudioService() != null) getAudioService().stopActiveInputSource();
     }
 
     @Override public void onDestroyView() {
         super.onDestroyView();
+        LOGD(TAG, "onDestroyView()");
         unbinder.unbind();
     }
 
@@ -111,6 +121,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @Override protected View createView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
+        LOGD(TAG, "createView()");
+
         final View view = inflater.inflate(R.layout.fragment_record_scope, container, false);
         unbinder = ButterKnife.bind(this, view);
 
@@ -200,7 +212,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
         if (!event.isGranted()) {
-            ViewUtils.toast(getContext(), "Please grant permission to start the communication");
+            if (getContext() != null) {
+                ViewUtils.toast(getContext(), "Please grant permission to start the communication");
+            }
 
             // user didn't get , we should start listening to microphone again
             if (getAudioService() != null) startMicrophone(getAudioService());
@@ -244,8 +258,10 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         // preset filter for the connected board
         if (getAudioService() != null && filter != null) getAudioService().setFilter(filter);
         // show what boar is connected in toast
-        ViewUtils.customToast(getActivity(),
-            String.format(getString(R.string.template_connected_to_board), spikerShieldBoard));
+        if (getActivity() != null) {
+            ViewUtils.customToast(getActivity(),
+                String.format(getString(R.string.template_connected_to_board), spikerShieldBoard));
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

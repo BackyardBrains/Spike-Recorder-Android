@@ -27,7 +27,7 @@
             android:name=".BackyardBrainsMain"
             android:label="@string/app_name"
             android:launchMode="singleTask"
-            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize"
             android:theme="@style/BYBAppStyle">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

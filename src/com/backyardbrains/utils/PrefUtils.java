@@ -146,4 +146,17 @@ public class PrefUtils {
     public static void setThreshold(@NonNull Context context, @NonNull Class clazz, float threshold) {
         getSharedPreferences(context).edit().putFloat(constructPrefKey(clazz, PREF_FLOAT_THRESHOLD), threshold).apply();
     }
+
+    /**
+     * Boolean indicating whether BPM sound is on or off.
+     */
+    private static final String PREF_BOOL_BPM_SOUND = "bpm_sound";
+
+    public static boolean getBpmSound(@NonNull Context context) {
+        return getSharedPreferences(context).getBoolean(PREF_NAME_PREFIX + PREF_BOOL_BPM_SOUND, true);
+    }
+
+    public static void setBpmSound(@NonNull Context context, boolean bpmSound) {
+        getSharedPreferences(context).edit().putBoolean(PREF_NAME_PREFIX + PREF_BOOL_BPM_SOUND, bpmSound).apply();
+    }
 }

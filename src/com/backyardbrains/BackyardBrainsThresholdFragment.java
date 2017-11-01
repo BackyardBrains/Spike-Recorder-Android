@@ -6,8 +6,10 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -21,6 +23,7 @@ import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ObjectUtils;
+import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.view.BYBThresholdHandle;
 import com.backyardbrains.view.HeartbeatView;
 import org.greenrobot.eventbus.Subscribe;
@@ -36,6 +39,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @BindView(R.id.threshold_handle) BYBThresholdHandle thresholdHandle;
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
+    @BindView(R.id.tb_sound) ToggleButton tbSound;
     @BindView(R.id.hv_heartbeat) HeartbeatView vHeartbeat;
     @BindView(R.id.tv_beats_per_minute) TextView tvBeatsPerMinute;
 
@@ -165,19 +169,19 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             startMicAndSetupDataProcessing();
             refreshThreshold();
             // setup BPM UI
-            setupBpm();
+            updateBpmUI();
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         // update BPM label
-        setupBpm();
+        updateBpmUI();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
         // update BPM UI
-        setupBpm();
+        updateBpmUI();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onHeartbeatEvent(HeartbeatEvent event) {
@@ -226,13 +230,22 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         });
         sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
         // BPM UI
-        setupBpm();
+        updateBpmUI();
+        if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
+        tbSound.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                vHeartbeat.setMuteSound(!b);
+                if (getContext() != null) PrefUtils.setBpmSound(getContext(), b);
+            }
+        });
     }
 
-    // Sets up BPM label and heartbeat animation
-    private void setupBpm() {
+    // Updates BpPM UI
+    private void updateBpmUI() {
         DATA_PROCESSOR.setBpmProcessing(shouldShowBpm());
+        tbSound.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
         vHeartbeat.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.setMuteSound(getContext() != null && !PrefUtils.getBpmSound(getContext()));
         vHeartbeat.off();
         tvBeatsPerMinute.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
         tvBeatsPerMinute.setText(String.format(getString(R.string.template_beats_per_minute), 0));

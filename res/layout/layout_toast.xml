@@ -12,6 +12,7 @@
         android:id="@+id/text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:fontFamily="@font/comic_book"
         android:textColor="@color/white"
         android:textSize="@dimen/font_size_large"

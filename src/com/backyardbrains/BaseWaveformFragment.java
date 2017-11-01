@@ -36,7 +36,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
-    @Override public final View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+    @Override public final View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
 
@@ -57,14 +57,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onStart();
         LOGD(TAG, "onStart()");
         waveform.resumeGL();
-        renderer.onLoadSettings(getContext());
+        if (getContext() != null) renderer.onLoadSettings(getContext());
     }
 
     @CallSuper @Override public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
         waveform.pauseGL();
-        renderer.onSaveSettings(getContext());
+        if (getContext() != null) renderer.onSaveSettings(getContext());
     }
 
     @Override public void onDestroy() {

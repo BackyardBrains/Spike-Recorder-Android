@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
@@ -38,10 +39,11 @@ public class HeartbeatView extends AppCompatImageView {
     private SoundPool soundPool;
     private int soundId;
     private boolean isOn;
+    private boolean isMuted;
 
     private final ValueAnimator.AnimatorUpdateListener animatorUpdateListener =
         new ValueAnimator.AnimatorUpdateListener() {
-            @Override public void onAnimationUpdate(ValueAnimator animator) {
+            @SuppressLint("RestrictedApi") @Override public void onAnimationUpdate(ValueAnimator animator) {
                 heartDrawable.setColorFilter(
                     AppCompatDrawableManager.getPorterDuffColorFilter((int) animator.getAnimatedValue(),
                         PorterDuff.Mode.SRC_IN));
@@ -66,8 +68,10 @@ public class HeartbeatView extends AppCompatImageView {
         super.onAttachedToWindow();
 
         // create sound pool for heartbeat beep sound
-        soundPool = AudioUtils.createSoundPool();
-        soundId = soundPool.load(getContext(), R.raw.beep, 1);
+        if (!isInEditMode()) {
+            soundPool = AudioUtils.createSoundPool();
+            soundId = soundPool.load(getContext(), R.raw.beep, 1);
+        }
     }
 
     @Override protected void onDetachedFromWindow() {
@@ -94,8 +98,7 @@ public class HeartbeatView extends AppCompatImageView {
                         null);
                 }
             });
-        /*if (!AudioUtils.isWiredHeadsetOn(getContext())) */
-        soundPool.play(soundId, 0.5f, 0.5f, 0, 0, 1);
+        if (!isMuted) soundPool.play(soundId, 0.5f, 0.5f, 0, 0, 1);
     }
 
     /**
@@ -104,6 +107,13 @@ public class HeartbeatView extends AppCompatImageView {
     public void off() {
         isOn = false;
         setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_heartbeat_off));
+    }
+
+    /**
+     * If {@code mute} is true sound is un-muted, else sound is muted.
+     */
+    public void setMuteSound(boolean mute) {
+        isMuted = mute;
     }
 
     // Initializes UI

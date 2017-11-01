@@ -104,11 +104,12 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LOGD(TAG, "onCreate()");
 
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        setupUI();
+        setupUI(savedInstanceState);
     }
 
     @Override protected void onStart() {
@@ -251,11 +252,11 @@ public class BackyardBrainsMain extends AppCompatActivity
 
     private void printBackStack() {
         if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-            String s = "BackStack:\n";
+            StringBuilder s = new StringBuilder("BackStack:\n");
             for (int i = 0; i < getSupportFragmentManager().getBackStackEntryCount(); i++) {
-                s += getSupportFragmentManager().getBackStackEntryAt(i).getName() + "\n";
+                s.append(getSupportFragmentManager().getBackStackEntryAt(i).getName()).append("\n");
             }
-            LOGD(TAG, s);
+            LOGD(TAG, s.toString());
         } else {
             LOGI(TAG, "printBackStack noStack");
         }
@@ -328,20 +329,12 @@ public class BackyardBrainsMain extends AppCompatActivity
     //=================================================
 
     // Initializes user interface
-    private void setupUI() {
-        // we will have recordings container only if in landscape mode
-        //if (flRecordingsContainer != null) {
-        //    sliding_drawer =
-        //        new BYBSlidingView(flRecordingsContainer, this, "recordings sliding drawer", R.anim.slide_in_right,
-        //            R.anim.slide_out_right);
-        //    showFragment(new BackyardBrainsRecordingsFragment(), BYB_RECORDINGS_FRAGMENT, R.id.fragment_recordings_list,
-        //        FragTransaction.REPLACE, false, R.anim.slide_in_right, R.anim.slide_out_right);
-        //}
+    private void setupUI(Bundle savedInstanceState) {
+        // load initial fragment
+        if (null == savedInstanceState) loadFragment(OSCILLOSCOPE_VIEW);
+
         // init bottom menu clicks
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
-
-        // load initial fragment
-        loadFragment(OSCILLOSCOPE_VIEW);
     }
 
     private int getFragmentTypeFromName(String fragName) {

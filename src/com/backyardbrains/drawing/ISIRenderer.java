@@ -14,19 +14,20 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
     }
 
     @Override protected void drawingHandler(GL10 gl) {
+        // initialize GL
         initGL(gl);
-
+        // draw thumb rectangles and main rectangle
         makeThumbAndMainRectangles();
+
         if (getAnalysisManager() != null) {
-            List<List<BYBInterSpikeInterval>> isi = getAnalysisManager().getISI();
+            final List<List<BYBInterSpikeInterval>> isi = getAnalysisManager().getISI();
             if (isi != null && isi.size() > 0) {
                 for (int i = 0; i < isi.size(); i++) {
                     drawISI(gl, isi.get(i), thumbRects[i], BYBColors.getColorAsGlById(i), true);
                 }
                 int s = selected;
-                if (selected >= isi.size() || selected < 0) {
-                    s = 0;
-                }
+                if (selected >= isi.size() || selected < 0) s = 0;
+                // draw ISI graphs
                 drawISI(gl, isi.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
             }
         }
