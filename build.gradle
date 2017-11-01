@@ -24,7 +24,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     buildToolsVersion '26.0.2'
     sourceSets {
         main {
@@ -51,9 +51,9 @@ android {
     }
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 26
-        versionCode 46
-        versionName '1.5.5'
+        targetSdkVersion 27
+        versionCode 47
+        versionName '1.5.6'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
@@ -80,9 +80,9 @@ android {
 }
 
 ext {
-    supportLibVersion = '26.1.0'
+    supportLibVersion = '27.0.0'
     butterknifeVersion = '8.8.1'
-    materialDialogsVersion = '539e9e7'
+    materialDialogsVersion = '0.9.5.0'
     simpleRangeBarVersion = '0.1.1'
     crashlyticsVersion = '2.7.1@aar'
     easyPermissionsVersion = '1.0.1'
