@@ -17,16 +17,16 @@
 
     <ToggleButton
         android:id="@+id/tb_sound"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:contentDescription="@string/content_desc_sound_mute"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="5dp"
+        android:text="@null"
         android:textOn="@null"
         android:textOff="@null"
         android:button="@drawable/btn_sound"
         android:background="@android:color/transparent"
-        android:visibility="gone"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
