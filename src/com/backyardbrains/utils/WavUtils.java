@@ -21,20 +21,20 @@ public class WavUtils {
     /**
      * Converts specified {@code sampleCount} to wav time progress and returns it formatted as {@code mm:ss}.
      */
-    public static CharSequence formatWavProgress(int sampleCount) {
+    public static CharSequence formatWavProgress(int sampleCount, int sampleRate) {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(getSeconds(byteCount)));
+        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(getSeconds(byteCount, sampleRate)));
     }
 
     /**
      * Returns length of the wav file of specified {@code byteCount} length formatted as "XX s" or "XX m XX s".
      */
-    public static CharSequence formatWavLength(long byteCount) {
+    public static CharSequence formatWavLength(long byteCount, int sampleRate) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s(getSeconds(byteCount));
+        return Formats.formatTime_m_s(getSeconds(byteCount, sampleRate));
     }
 
     public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelConfig, int audioFormat) {
@@ -76,8 +76,8 @@ public class WavUtils {
         check(channels == 1, "Unsupported number of channels: " + channels);
         // sample rate
         int rate = buffer.getInt();
-        // 8000, 44100, etc. (for not we support only 44100)
-        check(rate == 44100, "Unsupported sample rate: " + rate);
+        // 8000, 44100, etc. (for not we support only 10000 and 44100)
+        check(rate == AudioUtils.SAMPLE_RATE || rate == UsbUtils.SAMPLE_RATE, "Unsupported sample rate: " + rate);
 
         // fast-forward to bits per sample
         buffer.position(buffer.position() + 6);
@@ -103,8 +103,8 @@ public class WavUtils {
     }
 
     // Converts specified byteCount to seconds
-    private static long getSeconds(long byteCount) {
-        return byteCount / (AudioUtils.SAMPLE_RATE * 2);
+    private static long getSeconds(long byteCount, int sampleRate) {
+        return byteCount / (sampleRate * 2);
     }
 
     // Writes and returns WAV header following specified parameters

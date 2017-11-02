@@ -29,11 +29,20 @@
     <string name="content_desc_threshold_new">New threshold</string>
     <string name="content_desc_usb_connect">Connect to SpikerBox via USB</string>
     <string name="content_desc_usb_disconnect">Disconnect from SpikerBox</string>
+    <string name="content_desc_sound_un_mute">Un-mute the sound</string>
+    <string name="content_desc_sound_mute">Mute the sound</string>
     <string name="content_desc_am_modulation_filters">Apply filter</string>
+
+    <string name="template_beats_per_minute">%d BPM</string>
 
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
+
+    <string name="template_connected_to_board">Connected to\n%s</string>
+    <string name="board_type_plant">Plant Spikerbox</string>
+    <string name="board_type_muscle">Muscle Spikerbox</string>
+    <string name="board_type_heart">Heart and Brain Spikerbox</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
@@ -89,7 +98,7 @@
         <item>File Details</item>
         <item>Play this file</item>
         <item>Find Spikes</item>
-        <item>Email this file</item>
+        <item>Share</item>
         <item>Rename this file</item>
         <item>Delete this file</item>
     </string-array>
@@ -101,7 +110,7 @@
         <item>ISI</item>
         <item>Cross Correlation</item>
         <item>Average Spike</item>
-        <item>Email this file</item>
+        <item>Share</item>
         <item>Rename this file</item>
         <item>Delete this file</item>
     </string-array>

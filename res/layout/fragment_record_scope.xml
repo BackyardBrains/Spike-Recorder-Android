@@ -5,7 +5,7 @@
     android:layout_height="match_parent">
 
     <ImageButton
-        android:id="@+id/ibtn_am_modulation"
+        android:id="@+id/ibtn_filters"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/content_desc_am_modulation_filters"
@@ -28,7 +28,7 @@
         android:background="@android:color/transparent"
         android:visibility="gone"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_record"
-        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <ImageButton
         android:id="@+id/ibtn_record"

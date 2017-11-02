@@ -8,28 +8,36 @@ public class Filter {
     /**
      * Constant value that should be used when low or high cut-off frequencies should not be applied.
      */
-    public static final int FREQ_NO_CUT_OFF = -1;
-    public static final int FREQ_MIN_CUT_OFF = 0;
-    public static final int FREQ_MAX_CUT_OFF = 500;
+    public static final double FREQ_NO_CUT_OFF = -1d;
+    public static final double FREQ_MIN_CUT_OFF = 0d;
+    public static final double FREQ_MAX_CUT_OFF = 500d;
 
-    private final int lowCutOffFrequency;
-    private final int highCutOffFrequency;
+    private final double lowCutOffFrequency;
+    private final double highCutOffFrequency;
 
     public Filter() {
         this.lowCutOffFrequency = FREQ_NO_CUT_OFF;
         this.highCutOffFrequency = FREQ_NO_CUT_OFF;
     }
 
-    public Filter(int lowCutOffFrequency, int highCutOffFrequency) {
+    public Filter(double lowCutOffFrequency, double highCutOffFrequency) {
         this.lowCutOffFrequency = lowCutOffFrequency;
         this.highCutOffFrequency = highCutOffFrequency;
     }
 
-    public int getLowCutOffFrequency() {
+    public boolean isLowCutOffFrequencySet() {
+        return lowCutOffFrequency != FREQ_NO_CUT_OFF;
+    }
+
+    public double getLowCutOffFrequency() {
         return lowCutOffFrequency;
     }
 
-    public int getHighCutOffFrequency() {
+    public boolean isHighCutOffFrequencySet() {
+        return highCutOffFrequency != FREQ_NO_CUT_OFF;
+    }
+
+    public double getHighCutOffFrequency() {
         return highCutOffFrequency;
     }
 

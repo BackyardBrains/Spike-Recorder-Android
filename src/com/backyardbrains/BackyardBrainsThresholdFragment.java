@@ -6,17 +6,26 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.audio.Filters;
 import com.backyardbrains.audio.ThresholdProcessor;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
+import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.HeartbeatEvent;
+import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.ObjectUtils;
+import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.view.BYBThresholdHandle;
+import com.backyardbrains.view.HeartbeatView;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -30,10 +39,16 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     @BindView(R.id.threshold_handle) BYBThresholdHandle thresholdHandle;
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
+    @BindView(R.id.tb_sound) ToggleButton tbSound;
+    @BindView(R.id.hv_heartbeat) HeartbeatView vHeartbeat;
+    @BindView(R.id.tv_beats_per_minute) TextView tvBeatsPerMinute;
 
-    private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
+    private static final int AVERAGED_SAMPLE_COUNT = 30;
+    private static final double MAX_PROCESSING_TIME = 2.4; // 2.4 seconds
+    private static final double DEAD_PERIOD_TIME = 0.005; // 5 millis
 
-    private static final ThresholdProcessor DATA_PROCESSOR = new ThresholdProcessor(DEFAULT_AVERAGED_SAMPLE_COUNT);
+    private static final ThresholdProcessor DATA_PROCESSOR =
+        new ThresholdProcessor(AVERAGED_SAMPLE_COUNT, MAX_PROCESSING_TIME, DEAD_PERIOD_TIME);
 
     private Unbinder unbinder;
 
@@ -61,8 +76,7 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
         if (getAudioService() != null) {
             getAudioService().clearSampleProcessor();
-            getAudioService().resetBufferSize();
-            getAudioService().stopMicrophone();
+            getAudioService().stopActiveInputSource();
         }
     }
 
@@ -140,6 +154,10 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         return (ThresholdRenderer) super.getRenderer();
     }
 
+    @Override protected void onSampleRateChange(int sampleRate) {
+        DATA_PROCESSOR.setSampleRate(sampleRate);
+    }
+
     //==============================================
     //  EVENT BUS
     //==============================================
@@ -150,6 +168,29 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         if (event.isConnected()) {
             startMicAndSetupDataProcessing();
             refreshThreshold();
+            // setup BPM UI
+            updateBpmUI();
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
+        // update BPM label
+        updateBpmUI();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
+        // update BPM UI
+        updateBpmUI();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public void onHeartbeatEvent(HeartbeatEvent event) {
+        tvBeatsPerMinute.setText(
+            String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
+        if (event.getBeatsPerMinute() > 0) {
+            vHeartbeat.beep();
+        } else {
+            vHeartbeat.off();
         }
     }
 
@@ -159,12 +200,13 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     // Initializes user interface
     private void setupUI() {
+        // threshold handle
         thresholdHandle.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
                 getRenderer().adjustThreshold(y);
             }
         });
-
+        // average sample count
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
@@ -187,13 +229,45 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             }
         });
         sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
+        // BPM UI
+        updateBpmUI();
+        if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
+        tbSound.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                vHeartbeat.setMuteSound(!b);
+                if (getContext() != null) PrefUtils.setBpmSound(getContext(), b);
+            }
+        });
     }
 
+    // Updates BpPM UI
+    private void updateBpmUI() {
+        DATA_PROCESSOR.setBpmProcessing(shouldShowBpm());
+        tbSound.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.setMuteSound(getContext() != null && !PrefUtils.getBpmSound(getContext()));
+        vHeartbeat.off();
+        tvBeatsPerMinute.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        tvBeatsPerMinute.setText(String.format(getString(R.string.template_beats_per_minute), 0));
+    }
+
+    // Whether BPM label should be visible or not
+    private boolean shouldShowBpm() {
+        // BPM should be shown if either usb is active input source or we are in AM modulation,
+        // and if current filter is default EKG filter
+        return getAudioService() != null && (getAudioService().isUsbActiveInput()
+            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getFilter(),
+            Filters.FILTER_HEART);
+    }
+
+    // Starts the active input source and sets up data processor
     private void startMicAndSetupDataProcessing() {
         if (getAudioService() != null) {
+            getAudioService().startActiveInputSource();
+
+            DATA_PROCESSOR.setSampleRate(getAudioService().getSampleRate());
             getAudioService().setSampleProcessor(DATA_PROCESSOR);
-            getAudioService().setBufferSize(ThresholdProcessor.SAMPLE_COUNT);
-            getAudioService().startMicrophone();
+            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         }
     }
 

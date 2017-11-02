@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -14,16 +15,18 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_usb"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="@string/content_desc_usb_connect"
+    <ToggleButton
+        android:id="@+id/tb_sound"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/content_desc_sound_mute"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="5dp"
-        android:src="@drawable/ic_usb"
+        android:text="@null"
+        android:textOn="@null"
+        android:textOff="@null"
+        android:button="@drawable/btn_sound"
         android:background="@android:color/transparent"
-        android:visibility="gone"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
@@ -52,4 +55,34 @@
         app:layout_constraintLeft_toRightOf="@+id/sb_averaged_sample_count"
         app:layout_constraintTop_toTopOf="@+id/sb_averaged_sample_count"
         app:layout_constraintBottom_toBottomOf="@+id/sb_averaged_sample_count"/>
+
+    <com.backyardbrains.view.HeartbeatView
+        android:id="@+id/hv_heartbeat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="@+id/tv_beats_per_minute"
+        app:layout_constraintRight_toLeftOf="@+id/tv_beats_per_minute"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_beats_per_minute"/>
+
+    <TextView
+        android:id="@+id/tv_beats_per_minute"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/mid_button_tappable_h"
+        android:paddingStart="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin_half"
+        android:paddingEnd="@dimen/activity_horizontal_margin"
+        android:paddingBottom="@dimen/activity_vertical_margin_half"
+        android:background="@color/red_orange"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/font_size_normal"
+        android:textStyle="bold"
+        android:visibility="invisible"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="80 BPM"/>
 </android.support.constraint.ConstraintLayout>

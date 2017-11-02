@@ -25,11 +25,11 @@ class BYBFindSpikesAnalysis extends BYBBaseAnalysis {
 
     private static final int SCHMITT_ON = 1;
     private static final int SCHMITT_OFF = 2;
-    private static final int MIN_TOTAL_SAMPLES = (int) (AudioUtils.SAMPLE_RATE * 0.2);
 
     private final ArrayList<BYBSpike> allSpikes = new ArrayList<>();
     private final BYBAudioFile audioFile;
     private final int bufferSize;
+    private final int min_total_samples;
 
     private float highestPeak = 0;
     private float lowestPeak = 0;
@@ -39,7 +39,8 @@ class BYBFindSpikesAnalysis extends BYBBaseAnalysis {
         super(listener);
 
         this.audioFile = audioFile;
-        this.bufferSize = AudioUtils.OUT_BUFFER_SIZE;
+        this.bufferSize = AudioUtils.getOutBufferSize(audioFile.sampleRate());
+        this.min_total_samples = (int) (audioFile.sampleRate() * 0.2);
 
         execute();
     }
@@ -65,7 +66,7 @@ class BYBFindSpikesAnalysis extends BYBBaseAnalysis {
             totalSamples = AudioUtils.getSampleCount(audioFile.length());
             LOGD(TAG, "Audio file byte count is: " + duration);
 
-            if (totalSamples < MIN_TOTAL_SAMPLES) {
+            if (totalSamples < min_total_samples) {
                 LOGD(TAG, "File to short! Don't process!");
                 return;
             }

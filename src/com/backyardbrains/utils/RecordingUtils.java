@@ -17,7 +17,7 @@ public class RecordingUtils {
     // Name of the BYB recording folder
     private static final String BYB_DIRECTORY_NAME = "BackyardBrains";
     // Prefix for all BYB recordings
-    private static final String BYB_RECORDING_NAME_PREFIX = "BYB_";
+    private static final String BYB_RECORDING_NAME_PREFIX = "BYB Recording ";
     // BYB audio file extension
     private static final String BYB_RECORDING_EXT = ".wav";
 
@@ -34,6 +34,6 @@ public class RecordingUtils {
     public static File createRecordingFile() {
         return new File(BYB_DIRECTORY,
             BYB_RECORDING_NAME_PREFIX + DateUtils.format_d_MMM_yyyy_HH_mm_s_a(new Date(System.currentTimeMillis()))
-                + BYB_RECORDING_EXT);
+                /*+ BYB_RECORDING_EXT*/);
     }
 }

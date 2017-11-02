@@ -10,7 +10,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.view.WaveformLayout;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -33,7 +36,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
-    @Override public final View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+    @Override public final View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
         @Nullable Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
 
@@ -54,14 +57,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onStart();
         LOGD(TAG, "onStart()");
         waveform.resumeGL();
-        renderer.onLoadSettings(getContext());
+        if (getContext() != null) renderer.onLoadSettings(getContext());
     }
 
     @CallSuper @Override public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
         waveform.pauseGL();
-        renderer.onSaveSettings(getContext());
+        if (getContext() != null) renderer.onSaveSettings(getContext());
     }
 
     @Override public void onDestroy() {
@@ -104,6 +107,22 @@ public abstract class BaseWaveformFragment extends BaseFragment {
      */
     protected BYBBaseRenderer getRenderer() {
         return renderer;
+    }
+
+    /**
+     * Subclasses should override this method if they need to do some work when sample rate changes.
+     */
+    protected void onSampleRateChange(int sampleRate) {
+    }
+
+    //==============================================
+    //  EVENT BUS
+    //==============================================
+
+    @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+        LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
+        if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
+        onSampleRateChange(event.getSampleRate());
     }
 
     //==============================================

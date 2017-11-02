@@ -25,6 +25,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.analysis.BYBAnalysisType;
+import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
@@ -38,6 +39,7 @@ import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BybEmptyRecyclerView;
 import com.backyardbrains.view.BybEmptyView;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -165,7 +167,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             if (files.length > 0) {
                 Arrays.sort(files, new Comparator<File>() {
                     @Override public int compare(File object1, File object2) {
-                        return (int) (object2.lastModified() - object1.lastModified());
+                        return object2.lastModified() > object1.lastModified() ? 1 : -1;
                     }
                 });
             }
@@ -185,9 +187,14 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
 
     // Opens dialog with recording details
     private void fileDetails(File f) {
+        WavAudioFile waf = null;
+        try {
+            waf = new WavAudioFile(f);
+        } catch (IOException ignored) {
+        }
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        details += "Duration: " + WavUtils.formatWavLength(f.length());
+        details += "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate()) : "UNKNOWN");
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
@@ -239,7 +246,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         sendIntent.putExtra(Intent.EXTRA_STREAM,
             FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
         sendIntent.setType("audio/wav");
-        startActivity(Intent.createChooser(sendIntent, "Email file"));
+        startActivity(Intent.createChooser(sendIntent, "Share file"));
     }
 
     // Triggers renaming of the selected file
@@ -466,10 +473,14 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
 
             void setFile(@NonNull File file) {
                 this.file = file;
-                LOGD(TAG, "Binding file " + file.getName());
 
                 tvFileName.setText(file.getName());
-                tvFileSize.setText(WavUtils.formatWavLength(file.length()));
+                WavAudioFile waf = null;
+                try {
+                    waf = new WavAudioFile(file);
+                } catch (IOException ignored) {
+                }
+                tvFileSize.setText(waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate()) : "UNKNOWN");
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
             }
         }

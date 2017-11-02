@@ -49,7 +49,7 @@
         android:layout_gravity="top|start"
         android:background="@android:color/transparent"
         android:contentDescription="@string/content_desc_back"
-        app:srcCompat="@drawable/ic_keyboard_arrow_left_white_32dp"/>
+        app:srcCompat="@drawable/ic_chevron_left_white_32dp"/>
 
     <TextView
         android:id="@+id/tv_analysis_title"
