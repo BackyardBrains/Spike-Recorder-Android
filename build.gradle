@@ -7,8 +7,8 @@ buildscript {
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
-        classpath "io.fabric.tools:gradle:1.24.2"
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath "io.fabric.tools:gradle:1.25.1"
     }
 }
 
@@ -25,7 +25,7 @@ apply plugin: 'io.fabric'
 
 android {
     compileSdkVersion 27
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '27.0.3'
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -80,16 +80,16 @@ android {
 }
 
 ext {
-    supportLibVersion = '27.0.0'
+    supportLibVersion = '27.0.2'
     butterknifeVersion = '8.8.1'
-    materialDialogsVersion = '0.9.5.0'
+    materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
-    crashlyticsVersion = '2.7.1@aar'
-    easyPermissionsVersion = '1.0.1'
+    crashlyticsVersion = '2.8.0@aar'
+    easyPermissionsVersion = '1.1.2'
     constraintLayoutVersion = '1.0.2'
     eventBusVersion = '3.0.0'
     eventBusAnnotationProcessorVersion = '3.0.1'
-    usbSerialVersion = '4.5.1'
+    usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
 }
@@ -120,6 +120,6 @@ dependencies {
     compile "org.apache.commons:commons-math3:$commonsMathVersion"
     // crashlytics
     compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
-        transitive = true;
+        transitive = true
     }
 }
