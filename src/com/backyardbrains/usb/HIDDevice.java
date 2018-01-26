@@ -7,6 +7,7 @@ import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.support.annotation.NonNull;
+import com.backyardbrains.utils.SpikerBoxBoardType;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,6 +15,8 @@ import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
+ * Implementation of {@link BybUsbDevice} capable of USB HID communication with BYB hardware.
+ *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
 public class HIDDevice extends BybUsbDevice {
@@ -31,6 +34,8 @@ public class HIDDevice extends BybUsbDevice {
 
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
+    private static final String MSG_HARDWARE_INQUIRY = "?:;";
+    private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
 
     private ReadThread readThread;
     private WriteThread writeThread;
@@ -40,6 +45,8 @@ public class HIDDevice extends BybUsbDevice {
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
     private int packetSize;
+
+    private @SpikerBoxBoardType int boardType = SpikerBoxBoardType.UNKNOWN;
 
     /**
      * Thread used for reading data sent by connected USB device
@@ -63,7 +70,8 @@ public class HIDDevice extends BybUsbDevice {
 
                     // clear buffer, execute the callback
                     usbBuffer.clearReadBuffer();
-                    onReceivedData(data);
+                    // first two bytes are reserved for HID Report ID (vendor specific), and number of transferred bytes
+                    onReceivedData(Arrays.copyOfRange(data, 2, data.length));
 
                     // queue a new request
                     requestIn.queue(usbBuffer.getReadBuffer(), packetSize);
@@ -146,8 +154,22 @@ public class HIDDevice extends BybUsbDevice {
 
         usbBuffer = new HIDBuffer();
         usbInterface = device.getInterface(findFirstHID(device));
+
+        int vid = device.getVendorId();
+        int pid = device.getProductId();
+        if (vid == BYB_VENDOR_ID) {
+            if (pid == BYB_PID_MUSCLE_SB_PRO) {
+                boardType = SpikerBoxBoardType.MUSCLE_PRO;
+            } else if (pid == BYB_PID_NEURON_SB_PRO) boardType = SpikerBoxBoardType.NEURON_PRO;
+        }
     }
 
+    /**
+     * Creates and returns new {@link BybUsbDevice} based on specified {@code device} capable for HID communication, or
+     * {@code null} if specified device is not supported by BYB.
+     *
+     * @return BYB USB device interface configured for HID communication
+     */
     public static BybUsbDevice createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
         if (isSupported(device)) {
             return new HIDDevice(device, connection);
@@ -156,6 +178,9 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
+    /**
+     * Checks whether specified {@code device} is HID capable device supported by BYB.
+     */
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
@@ -190,7 +215,12 @@ public class HIDDevice extends BybUsbDevice {
     }
 
     @Override public void startStreaming() {
+        // start the sample stream
         write(MSG_START_STREAM.getBytes());
+        // check for hardware version, firmware version and hardware type
+        write(MSG_HARDWARE_INQUIRY.getBytes());
+        // and check maximal sample rate and number of channels
+        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
     }
 
     @Override public void stopStreaming() {

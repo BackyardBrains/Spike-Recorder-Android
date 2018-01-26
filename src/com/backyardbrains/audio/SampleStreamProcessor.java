@@ -3,7 +3,7 @@ package com.backyardbrains.audio;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.DataProcessor;
-import com.backyardbrains.utils.SpikerShieldBoardType;
+import com.backyardbrains.utils.SpikerBoxBoardType;
 import com.backyardbrains.utils.UsbUtils;
 import java.util.Arrays;
 
@@ -21,10 +21,15 @@ public class SampleStreamProcessor implements DataProcessor {
     private static final int CLEANER = 0xFF;
     private static final int REMOVER = 0x7F;
 
+    private static final int CHANNEL_COUNT = 2;
+    private static final int CHANNEL_INDEX = 0;
+
     // Responsible for detecting and processing escape sequences within incoming data
     private final EscapeSequence escapeSequence = new EscapeSequence();
 
-    // Buffer that holds most recent 680 ms of audio
+    // Most recent unfinished frame
+    private Frame unfinishedFrame;
+    // Most recent unfinished sample
     private Sample unfinishedSample;
     // Additional filtering that should be applied
     private Filters filters;
@@ -38,7 +43,7 @@ public class SampleStreamProcessor implements DataProcessor {
         /**
          * Triggered when SpikerShield sends board type message as a result of inquiry.
          */
-        void onBoardTypeDetected(@SpikerShieldBoardType int boardType);
+        void onBoardTypeDetected(@SpikerBoxBoardType int boardType);
     }
 
     private SampleStreamListener listener;
@@ -55,10 +60,17 @@ public class SampleStreamProcessor implements DataProcessor {
     }
 
     private short[] processIncomingData(@NonNull byte[] data) {
-        // Max number of samples can be number of incoming bytes divided by 2 +1
-        short[] samples = new short[data.length / 2 + 1];
-        int sampleCounter = 0;
+        // available channels (for now always 2)
+        short[][] channels = new short[CHANNEL_COUNT][];
+        for (int i = 0; i < channels.length; i++) {
+            // max number of samples can be number of incoming bytes divided by 2 divided by number of channels +1
+            channels[i] = new short[data.length / 2 / channels.length + 1];
+        }
+        // array of sample counters, one for every channel
+        int[] sampleCounters = new int[CHANNEL_COUNT];
+        int channelCounter = 0;
         int lsb, msb; // less significant and most significant bytes
+        short sample;
 
         for (byte b : data) {
             // 1. check if we are inside escape sequence or not
@@ -68,37 +80,65 @@ public class SampleStreamProcessor implements DataProcessor {
                 byte[] sequence = escapeSequence.getSequence();
                 for (byte b1 : sequence) {
                     // check if we have unfinished frame
-                    if (unfinishedSample != null) {
-                        lsb = b1 & CLEANER;
+                    if (unfinishedFrame != null) {
+                        // check if we have unfinished sample
+                        if (unfinishedSample != null) {
+                            lsb = b1 & CLEANER;
 
-                        // if less significant byte is also grater then 127 make it most significant
-                        if (lsb > 127) {
-                            LOGW(TAG, "LSB > 127! DROP!");
-                            unfinishedSample = new Sample(lsb);
-                            continue;
+                            // if less significant byte is also grater then 127 drop whole frame
+                            if (lsb > 127) {
+                                LOGW(TAG, "LSB > 127! DROP WHOLE FRAME!");
+                                unfinishedFrame = null;
+                                unfinishedSample = null;
+                                continue;
+                            }
+
+                            //LOGD(TAG, " --> LSB " + (channelCounter + 1) + ". CHANNEL");
+                            unfinishedSample.setLsb(lsb);
+                            if (!unfinishedFrame.isFull()) unfinishedFrame.incSampleCount();
+
+                            sample = (short) normalize(unfinishedSample.getSample());
+                            // calculate average sample
+                            average = 0.0001 * sample + 0.9999 * average;
+                            // use average to remove offset
+                            sample = (short) (sample - average);
+                            // apply additional filtering if necessary
+                            if (filters != null) sample = filters.apply(sample);
+
+                            channels[channelCounter][sampleCounters[channelCounter]] = sample;
+
+                            sampleCounters[channelCounter]++;
+
+                            unfinishedSample = null;
+                            if (unfinishedFrame.isFull()) {
+                                //LOGD(TAG, " --> FRAME END");
+                                unfinishedFrame = null;
+                            }
+                        } else {
+                            msb = b1 & CLEANER;
+                            // we already started the frame so if msb is greater then 127 drop whole frame
+                            if (msb > 127) {
+                                LOGW(TAG, "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
+                                unfinishedFrame = null;
+                                unfinishedSample = null;
+                            } else {
+                                channelCounter++;
+
+                                //LOGD(TAG, " --> MSB " + (channelCounter + 1) + ". CHANNEL");
+                                unfinishedSample = new Sample(msb);
+                            }
                         }
-
-                        unfinishedSample.setLsb(lsb);
-
-                        samples[sampleCounter] = (short) normalize(unfinishedSample.getSample());
-
-                        // calculate average sample
-                        average = 0.0001 * samples[sampleCounter] + 0.9999 * average;
-                        // use average to remove offset
-                        samples[sampleCounter] = (short) (samples[sampleCounter] - average);
-
-                        // apply additional filtering if necessary
-                        if (filters != null) samples[sampleCounter] = filters.apply(samples[sampleCounter]);
-
-                        sampleCounter++;
-
-                        unfinishedSample = null;
                     } else {
                         msb = b1 & CLEANER;
                         if (msb > 127) {
+                            channelCounter = 0;
+
+                            //LOGD(TAG, " --> FRAME START");
+                            unfinishedFrame = new Frame(CHANNEL_COUNT);
+                            //LOGD(TAG, " --> MSB " + (channelCounter + 1) + ". CHANNEL");
                             unfinishedSample = new Sample(msb);
                         } else {
-                            LOGW(TAG, "MSB < 127! DROP!");
+                            LOGW(TAG, "MSB < 128 AT FRAME START! DROP!");
                         }
                     }
                 }
@@ -109,13 +149,16 @@ public class SampleStreamProcessor implements DataProcessor {
                     // let's process incoming message
                     processEscapeSequenceMessage(escapeSequence.getMessage());
                     // clear the escape sequence instance so we can start detecting the next one
-                    LOGD(TAG, "Escape sequence is completed!");
+                    LOGD(TAG, "Escape sequence is completed");
                     escapeSequence.reset();
                 }
             }
         }
 
-        return Arrays.copyOfRange(samples, 0, sampleCounter);
+        //LOGD(TAG, "CHANNEL #1 SAMPLES COUNT: " + sampleCounters[0] + "/" + channels[0].length);
+        //LOGD(TAG, "CHANNEL #2 SAMPLES COUNT: " + sampleCounters[1] + "/" + channels[1].length);
+
+        return Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]);
     }
 
     private int normalize(int sample) {
@@ -131,6 +174,30 @@ public class SampleStreamProcessor implements DataProcessor {
         }
     }
 
+    /**
+     * Represents single frame of a sample stream sent by BYB hardware.
+     */
+    private class Frame {
+
+        int channelCount;
+        int counter;
+
+        Frame(int channelCount) {
+            this.channelCount = channelCount;
+        }
+
+        boolean isFull() {
+            return counter >= channelCount;
+        }
+
+        void incSampleCount() {
+            counter++;
+        }
+    }
+
+    /**
+     * Represents single sample of a sample stream sent by BYB hardware.
+     */
     private class Sample {
 
         int lsb, msb; // less and most significant bytes
@@ -152,7 +219,7 @@ public class SampleStreamProcessor implements DataProcessor {
     }
 
     /**
-     *
+     * Represents an escape sequence that holds different messages by sent by BYB hardware.
      */
     private class EscapeSequence {
 

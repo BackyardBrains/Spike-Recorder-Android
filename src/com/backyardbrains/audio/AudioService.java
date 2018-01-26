@@ -43,7 +43,7 @@ import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.SpikerShieldBoardType;
+import com.backyardbrains.utils.SpikerBoxBoardType;
 import com.backyardbrains.utils.UsbUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
@@ -87,7 +87,7 @@ public class AudioService extends Service implements ReceivesAudio {
         new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
     private static final SampleStreamProcessor.SampleStreamListener SAMPLE_STREAM_LISTENER =
         new SampleStreamProcessor.SampleStreamListener() {
-            @Override public void onBoardTypeDetected(@SpikerShieldBoardType int boardType) {
+            @Override public void onBoardTypeDetected(@SpikerBoxBoardType int boardType) {
                 EventBus.getDefault().post(new SpikerShieldBoardTypeDetectionEvent(boardType));
             }
         };

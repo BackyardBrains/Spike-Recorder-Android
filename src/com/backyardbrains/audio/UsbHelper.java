@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -35,21 +36,6 @@ public class UsbHelper {
 
     private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE; // 1 sec
 
-    //private static final String MSG_CONFIG_PREFIX = "conf ";
-    //private static final String MSG_SAMPLE_RATE = "s:%d;";
-    //private static final String MSG_CHANNELS = "c:%d;";
-
-    private static final String MSG_BOARD_TYPE = "b:;\n";
-    //private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
-
-    //static {
-    //    MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
-    //        MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, UsbUtils.SAMPLE_RATE)
-    //            + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
-    //}
-
-    //private static final int BAUD_RATE = 230400;
-
     private static final IntentFilter USB_INTENT_FILTER;
 
     static {
@@ -59,6 +45,7 @@ public class UsbHelper {
         USB_INTENT_FILTER.addAction(ACTION_USB_PERMISSION);
     }
 
+    // Receives broadcast sent by Android related to USB device interface
     private BroadcastReceiver usbConnectionReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
@@ -138,25 +125,33 @@ public class UsbHelper {
 
     private final CircularByteBuffer circularBuffer = new CircularByteBuffer(BUFFER_SIZE);
 
-    private boolean done, paused;
     private ReadThread readThread;
     private CommunicationThread communicationThread;
 
     // Thread used for reading data received from connected USB serial device
     private class ReadThread extends Thread {
 
-        byte[] data;
+        AtomicBoolean working = new AtomicBoolean(true);
+        AtomicBoolean paused = new AtomicBoolean(false);
 
         @Override public void run() {
-            while (!done) {
-                if (!paused) {
+            while (working.get()) {
+                if (!paused.get()) {
                     synchronized (service) {
-                        data = new byte[circularBuffer.peekSize()];
+                        byte[] data = new byte[circularBuffer.peekSize()];
                         circularBuffer.read(data, data.length, false);
                         service.receiveSampleStream(data);
                     }
                 }
             }
+        }
+
+        void stopWorking() {
+            this.working.set(false);
+        }
+
+        void setPaused(boolean paused) {
+            this.paused.set(paused);
         }
     }
 
@@ -180,15 +175,6 @@ public class UsbHelper {
      */
     public void stop(@NonNull Context context) {
         context.unregisterReceiver(usbConnectionReceiver);
-    }
-
-    public Map<String, UsbDevice> listDevices() {
-        if (manager == null) return devicesMap;
-
-        devicesMap.clear();
-        devicesMap.putAll(manager.getDeviceList());
-
-        return devicesMap;
     }
 
     @Nullable public UsbDevice getDevice(int index) {
@@ -225,23 +211,16 @@ public class UsbHelper {
 
     /**
      * Closes the communication with the currently connected usb device if any is connected. After calling this method
-     * user will need to request permission to connect with the device.
+     * caller will need to request permission to connect with the device.
      */
     public void close() {
         if (usbDevice != null) {
-            done = true;
             usbDevice.close();
-            readThread = null;
-            communicationThread = null;
             usbDevice = null;
         }
-        //if (serialDevice != null) {
-        //    done = true;
-        //    serialDevice.close();
-        //    readThread = null;
-        //    communicationThread = null;
-        //    serialDevice = null;
-        //}
+        if (readThread != null) readThread.stopWorking();
+        readThread = null;
+        communicationThread = null;
 
         if (listener != null) listener.onDataTransferEnd();
     }
@@ -251,14 +230,14 @@ public class UsbHelper {
      * paused until {@link #resume()} is called.
      */
     public void pause() {
-        paused = true;
+        if (readThread != null) readThread.setPaused(true);
     }
 
     /**
      * Starts reading incoming data from the connected usb device.
      */
     public void resume() {
-        paused = false;
+        if (readThread != null) readThread.setPaused(false);
     }
 
     private class CommunicationThread extends Thread {
@@ -271,17 +250,11 @@ public class UsbHelper {
                     if (usbDevice.open()) {
                         if (listener != null) listener.onDataTransferStart();
 
+                        if (readThread != null) readThread.stopWorking();
                         readThread = new ReadThread();
                         readThread.start();
-                        if (done) done = false;
 
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                        // start reading data
+                        // set callback for reading sample stream
                         usbDevice.read(new BybUsbInterface.BybUsbReadCallback() {
                             @Override public void onReceivedData(byte[] data) {
                                 circularBuffer.write(data);
@@ -290,8 +263,6 @@ public class UsbHelper {
 
                         // start to stream sample data
                         usbDevice.startStreaming();
-                        // and check which board are we connected to
-                        //usbDevice.write(MSG_BOARD_TYPE.getBytes());
                     } else {
                         LOGD(TAG, "PORT NOT OPEN");
                         Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
@@ -304,53 +275,6 @@ public class UsbHelper {
                 LOGD(TAG, "DEVICE NOT SUPPORTED");
                 Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
             }
-
-            //if (UsbSerialDevice.isSupported(device)) {
-            //    serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
-            //    if (serialDevice != null) {
-            //        if (serialDevice.open()) {
-            //            if (listener != null) listener.onDataTransferStart();
-            //
-            //            // set serial connection parameters.
-            //            serialDevice.setBaudRate(BAUD_RATE);
-            //            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-            //            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-            //            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-            //            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-            //
-            //            readThread = new ReadThread();
-            //            readThread.start();
-            //            if (done) done = false;
-            //
-            //            try {
-            //                Thread.sleep(2000);
-            //            } catch (InterruptedException e) {
-            //                e.printStackTrace();
-            //            }
-            //
-            //            // start reading data
-            //            serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
-            //                @Override public void onReceivedData(byte[] data) {
-            //                    circularBuffer.write(data);
-            //                }
-            //            });
-            //
-            //            // set sample rate and number of channels (into the void)
-            //            serialDevice.write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
-            //            // check which board are we connected to
-            //            serialDevice.write(MSG_BOARD_TYPE.getBytes());
-            //        } else {
-            //            LOGD(TAG, "PORT NOT OPEN");
-            //            Crashlytics.logException(new RuntimeException("Failed to open USB serial communication port!"));
-            //        }
-            //    } else {
-            //        LOGD(TAG, "PORT IS NULL");
-            //        Crashlytics.logException(new RuntimeException("Failed to create USB serial device!"));
-            //    }
-            //} else {
-            //    LOGD(TAG, "DEVICE NOT SUPPORTED");
-            //    Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
-            //}
         }
     }
 

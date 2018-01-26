@@ -11,6 +11,8 @@ import java.util.Locale;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
+ * Implementation of {@link BybUsbDevice} capable of USB serial communication with BYB hardware.
+ *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
 
@@ -20,9 +22,13 @@ public class SerialDevice extends BybUsbDevice {
 
     // BYB Vendor ID
     private static final int BYB_VENDOR_ID = 0x2E73;
+    // Arduino Vendor ID
     private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
+    // Arduino Vendor ID
     private static final int ARDUINO_VENDOR_ID_2 = 0x2A03;
+    // FTDI Vendor ID
     private static final int FTDI_VENDOR_ID = 0x0403;
+    // CH340 Chinese boards Vendor ID
     private static final int CH340_VENDOR_ID = 0x1A86;
 
     private static final int BAUD_RATE = 230400;
@@ -56,10 +62,19 @@ public class SerialDevice extends BybUsbDevice {
         }
     }
 
+    /**
+     * Creates and returns new {@link BybUsbDevice} based on specified {@code device} capable for serial communication,
+     * or {@code null} if specified device is not supported by BYB.
+     *
+     * @return BYB USB device interface configured for serial communication
+     */
     public static BybUsbDevice createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
         return new SerialDevice(device, connection);
     }
 
+    /**
+     * Checks whether specified {@code device} is serial capable device supported by BYB.
+     */
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || vid == ARDUINO_VENDOR_ID_1
@@ -78,6 +93,8 @@ public class SerialDevice extends BybUsbDevice {
         // we don't actually start the stream, it's automatically stared after connection, but we should
         // configure sample rate and num of channels at startup
         write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+        // and check which board are we connected to
+        write(MSG_BOARD_TYPE.getBytes());
     }
 
     @Override public void stopStreaming() {

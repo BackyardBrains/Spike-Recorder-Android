@@ -1,7 +1,6 @@
 package com.backyardbrains;
 
 import android.Manifest;
-import android.content.res.Configuration;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -32,7 +31,7 @@ import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.UsbFilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
-import com.backyardbrains.utils.SpikerShieldBoardType;
+import com.backyardbrains.utils.SpikerBoxBoardType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
@@ -237,20 +236,20 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         final String spikerShieldBoard;
         Filter filter = null;
         switch (event.getBoardType()) {
-            case SpikerShieldBoardType.HEART:
+            case SpikerBoxBoardType.HEART:
                 spikerShieldBoard = getString(R.string.board_type_heart);
                 filter = Filters.FILTER_HEART;
                 break;
-            case SpikerShieldBoardType.MUSCLE:
+            case SpikerBoxBoardType.MUSCLE:
                 spikerShieldBoard = getString(R.string.board_type_muscle);
                 filter = Filters.FILTER_MUSCLE;
                 break;
-            case SpikerShieldBoardType.PLANT:
+            case SpikerBoxBoardType.PLANT:
                 spikerShieldBoard = getString(R.string.board_type_plant);
                 filter = Filters.FILTER_PLANT;
                 break;
             default:
-            case SpikerShieldBoardType.UNKNOWN:
+            case SpikerBoxBoardType.UNKNOWN:
                 spikerShieldBoard = "UNKNOWN";
                 break;
         }

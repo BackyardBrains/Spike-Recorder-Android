@@ -35,10 +35,10 @@ public class UsbUtils {
     /**
      * Returns SpikerShield board type depending on the specified {@code message}.
      */
-    public static @SpikerShieldBoardType int getBoardType(@NonNull String message) {
-        if (ObjectUtils.equals(BOARD_TYPE_PLANT, message)) return SpikerShieldBoardType.PLANT;
-        if (ObjectUtils.equals(BOARD_TYPE_MUSCLE, message)) return SpikerShieldBoardType.MUSCLE;
-        if (ObjectUtils.equals(BOARD_TYPE_HEART, message)) return SpikerShieldBoardType.HEART;
-        return SpikerShieldBoardType.UNKNOWN;
+    public static @SpikerBoxBoardType int getBoardType(@NonNull String message) {
+        if (ObjectUtils.equals(BOARD_TYPE_PLANT, message)) return SpikerBoxBoardType.PLANT;
+        if (ObjectUtils.equals(BOARD_TYPE_MUSCLE, message)) return SpikerBoxBoardType.MUSCLE;
+        if (ObjectUtils.equals(BOARD_TYPE_HEART, message)) return SpikerBoxBoardType.HEART;
+        return SpikerBoxBoardType.UNKNOWN;
     }
 }
