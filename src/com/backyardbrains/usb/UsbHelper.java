@@ -1,4 +1,4 @@
-package com.backyardbrains.audio;
+package com.backyardbrains.usb;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -11,16 +11,13 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
-import com.angrygoat.buffer.CircularByteBuffer;
-import com.backyardbrains.usb.BybUsbDevice;
-import com.backyardbrains.usb.BybUsbInterface;
-import com.backyardbrains.utils.UsbUtils;
+import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.audio.InputSource;
 import com.crashlytics.android.Crashlytics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -33,8 +30,6 @@ public class UsbHelper {
     private static final String TAG = makeLogTag(UsbHelper.class);
 
     private static final String ACTION_USB_PERMISSION = "com.backyardbrains.usb.USB_PERMISSION";
-
-    private static final int BUFFER_SIZE = UsbUtils.SAMPLE_RATE; // 1 sec
 
     private static final IntentFilter USB_INTENT_FILTER;
 
@@ -112,48 +107,17 @@ public class UsbHelper {
         void onPermissionDenied();
     }
 
-    private final ReceivesAudio service;
+    private final InputSource.OnSamplesReceivedListener service;
     private final UsbManager manager;
     private final UsbHelper.UsbListener listener;
 
-    //private UsbSerialDevice serialDevice;
-    private BybUsbDevice usbDevice;
+    private UsbInputSource usbDevice;
     private UsbDevice device;
 
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
 
-    private final CircularByteBuffer circularBuffer = new CircularByteBuffer(BUFFER_SIZE);
-
-    private ReadThread readThread;
     private CommunicationThread communicationThread;
-
-    // Thread used for reading data received from connected USB serial device
-    private class ReadThread extends Thread {
-
-        AtomicBoolean working = new AtomicBoolean(true);
-        AtomicBoolean paused = new AtomicBoolean(false);
-
-        @Override public void run() {
-            while (working.get()) {
-                if (!paused.get()) {
-                    synchronized (service) {
-                        byte[] data = new byte[circularBuffer.peekSize()];
-                        circularBuffer.read(data, data.length, false);
-                        service.receiveSampleStream(data);
-                    }
-                }
-            }
-        }
-
-        void stopWorking() {
-            this.working.set(false);
-        }
-
-        void setPaused(boolean paused) {
-            this.paused.set(paused);
-        }
-    }
 
     public UsbHelper(@NonNull Context context, @NonNull AudioService service, @Nullable UsbListener listener) {
         this.service = service;
@@ -171,12 +135,31 @@ public class UsbHelper {
     }
 
     /**
+     * Stops reading incoming data from the connected usb device. Communication with the device is not finished, just
+     * paused until {@link #resume()} is called.
+     */
+    public void pause() {
+        if (usbDevice != null) usbDevice.pause();
+    }
+
+    /**
+     * Starts reading incoming data from the connected usb device.
+     */
+    public void resume() {
+        if (usbDevice != null) usbDevice.resume();
+    }
+
+    /**
      * Stops the helper.
      */
     public void stop(@NonNull Context context) {
         context.unregisterReceiver(usbConnectionReceiver);
     }
 
+    /**
+     * Returns USB device for the specified {@code index} or {@code null} if there are no connected devices or index is
+     * out of range.
+     */
     @Nullable public UsbDevice getDevice(int index) {
         if (index < 0 || index >= devices.size()) return null;
 
@@ -188,6 +171,13 @@ public class UsbHelper {
      */
     public int getDevicesCount() {
         return devicesMap.size();
+    }
+
+    /**
+     * Returns currently connected SpikerBox device, or {@code null} if none is connected.
+     */
+    @Nullable public UsbInputSource getUsbDevice() {
+        return usbDevice;
     }
 
     /**
@@ -215,54 +205,25 @@ public class UsbHelper {
      */
     public void close() {
         if (usbDevice != null) {
-            usbDevice.close();
+            usbDevice.stop();
             usbDevice = null;
         }
-        if (readThread != null) readThread.stopWorking();
-        readThread = null;
         communicationThread = null;
 
         if (listener != null) listener.onDataTransferEnd();
-    }
-
-    /**
-     * Stops reading incoming data from the connected usb device. Communication with the device is not finished, just
-     * paused until {@link #resume()} is called.
-     */
-    public void pause() {
-        if (readThread != null) readThread.setPaused(true);
-    }
-
-    /**
-     * Starts reading incoming data from the connected usb device.
-     */
-    public void resume() {
-        if (readThread != null) readThread.setPaused(false);
     }
 
     private class CommunicationThread extends Thread {
 
         @Override public void run() {
             final UsbDeviceConnection connection = manager.openDevice(device);
-            if (BybUsbDevice.isSupported(device)) {
-                usbDevice = BybUsbDevice.createUsbDevice(device, connection);
+            if (UsbInputSource.isSupported(device)) {
+                usbDevice = UsbInputSource.createUsbDevice(device, connection, service);
                 if (usbDevice != null) {
                     if (usbDevice.open()) {
                         if (listener != null) listener.onDataTransferStart();
 
-                        if (readThread != null) readThread.stopWorking();
-                        readThread = new ReadThread();
-                        readThread.start();
-
-                        // set callback for reading sample stream
-                        usbDevice.read(new BybUsbInterface.BybUsbReadCallback() {
-                            @Override public void onReceivedData(byte[] data) {
-                                circularBuffer.write(data);
-                            }
-                        });
-
-                        // start to stream sample data
-                        usbDevice.startStreaming();
+                        usbDevice.start();
                     } else {
                         LOGD(TAG, "PORT NOT OPEN");
                         Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
@@ -279,14 +240,14 @@ public class UsbHelper {
     }
 
     // Refreshes the connected devices list with only supported serial and hid ones.
-    @SuppressWarnings("WeakerAccess") void refreshDevices() {
+    private void refreshDevices() {
         devicesMap.clear();
         devices.clear();
 
         final Map<String, UsbDevice> devices = new ArrayMap<>();
         if (manager.getDeviceList().size() > 0) {
             for (UsbDevice device : manager.getDeviceList().values()) {
-                if (BybUsbDevice.isSupported(device)) devices.put(device.getDeviceName(), device);
+                if (UsbInputSource.isSupported(device)) devices.put(device.getDeviceName(), device);
             }
         }
 

@@ -3,25 +3,24 @@ package com.backyardbrains.usb;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.support.annotation.NonNull;
-import com.backyardbrains.utils.UsbUtils;
+import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.Locale;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link BybUsbDevice} capable of USB serial communication with BYB hardware.
+ * Implementation of {@link UsbInputSource} capable of USB serial communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
 
-public class SerialDevice extends BybUsbDevice {
+public class SerialDevice extends UsbInputSource {
 
     private static final String TAG = makeLogTag(SerialDevice.class);
 
-    // BYB Vendor ID
-    private static final int BYB_VENDOR_ID = 0x2E73;
     // Arduino Vendor ID
     private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
     // Arduino Vendor ID
@@ -37,39 +36,34 @@ public class SerialDevice extends BybUsbDevice {
     private static final String MSG_SAMPLE_RATE = "s:%d;";
     private static final String MSG_CHANNELS = "c:%d;";
 
-    private static final String MSG_BOARD_TYPE = "b:;\n";
+    private static final String MSG_BOARD_TYPE_INQUIRY = "b:;\n";
     private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
 
     static {
         MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
-            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, UsbUtils.SAMPLE_RATE)
+            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, SampleStreamUtils.SAMPLE_RATE)
                 + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
     private UsbSerialDevice serialDevice;
-    private BybUsbReadCallback callback;
 
-    private SerialDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
-        super(connection);
+    private SerialDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @NonNull OnSamplesReceivedListener listener) {
+        super(device, listener);
 
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
-        if (serialDevice != null) {
-            serialDevice.setBaudRate(BAUD_RATE);
-            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-        }
     }
 
     /**
-     * Creates and returns new {@link BybUsbDevice} based on specified {@code device} capable for serial communication,
+     * Creates and returns new {@link UsbInputSource} based on specified {@code device} capable for serial
+     * communication,
      * or {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for serial communication
      */
-    public static BybUsbDevice createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
-        return new SerialDevice(device, connection);
+    public static UsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @NonNull OnSamplesReceivedListener listener) {
+        return new SerialDevice(device, connection, listener);
     }
 
     /**
@@ -81,38 +75,58 @@ public class SerialDevice extends BybUsbDevice {
             || vid == ARDUINO_VENDOR_ID_2 || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
     }
 
-    @Override public boolean open() {
-        return serialDevice != null && serialDevice.open();
-    }
+    @Override protected void onInputStart() {
+        // prepare serial usb device for communication
+        if (serialDevice != null) {
+            serialDevice.setBaudRate(BAUD_RATE);
+            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+        }
 
-    @Override public void write(byte[] buffer) {
-        if (serialDevice != null) serialDevice.write(buffer);
-    }
-
-    @Override public void startStreaming() {
+        LOGD(TAG, "onInputStart()");
+        // start reading data from USB
+        startStream();
         // we don't actually start the stream, it's automatically stared after connection, but we should
         // configure sample rate and num of channels at startup
         write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
         // and check which board are we connected to
-        write(MSG_BOARD_TYPE.getBytes());
+        write(MSG_BOARD_TYPE_INQUIRY.getBytes());
     }
 
-    @Override public void stopStreaming() {
-        // sending of stream sample data cannot be started
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void onInputStop() {
+        LOGD(TAG, "onInputStop()");
+        if (serialDevice != null) serialDevice.close();
     }
 
-    @Override public void read(BybUsbReadCallback callback) {
-        this.callback = callback;
+    /**
+     * {@inheritDoc}
+     */
+    @Override public boolean open() {
+        return serialDevice != null && serialDevice.open();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void write(byte[] buffer) {
+        if (serialDevice != null) serialDevice.write(buffer);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void startStream() {
         if (serialDevice != null) {
             serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
                 @Override public void onReceivedData(byte[] bytes) {
-                    if (SerialDevice.this.callback != null) SerialDevice.this.callback.onReceivedData(bytes);
+                    writeToBuffer(bytes);
                 }
             });
         }
-    }
-
-    @Override public void close() {
-        if (serialDevice != null) serialDevice.close();
     }
 }

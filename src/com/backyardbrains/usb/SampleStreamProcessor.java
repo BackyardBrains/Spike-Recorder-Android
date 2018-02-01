@@ -1,10 +1,11 @@
-package com.backyardbrains.audio;
+package com.backyardbrains.usb;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.audio.Filters;
 import com.backyardbrains.data.DataProcessor;
-import com.backyardbrains.utils.SpikerBoxBoardType;
-import com.backyardbrains.utils.UsbUtils;
+import com.backyardbrains.utils.SampleStreamUtils;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import java.util.Arrays;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -14,14 +15,14 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class SampleStreamProcessor implements DataProcessor {
+class SampleStreamProcessor implements DataProcessor {
 
     private static final String TAG = makeLogTag(SampleStreamProcessor.class);
 
     private static final int CLEANER = 0xFF;
     private static final int REMOVER = 0x7F;
 
-    private static final int CHANNEL_COUNT = 2;
+    private static final int DEFAULT_CHANNEL_COUNT = 1;
     private static final int CHANNEL_INDEX = 0;
 
     // Responsible for detecting and processing escape sequences within incoming data
@@ -33,6 +34,10 @@ public class SampleStreamProcessor implements DataProcessor {
     private Sample unfinishedSample;
     // Additional filtering that should be applied
     private Filters filters;
+    // Number of channels
+    private int channelCount = DEFAULT_CHANNEL_COUNT;
+    // Whether channel count has changed during processing of the latest chunk of incoming data
+    private boolean channelCountChanged;
     // Average signal which we use to avoid signal offset
     private double average;
 
@@ -41,14 +46,19 @@ public class SampleStreamProcessor implements DataProcessor {
      */
     interface SampleStreamListener {
         /**
-         * Triggered when SpikerShield sends board type message as a result of inquiry.
+         * Triggered when SpikerBox sends hardware type message as a result of inquiry.
          */
-        void onBoardTypeDetected(@SpikerBoxBoardType int boardType);
+        void onSpikerBoxHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
+
+        /**
+         * Triggered when SpikerBox sends max sample rate and number of channels message as a result of inquiry.
+         */
+        void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount);
     }
 
     private SampleStreamListener listener;
 
-    public SampleStreamProcessor(@Nullable SampleStreamListener listener, @Nullable Filters filters) {
+    SampleStreamProcessor(@Nullable SampleStreamListener listener, @Nullable Filters filters) {
         this.listener = listener;
         this.filters = filters;
     }
@@ -59,15 +69,32 @@ public class SampleStreamProcessor implements DataProcessor {
         return new short[0];
     }
 
+    /**
+     * Set number of channels in the sample stream.
+     */
+    void setChannelCount(int channelCount) {
+        this.channelCount = channelCount;
+
+        channelCountChanged = true;
+    }
+
     private short[] processIncomingData(@NonNull byte[] data) {
-        // available channels (for now always 2)
-        short[][] channels = new short[CHANNEL_COUNT][];
+        // if channel count has changed during processing  previous data chunk we should disregard
+        if (channelCountChanged) {
+            unfinishedFrame = null;
+            unfinishedSample = null;
+
+            channelCountChanged = false;
+        }
+
+        final int tmpChannelCount = channelCount;
+        short[][] channels = new short[tmpChannelCount][];
         for (int i = 0; i < channels.length; i++) {
             // max number of samples can be number of incoming bytes divided by 2 divided by number of channels +1
             channels[i] = new short[data.length / 2 / channels.length + 1];
         }
         // array of sample counters, one for every channel
-        int[] sampleCounters = new int[CHANNEL_COUNT];
+        int[] sampleCounters = new int[tmpChannelCount];
         int channelCounter = 0;
         int lsb, msb; // less significant and most significant bytes
         short sample;
@@ -134,7 +161,7 @@ public class SampleStreamProcessor implements DataProcessor {
                             channelCounter = 0;
 
                             //LOGD(TAG, " --> FRAME START");
-                            unfinishedFrame = new Frame(CHANNEL_COUNT);
+                            unfinishedFrame = new Frame(tmpChannelCount);
                             //LOGD(TAG, " --> MSB " + (channelCounter + 1) + ". CHANNEL");
                             unfinishedSample = new Sample(msb);
                         } else {
@@ -168,9 +195,15 @@ public class SampleStreamProcessor implements DataProcessor {
     // Processes escape sequence message and triggers appropriate listener
     private void processEscapeSequenceMessage(byte[] messageBytes) {
         final String message = new String(messageBytes);
+        LOGD(TAG, "ESCAPE MESSAGE: " + message);
         // check if it's board type message
         if (listener != null) {
-            if (UsbUtils.isBoardTypeMsg(message)) listener.onBoardTypeDetected(UsbUtils.getBoardType(message));
+            if (SampleStreamUtils.isHardwareTypeMsg(message)) {
+                listener.onSpikerBoxHardwareTypeDetected(SampleStreamUtils.getBoardType(message));
+            } else if (SampleStreamUtils.isSampleRateAndNumOfChannelsMsg(message)) {
+                listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
+                    SampleStreamUtils.getChannelCount(message));
+            }
         }
     }
 

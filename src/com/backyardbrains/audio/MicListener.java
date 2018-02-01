@@ -129,6 +129,18 @@ class MicListener extends Thread {
         }
     }
 
+    /**
+     * Clean up {@link AudioRecord} resource before exiting thread.
+     */
+    void requestStop() {
+        done = true;
+        if (recorder != null) {
+            if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) stopRecorder();
+
+            recorder = null;
+        }
+    }
+
     private void stopRecorder() {
         if (recorder != null) {
             try {
@@ -141,18 +153,5 @@ class MicListener extends Thread {
             recorder = null;
         }
         LOGD(TAG, "Recorder Released");
-    }
-
-    /**
-     * Clean up {@link AudioRecord} resource before exiting thread.
-     */
-    void requestStop() {
-        done = true;
-        if (recorder != null) {
-            if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                stopRecorder();
-            }
-            recorder = null;
-        }
     }
 }

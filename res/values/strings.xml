@@ -40,9 +40,11 @@
     <string name="label_custom_filter_high">High</string>
 
     <string name="template_connected_to_board">Connected to\n%s</string>
-    <string name="board_type_plant">Plant Spikerbox</string>
-    <string name="board_type_muscle">Muscle Spikerbox</string>
-    <string name="board_type_heart">Heart and Brain Spikerbox</string>
+    <string name="board_type_plant">Plant SpikerBox</string>
+    <string name="board_type_muscle">Muscle SpikerBox</string>
+    <string name="board_type_heart">Heart and Brain SpikerBox</string>
+    <string name="board_type_muscle_pro">Muscle Pro SpikerBox</string>
+    <string name="board_type_neuron_pro">Neuron Pro SpikerBox</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>

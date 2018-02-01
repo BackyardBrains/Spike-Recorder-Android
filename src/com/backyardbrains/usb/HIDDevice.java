@@ -7,7 +7,6 @@ import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.support.annotation.NonNull;
-import com.backyardbrains.utils.SpikerBoxBoardType;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,22 +14,16 @@ import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link BybUsbDevice} capable of USB HID communication with BYB hardware.
+ * Implementation of {@link UsbInputSource} capable of USB HID communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
-public class HIDDevice extends BybUsbDevice {
+public class HIDDevice extends UsbInputSource {
 
     private static final String TAG = makeLogTag(HIDDevice.class);
 
     // TI Vendor ID
     private static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
-    // BYB Vendor ID
-    private static final int BYB_VENDOR_ID = 0x2E73;
-    // BYB Muscle SpikerBox Pro Product ID
-    private static final int BYB_PID_MUSCLE_SB_PRO = 0x1;
-    // BYB Neuron SpikerBox Pro Product ID
-    private static final int BYB_PID_NEURON_SB_PRO = 0x2;
 
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
@@ -41,25 +34,19 @@ public class HIDDevice extends BybUsbDevice {
     private WriteThread writeThread;
 
     private HIDBuffer usbBuffer;
+    private UsbDeviceConnection connection;
     private UsbInterface usbInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
     private int packetSize;
-
-    private @SpikerBoxBoardType int boardType = SpikerBoxBoardType.UNKNOWN;
 
     /**
      * Thread used for reading data sent by connected USB device
      */
     protected class ReadThread extends Thread {
 
-        private BybUsbReadCallback callback;
         private UsbRequest requestIn;
-        private AtomicBoolean working;
-
-        ReadThread() {
-            working = new AtomicBoolean(true);
-        }
+        private AtomicBoolean working = new AtomicBoolean(true);
 
         @Override public void run() {
             while (working.get()) {
@@ -68,19 +55,17 @@ public class HIDDevice extends BybUsbDevice {
                     && request.getEndpoint().getDirection() == UsbConstants.USB_DIR_IN) {
                     byte[] data = usbBuffer.getDataReceived();
 
-                    // clear buffer, execute the callback
-                    usbBuffer.clearReadBuffer();
-                    // first two bytes are reserved for HID Report ID (vendor specific), and number of transferred bytes
-                    onReceivedData(Arrays.copyOfRange(data, 2, data.length));
+                    if (data.length > 1) {
+                        // clear buffer, execute the callback
+                        usbBuffer.clearReadBuffer();
+                        // first two bytes are reserved for HID Report ID (vendor specific), and number of transferred bytes
+                        writeToBuffer(Arrays.copyOfRange(data, 2, data.length));
+                    }
 
                     // queue a new request
                     requestIn.queue(usbBuffer.getReadBuffer(), packetSize);
                 }
             }
-        }
-
-        void setCallback(BybUsbReadCallback callback) {
-            this.callback = callback;
         }
 
         void setUsbRequest(UsbRequest request) {
@@ -89,10 +74,6 @@ public class HIDDevice extends BybUsbDevice {
 
         UsbRequest getUsbRequest() {
             return requestIn;
-        }
-
-        private void onReceivedData(byte[] data) {
-            if (callback != null) callback.onReceivedData(data);
         }
 
         void stopReadThread() {
@@ -149,30 +130,28 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
-    private HIDDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
-        super(connection);
+    private HIDDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @NonNull OnSamplesReceivedListener listener) {
+        super(device, listener);
 
-        usbBuffer = new HIDBuffer();
-        usbInterface = device.getInterface(findFirstHID(device));
+        this.usbBuffer = new HIDBuffer();
+        this.connection = connection;
+        this.usbInterface = device.getInterface(findFirstHID(device));
 
-        int vid = device.getVendorId();
-        int pid = device.getProductId();
-        if (vid == BYB_VENDOR_ID) {
-            if (pid == BYB_PID_MUSCLE_SB_PRO) {
-                boardType = SpikerBoxBoardType.MUSCLE_PRO;
-            } else if (pid == BYB_PID_NEURON_SB_PRO) boardType = SpikerBoxBoardType.NEURON_PRO;
-        }
+        setChannelCount(2);
     }
 
     /**
-     * Creates and returns new {@link BybUsbDevice} based on specified {@code device} capable for HID communication, or
+     * Creates and returns new {@link UsbInputSource} based on specified {@code device} capable for HID communication,
+     * or
      * {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for HID communication
      */
-    public static BybUsbDevice createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
+    public static UsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @NonNull OnSamplesReceivedListener listener) {
         if (isSupported(device)) {
-            return new HIDDevice(device, connection);
+            return new HIDDevice(device, connection, listener);
         } else {
             return null;
         }
@@ -189,6 +168,33 @@ public class HIDDevice extends BybUsbDevice {
             || pid == BYB_PID_NEURON_SB_PRO);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void onInputStart() {
+        // start reading data from USB
+        startStream();
+        // start the sample stream
+        write(MSG_START_STREAM.getBytes());
+        // check for hardware version, firmware version and hardware type
+        write(MSG_HARDWARE_INQUIRY.getBytes());
+        // and check maximal sample rate and number of channels
+        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void onInputStop() {
+        // stop sample stream
+        write(MSG_STOP_STREAM.getBytes());
+        // and release the resources
+        close();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override public boolean open() {
         boolean ret = openHID();
 
@@ -210,45 +216,38 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void write(byte[] buffer) {
         usbBuffer.putWriteBuffer(buffer);
     }
 
-    @Override public void startStreaming() {
-        // start the sample stream
-        write(MSG_START_STREAM.getBytes());
-        // check for hardware version, firmware version and hardware type
-        write(MSG_HARDWARE_INQUIRY.getBytes());
-        // and check maximal sample rate and number of channels
-        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
-    }
-
-    @Override public void stopStreaming() {
-        write(MSG_STOP_STREAM.getBytes());
-    }
-
-    @Override public void read(BybUsbReadCallback callback) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void startStream() {
         if (readThread != null) {
-            readThread.setCallback(callback);
+            //readThread.setCallback(callback);
             readThread.getUsbRequest().queue(usbBuffer.getReadBuffer(), packetSize);
         }
     }
 
-    @Override public void close() {
+    // Pass UsbRequest to read thread and UsbEndpoint (in) to write thread.
+    private void setThreadsParams(UsbRequest request, UsbEndpoint endpoint) {
+        readThread.setUsbRequest(request);
+        writeThread.setUsbEndpoint(endpoint);
+    }
+
+    // Stops both read and write threads and releases resources
+    private void close() {
         killReadThread();
         killWriteThread();
         connection.releaseInterface(usbInterface);
         connection.close();
     }
 
-    private void setThreadsParams(UsbRequest request, UsbEndpoint endpoint) {
-        readThread.setUsbRequest(request);
-        writeThread.setUsbEndpoint(endpoint);
-    }
-
-    /*
-     * Kill readThread. This must be called when closing a device.
-     */
+    // Kill readThread. This must be called when closing a device.
     private void killReadThread() {
         if (readThread != null) {
             readThread.stopReadThread();
@@ -256,9 +255,7 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
-    /*
-     * Restart readThread if it has been killed before
-     */
+    // Restart readThread if it has been killed before
     private void restartReadThread() {
         if (readThread == null) {
             readThread = new ReadThread();
@@ -269,9 +266,7 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
-    /*
-     * Kill writeThread. This must be called when closing a device.
-     */
+    // Kill writeThread. This must be called when closing a device.
     private void killWriteThread() {
         if (writeThread != null) {
             writeThread.stopWriteThread();
@@ -280,9 +275,7 @@ public class HIDDevice extends BybUsbDevice {
         }
     }
 
-    /*
-     * Restart writeThread if it has been killed before
-     */
+    // Restart writeThread if it has been killed before
     private void restartWriteThread() {
         if (writeThread == null) {
             writeThread = new WriteThread();
@@ -323,9 +316,7 @@ public class HIDDevice extends BybUsbDevice {
         return true;
     }
 
-    /**
-     * Returns whether specified {@code device} is HID device.
-     */
+    // Returns whether specified {@code device} is HID device.
     private static boolean isHidDevice(@NonNull UsbDevice device) {
         int interfaceCount = device.getInterfaceCount();
         for (int i = 0; i <= interfaceCount - 1; i++) {
@@ -336,12 +327,7 @@ public class HIDDevice extends BybUsbDevice {
         return false;
     }
 
-    /**
-     * Checks whether specified {@code device} is HID device.
-     *
-     * @param device Device that should be queried for HID interface
-     * @return Index of the HID interface if it exists, {@code -1} otherwise.
-     */
+    // Checks whether specified {@code device} is HID device.
     private static int findFirstHID(@NonNull UsbDevice device) {
         int interfaceCount = device.getInterfaceCount();
 

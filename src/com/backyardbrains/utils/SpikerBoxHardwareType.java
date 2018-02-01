@@ -8,9 +8,9 @@ import java.lang.annotation.RetentionPolicy;
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
-    SpikerBoxBoardType.UNKNOWN, SpikerBoxBoardType.PLANT, SpikerBoxBoardType.MUSCLE, SpikerBoxBoardType.HEART,
-    SpikerBoxBoardType.MUSCLE_PRO, SpikerBoxBoardType.NEURON_PRO
-}) public @interface SpikerBoxBoardType {
+    SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT, SpikerBoxHardwareType.MUSCLE, SpikerBoxHardwareType.HEART,
+    SpikerBoxHardwareType.MUSCLE_PRO, SpikerBoxHardwareType.NEURON_PRO
+}) public @interface SpikerBoxHardwareType {
 
     /**
      * Unknown board type.

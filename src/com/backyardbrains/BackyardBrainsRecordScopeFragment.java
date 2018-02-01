@@ -22,16 +22,16 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
-import com.backyardbrains.events.SpikerShieldBoardTypeDetectionEvent;
+import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.AmModulationFilterSettingsDialog;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
-import com.backyardbrains.filters.UsbFilterSettingsDialog;
+import com.backyardbrains.filters.UsbSerialFilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
-import com.backyardbrains.utils.SpikerBoxBoardType;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BYBSlidingView;
@@ -232,25 +232,33 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSpikerShieldBoardTypeDetectionEvent(SpikerShieldBoardTypeDetectionEvent event) {
-        final String spikerShieldBoard;
+    public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
+        final String spikerBoxBoard;
         Filter filter = null;
-        switch (event.getBoardType()) {
-            case SpikerBoxBoardType.HEART:
-                spikerShieldBoard = getString(R.string.board_type_heart);
+        switch (event.getHardwareType()) {
+            case SpikerBoxHardwareType.HEART:
+                spikerBoxBoard = getString(R.string.board_type_heart);
                 filter = Filters.FILTER_HEART;
                 break;
-            case SpikerBoxBoardType.MUSCLE:
-                spikerShieldBoard = getString(R.string.board_type_muscle);
+            case SpikerBoxHardwareType.MUSCLE:
+                spikerBoxBoard = getString(R.string.board_type_muscle);
                 filter = Filters.FILTER_MUSCLE;
                 break;
-            case SpikerBoxBoardType.PLANT:
-                spikerShieldBoard = getString(R.string.board_type_plant);
+            case SpikerBoxHardwareType.PLANT:
+                spikerBoxBoard = getString(R.string.board_type_plant);
                 filter = Filters.FILTER_PLANT;
                 break;
+            case SpikerBoxHardwareType.MUSCLE_PRO:
+                spikerBoxBoard = getString(R.string.board_type_muscle_pro);
+                filter = Filters.FILTER_MUSCLE;
+                break;
+            case SpikerBoxHardwareType.NEURON_PRO:
+                spikerBoxBoard = getString(R.string.board_type_neuron_pro);
+                filter = Filters.FILTER_NEURON_PRO;
+                break;
             default:
-            case SpikerBoxBoardType.UNKNOWN:
-                spikerShieldBoard = "UNKNOWN";
+            case SpikerBoxHardwareType.UNKNOWN:
+                spikerBoxBoard = "UNKNOWN";
                 break;
         }
 
@@ -259,7 +267,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         // show what boar is connected in toast
         if (getActivity() != null) {
             ViewUtils.customToast(getActivity(),
-                String.format(getString(R.string.template_connected_to_board), spikerShieldBoard));
+                String.format(getString(R.string.template_connected_to_board), spikerBoxBoard));
         }
     }
 
@@ -319,12 +327,14 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     // Opens a dialog with predefined filters that can be applied while processing incoming data
     private void openFilterDialog() {
-        filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
-            ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
-            : new UsbFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
-        filterSettingsDialog.show(
-            getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
-                : new Filter());
+        if (getContext() != null) {
+            filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
+                ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+                : new UsbSerialFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
+            filterSettingsDialog.show(
+                getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
+                    : new Filter());
+        }
     }
 
     // Sets a filter that should be applied while processing incoming data

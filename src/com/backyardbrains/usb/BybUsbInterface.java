@@ -1,11 +1,20 @@
 package com.backyardbrains.usb;
 
+import com.backyardbrains.utils.SpikerBoxHardwareType;
+
 /**
  * Defines common USB in/out operations.
  *
  * @author Tihomir Leka <ticapeca at gmail.com>.
  */
-public interface BybUsbInterface {
+interface BybUsbInterface {
+
+    // BYB Vendor ID
+    int BYB_VENDOR_ID = 0x2E73;
+    // BYB Muscle SpikerBox Pro Product ID
+    int BYB_PID_MUSCLE_SB_PRO = 0x1;
+    // BYB Neuron SpikerBox Pro Product ID
+    int BYB_PID_NEURON_SB_PRO = 0x2;
 
     /**
      * Opens usb communication port.
@@ -20,28 +29,7 @@ public interface BybUsbInterface {
     void write(byte[] buffer);
 
     /**
-     * Send message to connected endpoint that streaming of sample data can start.
+     * Starts reading data from the usb endpoint.
      */
-    void startStreaming();
-
-    /**
-     * Send message to connected endpoint that streaming of sample data can stop.
-     */
-    void stopStreaming();
-
-    /**
-     * Starts receiving data from the usb endpoint asynchronously.
-     *
-     * @param callback Callback to be invoked when new batch of data is received.
-     */
-    void read(BybUsbReadCallback callback);
-
-    /**
-     * Closes usb communication port.
-     */
-    void close();
-
-    interface BybUsbReadCallback {
-        void onReceivedData(byte[] data);
-    }
+    void startStream();
 }
