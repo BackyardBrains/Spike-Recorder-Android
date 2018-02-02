@@ -8,7 +8,7 @@ import com.backyardbrains.audio.Filters;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class UsbFilterSettingsDialog extends FilterSettingsDialog {
+public class UsbSerialFilterSettingsDialog extends FilterSettingsDialog {
 
     private static final int FILTER_COUNT = 4;
 
@@ -36,7 +36,7 @@ public class UsbFilterSettingsDialog extends FilterSettingsDialog {
     private static final double FREQ_MIN_CUT_OFF = 0d;
     private static final double FREQ_MAX_CUT_OFF = 5000d;
 
-    public UsbFilterSettingsDialog(@NonNull Context context, @Nullable FilterSelectionListener listener) {
+    public UsbSerialFilterSettingsDialog(@NonNull Context context, @Nullable FilterSelectionListener listener) {
         super(context, listener);
     }
 

@@ -36,15 +36,17 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.SampleRateChangeEvent;
-import com.backyardbrains.events.SpikerShieldBoardTypeDetectionEvent;
+import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
+import com.backyardbrains.usb.UsbHelper;
+import com.backyardbrains.usb.UsbInputSource;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.SpikerShieldBoardType;
-import com.backyardbrains.utils.UsbUtils;
+import com.backyardbrains.utils.SampleStreamUtils;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.IOException;
@@ -63,16 +65,16 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  * @author Tihomir Leka <ticapeca at gmail.com>
  * @version 1
  */
-
-public class AudioService extends Service implements ReceivesAudio {
+public class AudioService extends Service implements ReceivesAudio, InputSource.OnSamplesReceivedListener {
 
     private static final String TAG = makeLogTag(AudioService.class);
 
-    private enum InputSource {
+    private enum InputSourceType {
         NONE, MICROPHONE, USB
     }
 
     private static final Filters FILTERS = new Filters();
+
     private static final AmModulationProcessor.AmModulationDetectionListener AM_MODULATION_DETECTION_LISTENER =
         new AmModulationProcessor.AmModulationDetectionListener() {
             @Override public void onAmModulationStart() {
@@ -83,16 +85,8 @@ public class AudioService extends Service implements ReceivesAudio {
                 EventBus.getDefault().post(new AmModulationDetectionEvent(false));
             }
         };
-    private static final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
+    private final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
         new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
-    private static final SampleStreamProcessor.SampleStreamListener SAMPLE_STREAM_LISTENER =
-        new SampleStreamProcessor.SampleStreamListener() {
-            @Override public void onBoardTypeDetected(@SpikerShieldBoardType int boardType) {
-                EventBus.getDefault().post(new SpikerShieldBoardTypeDetectionEvent(boardType));
-            }
-        };
-    private static final SampleStreamProcessor SAMPLE_STREAM_PROCESSOR =
-        new SampleStreamProcessor(SAMPLE_STREAM_LISTENER, FILTERS);
 
     private final IBinder binder = new ServiceBinder();
 
@@ -117,7 +111,10 @@ public class AudioService extends Service implements ReceivesAudio {
     // Maximum number of seconds data manager should hold at any time
     private double maxTime;
     // Current input source
-    private InputSource source = InputSource.NONE;
+    private InputSourceType source = InputSourceType.NONE;
+
+    // Holds currently active USB input source
+    private UsbInputSource usbInputSource;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -252,6 +249,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * Returns filter that is additionally applied when processing incoming data.
      */
     public Filter getFilter() {
+        if (usbInputSource != null) return usbInputSource.getFilter();
         return FILTERS.getFilter();
     }
 
@@ -259,7 +257,21 @@ public class AudioService extends Service implements ReceivesAudio {
      * Sets predefined filters to be applied when processing incoming data.
      */
     public void setFilter(@Nullable Filter filter) {
+        if (usbInputSource != null) usbInputSource.setFilter(filter);
         FILTERS.setFilter(filter);
+    }
+
+    //=================================================
+    //  IMPLEMENTATIONS OF OnSamplesReceivedListener INTERFACE
+    //=================================================
+
+    /**
+     * Adds received samples to the ring buffer. If we're recording, it also passes it to the recording saver.
+     *
+     * @see InputSource.OnSamplesReceivedListener#onSamplesReceived(short[]) (byte[])
+     */
+    @Override public void onSamplesReceived(short[] data) {
+        passToDataManager(data);
     }
 
     //=================================================
@@ -274,6 +286,13 @@ public class AudioService extends Service implements ReceivesAudio {
     @Override public void receiveAudio(@NonNull short[] data) {
         // any received audio needs to be process with AM Modulation processor
         passToDataManager(AM_MODULATION_DATA_PROCESSOR.process(data));
+
+        //short[] newData = new short[data.length];
+        //for (int i = 0; i < data.length; i++) {
+        //    newData[i] = AM_MODULATION_DATA_PROCESSOR.processSingle(data[i]);
+        //}
+        //
+        //passToDataManager(newData);
     }
 
     /**
@@ -284,17 +303,6 @@ public class AudioService extends Service implements ReceivesAudio {
     @Override public void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition) {
         // pass data to data manager
         if (dataManager != null) dataManager.addToBuffer(data, lastBytePosition);
-    }
-
-    /**
-     * Adds received sample stream data to the ring buffer. If we're recording, it also passes it to the recording
-     * saver.
-     *
-     * @see ReceivesAudio#receiveSampleStream(byte[])
-     */
-    @Override public void receiveSampleStream(@NonNull byte[] data) {
-        // any received serial data needs to be process with sample stream processor
-        passToDataManager(SAMPLE_STREAM_PROCESSOR.process(data));
     }
 
     // Passes data to data manager so it can be consumed by renderer
@@ -355,7 +363,7 @@ public class AudioService extends Service implements ReceivesAudio {
      * Whether USB is active input source.
      */
     public boolean isUsbActiveInput() {
-        return source == InputSource.USB;
+        return source == InputSourceType.USB;
     }
 
     //=================================================
@@ -382,7 +390,7 @@ public class AudioService extends Service implements ReceivesAudio {
         turnOffPlaybackThread();
 
         if (micThread == null) {
-            source = InputSource.MICROPHONE;
+            source = InputSourceType.MICROPHONE;
 
             // set sample rate for microphone input
             setSampleRate(AudioUtils.SAMPLE_RATE);
@@ -453,16 +461,34 @@ public class AudioService extends Service implements ReceivesAudio {
         return usbHelper.getDevice(index);
     }
 
+    //public boolean isCurrent
+
     // Turns on USB input processing
     private void turnOnUsb() {
         LOGD(TAG, "turnOnUsb()");
         turnOffMicThread();
         turnOffPlaybackThread();
 
-        source = InputSource.USB;
+        source = InputSourceType.USB;
+
+        // set current USB input source
+        usbInputSource = usbHelper.getUsbDevice();
+        if (usbInputSource != null) {
+            if (usbInputSource.getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
+                EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(usbInputSource.getHardwareType()));
+            } else {
+                usbInputSource.setOnSpikerBoxHardwareTypeDetectionListener(
+                    new UsbInputSource.OnSpikerBoxHardwareTypeDetectionListener() {
+                        @Override public void onSpikerBoxHardwareTypeDetected(int hardwareType) {
+                            LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
+                            EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
+                        }
+                    });
+            }
+        }
 
         // set sample rate for USB serial input
-        setSampleRate(UsbUtils.SAMPLE_RATE);
+        setSampleRate(SampleStreamUtils.SAMPLE_RATE);
 
         // resume communication with USB
         usbHelper.resume();
@@ -476,6 +502,10 @@ public class AudioService extends Service implements ReceivesAudio {
     private void turnOffUsb() {
         LOGD(TAG, "turnOffUsb()");
         stopRecording();
+
+        // remove current USB input source
+        usbInputSource = null;
+
         // pause communication with USB
         usbHelper.pause();
 
@@ -715,7 +745,7 @@ public class AudioService extends Service implements ReceivesAudio {
 
         try {
             // if there is not input source start the mic otherwise use the currently active input
-            if (source == InputSource.NONE) turnOnMicThread();
+            if (source == InputSourceType.NONE) turnOnMicThread();
 
             recordingSaver = new RecordingSaver();
 

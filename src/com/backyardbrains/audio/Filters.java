@@ -12,37 +12,44 @@ import uk.me.berndporr.iirj.Butterworth;
 public class Filters {
 
     // Low cut-off frequency for ECG and EEG
-    private static final double FREQ_LOW_CUTOFF_HEART_AND_BRAIN = 1d;
+    private static final double FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT = 1d;
     // High cut-off frequency for EKG
     private static final double FREQ_HIGH_CUTOFF_HEART = 50d;
     // High cut-off frequency for EEG
     private static final double FREQ_HIGH_CUTOFF_BRAIN = 100d;
     // High cut-off frequency for Plant
-    private static final double FREQ_HIGH_CUTOFF_PLANT = 5d;
+    private static final double FREQ_HIGH_CUTOFF_PLANT = 10d;
     // Low cut-off frequency for EMG
-    private static final double FREQ_LOW_CUTOFF_MUSCLE = 300d;
+    private static final double FREQ_LOW_CUTOFF_MUSCLE = 70d;
     // High cut-off frequency for EMG
     private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2500d;
+    // Low cut-off frequency for Neuron PRO
+    private static final double FREQ_LOW_CUTOFF_NEURON_PRO = 160d;
+    // High cut-off frequency for Neuron PRO
+    private static final double FREQ_HIGH_CUTOFF_NEURON_PRO = 3700d;
     // Order used the all filters
     private static final int FILTER_ORDER = 2;
 
     /**
      * Predefined filter configured for EKG.
      */
-    public static final Filter FILTER_HEART = new Filter(FREQ_LOW_CUTOFF_HEART_AND_BRAIN, FREQ_HIGH_CUTOFF_HEART);
+    public static final Filter FILTER_HEART = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
     /**
      * Predefined filter configured for EEG.
      */
-    public static final Filter FILTER_BRAIN = new Filter(FREQ_LOW_CUTOFF_HEART_AND_BRAIN, FREQ_HIGH_CUTOFF_BRAIN);
+    public static final Filter FILTER_BRAIN = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
     /**
-     * Predefined filter configured for Plan.
+     * Predefined filter configured for Plant.
      */
-    public static final Filter FILTER_PLANT = new Filter(Filter.FREQ_NO_CUT_OFF, FREQ_HIGH_CUTOFF_PLANT);
-
+    public static final Filter FILTER_PLANT = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_PLANT);
     /**
      * Predefined filter configured for EMG.
      */
     public static final Filter FILTER_MUSCLE = new Filter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
+    /**
+     * Predefined filter configured for Neuron Pro.
+     */
+    public static final Filter FILTER_NEURON_PRO = new Filter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
 
     // Filter used for additional filtering
     private Butterworth customFilter;

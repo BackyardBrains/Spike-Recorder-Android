@@ -29,7 +29,7 @@ public class AmModulationProcessor implements SampleProcessor {
     // Cut-off frequency for AM demodulation
     private static final int FREQ_CUT_OFF_LOW_PASS_AM_MODULATION = 500;
 
-    // Buffer that holds samples after filtering (buffer size is larger than number of incomming samples)
+    // Buffer that holds samples after filtering (buffer size is larger than number of incoming samples)
     private final short[] filteredSamples = new short[BUFFER_SIZE];
     // Actual number of incoming samples
     @SuppressWarnings("FieldCanBeLocal") private int sampleCount;
@@ -139,4 +139,46 @@ public class AmModulationProcessor implements SampleProcessor {
 
         return samples;
     }
+
+    // TODO: 29-Jan-18  CODE FOR PROCESSING SAMPLES ONE BY ONE, LEAVE FOR NOW UNTIL WE COMPARE EXECUTION SPEED
+
+    //public short processSingle(short sample) {
+    //    return processIncomingSingle(sample);
+    //}
+
+    //private short processIncomingSingle(short sample) {
+    //    short s;
+    //    s = (short) detectionLowPassFilter.filter(sample);
+    //    rmsOfOriginalSignal = 0.0001 * Math.pow(s, 2) + 0.9999 * rmsOfOriginalSignal;
+    //    s = (short) detectionBandStopFilter.filter(s);
+    //    rmsOfNotchedAMSignal = 0.0001 * Math.pow(s, 2) + 0.9999 * rmsOfNotchedAMSignal;
+    //
+    //    if (Math.sqrt(rmsOfOriginalSignal) / Math.sqrt(rmsOfNotchedAMSignal) > 5) {
+    //        if (!amModulationDetected) {
+    //            amModulationDetected = true;
+    //            if (listener != null) listener.onAmModulationStart();
+    //        }
+    //
+    //        s = (short) amLowPassFilter1.filter(Math.abs(sample));
+    //        s = (short) amLowPassFilter2.filter(Math.abs(s));
+    //        s = (short) amLowPassFilter3.filter(Math.abs(s));
+    //
+    //        // calculate average sample
+    //        average = 0.00001 * s + 0.99999 * average;
+    //        // use average to remove offset
+    //        s = (short) (s - average);
+    //
+    //        // apply additional filtering if necessary
+    //        if (filters != null) s = filters.apply(s);
+    //
+    //        return s;
+    //    }
+    //
+    //    if (amModulationDetected) {
+    //        amModulationDetected = false;
+    //        if (listener != null) listener.onAmModulationEnd();
+    //    }
+    //
+    //    return sample;
+    //}
 }
