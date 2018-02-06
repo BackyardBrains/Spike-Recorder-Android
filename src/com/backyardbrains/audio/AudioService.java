@@ -448,6 +448,15 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     }
 
     /**
+     * Returns {@code true} if currently active input is USB input and it's type is equal to the specified {@code
+     * hardwareType}, {@code false} otherwise.
+     */
+    public boolean isActiveUsbInputOfType(@SpikerBoxHardwareType int hardwareType) {
+        return created && usbInputSource != null && usbInputSource.isUsb()
+            && usbInputSource.getHardwareType() == hardwareType;
+    }
+
+    /**
      * Returns number of connected serial devices.
      */
     public int getDeviceCount() {

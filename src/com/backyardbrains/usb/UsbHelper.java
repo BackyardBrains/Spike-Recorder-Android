@@ -133,7 +133,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
                     if (usbDevice.open()) {
                         if (listener != null) listener.onDataTransferStart();
 
-                        usbDevice.start();
+                        if (usbDevice != null) usbDevice.start();
 
                         try {
                             Thread.sleep(2000);
@@ -141,7 +141,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
                             e.printStackTrace();
                         }
 
-                        usbDevice.checkHardwareType();
+                        if (usbDevice != null) usbDevice.checkHardwareType();
                     } else {
                         LOGD(TAG, "PORT NOT OPEN");
                         Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
