@@ -3,23 +3,23 @@ package com.backyardbrains.usb;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.Locale;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link UsbInputSource} capable of USB serial communication with BYB hardware.
+ * Implementation of {@link AbstractUsbInputSource} capable of USB serial communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
 
-public class SerialDevice extends UsbInputSource {
+public class SerialInputSource extends AbstractUsbInputSource {
 
-    private static final String TAG = makeLogTag(SerialDevice.class);
+    private static final String TAG = makeLogTag(SerialInputSource.class);
 
     // Arduino Vendor ID
     private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
@@ -47,23 +47,23 @@ public class SerialDevice extends UsbInputSource {
 
     private UsbSerialDevice serialDevice;
 
-    private SerialDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
+    private SerialInputSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @Nullable OnSamplesReceivedListener listener) {
         super(device, listener);
 
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
     }
 
     /**
-     * Creates and returns new {@link UsbInputSource} based on specified {@code device} capable for serial
+     * Creates and returns new {@link AbstractUsbInputSource} based on specified {@code device} capable for serial
      * communication,
      * or {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for serial communication
      */
-    public static UsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
-        return new SerialDevice(device, connection, listener);
+    public static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device,
+        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
+        return new SerialInputSource(device, connection, listener);
     }
 
     /**
@@ -85,21 +85,14 @@ public class SerialDevice extends UsbInputSource {
             serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
         }
 
-        LOGD(TAG, "onInputStart()");
-        // start reading data from USB
-        startStream();
-        // we don't actually start the stream, it's automatically stared after connection, but we should
-        // configure sample rate and num of channels at startup
-        write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
-        // and check which board are we connected to
-        write(MSG_BOARD_TYPE_INQUIRY.getBytes());
+        super.onInputStart();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override protected void onInputStop() {
-        LOGD(TAG, "onInputStop()");
+        super.onInputStop();
         if (serialDevice != null) serialDevice.close();
     }
 
@@ -120,7 +113,8 @@ public class SerialDevice extends UsbInputSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void startStream() {
+    @Override public void startReadingStream() {
+        // start reading data from USB
         if (serialDevice != null) {
             serialDevice.read(new UsbSerialInterface.UsbReadCallback() {
                 @Override public void onReceivedData(byte[] bytes) {
@@ -128,5 +122,15 @@ public class SerialDevice extends UsbInputSource {
                 }
             });
         }
+        // we don't actually start the stream, it's automatically stared after connection, but we should
+        // configure sample rate and num of channels at startup
+        write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void checkHardwareType() {
+        write(MSG_BOARD_TYPE_INQUIRY.getBytes());
     }
 }

@@ -212,7 +212,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
         if (!event.isGranted()) {
             if (getContext() != null) {
-                ViewUtils.toast(getContext(), "Please grant permission to start the communication");
+                ViewUtils.toast(getContext(), "Please reconnect the device and grant permission to be able to use it");
             }
 
             // user didn't get , we should start listening to microphone again
@@ -326,7 +326,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     }
 
     // Opens a dialog with predefined filters that can be applied while processing incoming data
-    private void openFilterDialog() {
+    void openFilterDialog() {
         if (getContext() != null) {
             filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
                 ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
@@ -371,7 +371,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
             return;
         }
 
-        ViewUtils.toast(getContext(), "No connected devices!");
+        if (getContext() != null) ViewUtils.toast(getContext(), "No connected devices!");
     }
 
     private void connectWithDevice(@NonNull String deviceName) {
@@ -380,28 +380,36 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
                 startUsb(getAudioService(), deviceName);
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
-                ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+                if (getContext() != null) {
+                    ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+                }
             }
 
             return;
         }
 
-        ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+        if (getContext() != null) {
+            ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
+        }
     }
 
-    private void disconnectFromDevice() {
+    void disconnectFromDevice() {
         if (getAudioService() != null) {
             try {
                 getAudioService().stopUsb();
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
-                ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+                if (getContext() != null) {
+                    ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+                }
             }
 
             return;
         }
 
-        ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+        if (getContext() != null) {
+            ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
+        }
     }
 
     private void startActiveInput(@NonNull AudioService audioService) {
@@ -440,11 +448,11 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
+    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
-    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
+    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
@@ -457,8 +465,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         }
     }
 
-    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) private void startRecording() {
-        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) void startRecording() {
+        if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             if (getAudioService() != null) getAudioService().startRecording();
         } else {
             // Request one permission
