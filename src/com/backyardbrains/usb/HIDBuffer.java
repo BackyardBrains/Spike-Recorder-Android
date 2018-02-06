@@ -1,62 +1,37 @@
 package com.backyardbrains.usb;
 
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class HIDBuffer {
+class HIDBuffer {
 
-    public static final int DEFAULT_READ_BUFFER_SIZE = 64;
-    public static final int DEFAULT_WRITE_BUFFER_SIZE = 255 * 2;
+    static final int DEFAULT_READ_BUFFER_SIZE = 64;
+    private static final int DEFAULT_WRITE_BUFFER_SIZE = 255 * 2;
 
-    private ByteBuffer readBuffer;
     private SynchronizedBuffer writeBuffer;
+    private byte[] readBuffer_compatible; // Read buffer for android < 4.2
 
-    public HIDBuffer() {
+    HIDBuffer() {
         writeBuffer = new SynchronizedBuffer();
-        readBuffer = ByteBuffer.allocate(DEFAULT_READ_BUFFER_SIZE);
+        readBuffer_compatible = new byte[DEFAULT_READ_BUFFER_SIZE];
     }
 
-    public void putReadBuffer(ByteBuffer data) {
-        synchronized (this) {
-            try {
-                readBuffer.put(data);
-            } catch (BufferOverflowException e) {
-                // TO-DO
-            }
-        }
+    byte[] getBufferCompatible() {
+        return readBuffer_compatible;
     }
 
-    public ByteBuffer getReadBuffer() {
-        synchronized (this) {
-            return readBuffer;
-        }
+    byte[] getDataReceivedCompatible(int numberBytes) {
+        return Arrays.copyOfRange(readBuffer_compatible, 0, numberBytes);
     }
 
-    public byte[] getDataReceived() {
-        synchronized (this) {
-            byte[] dst = new byte[readBuffer.position()];
-            readBuffer.position(0);
-            readBuffer.get(dst, 0, dst.length);
-            return dst;
-        }
-    }
-
-    public void clearReadBuffer() {
-        synchronized (this) {
-            readBuffer.clear();
-        }
-    }
-
-    public byte[] getWriteBuffer() {
+    byte[] getWriteBuffer() {
         return writeBuffer.get();
     }
 
-    public void putWriteBuffer(byte[] data) {
+    void putWriteBuffer(byte[] data) {
         writeBuffer.put(data);
     }
 
-    public void resetWriteBuffer() {
+    void resetWriteBuffer() {
         writeBuffer.reset();
     }
 

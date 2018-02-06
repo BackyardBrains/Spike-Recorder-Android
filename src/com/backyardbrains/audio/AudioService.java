@@ -41,8 +41,8 @@ import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
+import com.backyardbrains.usb.AbstractUsbInputSource;
 import com.backyardbrains.usb.UsbHelper;
-import com.backyardbrains.usb.UsbInputSource;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -65,9 +65,9 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  * @author Tihomir Leka <ticapeca at gmail.com>
  * @version 1
  */
-public class AudioService extends Service implements ReceivesAudio, InputSource.OnSamplesReceivedListener {
+public class AudioService extends Service implements ReceivesAudio, AbstractInputSource.OnSamplesReceivedListener {
 
-    private static final String TAG = makeLogTag(AudioService.class);
+    static final String TAG = makeLogTag(AudioService.class);
 
     private enum InputSourceType {
         NONE, MICROPHONE, USB
@@ -91,7 +91,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     private final IBinder binder = new ServiceBinder();
 
     // Reference to the data manager that stores and processes the data
-    private DataManager dataManager;
+    DataManager dataManager;
     // Reference to the sample processor that will additionally process the samples
     private WeakReference<SampleProcessor> sampleProcessorRef;
 
@@ -114,7 +114,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     private InputSourceType source = InputSourceType.NONE;
 
     // Holds currently active USB input source
-    private UsbInputSource usbInputSource;
+    private AbstractUsbInputSource usbInputSource;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -226,7 +226,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     }
 
     // Set's current sample rate
-    private void setSampleRate(int sampleRate) {
+    void setSampleRate(int sampleRate) {
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         if (sampleRate <= 0) return; // sample rate needs to be positive
 
@@ -268,7 +268,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     /**
      * Adds received samples to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
-     * @see InputSource.OnSamplesReceivedListener#onSamplesReceived(short[]) (byte[])
+     * @see AbstractInputSource.OnSamplesReceivedListener#onSamplesReceived(short[]) (byte[])
      */
     @Override public void onSamplesReceived(short[] data) {
         passToDataManager(data);
@@ -437,7 +437,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
      * Initiates communication with USB device with the specified {@code deviceName}.
      */
     public void startUsb(@NonNull String deviceName) throws IllegalArgumentException {
-        if (created) usbHelper.requestPermission(getApplicationContext(), deviceName);
+        if (created) usbHelper.requestPermission(getApplicationContext(), deviceName, false);
     }
 
     /**
@@ -464,7 +464,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     //public boolean isCurrent
 
     // Turns on USB input processing
-    private void turnOnUsb() {
+    void turnOnUsb() {
         LOGD(TAG, "turnOnUsb()");
         turnOffMicThread();
         turnOffPlaybackThread();
@@ -478,7 +478,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
                 EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(usbInputSource.getHardwareType()));
             } else {
                 usbInputSource.setOnSpikerBoxHardwareTypeDetectionListener(
-                    new UsbInputSource.OnSpikerBoxHardwareTypeDetectionListener() {
+                    new AbstractUsbInputSource.OnSpikerBoxHardwareTypeDetectionListener() {
                         @Override public void onSpikerBoxHardwareTypeDetected(int hardwareType) {
                             LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
                             EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
@@ -499,7 +499,7 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
     }
 
     // Turns off USB input processing
-    private void turnOffUsb() {
+    void turnOffUsb() {
         LOGD(TAG, "turnOffUsb()");
         stopRecording();
 
@@ -519,11 +519,12 @@ public class AudioService extends Service implements ReceivesAudio, InputSource.
         LOGD(TAG, "startUsbDetection()");
         if (usbHelper == null) {
             usbHelper = new UsbHelper(getApplicationContext(), this, new UsbHelper.UsbListener() {
-                @Override public void onDeviceAttached() {
+                @Override
+                public void onDeviceAttached(@NonNull String deviceName, @SpikerBoxHardwareType int hardwareType) {
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(true));
                 }
 
-                @Override public void onDeviceDetached() {
+                @Override public void onDeviceDetached(@NonNull String deviceName) {
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(false));
                 }
 

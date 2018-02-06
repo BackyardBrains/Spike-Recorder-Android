@@ -7,6 +7,7 @@ import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,13 +15,13 @@ import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link UsbInputSource} capable of USB HID communication with BYB hardware.
+ * Implementation of {@link AbstractUsbInputSource} capable of USB HID communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
-public class HIDDevice extends UsbInputSource {
+public class HIDInputSource extends AbstractUsbInputSource {
 
-    private static final String TAG = makeLogTag(HIDDevice.class);
+    private static final String TAG = makeLogTag(HIDInputSource.class);
 
     // TI Vendor ID
     private static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
@@ -33,47 +34,43 @@ public class HIDDevice extends UsbInputSource {
     private ReadThread readThread;
     private WriteThread writeThread;
 
-    private HIDBuffer usbBuffer;
-    private UsbDeviceConnection connection;
+    @SuppressWarnings("WeakerAccess") HIDBuffer usbBuffer;
+    @SuppressWarnings("WeakerAccess") UsbDeviceConnection connection;
     private UsbInterface usbInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
-    private int packetSize;
+    @SuppressWarnings("WeakerAccess") int packetSize;
 
     /**
      * Thread used for reading data sent by connected USB device
      */
     protected class ReadThread extends Thread {
 
-        private UsbRequest requestIn;
+        private UsbEndpoint inEndpoint;
         private AtomicBoolean working = new AtomicBoolean(true);
 
         @Override public void run() {
+            byte[] dataReceived;
             while (working.get()) {
-                UsbRequest request = connection.requestWait();
-                if (request != null && request.getEndpoint().getType() == UsbConstants.USB_ENDPOINT_XFER_INT
-                    && request.getEndpoint().getDirection() == UsbConstants.USB_DIR_IN) {
-                    byte[] data = usbBuffer.getDataReceived();
+                int numberBytes;
+                if (inEndpoint != null) {
+                    numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
+                        HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
+                } else {
+                    numberBytes = 0;
+                }
 
-                    if (data.length > 1) {
-                        // clear buffer, execute the callback
-                        usbBuffer.clearReadBuffer();
-                        // first two bytes are reserved for HID Report ID (vendor specific), and number of transferred bytes
-                        writeToBuffer(Arrays.copyOfRange(data, 2, data.length));
-                    }
+                if (numberBytes > 0) {
+                    dataReceived = usbBuffer.getDataReceivedCompatible(numberBytes);
 
-                    // queue a new request
-                    requestIn.queue(usbBuffer.getReadBuffer(), packetSize);
+                    // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
+                    writeToBuffer(Arrays.copyOfRange(dataReceived, 2, dataReceived.length));
                 }
             }
         }
 
-        void setUsbRequest(UsbRequest request) {
-            this.requestIn = request;
-        }
-
-        UsbRequest getUsbRequest() {
-            return requestIn;
+        void setUsbEndpoint(UsbEndpoint inEndpoint) {
+            this.inEndpoint = inEndpoint;
         }
 
         void stopReadThread() {
@@ -130,8 +127,8 @@ public class HIDDevice extends UsbInputSource {
         }
     }
 
-    private HIDDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
+    private HIDInputSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @Nullable OnSamplesReceivedListener listener) {
         super(device, listener);
 
         this.usbBuffer = new HIDBuffer();
@@ -142,16 +139,17 @@ public class HIDDevice extends UsbInputSource {
     }
 
     /**
-     * Creates and returns new {@link UsbInputSource} based on specified {@code device} capable for HID communication,
+     * Creates and returns new {@link AbstractUsbInputSource} based on specified {@code device} capable for HID
+     * communication,
      * or
      * {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for HID communication
      */
-    public static UsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
+    public static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device,
+        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
         if (isSupported(device)) {
-            return new HIDDevice(device, connection, listener);
+            return new HIDInputSource(device, connection, listener);
         } else {
             return null;
         }
@@ -171,21 +169,8 @@ public class HIDDevice extends UsbInputSource {
     /**
      * {@inheritDoc}
      */
-    @Override protected void onInputStart() {
-        // start reading data from USB
-        startStream();
-        // start the sample stream
-        write(MSG_START_STREAM.getBytes());
-        // check for hardware version, firmware version and hardware type
-        write(MSG_HARDWARE_INQUIRY.getBytes());
-        // and check maximal sample rate and number of channels
-        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override protected void onInputStop() {
+        super.onInputStop();
         // stop sample stream
         write(MSG_STOP_STREAM.getBytes());
         // and release the resources
@@ -226,16 +211,25 @@ public class HIDDevice extends UsbInputSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void startStream() {
-        if (readThread != null) {
-            //readThread.setCallback(callback);
-            readThread.getUsbRequest().queue(usbBuffer.getReadBuffer(), packetSize);
-        }
+    @Override public void startReadingStream() {
+        // start reading data from USB
+        //if (readThread != null) readThread.getUsbRequest().queue(usbBuffer.getReadBuffer(), packetSize);
+        // start the sample stream
+        write(MSG_START_STREAM.getBytes());
+        // and check maximal sample rate and number of channels
+        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void checkHardwareType() {
+        write(MSG_HARDWARE_INQUIRY.getBytes());
     }
 
     // Pass UsbRequest to read thread and UsbEndpoint (in) to write thread.
     private void setThreadsParams(UsbRequest request, UsbEndpoint endpoint) {
-        readThread.setUsbRequest(request);
+        readThread.setUsbEndpoint(request.getEndpoint());
         writeThread.setUsbEndpoint(endpoint);
     }
 
