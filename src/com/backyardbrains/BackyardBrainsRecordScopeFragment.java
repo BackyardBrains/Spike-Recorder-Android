@@ -29,6 +29,8 @@ import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.AmModulationFilterSettingsDialog;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.filters.FilterSettingsDialog;
+import com.backyardbrains.filters.UsbMuscleProFilterSettingsDialog;
+import com.backyardbrains.filters.UsbNeuronProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbSerialFilterSettingsDialog;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
@@ -330,8 +332,13 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         if (getContext() != null) {
             filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
                 ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
-                : new UsbSerialFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
+                : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
+                    ? new UsbMuscleProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+                    : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
+                        ? new UsbNeuronProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+                        : new UsbSerialFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
             filterSettingsDialog.show(
+
                 getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
                     : new Filter());
         }
