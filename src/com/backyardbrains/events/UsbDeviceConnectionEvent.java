@@ -5,13 +5,13 @@ package com.backyardbrains.events;
  */
 public class UsbDeviceConnectionEvent {
 
-    private final boolean attached;
+    private final boolean connected;
 
-    public UsbDeviceConnectionEvent(boolean attached) {
-        this.attached = attached;
+    public UsbDeviceConnectionEvent(boolean connected) {
+        this.connected = connected;
     }
 
-    public boolean isAttached() {
-        return attached;
+    public boolean isConnected() {
+        return connected;
     }
 }

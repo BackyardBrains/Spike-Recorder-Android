@@ -3,27 +3,30 @@ package com.backyardbrains.data;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.RingBuffer;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.LogUtils;
 import java.nio.ByteBuffer;
+
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
 public class DataManager {
 
-    private static final String TAG = LogUtils.makeLogTag(DataManager.class);
+    private static final String TAG = makeLogTag(DataManager.class);
 
     //
     private static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
 
     private RingBuffer dataBuffer;
+    private int bufferSize = DEFAULT_BUFFER_SIZE;
     private long lastBytePosition;
 
     private static DataManager manager;
 
     // Private constructor through which we create singleton instance
     private DataManager() {
-        dataBuffer = new RingBuffer(DEFAULT_BUFFER_SIZE);
+        dataBuffer = new RingBuffer(bufferSize);
     }
 
     /**
@@ -43,20 +46,15 @@ public class DataManager {
      * Sets buffer size of the {@link RingBuffer}.
      */
     public void setBufferSize(int bufferSize) {
-        if (bufferSize <= 0) throw new IllegalArgumentException("Buffer can't be 0 or negative value!");
+        LOGD(TAG, "setBufferSize(" + bufferSize + ")");
+
+        if (this.bufferSize == bufferSize) return;
+        if (bufferSize <= 0) return;
 
         dataBuffer.clear();
-        // if buffer size is negative or zero use default buffer size
         dataBuffer = new RingBuffer(bufferSize);
-    }
 
-    /**
-     * Sets buffer size of the {@link RingBuffer} to default value (6 sec of audio at 44.1 kHz)
-     */
-    public void resetBufferSize() {
-        dataBuffer.clear();
-        // if buffer size is negative or zero use default buffer size
-        dataBuffer = new RingBuffer(DEFAULT_BUFFER_SIZE);
+        this.bufferSize = bufferSize;
     }
 
     /**
@@ -91,10 +89,6 @@ public class DataManager {
 
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
-    }
-
-    public void addToBuffer(short sample) {
-        if (dataBuffer != null) dataBuffer.add(sample);
     }
 
     /**

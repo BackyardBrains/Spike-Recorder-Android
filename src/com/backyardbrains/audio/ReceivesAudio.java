@@ -39,9 +39,4 @@ public interface ReceivesAudio {
      * Called by playback thread to pass audio data to the service along with the positions of the last read byte.
      */
     void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition);
-
-    /**
-     * Called by USB read thread to pass serial {@link byte[]} into a service.
-     */
-    void receiveSampleStream(@NonNull byte[] data);
 }

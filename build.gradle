@@ -7,8 +7,8 @@ buildscript {
         maven { url 'https://maven.fabric.io/public' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
-        classpath "io.fabric.tools:gradle:1.24.1"
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        classpath "io.fabric.tools:gradle:1.25.1"
     }
 }
 
@@ -24,8 +24,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.1'
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -51,8 +51,9 @@ android {
     }
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 26
-        versionCode 39
+        targetSdkVersion 27
+        versionCode 49
+        versionName '1.5.8'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
@@ -76,59 +77,49 @@ android {
             ext.enableCrashlytics = false
         }
     }
-    productFlavors {
-        prod {
-            versionName '1.4.7.7'
-        }
-        dev {
-            minSdkVersion 21
-            versionCode 100000
-            versionName 'dev'
-        }
-    }
 }
 
 ext {
-    supportLibVersion = '26.0.1'
-    butterknifeVersion = '8.6.0'
-    materialDialogsVersion = '0.9.4.7'
+    supportLibVersion = '27.0.2'
+    butterknifeVersion = '8.8.1'
+    materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
-    crashlyticsVersion = '2.6.8@aar'
-    easyPermissionsVersion = '0.4.2'
+    crashlyticsVersion = '2.9.0@aar'
+    easyPermissionsVersion = '1.1.3'
     constraintLayoutVersion = '1.0.2'
-    eventBusVersion = '3.0.0'
+    eventBusVersion = '3.1.1'
     eventBusAnnotationProcessorVersion = '3.0.1'
-    usbSerialVersion = '4.5'
+    usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     // support libraries
-    compile "com.android.support:appcompat-v7:$supportLibVersion"
-    compile "com.android.support:support-compat:$supportLibVersion"
-    compile "com.android.support:design:$supportLibVersion"
-    compile "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+    implementation "com.android.support:appcompat-v7:$supportLibVersion"
+    implementation "com.android.support:support-compat:$supportLibVersion"
+    implementation "com.android.support:design:$supportLibVersion"
+    implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
     // view binding
-    compile "com.jakewharton:butterknife:$butterknifeVersion"
+    implementation "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     // material dialogs
-    compile "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+    implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
     // range bar
-    compile "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
+    implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
     // permissions
-    compile "pub.devrel:easypermissions:$easyPermissionsVersion"
+    implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
     // event bus
-    compile "org.greenrobot:eventbus:$eventBusVersion"
+    implementation "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
     // serial communication
-    compile "com.github.felHR85:UsbSerial:$usbSerialVersion"
+    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
     // signal filtering
-    compile "com.github.berndporr:iirj:v$iirFiltersVersion"
-    compile "org.apache.commons:commons-math3:$commonsMathVersion"
+    implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
+    implementation "org.apache.commons:commons-math3:$commonsMathVersion"
     // crashlytics
-    compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
-        transitive = true;
+    implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
+        transitive = true
     }
 }

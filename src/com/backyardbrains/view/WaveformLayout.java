@@ -94,8 +94,6 @@ public class WaveformLayout extends ConstraintLayout {
     public void setMilliseconds(final float milliseconds) {
         if (this.milliseconds == milliseconds) return;
 
-        //LOGD(TAG, "setMilliseconds()");
-
         this.milliseconds = milliseconds;
         tvTime.setText(Formats.formatTime_s_msec(milliseconds));
     }
@@ -105,8 +103,6 @@ public class WaveformLayout extends ConstraintLayout {
      */
     public void setMillivolts(final float millivolts) {
         if (this.millivolts == millivolts) return;
-
-        //LOGD(TAG, "setMillivolts()");
 
         this.millivolts = millivolts;
         tvSignal.setText(Formats.formatSignal(millivolts));

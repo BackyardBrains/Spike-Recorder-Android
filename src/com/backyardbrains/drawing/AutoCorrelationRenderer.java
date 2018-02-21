@@ -14,8 +14,11 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
     // ----------------------------------------------------------------------------------------
     @Override protected void drawingHandler(GL10 gl) {
+        // initialize GL
         initGL(gl);
+        // draw thumb rectangles and main rectangle
         makeThumbAndMainRectangles();
+
         if (getAnalysisManager() != null) {
             List<List<Integer>> AC = getAnalysisManager().getAutocorrelation();
             if (AC != null) {
@@ -24,9 +27,8 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
                 }
                 if (AC.size() > 0) {
                     int s = selected;
-                    if (selected >= AC.size() || selected < 0) {
-                        s = 0;
-                    }
+                    if (selected >= AC.size() || selected < 0) s = 0;
+                    
                     graphIntegerList(gl, AC.get(s), mainRect, BYBColors.getColorAsGlById(s), true);
                 }
             }

@@ -12,7 +12,7 @@ public final class DateUtils {
     private static SimpleDateFormat formatter = (SimpleDateFormat) SimpleDateFormat.getDateInstance();
 
     // Pattern for "Mar 17, 2017 12:06 a.m." date format
-    private static final String PATTERN_MMM_D_YYYY_HH_MM_A = "MMM d, yyyy HH:mm a";
+    private static final String PATTERN_MMM_D_YYYY_HH_MM_A = "MMM d, yyyy hh:mm a";
 
     /**
      * Returns string representation of the specified {@code date} formatted like following example "Mar 17, 2017 12:06
@@ -24,14 +24,14 @@ public final class DateUtils {
     }
 
     // Pattern for "17_Mar_2017_12_06_34_a.m." date format
-    private static final String PATTERN_D_MMM_YYYY_HH_MM_S_A = "d_MMM_yyyy_HH_mm_s_a";
+    private static final String PATTERN_M_D_YYYY_H_MM_SS_A = "M-d-yyyy h:mm:ss a";
 
     /**
      * Returns string representation of the specified {@code date} formatted like following example
-     * "17_Mar_2017_12_06_34_a.m.".
+     * "3-13-2017 1:55:34 a.m.".
      */
-    public static String format_d_MMM_yyyy_HH_mm_s_a(@NonNull Date date) {
-        formatter.applyPattern(PATTERN_D_MMM_YYYY_HH_MM_S_A);
+    static String format_d_MMM_yyyy_HH_mm_s_a(@NonNull Date date) {
+        formatter.applyPattern(PATTERN_M_D_YYYY_H_MM_SS_A);
         return formatter.format(date);
     }
 }

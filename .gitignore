@@ -12,6 +12,7 @@
 bin/
 gen/
 out/
+release/
 
 # Gradle files
 .gradle/
@@ -55,3 +56,4 @@ google-services.json
 freeline.py
 freeline/
 freeline_project_description.json
+/gradle.properties

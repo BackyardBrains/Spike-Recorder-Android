@@ -43,14 +43,14 @@ public class BaseFragment extends Fragment {
         }
     }
 
-    @CallSuper @Override public void onResume() {
-        super.onResume();
+    @CallSuper @Override public void onStart() {
+        super.onStart();
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
 
-    @CallSuper @Override public void onPause() {
+    @CallSuper @Override public void onStop() {
+        super.onStop();
         if (EventBus.getDefault().isRegistered(this)) EventBus.getDefault().unregister(this);
-        super.onPause();
     }
 
     @Override public void onDetach() {

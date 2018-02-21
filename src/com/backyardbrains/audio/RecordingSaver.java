@@ -19,6 +19,7 @@
 
 package com.backyardbrains.audio;
 
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
@@ -37,38 +38,43 @@ class RecordingSaver {
     private final List<short[]> allSamples;
     private final OutputStream outputStream;
 
+    private WriteThread writeThread;
     private boolean done;
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
 
     private class WriteThread extends Thread {
 
         private ByteBuffer bb;
 
-        @Override public void run() throws IllegalStateException {
-            while (!done) {
-                if (allSamples.size() > 0) {
-                    bb = ByteBuffer.allocate(allSamples.get(0).length * 2).order(ByteOrder.nativeOrder());
-                    bb.asShortBuffer().put(allSamples.remove(0));
+        @Override public void run() {
+            try {
+                while (!done) {
+                    if (allSamples.size() > 0) {
+                        bb = ByteBuffer.allocate(allSamples.get(0).length * 2).order(ByteOrder.nativeOrder());
+                        bb.asShortBuffer().put(allSamples.remove(0));
+                        try {
+                            outputStream.write(bb.array());
+                        } catch (IOException e) {
+                            throw new IllegalStateException("Could not write sample to file", e);
+                        }
+                    }
+                }
+                // let's record all left samples
+                for (int i = 0; i < allSamples.size(); i++) {
+                    bb = ByteBuffer.allocate(allSamples.get(i).length * 2).order(ByteOrder.nativeOrder());
+                    bb.asShortBuffer().put(allSamples.get(i));
                     try {
                         outputStream.write(bb.array());
                     } catch (IOException e) {
-                        Crashlytics.logException(e);
-                        throw new IllegalStateException("Could not write sample to file");
+                        throw new IllegalStateException("Could not write sample to file!", e);
                     }
                 }
+            } catch (IllegalStateException e) {
+                Crashlytics.logException(e);
+            } finally {
+                // close the stream and save the recorded file
+                stopRecording();
             }
-            // let's record all left samples
-            for (int i = 0; i < allSamples.size(); i++) {
-                bb = ByteBuffer.allocate(allSamples.get(i).length * 2).order(ByteOrder.nativeOrder());
-                bb.asShortBuffer().put(allSamples.get(i));
-                try {
-                    outputStream.write(bb.array());
-                } catch (IOException e) {
-                    Crashlytics.logException(e);
-                    throw new IllegalStateException("Could not write sample to file");
-                }
-            }
-            // close the stream and save the recorded file
-            stopRecording();
         }
     }
 
@@ -77,7 +83,8 @@ class RecordingSaver {
         allSamples = new CopyOnWriteArrayList<>();
 
         // start writing thread
-        new WriteThread().start();
+        writeThread = new WriteThread();
+        writeThread.start();
 
         try {
             outputStream = new FileOutputStream(file);
@@ -95,6 +102,16 @@ class RecordingSaver {
     }
 
     /**
+     * Sets the sample rate tha will be used when saving WAV file.
+     */
+    void setSampleRate(int sampleRate) {
+        if (this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return; // sample rate need to be positive
+
+        this.sampleRate = sampleRate;
+    }
+
+    /**
      * Returns currently recorder length.
      */
     long getAudioLength() {
@@ -104,20 +121,20 @@ class RecordingSaver {
     /**
      * Requests the recording to stop.
      */
-    void requestStop() throws IllegalStateException {
+    void requestStop() {
         done = true;
     }
 
     // Closes the audio stream and saves the audio file to storage
-    private void stopRecording() throws IllegalStateException {
+    private void stopRecording() {
         try {
             outputStream.flush();
             outputStream.close();
+            writeThread = null;
 
-            WavAudioFile.save(file);
+            WavAudioFile.save(file, sampleRate);
         } catch (IOException e) {
             Crashlytics.logException(e);
-            throw new IllegalStateException("Cannot write wav header.");
         }
     }
 }

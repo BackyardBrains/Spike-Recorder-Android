@@ -128,48 +128,21 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
         gl.glDisable(GL10.GL_DEPTH_TEST);
     }
 
-    // ----------------------------------------------------------------------------------------
+    /**
+     * Creates rectangles for graph thumbs and main graph that will be used as configs for drawing
+     */
     void makeThumbAndMainRectangles() {
-        int margin = 20;
         int maxSpikeTrains = 3;
-        float d = (Math.min(width, height) / (float) (maxSpikeTrains + 1)) * 0.2f;
-        if (d < margin) {
-            margin = (int) d;
-        }
-        float s = (Math.min(width, height) - margin * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
+        float margin = 20f;
+        float thumbSize = (Math.min(width, height) - margin * (maxSpikeTrains + 1)) / maxSpikeTrains;
 
-        boolean bVert = width > height;
-
+        // create rectangles for thumbs
         thumbRects = new ofRectangle[maxSpikeTrains];
         for (int i = 0; i < maxSpikeTrains; i++) {
-
-            float x = (float) margin;
-            float y = (float) margin;
-
-            if (bVert) {
-                y += (s + margin) * i;
-            } else {
-                y = height - s - margin;
-                x += (s + margin) * i;
-            }
-
-            thumbRects[i] = new ofRectangle(x, y, s, s);
+            thumbRects[i] = new ofRectangle(margin, margin + (thumbSize + margin) * i, thumbSize, thumbSize);
         }
-
-        float x = (float) margin;
-        float y = (float) margin;
-        float w = width;
-        float h = height;
-
-        if (bVert) {
-            x += margin + s;
-            h -= margin * 2;
-            w = width - (margin * 3) - s;
-        } else {
-            w -= x - margin;
-            h -= (margin * 3) - s;
-        }
-        mainRect = new ofRectangle(x, y, w, h);
+        // create main rectangle
+        mainRect = new ofRectangle(2 * margin + thumbSize, margin, width - 3 * margin - thumbSize, height - 2 * margin);
     }
 
     // ----------------------------------------------------------------------------------------

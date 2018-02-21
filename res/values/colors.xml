@@ -9,12 +9,14 @@
     <color name="blue">#FF007AFF</color>
     <color name="blue_dark">#FF00366F</color>
     <color name="gray_light">#FF8c8c8c</color>
+    <color name="gray_light_50">#808c8c8c</color>
     <color name="gray_dark">#FF656666</color>
     <color name="gray_darker">#FF262626</color>
     <color name="orange">#FFf77f03</color>
     <color name="grey22">#FF222222</color>
     <color name="grey40">#FF404040</color>
     <color name="red_orange">#FFFF3300</color>
+    <color name="red_orange_75">#80FF3300</color>
 
     <color name="red">#FFFF0000</color>
     <color name="yellow">#FFFFFF00</color>

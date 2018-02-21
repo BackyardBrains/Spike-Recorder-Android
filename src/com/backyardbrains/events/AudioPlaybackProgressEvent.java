@@ -6,12 +6,18 @@ package com.backyardbrains.events;
 public class AudioPlaybackProgressEvent {
 
     private final long progress;
+    private final int sampleRate;
 
-    public AudioPlaybackProgressEvent(long progress) {
+    public AudioPlaybackProgressEvent(long progress, int sampleRate) {
         this.progress = progress;
+        this.sampleRate = sampleRate;
     }
 
     public long getProgress() {
         return progress;
+    }
+
+    public int getSampleRate() {
+        return sampleRate;
     }
 }

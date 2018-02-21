@@ -19,11 +19,17 @@
 
 package com.backyardbrains.audio;
 
+import com.crashlytics.android.Crashlytics;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 public class RingBuffer {
+
+    private static final String TAG = makeLogTag(RingBuffer.class);
 
     private final int size;
 
@@ -40,15 +46,30 @@ public class RingBuffer {
     }
 
     public void add(final ShortBuffer incoming) {
-        incoming.clear();
+        try {
+            // we can only copy
+            incoming.clear();
 
-        System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length - incoming.capacity());
-        incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
+            System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length - incoming.capacity());
+            incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
+        } catch (Exception e) {
+            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
+                + incoming.capacity() + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length
+                - incoming.capacity()));
+            Crashlytics.logException(e);
+        }
     }
 
     public void add(short[] incoming) {
-        System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
-        System.arraycopy(incoming, 0, buffer, buffer.length - incoming.length, incoming.length);
+        try {
+            System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
+            System.arraycopy(incoming, 0, buffer, buffer.length - incoming.length, incoming.length);
+        } catch (Exception e) {
+            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
+                + incoming.length + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length
+                - incoming.length));
+            Crashlytics.logException(e);
+        }
     }
 
     public void add(short incoming) {

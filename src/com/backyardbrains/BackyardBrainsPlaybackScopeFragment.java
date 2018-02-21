@@ -18,6 +18,7 @@ import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
@@ -33,12 +34,19 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     private static final String TAG = makeLogTag(BackyardBrainsPlaybackScopeFragment.class);
 
     private static final String ARG_FILE_PATH = "bb_file_path";
+    private static final String INT_SAMPLE_RATE = "bb_sample_rate";
+
+    // Maximum time that should be processed in any given moment (in seconds)
+    private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
 
     protected ImageView ibtnPlayPause;
     protected SeekBar sbAudioProgress;
     protected TextView tvProgressTime;
 
     protected String filePath;
+
+    // Sample rate that should be used for audio playback
+    private int sampleRate;
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -63,6 +71,13 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         if (getArguments() != null) filePath = getArguments().getString(ARG_FILE_PATH);
     }
 
+    @Override public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        if (savedInstanceState != null) sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.SAMPLE_RATE);
+        seek(sbAudioProgress.getProgress());
+    }
+
     @Override public void onStart() {
         super.onStart();
 
@@ -71,6 +86,8 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
             return;
         }
 
+        // we should set max processing time to 6 seconds
+        if (getAudioService() != null) getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         // everything good, start playback if it hasn't already been started
         startPlaying(true);
     }
@@ -79,6 +96,12 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         super.onStop();
 
         stopPlaying();
+    }
+
+    @Override public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt(INT_SAMPLE_RATE, sampleRate);
     }
 
     //=================================================
@@ -113,7 +136,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             if (getAudioService() != null) {
-                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
+                                setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
                             }
 
                             setMillivolts(
@@ -136,7 +159,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                     @Override public void run() {
                         seek(finalProgress);
                         sbAudioProgress.setProgress(finalProgress);
-                        updateProgressTime(finalProgress);
+                        updateProgressTime(finalProgress, sampleRate);
                     }
                 });
             }
@@ -240,6 +263,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         LOGD(TAG, "Start audio playback - " + event.getLength());
+        sampleRate = event.getSampleRate();
         if (event.getLength() > 0) {
             sbAudioProgress.setMax((int) event.getLength());
             EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
@@ -254,7 +278,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         if (sbAudioProgress.getMax() == 0) sbAudioProgress.setMax(getLength());
 
         sbAudioProgress.setProgress((int) event.getProgress());
-        updateProgressTime((int) event.getProgress());
+        updateProgressTime((int) event.getProgress(), event.getSampleRate());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -296,7 +320,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                     seekBar.post(new Runnable() {
                         @Override public void run() {
                             seek(progress);
-                            updateProgressTime(progress);
+                            updateProgressTime(progress, sampleRate);
                         }
                     });
                 }
@@ -313,7 +337,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     // Updates progress time according to progress
-    private void updateProgressTime(int progress) {
-        tvProgressTime.setText(WavUtils.formatWavProgress(progress));
+    private void updateProgressTime(int progress, int sampleRate) {
+        tvProgressTime.setText(WavUtils.formatWavProgress(progress, sampleRate));
     }
 }
