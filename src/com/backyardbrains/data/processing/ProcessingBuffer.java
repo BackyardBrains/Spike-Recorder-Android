@@ -1,4 +1,4 @@
-package com.backyardbrains.data;
+package com.backyardbrains.data.processing;
 
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.RingBuffer;
@@ -11,31 +11,34 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class DataManager {
+public class ProcessingBuffer {
 
-    private static final String TAG = makeLogTag(DataManager.class);
+    private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
     //
     private static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
+
+    private static ProcessingBuffer INSTANCE;
 
     private RingBuffer dataBuffer;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private long lastBytePosition;
 
-    private static DataManager manager;
-
     // Private constructor through which we create singleton instance
-    private DataManager() {
+    private ProcessingBuffer() {
         dataBuffer = new RingBuffer(bufferSize);
     }
 
     /**
-     * Returns singleton instance of {@link DataManager} with default configuration.
+     * Returns singleton instance of {@link ProcessingBuffer} with default configuration.
      */
-    public static DataManager get() {
-        if (manager == null) manager = new DataManager();
-
-        return manager;
+    public static ProcessingBuffer get() {
+        if (INSTANCE == null) {
+            synchronized (ProcessingBuffer.class) {
+                if (INSTANCE == null) INSTANCE = new ProcessingBuffer();
+            }
+        }
+        return INSTANCE;
     }
 
     //=================================================

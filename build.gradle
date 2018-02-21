@@ -2,7 +2,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url "https://maven.google.com" }
+        google()
         maven { url "https://jitpack.io" }
         maven { url 'https://maven.fabric.io/public' }
     }
@@ -15,7 +15,7 @@ buildscript {
 repositories {
     jcenter()
     mavenCentral()
-    maven { url "https://maven.google.com" }
+    google()
     maven { url "https://jitpack.io" }
     maven { url 'https://maven.fabric.io/public' }
 }
@@ -60,7 +60,9 @@ android {
 
         javaCompileOptions {
             annotationProcessorOptions {
-                arguments = [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex']
+                arguments =
+                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
+                        toString()]
             }
         }
     }
@@ -85,7 +87,7 @@ ext {
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
     crashlyticsVersion = '2.8.0@aar'
-    easyPermissionsVersion = '1.1.2'
+    easyPermissionsVersion = '1.1.3'
     constraintLayoutVersion = '1.0.2'
     eventBusVersion = '3.0.0'
     eventBusAnnotationProcessorVersion = '3.0.1'
@@ -95,31 +97,36 @@ ext {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     // support libraries
-    compile "com.android.support:appcompat-v7:$supportLibVersion"
-    compile "com.android.support:support-compat:$supportLibVersion"
-    compile "com.android.support:design:$supportLibVersion"
-    compile "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+    implementation "com.android.support:appcompat-v7:$supportLibVersion"
+    implementation "com.android.support:support-compat:$supportLibVersion"
+    implementation "com.android.support:design:$supportLibVersion"
+    implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+    // db
+    implementation "android.arch.persistence.room:runtime:1.0.0"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
+    // debug db
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
     // view binding
-    compile "com.jakewharton:butterknife:$butterknifeVersion"
+    implementation "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     // material dialogs
-    compile "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+    implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
     // range bar
-    compile "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
+    implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
     // permissions
-    compile "pub.devrel:easypermissions:$easyPermissionsVersion"
+    implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
     // event bus
-    compile "org.greenrobot:eventbus:$eventBusVersion"
+    implementation "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
     // serial communication
-    compile "com.github.felHR85:UsbSerial:$usbSerialVersion"
+    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
     // signal filtering
-    compile "com.github.berndporr:iirj:v$iirFiltersVersion"
-    compile "org.apache.commons:commons-math3:$commonsMathVersion"
+    implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
+    implementation "org.apache.commons:commons-math3:$commonsMathVersion"
     // crashlytics
-    compile("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
+    implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true
     }
 }

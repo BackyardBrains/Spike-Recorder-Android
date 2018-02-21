@@ -6,7 +6,6 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.view.ofRectangle;
-import java.util.List;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -146,32 +145,32 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
     }
 
     // ----------------------------------------------------------------------------------------
-    void graphIntegerList(GL10 gl, List<Integer> ac, ofRectangle r, float[] color, boolean bDrawBox) {
+    void graphIntegerList(GL10 gl, int[] ac, ofRectangle r, float[] color, boolean bDrawBox) {
         graphIntegerList(gl, ac, r.x, r.y, r.width, r.height, color, bDrawBox);
     }
 
     // ----------------------------------------------------------------------------------------
-    private void graphIntegerList(GL10 gl, List<Integer> ac, float px, float py, float w, float h, float[] color,
+    private void graphIntegerList(GL10 gl, int[] ac, float px, float py, float w, float h, float[] color,
         boolean bDrawBox) {
         if (ac != null) {
-            if (ac.size() > 0) {
-                int s = ac.size();
+            if (ac.length > 0) {
+                int s = ac.length;
                 float[] values = new float[s];
                 int mx = Integer.MIN_VALUE;
                 for (int i = 0; i < s; i++) {
-                    int y = ac.get(i);
+                    int y = ac[i];
                     if (mx < y) mx = y;
                 }
                 if (mx == 0) mx = 1;// avoid division by zero
                 for (int i = 0; i < s; i++) {
-                    values[i] = ((float) ac.get(i)) / (float) mx;
+                    values[i] = ((float) ac[i]) / (float) mx;
                 }
                 BYBBarGraph graph = new BYBBarGraph(values, px, py, w, h, color);
                 if (bDrawBox) {
                     graph.makeBox(BYBColors.getColorAsGlById(BYBColors.white));
                 }
                 graph.setVerticalAxis(0, mx, 5);
-                graph.setHorizontalAxis(0, ac.size(), 6);
+                graph.setHorizontalAxis(0, ac.length, 6);
                 graph.draw(gl);
             }
         }

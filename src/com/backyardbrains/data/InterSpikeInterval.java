@@ -1,11 +1,11 @@
-package com.backyardbrains.analysis;
+package com.backyardbrains.data;
 
-public class BYBInterSpikeInterval {
+public class InterSpikeInterval {
 
     private final float x;
     private final int y;
 
-    public BYBInterSpikeInterval(float x, int y) {
+    public InterSpikeInterval(float x, int y) {
         this.x = x;
         this.y = y;
     }
@@ -17,4 +17,4 @@ public class BYBInterSpikeInterval {
     public int getY() {
         return y;
     }
-};
+}

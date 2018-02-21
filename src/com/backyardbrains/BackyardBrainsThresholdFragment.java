@@ -99,9 +99,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         return view;
     }
 
-    @Override
-    protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        final ThresholdRenderer renderer = new ThresholdRenderer(fragment, preparedBuffer);
+    @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
+        final ThresholdRenderer renderer = new ThresholdRenderer(this, preparedBuffer);
         renderer.setCallback(new ThresholdRenderer.CallbackAdapter() {
 
             @Override public void onThresholdPositionChange(final int position) {

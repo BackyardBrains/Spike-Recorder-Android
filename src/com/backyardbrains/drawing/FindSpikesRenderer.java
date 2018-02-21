@@ -4,17 +4,19 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.analysis.BYBSpike;
+import com.backyardbrains.data.persistance.AnalysisDataSource;
+import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.utils.BYBUtils;
 import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
-    private static final String TAG = makeLogTag(FindSpikesRenderer.class);
+    static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
     private long fromSample;
     private long toSample;
@@ -22,13 +24,14 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private FloatBuffer spikesBuffer;
     private FloatBuffer colorsBuffer;
 
-    private BYBSpike[] spikes;
+    @SuppressWarnings("WeakerAccess") Spike[] spikes;
     private int[] thresholds = new int[2];
 
     private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
     private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 
     private Callback callback;
+    private String filePath;
 
     interface Callback extends BYBBaseRenderer.Callback {
         void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
@@ -39,8 +42,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         }
     }
 
-    public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
+    public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer,
+        @NonNull String filePath) {
         super(fragment, preparedBuffer);
+
+        this.filePath = filePath;
 
         updateThresholdHandles();
     }
@@ -144,20 +150,28 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         }
     }
 
-    private void setThreshold(int t, @ThresholdOrientation int orientation, boolean bBroadcast) {
+    private void setThreshold(int t, @ThresholdOrientation int orientation, boolean broadcast) {
         if (orientation == ThresholdOrientation.LEFT || orientation == ThresholdOrientation.RIGHT) {
             thresholds[orientation] = t;
-            if (bBroadcast) updateThresholdHandle(orientation);
+            if (broadcast) updateThresholdHandle(orientation);
         }
     }
 
     private boolean getSpikes() {
-        if (getAnalysisManager() != null) {
-            spikes = getAnalysisManager().getSpikes();
+        if (spikes != null && spikes.length > 0) return true;
 
-            if (spikes.length > 0) return true;
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().getSpikes(filePath, new AnalysisDataSource.GetAnalysisCallback<Spike[]>() {
+                @Override public void onAnalysisLoaded(@NonNull Spike[] result) {
+                    LOGD(TAG, "SPIKES RETURNED: " + result.length);
+                    FindSpikesRenderer.this.spikes = result;
+                }
+
+                @Override public void onDataNotAvailable() {
+                    spikes = null;
+                }
+            });
         }
-        spikes = null;
 
         return false;
     }
@@ -177,14 +191,15 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                 int j = 0, k = 0; // j as index of arr, k as index of arr1
                 try {
                     long index;
-                    for (BYBSpike spike : spikes) {
-                        if (fromSample < spike.index && spike.index < toSample) {
+                    for (Spike spike : spikes) {
+                        if (fromSample < spike.getIndex() && spike.getIndex() < toSample) {
                             index = toSample - fromSample < getGlWindowHorizontalSize() ?
-                                spike.index + getGlWindowHorizontalSize() - toSample : spike.index - fromSample;
+                                spike.getIndex() + getGlWindowHorizontalSize() - toSample
+                                : spike.getIndex() - fromSample;
                             arr[j++] = index;
-                            arr[j++] = spike.value;
+                            arr[j++] = spike.getValue();
 
-                            float v = spike.value;
+                            float v = spike.getValue();
                             float[] colorToSet = whiteColor;
                             if (v >= min && v < max) colorToSet = currentColor;
                             for (int l = 0; l < 4; l++) {

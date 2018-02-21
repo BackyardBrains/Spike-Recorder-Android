@@ -26,8 +26,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.data.DataManager;
-import com.backyardbrains.data.SampleProcessor;
+import com.backyardbrains.data.processing.ProcessingBuffer;
+import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -91,7 +91,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     private final IBinder binder = new ServiceBinder();
 
     // Reference to the data manager that stores and processes the data
-    DataManager dataManager;
+    ProcessingBuffer processingBuffer;
     // Reference to the sample processor that will additionally process the samples
     private WeakReference<SampleProcessor> sampleProcessorRef;
 
@@ -133,7 +133,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         super.onCreate();
         LOGD(TAG, "onCreate()");
 
-        dataManager = DataManager.get();
+        processingBuffer = ProcessingBuffer.get();
         // we need to listen for USB attach/detach
         startUsbDetection();
 
@@ -155,7 +155,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         turnOffMicThread();
         turnOffPlaybackThread();
 
-        dataManager = null;
+        processingBuffer = null;
 
         super.onDestroy();
     }
@@ -213,7 +213,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
         if (maxSeconds <= 0) return; // max time needs to be positive
 
-        if (dataManager != null) dataManager.setBufferSize((int) (maxSeconds * sampleRate));
+        if (processingBuffer != null) processingBuffer.setBufferSize((int) (maxSeconds * sampleRate));
 
         this.maxTime = maxSeconds;
     }
@@ -302,20 +302,19 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      */
     @Override public void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition) {
         // pass data to data manager
-        if (dataManager != null) dataManager.addToBuffer(data, lastBytePosition);
+        if (processingBuffer != null) processingBuffer.addToBuffer(data, lastBytePosition);
     }
 
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(short[] data) {
-        // data -> DataManager up to 2 secs
-        if (dataManager != null) {
+        // data -> ProcessingBuffer up to 2 secs
+        if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                //noinspection ConstantConditions
-                dataManager.addToBuffer(getProcessor().process(data));
+                processingBuffer.addToBuffer(getProcessor().process(data));
             } else {
                 // pass data to data manager
-                dataManager.addToBuffer(data);
+                processingBuffer.addToBuffer(data);
             }
         }
 
@@ -398,7 +397,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             micThread = null;
             micThread = new MicListener(this);
             // we should clear buffer
-            if (dataManager != null) dataManager.clearBuffer();
+            if (processingBuffer != null) processingBuffer.clearBuffer();
 
             micThread.start();
             LOGD(TAG, "Microphone thread started");
@@ -414,7 +413,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             LOGD(TAG, "Microphone Thread stopped");
 
             // we should clear buffer so that next buffer user doesn't have any residue
-            if (dataManager != null) dataManager.clearBuffer();
+            if (processingBuffer != null) processingBuffer.clearBuffer();
         }
     }
 
@@ -495,7 +494,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         LOGD(TAG, "USB communication started");
 
         // we should clear buffer
-        if (dataManager != null) dataManager.clearBuffer();
+        if (processingBuffer != null) processingBuffer.clearBuffer();
     }
 
     // Turns off USB input processing
@@ -510,7 +509,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         usbHelper.pause();
 
         // we should clear buffer so that next buffer user doesn't have any residue
-        if (dataManager != null) dataManager.clearBuffer();
+        if (processingBuffer != null) processingBuffer.clearBuffer();
         LOGD(TAG, "USB communication ended");
     }
 
@@ -631,8 +630,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * @return long Position of the playback current sample.
      */
     public long getPlaybackProgress() {
-        if (isPlaybackMode() && dataManager != null) {
-            return AudioUtils.getSampleCount(dataManager.getLastBytePosition());
+        if (isPlaybackMode() && processingBuffer != null) {
+            return AudioUtils.getSampleCount(processingBuffer.getLastBytePosition());
         }
 
         return 0;
@@ -686,7 +685,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             playbackThread = null;
 
             // we should clear buffer so that next buffer user doesn't have any residue
-            if (dataManager != null) dataManager.clearBuffer();
+            if (processingBuffer != null) processingBuffer.clearBuffer();
 
             // post event that audio playback has stopped
             EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
@@ -724,7 +723,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
 
                 @Override public void onStop() {
                     // we should clear buffer
-                    if (dataManager != null) dataManager.clearBuffer();
+                    if (processingBuffer != null) processingBuffer.clearBuffer();
                     // post event that audio playback has started
                     EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                 }

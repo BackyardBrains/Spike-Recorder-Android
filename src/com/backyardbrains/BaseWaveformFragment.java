@@ -80,7 +80,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected abstract View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState);
 
-    protected abstract BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer);
+    protected abstract BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer);
 
     protected abstract boolean isBackable();
 
@@ -131,7 +131,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        renderer = createRenderer(this, bufferWithXs);
+        renderer = createRenderer(bufferWithXs);
         waveform.setRenderer(renderer);
 
         if (isBackable()) {

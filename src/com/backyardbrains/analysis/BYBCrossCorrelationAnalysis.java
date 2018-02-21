@@ -1,99 +1,85 @@
 package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
-import java.util.ArrayList;
-import java.util.List;
+import android.support.annotation.Nullable;
+import java.util.Arrays;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class BYBCrossCorrelationAnalysis extends BYBBaseAnalysis {
+class BYBCrossCorrelationAnalysis extends BYBBaseAnalysis<int[]> {
 
     private static final String TAG = makeLogTag(BYBCrossCorrelationAnalysis.class);
 
-    private final List<List<BYBSpike>> trains;
-    private List<List<Integer>> crossCorrelation = new ArrayList<>();
+    private static final float MAX_TIME = 0.1f;
+    private static final float BIN_SIZE = 0.001f;
+    private static final float MIN_EDGE = -MAX_TIME - BIN_SIZE * 0.5f;
+    private static final float MAX_EDGE = MAX_TIME + BIN_SIZE * 0.5f;
+    private static final float DIVIDER = 1 / BIN_SIZE;
 
-    BYBCrossCorrelationAnalysis(@NonNull List<List<BYBSpike>> trains, @NonNull AnalysisListener listener) {
-        super(listener);
+    private final float[][] trains;
+
+    BYBCrossCorrelationAnalysis(@NonNull String filePath, @NonNull float[][] trains,
+        @NonNull AnalysisListener<int[]> listener) {
+        super(filePath, listener);
 
         this.trains = trains;
-
-        execute();
     }
 
-    @NonNull List<List<Integer>> getCrossCorrelation() {
-        return crossCorrelation;
-    }
+    @Nullable @Override int[][] process() {
+        long start = System.currentTimeMillis();
+        int loopCounter = 0;
 
-    @Override void process() {
-        float maxTime = 0.1f;
-        float binSize = 0.001f;
+        float diff;
+        int firstIndex, secondIndex;
+        int firstSpikeCount, secondSpikeCount;
+        float[] firstTrain, secondTrain;
+        int[] temp;
 
-        clearCrossCorrelation();
-        crossCorrelation = new ArrayList<>();
+        int[] histogram = new int[(int) Math.ceil((2 * MAX_TIME + BIN_SIZE) / BIN_SIZE)];
+        int trainCount = trains.length;
+        int[][] crossCorrelation = new int[trainCount * trainCount][];
+        for (int i = 0; i < trainCount; i++) {
+            for (int j = 0; j < trainCount; j++) {
+                firstTrain = trains[i];
+                firstSpikeCount = firstTrain.length;
+                secondTrain = trains[j];
+                secondSpikeCount = secondTrain.length;
 
-        for (int fSpikeTrainIndex = 0; fSpikeTrainIndex < trains.size(); fSpikeTrainIndex++) {
-            for (int sSpikeTrainIndex = 0; sSpikeTrainIndex < trains.size(); sSpikeTrainIndex++) {
-                List<BYBSpike> fspikeTrain = trains.get(fSpikeTrainIndex);
-                List<BYBSpike> sspikeTrain = trains.get(sSpikeTrainIndex);
-                ArrayList<Integer> temp = new ArrayList<>();
-                if (fspikeTrain.size() > 1 && sspikeTrain.size() > 1) {
-                    BYBSpike firstSpike;
-                    BYBSpike secondSpike;
-                    int n = (int) Math.ceil((2 * maxTime + binSize) / binSize);
+                temp = new int[histogram.length];
+                if (firstSpikeCount > 1 && secondSpikeCount > 1) {
+                    Arrays.fill(histogram, 0);
 
-                    int[] histogram = new int[n];
-                    for (int x = 0; x < n; ++x) {
-                        histogram[x] = 0;
-                    }
-
-                    float minEdge = -maxTime - binSize * 0.5f;
-                    float maxEdge = maxTime + binSize * 0.5f;
-                    float diff;
-                    int index;
-                    int mainIndex;
-                    int secIndex;
                     boolean insideInterval;
                     // go through first spike train
-                    for (mainIndex = 0; mainIndex < fspikeTrain.size(); mainIndex++) {
-                        firstSpike = fspikeTrain.get(mainIndex);
-                        // Check on left of spike
+                    for (firstIndex = 0; firstIndex < firstSpikeCount; firstIndex++) {
+                        // check on left of spike
                         insideInterval = false;
                         // go through second spike train
-                        for (secIndex = 0; secIndex < sspikeTrain.size(); secIndex++) {
-                            secondSpike = sspikeTrain.get(secIndex);
-                            diff = firstSpike.time - secondSpike.time;
-                            if (diff > minEdge && diff < maxEdge) {
-                                insideInterval = false;
-                                index = (int) (((diff - minEdge) / binSize));
-                                histogram[index]++;
-                            } else if (insideInterval) {
+                        for (secondIndex = 0; secondIndex < secondSpikeCount; secondIndex++) {
+                            diff = firstTrain[firstIndex] - secondTrain[secondIndex];
+                            if (diff > MIN_EDGE && diff < MAX_EDGE) {
+                                insideInterval = true;
+                                histogram[(int) (((diff - MIN_EDGE) * DIVIDER))]++;
+                            } else if (insideInterval) { //we pass last spike that is in interval of interest
                                 break;
                             }
                         }
                     }
 
-                    for (int j = 0; j < n; j++) {
-                        temp.add(histogram[j]);
-                    }
+                    System.arraycopy(histogram, 0, temp, 0, histogram.length);
                 }
-                crossCorrelation.add(temp);
+
+                crossCorrelation[i * trainCount + j] = temp;
+
+                LOGD(TAG, "LOOP END (" + ++loopCounter + "): " + toSecs(start));
             }
         }
+
+        return crossCorrelation;
     }
 
-    private void clearCrossCorrelation() {
-        LOGD(TAG, "clearCrossCorrelation()");
-
-        if (crossCorrelation != null) {
-            for (int i = 0; i < crossCorrelation.size(); i++) {
-                if (crossCorrelation.get(i) != null) {
-                    crossCorrelation.get(i).clear();
-                }
-            }
-            crossCorrelation.clear();
-            crossCorrelation = null;
-        }
+    private long toSecs(long millis) {
+        return System.currentTimeMillis() - millis;
     }
 }

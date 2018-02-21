@@ -3,7 +3,7 @@ package com.backyardbrains.usb;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.Filters;
-import com.backyardbrains.data.DataProcessor;
+import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import java.util.Arrays;

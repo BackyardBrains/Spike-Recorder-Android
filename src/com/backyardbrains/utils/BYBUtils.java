@@ -87,19 +87,22 @@ public class BYBUtils {
         return buf;
     }
 
-    public static float[] generateLogSpace(int min, int max, int logBins) {
+    /**
+     * Generates a logarithmic scale of {@code size} values ranging between {@code min} and {@code max}.
+     */
+    public static float[] generateLogSpace(int min, int max, int size) {
         double logarithmicBase = Math.E;
-        double mins = Math.pow(10.0, min);
-        double maxs = Math.pow(10.0, max);
-        double logMin = Math.log(mins);
-        double logMax = Math.log(maxs);
-        double delta = (logMax - logMin) / logBins;
+        double minimums = Math.pow(10.0, min);
+        double maximums = Math.pow(10.0, max);
+        double logMin = Math.log(minimums);
+        double logMax = Math.log(maximums);
+        double delta = (logMax - logMin) / size;
 
         double accDelta = 0;
-        float[] v = new float[logBins + 1];
-        for (int i = 0; i <= logBins; ++i) {
+        float[] v = new float[size + 1];
+        for (int i = 0; i <= size; ++i) {
             v[i] = (float) Math.pow(logarithmicBase, logMin + accDelta);
-            accDelta += delta;// accDelta = delta * i
+            accDelta += delta;
         }
         return v;
     }

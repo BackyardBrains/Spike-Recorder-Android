@@ -1,103 +1,108 @@
 package com.backyardbrains.analysis;
 
-import android.os.AsyncTask;
-import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import java.lang.ref.WeakReference;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-abstract class BYBBaseAnalysis {
+abstract class BYBBaseAnalysis<T> {
 
     private static final String TAG = makeLogTag(BYBBaseAnalysis.class);
 
-    private final AnalysisListener listener;
-    private final AnalysisTask analysisTask;
+    private final String filePath;
+    private final AnalysisListener<T> listener;
+    private final AnalysisThread<T> analysisThread;
 
     /**
      *
      */
-    interface AnalysisListener {
+    interface AnalysisListener<T> {
+
+        /**
+         *  @param filePath
+         * @param results
+         */
+        void onAnalysisDone(@NonNull String filePath, @Nullable T[] results);
 
         /**
          *
+         * @param filePath
          */
-        void onAnalysisDone();
-
-        /**
-         *
-         */
-        void onAnalysisCanceled();
+        void onAnalysisFailed(@NonNull String filePath);
     }
 
-    BYBBaseAnalysis(@NonNull AnalysisListener listener) {
+    BYBBaseAnalysis(@NonNull String filePath, @NonNull AnalysisListener<T> listener) {
+        this.filePath = filePath;
         this.listener = listener;
-        this.analysisTask = new AnalysisTask();
+        this.analysisThread = new AnalysisThread<>(this);
     }
 
     /**
      *
      */
-    abstract void process();
+    @Nullable abstract T[] process() throws Exception;
 
     /**
      * Triggers the analysis process.
      */
-    public final void execute() {
-        analysisTask.execute();
+    final void startAnalysis() {
+        analysisThread.start();
     }
 
     /**
-     * Cancels the background process that performing the analysis.
+     *
+     * @param result
      */
-    public void stop() {
-        analysisTask.cancel(true);
+    @SuppressWarnings("WeakerAccess") void onResult(@Nullable T[] result) {
     }
 
     /**
      *
      */
-    protected void asyncPreExecute() {
-        LOGD(TAG, "asyncPreExecute");
+    @SuppressWarnings("WeakerAccess") void onFailed() {
     }
 
     /**
      *
      */
-    @CallSuper protected void asyncPostExecute() {
-        LOGD(TAG, "asyncPostExecute");
-        listener.onAnalysisDone();
+    void asyncOnResult(@Nullable T[] result) {
+        LOGD(TAG, "asyncOnResult");
+        listener.onAnalysisDone(filePath, result);
+        onResult(result);
     }
 
     /**
      *
      */
-    @CallSuper protected void asyncOnCancelled() {
-        LOGD(TAG, "asyncOnCancelled");
-        listener.onAnalysisCanceled();
+    void asyncOnFailed() {
+        LOGD(TAG, "asyncOnFailed");
+        listener.onAnalysisFailed(filePath);
+
+        onFailed();
     }
 
     /**
-     * Background task that initializes the analysis process.
+     * Background thread that initializes the analysis process.
      */
-    private class AnalysisTask extends AsyncTask<Void, Void, Void> {
+    private static class AnalysisThread<T> extends Thread {
 
-        @Override protected void onPreExecute() {
-            asyncPreExecute();
+        private WeakReference<BYBBaseAnalysis<T>> analysisRef;
+
+        AnalysisThread(BYBBaseAnalysis<T> analysis) {
+            analysisRef = new WeakReference<>(analysis);
         }
 
-        @SafeVarargs @Override protected final Void doInBackground(Void... params) {
-            process();
-
-            return null;
-        }
-
-        @Override protected void onPostExecute(Void v) {
-            asyncPostExecute();
-        }
-
-        @Override protected void onCancelled(Void v) {
-            asyncOnCancelled();
+        @Override public void run() {
+            final BYBBaseAnalysis<T> analysis;
+            if ((analysis = analysisRef.get()) != null) {
+                try {
+                    analysis.asyncOnResult(analysis.process());
+                } catch (Exception e) {
+                    analysis.asyncOnFailed();
+                }
+            }
         }
     }
 }

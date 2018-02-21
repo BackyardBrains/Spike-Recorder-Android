@@ -2,7 +2,7 @@ package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.data.SampleProcessor;
+import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.utils.AudioUtils;
 import java.util.Arrays;
 import uk.me.berndporr.iirj.Butterworth;

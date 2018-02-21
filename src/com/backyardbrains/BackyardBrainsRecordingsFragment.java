@@ -26,6 +26,7 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.audio.WavAudioFile;
+import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
@@ -89,7 +90,8 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         registerReceivers();
     }
 
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_recordings, container, false);
         unbinder = ButterKnife.bind(this, view);
 
@@ -127,11 +129,11 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
+    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
-    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
+    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
@@ -145,7 +147,8 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     @AfterPermissionGranted(BYB_READ_EXTERNAL_STORAGE_PERM) private void scanFiles() {
-        if (EasyPermissions.hasPermissions(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE)) {
+        if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
+            Manifest.permission.READ_EXTERNAL_STORAGE)) {
             rescanFiles();
         } else {
             // Request one permission
@@ -159,7 +162,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     //////////////////////////////////////////////////////////////////////////////
 
     // Rescans BYB directory and updates the files list.
-    private void rescanFiles() {
+    void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
         final File[] files = RecordingUtils.BYB_DIRECTORY.listFiles();
@@ -180,13 +183,14 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     //                         Utility methods
     //////////////////////////////////////////////////////////////////////////////
 
-    // Returns true if spikes have already been found for the selected recording, false otherwise
-    private boolean isFindSpikesDone() {
-        return getAnalysisManager() != null && getAnalysisManager().spikesFound();
+    // Specified callback is invoked after check that spike analysis for the recording at specified filePath exists or not
+    private void spikesAnalysisExists(@NonNull String filePath,
+        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
+        if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, callback);
     }
 
     // Opens dialog with recording details
-    private void fileDetails(File f) {
+    void fileDetails(File f) {
         WavAudioFile waf = null;
         try {
             waf = new WavAudioFile(f);
@@ -199,48 +203,53 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Starts playing specified audio file
-    private void playAudioFile(File f) {
+    void playAudioFile(File f) {
         EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
     }
 
     // Start process of finding spikes for the specified audio file
-    private void findSpikes(File f) {
+    void findSpikes(File f) {
         if (f.exists()) EventBus.getDefault().post(new FindSpikesEvent(f.getAbsolutePath()));
     }
 
     // Start process of autocorrelation analysis for specified audio file
-    private void autocorrelation(@NonNull File f) {
+    void autocorrelation(@NonNull File f) {
         startAnalysis(f, BYBAnalysisType.AUTOCORRELATION);
     }
 
     // Start process of inter spike interval analysis for specified audio file
-    private void ISI(@NonNull File f) {
+    void ISI(@NonNull File f) {
         startAnalysis(f, BYBAnalysisType.ISI);
     }
 
     // Start process of cross-correlation analysis for specified audio file
-    private void crossCorrelation(@NonNull File f) {
+    void crossCorrelation(@NonNull File f) {
         startAnalysis(f, BYBAnalysisType.CROSS_CORRELATION);
     }
 
     // Start process of average spike analysis for specified audio file
-    private void averageSpike(@NonNull File f) {
+    void averageSpike(@NonNull File f) {
         startAnalysis(f, BYBAnalysisType.AVERAGE_SPIKE);
     }
 
     // Starts analysis process for specified type and specified audio file
-    private void startAnalysis(@NonNull File f, @BYBAnalysisType int type) {
-        //noinspection ConstantConditions
-        if (isFindSpikesDone() && getAnalysisManager().isCurrentFile(f.getAbsolutePath())) {
-            if (f.exists()) EventBus.getDefault().post(new AnalyzeAudioFileEvent(f.getAbsolutePath(), type));
-        } else {
-            BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
-                getString(R.string.find_spikes_not_done_message));
-        }
+    private void startAnalysis(@NonNull final File file, @BYBAnalysisType final int type) {
+        spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
+            @Override public void onSpikeAnalysisExistsResult(boolean exists) {
+                if (exists) {
+                    if (file.exists()) {
+                        EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
+                    }
+                } else {
+                    BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
+                        getString(R.string.find_spikes_not_done_message));
+                }
+            }
+        });
     }
 
     // Initiates sending of the selected recording via email
-    private void emailFile(File f) {
+    void emailFile(File f) {
         Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
         sendIntent.putExtra(Intent.EXTRA_STREAM,
@@ -250,7 +259,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Triggers renaming of the selected file
-    private void renameFile(final File f) {
+    void renameFile(final File f) {
         final EditText e = new EditText(this.getActivity());
         e.setText(f.getName().replace(".wav", "")); // remove file extension when renaming
         e.setSelection(e.getText().length());
@@ -263,7 +272,9 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                         final String filename = e.getText().toString().trim();
                         // validate the new file name
                         if (ApacheCommonsLang3Utils.isBlank(filename)) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
+                            if (getContext() != null) {
+                                ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
+                            }
                             return;
                         }
                         final File newFile = new File(f.getParent(), filename + ".wav");
@@ -271,14 +282,20 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                         if (!newFile.exists()) {
                             // rename the file
                             if (!f.renameTo(newFile)) {
-                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
+                                if (getContext() != null) {
+                                    ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
+                                }
                                 EventUtils.logCustom("Renaming file " + f.getPath() + " failed", null);
                             }
                         } else {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_exists));
+                            if (getContext() != null) {
+                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_exists));
+                            }
                         }
                     } else {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                        if (getContext() != null) {
+                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                        }
                         EventUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
                     }
                     // rescan the files
@@ -291,7 +308,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Triggers deletion of the selected file
-    private void deleteFile(final File f) {
+    void deleteFile(final File f) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
             .setMessage("Are you sure you want to delete " + f.getName() + "?")
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
@@ -300,11 +317,15 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                     if (f.exists()) {
                         // delete the file
                         if (!f.delete()) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
+                            if (getContext() != null) {
+                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
+                            }
                             EventUtils.logCustom("Deleting file " + f.getPath() + " failed", null);
                         }
                     } else {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                        if (getContext() != null) {
+                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                        }
                         EventUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
                     }
                     rescanFiles();
@@ -355,8 +376,15 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     // Opens available options for a selected recording. Options are different depending on whether spikes have already
     // been found or not.
     void showRecordingOptions(@NonNull final File file) {
-        //noinspection ConstantConditions
-        final boolean canAnalyze = isFindSpikesDone() && getAnalysisManager().isCurrentFile(file.getAbsolutePath());
+        spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
+            @Override public void onSpikeAnalysisExistsResult(boolean exists) {
+                showDialog(file, exists);
+            }
+        });
+    }
+
+    // Creates and opens recording options dialog
+    void showDialog(@NonNull final File file, final boolean canAnalyze) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Choose an action")
             .setCancelable(true)
             .setItems(canAnalyze ? R.array.options_recording : R.array.options_recording_no_spikes,
