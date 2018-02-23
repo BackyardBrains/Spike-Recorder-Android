@@ -132,9 +132,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         return view;
     }
 
-    @Override
-    protected BYBBaseRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        final WaveformRenderer renderer = new WaveformRenderer(fragment, preparedBuffer);
+    @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
+        final WaveformRenderer renderer = new WaveformRenderer(this, preparedBuffer);
         renderer.setCallback(new BYBBaseRenderer.CallbackAdapter() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {

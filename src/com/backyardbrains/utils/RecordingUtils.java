@@ -34,6 +34,6 @@ public class RecordingUtils {
     public static File createRecordingFile() {
         return new File(BYB_DIRECTORY,
             BYB_RECORDING_NAME_PREFIX + DateUtils.format_d_MMM_yyyy_HH_mm_s_a(new Date(System.currentTimeMillis()))
-                /*+ BYB_RECORDING_EXT*/);
+                + BYB_RECORDING_EXT);
     }
 }

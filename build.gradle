@@ -2,7 +2,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url "https://maven.google.com" }
+        google()
         maven { url "https://jitpack.io" }
         maven { url 'https://maven.fabric.io/public' }
     }
@@ -15,7 +15,7 @@ buildscript {
 repositories {
     jcenter()
     mavenCentral()
-    maven { url "https://maven.google.com" }
+    google()
     maven { url "https://jitpack.io" }
     maven { url 'https://maven.fabric.io/public' }
 }
@@ -60,7 +60,9 @@ android {
 
         javaCompileOptions {
             annotationProcessorOptions {
-                arguments = [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex']
+                arguments =
+                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
+                        toString()]
             }
         }
     }
@@ -81,6 +83,7 @@ android {
 
 ext {
     supportLibVersion = '27.0.2'
+    architectureComponentsVersion = '1.0.0'
     butterknifeVersion = '8.8.1'
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
@@ -101,6 +104,11 @@ dependencies {
     implementation "com.android.support:support-compat:$supportLibVersion"
     implementation "com.android.support:design:$supportLibVersion"
     implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+    // db
+    implementation "android.arch.persistence.room:runtime:$architectureComponentsVersion"
+    annotationProcessor "android.arch.persistence.room:compiler:$architectureComponentsVersion"
+    // debug db
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
     // view binding
     implementation "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"

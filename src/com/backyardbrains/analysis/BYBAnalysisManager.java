@@ -1,12 +1,22 @@
 package com.backyardbrains.analysis;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.audio.WavAudioFile;
+import com.backyardbrains.data.AverageSpike;
+import com.backyardbrains.data.InterSpikeInterval;
+import com.backyardbrains.data.Threshold;
+import com.backyardbrains.data.persistance.AnalysisDataSource;
+import com.backyardbrains.data.persistance.AnalysisRepository;
+import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
+import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.drawing.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.utils.ObjectUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
@@ -22,85 +32,81 @@ public class BYBAnalysisManager {
 
     private static final String TAG = makeLogTag(BYBAnalysisManager.class);
 
-    private static final int MAX_THRESHOLDS = 3;
-
     private BYBAudioFile audioFile;
 
-    private BYBFindSpikesAnalysis spikesAnalysis;
-    private boolean bSpikesDone;
-    private BYBSpike[] spikes;
+    // Reference to the data manager that stores and processes the data
+    @SuppressWarnings("WeakerAccess") final AnalysisRepository analysisRepository;
 
-    private int selectedThreshold;
-    private ArrayList<int[]> thresholds;
-    private boolean bThresholdsChanged;
+    private List<List<Spike>> spikeTrains;
 
-    private List<List<BYBSpike>> spikeTrains;
-    private boolean bSpikeTrainsDone;
-
-    private BYBIsiAnalysis isiAnalysis;
-    private boolean bProcessISI;
-    private boolean bISIDone;
-
-    private BYBAutocorrelationAnalysis autocorrelationAnalysis;
-    private boolean bProcessAutocorrelation = false;
-    private boolean bAutocorrelationDone = false;
-
-    private BYBCrossCorrelationAnalysis crossCorrelationAnalysis;
-    private boolean bProcessCrossCorrelation = false;
-    private boolean bCrossCorrelationDone = false;
+    @SuppressWarnings("WeakerAccess") int[][] autocorrelation;
+    @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
+    @SuppressWarnings("WeakerAccess") InterSpikeInterval[][] isi;
+    @SuppressWarnings("WeakerAccess") AverageSpike[] averageSpikes;
 
     private BYBAverageSpikeAnalysis averageSpikeAnalysis;
-    private boolean bProcessAverageSpike = false;
-    private boolean bAverageSpikeDone = false;
+    boolean bProcessAverageSpike = false;
+    boolean bAverageSpikeDone = false;
 
-    public BYBAnalysisManager() {
-        // init thresholds, we have one pair of thresholds by default
-        thresholds = new ArrayList<>();
-        thresholds.add(new int[2]);
-    }
-
-    /**
-     * Whether specified {@code filePath} is path to currently processed audio file.
-     */
-    public boolean isCurrentFile(@NonNull String filePath) {
-        return audioFile != null && audioFile.getAbsolutePath().equals(filePath);
+    public BYBAnalysisManager(@NonNull Context context) {
+        analysisRepository = AnalysisRepository.get(SpikeRecorderDatabase.get(context));
     }
 
     //=================================================
     //  FIND SPIKES
     //=================================================
 
+    // Callback to be invoked when spikes are retrieved from the analysis repository
+    private AnalysisDataSource.GetAnalysisCallback<Spike[]> getSpikesCallback =
+        new AnalysisDataSource.GetAnalysisCallback<Spike[]>() {
+            @Override public void onAnalysisLoaded(@NonNull Spike[] spikes) {
+                // post event that audio file analysis was successfully finished
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.FIND_SPIKES));
+            }
+
+            @Override public void onDataNotAvailable() {
+                findSpikes();
+            }
+        };
+
     /**
-     * Loads file with specified {@code filePath} if not already loaded and starts the process of finding spikes.
+     * Loads file with specified {@code filePath} if not already loaded and starts the process of finding spikes if they
+     * are not already found.
      */
     public void findSpikes(@NonNull String filePath) {
         if (audioFile != null) {
-            if (!filePath.equals(audioFile.getAbsolutePath())) {
-                load(filePath);
+            if (!ObjectUtils.equals(filePath, audioFile.getAbsolutePath())) {
+                if (load(filePath)) {
+                    findSpikes();
+                } else {
+                    // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+                }
             } else {
-                process();
+                analysisRepository.getSpikeAnalysis(filePath, getSpikesCallback);
             }
         } else {
-            load(filePath);
+            if (load(filePath)) {
+                findSpikes();
+            } else {
+                // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+            }
         }
     }
 
     /**
      * Returns array of spikes found during the spike analysis.
      */
-    public BYBSpike[] getSpikes() {
-        if (spikesFound()) {
-            return spikes;
-        } else {
-            return new BYBSpike[0];
-        }
+    public void getSpikes(@NonNull String filePath,
+        @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
+        analysisRepository.getSpikeAnalysis(filePath, callback);
     }
 
     /**
      * Whether process of analysing spikes is finished or not.
      */
-    public boolean spikesFound() {
-        return (getThresholdsSize() > 0 && spikes != null && spikes.length > 0 && bSpikesDone);
+    public void spikesAnalysisExists(@NonNull String filePath,
+        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
+        analysisRepository.spikeAnalysisExists(filePath, callback);
     }
 
     // Loads file with specified file path into WavAudioFile for further processing
@@ -126,39 +132,24 @@ public class BYBAnalysisManager {
         reset();
         audioFile = new WavAudioFile(file);
 
-        findSpikes();
-
         return true;
     }
 
     // Clears current spike analysis and triggers the new one
-    private void findSpikes() {
-        LOGD(TAG, "findSpikes begin");
+    @SuppressWarnings("WeakerAccess") void findSpikes() {
+        new BYBFindSpikesAnalysis(audioFile, new BYBBaseAnalysis.AnalysisListener<Spike>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable Spike[] results) {
+                analysisRepository.saveSpikeAnalysis(filePath, results != null ? results : new Spike[0]);
 
-        spikesAnalysis = null;
-        spikesAnalysis = new BYBFindSpikesAnalysis(audioFile, new BYBBaseAnalysis.AnalysisListener() {
-
-            @Override public void onAnalysisDone() {
-                if (spikesAnalysis != null) {
-                    spikes = spikesAnalysis.getSpikes();
-
-                    spikesAnalysis = null;
-                    bSpikesDone = true;
-
-                    process();
-
-                    // post event that audio file analysis failed
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.FIND_SPIKES));
-                }
+                // post event that audio file analysis successfully finished
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.FIND_SPIKES));
             }
 
-            @Override public void onAnalysisCanceled() {
-                bSpikesDone = false;
-
+            @Override public void onAnalysisFailed(@NonNull String filePath) {
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.FIND_SPIKES));
             }
-        });
+        }).startAnalysis();
     }
 
     // Resets all the flags and clears all resources before loading new audio file.
@@ -176,68 +167,64 @@ public class BYBAnalysisManager {
             }
         }
 
-        spikes = null;
-        bSpikesDone = false;
-
-        resetAnalysisFlags();
-
-        bThresholdsChanged = false;
-        clearThresholds();
-    }
-
-    // Resets all the flags that influence analysis process
-    private void resetAnalysisFlags() {
-        clearSpikeTrains();
-        bSpikeTrainsDone = false;
-
-        isiAnalysis = null;
-        bProcessISI = false;
-        bISIDone = false;
-
-        autocorrelationAnalysis = null;
-        bProcessAutocorrelation = false;
-        bAutocorrelationDone = false;
-
-        crossCorrelationAnalysis = null;
-        bProcessCrossCorrelation = false;
-        bCrossCorrelationDone = false;
-
-        averageSpikeAnalysis = null;
-        bProcessAverageSpike = false;
-        bAverageSpikeDone = false;
+        autocorrelation = null;
+        isi = null;
+        crossCorrelation = null;
+        averageSpikes = null;
     }
 
     //=================================================
     //  SPIKE TRAINS
     //=================================================
 
-    private List<List<BYBSpike>> processSpikeTrains() {
-        if (!bSpikeTrainsDone || bThresholdsChanged) {
-            clearSpikeTrains();
-            spikeTrains = new ArrayList<>();
-            for (int j = 0; j < thresholds.size(); j++) {
-                int min = Math.min(thresholds.get(j)[0], thresholds.get(j)[1]);
-                int max = Math.max(thresholds.get(j)[0], thresholds.get(j)[1]);
-                ArrayList<BYBSpike> temp = new ArrayList<>();
-                for (BYBSpike spike : spikes) {
-                    if (spike.value >= min && spike.value <= max) temp.add(spike);
-                }
-                spikeTrains.add(temp);
-            }
-            bSpikeTrainsDone = true;
+    // Callback to be invoked when spike analysis (by trains) is retrieved from the analysis repository
+    private class GetSpikeAnalysisByTrainsCallback implements AnalysisDataSource.GetAnalysisCallback<float[][]> {
+
+        private final String filePath;
+        private final @BYBAnalysisType int analysisType;
+
+        GetSpikeAnalysisByTrainsCallback(@NonNull String filePath, @BYBAnalysisType int analysisType) {
+            this.filePath = filePath;
+            this.analysisType = analysisType;
         }
-        return spikeTrains;
+
+        @SuppressLint("SwitchIntDef") @Override public void onAnalysisLoaded(@NonNull float[][] result) {
+            switch (analysisType) {
+                case BYBAnalysisType.AUTOCORRELATION:
+                    autocorrelationAnalysis(filePath, result);
+                    break;
+                case BYBAnalysisType.ISI:
+                    isiAnalysis(filePath, result);
+                    break;
+                case BYBAnalysisType.CROSS_CORRELATION:
+                    crossCorrelationAnalysis(filePath, result);
+                    break;
+            }
+        }
+
+        @Override public void onDataNotAvailable() {
+            // post event that audio file analysis failed
+            EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, analysisType));
+        }
     }
 
-    private void clearSpikeTrains() {
-        if (spikeTrains != null) {
-            for (int i = 0; i < spikeTrains.size(); i++) {
-                if (spikeTrains.get(i) != null) {
-                    spikeTrains.get(i).clear();
-                }
-            }
-            spikeTrains.clear();
-            spikeTrains = null;
+    @SuppressWarnings("WeakerAccess") void getSpikeAnalysisByTrains(@NonNull String filePath,
+        @BYBAnalysisType int analysisType) {
+        if (analysisType == BYBAnalysisType.AVERAGE_SPIKE) {
+            analysisRepository.getSpikeAnalysisIndicesByTrains(filePath,
+                new AnalysisDataSource.GetAnalysisCallback<int[][]>() {
+                    @Override public void onAnalysisLoaded(@NonNull int[][] result) {
+                        averageSpikeAnalysis(result);
+                    }
+
+                    @Override public void onDataNotAvailable() {
+                        // post event that audio file analysis failed
+                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.AVERAGE_SPIKE));
+                    }
+                });
+        } else {
+            analysisRepository.getSpikeAnalysisTimesByTrains(filePath,
+                new GetSpikeAnalysisByTrainsCallback(filePath, analysisType));
         }
     }
 
@@ -246,113 +233,23 @@ public class BYBAnalysisManager {
     //=================================================
 
     /**
-     * Initializes the process of analyzing currently loaded audio file. If the file hasn't yet been loaded it's loaded
-     * and then analyzed. If the file has already been analyzed {@code false} is returned, {@code true} otherwise.
+     * Initiates a check of whether specified analysis {@code type} already exists for the file at specified {@code
+     * filePath}. The check will either start the analysis process if it doesn't exist, or inform caller that it does.
      */
-    @SuppressLint("SwitchIntDef") public boolean analyzeFile(@NonNull String filePath, @BYBAnalysisType int type) {
-        boolean alreadyAnalyzed = false;
+    @SuppressLint("SwitchIntDef") public void startAnalysis(@NonNull final String filePath, @BYBAnalysisType int type) {
         switch (type) {
             case BYBAnalysisType.AUTOCORRELATION:
-                if (!bAutocorrelationDone || bThresholdsChanged) {
-                    bProcessAutocorrelation = true;
-                    bSpikeTrainsDone = false;
-                } else {
-                    alreadyAnalyzed = true;
-                }
-                break;
-            case BYBAnalysisType.AVERAGE_SPIKE:
-                if (!bAverageSpikeDone || bThresholdsChanged) {
-                    bProcessAverageSpike = true;
-                    bSpikeTrainsDone = false;
-                } else {
-                    alreadyAnalyzed = true;
-                }
-                break;
-            case BYBAnalysisType.CROSS_CORRELATION:
-                if (!bCrossCorrelationDone || bThresholdsChanged) {
-                    bProcessCrossCorrelation = true;
-                    bSpikeTrainsDone = false;
-                } else {
-                    alreadyAnalyzed = true;
-                }
+                getSpikeAnalysisByTrains(filePath, BYBAnalysisType.AUTOCORRELATION);
                 break;
             case BYBAnalysisType.ISI:
-                if (!bISIDone || bThresholdsChanged) {
-                    bProcessISI = true;
-                    bSpikeTrainsDone = false;
-                } else {
-                    alreadyAnalyzed = true;
-                }
+                getSpikeAnalysisByTrains(filePath, BYBAnalysisType.ISI);
                 break;
-        }
-
-        if (alreadyAnalyzed) EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, type));
-
-        // in case file is not already loaded let's do it
-        findSpikes(filePath);
-
-        return !alreadyAnalyzed;
-    }
-
-    // Starts one of the analysis depending on the set flags
-    private void process() {
-        LOGD(TAG, "process!");
-        if (spikesFound()) {
-            if (bProcessISI) {
-                isiAnalysis();
-                bProcessISI = false;
-            }
-            if (bProcessAutocorrelation) {
-                autocorrelationAnalysis();
-                bProcessAutocorrelation = false;
-            }
-            if (bProcessCrossCorrelation) {
-                crossCorrelationAnalysis();
-                bProcessCrossCorrelation = false;
-            }
-            if (bProcessAverageSpike) {
-                averageSpikeAnalysis();
-                bProcessAverageSpike = false;
-            }
-        }
-        bThresholdsChanged = false;
-    }
-
-    //=================================================
-    //  ISI (Inter Spike Interval)
-    //=================================================
-
-    /**
-     * Returns results for the Inter Spike Interval analysis
-     */
-    @Nullable public List<List<BYBInterSpikeInterval>> getISI() {
-        return isiAnalysis != null ? isiAnalysis.getIsi() : null;
-    }
-
-    // Starts Inter Spike Interval analysis depending on the set flags.
-    private void isiAnalysis() {
-        LOGD(TAG, "isiAnalysis()");
-        if (!bISIDone || bThresholdsChanged) {
-            processSpikeTrains();
-
-            bProcessISI = true;
-            isiAnalysis = new BYBIsiAnalysis(spikeTrains, new BYBBaseAnalysis.AnalysisListener() {
-                @Override public void onAnalysisDone() {
-                    bISIDone = true;
-                    bProcessISI = false;
-
-                    // post event that audio file analysis is successfully finished
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.ISI));
-                }
-
-                @Override public void onAnalysisCanceled() {
-                    bISIDone = false;
-                    bProcessISI = false;
-
-                    // post event that audio file analysis is successfully finished
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.ISI));
-                }
-            });
+            case BYBAnalysisType.CROSS_CORRELATION:
+                getSpikeAnalysisByTrains(filePath, BYBAnalysisType.CROSS_CORRELATION);
+                break;
+            case BYBAnalysisType.AVERAGE_SPIKE:
+                averageSpikeAnalysis(filePath);
+                break;
         }
     }
 
@@ -363,36 +260,57 @@ public class BYBAnalysisManager {
     /**
      * Returns results for the Autocorrelation analysis
      */
-    @Nullable public List<List<Integer>> getAutocorrelation() {
-        return autocorrelationAnalysis != null ? autocorrelationAnalysis.getAutoCorrelation() : null;
+    @Nullable public int[][] getAutocorrelation() {
+        return autocorrelation;
     }
 
     // Starts Autocorrelation analysis depending on the set flags.
-    private void autocorrelationAnalysis() {
+    @SuppressWarnings("WeakerAccess") void autocorrelationAnalysis(final @NonNull String filePath,
+        @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "autocorrelationAnalysis()");
-        if (!bAutocorrelationDone || bThresholdsChanged) {
-            processSpikeTrains();
+        new BYBAutocorrelationAnalysis(filePath, spikeAnalysisByTrains, new BYBBaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
+                autocorrelation = results;
+                // post event that audio file analysis successfully finished
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.AUTOCORRELATION));
+            }
 
-            bProcessAutocorrelation = true;
-            autocorrelationAnalysis =
-                new BYBAutocorrelationAnalysis(spikeTrains, new BYBBaseAnalysis.AnalysisListener() {
-                    @Override public void onAnalysisDone() {
-                        bAutocorrelationDone = true;
-                        bProcessAutocorrelation = false;
+            @Override public void onAnalysisFailed(@NonNull String filePath) {
+                // post event that audio file analysis failed
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AUTOCORRELATION));
+            }
+        }).startAnalysis();
+    }
 
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.AUTOCORRELATION));
-                    }
+    //=================================================
+    //  ISI (Inter Spike Interval)
+    //=================================================
 
-                    @Override public void onAnalysisCanceled() {
-                        bAutocorrelationDone = false;
-                        bProcessAutocorrelation = false;
+    /**
+     * Returns results for the Inter Spike Interval analysis
+     */
+    @Nullable public InterSpikeInterval[][] getISI() {
+        return isi;
+    }
 
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AUTOCORRELATION));
-                    }
-                });
-        }
+    // Starts Inter Spike Interval analysis depending on the set flags.
+    @SuppressWarnings("WeakerAccess") void isiAnalysis(final @NonNull String filePath,
+        @NonNull float[][] spikeAnalysisByTrains) {
+        LOGD(TAG, "isiAnalysis()");
+        new BYBIsiAnalysis(filePath, spikeAnalysisByTrains,
+            new BYBBaseAnalysis.AnalysisListener<InterSpikeInterval[]>() {
+                @Override
+                public void onAnalysisDone(@NonNull String filePath, @Nullable InterSpikeInterval[][] results) {
+                    isi = results;
+                    // post event that audio file analysis successfully finished
+                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.ISI));
+                }
+
+                @Override public void onAnalysisFailed(@NonNull String filePath) {
+                    // post event that audio file analysis failed
+                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.ISI));
+                }
+            }).startAnalysis();
     }
 
     //=================================================
@@ -402,37 +320,27 @@ public class BYBAnalysisManager {
     /**
      * Returns results for the Cross-Correlation analysis
      */
-    @Nullable public List<List<Integer>> getCrossCorrelation() {
-        return crossCorrelationAnalysis != null ? crossCorrelationAnalysis.getCrossCorrelation() : null;
+    @Nullable public int[][] getCrossCorrelation() {
+        return crossCorrelation;
     }
 
     // Starts Cross-Correlation analysis depending on the set flags.
-    private void crossCorrelationAnalysis() {
+    @SuppressWarnings("WeakerAccess") void crossCorrelationAnalysis(final @NonNull String filePath,
+        @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "crossCorrelationAnalysis()");
-        if (!bCrossCorrelationDone || bThresholdsChanged) {
-            processSpikeTrains();
+        new BYBCrossCorrelationAnalysis(filePath, spikeAnalysisByTrains,
+            new BYBBaseAnalysis.AnalysisListener<int[]>() {
+                @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
+                    crossCorrelation = results;
+                    // post event that audio file analysis successfully finished
+                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.CROSS_CORRELATION));
+                }
 
-            bProcessCrossCorrelation = true;
-            crossCorrelationAnalysis =
-                new BYBCrossCorrelationAnalysis(spikeTrains, new BYBBaseAnalysis.AnalysisListener() {
-                    @Override public void onAnalysisDone() {
-                        bCrossCorrelationDone = true;
-                        bProcessCrossCorrelation = false;
-
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.CROSS_CORRELATION));
-                    }
-
-                    @Override public void onAnalysisCanceled() {
-                        bCrossCorrelationDone = false;
-                        bProcessCrossCorrelation = false;
-
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault()
-                            .post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
-                    }
-                });
-        }
+                @Override public void onAnalysisFailed(@NonNull String filePath) {
+                    // post event that audio file analysis failed
+                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
+                }
+            }).startAnalysis();
     }
 
     //=================================================
@@ -442,38 +350,48 @@ public class BYBAnalysisManager {
     /**
      * Returns results for the Average Spike analysis
      */
-    @Nullable public BYBAverageSpike[] getAverageSpike() {
-        return averageSpikeAnalysis != null ? averageSpikeAnalysis.getAverageSpikes() : null;
+    @Nullable public AverageSpike[] getAverageSpike() {
+        return averageSpikes;
     }
 
-    // Starts Average Spike analysis depending on the set flags.
-    private void averageSpikeAnalysis() {
-        LOGD(TAG, "averageSpikeAnalysis()");
-        if (!bAverageSpikeDone || bThresholdsChanged) {
-            if (audioFile != null) {
-                processSpikeTrains();
-
-                bProcessAverageSpike = true;
-                averageSpikeAnalysis =
-                    new BYBAverageSpikeAnalysis(audioFile, spikeTrains, new BYBBaseAnalysis.AnalysisListener() {
-                        @Override public void onAnalysisDone() {
-                            bAverageSpikeDone = true;
-                            bProcessAverageSpike = false;
-
-                            // post event that audio file analysis is successfully finished
-                            EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.AVERAGE_SPIKE));
-                        }
-
-                        @Override public void onAnalysisCanceled() {
-                            bAverageSpikeDone = false;
-                            bProcessAverageSpike = false;
-
-                            // post event that audio file analysis is successfully finished
-                            EventBus.getDefault()
-                                .post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AVERAGE_SPIKE));
-                        }
-                    });
+    // Loads file with specified filePath if not already loaded and starts Average Spike analysis.
+    private void averageSpikeAnalysis(@NonNull String filePath) {
+        if (audioFile != null) {
+            if (!ObjectUtils.equals(filePath, audioFile.getAbsolutePath())) {
+                if (load(filePath)) {
+                    getSpikeAnalysisByTrains(filePath, BYBAnalysisType.AVERAGE_SPIKE);
+                } else {
+                    // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+                }
+            } else {
+                getSpikeAnalysisByTrains(filePath, BYBAnalysisType.AVERAGE_SPIKE);
             }
+        } else {
+            if (load(filePath)) {
+                getSpikeAnalysisByTrains(filePath, BYBAnalysisType.AVERAGE_SPIKE);
+            } else {
+                // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+            }
+        }
+    }
+
+    // Starts the actual Average Spike analysis.
+    @SuppressWarnings("WeakerAccess") void averageSpikeAnalysis(@NonNull int[][] spikeAnalysisByTrains) {
+        LOGD(TAG, "averageSpikeAnalysis()");
+        if (audioFile != null) {
+            new BYBAverageSpikeAnalysis(audioFile, spikeAnalysisByTrains,
+                new BYBBaseAnalysis.AnalysisListener<AverageSpike>() {
+                    @Override public void onAnalysisDone(@NonNull String filePath, @Nullable AverageSpike[] results) {
+                        averageSpikes = results;
+                        // post event that audio file analysis is successfully finished
+                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.AVERAGE_SPIKE));
+                    }
+
+                    @Override public void onAnalysisFailed(@NonNull String filePath) {
+                        // post event that audio file analysis is successfully finished
+                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.AVERAGE_SPIKE));
+                    }
+                }).startAnalysis();
         }
     }
 
@@ -482,90 +400,66 @@ public class BYBAnalysisManager {
     //=================================================
 
     /**
-     * Returns maximum number of thresholds.
+     * Listens for DB query response when retrieving existing spike trains.
      */
-    public int getMaxThresholds() {
-        return MAX_THRESHOLDS;
+    public interface GetThresholdsCallback {
+        /**
+         * Triggered when spike trains are retrieved from database.
+         */
+        void onThresholdsLoaded(@NonNull List<Threshold> thresholds);
     }
 
     /**
-     * Returns currently available number of thresholds.
+     * Returns existing thresholds for the audio file with specified {@code filePath}.
      */
-    public int getThresholdsSize() {
-        return thresholds.size();
+    public void getThresholds(@NonNull String filePath, @Nullable final GetThresholdsCallback callback) {
+        analysisRepository.getSpikeAnalysisTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
+            @Override public void onAnalysisLoaded(@NonNull Train[] result) {
+                final List<Threshold> thresholds = new ArrayList<>();
+                for (Train train : result) {
+                    int leftThreshold = train.isLowerLeft() ? train.getLowerThreshold() : train.getUpperThreshold();
+                    int rightThreshold = train.isLowerLeft() ? train.getUpperThreshold() : train.getLowerThreshold();
+                    thresholds.add(new Threshold(leftThreshold, rightThreshold));
+                }
+                if (callback != null) callback.onThresholdsLoaded(thresholds);
+            }
+
+            @Override public void onDataNotAvailable() {
+                if (callback != null) callback.onThresholdsLoaded(new ArrayList<Threshold>());
+            }
+        });
     }
 
     /**
-     * Returns index of currently selected thresholds.
+     * Adds new pair of thresholds for the audio file with specified {@code filePath}.
      */
-    public int getSelectedThresholdIndex() {
-        return selectedThreshold;
+    public void addThreshold(@NonNull String filePath,
+        @Nullable final AnalysisDataSource.AddSpikeAnalysisTrainCallback callback) {
+        analysisRepository.addSpikeAnalysisTrain(filePath, new AnalysisDataSource.AddSpikeAnalysisTrainCallback() {
+            @Override public void onSpikeAnalysisTrainAdded(@NonNull Train train) {
+                if (callback != null) callback.onSpikeAnalysisTrainAdded(train);
+            }
+        });
     }
 
     /**
-     * Returns values for currently selected thresholds.
+     * Removes thresholds at the specified {@code index} for the audio file with specified {@code filePath}.
      */
-    public int[] getSelectedThresholds() {
-        if (selectedThreshold >= 0 && selectedThreshold < thresholds.size()) {
-            return thresholds.get(selectedThreshold);
-        }
-        return new int[2];
+    public void removeThreshold(int index, @NonNull String filePath,
+        @Nullable final AnalysisDataSource.RemoveSpikeAnalysisTrainCallback callback) {
+        analysisRepository.removeSpikeAnalysisTrain(filePath, index,
+            new AnalysisDataSource.RemoveSpikeAnalysisTrainCallback() {
+                @Override public void onSpikeAnalysisTrainRemoved(int newTrainCount) {
+                    if (callback != null) callback.onSpikeAnalysisTrainRemoved(newTrainCount);
+                }
+            });
     }
 
     /**
-     * Selects thresholds at specified {@code index} as current thresholds.
+     * Sets specified {@code value} for the current threshold at the specified {@code index} with specified {@code
+     * orientation}.
      */
-    public void selectThreshold(int index) {
-        if (index >= 0 && index < MAX_THRESHOLDS) {
-            selectedThreshold = index;
-
-            bThresholdsChanged = true;
-        }
-    }
-
-    /**
-     * Adds new pair of thresholds.
-     */
-    public void addThreshold() {
-        if (thresholds.size() < MAX_THRESHOLDS) {
-            thresholds.add(new int[2]);
-            selectedThreshold = thresholds.size() - 1;
-
-            bThresholdsChanged = true;
-            resetAnalysisFlags();
-        }
-    }
-
-    /**
-     * Removes currently selected thresholds
-     */
-    public void removeSelectedThreshold() {
-        if (thresholds.size() > 0 && thresholds.size() > selectedThreshold) {
-            thresholds.remove(selectedThreshold);
-            selectedThreshold = thresholds.size() - 1;
-
-            bThresholdsChanged = true;
-            resetAnalysisFlags();
-        }
-    }
-
-    /**
-     * Sets specified {@code value} for the current threshold with specified {@code orientation}.
-     */
-    public void setThreshold(@ThresholdOrientation int orientation, int value) {
-        if (thresholds.size() > 0 && thresholds.size() > selectedThreshold) {
-            thresholds.get(selectedThreshold)[orientation] = value;
-
-            bThresholdsChanged = true;
-            resetAnalysisFlags();
-        }
-    }
-
-    // Clears all thresholds.
-    private void clearThresholds() {
-        thresholds.clear();
-        selectedThreshold = 0;
-
-        bThresholdsChanged = true;
+    public void setThreshold(int index, @ThresholdOrientation int orientation, int value, @NonNull String filePath) {
+        analysisRepository.saveSpikeAnalysisTrain(filePath, orientation, value, index);
     }
 }

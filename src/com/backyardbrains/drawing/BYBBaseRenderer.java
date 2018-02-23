@@ -5,7 +5,7 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.DataManager;
+import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
@@ -39,7 +39,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     private boolean bPanning;
     private float panningDx;
 
-    private DataManager dataManager;
+    private ProcessingBuffer processingBuffer;
 
     short[] drawingBuffer;
     private float[] tempBufferToDraws;
@@ -97,7 +97,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     public BYBBaseRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment);
 
-        dataManager = DataManager.get();
+        processingBuffer = ProcessingBuffer.get();
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -315,9 +315,9 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
     private boolean fillBuffer() {
-        drawingBuffer = dataManager.getData();
-        //new short[dataManager.getData().length];
-        //System.arraycopy(dataManager.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
+        drawingBuffer = processingBuffer.getData();
+        //new short[processingBuffer.getData().length];
+        //System.arraycopy(processingBuffer.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
     }
 

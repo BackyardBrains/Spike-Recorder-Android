@@ -1,93 +1,76 @@
 package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
-import java.util.ArrayList;
-import java.util.List;
+import android.support.annotation.Nullable;
+import java.util.Arrays;
 
-class BYBAutocorrelationAnalysis extends BYBBaseAnalysis {
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-    private final List<List<BYBSpike>> trains;
-    private List<List<Integer>> autoCorrelation;
+class BYBAutocorrelationAnalysis extends BYBBaseAnalysis<int[]> {
 
-    BYBAutocorrelationAnalysis(@NonNull List<List<BYBSpike>> trains, @NonNull AnalysisListener listener) {
-        super(listener);
+    private static final String TAG = makeLogTag(BYBAutocorrelationAnalysis.class);
+
+    private static final float MAX_TIME = 0.1f; // 100ms
+    private static final float BIN_SIZE = 0.001f; // 1ms
+    private static final float MIN_EDGE = -BIN_SIZE * 0.5f; // -.5ms
+    private static final float MAX_EDGE = MAX_TIME + BIN_SIZE * 0.5f; // 100.5ms
+
+    private final float[][] trains;
+
+    BYBAutocorrelationAnalysis(@NonNull String filePath, @NonNull float[][] trains,
+        @NonNull AnalysisListener<int[]> listener) {
+        super(filePath, listener);
 
         this.trains = trains;
-
-        execute();
     }
 
-    List<List<Integer>> getAutoCorrelation() {
-        return autoCorrelation;
-    }
+    @Nullable @Override int[][] process() throws Exception {
+        long start = System.currentTimeMillis();
+        int loopCounter = 0;
 
-    @Override void process() {
-        float maxTime = 0.1f;
-        float binSize = 0.001f;
+        float diff;
+        int mainIndex, secIndex;
+        int spikeCount;
+        float[] train;
 
-        clearAutoCorrelation();
-        autoCorrelation = new ArrayList<>();
+        int[] histogram = new int[(int) Math.ceil((MAX_TIME + BIN_SIZE) / BIN_SIZE)];
+        final int[][] autoCorrelation = new int[trains.length][];
+        for (int i = 0; i < trains.length; i++) {
+            train = trains[i];
+            spikeCount = train.length;
 
-        for (int i = 0; i < trains.size(); i++) {
-            BYBSpike firstSpike;
-            BYBSpike secondSpike;
-            int n = (int) Math.ceil((maxTime + binSize) / binSize);
+            Arrays.fill(histogram, 0);
 
-            int[] histogram = new int[n];
-            for (int x = 0; x < n; x++) {
-                histogram[x] = 0;
-            }
-
-            float minEdge = -binSize * 0.5f;
-            float maxEdge = maxTime + binSize * 0.5f;
-            float diff;
-            int index;
-            int mainIndex;
-            int secIndex;
-
-            for (mainIndex = 0; mainIndex < trains.get(i).size(); mainIndex++) {
-                firstSpike = trains.get(i).get(mainIndex);
-                // Check on left of spike
+            for (mainIndex = 0; mainIndex < spikeCount; mainIndex++) {
+                // check on left of spike
                 for (secIndex = mainIndex; secIndex >= 0; secIndex--) {
-                    secondSpike = trains.get(i).get(secIndex);
-                    diff = firstSpike.time - secondSpike.time;
-                    if (diff > minEdge && diff < maxEdge) {
-                        index = (int) (((diff - minEdge) / binSize));
-                        histogram[index]++;
+                    diff = train[mainIndex] - train[secIndex];
+                    if (diff > MIN_EDGE && diff < MAX_EDGE) {
+                        histogram[(int) (((diff - MIN_EDGE) / BIN_SIZE))]++;
                     } else {
                         break;
                     }
                 }
                 // check on right of spike
-                for (secIndex = mainIndex + 1; secIndex < trains.get(i).size(); secIndex++) {
-                    secondSpike = trains.get(i).get(secIndex);
-                    diff = firstSpike.time - secondSpike.time;
-                    if (diff > minEdge && diff < maxEdge) {
-                        index = (int) (((diff - minEdge) / binSize));
-                        histogram[index]++;
+                for (secIndex = mainIndex + 1; secIndex < spikeCount; secIndex++) {
+                    diff = train[mainIndex] - train[secIndex];
+                    if (diff > MIN_EDGE && diff < MAX_EDGE) {
+                        histogram[(int) (((diff - MIN_EDGE) / BIN_SIZE))]++;
                     } else {
                         break;
                     }
                 }
             }
-            ArrayList<Integer> temp = new ArrayList<>();
 
-            for (int j = 0; j < n; j++) {
-                temp.add(histogram[j]);
-            }
-            autoCorrelation.add(temp);
-        }
-    }
+            int[] tmp = new int[histogram.length - 1]; // we are excluding 1st value
+            System.arraycopy(histogram, 1, tmp, 0, histogram.length - 1);
 
-    private void clearAutoCorrelation() {
-        if (autoCorrelation != null) {
-            for (int i = 0; i < autoCorrelation.size(); i++) {
-                if (autoCorrelation.get(i) != null) {
-                    autoCorrelation.get(i).clear();
-                }
-            }
-            autoCorrelation.clear();
-            autoCorrelation = null;
+            autoCorrelation[i] = tmp;
+
+            LOGD(TAG, "LOOP END (" + ++loopCounter + "): " + (System.currentTimeMillis() - start));
         }
+
+        return autoCorrelation;
     }
 }

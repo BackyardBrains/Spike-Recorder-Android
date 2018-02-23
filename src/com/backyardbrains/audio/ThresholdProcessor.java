@@ -21,7 +21,7 @@ package com.backyardbrains.audio;
 
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import com.backyardbrains.data.SampleProcessor;
+import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.utils.AudioUtils;
 import java.util.ArrayList;
 import java.util.Iterator;

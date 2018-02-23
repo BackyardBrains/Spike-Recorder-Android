@@ -11,6 +11,10 @@ import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.data.Threshold;
+import com.backyardbrains.data.persistance.AnalysisDataSource;
+import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.drawing.ThresholdOrientation;
@@ -30,6 +34,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
 
     private static final String ARG_FILE_PATH = "bb_file_path";
 
+    // Max number of thresholds
+    private static final int MAX_THRESHOLDS = 3;
+
     @BindView(R.id.threshold_handle_left) BYBThresholdHandle thresholdHandleLeft;
     @BindView(R.id.threshold_handle_right) BYBThresholdHandle thresholdHandleRight;
     @BindView(R.id.ibtn_remove_threshold) ImageButton ibtnRemoveThreshold;
@@ -38,8 +45,11 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
 
     private Unbinder unbinder;
 
-    private float[][] handleColors;
+    float[][] handleColors;
     private int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ffff };
+
+    // Index of the currently selected threshold
+    int selectedThreshold;
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -93,9 +103,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
     //=================================================
 
-    @Override
-    protected FindSpikesRenderer createRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        final FindSpikesRenderer renderer = new FindSpikesRenderer(fragment, preparedBuffer);
+    @Override protected FindSpikesRenderer createRenderer(@NonNull float[] preparedBuffer) {
+        final FindSpikesRenderer renderer = new FindSpikesRenderer(this, preparedBuffer, filePath);
         renderer.setCallback(new FindSpikesRenderer.CallbackAdapter() {
 
             @Override public void onThresholdUpdate(@ThresholdOrientation final int threshold, final int value) {
@@ -115,7 +124,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                     getActivity().runOnUiThread(new Runnable() {
                         @Override public void run() {
                             if (getAudioService() != null) {
-                                setMilliseconds(drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
+                                setMilliseconds(
+                                    drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
                             }
 
                             setMillivolts(
@@ -174,9 +184,13 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioAnalysisDoneEvent(AudioAnalysisDoneEvent event) {
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
-        if (event.isSuccess()) {
-            if (getAnalysisManager() != null && !getAnalysisManager().spikesFound()) addThreshold();
-            updateThresholdActions();
+        if (event.isSuccess() && getAnalysisManager() != null) {
+            getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
+                @Override public void onSpikeAnalysisExistsResult(boolean exists) {
+                    if (!exists) addThreshold();
+                    updateThresholdActions();
+                }
+            });
         }
     }
 
@@ -198,12 +212,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
         thresholdHandleLeft.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
                 if (getAnalysisManager() != null) {
-                    int thresholdsSize = getAnalysisManager().getThresholdsSize();
-                    if (thresholdsSize > 0) {
-                        int t = (int) getRenderer().pixelHeightToGlHeight(y);
-                        getRenderer().setThreshold(t, ThresholdOrientation.LEFT);
-                        getAnalysisManager().setThreshold(ThresholdOrientation.LEFT, t);
-                    }
+                    int t = (int) getRenderer().pixelHeightToGlHeight(y);
+                    getRenderer().setThreshold(t, ThresholdOrientation.LEFT);
+                    getAnalysisManager().setThreshold(selectedThreshold, ThresholdOrientation.LEFT, t, filePath);
                 }
             }
         });
@@ -211,12 +222,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
         thresholdHandleRight.setOnHandlePositionChangeListener(new BYBThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
                 if (getAnalysisManager() != null) {
-                    int thresholdsSize = getAnalysisManager().getThresholdsSize();
-                    if (thresholdsSize > 0) {
-                        int t = (int) getRenderer().pixelHeightToGlHeight(y);
-                        getRenderer().setThreshold(t, ThresholdOrientation.RIGHT);
-                        getAnalysisManager().setThreshold(ThresholdOrientation.RIGHT, t);
-                    }
+                    int t = (int) getRenderer().pixelHeightToGlHeight(y);
+                    getRenderer().setThreshold(t, ThresholdOrientation.RIGHT);
+                    getAnalysisManager().setThreshold(selectedThreshold, ThresholdOrientation.RIGHT, t, filePath);
                 }
             }
         });
@@ -245,7 +253,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     }
 
     // Sets the specified value for the specified threshold
-    private void setThreshold(@ThresholdOrientation int threshold, int value) {
+    void setThreshold(@ThresholdOrientation int threshold, int value) {
         BYBThresholdHandle handle = null;
         switch (threshold) {
             case ThresholdOrientation.LEFT:
@@ -264,55 +272,73 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     }
 
     // Selects the threshold at specified index and updates UI.
-    private void selectThreshold(int index) {
-        if (getAnalysisManager() != null) getAnalysisManager().selectThreshold(index);
+    void selectThreshold(int index) {
+        if (index >= 0 && index < MAX_THRESHOLDS) {
+            selectedThreshold = index;
 
-        updateThresholdActions();
+            updateThresholdActions();
+        }
     }
 
     // Adds a new threshold to analysis manager and updates UI.
-    private void addThreshold() {
-        if (getAnalysisManager() != null) getAnalysisManager().addThreshold();
-
-        updateThresholdActions();
+    void addThreshold() {
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().addThreshold(filePath, new AnalysisDataSource.AddSpikeAnalysisTrainCallback() {
+                @Override public void onSpikeAnalysisTrainAdded(@NonNull Train train) {
+                    selectedThreshold = train.getOrder();
+                    updateThresholdActions();
+                }
+            });
+        }
     }
 
     // Removes currently selected threshold and updates UI.
-    private void removeSelectedThreshold() {
-        if (getAnalysisManager() != null) getAnalysisManager().removeSelectedThreshold();
-
-        updateThresholdActions();
+    void removeSelectedThreshold() {
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().removeThreshold(selectedThreshold, filePath,
+                new AnalysisDataSource.RemoveSpikeAnalysisTrainCallback() {
+                    @Override public void onSpikeAnalysisTrainRemoved(int newTrainCount) {
+                        selectedThreshold = newTrainCount - 1;
+                        updateThresholdActions();
+                    }
+                });
+        }
     }
 
     // Updates threshold actions
-    private void updateThresholdActions() {
+    void updateThresholdActions() {
         if (getAnalysisManager() != null) {
-            int thresholdsSize = getAnalysisManager().getThresholdsSize();
-            final int minThresholds = 1;
-            int maxThresholds = getAnalysisManager().getMaxThresholds();
-            int selectedThreshold = getAnalysisManager().getSelectedThresholdIndex();
-            if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < maxThresholds) {
-                int[] t = getAnalysisManager().getSelectedThresholds();
-                getRenderer().setThreshold(t[ThresholdOrientation.LEFT], ThresholdOrientation.LEFT);
-                getRenderer().setThreshold(t[ThresholdOrientation.RIGHT], ThresholdOrientation.RIGHT);
+            getAnalysisManager().getThresholds(filePath, new BYBAnalysisManager.GetThresholdsCallback() {
+                @Override public void onThresholdsLoaded(@NonNull List<Threshold> thresholds) {
+                    final int thresholdsSize = thresholds.size();
+                    if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < MAX_THRESHOLDS) {
+                        Threshold t = thresholds.get(selectedThreshold);
+                        getRenderer().setThreshold(t.getThreshold(ThresholdOrientation.LEFT),
+                            ThresholdOrientation.LEFT);
+                        getRenderer().setThreshold(t.getThreshold(ThresholdOrientation.RIGHT),
+                            ThresholdOrientation.RIGHT);
 
-                thresholdHandleLeft.setPosition(getRenderer().getThresholdScreenValue(ThresholdOrientation.LEFT));
-                thresholdHandleRight.setPosition(getRenderer().getThresholdScreenValue(ThresholdOrientation.RIGHT));
+                        thresholdHandleLeft.setPosition(
+                            getRenderer().getThresholdScreenValue(ThresholdOrientation.LEFT));
+                        thresholdHandleRight.setPosition(
+                            getRenderer().getThresholdScreenValue(ThresholdOrientation.RIGHT));
 
-                float[] currentColor = handleColors[selectedThreshold];
-                getRenderer().setCurrentColor(currentColor);
-                thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-                thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-            }
-            for (int i = 0; i < maxThresholds; i++) {
-                if (i < thresholdsSize) {
-                    thresholdButtons.get(i).setVisibility(View.VISIBLE);
-                } else {
-                    thresholdButtons.get(i).setVisibility(View.GONE);
+                        float[] currentColor = handleColors[selectedThreshold];
+                        getRenderer().setCurrentColor(currentColor);
+                        thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
+                        thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
+                    }
+                    for (int i = 0; i < MAX_THRESHOLDS; i++) {
+                        if (i < thresholdsSize) {
+                            thresholdButtons.get(i).setVisibility(View.VISIBLE);
+                        } else {
+                            thresholdButtons.get(i).setVisibility(View.GONE);
+                        }
+                    }
+                    ibtnAddThreshold.setVisibility(thresholdsSize < MAX_THRESHOLDS ? View.VISIBLE : View.GONE);
+                    ibtnRemoveThreshold.setVisibility(thresholdsSize > 1 ? View.VISIBLE : View.GONE);
                 }
-            }
-            ibtnAddThreshold.setVisibility(thresholdsSize < maxThresholds ? View.VISIBLE : View.GONE);
-            ibtnRemoveThreshold.setVisibility(thresholdsSize > minThresholds ? View.VISIBLE : View.GONE);
+            });
         }
     }
 }

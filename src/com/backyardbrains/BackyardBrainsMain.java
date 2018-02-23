@@ -541,7 +541,7 @@ public class BackyardBrainsMain extends AppCompatActivity
     };
 
     //==============================================
-    // ANALYSIS MANAGER AND
+    // ANALYSIS MANAGER
     //==============================================
 
     // Starts BYBAnalysisManager
@@ -549,7 +549,7 @@ public class BackyardBrainsMain extends AppCompatActivity
         if (analysisManager == null) {
             LOGD(TAG, "Starting AnalysisManager");
 
-            analysisManager = new BYBAnalysisManager();
+            analysisManager = new BYBAnalysisManager(getApplicationContext());
         }
     }
 

@@ -3,6 +3,7 @@ package com.backyardbrains;
 import android.annotation.SuppressLint;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -82,7 +83,8 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         }
     }
 
-    @Override public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         LOGD(TAG, "onCreateView()");
         final View root = inflater.inflate(R.layout.fragment_analysis, container, false);
         unbinder = ButterKnife.bind(this, root);
@@ -99,13 +101,14 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         if (glSurface != null) glSurface.onResume();
 
         if (ApacheCommonsLang3Utils.isBlank(filePath)) {
-            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+            if (getContext() != null) ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
             return;
         }
 
         if (getAnalysisManager() != null) {
-            // if file hasn't already been analyzed show waiting screen
-            if (getAnalysisManager().analyzeFile(filePath, analysisType)) showWaiting(true);
+            // show "Waiting..." screen and start analysis
+            showWaiting(true);
+            getAnalysisManager().startAnalysis(filePath, analysisType);
         }
     }
 
@@ -151,7 +154,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         // just redraw to show thumbs view
         if (currentRenderer instanceof CrossCorrelationRenderer
             && !((CrossCorrelationRenderer) currentRenderer).isThumbsView()) {
-            ((CrossCorrelationRenderer) currentRenderer).setThumbsView(true);
+            ((CrossCorrelationRenderer) currentRenderer).setThumbsView();
             redraw();
 
             return;
@@ -240,7 +243,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         });
     }
 
-    // Returns analysis title depending on the analyisis type
+    // Returns analysis title depending on the analysis type
     private String getTitle(@BYBAnalysisType int analysisType) {
         switch (analysisType) {
             case BYBAnalysisType.AUTOCORRELATION:
