@@ -14,7 +14,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.audio.Filters;
-import com.backyardbrains.audio.ThresholdProcessor;
+import com.backyardbrains.data.processing.ThresholdProcessor;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AmModulationDetectionEvent;

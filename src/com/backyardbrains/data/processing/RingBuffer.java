@@ -17,50 +17,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.backyardbrains.audio;
+package com.backyardbrains.data.processing;
 
 import com.crashlytics.android.Crashlytics;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
+import java.lang.reflect.Array;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class RingBuffer {
+/**
+ * @param <T>
+ * @author Tihomir Leka <ticapeca at gmail.com>
+ */
+public class RingBuffer<T> {
 
     private static final String TAG = makeLogTag(RingBuffer.class);
 
+    private final Class<T> clazz;
     private final int size;
 
-    private short[] buffer;
+    private T[] buffer;
 
-    public RingBuffer(int size) {
+    public RingBuffer(Class<T> clazz, int size) {
+        this.clazz = clazz;
         this.size = size;
 
-        buffer = new short[size];
+        //noinspection unchecked
+        buffer = (T[]) Array.newInstance(clazz, size);
     }
 
-    public void add(final ByteBuffer incoming) {
-        add(incoming.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer());
-    }
-
-    public void add(final ShortBuffer incoming) {
-        try {
-            // we can only copy
-            incoming.clear();
-
-            System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length - incoming.capacity());
-            incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
-        } catch (Exception e) {
-            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
-                + incoming.capacity() + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length
-                - incoming.capacity()));
-            Crashlytics.logException(e);
-        }
-    }
-
-    public void add(short[] incoming) {
+    public void add(T[] incoming) {
         try {
             System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
             System.arraycopy(incoming, 0, buffer, buffer.length - incoming.length, incoming.length);
@@ -72,7 +58,7 @@ public class RingBuffer {
         }
     }
 
-    public void add(short incoming) {
+    public void add(T incoming) {
         System.arraycopy(buffer, 1, buffer, 0, buffer.length - 1);
         buffer[buffer.length - 1] = incoming;
     }
@@ -80,7 +66,7 @@ public class RingBuffer {
     /**
      * @return an order-adjusted version of the whole buffer
      */
-    public short[] getArray() {
+    public T[] getArray() {
         return buffer;
     }
 
@@ -88,6 +74,7 @@ public class RingBuffer {
      * Clears the buffer as sets all values to zeros
      */
     public void clear() {
-        buffer = new short[size];
+        //noinspection unchecked
+        buffer = (T[]) Array.newInstance(clazz, size);
     }
 }

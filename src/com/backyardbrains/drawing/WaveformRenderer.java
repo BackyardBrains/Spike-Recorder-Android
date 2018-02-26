@@ -19,8 +19,11 @@
 
 package com.backyardbrains.drawing;
 
+import android.graphics.Color;
 import android.support.annotation.NonNull;
+import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utils.BYBGlUtils;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -45,6 +48,12 @@ public class WaveformRenderer extends BYBBaseRenderer {
             gl.glVertexPointer(2, GL10.GL_FLOAT, 0, mVertexBuffer);
             gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, mVertexBuffer.limit() / 2);
             gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+        }
+
+        final SparseArray<String> markers = getMarkers();
+        for (int i = 0; i < markers.size(); i++) {
+            BYBGlUtils.drawGlLine(gl, markers.keyAt(i), -getGlWindowVerticalSize(), markers.keyAt(i),
+                getGlWindowVerticalSize(), Color.CYAN);
         }
     }
 }

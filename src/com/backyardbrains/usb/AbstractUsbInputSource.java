@@ -33,14 +33,29 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
          *
          * @param hardwareType Type of the connected SpikerBox hardware. One of {@link SpikerBoxHardwareType}.
          */
-        void onSpikerBoxHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
+        void onHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
     }
 
-    private OnSpikerBoxHardwareTypeDetectionListener listener;
+    private OnSpikerBoxHardwareTypeDetectionListener onSpikerBoxHardwareTypeDetectionListener;
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
-    AbstractUsbInputSource(@NonNull UsbDevice device, @Nullable OnSamplesReceivedListener listener) {
+    /**
+     * Interface definition for a callback to be invoked when SpikerBox event message is sent.
+     */
+    public interface OnSpikerBoxEventMessageReceivedListener {
+        /**
+         * Called when SpikerBox sends an event message.
+         *
+         * @param event Event sent by SpikerBox.
+         * @param sampleIndex
+         */
+        void onEventReceived(@NonNull String event, int sampleIndex);
+    }
+
+    @SuppressWarnings("WeakerAccess") OnSpikerBoxEventMessageReceivedListener onSpikerBoxEventMessageReceivedListener;
+
+    AbstractUsbInputSource(@NonNull UsbDevice device, @Nullable final OnSamplesReceivedListener listener) {
         super(listener);
 
         this.device = device;
@@ -59,6 +74,13 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
                     setChannelCount(channelCount);
 
                     processor.setChannelCount(channelCount);
+                }
+
+                @Override public void onEventReceived(@NonNull String event, int sampleIndex) {
+                    LOGD(TAG, "EVENT: " + event);
+                    if (onSpikerBoxEventMessageReceivedListener != null) {
+                        onSpikerBoxEventMessageReceivedListener.onEventReceived(event, sampleIndex);
+                    }
                 }
             };
         processor = new SampleStreamProcessor(sampleStreamListener, FILTERS);
@@ -129,13 +151,22 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
     }
 
     /**
-     * Register a callback to be invoked when connected SpikerBox hardware type is detected.
+     * Registers a callback to be invoked when connected SpikerBox hardware type is detected.
      *
      * @param listener The callback that will be run. This value may be {@code null}.
      */
     public void setOnSpikerBoxHardwareTypeDetectionListener(
         @Nullable OnSpikerBoxHardwareTypeDetectionListener listener) {
-        this.listener = listener;
+        onSpikerBoxHardwareTypeDetectionListener = listener;
+    }
+
+    /**
+     * Registers a callback to be invoked when connected SpikerBox sends an event message.
+     *
+     * @param listener The callack that will be run. This value may be {@code null}.
+     */
+    public void setOnSpikerBoxEventMessageReceivedListener(@Nullable OnSpikerBoxEventMessageReceivedListener listener) {
+        onSpikerBoxEventMessageReceivedListener = listener;
     }
 
     /**
@@ -183,6 +214,8 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
 
         this.hardwareType = hardwareType;
 
-        if (listener != null) listener.onSpikerBoxHardwareTypeDetected(hardwareType);
+        if (onSpikerBoxHardwareTypeDetectionListener != null) {
+            onSpikerBoxHardwareTypeDetectionListener.onHardwareTypeDetected(hardwareType);
+        }
     }
 }

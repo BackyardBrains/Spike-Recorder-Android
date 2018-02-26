@@ -27,7 +27,7 @@ public class BYBGlUtils {
         //        gl.glDrawArrays(GL10.GL_LINES, 0, 2);
         //        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 
-        BYBGlUtils.drawArray2D(gl, line, color, 2);
+        BYBGlUtils.drawArray2D(gl, line, color, 4);
     }
 
     public static void drawArray2D(GL10 gl, float[] array, int color, float lineWidth) {

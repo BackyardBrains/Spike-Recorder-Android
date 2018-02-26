@@ -54,6 +54,11 @@ class SampleStreamProcessor implements DataProcessor {
          * Triggered when SpikerBox sends max sample rate and number of channels message as a result of inquiry.
          */
         void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount);
+
+        /**
+         * Triggered when SpikerBox sends an event message.
+         */
+        void onEventReceived(@NonNull String event, int sampleIndex);
     }
 
     private SampleStreamListener listener;
@@ -98,6 +103,7 @@ class SampleStreamProcessor implements DataProcessor {
         int channelCounter = 0;
         int lsb, msb; // less significant and most significant bytes
         short sample;
+        int counter = 0;
 
         for (byte b : data) {
             // 1. check if we are inside escape sequence or not
@@ -174,7 +180,7 @@ class SampleStreamProcessor implements DataProcessor {
             } else {
                 if (escapeSequence.isCompleted()) {
                     // let's process incoming message
-                    processEscapeSequenceMessage(escapeSequence.getMessage());
+                    processEscapeSequenceMessage(escapeSequence.getMessage(), sampleCounters[CHANNEL_INDEX]);
                     // clear the escape sequence instance so we can start detecting the next one
                     LOGD(TAG, "Escape sequence is completed");
                     escapeSequence.reset();
@@ -193,7 +199,7 @@ class SampleStreamProcessor implements DataProcessor {
     }
 
     // Processes escape sequence message and triggers appropriate listener
-    private void processEscapeSequenceMessage(byte[] messageBytes) {
+    private void processEscapeSequenceMessage(byte[] messageBytes, int sampleIndex) {
         final String message = new String(messageBytes);
         LOGD(TAG, "ESCAPE MESSAGE: " + message);
         // check if it's board type message
@@ -203,6 +209,8 @@ class SampleStreamProcessor implements DataProcessor {
             } else if (SampleStreamUtils.isSampleRateAndNumOfChannelsMsg(message)) {
                 listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                     SampleStreamUtils.getChannelCount(message));
+            } else if (SampleStreamUtils.isEventMsg(message)) {
+                listener.onEventReceived(SampleStreamUtils.getEventNumber(message), sampleIndex);
             }
         }
     }

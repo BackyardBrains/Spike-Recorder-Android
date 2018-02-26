@@ -487,12 +487,13 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             } else {
                 usbInputSource.setOnSpikerBoxHardwareTypeDetectionListener(
                     new AbstractUsbInputSource.OnSpikerBoxHardwareTypeDetectionListener() {
-                        @Override public void onSpikerBoxHardwareTypeDetected(int hardwareType) {
+                        @Override public void onHardwareTypeDetected(int hardwareType) {
                             LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
                             EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
                         }
                     });
             }
+            usbInputSource.setOnSpikerBoxEventMessageReceivedListener(processingBuffer);
         }
 
         // set sample rate for USB serial input

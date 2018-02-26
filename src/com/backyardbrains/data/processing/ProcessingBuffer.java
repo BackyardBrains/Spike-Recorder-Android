@@ -1,7 +1,9 @@
 package com.backyardbrains.data.processing;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.RingBuffer;
+import android.util.SparseArray;
+import com.backyardbrains.usb.AbstractUsbInputSource;
 import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 
@@ -11,7 +13,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class ProcessingBuffer {
+public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEventMessageReceivedListener {
 
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
@@ -20,13 +22,19 @@ public class ProcessingBuffer {
 
     private static ProcessingBuffer INSTANCE;
 
-    private RingBuffer dataBuffer;
+    private SampleBuffer dataBuffer;
+    private RingBuffer<String> markerBuffer;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private long lastBytePosition;
 
+    private final SparseArray<String> markerMap;
+    private String[] markers;
+
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
-        dataBuffer = new RingBuffer(bufferSize);
+        dataBuffer = new SampleBuffer(bufferSize);
+        markerBuffer = new RingBuffer<>(String.class, bufferSize);
+        markerMap = new SparseArray<>();
     }
 
     /**
@@ -41,12 +49,12 @@ public class ProcessingBuffer {
         return INSTANCE;
     }
 
-    //=================================================
+    //======================================================================
     //  PUBLIC METHODS
-    //=================================================
+    //======================================================================
 
     /**
-     * Sets buffer size of the {@link RingBuffer}.
+     * Sets buffer size of the {@link SampleBuffer}.
      */
     public void setBufferSize(int bufferSize) {
         LOGD(TAG, "setBufferSize(" + bufferSize + ")");
@@ -55,7 +63,12 @@ public class ProcessingBuffer {
         if (bufferSize <= 0) return;
 
         dataBuffer.clear();
-        dataBuffer = new RingBuffer(bufferSize);
+        dataBuffer = new SampleBuffer(bufferSize);
+
+        markerBuffer.clear();
+        markerBuffer = new RingBuffer<>(String.class, bufferSize);
+
+        markerMap.clear();
 
         this.bufferSize = bufferSize;
     }
@@ -67,6 +80,13 @@ public class ProcessingBuffer {
      */
     public short[] getData() {
         return dataBuffer != null ? dataBuffer.getArray() : new short[0];
+    }
+
+    /**
+     * Returns an array of shorts that are representing
+     */
+    public String[] getMarkers() {
+        return markerBuffer != null ? markerBuffer.getArray() : new String[0];
     }
 
     /**
@@ -92,6 +112,16 @@ public class ProcessingBuffer {
 
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
+        // add markers
+        markers = new String[data.length];
+        int index;
+        for (int i = 0; i < markerMap.size(); i++) {
+            LOGD(TAG, "ADDING NEW EVENT " + markerMap.valueAt(i) + " TO BUFFER AT " + markerMap.keyAt(i));
+            index = markerMap.keyAt(i) >= markers.length ? markers.length - 1 : markerMap.keyAt(i);
+            markers[index] = markerMap.valueAt(i);
+        }
+        if (markerBuffer != null) markerBuffer.add(markers);
+        markerMap.clear();
     }
 
     /**
@@ -102,6 +132,8 @@ public class ProcessingBuffer {
             dataBuffer.clear();
             lastBytePosition = 0;
         }
+        if (markerBuffer != null) markerBuffer.clear();
+        markerMap.clear();
     }
 
     /**
@@ -109,5 +141,13 @@ public class ProcessingBuffer {
      */
     public long getLastBytePosition() {
         return lastBytePosition;
+    }
+
+    //======================================================================
+    //  IMPLEMENTATION OF OnSpikerBoxEventMessageReceivedListener INTERFACE
+    //======================================================================
+
+    @Override public void onEventReceived(@NonNull String event, int sampleIndex) {
+        markerMap.put(sampleIndex, event);
     }
 }

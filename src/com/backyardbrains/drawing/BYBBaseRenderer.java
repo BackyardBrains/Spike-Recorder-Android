@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AudioUtils;
@@ -43,6 +44,8 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     short[] drawingBuffer;
     private float[] tempBufferToDraws;
+    String[] markers;
+    private SparseArray<String> markerBuffer;
 
     protected int height;
     protected int width;
@@ -316,6 +319,7 @@ public class BYBBaseRenderer extends BaseRenderer {
     // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
     private boolean fillBuffer() {
         drawingBuffer = processingBuffer.getData();
+        markers = processingBuffer.getMarkers();
         //new short[processingBuffer.getData().length];
         //System.arraycopy(processingBuffer.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
@@ -347,6 +351,7 @@ public class BYBBaseRenderer extends BaseRenderer {
         int j = 1;
 
         try {
+            markerBuffer = new SparseArray<>();
             for (int i = startIndex; i < endIndex; i++) {
                 if (i < 0) {
                     if (clearFront) tempBufferToDraws[j] = 0;
@@ -355,8 +360,7 @@ public class BYBBaseRenderer extends BaseRenderer {
                 }
                 //LOGD(TAG, "currentSample: " + tempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
 
-                // give subclass a chance to process current sample
-                //onCycle(j);
+                if (markers[i] != null) markerBuffer.put((int) tempBufferToDraws[j - 1], markers[i]);
 
                 j += 2;
             }
@@ -374,6 +378,10 @@ public class BYBBaseRenderer extends BaseRenderer {
         //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
         //LOGD(TAG, ".........................................");
         return fb;
+    }
+
+    protected SparseArray<String> getMarkers() {
+        return markerBuffer;
     }
 
     private float getMinimumDetectedPCMValue() {
