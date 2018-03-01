@@ -10,5 +10,5 @@ public interface DataProcessor {
     /**
      * Takes incoming {@code byte[]}, processes it and returns array of samples.
      */
-    short[] process(@NonNull byte[] data);
+    @NonNull short[] process(@NonNull byte[] data);
 }

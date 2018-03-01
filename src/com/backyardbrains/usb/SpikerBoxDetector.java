@@ -6,7 +6,6 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
-import com.backyardbrains.audio.AbstractInputSource;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
 import java.util.Map;
@@ -72,11 +71,7 @@ class SpikerBoxDetector {
     void startDetection(@NonNull UsbDevice device) {
         if (manager != null && AbstractUsbInputSource.isSupported(device)) {
             final UsbDeviceConnection connection = manager.openDevice(device);
-            final AbstractUsbInputSource usbDevice = AbstractUsbInputSource.createUsbDevice(device, connection,
-                new AbstractInputSource.OnSamplesReceivedListener() {
-                    @Override public void onSamplesReceived(short[] data) {
-                    }
-                });
+            final AbstractUsbInputSource usbDevice = AbstractUsbInputSource.createUsbDevice(device, connection, null);
             if (usbDevice != null) {
                 // For some devices we set hardware type on creation just by checking VID and PID
                 if (usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN && listener != null) {

@@ -40,6 +40,7 @@ import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.BybEmptyRecyclerView;
 import com.backyardbrains.view.BybEmptyView;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -165,7 +166,11 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
-        final File[] files = RecordingUtils.BYB_DIRECTORY.listFiles();
+        final File[] files = RecordingUtils.BYB_DIRECTORY.listFiles(new FileFilter() {
+            @Override public boolean accept(File file) {
+                return !RecordingUtils.isEventsFile(file);
+            }
+        });
         if (files != null) {
             if (files.length > 0) {
                 Arrays.sort(files, new Comparator<File>() {

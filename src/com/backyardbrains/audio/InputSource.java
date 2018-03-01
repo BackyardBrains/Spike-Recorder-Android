@@ -1,6 +1,7 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -34,7 +35,7 @@ public interface InputSource {
          *
          * @param data The received data.
          */
-        void onSamplesReceived(short[] data);
+        void onSamplesReceived(@NonNull short[] data);
     }
 
     /**

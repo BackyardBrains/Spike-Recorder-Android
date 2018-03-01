@@ -242,5 +242,5 @@ public abstract class AbstractInputSource implements InputSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    protected abstract short[] processIncomingData(byte[] data);
+    @NonNull protected abstract short[] processIncomingData(byte[] data);
 }

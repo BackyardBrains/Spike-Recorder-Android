@@ -48,7 +48,7 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
          * Called when SpikerBox sends an event message.
          *
          * @param event Event sent by SpikerBox.
-         * @param sampleIndex
+         * @param sampleIndex Index of the sample in the current batch where event occurred.
          */
         void onEventReceived(@NonNull String event, int sampleIndex);
     }
@@ -98,7 +98,7 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
      * device.
      */
     static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
+        @Nullable OnSamplesReceivedListener listener) {
         if (SerialInputSource.isSupported(device)) {
             return SerialInputSource.createUsbDevice(device, connection, listener);
         } else if (HIDInputSource.isSupported(device)) {
@@ -181,7 +181,7 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
     /**
      * {@inheritDoc}
      */
-    @Override protected final short[] processIncomingData(byte[] data) {
+    @NonNull @Override protected final short[] processIncomingData(byte[] data) {
         return processor.process(data);
     }
 

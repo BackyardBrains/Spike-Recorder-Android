@@ -70,7 +70,7 @@ public class AmModulationProcessor implements SampleProcessor {
         init();
     }
 
-    @Override public short[] process(@NonNull short[] data) {
+    @NonNull @Override public short[] process(@NonNull short[] data) {
         if (data.length > 0) return processIncomingData(data);
 
         return new short[0];
@@ -99,7 +99,7 @@ public class AmModulationProcessor implements SampleProcessor {
     }
 
     // Does actual processing of incoming samples.
-    private short[] processIncomingData(@NonNull short[] samples) {
+    @NonNull private short[] processIncomingData(@NonNull short[] samples) {
         sampleCount = samples.length;
 
         for (int i = 0; i < sampleCount; i++) {
