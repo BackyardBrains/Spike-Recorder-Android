@@ -28,7 +28,6 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
     private long lastBytePosition;
 
     private final SparseArray<String> markerMap;
-    private String[] markers;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
@@ -113,7 +112,7 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
         // add data to ring buffer
         if (dataBuffer != null) dataBuffer.add(data);
         // add markers
-        markers = new String[data.length];
+        String[] markers = new String[data.length];
         int index;
         for (int i = 0; i < markerMap.size(); i++) {
             LOGD(TAG, "ADDING NEW EVENT " + markerMap.valueAt(i) + " TO BUFFER AT " + markerMap.keyAt(i));

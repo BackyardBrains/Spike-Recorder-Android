@@ -13,6 +13,8 @@ import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -20,16 +22,13 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class BYBBaseRenderer extends BaseRenderer {
+public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private static final String TAG = makeLogTag(BYBBaseRenderer.class);
 
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int SECONDS_TO_RENDER = 12;
-
-    private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
-    private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
 
     private float focusX;
     private float scaledFocusX;
@@ -45,19 +44,21 @@ public class BYBBaseRenderer extends BaseRenderer {
     short[] drawingBuffer;
     private float[] tempBufferToDraws;
     String[] markers;
-    private SparseArray<String> markerBuffer;
 
-    protected int height;
-    protected int width;
-    private boolean autoScaled;
+    private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
+    private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
+    private boolean glWindowSizeDirty;
+    private int surfaceWidth;
+    private int surfaceHeight;
+    private boolean autoScale;
+    // Prevents buffer to update while preparing samples for drawing
+    private AtomicBoolean processing = new AtomicBoolean(false);
 
     private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 6 sec
 
-    private int min_gl_horizontal_size = AudioUtils.SAMPLE_RATE / 5000; // 0.2 millis
+    private int minGlWindowHorizontalSize = (int) (AudioUtils.SAMPLE_RATE * .0002); // 0.2 millis
     private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
-    private int startIndex;
-    private int endIndex;
     private boolean bShowScalingAreaX;
     private int scalingAreaStartX;
     private int scalingAreaEndX;
@@ -134,28 +135,34 @@ public class BYBBaseRenderer extends BaseRenderer {
     public void setSampleRate(int sampleRate) {
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         MAX_SAMPLES_COUNT = sampleRate * SECONDS_TO_RENDER;
-        min_gl_horizontal_size = sampleRate / 5000;
+        minGlWindowHorizontalSize = (int) (sampleRate * .0002);
         tempBufferToDraws = initTempBuffer();
 
         // recalculate GlWindowHorizontalSize
         int newSize = glWindowHorizontalSize;
-        if (glWindowHorizontalSize < min_gl_horizontal_size) newSize = min_gl_horizontal_size;
+        if (glWindowHorizontalSize < minGlWindowHorizontalSize) newSize = minGlWindowHorizontalSize;
         if (drawingBuffer != null) {
             final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
             if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
         }
+        // save new GL windows width
         glWindowHorizontalSize = newSize;
+        // set GL window size dirty so we can recalculate projection
+        glWindowSizeDirty = true;
     }
 
     public void setGlWindowHorizontalSize(int newSize) {
         if (newSize < 0 || newSize == glWindowHorizontalSize) return;
 
-        if (newSize < min_gl_horizontal_size) newSize = min_gl_horizontal_size;
+        if (newSize < minGlWindowHorizontalSize) newSize = minGlWindowHorizontalSize;
         if (drawingBuffer != null) {
             final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
             if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
         }
+        // save new GL windows width
         glWindowHorizontalSize = newSize;
+        // set GL window size dirty so we can recalculate projection
+        glWindowSizeDirty = true;
     }
 
     public int getGlWindowHorizontalSize() {
@@ -167,19 +174,30 @@ public class BYBBaseRenderer extends BaseRenderer {
         if (newSize < MIN_GL_VERTICAL_SIZE) newSize = MIN_GL_VERTICAL_SIZE;
         if (newSize > PCM_MAXIMUM_VALUE) newSize = PCM_MAXIMUM_VALUE;
 
+        // save new GL windows height
         glWindowVerticalSize = newSize;
+        // set GL window size dirty so we can recalculate projection
+        glWindowSizeDirty = true;
     }
 
     public int getGlWindowVerticalSize() {
         return glWindowVerticalSize;
     }
 
-    public int getSurfaceWidth() {
-        return width;
+    int getSurfaceWidth() {
+        return surfaceWidth;
     }
 
-    public int getSurfaceHeight() {
-        return height;
+    int getSurfaceHeight() {
+        return surfaceHeight;
+    }
+
+    float getScaleX(int glWindowHorizontalSize) {
+        return surfaceWidth > 0 ? glWindowHorizontalSize / (float) surfaceWidth : (float) glWindowHorizontalSize;
+    }
+
+    float getScaleY(int glWindowVerticalSize) {
+        return surfaceHeight > 0 ? glWindowVerticalSize / (float) surfaceHeight : (float) glWindowVerticalSize;
     }
 
     public void setScaleFocusX(float fx) {
@@ -202,9 +220,9 @@ public class BYBBaseRenderer extends BaseRenderer {
     @CallSuper public void onLoadSettings(@NonNull Context context) {
         setGlWindowHorizontalSize(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
         setGlWindowVerticalSize(PrefUtils.getGlWindowVerticalSize(context, BYBBaseRenderer.class));
-        width = PrefUtils.getViewportWidth(context, getClass());
-        height = PrefUtils.getViewportHeight(context, BYBBaseRenderer.class);
-        setAutoScaled(PrefUtils.getAutoScale(context, getClass()));
+        surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
+        surfaceHeight = PrefUtils.getViewportHeight(context, BYBBaseRenderer.class);
+        setAutoScale(PrefUtils.getAutoScale(context, getClass()));
         minimumDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
 
@@ -218,9 +236,9 @@ public class BYBBaseRenderer extends BaseRenderer {
     @CallSuper public void onSaveSettings(@NonNull Context context) {
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowHorizontalSize);
         PrefUtils.setGlWindowVerticalSize(context, BYBBaseRenderer.class, glWindowVerticalSize);
-        PrefUtils.setViewportWidth(context, getClass(), width);
-        PrefUtils.setViewportHeight(context, BYBBaseRenderer.class, height);
-        PrefUtils.setAutoScale(context, getClass(), autoScaled);
+        PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
+        PrefUtils.setViewportHeight(context, BYBBaseRenderer.class, surfaceHeight);
+        PrefUtils.setAutoScale(context, getClass(), autoScale);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minimumDetectedPCMValue);
     }
 
@@ -230,37 +248,50 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         LOGD(TAG, "onSurfaceCreated()");
-
+        gl.glClearColor(0f, 0f, 0f, 1.0f);
+        gl.glClearDepthf(1.0f);
+        gl.glDepthFunc(GL10.GL_LEQUAL);
+        gl.glEnable(GL10.GL_DEPTH_TEST);
+        gl.glEnable(GL10.GL_LINE_SMOOTH);
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-        gl.glEnable(GL10.GL_DEPTH_TEST);
+        gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
     }
 
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         LOGD(TAG, "onSurfaceCreated()");
+        gl.glViewport(0, 0, width, height);
+        prepareForDrawing(gl);
+        gl.glMatrixMode(GL10.GL_PROJECTION);
+        gl.glLoadIdentity();
+        float heightHalf = glWindowVerticalSize * .5f;
+        gl.glOrthof(0, glWindowHorizontalSize, -heightHalf, heightHalf, -1f, 1f);
+        gl.glRotatef(0f, 0f, 0f, 1f);
 
-        this.width = width;
-        this.height = height;
+        this.surfaceWidth = width;
+        this.surfaceHeight = height;
     }
 
     @Override public void onDrawFrame(GL10 gl) {
-        long start = System.currentTimeMillis();
+        //long start = System.currentTimeMillis();
         //LOGD(TAG, "START");
         if (!fillBuffer()) {
             LOGD(TAG, "Can't fill audio buffer!");
             return;
         }
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER getCurrentAudio()");
-        if (!BYBUtils.isValidAudioBuffer(drawingBuffer)) {
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER fillBuffer()");
+        if (!BYBUtils.isValidBuffer(drawingBuffer)) {
             LOGD(TAG, "Invalid audio buffer!");
             return;
         }
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER isValidAudioBuffer()");
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER isValidBuffer()");
+
+        if (callback != null) callback.onDraw(glWindowHorizontalSize, glWindowVerticalSize);
 
         preDrawingHandler();
         //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER preDrawingHandler()");
-        BYBGlUtils.glClear(gl);
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER glClear()");
+        prepareForDrawing(gl);
+        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER prepareForDrawing()");
         drawingHandler(gl);
         //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER drawingHandler()");
         postDrawingHandler(gl);
@@ -269,27 +300,37 @@ public class BYBBaseRenderer extends BaseRenderer {
         //LOGD(TAG, "================================================");
     }
 
-    @CallSuper protected void preDrawingHandler() {
-        if (callback != null) callback.onDraw(glWindowHorizontalSize, glWindowVerticalSize);
+    protected void preDrawingHandler() {
     }
 
-    protected void drawingHandler(GL10 gl) {
+    private void prepareForDrawing(GL10 gl) {
+        BYBGlUtils.glClear(gl);
+        if (glWindowSizeDirty) {
+            float heightHalf = glWindowVerticalSize * .5f;
+            gl.glMatrixMode(GL10.GL_PROJECTION);
+            gl.glLoadIdentity();
+            gl.glOrthof(0f, glWindowHorizontalSize, -heightHalf, heightHalf, -1f, 1f);
+
+            glWindowSizeDirty = false;
+        }
     }
+
+    abstract protected void drawingHandler(GL10 gl);
 
     protected void postDrawingHandler(GL10 gl) {
-        if (bShowScalingAreaX || bShowScalingAreaY) {
-            gl.glEnable(GL10.GL_BLEND);
-            // Specifies pixel arithmetic
-            gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-            if (bShowScalingAreaX) {
-                BYBGlUtils.drawRectangle(gl, scalingAreaStartX, -getGlWindowVerticalSize(),
-                    scalingAreaEndX - scalingAreaStartX, getGlWindowVerticalSize() * 2, 0xFFFFFF33);
-            } else {
-                BYBGlUtils.drawRectangle(gl, 0, scalingAreaStartY, getGlWindowHorizontalSize(), scalingAreaEndY,
-                    0xFFFFFF33);
-            }
-            gl.glDisable(GL10.GL_BLEND);
-        }
+        //if (bShowScalingAreaX || bShowScalingAreaY) {
+        //    gl.glEnable(GL10.GL_BLEND);
+        //    // Specifies pixel arithmetic
+        //    gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+        //    if (bShowScalingAreaX) {
+        //        BYBGlUtils.drawRectangle(gl, scalingAreaStartX, -getGlWindowVerticalSize(),
+        //            scalingAreaEndX - scalingAreaStartX, getGlWindowVerticalSize() * 2, 0xFFFFFF33);
+        //    } else {
+        //        BYBGlUtils.drawRectangle(gl, 0, scalingAreaStartY, getGlWindowHorizontalSize(), scalingAreaEndY,
+        //            0xFFFFFF33);
+        //    }
+        //    gl.glDisable(GL10.GL_BLEND);
+        //}
     }
 
     //==============================================
@@ -304,7 +345,7 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     void addToGlOffset(float dx, float dy) {
         if (getIsPlaybackMode() && !getIsPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / width);
+            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / surfaceWidth);
 
             //bPanning = true;
             //panningDx = dx;
@@ -318,45 +359,44 @@ public class BYBBaseRenderer extends BaseRenderer {
 
     // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
     private boolean fillBuffer() {
-        drawingBuffer = processingBuffer.getData();
-        markers = processingBuffer.getMarkers();
+        if (!processing.get()) {
+            drawingBuffer = processingBuffer.getData();
+            markers = processingBuffer.getMarkers();
+        }
         //new short[processingBuffer.getData().length];
         //System.arraycopy(processingBuffer.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
     }
 
-    private void setStartEndIndex(int arrayLength) {
-        setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
-
-        if (startIndex < -glWindowHorizontalSize) setStartIndex(-glWindowHorizontalSize, arrayLength);
-
-        if (startIndex + glWindowHorizontalSize > arrayLength) {
-            setStartIndex(arrayLength - glWindowHorizontalSize, arrayLength);
-        }
+    @Nullable protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, int glWindowHorizontalSize) {
+        return getWaveformBuffer(sampleBuffer, new SparseArray<String>(), glWindowHorizontalSize);
     }
 
-    private void setStartIndex(int si, int arrayLength) {
-        startIndex = si;
-        //endIndex = startIndex + glWindowHorizontalSize;
-        endIndex = Math.min(startIndex + glWindowHorizontalSize, arrayLength);
-    }
-
-    @Nullable protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
+    @Nullable protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, SparseArray<String> markerBuffer,
+        int glWindowHorizontalSize) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
         //LOGD(TAG, "START - " + shortArrayToDraw.length);
-        final boolean clearFront = getIsSeeking();
-        setStartEndIndex(shortArrayToDraw.length);
+
+        // start preparing samples for drawing
+        processing.set(true);
+
+        boolean clearFront = getIsSeeking();
         //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
         int j = 1;
+        int len = sampleBuffer.length;
+        int startIndex = len - glWindowHorizontalSize;
+        if (startIndex < -glWindowHorizontalSize) startIndex = -glWindowHorizontalSize;
+        if (startIndex + glWindowHorizontalSize > len) startIndex = len - glWindowHorizontalSize;
+        int endIndex = Math.min(startIndex + glWindowHorizontalSize, len);
+        String[] markers = Arrays.copyOf(this.markers, this.markers.length);
 
         try {
-            markerBuffer = new SparseArray<>();
             for (int i = startIndex; i < endIndex; i++) {
                 if (i < 0) {
                     if (clearFront) tempBufferToDraws[j] = 0;
                 } else {
-                    tempBufferToDraws[j] = shortArrayToDraw[i];
+                    tempBufferToDraws[j] = sampleBuffer[i];
                 }
                 //LOGD(TAG, "currentSample: " + tempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
 
@@ -370,18 +410,16 @@ public class BYBBaseRenderer extends BaseRenderer {
             Crashlytics.logException(e);
         }
 
-        // subclasses can do some post-processing
-        //postCycle();
         //Log.d(TAG, "AFTER postCycle():" + (System.currentTimeMillis() - start));
 
         final FloatBuffer fb = BYBUtils.getFloatBufferFromFloatArray(tempBufferToDraws, glWindowHorizontalSize * 2);
+
+        // mark preparing samples for drawing as finished
+        processing.set(false);
+
         //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
         //LOGD(TAG, ".........................................");
         return fb;
-    }
-
-    protected SparseArray<String> getMarkers() {
-        return markerBuffer;
     }
 
     private float getMinimumDetectedPCMValue() {
@@ -392,42 +430,19 @@ public class BYBBaseRenderer extends BaseRenderer {
     // ----------------------------------------- GL
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    protected void setGlWindow(GL10 gl, final int samplesToShow, final int lengthOfSampleSet) {
-        initGL(gl, 0, samplesToShow, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+    // ----------------------------------------------------------------------------------------
+    private boolean isAutoScale() {
+        return autoScale;
     }
 
     // ----------------------------------------------------------------------------------------
-    void initGL(GL10 gl, float xBegin, float xEnd, float scaledYBegin, float scaledYEnd) {
-        gl.glViewport(0, 0, width, height);
-
-        BYBGlUtils.glClear(gl);
-        gl.glMatrixMode(GL10.GL_PROJECTION);
-        gl.glLoadIdentity();
-        gl.glOrthof(xBegin, xEnd, scaledYBegin, scaledYEnd, -1f, 1f);
-        gl.glRotatef(0f, 0f, 0f, 1f);
-
-        gl.glClearColor(0f, 0f, 0f, 1.0f);
-        gl.glClearDepthf(1.0f);
-        gl.glEnable(GL10.GL_DEPTH_TEST);
-        gl.glDepthFunc(GL10.GL_LEQUAL);
-        gl.glEnable(GL10.GL_LINE_SMOOTH);
-        gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
-        gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private boolean isAutoScaled() {
-        return autoScaled;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private void setAutoScaled(boolean isScaled) {
-        autoScaled = isScaled;
+    private void setAutoScale(boolean isScaled) {
+        autoScale = isScaled;
     }
 
     // ----------------------------------------------------------------------------------------
     void autoScaleCheck() {
-        if (!isAutoScaled() && drawingBuffer != null) {
+        if (!isAutoScale() && drawingBuffer != null) {
             if (drawingBuffer.length > 0) {
                 autoSetFrame(drawingBuffer);
             }
@@ -456,7 +471,7 @@ public class BYBBaseRenderer extends BaseRenderer {
                 setGlWindowVerticalSize(newyMax * 2);
             }
         }
-        setAutoScaled(true);
+        setAutoScale(true);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,28 +479,14 @@ public class BYBBaseRenderer extends BaseRenderer {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // ----------------------------------------------------------------------------------------
     int glHeightToPixelHeight(float glHeight) {
-        if (height <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
+        if (surfaceHeight <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
 
-        return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, height, 0);
+        return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, surfaceHeight, 0);
     }
 
     // ----------------------------------------------------------------------------------------
     public float pixelHeightToGlHeight(float pxHeight) {
-        return BYBUtils.map(pxHeight, height, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
-    }
-
-    public int screenToSampleScale(float screenPos) {
-        float normalizedScreenPos = screenPos / (float) width;
-        return (int) (normalizedScreenPos * getGlWindowHorizontalSize());
-    }
-
-    public int screenToSamplePos(float screenPos) {
-        return startIndex + screenToSampleScale(screenPos);
-    }
-
-    public float samplePosToScreen(int samplePos) {
-        float normalizedScreenPos = (float) (samplePos - startIndex) / (float) getGlWindowHorizontalSize();
-        return normalizedScreenPos * width;
+        return BYBUtils.map(pxHeight, surfaceHeight, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
     }
 
     private boolean getIsPlaybackMode() {

@@ -5,7 +5,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.persistance.source.AnalysisLocalDataSource;
-import com.backyardbrains.drawing.ThresholdOrientation;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.utils.AppExecutors;
 
 /**

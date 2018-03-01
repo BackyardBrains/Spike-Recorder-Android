@@ -15,7 +15,6 @@ import java.util.ArrayList;
 public class BYBUtils {
 
     public static void showAlert(Activity activity, String title, String mensage) {
-
         AlertDialog alertDialog =
             new AlertDialog.Builder(new ContextThemeWrapper(activity, R.style.BYBAppStyle)).create();
         alertDialog.setTitle(title);
@@ -44,15 +43,7 @@ public class BYBUtils {
     }
 
     // ----------------------------------------------------------------------------------------
-    public static boolean isValidAudioBuffer(float[] buffer) {
-        if (buffer == null) {
-            return false;
-        }
-        return buffer.length > 0;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public static boolean isValidAudioBuffer(short[] buffer) {
+    public static boolean isValidBuffer(short[] buffer) {
         if (buffer == null) {
             return false;
         }

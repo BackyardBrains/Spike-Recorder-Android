@@ -1,4 +1,4 @@
-package com.backyardbrains.drawing;
+package com.backyardbrains.utils;
 
 import android.support.annotation.IntDef;
 import java.lang.annotation.Retention;

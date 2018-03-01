@@ -1,6 +1,6 @@
 package com.backyardbrains.data;
 
-import com.backyardbrains.drawing.ThresholdOrientation;
+import com.backyardbrains.utils.ThresholdOrientation;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com.

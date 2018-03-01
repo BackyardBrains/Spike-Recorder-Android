@@ -22,6 +22,7 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -102,17 +103,18 @@ public class ThresholdRenderer extends WaveformRenderer {
         PrefUtils.setThreshold(context, getClass(), threshold);
     }
 
-    @Override protected FloatBuffer getWaveformBuffer(short[] shortArrayToDraw) {
-        if (getGlWindowHorizontalSize() > shortArrayToDraw.length) setGlWindowHorizontalSize(shortArrayToDraw.length);
+    @Override protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, SparseArray<String> markerBuffer,
+        int glWindowHorizontalSize) {
+        if (getGlWindowHorizontalSize() > sampleBuffer.length) setGlWindowHorizontalSize(sampleBuffer.length);
 
         float[] arr = new float[getGlWindowHorizontalSize() * 2]; // array to fill
         int j = 0; // index of arr
         try {
-            int start = (shortArrayToDraw.length - getGlWindowHorizontalSize()) / 2;
-            int end = (shortArrayToDraw.length + getGlWindowHorizontalSize()) / 2;
-            for (int i = start; i < end && i < shortArrayToDraw.length; i++) {
+            int start = (sampleBuffer.length - getGlWindowHorizontalSize()) / 2;
+            int end = (sampleBuffer.length + getGlWindowHorizontalSize()) / 2;
+            for (int i = start; i < end && i < sampleBuffer.length; i++) {
                 arr[j++] = i - start;
-                arr[j++] = shortArrayToDraw[i];
+                arr[j++] = sampleBuffer[i];
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             Log.e(TAG, e.getMessage());

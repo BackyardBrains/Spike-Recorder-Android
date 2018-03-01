@@ -17,7 +17,7 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
-import com.backyardbrains.drawing.ThresholdOrientation;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.BYBThresholdHandle;

@@ -12,9 +12,8 @@ public class SeekableWaveformRenderer extends BYBBaseRenderer {
     }
 
     @Override protected void drawingHandler(GL10 gl) {
-        setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
-
-        final FloatBuffer mVertexBuffer = getWaveformBuffer(drawingBuffer);
+        int glWindowHorizontalSize = getGlWindowHorizontalSize();
+        final FloatBuffer mVertexBuffer = getWaveformBuffer(drawingBuffer, glWindowHorizontalSize);
         if (mVertexBuffer != null) {
             gl.glMatrixMode(GL10.GL_MODELVIEW);
             gl.glLoadIdentity();
