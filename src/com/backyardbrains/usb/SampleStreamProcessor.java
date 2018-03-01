@@ -68,7 +68,7 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @Override public short[] process(@NonNull byte[] data) {
+    @NonNull @Override public short[] process(@NonNull byte[] data) {
         if (data.length > 0) return processIncomingData(data);
 
         return new short[0];
@@ -83,7 +83,7 @@ class SampleStreamProcessor implements DataProcessor {
         channelCountChanged = true;
     }
 
-    private short[] processIncomingData(@NonNull byte[] data) {
+    @NonNull private short[] processIncomingData(@NonNull byte[] data) {
         // if channel count has changed during processing  previous data chunk we should disregard
         if (channelCountChanged) {
             unfinishedFrame = null;
@@ -103,7 +103,6 @@ class SampleStreamProcessor implements DataProcessor {
         int channelCounter = 0;
         int lsb, msb; // less significant and most significant bytes
         short sample;
-        int counter = 0;
 
         for (byte b : data) {
             // 1. check if we are inside escape sequence or not

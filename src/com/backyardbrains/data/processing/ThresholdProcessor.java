@@ -109,7 +109,7 @@ public class ThresholdProcessor implements SampleProcessor {
         handler = new Handler();
     }
 
-    @Override public short[] process(@NonNull short[] samples) {
+    @NonNull @Override public short[] process(@NonNull short[] samples) {
         if (samples.length > 0) {
             processIncomingData(samples);
 

@@ -361,10 +361,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private boolean fillBuffer() {
         if (!processing.get()) {
             drawingBuffer = processingBuffer.getData();
-            markers = processingBuffer.getMarkers();
+            markers = processingBuffer.getEvents();
         }
-        //new short[processingBuffer.getData().length];
-        //System.arraycopy(processingBuffer.getData(), 0, drawingBuffer, 0, drawingBuffer.length);
         return true;
     }
 
@@ -385,8 +383,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
         int j = 1;
         int len = sampleBuffer.length;
-        int startIndex = len - glWindowHorizontalSize;
-        if (startIndex < -glWindowHorizontalSize) startIndex = -glWindowHorizontalSize;
+        int startIndex = Math.max(len - glWindowHorizontalSize, -glWindowHorizontalSize);
         if (startIndex + glWindowHorizontalSize > len) startIndex = len - glWindowHorizontalSize;
         int endIndex = Math.min(startIndex + glWindowHorizontalSize, len);
         String[] markers = Arrays.copyOf(this.markers, this.markers.length);

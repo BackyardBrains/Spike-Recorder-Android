@@ -22,18 +22,18 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
 
     private static ProcessingBuffer INSTANCE;
 
-    private SampleBuffer dataBuffer;
-    private RingBuffer<String> markerBuffer;
+    private SampleBuffer sampleBuffer;
+    private RingBuffer<String> eventBuffer;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private long lastBytePosition;
 
-    private final SparseArray<String> markerMap;
+    private final SparseArray<String> tmpEventMap;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
-        dataBuffer = new SampleBuffer(bufferSize);
-        markerBuffer = new RingBuffer<>(String.class, bufferSize);
-        markerMap = new SparseArray<>();
+        sampleBuffer = new SampleBuffer(bufferSize);
+        eventBuffer = new RingBuffer<>(String.class, bufferSize);
+        tmpEventMap = new SparseArray<>();
     }
 
     /**
@@ -61,13 +61,13 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
         if (this.bufferSize == bufferSize) return;
         if (bufferSize <= 0) return;
 
-        dataBuffer.clear();
-        dataBuffer = new SampleBuffer(bufferSize);
+        sampleBuffer.clear();
+        sampleBuffer = new SampleBuffer(bufferSize);
 
-        markerBuffer.clear();
-        markerBuffer = new RingBuffer<>(String.class, bufferSize);
+        eventBuffer.clear();
+        eventBuffer = new RingBuffer<>(String.class, bufferSize);
 
-        markerMap.clear();
+        tmpEventMap.clear();
 
         this.bufferSize = bufferSize;
     }
@@ -78,14 +78,14 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
      * @return a ordinate-corrected version of the audio buffer
      */
     public short[] getData() {
-        return dataBuffer != null ? dataBuffer.getArray() : new short[0];
+        return sampleBuffer != null ? sampleBuffer.getArray() : new short[0];
     }
 
     /**
-     * Returns an array of shorts that are representing
+     * Returns an array of Strings that are representing all the events accompanying sames data.
      */
-    public String[] getMarkers() {
-        return markerBuffer != null ? markerBuffer.getArray() : new String[0];
+    public String[] getEvents() {
+        return eventBuffer != null ? eventBuffer.getArray() : new String[0];
     }
 
     /**
@@ -96,43 +96,50 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
         if (data == null) return;
 
         // add data to ring buffer
-        if (dataBuffer != null) dataBuffer.add(data);
+        if (sampleBuffer != null) sampleBuffer.add(data);
 
         // last played byte position
         this.lastBytePosition = lastBytePosition;
     }
 
     /**
-     * Adds specified {@code data} to ring buffer
+     * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
-    public void addToBuffer(@Nullable short[] data) {
+    public SparseArray<String> addToBufferAndGetEvents(@Nullable short[] samples) {
         // just return if data is null
-        if (data == null) return;
+        if (samples == null) return new SparseArray<>();
 
-        // add data to ring buffer
-        if (dataBuffer != null) dataBuffer.add(data);
-        // add markers
-        String[] markers = new String[data.length];
+        // add samples to ring buffer
+        if (sampleBuffer != null) sampleBuffer.add(samples);
+        // add event
+        String[] events = new String[samples.length];
         int index;
-        for (int i = 0; i < markerMap.size(); i++) {
-            LOGD(TAG, "ADDING NEW EVENT " + markerMap.valueAt(i) + " TO BUFFER AT " + markerMap.keyAt(i));
-            index = markerMap.keyAt(i) >= markers.length ? markers.length - 1 : markerMap.keyAt(i);
-            markers[index] = markerMap.valueAt(i);
+        int len = tmpEventMap.size();
+        for (int i = 0; i < len; i++) {
+            LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
+            index = tmpEventMap.keyAt(i) >= events.length ? events.length - 1 : tmpEventMap.keyAt(i);
+            events[index] = tmpEventMap.valueAt(i);
         }
-        if (markerBuffer != null) markerBuffer.add(markers);
-        markerMap.clear();
+        // add events from this sample batch to event ring buffer
+        if (eventBuffer != null) eventBuffer.add(events);
+        // we need to return events for the current batch
+        SparseArray<String> eventsFromSampleBatch = tmpEventMap.clone();
+        // clear temporary event map to get it ready for next batch
+        tmpEventMap.clear();
+
+        return eventsFromSampleBatch;
     }
 
     /**
      * Clears the ring buffer and resets last read byte position
      */
     public void clearBuffer() {
-        if (dataBuffer != null) {
-            dataBuffer.clear();
+        if (sampleBuffer != null) {
+            sampleBuffer.clear();
             lastBytePosition = 0;
         }
-        if (markerBuffer != null) markerBuffer.clear();
-        markerMap.clear();
+        if (eventBuffer != null) eventBuffer.clear();
+        tmpEventMap.clear();
     }
 
     /**
@@ -147,6 +154,6 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
     //======================================================================
 
     @Override public void onEventReceived(@NonNull String event, int sampleIndex) {
-        markerMap.put(sampleIndex, event);
+        tmpEventMap.put(sampleIndex, event);
     }
 }

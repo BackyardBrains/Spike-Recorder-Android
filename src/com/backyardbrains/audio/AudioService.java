@@ -26,6 +26,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
@@ -104,7 +105,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     // Reference to the audio recorder
     private RecordingSaver recordingSaver;
 
-    // Whether servise is created
+    // Whether service is created
     private boolean created;
     // Current sample rate
     private int sampleRate;
@@ -270,7 +271,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      *
      * @see AbstractInputSource.OnSamplesReceivedListener#onSamplesReceived(short[]) (byte[])
      */
-    @Override public void onSamplesReceived(short[] data) {
+    @Override public void onSamplesReceived(@NonNull short[] data) {
         passToDataManager(data);
     }
 
@@ -306,25 +307,26 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(short[] data) {
+    private void passToDataManager(@NonNull short[] data) {
         // data -> ProcessingBuffer up to 2 secs
+        SparseArray<String> events = new SparseArray<>();
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                processingBuffer.addToBuffer(getProcessor().process(data));
+                events = processingBuffer.addToBufferAndGetEvents(getProcessor().process(data));
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(data);
+                events = processingBuffer.addToBufferAndGetEvents(data);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(data);
+        passToRecorder(data, events);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(short[] data) {
-        if (recordingSaver != null) recordAudio(data);
+    private void passToRecorder(@NonNull short[] data, @NonNull SparseArray<String> events) {
+        if (recordingSaver != null) record(data, events);
     }
 
     //=================================================
@@ -758,6 +760,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             if (source == InputSourceType.NONE) turnOnMicThread();
 
             recordingSaver = new RecordingSaver();
+            recordingSaver.setSampleRate(sampleRate);
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStartedEvent());
@@ -782,7 +785,6 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
 
         try {
             // set current sample rate to be used when saving WAV file
-            recordingSaver.setSampleRate(sampleRate);
             recordingSaver.requestStop();
             recordingSaver = null;
 
@@ -804,15 +806,17 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         return (recordingSaver != null);
     }
 
-    // Pass audio to the active RecordingSaver instance
-    private void recordAudio(short[] data) {
+    // Pass audio and events to the active RecordingSaver instance
+    private void record(@NonNull short[] data, @NonNull SparseArray<String> events) {
         try {
-            recordingSaver.writeAudio(data);
+            if (recordingSaver != null) {
+                recordingSaver.writeAudioWithEvents(data, events);
 
-            // post current recording progress
-            EventBus.getDefault()
-                .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
-                    sampleRate));
+                // post current recording progress
+                EventBus.getDefault()
+                    .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
+                        sampleRate));
+            }
         } catch (IllegalStateException e) {
             Crashlytics.logException(e);
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
