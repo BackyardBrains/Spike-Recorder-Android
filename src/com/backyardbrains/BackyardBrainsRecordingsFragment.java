@@ -42,6 +42,7 @@ import com.backyardbrains.view.BybEmptyView;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -195,7 +196,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Opens dialog with recording details
-    void fileDetails(File f) {
+    void fileDetails(@NonNull File f) {
         WavAudioFile waf = null;
         try {
             waf = new WavAudioFile(f);
@@ -208,12 +209,12 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Starts playing specified audio file
-    void playAudioFile(File f) {
+    void playAudioFile(@NonNull File f) {
         EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
     }
 
     // Start process of finding spikes for the specified audio file
-    void findSpikes(File f) {
+    void findSpikes(@NonNull File f) {
         if (f.exists()) EventBus.getDefault().post(new FindSpikesEvent(f.getAbsolutePath()));
     }
 
@@ -254,17 +255,23 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Initiates sending of the selected recording via email
-    void emailFile(File f) {
-        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+    void emailFile(@NonNull File f) {
+        // first check if accompanying events file exists because it needs to be shared as well
+        final ArrayList<Uri> uris = new ArrayList<>();
+        uris.add(FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
+        final File eventsFile = RecordingUtils.getEventFile(f);
+        if (eventsFile != null) {
+            uris.add(FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", eventsFile));
+        }
+        Intent sendIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
-        sendIntent.putExtra(Intent.EXTRA_STREAM,
-            FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
-        sendIntent.setType("audio/wav");
+        sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+        sendIntent.setType("message/rfc822");
         startActivity(Intent.createChooser(sendIntent, "Share file"));
     }
 
     // Triggers renaming of the selected file
-    void renameFile(final File f) {
+    void renameFile(@NonNull final File f) {
         final EditText e = new EditText(this.getActivity());
         e.setText(f.getName().replace(".wav", "")); // remove file extension when renaming
         e.setSelection(e.getText().length());
@@ -313,7 +320,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     }
 
     // Triggers deletion of the selected file
-    void deleteFile(final File f) {
+    void deleteFile(@NonNull final File f) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
             .setMessage("Are you sure you want to delete " + f.getName() + "?")
             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
