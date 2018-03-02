@@ -191,6 +191,10 @@ class RecordingSaver {
         private void saveEventFile() throws IOException {
             LOGD(TAG, eventsFileContent.toString());
 
+            // there needs to be a RETURN char at the end of the events file
+            // for the desktop app to be able to parse it properly
+            eventsFileContent.append("\n");
+
             final FileOutputStream outputStream;
             try {
                 outputStream = new FileOutputStream(eventsFile);
