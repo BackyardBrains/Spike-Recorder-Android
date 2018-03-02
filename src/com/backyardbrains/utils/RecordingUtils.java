@@ -2,6 +2,7 @@ package com.backyardbrains.utils;
 
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.io.File;
 import java.util.Date;
 
@@ -18,11 +19,13 @@ public class RecordingUtils {
     // Name of the BYB recording folder
     private static final String BYB_DIRECTORY_NAME = "BackyardBrains";
     // Prefix for all BYB recordings
-    private static final String BYB_RECORDING_NAME_PREFIX = "BYB Recording ";
+    // BYB_Recording_2018-02-28_13.42.21.wav
+    // BYB_Recording_2018-02-28_13.42.21-events.txt
+    private static final String BYB_RECORDING_NAME_PREFIX = "BYB_Recording_";
     // BYB audio file extension
     private static final String BYB_RECORDING_EXT = ".wav";
     // BYB events file suffix
-    private static final String BYB_EVENTS_SUFFIX = "-events";
+    private static final String BYB_EVENTS_NAME_SUFFIX = "-events";
     // BYB events file extension
     private static final String BYB_EVENTS_EXT = ".txt";
 
@@ -38,7 +41,7 @@ public class RecordingUtils {
      */
     public static File createRecordingFile() {
         return new File(BYB_DIRECTORY,
-            BYB_RECORDING_NAME_PREFIX + DateUtils.format_d_MMM_yyyy_HH_mm_s_a(new Date(System.currentTimeMillis()))
+            BYB_RECORDING_NAME_PREFIX + DateUtils.format_yyyy_MM_dd_HH_mm_ss(new Date(System.currentTimeMillis()))
                 + BYB_RECORDING_EXT);
     }
 
@@ -47,13 +50,22 @@ public class RecordingUtils {
      */
     public static File createEventsFile(@NonNull File file) {
         String fileName = file.getName().substring(0, file.getName().lastIndexOf("."));
-        return new File(BYB_DIRECTORY, fileName + BYB_EVENTS_SUFFIX + BYB_EVENTS_EXT);
+        return new File(BYB_DIRECTORY, fileName + BYB_EVENTS_NAME_SUFFIX + BYB_EVENTS_EXT);
     }
 
     /**
      * Returns {@code true} if specified {@code file} is an events file, {@code false} otherwise.
      */
     public static boolean isEventsFile(@NonNull File file) {
-        return file.getName().endsWith(BYB_EVENTS_SUFFIX + BYB_EVENTS_EXT);
+        return file.getName().endsWith(BYB_EVENTS_NAME_SUFFIX + BYB_EVENTS_EXT);
+    }
+
+    /**
+     * Returns an events text {@link File} that accompanies the specified audio {@code file} if it exists, {@code null}
+     * otherwise.
+     */
+    @Nullable public static File getEventFile(@NonNull File file) {
+        File f = createEventsFile(file);
+        return f.exists() ? f : null;
     }
 }
