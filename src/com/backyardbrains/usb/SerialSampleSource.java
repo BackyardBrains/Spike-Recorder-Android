@@ -12,14 +12,14 @@ import java.util.Locale;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link AbstractUsbInputSource} capable of USB serial communication with BYB hardware.
+ * Implementation of {@link AbstractUsbSampleSource} capable of USB serial communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
 
-public class SerialInputSource extends AbstractUsbInputSource {
+public class SerialSampleSource extends AbstractUsbSampleSource {
 
-    private static final String TAG = makeLogTag(SerialInputSource.class);
+    private static final String TAG = makeLogTag(SerialSampleSource.class);
 
     // Arduino Vendor ID
     private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
@@ -47,7 +47,7 @@ public class SerialInputSource extends AbstractUsbInputSource {
 
     private UsbSerialDevice serialDevice;
 
-    private SerialInputSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+    private SerialSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
         @Nullable OnSamplesReceivedListener listener) {
         super(device, listener);
 
@@ -55,15 +55,15 @@ public class SerialInputSource extends AbstractUsbInputSource {
     }
 
     /**
-     * Creates and returns new {@link AbstractUsbInputSource} based on specified {@code device} capable for serial
+     * Creates and returns new {@link AbstractUsbSampleSource} based on specified {@code device} capable for serial
      * communication,
      * or {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for serial communication
      */
-    public static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device,
+    public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
         @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
-        return new SerialInputSource(device, connection, listener);
+        return new SerialSampleSource(device, connection, listener);
     }
 
     /**
@@ -92,7 +92,6 @@ public class SerialInputSource extends AbstractUsbInputSource {
      * {@inheritDoc}
      */
     @Override protected void onInputStop() {
-        super.onInputStop();
         if (serialDevice != null) serialDevice.close();
     }
 

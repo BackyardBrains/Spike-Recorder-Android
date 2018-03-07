@@ -125,8 +125,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         return view;
     }
 
-    @Override
-    protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
+    @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(this, preparedBuffer);
         renderer.setCallback(new BYBBaseRenderer.Callback() {
 

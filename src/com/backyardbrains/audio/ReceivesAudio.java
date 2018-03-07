@@ -20,7 +20,6 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
-import java.nio.ByteBuffer;
 
 /**
  * A simple interface to attach to services which allows a callback into android's built-in classes from an unrelated
@@ -34,9 +33,4 @@ public interface ReceivesAudio {
      * Called by microphone thread to pass audio data to the service.
      */
     void receiveAudio(@NonNull short[] data);
-
-    /**
-     * Called by playback thread to pass audio data to the service along with the positions of the last read byte.
-     */
-    void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition);
 }

@@ -26,7 +26,6 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @param <T>
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
 public class RingBuffer<T> {
@@ -44,6 +43,13 @@ public class RingBuffer<T> {
 
         //noinspection unchecked
         buffer = (T[]) Array.newInstance(clazz, size);
+    }
+
+    /**
+     * Returns size of this ring buffer.
+     */
+    public int getSize() {
+        return size;
     }
 
     public void add(T[] incoming) {

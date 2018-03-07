@@ -1,11 +1,8 @@
 package com.backyardbrains.data.processing;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.usb.AbstractUsbInputSource;
 import com.backyardbrains.utils.AudioUtils;
-import java.nio.ByteBuffer;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -13,7 +10,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com>
  */
-public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEventMessageReceivedListener {
+public class ProcessingBuffer {
 
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
@@ -25,15 +22,11 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
     private SampleBuffer sampleBuffer;
     private RingBuffer<String> eventBuffer;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
-    private long lastBytePosition;
-
-    private final SparseArray<String> tmpEventMap;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
         sampleBuffer = new SampleBuffer(bufferSize);
         eventBuffer = new RingBuffer<>(String.class, bufferSize);
-        tmpEventMap = new SparseArray<>();
     }
 
     /**
@@ -67,8 +60,6 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
         eventBuffer.clear();
         eventBuffer = new RingBuffer<>(String.class, bufferSize);
 
-        tmpEventMap.clear();
-
         this.bufferSize = bufferSize;
     }
 
@@ -89,45 +80,25 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
     }
 
     /**
-     * Adds specified {@code data} to ring buffer and saves position of the last added byte
-     */
-    public void addToBuffer(@Nullable ByteBuffer data, long lastBytePosition) {
-        // just return if data is null
-        if (data == null) return;
-
-        // add data to ring buffer
-        if (sampleBuffer != null) sampleBuffer.add(data);
-
-        // last played byte position
-        this.lastBytePosition = lastBytePosition;
-    }
-
-    /**
      * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
-    public SparseArray<String> addToBufferAndGetEvents(@Nullable short[] samples) {
+    public void addToBuffer(@Nullable short[] samples, SparseArray<String> events) {
         // just return if data is null
-        if (samples == null) return new SparseArray<>();
+        if (samples == null) return;
 
         // add samples to ring buffer
         if (sampleBuffer != null) sampleBuffer.add(samples);
         // add event
-        String[] events = new String[samples.length];
+        String[] e = new String[samples.length];
         int index;
-        int len = tmpEventMap.size();
+        int len = events.size();
         for (int i = 0; i < len; i++) {
-            LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
-            index = tmpEventMap.keyAt(i) >= events.length ? events.length - 1 : tmpEventMap.keyAt(i);
-            events[index] = tmpEventMap.valueAt(i);
+            //LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
+            index = events.keyAt(i) >= e.length ? e.length - 1 : events.keyAt(i);
+            e[index] = events.valueAt(i);
         }
         // add events from this sample batch to event ring buffer
-        if (eventBuffer != null) eventBuffer.add(events);
-        // we need to return events for the current batch
-        SparseArray<String> eventsFromSampleBatch = tmpEventMap.clone();
-        // clear temporary event map to get it ready for next batch
-        tmpEventMap.clear();
-
-        return eventsFromSampleBatch;
+        if (eventBuffer != null) eventBuffer.add(e);
     }
 
     /**
@@ -136,24 +107,7 @@ public class ProcessingBuffer implements AbstractUsbInputSource.OnSpikerBoxEvent
     public void clearBuffer() {
         if (sampleBuffer != null) {
             sampleBuffer.clear();
-            lastBytePosition = 0;
         }
         if (eventBuffer != null) eventBuffer.clear();
-        tmpEventMap.clear();
-    }
-
-    /**
-     * Returns last read byte position.
-     */
-    public long getLastBytePosition() {
-        return lastBytePosition;
-    }
-
-    //======================================================================
-    //  IMPLEMENTATION OF OnSpikerBoxEventMessageReceivedListener INTERFACE
-    //======================================================================
-
-    @Override public void onEventReceived(@NonNull String event, int sampleIndex) {
-        tmpEventMap.put(sampleIndex, event);
     }
 }
