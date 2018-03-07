@@ -1,7 +1,7 @@
 package com.backyardbrains.usb;
 
 import android.hardware.usb.UsbDevice;
-import com.backyardbrains.audio.InputSource;
+import com.backyardbrains.data.processing.SampleSource;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
 /**
@@ -9,7 +9,7 @@ import com.backyardbrains.utils.SpikerBoxHardwareType;
  *
  * @author Tihomir Leka <ticapeca at gmail.com>.
  */
-public interface UsbInputSource extends InputSource {
+public interface UsbSampleSource extends SampleSource {
 
     // BYB Vendor ID
     int BYB_VENDOR_ID = 0x2E73;

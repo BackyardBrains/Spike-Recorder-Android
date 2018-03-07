@@ -7,6 +7,7 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
@@ -85,8 +86,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     @Override public void onDrawFrame(GL10 gl) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
-        toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
-        fromSample = Math.max(0, toSample - getGlWindowHorizontalSize());
+        //toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
+        //fromSample = Math.max(0, toSample - getGlWindowHorizontalSize());
         //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());
 
         super.onDrawFrame(gl);
@@ -102,10 +103,14 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
 
-            setGlWindow(gl, getGlWindowHorizontalSize(), drawingBuffer.length);
+            int glWindowHorizontalSize = getGlWindowHorizontalSize();
 
-            constructSpikesAndColorsBuffers();
-            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer);
+            // let's save start and end sample positions that are being drawn before triggering the actual draw
+            toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
+            fromSample = Math.max(0, toSample - glWindowHorizontalSize);
+
+            constructSpikesAndColorsBuffers(glWindowHorizontalSize);
+            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer, glWindowHorizontalSize);
 
             if (linesBuffer != null && spikesBuffer != null && colorsBuffer != null) {
                 gl.glMatrixMode(GL10.GL_MODELVIEW);
@@ -176,7 +181,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         return false;
     }
 
-    private void constructSpikesAndColorsBuffers() {
+    private void constructSpikesAndColorsBuffers(int glWindowHorizontalSize) {
         float[] arr;
         float[] spikeArr = null;
         float[] arr1;
@@ -193,9 +198,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     long index;
                     for (Spike spike : spikes) {
                         if (fromSample < spike.getIndex() && spike.getIndex() < toSample) {
-                            index = toSample - fromSample < getGlWindowHorizontalSize() ?
-                                spike.getIndex() + getGlWindowHorizontalSize() - toSample
-                                : spike.getIndex() - fromSample;
+                            index = toSample - fromSample < glWindowHorizontalSize ?
+                                spike.getIndex() + glWindowHorizontalSize - toSample : spike.getIndex() - fromSample;
                             arr[j++] = index;
                             arr[j++] = spike.getValue();
 

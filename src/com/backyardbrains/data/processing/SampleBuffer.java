@@ -17,49 +17,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.backyardbrains.audio;
+package com.backyardbrains.data.processing;
 
 import com.crashlytics.android.Crashlytics;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class RingBuffer {
+public class SampleBuffer {
 
-    private static final String TAG = makeLogTag(RingBuffer.class);
+    private static final String TAG = makeLogTag(SampleBuffer.class);
 
     private final int size;
 
     private short[] buffer;
 
-    public RingBuffer(int size) {
+    SampleBuffer(int size) {
         this.size = size;
 
         buffer = new short[size];
     }
 
-    public void add(final ByteBuffer incoming) {
-        add(incoming.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer());
-    }
-
-    public void add(final ShortBuffer incoming) {
-        try {
-            // we can only copy
-            incoming.clear();
-
-            System.arraycopy(buffer, incoming.capacity(), buffer, 0, buffer.length - incoming.capacity());
-            incoming.get(buffer, buffer.length - incoming.capacity(), incoming.capacity());
-        } catch (Exception e) {
-            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
-                + incoming.capacity() + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length
-                - incoming.capacity()));
-            Crashlytics.logException(e);
-        }
-    }
-
+    /**
+     * Adds new {@code incoming} samples to the buffer.
+     */
     public void add(short[] incoming) {
         try {
             System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
@@ -70,11 +51,6 @@ public class RingBuffer {
                 - incoming.length));
             Crashlytics.logException(e);
         }
-    }
-
-    public void add(short incoming) {
-        System.arraycopy(buffer, 1, buffer, 0, buffer.length - 1);
-        buffer[buffer.length - 1] = incoming;
     }
 
     /**

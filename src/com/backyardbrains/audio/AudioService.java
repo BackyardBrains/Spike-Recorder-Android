@@ -26,6 +26,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
+import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
@@ -41,7 +43,7 @@ import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
-import com.backyardbrains.usb.AbstractUsbInputSource;
+import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
@@ -51,7 +53,6 @@ import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
 import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -65,7 +66,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  * @author Tihomir Leka <ticapeca at gmail.com>
  * @version 1
  */
-public class AudioService extends Service implements ReceivesAudio, AbstractInputSource.OnSamplesReceivedListener {
+public class AudioService extends Service implements ReceivesAudio, AbstractSampleSource.OnSamplesReceivedListener {
 
     static final String TAG = makeLogTag(AudioService.class);
 
@@ -99,12 +100,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     private MicListener micThread;
     // Reference to the USB serial data source
     private UsbHelper usbHelper;
-    // Reference to the playback data source
-    private PlaybackThread playbackThread;
     // Reference to the audio recorder
     private RecordingSaver recordingSaver;
 
-    // Whether servise is created
+    // Whether service is created
     private boolean created;
     // Current sample rate
     private int sampleRate;
@@ -113,8 +112,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     // Current input source
     private InputSourceType source = InputSourceType.NONE;
 
-    // Holds currently active USB input source
-    private AbstractUsbInputSource usbInputSource;
+    // Reference to currently active USB sample source
+    private AbstractUsbSampleSource usbSampleSource;
+    // Reference to playback sample source
+    private PlaybackSampleSource playbackSampleSource;
 
     /**
      * Provides a reference to {@link AudioService} to all bound clients.
@@ -153,7 +154,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         LOGD(TAG, "onDestroy()");
         stopUsbDetection();
         turnOffMicThread();
-        turnOffPlaybackThread();
+        turnOffPlayback();
 
         processingBuffer = null;
 
@@ -249,7 +250,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * Returns filter that is additionally applied when processing incoming data.
      */
     public Filter getFilter() {
-        if (usbInputSource != null) return usbInputSource.getFilter();
+        if (usbSampleSource != null) return usbSampleSource.getFilter();
         return FILTERS.getFilter();
     }
 
@@ -257,7 +258,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * Sets predefined filters to be applied when processing incoming data.
      */
     public void setFilter(@Nullable Filter filter) {
-        if (usbInputSource != null) usbInputSource.setFilter(filter);
+        if (usbSampleSource != null) usbSampleSource.setFilter(filter);
         FILTERS.setFilter(filter);
     }
 
@@ -268,10 +269,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     /**
      * Adds received samples to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
-     * @see AbstractInputSource.OnSamplesReceivedListener#onSamplesReceived(short[]) (byte[])
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(short[], SparseArray)
      */
-    @Override public void onSamplesReceived(short[] data) {
-        passToDataManager(data);
+    @Override public void onSamplesReceived(@NonNull short[] data, @NonNull SparseArray<String> events) {
+        passToDataManager(data, events);
     }
 
     //=================================================
@@ -285,7 +286,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      */
     @Override public void receiveAudio(@NonNull short[] data) {
         // any received audio needs to be process with AM Modulation processor
-        passToDataManager(AM_MODULATION_DATA_PROCESSOR.process(data));
+        passToDataManager(AM_MODULATION_DATA_PROCESSOR.process(data), new SparseArray<String>());
 
         //short[] newData = new short[data.length];
         //for (int i = 0; i < data.length; i++) {
@@ -295,36 +296,26 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         //passToDataManager(newData);
     }
 
-    /**
-     * Adds received audio and position of the last read byte to the ring buffer.
-     *
-     * @see ReceivesAudio#receiveAudio(ByteBuffer, long)
-     */
-    @Override public void receiveAudio(@NonNull ByteBuffer data, long lastBytePosition) {
-        // pass data to data manager
-        if (processingBuffer != null) processingBuffer.addToBuffer(data, lastBytePosition);
-    }
-
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(short[] data) {
+    private void passToDataManager(@NonNull short[] data, SparseArray<String> events) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                processingBuffer.addToBuffer(getProcessor().process(data));
+                processingBuffer.addToBuffer(getProcessor().process(data), events);
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(data);
+                processingBuffer.addToBuffer(data, events);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(data);
+        passToRecorder(data, events);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(short[] data) {
-        if (recordingSaver != null) recordAudio(data);
+    private void passToRecorder(@NonNull short[] data, @NonNull SparseArray<String> events) {
+        if (recordingSaver != null) record(data, events);
     }
 
     //=================================================
@@ -386,7 +377,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     private void turnOnMicThread() {
         LOGD(TAG, "turnOnMicThread()");
         turnOffUsb();
-        turnOffPlaybackThread();
+        turnOffPlayback();
 
         if (micThread == null) {
             source = InputSourceType.MICROPHONE;
@@ -451,8 +442,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * hardwareType}, {@code false} otherwise.
      */
     public boolean isActiveUsbInputOfType(@SpikerBoxHardwareType int hardwareType) {
-        return created && usbInputSource != null && usbInputSource.isUsb()
-            && usbInputSource.getHardwareType() == hardwareType;
+        return created && usbSampleSource != null && usbSampleSource.isUsb()
+            && usbSampleSource.getHardwareType() == hardwareType;
     }
 
     /**
@@ -475,19 +466,19 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
     void turnOnUsb() {
         LOGD(TAG, "turnOnUsb()");
         turnOffMicThread();
-        turnOffPlaybackThread();
+        turnOffPlayback();
 
         source = InputSourceType.USB;
 
         // set current USB input source
-        usbInputSource = usbHelper.getUsbDevice();
-        if (usbInputSource != null) {
-            if (usbInputSource.getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
-                EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(usbInputSource.getHardwareType()));
+        usbSampleSource = usbHelper.getUsbDevice();
+        if (usbSampleSource != null) {
+            if (usbSampleSource.getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
+                EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(usbSampleSource.getHardwareType()));
             } else {
-                usbInputSource.setOnSpikerBoxHardwareTypeDetectionListener(
-                    new AbstractUsbInputSource.OnSpikerBoxHardwareTypeDetectionListener() {
-                        @Override public void onSpikerBoxHardwareTypeDetected(int hardwareType) {
+                usbSampleSource.setOnSpikerBoxHardwareTypeDetectionListener(
+                    new AbstractUsbSampleSource.OnSpikerBoxHardwareTypeDetectionListener() {
+                        @Override public void onHardwareTypeDetected(int hardwareType) {
                             LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
                             EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
                         }
@@ -512,7 +503,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         stopRecording();
 
         // remove current USB input source
-        usbInputSource = null;
+        usbSampleSource = null;
 
         // pause communication with USB
         usbHelper.pause();
@@ -583,7 +574,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * starts playing as soon as first samples are loaded, if it's {@code false} file is initially paused.
      */
     public void startPlayback(@NonNull String filePath, boolean autoPlay) {
-        if (created) startPlaybackThread(filePath, autoPlay);
+        if (created) startPlaybackSource(filePath, autoPlay);
     }
 
     /**
@@ -592,11 +583,11 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * @param play Determines whether playback needs to be continued or paused.
      */
     public void togglePlayback(boolean play) {
-        if (created && playbackThread != null) {
+        if (created && playbackSampleSource != null) {
             if (play) {
-                playbackThread.play();
+                playbackSampleSource.resumePlayback();
             } else {
-                playbackThread.pause();
+                playbackSampleSource.pausePlayback();
             }
         }
     }
@@ -605,7 +596,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * Stops the playback.
      */
     public void stopPlayback() {
-        if (created) turnOffPlaybackThread();
+        if (created) turnOffPlayback();
     }
 
     /**
@@ -614,14 +605,14 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void startPlaybackSeek() {
-        if (created && playbackThread != null) playbackThread.seek(true);
+        if (created && playbackSampleSource != null) playbackSampleSource.seek(true);
     }
 
     /**
      * Rewinds or forwards the playback to the specified sample {@code position}.
      */
     public void seekPlayback(int position) {
-        if (created && playbackThread != null) playbackThread.seek(AudioUtils.getByteCount(position));
+        if (created && playbackSampleSource != null) playbackSampleSource.seek(AudioUtils.getByteCount(position));
     }
 
     /**
@@ -630,7 +621,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void stopPlaybackSeek() {
-        if (created && playbackThread != null) playbackThread.seek(false);
+        if (created && playbackSampleSource != null) playbackSampleSource.seek(false);
     }
 
     /**
@@ -639,9 +630,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * @return long Position of the playback current sample.
      */
     public long getPlaybackProgress() {
-        if (isPlaybackMode() && processingBuffer != null) {
-            return AudioUtils.getSampleCount(processingBuffer.getLastBytePosition());
-        }
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackSampleSource.getProgress());
 
         return 0;
     }
@@ -650,7 +639,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * Returns number of playback samples.
      */
     public long getPlaybackLength() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackThread.getLength());
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackSampleSource.getLength());
 
         return 0;
     }
@@ -659,39 +648,40 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
      * Whether we are currently in the playback mode.
      */
     public boolean isPlaybackMode() {
-        return playbackThread != null;
+        return playbackSampleSource != null;
     }
 
     /**
      * Whether playback is currently playing.
      */
     public boolean isAudioPlaying() {
-        return isPlaybackMode() && playbackThread.isPlaying();
+        return isPlaybackMode() && playbackSampleSource.isPlaying();
     }
 
     /**
      * Whether playback is currenly in the seek mode.
      */
     public boolean isAudioSeeking() {
-        return isPlaybackMode() && playbackThread.isSeeking();
+        return isPlaybackMode() && playbackSampleSource.isSeeking();
     }
 
-    private void turnOnPlaybackThread() {
-        LOGD(TAG, "turnOnPlaybackThread()");
+    private void turnOnPlayback() {
+        LOGD(TAG, "turnOnPlayback()");
 
         turnOffMicThread();
         turnOffUsb();
 
-        if (playbackThread != null) playbackThread.play();
+        if (playbackSampleSource != null) playbackSampleSource.start();
     }
 
-    private void turnOffPlaybackThread() {
-        LOGD(TAG,
-            "turnOffPlaybackThread() - playbackThread " + (playbackThread != null ? "not null (stopping)" : "null"));
+    private void turnOffPlayback() {
+        LOGD(TAG, "turnOffPlayback() - playbackSampleSource " + (playbackSampleSource != null ? "not null (stopping)"
+            : "null"));
 
-        if (playbackThread != null) {
-            playbackThread.stop();
-            playbackThread = null;
+        // remove current USB input source
+        if (playbackSampleSource != null) {
+            playbackSampleSource.stop();
+            playbackSampleSource = null;
 
             // we should clear buffer so that next buffer user doesn't have any residue
             if (processingBuffer != null) processingBuffer.clearBuffer();
@@ -701,12 +691,13 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         }
     }
 
-    private void startPlaybackThread(@NonNull String filePath, boolean autoPlay) {
+    private void startPlaybackSource(@NonNull final String filePath, boolean autoPlay) {
         if (ApacheCommonsLang3Utils.isNotBlank(filePath)) {
-            turnOffPlaybackThread();
-            playbackThread = new PlaybackThread(this, filePath, autoPlay, new PlaybackThread.PlaybackListener() {
+            turnOffPlayback();
+            playbackSampleSource = new PlaybackSampleSource(filePath, autoPlay, this);
+            playbackSampleSource.setOnPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
                 @Override public void onStart(long length, int sampleRate) {
-                    // set file sample rate to be used when playing
+                    // set file sample rate to be used while playing
                     setSampleRate(sampleRate);
 
                     // post event that audio playback has started, but post a sticky event
@@ -737,7 +728,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
                     EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                 }
             });
-            turnOnPlaybackThread(); // this will stop the microphone and in progress recording if any
+            turnOnPlayback(); // this will stop the microphone and in progress recording if any
         }
     }
 
@@ -757,6 +748,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
             if (source == InputSourceType.NONE) turnOnMicThread();
 
             recordingSaver = new RecordingSaver();
+            recordingSaver.setSampleRate(sampleRate);
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStartedEvent());
@@ -781,7 +773,6 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
 
         try {
             // set current sample rate to be used when saving WAV file
-            recordingSaver.setSampleRate(sampleRate);
             recordingSaver.requestStop();
             recordingSaver = null;
 
@@ -803,15 +794,17 @@ public class AudioService extends Service implements ReceivesAudio, AbstractInpu
         return (recordingSaver != null);
     }
 
-    // Pass audio to the active RecordingSaver instance
-    private void recordAudio(short[] data) {
+    // Pass audio and events to the active RecordingSaver instance
+    private void record(@NonNull short[] data, @NonNull SparseArray<String> events) {
         try {
-            recordingSaver.writeAudio(data);
+            if (recordingSaver != null) {
+                recordingSaver.writeAudioWithEvents(data, events);
 
-            // post current recording progress
-            EventBus.getDefault()
-                .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
-                    sampleRate));
+                // post current recording progress
+                EventBus.getDefault()
+                    .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
+                        sampleRate));
+            }
         } catch (IllegalStateException e) {
             Crashlytics.logException(e);
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());

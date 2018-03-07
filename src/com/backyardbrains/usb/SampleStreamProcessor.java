@@ -2,6 +2,7 @@ package com.backyardbrains.usb;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -40,6 +41,8 @@ class SampleStreamProcessor implements DataProcessor {
     private boolean channelCountChanged;
     // Average signal which we use to avoid signal offset
     private double average;
+    // Collection of events found within one sample batch
+    private SparseArray<String> events;
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
@@ -63,8 +66,8 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @Override public short[] process(@NonNull byte[] data) {
-        if (data.length > 0) return processIncomingData(data);
+    @NonNull @Override public short[] process(@NonNull byte[] data, @NonNull SparseArray<String> events) {
+        if (data.length > 0) return processIncomingData(data, events);
 
         return new short[0];
     }
@@ -78,7 +81,9 @@ class SampleStreamProcessor implements DataProcessor {
         channelCountChanged = true;
     }
 
-    private short[] processIncomingData(@NonNull byte[] data) {
+    @NonNull private short[] processIncomingData(@NonNull byte[] data, @NonNull SparseArray<String> events) {
+        this.events = events;
+
         // if channel count has changed during processing  previous data chunk we should disregard
         if (channelCountChanged) {
             unfinishedFrame = null;
@@ -174,7 +179,7 @@ class SampleStreamProcessor implements DataProcessor {
             } else {
                 if (escapeSequence.isCompleted()) {
                     // let's process incoming message
-                    processEscapeSequenceMessage(escapeSequence.getMessage());
+                    processEscapeSequenceMessage(escapeSequence.getMessage(), sampleCounters[CHANNEL_INDEX]);
                     // clear the escape sequence instance so we can start detecting the next one
                     LOGD(TAG, "Escape sequence is completed");
                     escapeSequence.reset();
@@ -193,7 +198,7 @@ class SampleStreamProcessor implements DataProcessor {
     }
 
     // Processes escape sequence message and triggers appropriate listener
-    private void processEscapeSequenceMessage(byte[] messageBytes) {
+    private void processEscapeSequenceMessage(byte[] messageBytes, int sampleIndex) {
         final String message = new String(messageBytes);
         LOGD(TAG, "ESCAPE MESSAGE: " + message);
         // check if it's board type message
@@ -203,6 +208,8 @@ class SampleStreamProcessor implements DataProcessor {
             } else if (SampleStreamUtils.isSampleRateAndNumOfChannelsMsg(message)) {
                 listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                     SampleStreamUtils.getChannelCount(message));
+            } else if (SampleStreamUtils.isEventMsg(message)) {
+                events.put(sampleIndex, SampleStreamUtils.getEventNumber(message));
             }
         }
     }

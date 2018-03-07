@@ -1,9 +1,8 @@
 package com.backyardbrains.data.processing;
 
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.RingBuffer;
+import android.util.SparseArray;
 import com.backyardbrains.utils.AudioUtils;
-import java.nio.ByteBuffer;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -20,13 +19,14 @@ public class ProcessingBuffer {
 
     private static ProcessingBuffer INSTANCE;
 
-    private RingBuffer dataBuffer;
+    private SampleBuffer sampleBuffer;
+    private RingBuffer<String> eventBuffer;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
-    private long lastBytePosition;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
-        dataBuffer = new RingBuffer(bufferSize);
+        sampleBuffer = new SampleBuffer(bufferSize);
+        eventBuffer = new RingBuffer<>(String.class, bufferSize);
     }
 
     /**
@@ -41,12 +41,12 @@ public class ProcessingBuffer {
         return INSTANCE;
     }
 
-    //=================================================
+    //======================================================================
     //  PUBLIC METHODS
-    //=================================================
+    //======================================================================
 
     /**
-     * Sets buffer size of the {@link RingBuffer}.
+     * Sets buffer size of the {@link SampleBuffer}.
      */
     public void setBufferSize(int bufferSize) {
         LOGD(TAG, "setBufferSize(" + bufferSize + ")");
@@ -54,8 +54,11 @@ public class ProcessingBuffer {
         if (this.bufferSize == bufferSize) return;
         if (bufferSize <= 0) return;
 
-        dataBuffer.clear();
-        dataBuffer = new RingBuffer(bufferSize);
+        sampleBuffer.clear();
+        sampleBuffer = new SampleBuffer(bufferSize);
+
+        eventBuffer.clear();
+        eventBuffer = new RingBuffer<>(String.class, bufferSize);
 
         this.bufferSize = bufferSize;
     }
@@ -66,48 +69,45 @@ public class ProcessingBuffer {
      * @return a ordinate-corrected version of the audio buffer
      */
     public short[] getData() {
-        return dataBuffer != null ? dataBuffer.getArray() : new short[0];
+        return sampleBuffer != null ? sampleBuffer.getArray() : new short[0];
     }
 
     /**
-     * Adds specified {@code data} to ring buffer and saves position of the last added byte
+     * Returns an array of Strings that are representing all the events accompanying sames data.
      */
-    public void addToBuffer(@Nullable ByteBuffer data, long lastBytePosition) {
-        // just return if data is null
-        if (data == null) return;
-
-        // add data to ring buffer
-        if (dataBuffer != null) dataBuffer.add(data);
-
-        // last played byte position
-        this.lastBytePosition = lastBytePosition;
+    public String[] getEvents() {
+        return eventBuffer != null ? eventBuffer.getArray() : new String[0];
     }
 
     /**
-     * Adds specified {@code data} to ring buffer
+     * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
-    public void addToBuffer(@Nullable short[] data) {
+    public void addToBuffer(@Nullable short[] samples, SparseArray<String> events) {
         // just return if data is null
-        if (data == null) return;
+        if (samples == null) return;
 
-        // add data to ring buffer
-        if (dataBuffer != null) dataBuffer.add(data);
+        // add samples to ring buffer
+        if (sampleBuffer != null) sampleBuffer.add(samples);
+        // add event
+        String[] e = new String[samples.length];
+        int index;
+        int len = events.size();
+        for (int i = 0; i < len; i++) {
+            //LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
+            index = events.keyAt(i) >= e.length ? e.length - 1 : events.keyAt(i);
+            e[index] = events.valueAt(i);
+        }
+        // add events from this sample batch to event ring buffer
+        if (eventBuffer != null) eventBuffer.add(e);
     }
 
     /**
      * Clears the ring buffer and resets last read byte position
      */
     public void clearBuffer() {
-        if (dataBuffer != null) {
-            dataBuffer.clear();
-            lastBytePosition = 0;
+        if (sampleBuffer != null) {
+            sampleBuffer.clear();
         }
-    }
-
-    /**
-     * Returns last read byte position.
-     */
-    public long getLastBytePosition() {
-        return lastBytePosition;
+        if (eventBuffer != null) eventBuffer.clear();
     }
 }

@@ -14,7 +14,7 @@ import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.drawing.ThresholdOrientation;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
 import com.crashlytics.android.Crashlytics;

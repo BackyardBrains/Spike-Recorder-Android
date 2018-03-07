@@ -5,7 +5,8 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.AbstractInputSource;
+import android.util.SparseArray;
+import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -17,9 +18,9 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  *
  * @author Tihomir Leka <ticapeca at gmail.com>.
  */
-public abstract class AbstractUsbInputSource extends AbstractInputSource implements UsbInputSource {
+public abstract class AbstractUsbSampleSource extends AbstractSampleSource implements UsbSampleSource {
 
-    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbInputSource.class);
+    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbSampleSource.class);
 
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
@@ -33,14 +34,14 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
          *
          * @param hardwareType Type of the connected SpikerBox hardware. One of {@link SpikerBoxHardwareType}.
          */
-        void onSpikerBoxHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
+        void onHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
     }
 
-    private OnSpikerBoxHardwareTypeDetectionListener listener;
+    private OnSpikerBoxHardwareTypeDetectionListener onSpikerBoxHardwareTypeDetectionListener;
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
-    AbstractUsbInputSource(@NonNull UsbDevice device, @Nullable OnSamplesReceivedListener listener) {
+    AbstractUsbSampleSource(@NonNull UsbDevice device, @Nullable final OnSamplesReceivedListener listener) {
         super(listener);
 
         this.device = device;
@@ -72,15 +73,15 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
     }
 
     /**
-     * Creates and returns {@link AbstractUsbInputSource} instance that is used to communicate with the connected USB
+     * Creates and returns {@link AbstractUsbSampleSource} instance that is used to communicate with the connected USB
      * device.
      */
-    static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @NonNull OnSamplesReceivedListener listener) {
-        if (SerialInputSource.isSupported(device)) {
-            return SerialInputSource.createUsbDevice(device, connection, listener);
-        } else if (HIDInputSource.isSupported(device)) {
-            return HIDInputSource.createUsbDevice(device, connection, listener);
+    static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+        @Nullable OnSamplesReceivedListener listener) {
+        if (SerialSampleSource.isSupported(device)) {
+            return SerialSampleSource.createUsbDevice(device, connection, listener);
+        } else if (HIDSampleSource.isSupported(device)) {
+            return HIDSampleSource.createUsbDevice(device, connection, listener);
         } else {
             return null;
         }
@@ -90,7 +91,7 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
      * Returns whether specified {@code device} is supported device for this app.
      */
     static boolean isSupported(@NonNull UsbDevice device) {
-        return SerialInputSource.isSupported(device) || HIDInputSource.isSupported(device);
+        return SerialSampleSource.isSupported(device) || HIDSampleSource.isSupported(device);
     }
 
     /**
@@ -124,18 +125,18 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
         startReadingStream();
     }
 
-    @CallSuper @Override protected void onInputStop() {
+    @Override protected void onInputStop() {
         LOGD(TAG, "onInputStart()");
     }
 
     /**
-     * Register a callback to be invoked when connected SpikerBox hardware type is detected.
+     * Registers a callback to be invoked when connected SpikerBox hardware type is detected.
      *
      * @param listener The callback that will be run. This value may be {@code null}.
      */
     public void setOnSpikerBoxHardwareTypeDetectionListener(
         @Nullable OnSpikerBoxHardwareTypeDetectionListener listener) {
-        this.listener = listener;
+        onSpikerBoxHardwareTypeDetectionListener = listener;
     }
 
     /**
@@ -150,8 +151,8 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
     /**
      * {@inheritDoc}
      */
-    @Override protected final short[] processIncomingData(byte[] data) {
-        return processor.process(data);
+    @NonNull @Override protected final short[] processIncomingData(byte[] data, @NonNull SparseArray<String> events) {
+        return processor.process(data, events);
     }
 
     /**
@@ -183,6 +184,8 @@ public abstract class AbstractUsbInputSource extends AbstractInputSource impleme
 
         this.hardwareType = hardwareType;
 
-        if (listener != null) listener.onSpikerBoxHardwareTypeDetected(hardwareType);
+        if (onSpikerBoxHardwareTypeDetectionListener != null) {
+            onSpikerBoxHardwareTypeDetectionListener.onHardwareTypeDetected(hardwareType);
+        }
     }
 }

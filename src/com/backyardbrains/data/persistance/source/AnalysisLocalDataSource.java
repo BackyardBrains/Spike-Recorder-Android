@@ -11,7 +11,7 @@ import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.SpikeTrain;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.drawing.ThresholdOrientation;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.utils.AppExecutors;
 import java.util.ArrayList;
 import java.util.List;

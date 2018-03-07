@@ -6,7 +6,6 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
-import com.backyardbrains.audio.AbstractInputSource;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
 import java.util.Map;
@@ -70,13 +69,9 @@ class SpikerBoxDetector {
      * Starts the hardware type detection process for the provided usb {@code device} in the background thread.
      */
     void startDetection(@NonNull UsbDevice device) {
-        if (manager != null && AbstractUsbInputSource.isSupported(device)) {
+        if (manager != null && AbstractUsbSampleSource.isSupported(device)) {
             final UsbDeviceConnection connection = manager.openDevice(device);
-            final AbstractUsbInputSource usbDevice = AbstractUsbInputSource.createUsbDevice(device, connection,
-                new AbstractInputSource.OnSamplesReceivedListener() {
-                    @Override public void onSamplesReceived(short[] data) {
-                    }
-                });
+            final AbstractUsbSampleSource usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, null);
             if (usbDevice != null) {
                 // For some devices we set hardware type on creation just by checking VID and PID
                 if (usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN && listener != null) {
@@ -145,9 +140,9 @@ class SpikerBoxDetector {
         private boolean canceled = false;
         private int counter = 0;
 
-        private UsbInputSource usbDevice;
+        private UsbSampleSource usbDevice;
 
-        DetectionThread(@NonNull AbstractUsbInputSource usbDevice) {
+        DetectionThread(@NonNull AbstractUsbSampleSource usbDevice) {
             this.usbDevice = usbDevice;
         }
 

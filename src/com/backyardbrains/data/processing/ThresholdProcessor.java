@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.backyardbrains.audio;
+package com.backyardbrains.data.processing;
 
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import com.backyardbrains.data.processing.SampleProcessor;
+import com.backyardbrains.audio.HeartbeatHelper;
 import com.backyardbrains.utils.AudioUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -71,7 +71,7 @@ public class ThresholdProcessor implements SampleProcessor {
     private int[] summedSamplesCounts;
 
     // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
-    private RingBuffer buffer;
+    private SampleBuffer buffer;
     private ArrayList<short[]> samplesForCalculation;
     private ArrayList<Samples> unfinishedSamplesForCalculation;
     private Handler handler;
@@ -109,7 +109,7 @@ public class ThresholdProcessor implements SampleProcessor {
         handler = new Handler();
     }
 
-    @Override public short[] process(@NonNull short[] samples) {
+    @NonNull @Override public short[] process(@NonNull short[] samples) {
         if (samples.length > 0) {
             processIncomingData(samples);
 
@@ -206,7 +206,7 @@ public class ThresholdProcessor implements SampleProcessor {
         deadPeriodCount = (int) (sampleRate * deadPeriodSeconds);
         minBpmResetPeriodCount = (int) (sampleRate * minBpmResetPeriodSeconds);
 
-        buffer = new RingBuffer(bufferSampleCount);
+        buffer = new SampleBuffer(bufferSampleCount);
         samplesForCalculation = new ArrayList<>(averagedSampleCount * 2);
         summedSamples = null;
         summedSamplesCounts = null;

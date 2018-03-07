@@ -11,7 +11,7 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArraySet;
-import com.backyardbrains.audio.AbstractInputSource;
+import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
@@ -127,8 +127,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
 
         @Override public void run() {
             final UsbDeviceConnection connection = manager.openDevice(device);
-            if (AbstractUsbInputSource.isSupported(device)) {
-                usbDevice = AbstractUsbInputSource.createUsbDevice(device, connection, service);
+            if (AbstractUsbSampleSource.isSupported(device)) {
+                usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, service);
                 if (usbDevice != null) {
                     if (usbDevice.open()) {
                         if (listener != null) listener.onDataTransferStart();
@@ -157,12 +157,12 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         }
     }
 
-    @SuppressWarnings("WeakerAccess") final AbstractInputSource.OnSamplesReceivedListener service;
+    @SuppressWarnings("WeakerAccess") final AbstractSampleSource.OnSamplesReceivedListener service;
     @SuppressWarnings("WeakerAccess") final UsbManager manager;
     @SuppressWarnings("WeakerAccess") final SpikerBoxDetector detector;
     @SuppressWarnings("WeakerAccess") final UsbHelper.UsbListener listener;
 
-    @SuppressWarnings("WeakerAccess") AbstractUsbInputSource usbDevice;
+    @SuppressWarnings("WeakerAccess") AbstractUsbSampleSource usbDevice;
 
     @SuppressWarnings("WeakerAccess") CommunicationThread communicationThread;
 
@@ -228,7 +228,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     /**
      * Returns currently connected SpikerBox device, or {@code null} if none is connected.
      */
-    @Nullable public AbstractUsbInputSource getUsbDevice() {
+    @Nullable public AbstractUsbSampleSource getUsbDevice() {
         return usbDevice;
     }
 
@@ -304,7 +304,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
 
         // find newly added devices
         for (UsbDevice device : devices) {
-            if (AbstractUsbInputSource.isSupported(device) && !devicesMap.containsKey(device.getDeviceName())) {
+            if (AbstractUsbSampleSource.isSupported(device) && !devicesMap.containsKey(device.getDeviceName())) {
                 addedDevices.add(device);
             }
         }
@@ -325,7 +325,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
             addDevice(device);
             // let's just do a quick check if we can detect hardware type through VID and PID
             final @SpikerBoxHardwareType int hardwareType;
-            if ((hardwareType = AbstractUsbInputSource.getHardwareType(device)) != SpikerBoxHardwareType.UNKNOWN) {
+            if ((hardwareType = AbstractUsbSampleSource.getHardwareType(device)) != SpikerBoxHardwareType.UNKNOWN) {
                 listener.onDeviceAttached(device.getDeviceName(), hardwareType);
             } else {
                 requestPermission(context, device.getDeviceName(), true);

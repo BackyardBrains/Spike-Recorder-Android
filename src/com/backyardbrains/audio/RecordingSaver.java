@@ -19,7 +19,10 @@
 
 package com.backyardbrains.audio;
 
+import android.support.annotation.NonNull;
+import android.util.SparseArray;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
@@ -31,27 +34,69 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 class RecordingSaver {
 
-    private final File file;
-    private final List<short[]> allSamples;
-    private final OutputStream outputStream;
+    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(RecordingSaver.class);
 
-    private WriteThread writeThread;
-    private boolean done;
-    private int sampleRate = AudioUtils.SAMPLE_RATE;
+    @SuppressWarnings("WeakerAccess") static final String EVENT_MARKERS_FILE_HEADER_CONTENT =
+        "# Marker IDs can be arbitrary strings.\n# Marker ID,\tTime (in s)";
+
+    @SuppressWarnings("WeakerAccess") WriteThread writeThread;
 
     private class WriteThread extends Thread {
 
+        private final File audioFile;
+        private final OutputStream outputStream;
+        private final File eventsFile;
+        private final AtomicBoolean working = new AtomicBoolean(true);
+        private final List<short[]> samples = new CopyOnWriteArrayList<>();
+        private final List<SparseArray<String>> events = new CopyOnWriteArrayList<>();
+
+        private int sampleRate = AudioUtils.SAMPLE_RATE;
+        private StringBuilder eventsFileContent = new StringBuilder(EVENT_MARKERS_FILE_HEADER_CONTENT);
         private ByteBuffer bb;
+
+        WriteThread() throws IOException {
+            // create recording file
+            audioFile = RecordingUtils.createRecordingFile();
+            // and stream to write sample to
+            try {
+                outputStream = new FileOutputStream(audioFile);
+            } catch (FileNotFoundException e) {
+                Crashlytics.logException(e);
+                throw new IOException("could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
+                    e);
+            }
+
+            // create events file
+            eventsFile = RecordingUtils.createEventsFile(audioFile);
+        }
 
         @Override public void run() {
             try {
-                while (!done) {
-                    if (allSamples.size() > 0) {
-                        bb = ByteBuffer.allocate(allSamples.get(0).length * 2).order(ByteOrder.nativeOrder());
-                        bb.asShortBuffer().put(allSamples.remove(0));
+                while (working.get()) {
+                    if (samples.size() > 0 && events.size() > 0) {
+                        // we first need to write all the events before start writing the samples
+                        // so we get the precise times for events
+                        SparseArray<String> events = this.events.remove(0);
+                        int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
+                        int len = events.size();
+                        for (int i = 0; i < len; i++) {
+                            eventsFileContent.append("\n")
+                                .append(events.valueAt(i))
+                                .append(",\t")
+                                .append((writtenSamples + events.keyAt(i)) / (float) sampleRate);
+                        }
+
+                        // now we can write to audio stream
+                        bb = ByteBuffer.allocate(samples.get(0).length * 2).order(ByteOrder.nativeOrder());
+                        bb.asShortBuffer().put(samples.get(0));
+                        samples.remove(0);
                         try {
                             outputStream.write(bb.array());
                         } catch (IOException e) {
@@ -60,9 +105,21 @@ class RecordingSaver {
                     }
                 }
                 // let's record all left samples
-                for (int i = 0; i < allSamples.size(); i++) {
-                    bb = ByteBuffer.allocate(allSamples.get(i).length * 2).order(ByteOrder.nativeOrder());
-                    bb.asShortBuffer().put(allSamples.get(i));
+                for (int i = 0; i < samples.size(); i++) {
+                    // we first need to write all the events before start writing the samples
+                    // so we get the precise times for events
+                    SparseArray<String> events = this.events.get(i);
+                    int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
+                    int len = events.size();
+                    for (int j = 0; j < len; j++) {
+                        eventsFileContent.append("\n")
+                            .append(events.valueAt(j))
+                            .append(",\t")
+                            .append((writtenSamples + events.keyAt(j)) / (float) sampleRate);
+                    }
+                    // now we can write to audio stream
+                    bb = ByteBuffer.allocate(samples.get(i).length * 2).order(ByteOrder.nativeOrder());
+                    bb.asShortBuffer().put(samples.get(i));
                     try {
                         outputStream.write(bb.array());
                     } catch (IOException e) {
@@ -73,68 +130,116 @@ class RecordingSaver {
                 Crashlytics.logException(e);
             } finally {
                 // close the stream and save the recorded file
-                stopRecording();
+                saveFiles();
+            }
+        }
+
+        /**
+         * Appends specified {@code samples} to previously saved ones.
+         */
+        void writeSamplesAndEvents(@NonNull short[] samples, @NonNull SparseArray<String> events) {
+            if (working.get()) {
+                this.events.add(events);
+                this.samples.add(samples);
+            }
+        }
+
+        /**
+         * Sets sample rate of the currently recorded audio file.
+         */
+        void setSampleRate(int sampleRate) {
+            if (this.sampleRate == sampleRate) return;
+            if (sampleRate <= 0) return; // sample rate need to be positive
+
+            this.sampleRate = sampleRate;
+        }
+
+        /**
+         * Returns current length of the recorded file.
+         *
+         * @return Length of the recorded file in bytes.
+         */
+        long getCurrentLength() {
+            return audioFile.length();
+        }
+
+        /**
+         * Initiates ending of recording the audio.
+         */
+        void stopRecording() {
+            working.set(false);
+        }
+
+        // Closes the audio stream and saves the audio file to storage
+        private void saveFiles() {
+            try {
+                outputStream.flush();
+                outputStream.close();
+                WavAudioFile.save(audioFile, sampleRate);
+
+                if (!ObjectUtils.equals(EVENT_MARKERS_FILE_HEADER_CONTENT, eventsFileContent.toString())) {
+                    saveEventFile();
+                }
+
+                writeThread = null;
+            } catch (IOException e) {
+                Crashlytics.logException(e);
+            }
+        }
+
+        // Populates and saves file with all the events
+        private void saveEventFile() throws IOException {
+            LOGD(TAG, eventsFileContent.toString());
+
+            // there needs to be a RETURN char at the end of the events file
+            // for the desktop app to be able to parse it properly
+            eventsFileContent.append("\n");
+
+            final FileOutputStream outputStream;
+            try {
+                outputStream = new FileOutputStream(eventsFile);
+                outputStream.write(eventsFileContent.toString().getBytes());
+                outputStream.flush();
+                outputStream.close();
+            } catch (IOException e) {
+                Crashlytics.logException(e);
+                throw new IOException("could not build OutputStream from events file: " + audioFile.getAbsolutePath(),
+                    e);
             }
         }
     }
 
     RecordingSaver() throws IOException {
-        file = RecordingUtils.createRecordingFile();
-        allSamples = new CopyOnWriteArrayList<>();
-
-        // start writing thread
+        // start sample writing thread
         writeThread = new WriteThread();
         writeThread.start();
-
-        try {
-            outputStream = new FileOutputStream(file);
-        } catch (FileNotFoundException e) {
-            Crashlytics.logException(e);
-            throw new IOException("could not build OutputStream from this file: " + file.getAbsolutePath(), e);
-        }
     }
 
     /**
      * Writes specified {@code samples} to the audio stream.
      */
-    void writeAudio(short[] samples) {
-        this.allSamples.add(samples);
+    void writeAudioWithEvents(@NonNull short[] samples, @NonNull SparseArray<String> events) {
+        if (writeThread != null) writeThread.writeSamplesAndEvents(samples, events);
     }
 
     /**
      * Sets the sample rate tha will be used when saving WAV file.
      */
     void setSampleRate(int sampleRate) {
-        if (this.sampleRate == sampleRate) return;
-        if (sampleRate <= 0) return; // sample rate need to be positive
-
-        this.sampleRate = sampleRate;
+        if (writeThread != null) writeThread.setSampleRate(sampleRate);
     }
 
     /**
      * Returns currently recorder length.
      */
     long getAudioLength() {
-        return file.length();
+        return writeThread != null ? writeThread.getCurrentLength() : 0;
     }
 
     /**
      * Requests the recording to stop.
      */
     void requestStop() {
-        done = true;
-    }
-
-    // Closes the audio stream and saves the audio file to storage
-    private void stopRecording() {
-        try {
-            outputStream.flush();
-            outputStream.close();
-            writeThread = null;
-
-            WavAudioFile.save(file, sampleRate);
-        } catch (IOException e) {
-            Crashlytics.logException(e);
-        }
+        if (writeThread != null) writeThread.stopRecording();
     }
 }

@@ -23,15 +23,15 @@ public final class DateUtils {
         return formatter.format(date);
     }
 
-    // Pattern for "17_Mar_2017_12_06_34_a.m." date format
-    private static final String PATTERN_M_D_YYYY_H_MM_SS_A = "M-d-yyyy h:mm:ss a";
+    // Pattern for "2018-03-02_13.06.05" date format
+    private static final String PATTERN_YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd_HH:mm:ss";
 
     /**
      * Returns string representation of the specified {@code date} formatted like following example
-     * "3-13-2017 1:55:34 a.m.".
+     * "2018-03-02_13.06.05".
      */
-    static String format_d_MMM_yyyy_HH_mm_s_a(@NonNull Date date) {
-        formatter.applyPattern(PATTERN_M_D_YYYY_H_MM_SS_A);
+    static String format_yyyy_MM_dd_HH_mm_ss(@NonNull Date date) {
+        formatter.applyPattern(PATTERN_YYYY_MM_DD_HH_MM_SS);
         return formatter.format(date);
     }
 }
