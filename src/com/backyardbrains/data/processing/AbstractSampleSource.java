@@ -1,9 +1,11 @@
-package com.backyardbrains.audio;
+package com.backyardbrains.data.processing;
 
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.angrygoat.buffer.CircularByteBuffer;
+import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -12,9 +14,9 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
-public abstract class AbstractInputSource implements InputSource {
+public abstract class AbstractSampleSource implements SampleSource {
 
-    private static final String TAG = makeLogTag(AbstractInputSource.class);
+    private static final String TAG = makeLogTag(AbstractSampleSource.class);
 
     // Additional filters that should be applied to input data
     protected static final Filters FILTERS = new Filters();
@@ -28,7 +30,7 @@ public abstract class AbstractInputSource implements InputSource {
 
     /**
      * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
-     * ProcessingThread}.
+     * OnSamplesReceivedListener}.
      */
     protected class ReadThread extends Thread {
 
@@ -43,7 +45,17 @@ public abstract class AbstractInputSource implements InputSource {
                         byte[] data = new byte[size];
                         readBuffer.read(data, data.length, false);
 
-                        processingBuffer.write(data);
+                        // we should process the incoming data even if there is no listener
+                        SparseArray<String> events = new SparseArray<>();
+                        if (listener == null) {
+                            processIncomingData(data, events);
+                            return;
+                        } else {
+                            // forward received samples to OnSamplesReceivedListener
+                            synchronized (listener) {
+                                listener.onSamplesReceived(processIncomingData(data, events), events);
+                            }
+                        }
                     }
                 }
             }
@@ -62,49 +74,13 @@ public abstract class AbstractInputSource implements InputSource {
         }
     }
 
-    /**
-     * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
-     * OnSamplesReceivedListener}.
-     */
-    protected class ProcessingThread extends Thread {
-
-        private AtomicBoolean working = new AtomicBoolean(true);
-
-        @Override public void run() {
-            while (working.get()) {
-                int size = processingBuffer.peekSize();
-                if (size > 0) {
-                    byte[] data = new byte[size];
-                    processingBuffer.read(data, data.length, false);
-
-                    // we should process the incoming data even if there is no listener
-                    if (listener == null) {
-                        processIncomingData(data);
-                        return;
-                    }
-
-                    // forward received samples to OnSamplesReceivedListener
-                    synchronized (listener) {
-                        listener.onSamplesReceived(processIncomingData(data));
-                    }
-                }
-            }
-        }
-
-        void stopWorking() {
-            working.set(false);
-        }
-    }
-
     private ReadThread readThread;
-    private ProcessingThread processingThread;
     @SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
-    @SuppressWarnings("WeakerAccess") CircularByteBuffer processingBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
 
     private int sampleRate;
     private int channelCount;
 
-    public AbstractInputSource(@Nullable OnSamplesReceivedListener listener) {
+    public AbstractSampleSource(@Nullable OnSamplesReceivedListener listener) {
         this.listener = listener;
     }
 
@@ -135,7 +111,7 @@ public abstract class AbstractInputSource implements InputSource {
     protected void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
         // recreate buffer to hold 2 seconds of data
-        this.processingBuffer.setCapacity(sampleRate * BUFFERED_SECONDS);
+        this.readBuffer.setCapacity(sampleRate * BUFFERED_SECONDS);
     }
 
     /**
@@ -170,11 +146,6 @@ public abstract class AbstractInputSource implements InputSource {
      * {@inheritDoc}
      */
     @Override public final void start() {
-        // start the processing thread
-        if (processingBuffer != null) {
-            processingThread = new ProcessingThread();
-            processingThread.start();
-        }
         // start the read thread
         if (readThread == null) {
             readThread = new ReadThread();
@@ -188,6 +159,7 @@ public abstract class AbstractInputSource implements InputSource {
      * {@inheritDoc}
      */
     @Override public final void pause() {
+        // pause read thread
         if (readThread != null) readThread.pauseWorking();
     }
 
@@ -195,6 +167,7 @@ public abstract class AbstractInputSource implements InputSource {
      * {@inheritDoc}
      */
     @Override public final void resume() {
+        // resume read thread
         if (readThread != null) readThread.resumeWorking();
     }
 
@@ -204,16 +177,29 @@ public abstract class AbstractInputSource implements InputSource {
     @Override public final void stop() {
         // give chance to subclass to clean resources
         onInputStop();
-        // stop the processing thread
-        if (processingThread != null) {
-            processingThread.stopWorking();
-            processingThread = null;
-        }
         // stop the read thread
         if (readThread != null) {
             readThread.stopWorking();
             readThread = null;
         }
+    }
+
+    /**
+     * Returns size of the read buffer.
+     *
+     * @return Size of the buffer in bytes.
+     */
+    protected final int getReadBufferSize() {
+        return readBuffer.getCapacity();
+    }
+
+    /**
+     * Sets the size of the read buffer.
+     *
+     * @param size Size of the buffer in bytes.
+     */
+    protected final void setReadBufferSize(int size) {
+        readBuffer.setCapacity(size);
     }
 
     /**
@@ -242,5 +228,5 @@ public abstract class AbstractInputSource implements InputSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract short[] processIncomingData(byte[] data);
+    @NonNull protected abstract short[] processIncomingData(byte[] data, @NonNull SparseArray<String> events);
 }

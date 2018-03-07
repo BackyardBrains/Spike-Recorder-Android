@@ -25,7 +25,7 @@ public class WavUtils {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(getSeconds(byteCount, sampleRate)));
+        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(toSeconds(byteCount, sampleRate)));
     }
 
     /**
@@ -34,7 +34,7 @@ public class WavUtils {
     public static CharSequence formatWavLength(long byteCount, int sampleRate) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s(getSeconds(byteCount, sampleRate));
+        return Formats.formatTime_m_s(toSeconds(byteCount, sampleRate));
     }
 
     public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelConfig, int audioFormat) {
@@ -77,7 +77,8 @@ public class WavUtils {
         // sample rate
         int rate = buffer.getInt();
         // 8000, 44100, etc. (for not we support only 10000 and 44100)
-        check(rate == AudioUtils.SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE, "Unsupported sample rate: " + rate);
+        check(rate == AudioUtils.SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE,
+            "Unsupported sample rate: " + rate);
 
         // fast-forward to bits per sample
         buffer.position(buffer.position() + 6);
@@ -103,7 +104,7 @@ public class WavUtils {
     }
 
     // Converts specified byteCount to seconds
-    private static long getSeconds(long byteCount, int sampleRate) {
+    private static long toSeconds(long byteCount, int sampleRate) {
         return byteCount / (sampleRate * 2);
     }
 

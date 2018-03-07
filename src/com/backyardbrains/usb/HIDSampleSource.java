@@ -15,13 +15,13 @@ import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * Implementation of {@link AbstractUsbInputSource} capable of USB HID communication with BYB hardware.
+ * Implementation of {@link AbstractUsbSampleSource} capable of USB HID communication with BYB hardware.
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
-public class HIDInputSource extends AbstractUsbInputSource {
+public class HIDSampleSource extends AbstractUsbSampleSource {
 
-    private static final String TAG = makeLogTag(HIDInputSource.class);
+    private static final String TAG = makeLogTag(HIDSampleSource.class);
 
     // TI Vendor ID
     private static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
@@ -127,7 +127,7 @@ public class HIDInputSource extends AbstractUsbInputSource {
         }
     }
 
-    private HIDInputSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
+    private HIDSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
         @Nullable OnSamplesReceivedListener listener) {
         super(device, listener);
 
@@ -139,17 +139,17 @@ public class HIDInputSource extends AbstractUsbInputSource {
     }
 
     /**
-     * Creates and returns new {@link AbstractUsbInputSource} based on specified {@code device} capable for HID
+     * Creates and returns new {@link AbstractUsbSampleSource} based on specified {@code device} capable for HID
      * communication,
      * or
      * {@code null} if specified device is not supported by BYB.
      *
      * @return BYB USB device interface configured for HID communication
      */
-    public static AbstractUsbInputSource createUsbDevice(@NonNull UsbDevice device,
+    public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
         @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
         if (isSupported(device)) {
-            return new HIDInputSource(device, connection, listener);
+            return new HIDSampleSource(device, connection, listener);
         } else {
             return null;
         }
@@ -170,7 +170,6 @@ public class HIDInputSource extends AbstractUsbInputSource {
      * {@inheritDoc}
      */
     @Override protected void onInputStop() {
-        super.onInputStop();
         // stop sample stream
         write(MSG_STOP_STREAM.getBytes());
         // and release the resources

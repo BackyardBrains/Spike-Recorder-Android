@@ -2,6 +2,7 @@ package com.backyardbrains.usb;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -40,6 +41,8 @@ class SampleStreamProcessor implements DataProcessor {
     private boolean channelCountChanged;
     // Average signal which we use to avoid signal offset
     private double average;
+    // Collection of events found within one sample batch
+    private SparseArray<String> events;
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
@@ -54,11 +57,6 @@ class SampleStreamProcessor implements DataProcessor {
          * Triggered when SpikerBox sends max sample rate and number of channels message as a result of inquiry.
          */
         void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount);
-
-        /**
-         * Triggered when SpikerBox sends an event message.
-         */
-        void onEventReceived(@NonNull String event, int sampleIndex);
     }
 
     private SampleStreamListener listener;
@@ -68,8 +66,8 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @NonNull @Override public short[] process(@NonNull byte[] data) {
-        if (data.length > 0) return processIncomingData(data);
+    @NonNull @Override public short[] process(@NonNull byte[] data, @NonNull SparseArray<String> events) {
+        if (data.length > 0) return processIncomingData(data, events);
 
         return new short[0];
     }
@@ -83,7 +81,9 @@ class SampleStreamProcessor implements DataProcessor {
         channelCountChanged = true;
     }
 
-    @NonNull private short[] processIncomingData(@NonNull byte[] data) {
+    @NonNull private short[] processIncomingData(@NonNull byte[] data, @NonNull SparseArray<String> events) {
+        this.events = events;
+
         // if channel count has changed during processing  previous data chunk we should disregard
         if (channelCountChanged) {
             unfinishedFrame = null;
@@ -209,7 +209,7 @@ class SampleStreamProcessor implements DataProcessor {
                 listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                     SampleStreamUtils.getChannelCount(message));
             } else if (SampleStreamUtils.isEventMsg(message)) {
-                listener.onEventReceived(SampleStreamUtils.getEventNumber(message), sampleIndex);
+                events.put(sampleIndex, SampleStreamUtils.getEventNumber(message));
             }
         }
     }
