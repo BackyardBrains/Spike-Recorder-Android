@@ -30,7 +30,7 @@ public abstract class AbstractSampleSource implements SampleSource {
 
     /**
      * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
-     * OnSamplesReceivedListener}.
+     * ProcessingThread}.
      */
     protected class ReadThread extends Thread {
 
@@ -45,17 +45,7 @@ public abstract class AbstractSampleSource implements SampleSource {
                         byte[] data = new byte[size];
                         readBuffer.read(data, data.length, false);
 
-                        // we should process the incoming data even if there is no listener
-                        SparseArray<String> events = new SparseArray<>();
-                        if (listener == null) {
-                            processIncomingData(data, events);
-                            return;
-                        } else {
-                            // forward received samples to OnSamplesReceivedListener
-                            synchronized (listener) {
-                                listener.onSamplesReceived(processIncomingData(data, events), events);
-                            }
-                        }
+                        processingBuffer.write(data);
                     }
                 }
             }
@@ -74,8 +64,45 @@ public abstract class AbstractSampleSource implements SampleSource {
         }
     }
 
+    /**
+     * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
+     * OnSamplesReceivedListener}.
+     */
+    protected class ProcessingThread extends Thread {
+
+        private AtomicBoolean working = new AtomicBoolean(true);
+
+        @Override public void run() {
+            while (working.get()) {
+                int size = processingBuffer.peekSize();
+                if (size > 0) {
+                    byte[] data = new byte[size];
+                    processingBuffer.read(data, data.length, false);
+
+                    // we should process the incoming data even if there is no listener
+                    SparseArray<String> events = new SparseArray<>();
+                    if (listener == null) {
+                        processIncomingData(data, events);
+                        return;
+                    } else {
+                        // forward received samples to OnSamplesReceivedListener
+                        synchronized (listener) {
+                            listener.onSamplesReceived(processIncomingData(data, events), events);
+                        }
+                    }
+                }
+            }
+        }
+
+        void stopWorking() {
+            working.set(false);
+        }
+    }
+
     private ReadThread readThread;
     @SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
+    private ProcessingThread processingThread;
+    @SuppressWarnings("WeakerAccess") CircularByteBuffer processingBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
 
     private int sampleRate;
     private int channelCount;
@@ -111,7 +138,7 @@ public abstract class AbstractSampleSource implements SampleSource {
     protected void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
         // recreate buffer to hold 2 seconds of data
-        this.readBuffer.setCapacity(sampleRate * BUFFERED_SECONDS);
+        this.processingBuffer.setCapacity(sampleRate * BUFFERED_SECONDS);
     }
 
     /**
@@ -146,6 +173,11 @@ public abstract class AbstractSampleSource implements SampleSource {
      * {@inheritDoc}
      */
     @Override public final void start() {
+        // start the processing thread
+        if (processingThread == null) {
+            processingThread = new ProcessingThread();
+            processingThread.start();
+        }
         // start the read thread
         if (readThread == null) {
             readThread = new ReadThread();
@@ -177,6 +209,11 @@ public abstract class AbstractSampleSource implements SampleSource {
     @Override public final void stop() {
         // give chance to subclass to clean resources
         onInputStop();
+        // stop the processing thread
+        if (processingThread != null) {
+            processingThread.stopWorking();
+            processingThread = null;
+        }
         // stop the read thread
         if (readThread != null) {
             readThread.stopWorking();
@@ -200,6 +237,24 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected final void setReadBufferSize(int size) {
         readBuffer.setCapacity(size);
+    }
+
+    /**
+     * Returns size of the processing buffer.
+     *
+     * @return Size of the buffer in bytes.
+     */
+    protected final int getProcessingBufferSize() {
+        return processingBuffer.getCapacity();
+    }
+
+    /**
+     * Sets the size of the processing buffer.
+     *
+     * @param size Size of the buffer in bytes.
+     */
+    protected final void setProcessingBufferSize(int size) {
+        processingBuffer.setCapacity(size);
     }
 
     /**

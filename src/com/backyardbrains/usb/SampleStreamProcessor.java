@@ -95,8 +95,8 @@ class SampleStreamProcessor implements DataProcessor {
         final int tmpChannelCount = channelCount;
         short[][] channels = new short[tmpChannelCount][];
         for (int i = 0; i < channels.length; i++) {
-            // max number of samples can be number of incoming bytes divided by 2 divided by number of channels +1
-            channels[i] = new short[data.length / 2 / channels.length + 1];
+            // max number of samples can be number of incoming bytes divided by 2
+            channels[i] = new short[(int) (data.length * .5)];
         }
         // array of sample counters, one for every channel
         int[] sampleCounters = new int[tmpChannelCount];
@@ -189,6 +189,11 @@ class SampleStreamProcessor implements DataProcessor {
 
         //LOGD(TAG, "CHANNEL #1 SAMPLES COUNT: " + sampleCounters[0] + "/" + channels[0].length);
         //LOGD(TAG, "CHANNEL #2 SAMPLES COUNT: " + sampleCounters[1] + "/" + channels[1].length);
+
+        if (sampleCounters[CHANNEL_INDEX] == 0) {
+            events.clear();
+            return new short[0];
+        }
 
         return Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]);
     }
@@ -389,9 +394,4 @@ class SampleStreamProcessor implements DataProcessor {
             return Arrays.copyOfRange(sequence, from, to);
         }
     }
-
-    // Can we get only part of frame in one batch? - YES
-    // Can message arrive in the middle of frame? - YES
-    // If there is an inconsistency in frame (i.e. two bytes > 127) do we drop only first or both? - ONLY FIRST
-    // Can we get only part of escape sequence in one batch? - YES
 }

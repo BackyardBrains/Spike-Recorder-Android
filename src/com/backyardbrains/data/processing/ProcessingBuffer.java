@@ -83,19 +83,17 @@ public class ProcessingBuffer {
      * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
     public void addToBuffer(@Nullable short[] samples, SparseArray<String> events) {
-        // just return if data is null
-        if (samples == null) return;
+        // check if data is valid
+        if (samples == null || samples.length == 0 || samples.length < events.size()) return;
 
         // add samples to ring buffer
         if (sampleBuffer != null) sampleBuffer.add(samples);
         // add event
         String[] e = new String[samples.length];
-        int index;
         int len = events.size();
         for (int i = 0; i < len; i++) {
             //LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
-            index = events.keyAt(i) >= e.length ? e.length - 1 : events.keyAt(i);
-            e[index] = events.valueAt(i);
+            if (events.keyAt(i) < e.length) e[events.keyAt(i)] = events.valueAt(i);
         }
         // add events from this sample batch to event ring buffer
         if (eventBuffer != null) eventBuffer.add(e);

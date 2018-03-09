@@ -138,6 +138,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                         // update buffer capacity when switching from seeking to playing
                         if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
+                        if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
 
                         // index of the sample up to which we check the events
                         long endSampleIndex = AudioUtils.getSampleCount(progress.get());
@@ -234,6 +235,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 // update buffer capacity when switching from playing to seeking
                 if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
+                if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
 
                 // index of the sample up to which we check the events
                 long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
