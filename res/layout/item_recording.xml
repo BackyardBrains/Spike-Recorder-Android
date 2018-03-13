@@ -43,7 +43,7 @@
         android:gravity="center_vertical|end"
         android:textSize="18sp"
         android:textColor="@color/white"
-        android:drawableEnd="@drawable/ic_chevron_right_white_24dp"
+        android:drawableEnd="@drawable/btn_chevron_right_white_24dp"
         app:layout_constraintLeft_toRightOf="@+id/tv_file_name"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
