@@ -84,16 +84,18 @@ public class ProcessingBuffer {
      */
     public void addToBuffer(@Nullable short[] samples, SparseArray<String> events) {
         // check if data is valid
-        if (samples == null || samples.length == 0 || samples.length < events.size()) return;
+        if (samples == null) return;
 
         // add samples to ring buffer
         if (sampleBuffer != null) sampleBuffer.add(samples);
         // add event
         String[] e = new String[samples.length];
+        int index;
         int len = events.size();
         for (int i = 0; i < len; i++) {
             //LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
-            if (events.keyAt(i) < e.length) e[events.keyAt(i)] = events.valueAt(i);
+            index = events.keyAt(i);
+            if (index < e.length) e[index] = events.valueAt(i);
         }
         // add events from this sample batch to event ring buffer
         if (eventBuffer != null) eventBuffer.add(e);
@@ -103,9 +105,7 @@ public class ProcessingBuffer {
      * Clears the ring buffer and resets last read byte position
      */
     public void clearBuffer() {
-        if (sampleBuffer != null) {
-            sampleBuffer.clear();
-        }
+        if (sampleBuffer != null) sampleBuffer.clear();
         if (eventBuffer != null) eventBuffer.clear();
     }
 }

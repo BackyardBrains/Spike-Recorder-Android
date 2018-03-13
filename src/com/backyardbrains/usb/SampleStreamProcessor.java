@@ -33,6 +33,8 @@ class SampleStreamProcessor implements DataProcessor {
     private Frame unfinishedFrame;
     // Most recent unfinished sample
     private Sample unfinishedSample;
+    // Holds currently processed channel
+    private int currentChannel = 0;
     // Additional filtering that should be applied
     private Filters filters;
     // Number of channels
@@ -88,6 +90,7 @@ class SampleStreamProcessor implements DataProcessor {
         if (channelCountChanged) {
             unfinishedFrame = null;
             unfinishedSample = null;
+            currentChannel = 0;
 
             channelCountChanged = false;
         }
@@ -100,7 +103,8 @@ class SampleStreamProcessor implements DataProcessor {
         }
         // array of sample counters, one for every channel
         int[] sampleCounters = new int[tmpChannelCount];
-        int channelCounter = 0;
+        int channelCounter = currentChannel;
+        double avg = average;
         int lsb, msb; // less significant and most significant bytes
         short sample;
 
@@ -122,6 +126,7 @@ class SampleStreamProcessor implements DataProcessor {
                                 LOGW(TAG, "LSB > 127! DROP WHOLE FRAME!");
                                 unfinishedFrame = null;
                                 unfinishedSample = null;
+                                channelCounter = 0;
                                 continue;
                             }
 
@@ -131,9 +136,9 @@ class SampleStreamProcessor implements DataProcessor {
 
                             sample = (short) normalize(unfinishedSample.getSample());
                             // calculate average sample
-                            average = 0.0001 * sample + 0.9999 * average;
+                            avg = 0.0001 * sample + 0.9999 * avg;
                             // use average to remove offset
-                            sample = (short) (sample - average);
+                            sample = (short) (sample - avg);
                             // apply additional filtering if necessary
                             if (filters != null) sample = filters.apply(sample);
 
@@ -153,6 +158,7 @@ class SampleStreamProcessor implements DataProcessor {
                                 LOGW(TAG, "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
                                 unfinishedFrame = null;
                                 unfinishedSample = null;
+                                channelCounter = 0;
                             } else {
                                 channelCounter++;
 
@@ -189,6 +195,9 @@ class SampleStreamProcessor implements DataProcessor {
 
         //LOGD(TAG, "CHANNEL #1 SAMPLES COUNT: " + sampleCounters[0] + "/" + channels[0].length);
         //LOGD(TAG, "CHANNEL #2 SAMPLES COUNT: " + sampleCounters[1] + "/" + channels[1].length);
+
+        currentChannel = channelCounter;
+        average = avg;
 
         if (sampleCounters[CHANNEL_INDEX] == 0) {
             events.clear();
