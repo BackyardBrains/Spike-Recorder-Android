@@ -52,7 +52,7 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 50
+        versionCode 51
         versionName '1.5.9'
 
         // Enabling vector drawables
