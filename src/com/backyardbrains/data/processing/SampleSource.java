@@ -2,7 +2,6 @@ package com.backyardbrains.data.processing;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import android.util.SparseArray;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -28,16 +27,16 @@ public interface SampleSource {
     }
 
     /**
-     * Interface definition for a callback to be invoked when chunk of data is received from the sample source.
+     * Interface definition for a callback to be invoked when chunk of data is received and processed from the sample
+     * source.
      */
     interface OnSamplesReceivedListener {
         /**
          * Called when chunk of data is received.
          *
-         * @param data The received data.
-         * @param events Collection of events that will be filled with all the events available within {@code data}.
+         * @param data The received data which contains processed samples and events.
          */
-        void onSamplesReceived(@NonNull short[] data, @NonNull SparseArray<String> events);
+        void onSamplesReceived(@NonNull DataProcessor.Data data);
     }
 
     /**

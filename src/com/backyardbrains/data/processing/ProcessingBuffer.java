@@ -1,7 +1,6 @@
 package com.backyardbrains.data.processing;
 
-import android.support.annotation.Nullable;
-import android.util.SparseArray;
+import android.support.annotation.NonNull;
 import com.backyardbrains.utils.AudioUtils;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -82,23 +81,11 @@ public class ProcessingBuffer {
     /**
      * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
-    public void addToBuffer(@Nullable short[] samples, SparseArray<String> events) {
-        // check if data is valid
-        if (samples == null) return;
-
+    public void addToBuffer(@NonNull DataProcessor.Data data) {
         // add samples to ring buffer
-        if (sampleBuffer != null) sampleBuffer.add(samples);
-        // add event
-        String[] e = new String[samples.length];
-        int index;
-        int len = events.size();
-        for (int i = 0; i < len; i++) {
-            //LOGD(TAG, "ADDING NEW EVENT " + tmpEventMap.valueAt(i) + " TO BUFFER AT " + tmpEventMap.keyAt(i));
-            index = events.keyAt(i);
-            if (index < e.length) e[index] = events.valueAt(i);
-        }
-        // add events from this sample batch to event ring buffer
-        if (eventBuffer != null) eventBuffer.add(e);
+        if (sampleBuffer != null) sampleBuffer.add(data.samples);
+        // add events to ring buffer
+        if (eventBuffer != null) eventBuffer.add(data.events);
     }
 
     /**

@@ -3,7 +3,6 @@ package com.backyardbrains.data.processing;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 import com.angrygoat.buffer.CircularByteBuffer;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
@@ -79,15 +78,14 @@ public abstract class AbstractSampleSource implements SampleSource {
                     byte[] data = new byte[size];
                     processingBuffer.read(data, data.length, false);
 
-                    // we should process the incoming data even if there is no listener
-                    SparseArray<String> events = new SparseArray<>();
                     if (listener == null) {
-                        processIncomingData(data, events);
+                        // we should process the incoming data even if there is no listener
+                        processIncomingData(data);
                         return;
                     } else {
                         // forward received samples to OnSamplesReceivedListener
                         synchronized (listener) {
-                            listener.onSamplesReceived(processIncomingData(data, events), events);
+                            listener.onSamplesReceived(processIncomingData(data));
                         }
                     }
                 }
@@ -283,5 +281,5 @@ public abstract class AbstractSampleSource implements SampleSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract short[] processIncomingData(byte[] data, @NonNull SparseArray<String> events);
+    @NonNull protected abstract DataProcessor.Data processIncomingData(byte[] data);
 }

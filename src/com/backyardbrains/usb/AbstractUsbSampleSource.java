@@ -5,8 +5,8 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -151,8 +151,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final short[] processIncomingData(byte[] data, @NonNull SparseArray<String> events) {
-        return processor.process(data, events);
+    @NonNull @Override protected final DataProcessor.Data processIncomingData(byte[] data) {
+        return processor.process(data);
     }
 
     /**

@@ -2,7 +2,6 @@ package com.backyardbrains.usb;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -43,8 +42,8 @@ class SampleStreamProcessor implements DataProcessor {
     private boolean channelCountChanged;
     // Average signal which we use to avoid signal offset
     private double average;
-    // Collection of events found within one sample batch
-    private SparseArray<String> events;
+    // Array of events found within one sample batch
+    private String[] events;
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
@@ -68,10 +67,10 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @NonNull @Override public short[] process(@NonNull byte[] data, @NonNull SparseArray<String> events) {
-        if (data.length > 0) return processIncomingData(data, events);
+    @NonNull @Override public Data process(@NonNull byte[] data) {
+        if (data.length > 0) return processIncomingData(data);
 
-        return new short[0];
+        return new Data();
     }
 
     /**
@@ -83,9 +82,7 @@ class SampleStreamProcessor implements DataProcessor {
         channelCountChanged = true;
     }
 
-    @NonNull private short[] processIncomingData(@NonNull byte[] data, @NonNull SparseArray<String> events) {
-        this.events = events;
-
+    @NonNull private Data processIncomingData(@NonNull byte[] data) {
         // if channel count has changed during processing  previous data chunk we should disregard
         if (channelCountChanged) {
             unfinishedFrame = null;
@@ -101,6 +98,8 @@ class SampleStreamProcessor implements DataProcessor {
             // max number of samples can be number of incoming bytes divided by 2
             channels[i] = new short[(int) (data.length * .5)];
         }
+        // init events array
+        events = new String[(int) (data.length * .5)];
         // array of sample counters, one for every channel
         int[] sampleCounters = new int[tmpChannelCount];
         int channelCounter = currentChannel;
@@ -200,11 +199,14 @@ class SampleStreamProcessor implements DataProcessor {
         average = avg;
 
         if (sampleCounters[CHANNEL_INDEX] == 0) {
-            events.clear();
-            return new short[0];
+            return new Data();
         }
 
-        return Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]);
+        // prepare and return result
+        Data result = new Data();
+        result.samples = Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]);
+        result.events = Arrays.copyOfRange(events, 0, sampleCounters[CHANNEL_INDEX]);
+        return result;
     }
 
     private int normalize(int sample) {
@@ -223,7 +225,7 @@ class SampleStreamProcessor implements DataProcessor {
                 listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                     SampleStreamUtils.getChannelCount(message));
             } else if (SampleStreamUtils.isEventMsg(message)) {
-                events.put(sampleIndex, SampleStreamUtils.getEventNumber(message));
+                events[sampleIndex] = SampleStreamUtils.getEventNumber(message);
             }
         }
     }

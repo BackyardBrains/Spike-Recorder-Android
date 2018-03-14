@@ -26,8 +26,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
@@ -267,12 +267,13 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //=================================================
 
     /**
-     * Adds received samples to the ring buffer. If we're recording, it also passes it to the recording saver.
+     * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
+     * saver.
      *
-     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(short[], SparseArray)
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(DataProcessor.Data)
      */
-    @Override public void onSamplesReceived(@NonNull short[] data, @NonNull SparseArray<String> events) {
-        passToDataManager(data, events);
+    @Override public void onSamplesReceived(@NonNull DataProcessor.Data data) {
+        passToDataManager(data);
     }
 
     //=================================================
@@ -286,36 +287,29 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      */
     @Override public void receiveAudio(@NonNull short[] data) {
         // any received audio needs to be process with AM Modulation processor
-        passToDataManager(AM_MODULATION_DATA_PROCESSOR.process(data), new SparseArray<String>());
-
-        //short[] newData = new short[data.length];
-        //for (int i = 0; i < data.length; i++) {
-        //    newData[i] = AM_MODULATION_DATA_PROCESSOR.processSingle(data[i]);
-        //}
-        //
-        //passToDataManager(newData);
+        passToDataManager(new DataProcessor.Data(AM_MODULATION_DATA_PROCESSOR.process(data)));
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(@NonNull short[] data, SparseArray<String> events) {
+    private void passToDataManager(@NonNull DataProcessor.Data data) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                processingBuffer.addToBuffer(getProcessor().process(data), events);
+                processingBuffer.addToBuffer(new DataProcessor.Data(getProcessor().process(data.samples)));
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(data, events);
+                processingBuffer.addToBuffer(data);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(data, events);
+        passToRecorder(data);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(@NonNull short[] data, @NonNull SparseArray<String> events) {
-        if (recordingSaver != null) record(data, events);
+    private void passToRecorder(@NonNull DataProcessor.Data data) {
+        if (recordingSaver != null) record(data);
     }
 
     //=================================================
@@ -795,10 +789,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Pass audio and events to the active RecordingSaver instance
-    private void record(@NonNull short[] data, @NonNull SparseArray<String> events) {
+    private void record(@NonNull DataProcessor.Data data) {
         try {
             if (recordingSaver != null) {
-                recordingSaver.writeAudioWithEvents(data, events);
+                recordingSaver.writeAudioWithEvents(data);
 
                 // post current recording progress
                 EventBus.getDefault()
