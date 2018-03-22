@@ -81,11 +81,11 @@ public class ProcessingBuffer {
     /**
      * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
-    public void addToBuffer(@NonNull DataProcessor.Data data) {
+    public void addToBuffer(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
         // add samples to ring buffer
-        if (sampleBuffer != null) sampleBuffer.add(data.samples);
+        if (sampleBuffer != null) sampleBuffer.add(samplesWithMarkers.samples);
         // add events to ring buffer
-        if (eventBuffer != null) eventBuffer.add(data.events);
+        if (eventBuffer != null) eventBuffer.add(samplesWithMarkers.events);
     }
 
     /**

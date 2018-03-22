@@ -138,7 +138,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                         progress.set(raf.getFilePointer());
 
                         // update buffer capacity when switching from seeking to playing
-                        if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
                         if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
 
                         // index of the sample up to which we check the events
@@ -235,7 +234,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 }
 
                 // update buffer capacity when switching from playing to seeking
-                if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
                 if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
 
                 // index of the sample up to which we check the events
@@ -467,7 +465,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected DataProcessor.Data processIncomingData(byte[] data) {
+    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
         short[] s = new short[0];
         if (data.length == bufferSize) {
             ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
@@ -485,6 +483,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new DataProcessor.Data(s, e);
+        return new DataProcessor.SamplesWithMarkers(s, e);
     }
 }

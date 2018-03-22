@@ -54,7 +54,7 @@ class RecordingSaver {
         private final OutputStream outputStream;
         private final File eventsFile;
         private final AtomicBoolean working = new AtomicBoolean(true);
-        private final List<DataProcessor.Data> samples = new CopyOnWriteArrayList<>();
+        private final List<DataProcessor.SamplesWithMarkers> samples = new CopyOnWriteArrayList<>();
 
         private int sampleRate = AudioUtils.SAMPLE_RATE;
         private StringBuilder eventsFileContent = new StringBuilder(EVENT_MARKERS_FILE_HEADER_CONTENT);
@@ -80,14 +80,14 @@ class RecordingSaver {
             try {
                 while (working.get()) {
                     if (samples.size() > 0) {
-                        DataProcessor.Data data = samples.remove(0);
+                        DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.remove(0);
                         // we first need to write all the events before start writing the samples
                         // so we get the precise times for events
                         int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                        int len = data.events.length;
+                        int len = samplesWithMarkers.events.length;
                         String event;
                         for (int i = 0; i < len; i++) {
-                            event = data.events[i];
+                            event = samplesWithMarkers.events[i];
                             if (event != null) {
                                 eventsFileContent.append("\n")
                                     .append(event)
@@ -97,8 +97,8 @@ class RecordingSaver {
                         }
 
                         // now we can write to audio stream
-                        bb = ByteBuffer.allocate(data.samples.length * 2).order(ByteOrder.nativeOrder());
-                        bb.asShortBuffer().put(data.samples);
+                        bb = ByteBuffer.allocate(samplesWithMarkers.samples.length * 2).order(ByteOrder.nativeOrder());
+                        bb.asShortBuffer().put(samplesWithMarkers.samples);
                         try {
                             outputStream.write(bb.array());
                         } catch (IOException e) {
@@ -108,14 +108,14 @@ class RecordingSaver {
                 }
                 // let's record all left samples
                 for (int i = 0; i < samples.size(); i++) {
-                    DataProcessor.Data data = samples.get(i);
+                    DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.get(i);
                     // we first need to write all the events before start writing the samples
                     // so we get the precise times for events
                     int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                    int len = data.events.length;
+                    int len = samplesWithMarkers.events.length;
                     String event;
                     for (int j = 0; j < len; j++) {
-                        event = data.events[j];
+                        event = samplesWithMarkers.events[j];
                         if (event != null) {
                             eventsFileContent.append("\n")
                                 .append(event)
@@ -124,8 +124,8 @@ class RecordingSaver {
                         }
                     }
                     // now we can write to audio stream
-                    bb = ByteBuffer.allocate(data.samples.length * 2).order(ByteOrder.nativeOrder());
-                    bb.asShortBuffer().put(data.samples);
+                    bb = ByteBuffer.allocate(samplesWithMarkers.samples.length * 2).order(ByteOrder.nativeOrder());
+                    bb.asShortBuffer().put(samplesWithMarkers.samples);
                     try {
                         outputStream.write(bb.array());
                     } catch (IOException e) {
@@ -143,8 +143,8 @@ class RecordingSaver {
         /**
          * Appends specified {@code samples} to previously saved ones.
          */
-        void writeData(@NonNull DataProcessor.Data data) {
-            if (working.get()) this.samples.add(data);
+        void writeData(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+            if (working.get()) this.samples.add(samplesWithMarkers);
         }
 
         /**
@@ -221,8 +221,8 @@ class RecordingSaver {
     /**
      * Writes specified {@code samples} to the audio stream.
      */
-    void writeAudioWithEvents(@NonNull DataProcessor.Data data) {
-        if (writeThread != null) writeThread.writeData(data);
+    void writeAudioWithEvents(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+        if (writeThread != null) writeThread.writeData(samplesWithMarkers);
     }
 
     /**

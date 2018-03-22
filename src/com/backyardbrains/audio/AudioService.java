@@ -270,10 +270,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
      * saver.
      *
-     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(DataProcessor.Data)
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(DataProcessor.SamplesWithMarkers)
      */
-    @Override public void onSamplesReceived(@NonNull DataProcessor.Data data) {
-        passToDataManager(data);
+    @Override public void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+        passToDataManager(samplesWithMarkers);
     }
 
     //=================================================
@@ -287,29 +287,30 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      */
     @Override public void receiveAudio(@NonNull short[] data) {
         // any received audio needs to be process with AM Modulation processor
-        passToDataManager(new DataProcessor.Data(AM_MODULATION_DATA_PROCESSOR.process(data)));
+        passToDataManager(new DataProcessor.SamplesWithMarkers(AM_MODULATION_DATA_PROCESSOR.process(data)));
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(@NonNull DataProcessor.Data data) {
+    private void passToDataManager(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                processingBuffer.addToBuffer(new DataProcessor.Data(getProcessor().process(data.samples)));
+                processingBuffer.addToBuffer(new DataProcessor.SamplesWithMarkers(getProcessor().process(
+                    samplesWithMarkers.samples)));
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(data);
+                processingBuffer.addToBuffer(samplesWithMarkers);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(data);
+        passToRecorder(samplesWithMarkers);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(@NonNull DataProcessor.Data data) {
-        if (recordingSaver != null) record(data);
+    private void passToRecorder(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+        if (recordingSaver != null) record(samplesWithMarkers);
     }
 
     //=================================================
@@ -789,10 +790,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Pass audio and events to the active RecordingSaver instance
-    private void record(@NonNull DataProcessor.Data data) {
+    private void record(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
         try {
             if (recordingSaver != null) {
-                recordingSaver.writeAudioWithEvents(data);
+                recordingSaver.writeAudioWithEvents(samplesWithMarkers);
 
                 // post current recording progress
                 EventBus.getDefault()

@@ -151,7 +151,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final DataProcessor.Data processIncomingData(byte[] data) {
+    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
         return processor.process(data);
     }
 

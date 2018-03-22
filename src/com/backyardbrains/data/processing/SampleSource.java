@@ -34,9 +34,9 @@ public interface SampleSource {
         /**
          * Called when chunk of data is received.
          *
-         * @param data The received data which contains processed samples and events.
+         * @param samplesWithMarkers The received data which contains processed samples and events.
          */
-        void onSamplesReceived(@NonNull DataProcessor.Data data);
+        void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers);
     }
 
     /**
