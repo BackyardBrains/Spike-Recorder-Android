@@ -121,6 +121,8 @@
     <string name="error_message_files_no_file">The requested file could not be found. Please try again later.</string>
     <string name="error_message_files_exists">File with the specified name already exists. Please use a different name.</string>
     <string name="error_message_files_delete">The requested file could not be deleted. Please try again later.</string>
+    <string name="error_message_files_events_delete">The associated file that holds saved events could not be deleted. Please use any file manager app to delete the associated file manually.</string>
     <string name="error_message_files_rename">The requested file could not be renamed. Please try again later.</string>
+    <string name="error_message_files_events_rename">The associated file that holds saved events could not be renamed. Please use any file manager app to rename the associated file manually. The name should be the same as the recording (.wav) file but with "-events" suffix.</string>
     <string name="error_message_validation_file_name">Please enter the file name.</string>
 </resources>
