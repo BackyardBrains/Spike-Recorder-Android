@@ -13,8 +13,10 @@ public class SampleStreamUtils {
     private static final String HARDWARE_TYPE_PLANT = HARDWARE_TYPE_PREFIX + "PLANTSS;";
     // Muscle SpikerBox reply message for hardware type inquiry.
     private static final String HARDWARE_TYPE_MUSCLE = HARDWARE_TYPE_PREFIX + "MUSCLESS;";
-    // Brain & Heart SpikerBox reply message for hardware type inquiry.
-    private static final String HARDWARE_TYPE_HEART = HARDWARE_TYPE_PREFIX + "HEARTSS;";
+    // Brain & Heart SpikerBox reply message for hardware type inquiry (old 1 channel, new 6 channels).
+    private static final String HARDWARE_TYPE_HEART_AND_BRAIN_6CH = HARDWARE_TYPE_PREFIX + "HEARTSS;";
+    // Heart & Brain SpikerBox reply message for hardware type inquiry.
+    private static final String HARDWARE_TYPE_HEART_AND_BRAIN = HARDWARE_TYPE_PREFIX + "HBLEOSB;";
     // Neuron PRO SpikerBox reply message for hardware type inquiry.
     private static final String HARDWARE_TYPE_NEURON_PRO = HARDWARE_TYPE_PREFIX + "NEURONSB;";
     // Muscle PRO SpikerBox reply message for hardware type inquiry.
@@ -44,7 +46,8 @@ public class SampleStreamUtils {
     public static @SpikerBoxHardwareType int getBoardType(@NonNull String message) {
         if (ObjectUtils.equals(HARDWARE_TYPE_PLANT, message)) return SpikerBoxHardwareType.PLANT;
         if (ObjectUtils.equals(HARDWARE_TYPE_MUSCLE, message)) return SpikerBoxHardwareType.MUSCLE;
-        if (ObjectUtils.equals(HARDWARE_TYPE_HEART, message)) return SpikerBoxHardwareType.HEART;
+        if (ObjectUtils.equals(HARDWARE_TYPE_HEART_AND_BRAIN_6CH, message)) return SpikerBoxHardwareType.HEART;
+        if (ObjectUtils.equals(HARDWARE_TYPE_HEART_AND_BRAIN, message)) return SpikerBoxHardwareType.HEART;
         if (message.contains(HARDWARE_TYPE_NEURON_PRO)) return SpikerBoxHardwareType.NEURON_PRO;
         if (message.contains(HARDWARE_TYPE_MUSCLE_PRO)) return SpikerBoxHardwareType.MUSCLE_PRO;
         return SpikerBoxHardwareType.UNKNOWN;

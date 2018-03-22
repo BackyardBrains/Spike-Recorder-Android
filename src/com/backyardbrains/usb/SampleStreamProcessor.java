@@ -132,7 +132,7 @@ class SampleStreamProcessor implements DataProcessor {
         byte b;
 
         // max number of samples can be number of incoming bytes divided by 2
-        int maxSampleCount = (int) (data.length * .5);
+        int maxSampleCount = (int) (data.length * .5 + 1);
         // init samples (by channels)
         for (int i = 0; i < channelCount; i++) {
             channels[i] = new short[maxSampleCount];
@@ -214,9 +214,7 @@ class SampleStreamProcessor implements DataProcessor {
                             channels[currentChannel][sampleCounters[currentChannel]++] = sample;
 
                             sampleStarted = false;
-                            if (currentChannel >= 1) {
-                                frameStarted = false;
-                            }
+                            if (currentChannel >= channelCount - 1) frameStarted = false;
                         } else {
                             msb = b & CLEANER;
                             // we already started the frame so if msb is greater then 127 drop whole frame
