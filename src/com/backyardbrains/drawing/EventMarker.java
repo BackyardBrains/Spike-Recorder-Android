@@ -23,7 +23,7 @@ public class EventMarker {
         new float[] { .675f, .82f, .914f, 1f }, new float[] { .682f, 1f, .682f, 1f }, new float[] { 1f, .925f, 1f, 1f }
     };
     private static final int LINE_WIDTH = 2;
-    private static final float LABEL_TOP = 200f;
+    private static final float LABEL_TOP = 230f;
     private static final int LINE_VERTICES_COUNT = 4;
     private static final int LABEL_VERTICES_COUNT = 8;
     private static final short[] INDICES = { 0, 1, 2, 0, 2, 3 };
@@ -49,7 +49,7 @@ public class EventMarker {
         indicesBuffer.position(0);
 
         text = new GLText(gl, context.getAssets());
-        text.load("Roboto-Regular.ttf", 48, 2, 2);
+        text.load("dos-437.ttf", 48, 2, 2);
     }
 
     public void draw(@NonNull GL10 gl, @NonNull String eventName, float x, float y0, float y1, float scaleX,
@@ -69,8 +69,10 @@ public class EventMarker {
 
         // draw label background
         text.setScale(scaleX, scaleY);
-        float labelW = text.getLength(eventName);
-        float labelH = text.getHeight();
+        float textW = text.getLength(eventName);
+        float textH = text.getHeight();
+        float labelW = textW * 1.3f;
+        float labelH = textH * 1.3f;
         float labelX = x - labelW * .5f;
         float labelY = y1 - LABEL_TOP * scaleY;
 
@@ -88,7 +90,7 @@ public class EventMarker {
         gl.glEnable(GL10.GL_BLEND);
         gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
         text.begin(0f, 0f, 0f, 1f);
-        text.draw(eventName, labelX, labelY);
+        text.draw(eventName, labelX + (labelW - textW) * .5f, labelY + (labelH - textH) * .5f);
         text.end();
         gl.glDisable(GL10.GL_BLEND);
         gl.glDisable(GL10.GL_TEXTURE_2D);
