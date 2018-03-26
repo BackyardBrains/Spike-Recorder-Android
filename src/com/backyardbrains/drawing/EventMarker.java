@@ -54,6 +54,16 @@ public class EventMarker {
 
     public void draw(@NonNull GL10 gl, @NonNull String eventName, float x, float y0, float y1, float scaleX,
         float scaleY) {
+        int len = eventName.length();
+        int ascii;
+        // we just use event up to the first unsupported character
+        for (int i = 0; i < len; i++) {
+            ascii = (int) eventName.charAt(i);
+            if (ascii < GLText.CHAR_START || ascii > GLText.CHAR_END) {
+                eventName = eventName.substring(0, i);
+                break;
+            }
+        }
         final char ch = eventName.length() > 0 ? eventName.charAt(0) : '1';
         final float[] glColor = MARKER_COLORS[(ch - '0') % MARKER_COLORS.length];
         gl.glColor4f(glColor[0], glColor[1], glColor[2], glColor[3]);
