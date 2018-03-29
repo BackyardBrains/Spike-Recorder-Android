@@ -3,13 +3,12 @@ package com.backyardbrains.drawing;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Spike;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
-import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -22,8 +21,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private long fromSample;
     private long toSample;
 
-    private FloatBuffer spikesBuffer;
-    private FloatBuffer colorsBuffer;
+    private GlSpikes glSpikes;
+    private float[] spikesVertices;
+    private float[] spikesColors;
 
     @SuppressWarnings("WeakerAccess") Spike[] spikes;
     private int[] thresholds = new int[2];
@@ -48,6 +48,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         super(fragment, preparedBuffer);
 
         this.filePath = filePath;
+
+        glSpikes = new GlSpikes();
 
         updateThresholdHandles();
     }
@@ -84,59 +86,27 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
-    @Override public void onDrawFrame(GL10 gl) {
-        // let's save start and end sample positions that are being drawn before triggering the actual draw
-        //toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
-        //fromSample = Math.max(0, toSample - getGlWindowHorizontalSize());
-        //LOGD(TAG, "from: " + fromSample + ", to: " + toSample + ", horizontal: " + getGlWindowHorizontalSize());
-
-        super.onDrawFrame(gl);
-    }
-
-    @Override public void setGlWindowVerticalSize(int newSize) {
-        super.setGlWindowVerticalSize(Math.abs(newSize));
+    @Override public void setGlWindowHeight(int newSize) {
+        super.setGlWindowHeight(Math.abs(newSize));
 
         updateThresholdHandles();
     }
 
-    @Override protected void drawingHandler(GL10 gl) {
+    @Override
+    protected void drawingHandler(GL10 gl, @NonNull float[] waveformVertices, @NonNull SparseArray<String> markers,
+        int glWindowWidth, int glWindowHeight, float scaleX, float scaleY) {
+        super.drawingHandler(gl, waveformVertices, markers, glWindowWidth, glWindowHeight, scaleX, scaleY);
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
 
-            int glWindowHorizontalSize = getGlWindowHorizontalSize();
-
             // let's save start and end sample positions that are being drawn before triggering the actual draw
             toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
-            fromSample = Math.max(0, toSample - glWindowHorizontalSize);
+            fromSample = Math.max(0, toSample - glWindowWidth);
 
-            constructSpikesAndColorsBuffers(glWindowHorizontalSize);
-            final FloatBuffer linesBuffer = getWaveformBuffer(drawingBuffer, glWindowHorizontalSize);
+            constructSpikesAndColorsBuffers(glWindowWidth, fromSample, toSample);
+            glSpikes.draw(gl, spikesVertices, spikesColors);
 
-            if (linesBuffer != null && spikesBuffer != null && colorsBuffer != null) {
-                gl.glMatrixMode(GL10.GL_MODELVIEW);
-                gl.glLoadIdentity();
-
-                gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-                gl.glLineWidth(1f);
-                gl.glColor4f(0f, 1f, 0f, 1f);
-                gl.glVertexPointer(2, GL10.GL_FLOAT, 0, linesBuffer);
-                gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, linesBuffer.limit() / 2);
-                gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-                //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER DRAWING WAVE");
-
-                gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-                gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
-                gl.glPointSize(10.0f);
-                gl.glVertexPointer(2, GL10.GL_FLOAT, 0, spikesBuffer);
-                gl.glColorPointer(4, GL10.GL_FLOAT, 0, colorsBuffer);
-                gl.glDrawArrays(GL10.GL_POINTS, 0, spikesBuffer.limit() / 2);
-                gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-                gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
-
-                //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER DRAWING SPIKES");
-            }
-        } else {
-            super.drawingHandler(gl);
+            //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER DRAWING SPIKES");
         }
     }
 
@@ -181,11 +151,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         return false;
     }
 
-    private void constructSpikesAndColorsBuffers(int glWindowHorizontalSize) {
+    private void constructSpikesAndColorsBuffers(int glWindowWidth, long fromSample, long toSample) {
+        spikesVertices = null;
+        spikesColors = null;
+
         float[] arr;
-        float[] spikeArr = null;
         float[] arr1;
-        float[] colorsArr = null;
         if (spikes != null) {
             if (spikes.length > 0) {
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
@@ -198,8 +169,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     long index;
                     for (Spike spike : spikes) {
                         if (fromSample < spike.getIndex() && spike.getIndex() < toSample) {
-                            index = toSample - fromSample < glWindowHorizontalSize ?
-                                spike.getIndex() + glWindowHorizontalSize - toSample : spike.getIndex() - fromSample;
+                            index = toSample - fromSample < glWindowWidth ? spike.getIndex() + glWindowWidth - toSample
+                                : spike.getIndex() - fromSample;
                             arr[j++] = index;
                             arr[j++] = spike.getValue();
 
@@ -212,20 +183,18 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                         }
                     }
 
-                    spikeArr = new float[j];
-                    System.arraycopy(arr, 0, spikeArr, 0, spikeArr.length);
+                    spikesVertices = new float[j];
+                    System.arraycopy(arr, 0, spikesVertices, 0, spikesVertices.length);
 
-                    colorsArr = new float[k];
-                    System.arraycopy(arr1, 0, colorsArr, 0, colorsArr.length);
+                    spikesColors = new float[k];
+                    System.arraycopy(arr1, 0, spikesColors, 0, spikesColors.length);
                 } catch (ArrayIndexOutOfBoundsException e) {
                     Log.e(TAG, e.getMessage());
                     Crashlytics.logException(e);
                 }
             }
         }
-        if (spikeArr == null) spikeArr = new float[0];
-        if (colorsArr == null) colorsArr = new float[0];
-        spikesBuffer = BYBUtils.getFloatBufferFromFloatArray(spikeArr, spikeArr.length);
-        colorsBuffer = BYBUtils.getFloatBufferFromFloatArray(colorsArr, colorsArr.length);
+        if (spikesVertices == null) spikesVertices = new float[0];
+        if (spikesColors == null) spikesColors = new float[0];
     }
 }

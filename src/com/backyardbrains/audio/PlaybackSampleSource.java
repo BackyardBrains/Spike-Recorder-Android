@@ -240,7 +240,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 // index of the sample up to which we check the events
                 long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
 
-                LOGD(TAG, "START: " + startSampleIndex + ", END: " + endSampleIndex);
+                //LOGD(TAG, "START: " + startSampleIndex + ", END: " + endSampleIndex);
 
                 // check if there are any events in the currently read buffer
                 int len = allEvents.size();
