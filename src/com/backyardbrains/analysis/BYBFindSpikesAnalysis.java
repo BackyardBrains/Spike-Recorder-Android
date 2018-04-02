@@ -60,9 +60,9 @@ class BYBFindSpikesAnalysis extends BYBBaseAnalysis<Spike> {
             sb = ByteBuffer.wrap(buffer).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
             samples = new short[sb.capacity()];
             sb.get(samples);
-            standardDeviationsArr[deviationCounter] = AnalysisUtils.STD(samples);
+            standardDeviationsArr[deviationCounter] = AnalysisUtils.SD(samples, samples.length - 1);
             deviationCounter++;
-            //standardDeviations.add(AnalysisUtils.STD(shortBuffer));
+            //standardDeviations.add(AnalysisUtils.SD(shortBuffer));
         }
         LOGD(TAG, (System.currentTimeMillis() - start) + " - AFTER FINDING DEVIATIONS");
 

@@ -17,9 +17,8 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
-import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
-import com.backyardbrains.utils.BYBConstants;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.view.BYBThresholdHandle;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -121,7 +120,10 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
+                    viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable/*new Runnable() {
                         @Override public void run() {
                             if (getAudioService() != null) {
                                 setMilliseconds(
@@ -131,7 +133,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                             setMillivolts(
                                 (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
                         }
-                    });
+                    }*/);
                 }
             }
 
@@ -143,13 +145,16 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                 int progress = (int) (sbAudioProgress.getProgress() - dx);
                 if (progress < 0) progress = 0;
                 if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
-                final int finalProgress = progress;
-                sbAudioProgress.post(new Runnable() {
+                playbackSeekRunnable.setProgress(progress);
+                playbackSeekRunnable.setUpdateProgressSeekBar(true);
+                playbackSeekRunnable.setUpdateProgressTimeLabel(false);
+                //final int finalProgress = progress;
+                sbAudioProgress.post(playbackSeekRunnable/*new Runnable() {
                     @Override public void run() {
                         seek(finalProgress);
                         sbAudioProgress.setProgress(finalProgress);
                     }
-                });
+                }*/);
             }
 
             @Override public void onHorizontalDragEnd() {

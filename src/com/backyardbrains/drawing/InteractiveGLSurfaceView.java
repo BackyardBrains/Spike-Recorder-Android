@@ -49,7 +49,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
     @SuppressWarnings("unused") private static final String TAG = makeLogTag(InteractiveGLSurfaceView.class);
 
-    private final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
+    private static final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
+    private static final int LONG_PRESS_X_OFFSET = 3;
 
     public static final int MODE_ZOOM_IN_H = 0;
     public static final int MODE_ZOOM_OUT_H = 1;
@@ -175,7 +176,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     @SuppressLint("ClickableViewAccessibility") @Override public boolean onTouchEvent(final MotionEvent event) {
-        if (event.getPointerCount() > 0) {
+        int pointerCount = event.getPointerCount();
+        if (pointerCount > 0) {
             switch (event.getToolType(0)) {
                 case TOOL_TYPE_UNKNOWN:
                 case TOOL_TYPE_STYLUS:
@@ -194,7 +196,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                 waitingForLongPress = false;
                 handler.removeCallbacks(longPress);
                 return true;
-            } else if (scrollDetector != null && event.getPointerCount() == 1 && !scrollDetector.onTouchEvent(event)) {
+            } else if (scrollDetector != null && pointerCount == 1 && !scrollDetector.onTouchEvent(event)) {
                 // pass latest pointer x to long press runnable
                 longPress.setEventX((int) event.getX());
                 // and manually handle the event.
@@ -207,15 +209,18 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                         // and start waiting for long-press
                         waitingForLongPress = true;
                         handler.postDelayed(longPress, LONG_PRESS_TIMEOUT);
+                        prevX = event.getX();
                         break;
                     case MotionEvent.ACTION_MOVE:
                         // if we moved before long press, stop waiting for it
-                        if (waitingForLongPress) {
+                        if (waitingForLongPress && Math.abs(prevX - event.getX()) > LONG_PRESS_X_OFFSET) {
                             waitingForLongPress = false;
                             handler.removeCallbacks(longPress);
                         }
                         // otherwise if we're not scrolling it means we are in measurement
                         if (!scrolling) renderer.measure(event.getX());
+
+                        prevX = event.getX();
                         break;
                     case MotionEvent.ACTION_CANCEL:
                     case MotionEvent.ACTION_UP:
@@ -226,12 +231,13 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                         handler.removeCallbacks(longPress);
                         break;
                 }
-                //return false;
             }
         }
 
         return true;
     }
+
+    float prevX;
 
     //==============================================
     //  PRIVATE METHODS

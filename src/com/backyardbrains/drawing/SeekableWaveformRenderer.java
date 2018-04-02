@@ -42,7 +42,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     }
 
     @Override protected void onMeasurementEnd(float x) {
-        measuringAreaX2 = x;
         measuring = false;
+        measuringAreaX1 = 0;
+        measuringAreaX2 = 0;
     }
 }

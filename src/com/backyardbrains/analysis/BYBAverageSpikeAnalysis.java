@@ -143,12 +143,12 @@ class BYBAverageSpikeAnalysis extends BYBBaseAnalysis<AverageSpike> {
                         tmp[j] = tmpAvr[i].topSTDLine[j] - tmp[j];
                     }
 
-                    // calculate STD from variance
+                    // calculate SD from variance
                     for (int k = 0; k < batchSpikeCount; k++) {
                         tmp[k] = (float) Math.sqrt(tmp[k]);
                     }
 
-                    // Make top line and bottom line around mean that represent one STD deviation from mean
+                    // Make top line and bottom line around mean that represent one SD deviation from mean
                     for (int j = 0; j < batchSpikeCount; j++) {
                         tmpAvr[i].bottomSTDLine[j] = tmpAvr[i].averageSpike[j] - tmp[j];
                         tmpAvr[i].topSTDLine[j] = tmpAvr[i].averageSpike[j] + tmp[j];

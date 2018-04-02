@@ -101,8 +101,8 @@ public class ThresholdRenderer extends WaveformRenderer {
         PrefUtils.setThreshold(context, getClass(), threshold);
     }
 
-    @NonNull @Override protected float[] updateWaveformBuffer(@NonNull short[] samples, @NonNull String[] markers,
-        @NonNull SparseArray<String> markerBuffer, int glWindowWidth) {
+    @NonNull @Override protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
+        @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
         if (glWindowWidth > samples.length) setGlWindowWidth(samples.length);
         glWindowWidth = getGlWindowWidth();
 
