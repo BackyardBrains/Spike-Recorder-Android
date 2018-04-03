@@ -6,7 +6,6 @@ import android.support.annotation.NonNull;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
@@ -26,7 +25,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int SECONDS_TO_RENDER = 12;
-    private static final float RMS_QUANTIFIER = 0.005f;
 
     private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 12 sec
 
@@ -46,11 +44,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private float scaleX;
     private float scaleY;
 
-    private short[] rmsSamples;
-    private float measurementX;
-    private float measurementStartX;
-    private float drawSampleCount;
-
     private boolean autoScale;
 
     private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
@@ -67,12 +60,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         void onHorizontalDrag(float dx);
 
         void onHorizontalDragEnd();
-
-        void onMeasurementStart();
-
-        void onMeasure(float rms, int rmsSampleCount);
-
-        void onMeasurementEnd();
     }
 
     public static class CallbackAdapter implements Callback {
@@ -87,15 +74,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         }
 
         @Override public void onHorizontalDragEnd() {
-        }
-
-        @Override public void onMeasurementStart() {
-        }
-
-        @Override public void onMeasure(float rms, int rmsSampleCount) {
-        }
-
-        @Override public void onMeasurementEnd() {
         }
     }
 
@@ -249,15 +227,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         LOGD(TAG, "onSurfaceCreated()");
         gl.glViewport(0, 0, width, height);
         initDrawSurface(gl, glWindowWidth, glWindowHeight, true);
-        gl.glMatrixMode(GL10.GL_PROJECTION);
-        gl.glLoadIdentity();
-        float heightHalf = glWindowHeight * .5f;
-        gl.glOrthof(0, glWindowWidth, -heightHalf, heightHalf, -1f, 1f);
-        gl.glRotatef(0f, 0f, 0f, 1f);
 
-        // recalculate measurement start and end x coordinate
-        measurementStartX = width * measurementStartX / surfaceWidth;
-        measurementX = width * measurementX / surfaceWidth;
         // save new surface width and height
         surfaceWidth = width;
         surfaceHeight = height;
@@ -280,56 +250,37 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         this.glWindowWidthDirty = false;
         this.glWindowHeightDirty = false;
 
-        if (surfaceSizeDirty) {
-            if (glWindowWidthDirty) {
-                scaleX = surfaceWidth > 0 ? glWindowWidth / (float) surfaceWidth : (float) glWindowWidth;
-            }
-            if (glWindowHeightDirty) {
-                scaleY = surfaceHeight > 0 ? glWindowHeight / (float) surfaceHeight : (float) glWindowHeight;
-            }
-        }
-
-        // fill buffers with sample data and marker
+        // get samples from processing buffer and check if it's valid
         if (samples == null || samples.length != processingBuffer.getData().length) {
             samples = new short[processingBuffer.getData().length];
         }
         System.arraycopy(processingBuffer.getData(), 0, samples, 0, samples.length);
+        // check if we have a valid buffer after filling it
+        if (samples.length <= 0) return;
+
+        // samples are OK, we can move on
+
+        // get markers from processing buffer and check if it's valid
         if (markers == null || markers.length != processingBuffer.getEvents().length) {
             markers = new String[processingBuffer.getEvents().length];
         }
         System.arraycopy(processingBuffer.getEvents(), 0, markers, 0, markers.length);
 
-        // check if we have a valid buffer after filling it
+        if (surfaceSizeDirty || glWindowWidthDirty) {
+            scaleX = surfaceWidth > 0 ? glWindowWidth / (float) surfaceWidth : (float) glWindowWidth;
+        }
+        if (surfaceSizeDirty || glWindowHeightDirty) {
+            scaleY = surfaceHeight > 0 ? glWindowHeight / (float) surfaceHeight : (float) glWindowHeight;
+        }
+
         final int sampleCount = samples.length;
-        if (sampleCount <= 0) return;
 
         // calculate necessary drawing parameters
         int drawStartIndex = Math.max(sampleCount - glWindowWidth, -glWindowWidth);
         if (drawStartIndex + glWindowWidth > sampleCount) drawStartIndex = sampleCount - glWindowWidth;
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
-        // calculate necessary measurement parameters
-        if (measurementStartX > 0 && measurementX > 0) {
-            final int drawSampleCount = drawEndIndex - drawStartIndex;
-            final float coefficient = drawSampleCount * 1f / surfaceWidth;
-            final int measureStartIndex = Math.round(measurementStartX * coefficient);
-            final int measureEndIndex = Math.round(measurementX * coefficient);
-            final int measureSampleCount = Math.abs(measureEndIndex - measureStartIndex);
-            if (rmsSamples == null || drawSampleCount != this.drawSampleCount) {
-                this.drawSampleCount = drawSampleCount;
-                rmsSamples = new short[drawSampleCount];
-            }
-            final int startIndex = Math.min(measureStartIndex, measureEndIndex);
-            final int measureFirstSampleIndex = drawStartIndex + startIndex;
-            System.arraycopy(samples, measureFirstSampleIndex, rmsSamples, 0, measureSampleCount);
-            final float rms = AnalysisUtils.RMS(rmsSamples, measureSampleCount) * RMS_QUANTIFIER;
-
-            if (callback != null) callback.onMeasure(Float.isNaN(rms) ? 0f : rms, measureSampleCount);
-        }
-
-        // invoke callback that the surface is about to be drawn
-        if (callback != null) callback.onDraw(glWindowWidth, glWindowHeight);
-
+        // construct waveform vertices and populate markers buffer
         final SparseArray<String> markersBuffer = new SparseArray<>();
         final float[] waveformVertices =
             getWaveformVertices(samples, markers, markersBuffer, glWindowWidth, drawStartIndex, drawEndIndex);
@@ -339,33 +290,35 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         //autoScaleCheck(samples);
 
-        gl.glMatrixMode(GL10.GL_MODELVIEW);
-        gl.glLoadIdentity();
-
         // draw on surface
-        drawingHandler(gl, waveformVertices, markersBuffer, glWindowWidth, glWindowHeight, scaleX, scaleY);
+        draw(gl, samples, waveformVertices, markersBuffer, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
+            drawStartIndex, drawEndIndex, scaleX, scaleY);
+
+        // invoke callback that the surface has been drawn
+        if (callback != null) callback.onDraw(glWindowWidth, glWindowHeight);
+
         //LOGD(TAG, "" + (System.currentTimeMillis() - start));
         //LOGD(TAG, "================================================");
     }
 
-    private void initDrawSurface(GL10 gl, int glWindowHorizontalSize, int glWindowVerticalSize,
-        boolean updateProjection) {
+    private void initDrawSurface(GL10 gl, int glWindowWidth, int glWindowHeight, boolean updateProjection) {
         BYBGlUtils.glClear(gl);
         if (updateProjection) {
-            float heightHalf = glWindowVerticalSize * .5f;
+            float heightHalf = glWindowHeight * .5f;
             gl.glMatrixMode(GL10.GL_PROJECTION);
             gl.glLoadIdentity();
-            gl.glOrthof(0f, glWindowHorizontalSize - 1, -heightHalf, heightHalf, -1f, 1f);
+            gl.glOrthof(0f, glWindowWidth - 1, -heightHalf, heightHalf, -1f, 1f);
         }
     }
 
-    abstract protected void drawingHandler(GL10 gl, @NonNull float[] waveformVertices,
-        @NonNull SparseArray<String> markers, int glWindowWidth, int glWindowHeight, float scaleX, float scaleY);
+    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
 
     protected void onMeasurementStart(float x) {
     }
 
-    protected void onMeasurement(float dx) {
+    protected void onMeasure(float x) {
     }
 
     protected void onMeasurementEnd(float x) {
@@ -392,35 +345,15 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     }
 
     void startMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            measurementX = x;
-            measurementStartX = x;
-
-            onMeasurementStart(x);
-
-            if (callback != null) callback.onMeasurementStart();
-        }
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementStart(x);
     }
 
     void measure(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            float dx = x - measurementX;
-
-            onMeasurement(dx);
-
-            measurementX = x;
-        }
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasure(x);
     }
 
     void endMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            onMeasurementEnd(x);
-
-            measurementX = 0;
-            measurementStartX = 0;
-
-            if (callback != null) callback.onMeasurementEnd();
-        }
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementEnd(x);
     }
 
     @NonNull protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,

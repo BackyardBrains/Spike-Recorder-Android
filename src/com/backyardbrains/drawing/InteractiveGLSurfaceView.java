@@ -73,10 +73,10 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
     BYBBaseRenderer renderer;
 
-    // Whether we are currently scrolling
-    boolean scrolling = true;
-    // Whether we are waiting for long press to start measurement
-    boolean waitingForLongPress = false;
+    private boolean bZoomButtonsEnabled = false;
+    float scalingFactor = 0.5f;
+    float scalingFactorOut;
+    float scalingFactorIn;
 
     // Implementation of long press
     private abstract static class LongPressRunnable implements Runnable {
@@ -88,6 +88,11 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
     }
 
+    // Whether we are waiting for long press to start measurement
+    boolean waitingForLongPress = false;
+    // Whether we are currently scrolling
+    boolean scrolling = true;
+
     private final Handler handler = new Handler();
     private final LongPressRunnable longPress = new LongPressRunnable() {
         @Override public void run() {
@@ -98,11 +103,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             }
         }
     };
-
-    private boolean bZoomButtonsEnabled = false;
-    float scalingFactor = 0.5f;
-    float scalingFactorOut;
-    float scalingFactorIn;
 
     public InteractiveGLSurfaceView(Context context) {
         this(context, null);

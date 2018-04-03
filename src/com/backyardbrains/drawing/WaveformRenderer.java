@@ -49,9 +49,9 @@ public class WaveformRenderer extends BYBBaseRenderer {
         glEventMarker = new GlEventMarker(context, gl);
     }
 
-    @Override
-    protected void drawingHandler(GL10 gl, @NonNull float[] waveformVertices, @NonNull SparseArray<String> markers,
-        int glWindowWidth, int glWindowHeight, float scaleX, float scaleY) {
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
 
         // draw waveform
         glWaveform.draw(gl, waveformVertices);

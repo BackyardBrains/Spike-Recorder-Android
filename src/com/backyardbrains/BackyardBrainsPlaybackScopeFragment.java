@@ -193,7 +193,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(this, preparedBuffer);
-        renderer.setCallback(new BYBBaseRenderer.Callback() {
+        renderer.setCallback(new SeekableWaveformRenderer.Callback() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 // we need to call it on UI thread because renderer is drawing on background thread

@@ -92,10 +92,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
-    @Override
-    protected void drawingHandler(GL10 gl, @NonNull float[] waveformVertices, @NonNull SparseArray<String> markers,
-        int glWindowWidth, int glWindowHeight, float scaleX, float scaleY) {
-        super.drawingHandler(gl, waveformVertices, markers, glWindowWidth, glWindowHeight, scaleX, scaleY);
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
+        super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
+            drawStartIndex, drawEndIndex, scaleX, scaleY);
         if (getSpikes()) {
             //long start = System.currentTimeMillis();
 
