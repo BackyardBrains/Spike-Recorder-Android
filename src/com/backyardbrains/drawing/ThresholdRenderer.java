@@ -24,10 +24,8 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
-import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -85,8 +83,8 @@ public class ThresholdRenderer extends WaveformRenderer {
         updateThresholdHandle();
     }
 
-    @Override public void setGlWindowVerticalSize(int newSize) {
-        super.setGlWindowVerticalSize(newSize);
+    @Override public void setGlWindowHeight(int newSize) {
+        super.setGlWindowHeight(newSize);
 
         updateThresholdHandle();
     }
@@ -103,24 +101,25 @@ public class ThresholdRenderer extends WaveformRenderer {
         PrefUtils.setThreshold(context, getClass(), threshold);
     }
 
-    @Override protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, SparseArray<String> markerBuffer,
-        int glWindowHorizontalSize) {
-        if (getGlWindowHorizontalSize() > sampleBuffer.length) setGlWindowHorizontalSize(sampleBuffer.length);
+    @NonNull @Override protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
+        @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
+        if (glWindowWidth > samples.length) setGlWindowWidth(samples.length);
+        glWindowWidth = getGlWindowWidth();
 
-        float[] arr = new float[getGlWindowHorizontalSize() * 2]; // array to fill
+        float[] arr = new float[glWindowWidth * 2]; // array to fill
         int j = 0; // index of arr
         try {
-            int start = (sampleBuffer.length - getGlWindowHorizontalSize()) / 2;
-            int end = (sampleBuffer.length + getGlWindowHorizontalSize()) / 2;
-            for (int i = start; i < end && i < sampleBuffer.length; i++) {
+            int start = (int) ((samples.length - glWindowWidth) * .5);
+            int end = (int) ((samples.length + glWindowWidth) * .5);
+            for (int i = start; i < end && i < samples.length; i++) {
                 arr[j++] = i - start;
-                arr[j++] = sampleBuffer[i];
+                arr[j++] = samples[i];
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             Log.e(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
-        return BYBUtils.getFloatBufferFromFloatArray(arr, arr.length);
+        return arr;
     }
 
     private void updateThresholdHandle() {

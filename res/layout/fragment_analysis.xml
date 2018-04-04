@@ -18,7 +18,7 @@
         android:id="@+id/pb_waiting"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="@dimen/activity_vertical_margin_half"
         android:visibility="gone"
         app:layout_constraintVertical_chainStyle="packed"
         app:layout_constraintLeft_toLeftOf="@+id/fl_container"

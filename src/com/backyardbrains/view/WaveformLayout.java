@@ -37,7 +37,6 @@ public class WaveformLayout extends ConstraintLayout {
     @BindView(R.id.ibtn_zoom_out_v) ImageButton ibtnZoomOutVertically;
 
     private InteractiveGLSurfaceView glSurface;
-    private BYBBaseRenderer renderer;
     protected BYBZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
 
     private float millivolts;

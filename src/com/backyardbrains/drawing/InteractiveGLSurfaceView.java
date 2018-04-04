@@ -19,21 +19,25 @@
 
 package com.backyardbrains.drawing;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
+import android.view.ViewConfiguration;
 import com.backyardbrains.BackyardBrainsApplication;
 import com.backyardbrains.view.BYBZoomButton;
 import com.backyardbrains.view.BybScaleListener;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.view.MotionEvent.TOOL_TYPE_FINGER;
 import static android.view.MotionEvent.TOOL_TYPE_MOUSE;
@@ -44,6 +48,9 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class InteractiveGLSurfaceView extends GLSurfaceView {
 
     @SuppressWarnings("unused") private static final String TAG = makeLogTag(InteractiveGLSurfaceView.class);
+
+    private static final int LONG_PRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
+    private static final int LONG_PRESS_X_OFFSET = 3;
 
     public static final int MODE_ZOOM_IN_H = 0;
     public static final int MODE_ZOOM_OUT_H = 1;
@@ -56,15 +63,11 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     protected GestureDetector scrollDetector;
     protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
 
-        @Override public boolean onDown(MotionEvent e) {
-            renderer.startAddToGlOffset();
-            return true;
-        }
-
         @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            // Updates the viewport, refreshes the display.
-            renderer.addToGlOffset(-distanceX, distanceY);
-            return true;
+            // if we are currently scrolling update the viewport and refresh the display
+            if (scrolling) renderer.scroll(-distanceX);
+
+            return scrolling;
         }
     };
 
@@ -74,6 +77,32 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     float scalingFactor = 0.5f;
     float scalingFactorOut;
     float scalingFactorIn;
+
+    // Implementation of long press
+    private abstract static class LongPressRunnable implements Runnable {
+
+        AtomicInteger eventX = new AtomicInteger();
+
+        void setEventX(int x) {
+            this.eventX.set(x);
+        }
+    }
+
+    // Whether we are waiting for long press to start measurement
+    boolean waitingForLongPress = false;
+    // Whether we are currently scrolling
+    boolean scrolling = true;
+
+    private final Handler handler = new Handler();
+    private final LongPressRunnable longPress = new LongPressRunnable() {
+        @Override public void run() {
+            if (waitingForLongPress) {
+                waitingForLongPress = false;
+                scrolling = false;
+                renderer.startMeasurements(eventX.get());
+            }
+        }
+    };
 
     public InteractiveGLSurfaceView(Context context) {
         this(context, null);
@@ -115,6 +144,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         scaleListener = new BybScaleListener(renderer);
         scaleDetector = new ScaleGestureDetector(getContext(), scaleListener);
         scrollDetector = new GestureDetector(getContext(), scrollListener);
+        scrollDetector.setIsLongpressEnabled(false);
 
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
@@ -145,8 +175,9 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         super.surfaceDestroyed(holder);
     }
 
-    @Override public boolean onTouchEvent(MotionEvent event) {
-        if (event.getPointerCount() > 0) {
+    @SuppressLint("ClickableViewAccessibility") @Override public boolean onTouchEvent(final MotionEvent event) {
+        int pointerCount = event.getPointerCount();
+        if (pointerCount > 0) {
             switch (event.getToolType(0)) {
                 case TOOL_TYPE_UNKNOWN:
                 case TOOL_TYPE_STYLUS:
@@ -159,18 +190,54 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             }
         }
         if (renderer != null) {
-            if (scaleDetector != null) {
-                scaleDetector.onTouchEvent(event);
-                if (scaleDetector.isInProgress()) return true;
-            }
-            if (scrollDetector != null) {
-                if (!scrollDetector.onTouchEvent(event) && event.getAction() == MotionEvent.ACTION_UP) {
-                    renderer.endAddToGlOffset();
+            if (scaleDetector != null && scaleDetector.onTouchEvent(event) && scaleDetector.isInProgress()) {
+                scrolling = false;
+                renderer.endScroll();
+                waitingForLongPress = false;
+                handler.removeCallbacks(longPress);
+                return true;
+            } else if (scrollDetector != null && pointerCount == 1 && !scrollDetector.onTouchEvent(event)) {
+                // pass latest pointer x to long press runnable
+                longPress.setEventX((int) event.getX());
+                // and manually handle the event.
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        // start scrolling
+                        scrolling = true;
+                        renderer.endMeasurements(event.getX());
+                        renderer.startScroll();
+                        // and start waiting for long-press
+                        waitingForLongPress = true;
+                        handler.postDelayed(longPress, LONG_PRESS_TIMEOUT);
+                        prevX = event.getX();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        // if we moved before long press, stop waiting for it
+                        if (waitingForLongPress && Math.abs(prevX - event.getX()) > LONG_PRESS_X_OFFSET) {
+                            waitingForLongPress = false;
+                            handler.removeCallbacks(longPress);
+                        }
+                        // otherwise if we're not scrolling it means we are in measurement
+                        if (!scrolling) renderer.measure(event.getX());
+
+                        prevX = event.getX();
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                    case MotionEvent.ACTION_UP:
+                        // reset all flags
+                        scrolling = false;
+                        renderer.endScroll();
+                        waitingForLongPress = false;
+                        handler.removeCallbacks(longPress);
+                        break;
                 }
             }
         }
+
         return true;
     }
+
+    float prevX;
 
     //==============================================
     //  PRIVATE METHODS
@@ -190,9 +257,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     private void scaleRenderer(int zoomMode) {
-        if (renderer != null) {
-            scaleRenderer(renderer.getSurfaceWidth() * 0.5f, zoomMode);
-        }
+        if (renderer != null) scaleRenderer(renderer.getSurfaceWidth() * 0.5f, zoomMode);
     }
 
     private void scaleRenderer(float focusX, int zoomMode) {
@@ -204,10 +269,9 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                 scaling = scalingFactorOut;
             }
             if (isScalingHorizontally(zoomMode)) {
-                renderer.setGlWindowHorizontalSize((int) (renderer.getGlWindowHorizontalSize() * scaling));
-                renderer.setScaleFocusX(focusX);
+                renderer.setGlWindowWidth((int) (renderer.getGlWindowWidth() * scaling));
             } else {
-                renderer.setGlWindowVerticalSize((int) (renderer.getGlWindowVerticalSize() * scaling));
+                renderer.setGlWindowHeight((int) (renderer.getGlWindowHeight() * scaling));
             }
         }
     }

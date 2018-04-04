@@ -63,18 +63,25 @@ public class ProcessingBuffer {
     }
 
     /**
+     * Returns buffer size.
+     */
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
+    /**
      * Returns an array of shorts that are representing the sample data.
      *
      * @return a ordinate-corrected version of the audio buffer
      */
-    public short[] getData() {
+    @NonNull public short[] getData() {
         return sampleBuffer != null ? sampleBuffer.getArray() : new short[0];
     }
 
     /**
      * Returns an array of Strings that are representing all the events accompanying sames data.
      */
-    public String[] getEvents() {
+    @NonNull public String[] getEvents() {
         return eventBuffer != null ? eventBuffer.getArray() : new String[0];
     }
 

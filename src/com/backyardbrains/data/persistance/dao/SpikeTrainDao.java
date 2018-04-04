@@ -17,6 +17,9 @@ import java.util.List;
     @Query("SELECT id, analysis_id, value, `index`, time FROM spikes INNER JOIN spike_trains ON spikes.id = spike_trains.spike_id WHERE spike_trains.train_id = :trainId ORDER BY spikes.`index`")
     Spike[] loadSpikes(long trainId);
 
+    @Query("SELECT id, analysis_id, value, `index`, time FROM spikes INNER JOIN spike_trains ON spikes.id = spike_trains.spike_id WHERE spike_trains.train_id = :trainId AND spikes.`index` >= :startIndex AND spikes.`index` <= :endIndex ORDER BY spikes.`index`")
+    Spike[] loadSpikesForRange(long trainId, int startIndex, int endIndex);
+
     @Query("SELECT time FROM spikes INNER JOIN spike_trains ON spikes.id = spike_trains.spike_id WHERE spike_trains.train_id = :trainId ORDER BY spikes.`index`")
     float[] loadSpikeTimes(long trainId);
 

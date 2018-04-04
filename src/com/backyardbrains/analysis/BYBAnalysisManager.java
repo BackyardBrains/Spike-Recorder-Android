@@ -14,9 +14,9 @@ import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
+import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
@@ -43,10 +43,6 @@ public class BYBAnalysisManager {
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
     @SuppressWarnings("WeakerAccess") InterSpikeInterval[][] isi;
     @SuppressWarnings("WeakerAccess") AverageSpike[] averageSpikes;
-
-    private BYBAverageSpikeAnalysis averageSpikeAnalysis;
-    boolean bProcessAverageSpike = false;
-    boolean bAverageSpikeDone = false;
 
     public BYBAnalysisManager(@NonNull Context context) {
         analysisRepository = AnalysisRepository.get(SpikeRecorderDatabase.get(context));
@@ -99,6 +95,13 @@ public class BYBAnalysisManager {
     public void getSpikes(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
         analysisRepository.getSpikeAnalysis(filePath, callback);
+    }
+
+    /**
+     * Returns arrays of spikes sorted by trains for the specified range.
+     */
+    public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
+        return analysisRepository.getSpikesByTrainsForRange(filePath, startIndex, endIndex);
     }
 
     /**
@@ -328,19 +331,18 @@ public class BYBAnalysisManager {
     @SuppressWarnings("WeakerAccess") void crossCorrelationAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "crossCorrelationAnalysis()");
-        new BYBCrossCorrelationAnalysis(filePath, spikeAnalysisByTrains,
-            new BYBBaseAnalysis.AnalysisListener<int[]>() {
-                @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
-                    crossCorrelation = results;
-                    // post event that audio file analysis successfully finished
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.CROSS_CORRELATION));
-                }
+        new BYBCrossCorrelationAnalysis(filePath, spikeAnalysisByTrains, new BYBBaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
+                crossCorrelation = results;
+                // post event that audio file analysis successfully finished
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.CROSS_CORRELATION));
+            }
 
-                @Override public void onAnalysisFailed(@NonNull String filePath) {
-                    // post event that audio file analysis failed
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
-                }
-            }).startAnalysis();
+            @Override public void onAnalysisFailed(@NonNull String filePath) {
+                // post event that audio file analysis failed
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.CROSS_CORRELATION));
+            }
+        }).startAnalysis();
     }
 
     //=================================================

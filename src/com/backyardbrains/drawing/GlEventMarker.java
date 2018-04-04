@@ -14,7 +14,7 @@ import javax.microedition.khronos.opengles.GL10;
  *
  * @author Tihomir Leka <ticapeca at gmail.com.
  */
-public class EventMarker {
+public class GlEventMarker {
 
     private static final float[][] MARKER_COLORS = new float[][] {
         new float[] { .847f, .706f, .906f, 1f }, new float[] { 1f, .314f, 0f, 1f }, new float[] { 1f, .925f, .58f, 1f },
@@ -33,7 +33,7 @@ public class EventMarker {
     private final ShortBuffer indicesBuffer;
     private final GLText text;
 
-    EventMarker(@NonNull Context context, @NonNull GL10 gl) {
+    GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
         ByteBuffer lineVBB = ByteBuffer.allocateDirect(LINE_VERTICES_COUNT * 4);
         lineVBB.order(ByteOrder.nativeOrder());
         lineVFB = lineVBB.asFloatBuffer();

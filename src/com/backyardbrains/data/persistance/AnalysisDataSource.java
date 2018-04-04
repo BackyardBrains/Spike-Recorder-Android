@@ -31,6 +31,8 @@ public interface AnalysisDataSource {
 
     void getSpikeAnalysis(@NonNull String filePath, @Nullable GetAnalysisCallback<Spike[]> callback);
 
+    Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex);
+
     void getSpikeAnalysisByTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<Spike[][]> callback);
 
     void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,

@@ -3,7 +3,6 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
@@ -12,9 +11,6 @@ import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
-import java.nio.FloatBuffer;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -30,41 +26,28 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final int SECONDS_TO_RENDER = 12;
 
-    private float focusX;
-    private float scaledFocusX;
-    private float normalizedFocusX;
-    private int focusedSample;
-
-    private boolean bZooming;
-    private boolean bPanning;
-    private float panningDx;
+    private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 12 sec
 
     private ProcessingBuffer processingBuffer;
 
-    short[] drawingBuffer;
     private float[] tempBufferToDraws;
-    String[] markers;
+    private short[] samples;
+    private String[] markers;
 
-    private int glWindowHorizontalSize = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
-    private int glWindowVerticalSize = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
-    private boolean glWindowSizeDirty;
     private int surfaceWidth;
     private int surfaceHeight;
+    private boolean surfaceSizeDirty;
+    private int glWindowWidth = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
+    private int glWindowHeight = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
+    private boolean glWindowWidthDirty;
+    private boolean glWindowHeightDirty;
+    private float scaleX;
+    private float scaleY;
+
     private boolean autoScale;
-    // Prevents buffer to update while preparing samples for drawing
-    private AtomicBoolean processing = new AtomicBoolean(false);
 
-    private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 6 sec
-
-    private int minGlWindowHorizontalSize = (int) (AudioUtils.SAMPLE_RATE * .0002); // 0.2 millis
+    private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
     private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
-
-    private boolean bShowScalingAreaX;
-    private int scalingAreaStartX;
-    private int scalingAreaEndX;
-    private boolean bShowScalingAreaY;
-    private int scalingAreaStartY;
-    private int scalingAreaEndY;
 
     private Callback callback;
 
@@ -135,53 +118,47 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     public void setSampleRate(int sampleRate) {
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         MAX_SAMPLES_COUNT = sampleRate * SECONDS_TO_RENDER;
-        minGlWindowHorizontalSize = (int) (sampleRate * .0002);
+        minGlWindowWidth = (int) (sampleRate * .0004);
         tempBufferToDraws = initTempBuffer();
 
-        // recalculate GlWindowHorizontalSize
-        int newSize = glWindowHorizontalSize;
-        if (glWindowHorizontalSize < minGlWindowHorizontalSize) newSize = minGlWindowHorizontalSize;
-        if (drawingBuffer != null) {
-            final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
-            if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
-        }
-        // save new GL windows width
-        glWindowHorizontalSize = newSize;
+        // recalculate width of the GL window
+        int newSize = glWindowWidth;
+        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
+        if (newSize > processingBuffer.getBufferSize()) newSize = processingBuffer.getBufferSize();
+        // save new GL window
+        glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
-        glWindowSizeDirty = true;
+        glWindowWidthDirty = true;
     }
 
-    public void setGlWindowHorizontalSize(int newSize) {
-        if (newSize < 0 || newSize == glWindowHorizontalSize) return;
+    public void setGlWindowWidth(int newSize) {
+        if (newSize < 0 || newSize == glWindowWidth) return;
 
-        if (newSize < minGlWindowHorizontalSize) newSize = minGlWindowHorizontalSize;
-        if (drawingBuffer != null) {
-            final int maxLength = Math.min(drawingBuffer.length, MAX_SAMPLES_COUNT);
-            if (maxLength > 0 && newSize > maxLength) newSize = maxLength;
-        }
+        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
+        if (newSize > processingBuffer.getBufferSize()) newSize = processingBuffer.getBufferSize();
         // save new GL windows width
-        glWindowHorizontalSize = newSize;
+        glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
-        glWindowSizeDirty = true;
+        glWindowWidthDirty = true;
     }
 
-    public int getGlWindowHorizontalSize() {
-        return glWindowHorizontalSize;
+    public int getGlWindowWidth() {
+        return glWindowWidth;
     }
 
-    public void setGlWindowVerticalSize(int newSize) {
-        if (newSize < 0 || newSize == glWindowVerticalSize) return;
+    public void setGlWindowHeight(int newSize) {
+        if (newSize < 0 || newSize == glWindowHeight) return;
         if (newSize < MIN_GL_VERTICAL_SIZE) newSize = MIN_GL_VERTICAL_SIZE;
         if (newSize > PCM_MAXIMUM_VALUE) newSize = PCM_MAXIMUM_VALUE;
 
         // save new GL windows height
-        glWindowVerticalSize = newSize;
+        glWindowHeight = newSize;
         // set GL window size dirty so we can recalculate projection
-        glWindowSizeDirty = true;
+        glWindowHeightDirty = true;
     }
 
-    public int getGlWindowVerticalSize() {
-        return glWindowVerticalSize;
+    public int getGlWindowHeight() {
+        return glWindowHeight;
     }
 
     int getSurfaceWidth() {
@@ -190,20 +167,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     int getSurfaceHeight() {
         return surfaceHeight;
-    }
-
-    float getScaleX(int glWindowHorizontalSize) {
-        return surfaceWidth > 0 ? glWindowHorizontalSize / (float) surfaceWidth : (float) glWindowHorizontalSize;
-    }
-
-    float getScaleY(int glWindowVerticalSize) {
-        return surfaceHeight > 0 ? glWindowVerticalSize / (float) surfaceHeight : (float) glWindowVerticalSize;
-    }
-
-    public void setScaleFocusX(float fx) {
-        focusX = fx;
-        bZooming = true;
-        bPanning = false;
     }
 
     //==============================================
@@ -218,10 +181,11 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
-        setGlWindowHorizontalSize(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowVerticalSize(PrefUtils.getGlWindowVerticalSize(context, BYBBaseRenderer.class));
+        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
+        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, BYBBaseRenderer.class));
         surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
         surfaceHeight = PrefUtils.getViewportHeight(context, BYBBaseRenderer.class);
+        surfaceSizeDirty = true;
         setAutoScale(PrefUtils.getAutoScale(context, getClass()));
         minimumDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
@@ -234,8 +198,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
-        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowHorizontalSize);
-        PrefUtils.setGlWindowVerticalSize(context, BYBBaseRenderer.class, glWindowVerticalSize);
+        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
+        PrefUtils.setGlWindowVerticalSize(context, BYBBaseRenderer.class, glWindowHeight);
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
         PrefUtils.setViewportHeight(context, BYBBaseRenderer.class, surfaceHeight);
         PrefUtils.setAutoScale(context, getClass(), autoScale);
@@ -253,6 +217,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         gl.glDepthFunc(GL10.GL_LEQUAL);
         gl.glEnable(GL10.GL_DEPTH_TEST);
         gl.glEnable(GL10.GL_LINE_SMOOTH);
+        gl.glEnable(GL10.GL_POINT_SMOOTH);
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
@@ -261,200 +226,188 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         LOGD(TAG, "onSurfaceCreated()");
         gl.glViewport(0, 0, width, height);
-        prepareForDrawing(gl);
-        gl.glMatrixMode(GL10.GL_PROJECTION);
-        gl.glLoadIdentity();
-        float heightHalf = glWindowVerticalSize * .5f;
-        gl.glOrthof(0, glWindowHorizontalSize, -heightHalf, heightHalf, -1f, 1f);
-        gl.glRotatef(0f, 0f, 0f, 1f);
+        initDrawSurface(gl, glWindowWidth, glWindowHeight, true);
 
-        this.surfaceWidth = width;
-        this.surfaceHeight = height;
+        // save new surface width and height
+        surfaceWidth = width;
+        surfaceHeight = height;
+        // set surface size dirty so we can recalculate scale
+        surfaceSizeDirty = true;
     }
 
     @Override public void onDrawFrame(GL10 gl) {
         //long start = System.currentTimeMillis();
-        //LOGD(TAG, "START");
-        if (!fillBuffer()) {
-            LOGD(TAG, "Can't fill audio buffer!");
-            return;
-        }
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER fillBuffer()");
-        if (!BYBUtils.isValidBuffer(drawingBuffer)) {
-            LOGD(TAG, "Invalid audio buffer!");
-            return;
-        }
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER isValidBuffer()");
 
-        if (callback != null) callback.onDraw(glWindowHorizontalSize, glWindowVerticalSize);
+        final boolean surfaceSizeDirty = this.surfaceSizeDirty;
+        final int surfaceWidth = this.surfaceWidth;
+        final int surfaceHeight = this.surfaceHeight;
+        final boolean glWindowWidthDirty = this.glWindowWidthDirty;
+        final boolean glWindowHeightDirty = this.glWindowHeightDirty;
+        final int glWindowWidth = this.glWindowWidth;
+        final int glWindowHeight = this.glWindowHeight;
 
-        preDrawingHandler();
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER preDrawingHandler()");
-        prepareForDrawing(gl);
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER prepareForDrawing()");
-        drawingHandler(gl);
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER drawingHandler()");
-        postDrawingHandler(gl);
-        //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER postDrawingHandler()");
-        //LOGD(TAG, "END");
+        // let's reset dirty flags right away
+        this.glWindowWidthDirty = false;
+        this.glWindowHeightDirty = false;
+
+        // get samples from processing buffer and check if it's valid
+        if (samples == null || samples.length != processingBuffer.getData().length) {
+            samples = new short[processingBuffer.getData().length];
+        }
+        System.arraycopy(processingBuffer.getData(), 0, samples, 0, samples.length);
+        // check if we have a valid buffer after filling it
+        if (samples.length <= 0) return;
+
+        // samples are OK, we can move on
+
+        // get markers from processing buffer and check if it's valid
+        if (markers == null || markers.length != processingBuffer.getEvents().length) {
+            markers = new String[processingBuffer.getEvents().length];
+        }
+        System.arraycopy(processingBuffer.getEvents(), 0, markers, 0, markers.length);
+
+        if (surfaceSizeDirty || glWindowWidthDirty) {
+            scaleX = surfaceWidth > 0 ? glWindowWidth / (float) surfaceWidth : (float) glWindowWidth;
+        }
+        if (surfaceSizeDirty || glWindowHeightDirty) {
+            scaleY = surfaceHeight > 0 ? glWindowHeight / (float) surfaceHeight : (float) glWindowHeight;
+        }
+
+        final int sampleCount = samples.length;
+
+        // calculate necessary drawing parameters
+        int drawStartIndex = Math.max(sampleCount - glWindowWidth, -glWindowWidth);
+        if (drawStartIndex + glWindowWidth > sampleCount) drawStartIndex = sampleCount - glWindowWidth;
+        final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
+
+        // construct waveform vertices and populate markers buffer
+        final SparseArray<String> markersBuffer = new SparseArray<>();
+        final float[] waveformVertices =
+            getWaveformVertices(samples, markers, markersBuffer, glWindowWidth, drawStartIndex, drawEndIndex);
+
+        // init surface before drawing
+        initDrawSurface(gl, glWindowWidth, glWindowHeight, glWindowWidthDirty || glWindowHeightDirty);
+
+        //autoScaleCheck(samples);
+
+        // draw on surface
+        draw(gl, samples, waveformVertices, markersBuffer, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
+            drawStartIndex, drawEndIndex, scaleX, scaleY);
+
+        // invoke callback that the surface has been drawn
+        if (callback != null) callback.onDraw(glWindowWidth, glWindowHeight);
+
+        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
         //LOGD(TAG, "================================================");
     }
 
-    protected void preDrawingHandler() {
-    }
-
-    private void prepareForDrawing(GL10 gl) {
+    private void initDrawSurface(GL10 gl, int glWindowWidth, int glWindowHeight, boolean updateProjection) {
         BYBGlUtils.glClear(gl);
-        if (glWindowSizeDirty) {
-            float heightHalf = glWindowVerticalSize * .5f;
+        if (updateProjection) {
+            float heightHalf = glWindowHeight * .5f;
             gl.glMatrixMode(GL10.GL_PROJECTION);
             gl.glLoadIdentity();
-            gl.glOrthof(0f, glWindowHorizontalSize, -heightHalf, heightHalf, -1f, 1f);
-
-            glWindowSizeDirty = false;
+            gl.glOrthof(0f, glWindowWidth - 1, -heightHalf, heightHalf, -1f, 1f);
         }
     }
 
-    abstract protected void drawingHandler(GL10 gl);
+    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
 
-    protected void postDrawingHandler(GL10 gl) {
-        //if (bShowScalingAreaX || bShowScalingAreaY) {
-        //    gl.glEnable(GL10.GL_BLEND);
-        //    // Specifies pixel arithmetic
-        //    gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-        //    if (bShowScalingAreaX) {
-        //        BYBGlUtils.drawRectangle(gl, scalingAreaStartX, -getGlWindowVerticalSize(),
-        //            scalingAreaEndX - scalingAreaStartX, getGlWindowVerticalSize() * 2, 0xFFFFFF33);
-        //    } else {
-        //        BYBGlUtils.drawRectangle(gl, 0, scalingAreaStartY, getGlWindowHorizontalSize(), scalingAreaEndY,
-        //            0xFFFFFF33);
-        //    }
-        //    gl.glDisable(GL10.GL_BLEND);
-        //}
+    protected void onMeasurementStart(float x) {
+    }
+
+    protected void onMeasure(float x) {
+    }
+
+    protected void onMeasurementEnd(float x) {
     }
 
     //==============================================
     //  PRIVATE AND PACKAGE-PRIVATE METHODS
     //==============================================
 
-    void startAddToGlOffset() {
-        if (getIsPlaybackMode() && !getIsPlaying() && !getIsSeeking()) {
+    void startScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) {
             if (callback != null) callback.onHorizontalDragStart();
         }
     }
 
-    void addToGlOffset(float dx, float dy) {
-        if (getIsPlaybackMode() && !getIsPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * glWindowHorizontalSize / surfaceWidth);
-
-            //bPanning = true;
-            //panningDx = dx;
-            //bZooming = false;
+    void scroll(float dx) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            if (callback != null) callback.onHorizontalDrag(dx * glWindowWidth / surfaceWidth);
         }
     }
 
-    void endAddToGlOffset() {
-        if (getIsPlaybackMode() && !getIsPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    void endScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying()) if (callback != null) callback.onHorizontalDragEnd();
     }
 
-    // Fills buffer with sample data. Returns true if buffer is successfully filled, false otherwise.
-    private boolean fillBuffer() {
-        if (!processing.get()) {
-            drawingBuffer = processingBuffer.getData();
-            markers = processingBuffer.getEvents();
-        }
-        return true;
+    void startMeasurements(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementStart(x);
     }
 
-    @Nullable protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, int glWindowHorizontalSize) {
-        return getWaveformBuffer(sampleBuffer, new SparseArray<String>(), glWindowHorizontalSize);
+    void measure(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasure(x);
     }
 
-    @Nullable protected FloatBuffer getWaveformBuffer(short[] sampleBuffer, SparseArray<String> markerBuffer,
-        int glWindowHorizontalSize) {
+    void endMeasurements(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementEnd(x);
+    }
+
+    @NonNull protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
+        @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
-        //LOGD(TAG, "START - " + shortArrayToDraw.length);
-
-        // start preparing samples for drawing
-        processing.set(true);
-
-        boolean clearFront = getIsSeeking();
-        //Log.d(TAG, "AFTER setStartEndIndex():" + (System.currentTimeMillis() - start));
-        int j = 1;
-        int len = sampleBuffer.length;
-        int startIndex = Math.max(len - glWindowHorizontalSize, -glWindowHorizontalSize);
-        if (startIndex + glWindowHorizontalSize > len) startIndex = len - glWindowHorizontalSize;
-        int endIndex = Math.min(startIndex + glWindowHorizontalSize, len);
-        String[] markers = Arrays.copyOf(this.markers, this.markers.length);
+        //LOGD(TAG, "START - " + samples.length);
 
         try {
-            for (int i = startIndex; i < endIndex; i++) {
-                if (i < 0) {
-                    if (clearFront) tempBufferToDraws[j] = 0;
-                } else {
-                    tempBufferToDraws[j] = sampleBuffer[i];
-                }
-                //LOGD(TAG, "currentSample: " + tempBufferToDraws[j] + " - " + (System.currentTimeMillis() - start));
-
+            //boolean clearFront = getIsSeeking();
+            int j = 1;
+            for (int i = drawStartIndex; i < drawEndIndex; i++) {
+                //if (i < 0) {
+                //    if (clearFront) tempBufferToDraws[j] = 0;
+                //} else {
+                tempBufferToDraws[j] = samples[i];
+                //}
                 if (markers[i] != null) markerBuffer.put((int) tempBufferToDraws[j - 1], markers[i]);
 
                 j += 2;
             }
-            //LOGD(TAG, "AFTER for loop2:" + (System.currentTimeMillis() - start));
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, "Array size out of sync while building new waveform buffer");
             Crashlytics.logException(e);
         }
 
-        //Log.d(TAG, "AFTER postCycle():" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "END: " + (System.currentTimeMillis() - start));
 
-        final FloatBuffer fb = BYBUtils.getFloatBufferFromFloatArray(tempBufferToDraws, glWindowHorizontalSize * 2);
-
-        // mark preparing samples for drawing as finished
-        processing.set(false);
-
-        //Log.d(TAG, "AFTER getFloatBufferFromFloatArray():" + (System.currentTimeMillis() - start));
-        //LOGD(TAG, ".........................................");
-        return fb;
+        return tempBufferToDraws;
     }
 
-    private float getMinimumDetectedPCMValue() {
-        return minimumDetectedPCMValue;
+    //==============================================
+    //  AUTO-SCALE
+    //==============================================
+
+    private void autoScaleCheck(@NonNull short[] samples) {
+        if (!isAutoScale()) if (samples.length > 0) autoSetFrame(samples);
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- GL
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // ----------------------------------------------------------------------------------------
     private boolean isAutoScale() {
         return autoScale;
     }
 
-    // ----------------------------------------------------------------------------------------
     private void setAutoScale(boolean isScaled) {
         autoScale = isScaled;
     }
 
-    // ----------------------------------------------------------------------------------------
-    void autoScaleCheck() {
-        if (!isAutoScale() && drawingBuffer != null) {
-            if (drawingBuffer.length > 0) {
-                autoSetFrame(drawingBuffer);
-            }
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
     private void autoSetFrame(short[] arrayToScaleTo) {
-        //	//Log.d(TAG, "autoSetFrame");
         int theMax = 0;
         int theMin = 0;
 
-        for (int i = 0; i < arrayToScaleTo.length; i++) {
-            if (theMax < arrayToScaleTo[i]) theMax = arrayToScaleTo[i];
-            if (theMin > arrayToScaleTo[i]) theMin = arrayToScaleTo[i];
+        for (short anArrayToScaleTo : arrayToScaleTo) {
+            if (theMax < anArrayToScaleTo) theMax = anArrayToScaleTo;
+            if (theMin > anArrayToScaleTo) theMin = anArrayToScaleTo;
         }
 
         if (theMax != 0 && theMin != 0) {
@@ -465,10 +418,14 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
                 newyMax = Math.abs(theMin) * 2;
             }
             if (-newyMax > getMinimumDetectedPCMValue()) {
-                setGlWindowVerticalSize(newyMax * 2);
+                setGlWindowHeight(newyMax * 2);
             }
         }
         setAutoScale(true);
+    }
+
+    private float getMinimumDetectedPCMValue() {
+        return minimumDetectedPCMValue;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -478,20 +435,20 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     int glHeightToPixelHeight(float glHeight) {
         if (surfaceHeight <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
 
-        return BYBUtils.map(glHeight, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2, surfaceHeight, 0);
+        return BYBUtils.map(glHeight, -getGlWindowHeight() / 2, getGlWindowHeight() / 2, surfaceHeight, 0);
     }
 
     // ----------------------------------------------------------------------------------------
     public float pixelHeightToGlHeight(float pxHeight) {
-        return BYBUtils.map(pxHeight, surfaceHeight, 0, -getGlWindowVerticalSize() / 2, getGlWindowVerticalSize() / 2);
+        return BYBUtils.map(pxHeight, surfaceHeight, 0, -getGlWindowHeight() / 2, getGlWindowHeight() / 2);
     }
 
     private boolean getIsPlaybackMode() {
         return getAudioService() != null && getAudioService().isPlaybackMode();
     }
 
-    private boolean getIsPlaying() {
-        return getAudioService() != null && getAudioService().isAudioPlaying();
+    private boolean getIsNotPlaying() {
+        return getAudioService() == null || !getAudioService().isAudioPlaying();
     }
 
     private boolean getIsSeeking() {

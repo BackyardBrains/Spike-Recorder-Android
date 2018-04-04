@@ -49,8 +49,8 @@ public class BybScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureL
     @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
         if (renderer == null) return false;
 
-        sizeAtBeginningX = renderer.getGlWindowHorizontalSize();
-        sizeAtBeginningY = renderer.getGlWindowVerticalSize();
+        sizeAtBeginningX = renderer.getGlWindowWidth();
+        sizeAtBeginningY = renderer.getGlWindowHeight();
         scaleFactorX = 1.f;
         scaleFactorY = 1.f;
         scalingAxisDetermined = false;
@@ -79,13 +79,10 @@ public class BybScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureL
 
             // scale
             if (horizontalScaling) {
-                renderer.setGlWindowHorizontalSize((int) (sizeAtBeginningX * scaleFactorX));
+                renderer.setGlWindowWidth((int) (sizeAtBeginningX * scaleFactorX));
             } else {
-                renderer.setGlWindowVerticalSize((int) (sizeAtBeginningY * scaleFactorY));
+                renderer.setGlWindowHeight((int) (sizeAtBeginningY * scaleFactorY));
             }
-
-            // TODO: 3/8/2017 Not sure what this line does, it's used in playback so need to check it there
-            renderer.setScaleFocusX(detector.getFocusX());
 
             return true;
         } catch (IllegalStateException e) {
