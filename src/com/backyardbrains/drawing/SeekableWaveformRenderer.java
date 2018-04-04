@@ -28,7 +28,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private float[] redColor = BYBColors.getColorAsGlById(BYBColors.red);
     private float[] yellowColor = BYBColors.getColorAsGlById(BYBColors.yellow);
-    private float[] greenColor = BYBColors.getColorAsGlById(BYBColors.green);
+    private float[] cyanColor = BYBColors.getColorAsGlById(BYBColors.cyan);
 
     private short[] rmsSamples;
     private float drawSampleCount;
@@ -43,7 +43,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         void onMeasurementStart();
 
-        void onMeasure(float rms, int rmsSampleCount);
+        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
+            int rmsSampleCount);
 
         void onMeasurementEnd();
     }
@@ -86,6 +87,17 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
 
+        // let's save start and end sample positions that are being drawn before triggering the actual draw
+        int toSample = getAudioService() != null ? (int) getAudioService().getPlaybackProgress() : 0;
+        int fromSample = Math.max(0, toSample - glWindowWidth);
+        Spike[][] spikes = new Spike[0][];
+        if (drawSpikes()) {
+            // draw spikes
+            if (getAnalysisManager() != null) {
+                spikes = getAnalysisManager().getSpikesByTrainsForRange(filePath, fromSample, toSample);
+            }
+        }
+
         // draw measurement area
         if (measuring) {
             // calculate necessary measurement parameters
@@ -105,7 +117,21 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             // calculate RMS
             final float rms = AnalysisUtils.RMS(rmsSamples, measureSampleCount) * RMS_QUANTIFIER;
 
-            if (callback != null) callback.onMeasure(Float.isNaN(rms) ? 0f : rms, measureSampleCount);
+            int[] spikeCounts = new int[] { -1, -1, -1 };
+            for (int i = 0; i < spikes.length; i++) {
+                spikeCounts[i] = 0;
+                for (int j = 0; j < spikes[i].length; j++) {
+                    if (fromSample + startIndex <= spikes[i][j].getIndex()
+                        && spikes[i][j].getIndex() <= fromSample + startIndex + measureSampleCount) {
+                        spikeCounts[i]++;
+                    }
+                }
+            }
+
+            if (callback != null) {
+                callback.onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2],
+                    measureSampleCount);
+            }
 
             // draw measurement area
             glMeasurementArea.draw(gl, measurementStartX * scaleX, measurementEndX * scaleX, -glWindowHeight * .5f,
@@ -116,20 +142,10 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             drawStartIndex, drawEndIndex, scaleX, scaleY);
 
         if (drawSpikes()) {
-            // let's save start and end sample positions that are being drawn before triggering the actual draw
-            int toSample = getAudioService() != null ? (int) getAudioService().getPlaybackProgress() : 0;
-            int fromSample = Math.max(0, toSample - glWindowWidth);
-            // draw spikes
-            Spike[][] spikes;
-            if (getAnalysisManager() != null) {
-                spikes = getAnalysisManager().getSpikesByTrainsForRange(filePath, fromSample, toSample);
-            } else {
-                spikes = new Spike[0][];
-            }
             if (spikes.length > 0) {
                 for (int i = 0; i < spikes.length; i++) {
                     constructSpikesAndColorsBuffers(spikes[i], glWindowWidth, fromSample, toSample,
-                        i == 0 ? redColor : i == 1 ? yellowColor : greenColor);
+                        i == 0 ? redColor : i == 1 ? yellowColor : cyanColor);
                     glSpikes.draw(gl, spikesVertices, spikesColors);
                 }
             }
@@ -169,7 +185,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 long index;
 
                 for (Spike spike : spikes) {
-                    if (fromSample <= spike.getIndex() && spike.getIndex() <= toSample) {
+                    if (fromSample <= spike.getIndex() && spike.getIndex() < toSample) {
                         index = toSample - fromSample < glWindowWidth ? spike.getIndex() + glWindowWidth - toSample
                             : spike.getIndex() - fromSample;
                         arr[i++] = index;

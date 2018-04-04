@@ -35,6 +35,7 @@
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
+    <string name="template_spike_count">%1$d(%2$.1fHz)</string>
 
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>

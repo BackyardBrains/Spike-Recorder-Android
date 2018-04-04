@@ -93,19 +93,66 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     protected class RMSUpdateRunnable implements Runnable {
 
         private float rms;
+        private int firstTrainSpikeCount;
+        private float firstTrainSpikesPerSecond;
+        private int secondTrainSpikeCount;
+        private float secondTrainSpikesPerSecond;
+        private int thirdTrainSpikeCount;
+        private float thirdTrainSpikesPerSecond;
         private int sampleCount;
 
         @Override public void run() {
             tvRms.setText(String.format(getString(R.string.template_rms), rms));
             tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
+            tvSpikeCount0.setVisibility(firstTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+            tvSpikeCount0.setText(String.format(getString(R.string.template_spike_count), firstTrainSpikeCount,
+                firstTrainSpikesPerSecond));
+            tvSpikeCount1.setVisibility(secondTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+            tvSpikeCount1.setText(String.format(getString(R.string.template_spike_count), secondTrainSpikeCount,
+                secondTrainSpikesPerSecond));
+            tvSpikeCount2.setVisibility(thirdTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+            tvSpikeCount2.setText(String.format(getString(R.string.template_spike_count), thirdTrainSpikeCount,
+                thirdTrainSpikesPerSecond));
         }
 
         public void setRms(float rms) {
+            if (Float.isInfinite(rms) || Float.isNaN(rms)) {
+                this.rms = 0f;
+                return;
+            }
+
             this.rms = rms;
         }
 
         public void setSampleCount(int sampleCount) {
             this.sampleCount = sampleCount;
+        }
+
+        public void setFirstTrainSpikeCount(int firstTrainSpikeCount) {
+            this.firstTrainSpikeCount = firstTrainSpikeCount;
+
+            firstTrainSpikesPerSecond = (firstTrainSpikeCount * sampleRate) / (float) sampleCount;
+            if (Float.isInfinite(firstTrainSpikesPerSecond) || Float.isNaN(firstTrainSpikesPerSecond)) {
+                firstTrainSpikesPerSecond = 0f;
+            }
+        }
+
+        public void setSecondTrainSpikeCount(int secondTrainSpikeCount) {
+            this.secondTrainSpikeCount = secondTrainSpikeCount;
+
+            secondTrainSpikesPerSecond = (secondTrainSpikeCount * sampleRate) / (float) sampleCount;
+            if (Float.isInfinite(secondTrainSpikesPerSecond) || Float.isNaN(secondTrainSpikesPerSecond)) {
+                secondTrainSpikesPerSecond = 0f;
+            }
+        }
+
+        public void setThirdTrainSpikeCount(int thirdTrainSpikeCount) {
+            this.thirdTrainSpikeCount = thirdTrainSpikeCount;
+
+            thirdTrainSpikesPerSecond = (thirdTrainSpikeCount * sampleRate) / (float) sampleCount;
+            if (Float.isInfinite(thirdTrainSpikesPerSecond) || Float.isNaN(thirdTrainSpikesPerSecond)) {
+                thirdTrainSpikesPerSecond = 0f;
+            }
         }
     }
 
@@ -135,7 +182,9 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     @Override public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (savedInstanceState != null) sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.SAMPLE_RATE);
+        if (savedInstanceState != null) {
+            sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.SAMPLE_RATE);
+        }
         seek(sbAudioProgress.getProgress());
     }
 
@@ -228,9 +277,13 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                 tvRmsTime.setVisibility(View.VISIBLE);
             }
 
-            @Override public void onMeasure(float rms, int rmsSampleCount) {
+            @Override public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount,
+                int thirdTrainSpikeCount, int rmsSampleCount) {
                 if (getActivity() != null) {
                     rmsUpdateRunnable.setRms(rms);
+                    rmsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
+                    rmsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
+                    rmsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
                     rmsUpdateRunnable.setSampleCount(rmsSampleCount);
                     tvRms.post(rmsUpdateRunnable);
                 }
@@ -239,6 +292,9 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
             @Override public void onMeasurementEnd() {
                 tvRms.setVisibility(View.INVISIBLE);
                 tvRmsTime.setVisibility(View.INVISIBLE);
+                tvSpikeCount0.setVisibility(View.INVISIBLE);
+                tvSpikeCount1.setVisibility(View.INVISIBLE);
+                tvSpikeCount2.setVisibility(View.INVISIBLE);
             }
         });
         return renderer;
