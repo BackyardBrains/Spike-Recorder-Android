@@ -4,6 +4,7 @@ import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
+import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.MarkerUtils;
@@ -137,7 +138,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                         progress.set(raf.getFilePointer());
 
                         // update buffer capacity when switching from seeking to playing
-                        if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
                         if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
 
                         // index of the sample up to which we check the events
@@ -234,13 +234,10 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 }
 
                 // update buffer capacity when switching from playing to seeking
-                if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
                 if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
 
                 // index of the sample up to which we check the events
                 long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
-
-                LOGD(TAG, "START: " + startSampleIndex + ", END: " + endSampleIndex);
 
                 // check if there are any events in the currently read buffer
                 int len = allEvents.size();
@@ -468,22 +465,24 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected short[] processIncomingData(byte[] data, @NonNull SparseArray<String> events) {
-        int len = eventsInCurrentBatch.size();
-        for (int i = 0; i < len; i++) {
-            events.put(eventsInCurrentBatch.keyAt(i), eventsInCurrentBatch.valueAt(i));
-        }
+    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
+        short[] s = new short[0];
         if (data.length == bufferSize) {
             ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
-            return samples;
+            s = samples;
         } else if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asShortBuffer()
                 .get(seekSamples, 0, seekSamples.length);
-            return seekSamples;
+            s = seekSamples;
+        }
+        String[] e = new String[s.length];
+        int len = eventsInCurrentBatch.size();
+        for (int i = 0; i < len; i++) {
+            e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new short[0];
+        return new DataProcessor.SamplesWithMarkers(s, e);
     }
 }

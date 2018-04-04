@@ -9,6 +9,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
         classpath "io.fabric.tools:gradle:1.25.1"
+        classpath 'com.google.gms:google-services:3.1.1'
     }
 }
 
@@ -52,8 +53,8 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 51
-        versionName '1.5.9'
+        versionCode 54
+        versionName '1.5.10.2'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
@@ -85,6 +86,7 @@ ext {
     supportLibVersion = '27.1.0'
     architectureComponentsVersion = '1.0.0'
     constraintLayoutVersion = '1.0.2'
+    firebaseVersion = '11.8.0'
     butterknifeVersion = '8.8.1'
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
@@ -126,8 +128,11 @@ dependencies {
     // signal filtering
     implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
     implementation "org.apache.commons:commons-math3:$commonsMathVersion"
-    // crashlytics
+    // firebase & crashlytics
+    implementation "com.google.firebase:firebase-core:$firebaseVersion"
     implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true
     }
 }
+
+apply plugin: 'com.google.gms.google-services'

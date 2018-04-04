@@ -121,6 +121,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
                 }
             });
         }
+
         // we don't actually start the stream, it's automatically stared after connection, but we should
         // configure sample rate and num of channels at startup
         write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());

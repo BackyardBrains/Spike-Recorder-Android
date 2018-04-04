@@ -292,8 +292,25 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                         final File newFile = new File(f.getParent(), filename + ".wav");
                         // validate if file with specified name already exists
                         if (!newFile.exists()) {
+                            // get events file before renaming
+                            final File ef = RecordingUtils.getEventFile(f);
                             // rename the file
-                            if (!f.renameTo(newFile)) {
+                            if (f.renameTo(newFile)) {
+                                // we need to rename events file as well, if it exists
+                                if (ef != null) {
+                                    final File newEventsFile = RecordingUtils.createEventsFile(newFile);
+                                    if (!newEventsFile.exists()) {
+                                        // let's rename events file
+                                        if (!ef.renameTo(newEventsFile)) {
+                                            BYBUtils.showAlert(getActivity(), "Error",
+                                                getString(R.string.error_message_files_events_rename));
+                                            EventUtils.logCustom(
+                                                "Renaming events file for the given recording " + f.getPath()
+                                                    + " failed", null);
+                                        }
+                                    }
+                                }
+                            } else {
                                 if (getContext() != null) {
                                     ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
                                 }
@@ -327,8 +344,22 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                 public void onClick(DialogInterface dialog, int which) {
                     // validate if the specified file already exists
                     if (f.exists()) {
+                        // get events file before renaming
+                        final File ef = RecordingUtils.getEventFile(f);
                         // delete the file
-                        if (!f.delete()) {
+                        if (f.delete()) {
+                            // we need to delete events file as well, if it exists
+                            if (ef != null && ef.exists()) {
+                                // let's delete events file
+                                if (!ef.delete()) {
+                                    BYBUtils.showAlert(getActivity(), "Error",
+                                        getString(R.string.error_message_files_events_delete));
+                                    EventUtils.logCustom(
+                                        "Deleting events file for the given recording " + f.getPath() + " failed",
+                                        null);
+                                }
+                            }
+                        } else {
                             if (getContext() != null) {
                                 ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
                             }
