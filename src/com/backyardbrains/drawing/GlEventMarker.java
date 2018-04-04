@@ -33,6 +33,9 @@ public class GlEventMarker {
     private final ShortBuffer indicesBuffer;
     private final GLText text;
 
+    private final float[] lineVertices = new float[4];
+    private final float[] labelVertices = new float[8];
+
     GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
         ByteBuffer lineVBB = ByteBuffer.allocateDirect(LINE_VERTICES_COUNT * 4);
         lineVBB.order(ByteOrder.nativeOrder());
@@ -71,7 +74,11 @@ public class GlEventMarker {
 
         // draw line
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        lineVFB.put(new float[] { x, y0, x, y1 });
+        lineVertices[0] = x;
+        lineVertices[1] = y0;
+        lineVertices[2] = x;
+        lineVertices[3] = y1;
+        lineVFB.put(lineVertices);
         lineVFB.position(0);
         gl.glVertexPointer(2, GL10.GL_FLOAT, 0, lineVFB);
         gl.glDrawArrays(GL10.GL_LINES, 0, 2);
@@ -87,9 +94,15 @@ public class GlEventMarker {
         float labelY = y1 - LABEL_TOP * scaleY;
 
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        labelVFB.put(new float[] {
-            labelX, labelY, labelX, labelY + labelH, labelX + labelW, labelY + labelH, labelX + labelW, labelY
-        });
+        labelVertices[0] = labelX;
+        labelVertices[1] = labelY;
+        labelVertices[2] = labelX;
+        labelVertices[3] = labelY + labelH;
+        labelVertices[4] = labelX + labelW;
+        labelVertices[5] = labelY + labelH;
+        labelVertices[6] = labelX + labelW;
+        labelVertices[7] = labelY;
+        labelVFB.put(labelVertices);
         labelVFB.position(0);
         gl.glVertexPointer(2, GL10.GL_FLOAT, 0, labelVFB);
         gl.glDrawElements(GL10.GL_TRIANGLES, INDICES.length, GL10.GL_UNSIGNED_SHORT, indicesBuffer);

@@ -19,9 +19,9 @@ public interface DataProcessor {
             events = new String[0];
         }
 
-        public SamplesWithMarkers(@NonNull short[] samples) {
-            this.samples = samples;
-            this.events = new String[samples.length];
+        public SamplesWithMarkers(@NonNull String[] events) {
+            this.samples = new short[0];
+            this.events = events;
         }
 
         public SamplesWithMarkers(short[] samples, String[] events) {

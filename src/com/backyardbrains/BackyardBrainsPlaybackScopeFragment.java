@@ -39,11 +39,10 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     // Maximum time that should be processed in any given moment (in seconds)
     private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
 
-    // Runnable used for updating viewable time span number
-    final protected ViewableTimeSpanUpdateRunnable viewableTimeSpanUpdateRunnable =
-        new ViewableTimeSpanUpdateRunnable();
+    // Runnable used for updating playback seekbar
     final protected PlaybackSeekRunnable playbackSeekRunnable = new PlaybackSeekRunnable();
-    final protected RMSUpdateRunnable rmsUpdateRunnable = new RMSUpdateRunnable();
+    // Runnable used for updating selected samples measurements (RMS, spike count and spike frequency)
+    final protected MeasurementsUpdateRunnable measurementsUpdateRunnable = new MeasurementsUpdateRunnable();
 
     protected TextView tvRms;
     protected TextView tvSpikeCount0;
@@ -90,7 +89,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     /**
      * Runnable that is executed on the UI thread every time RMS of the selected samples is updated.
      */
-    protected class RMSUpdateRunnable implements Runnable {
+    protected class MeasurementsUpdateRunnable implements Runnable {
 
         private float rms;
         private int firstTrainSpikeCount;
@@ -285,13 +284,13 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
             @Override public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount,
                 int thirdTrainSpikeCount, int rmsSampleCount) {
                 if (getActivity() != null) {
-                    rmsUpdateRunnable.setRms(rms);
-                    rmsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
-                    rmsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
-                    rmsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
-                    rmsUpdateRunnable.setSampleCount(rmsSampleCount);
+                    measurementsUpdateRunnable.setRms(rms);
+                    measurementsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
+                    measurementsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
+                    measurementsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
+                    measurementsUpdateRunnable.setSampleCount(rmsSampleCount);
                     // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(rmsUpdateRunnable);
+                    getActivity().runOnUiThread(measurementsUpdateRunnable);
                 }
             }
 

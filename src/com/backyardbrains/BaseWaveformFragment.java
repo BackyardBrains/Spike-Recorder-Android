@@ -26,6 +26,10 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     private String TAG = makeLogTag(BaseWaveformFragment.class);
 
+    // Runnable used for updating viewable time span number
+    protected final ViewableTimeSpanUpdateRunnable viewableTimeSpanUpdateRunnable =
+        new ViewableTimeSpanUpdateRunnable();
+
     private WaveformLayout waveform;
     private ImageButton ibtnBack;
 
