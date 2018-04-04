@@ -37,16 +37,19 @@ public abstract class AbstractSampleSource implements SampleSource {
             while (working.get()) {
                 if (!paused.get()) {
                     if (processingBuffer.peekSize() > 0) {
-                        byte[] data = new byte[processingBuffer.peekSize()];
-                        processingBuffer.read(data, data.length, true);
+                        if (processingBufferData == null
+                            || processingBufferData.length != processingBuffer.peekSize()) {
+                            processingBufferData = new byte[processingBuffer.peekSize()];
+                        }
+                        processingBuffer.read(processingBufferData, processingBufferData.length, true);
 
                         if (listener == null) {
                             // we should process the incoming data even if there is no listener
-                            processIncomingData(data);
+                            processIncomingData(processingBufferData);
                         } else {
                             // forward received samples to OnSamplesReceivedListener
                             synchronized (listener) {
-                                listener.onSamplesReceived(processIncomingData(data));
+                                listener.onSamplesReceived(processIncomingData(processingBufferData));
                             }
                         }
                     }
@@ -69,6 +72,7 @@ public abstract class AbstractSampleSource implements SampleSource {
 
     private ProcessingThread processingThread;
     @SuppressWarnings("WeakerAccess") final CircularByteBuffer processingBuffer;
+    @SuppressWarnings("WeakerAccess") byte[] processingBufferData;
 
     private int sampleRate;
     private int channelCount;

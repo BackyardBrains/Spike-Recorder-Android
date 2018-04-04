@@ -28,7 +28,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 12 sec
 
-    private ProcessingBuffer processingBuffer;
+    private final ProcessingBuffer processingBuffer;
+    private final SparseArray<String> markersBuffer;
 
     private float[] tempBufferToDraws;
     private short[] samples;
@@ -85,6 +86,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         super(fragment);
 
         processingBuffer = ProcessingBuffer.get();
+        markersBuffer = new SparseArray<>();
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -281,7 +283,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
         // construct waveform vertices and populate markers buffer
-        final SparseArray<String> markersBuffer = new SparseArray<>();
+        markersBuffer.clear();
         final float[] waveformVertices =
             getWaveformVertices(samples, markers, markersBuffer, glWindowWidth, drawStartIndex, drawEndIndex);
 

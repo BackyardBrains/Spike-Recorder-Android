@@ -112,7 +112,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             LOGD(TAG, "START: " + drawStartIndex + ", END: " + drawEndIndex);
 
             constructSpikesAndColorsBuffers(glWindowWidth, fromSample, toSample);
-            glSpikes.draw(gl, spikesVertices, spikesColors);
+            glSpikes.draw(gl, spikesVertices, spikesColors, spikesVertices.length);
 
             //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER DRAWING SPIKES");
         }

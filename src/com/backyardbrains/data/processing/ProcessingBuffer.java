@@ -14,13 +14,13 @@ public class ProcessingBuffer {
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
     //
-    private static final int DEFAULT_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
+    public static final int MAX_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
 
     private static ProcessingBuffer INSTANCE;
 
     private SampleBuffer sampleBuffer;
     private RingBuffer<String> eventBuffer;
-    private int bufferSize = DEFAULT_BUFFER_SIZE;
+    private int bufferSize = MAX_BUFFER_SIZE;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {

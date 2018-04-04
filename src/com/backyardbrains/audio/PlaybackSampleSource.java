@@ -14,6 +14,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,13 +29,20 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSampleSource.class);
 
-    // Audio playback thread
-    private PlaybackThread playbackThread;
+    private static final int MAX_EVENTS_IN_BATCH_COUNT = AudioUtils.SAMPLE_RATE * 6;
+    private static final String[] EVENT_INIT_BUFFER = new String[MAX_EVENTS_IN_BATCH_COUNT];
+
+    static {
+        Arrays.fill(EVENT_INIT_BUFFER, null);
+    }
 
     // Path to the audio file
     private final String filePath;
     // Whether file should start playing right away
     private final boolean autoPlay;
+
+    // Audio playback thread
+    private PlaybackThread playbackThread;
 
     // Size of buffer (chunk) for the audio file reading
     @SuppressWarnings("WeakerAccess") int bufferSize;
@@ -44,6 +52,10 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     @SuppressWarnings("WeakerAccess") short[] seekSamples;
     // Buffer that holds samples while playing
     @SuppressWarnings("WeakerAccess") short[] samples;
+    // Buffer that holds events while seeking
+    @SuppressWarnings("WeakerAccess") String[] seekEvents;
+    // Buffer that holds events while playing
+    @SuppressWarnings("WeakerAccess") String[] events;
     // Collection of events within currently processed data batch
     @SuppressWarnings("WeakerAccess") SparseArray<String> eventsInCurrentBatch = new SparseArray<>();
 
@@ -111,9 +123,11 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 seekBuffer = new byte[seekBufferSize];
                 seekSamples = new short[(int) (seekBufferSize * .5)];
+                seekEvents = new String[seekSamples.length];
 
                 final byte[] buffer = new byte[bufferSize];
                 samples = new short[(int) (bufferSize * .5)];
+                events = new String[samples.length];
                 while (working.get() && raf != null) {
                     if (playing.get()) {
                         // if we are playing after seek we need to fix it because of the different buffer sizes
@@ -238,8 +252,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 // index of the sample up to which we check the events
                 long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
-
-                //LOGD(TAG, "START: " + startSampleIndex + ", END: " + endSampleIndex);
 
                 // check if there are any events in the currently read buffer
                 int len = allEvents.size();
@@ -468,18 +480,21 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     }
 
     @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
-        short[] s = new short[0];
-        if (data.length == bufferSize) {
-            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
-            s = samples;
-        } else if (data.length == seekBufferSize) {
+        short[] s;
+        String[] e;
+        if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asShortBuffer()
                 .get(seekSamples, 0, seekSamples.length);
             s = seekSamples;
+            e = seekEvents;
+        } else {
+            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
+            s = samples;
+            e = events;
         }
-        String[] e = new String[s.length];
+        System.arraycopy(EVENT_INIT_BUFFER, 0, e, 0, e.length);
         int len = eventsInCurrentBatch.size();
         for (int i = 0; i < len; i++) {
             e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);

@@ -2,6 +2,7 @@ package com.backyardbrains.data.persistance.source;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.dao.SpikeAnalysisDao;
 import com.backyardbrains.data.persistance.dao.SpikeDao;
@@ -152,88 +153,14 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
-     * @param filePath Absolute path of the audio file for which we want to retrieve the spikes.
+     * @param trainId Id of the {@link Train} for which spike times and indices should be queried.
      * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
-     * @return Array of spikes between specified {@code startIndex} and {@code endIndex}.
+     * @return Array of spike trains and indices located between specified {@code startIndex} and {@code endIndex}.
      */
-    @Override public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
-        final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
-        if (analysis != null) {
-            final Train[] trains = trainDao.loadTrains(analysis.getId());
-            if (trains.length > 0) {
-                final Spike[][] spikeAnalysisTrains = new Spike[trains.length][];
-                boolean analysisExists = false;
-                for (int i = 0; i < trains.length; i++) {
-                    spikeAnalysisTrains[i] = spikeTrainDao.loadSpikesForRange(trains[i].getId(), startIndex, endIndex);
-                    if (spikeAnalysisTrains[i].length > 0) analysisExists = true;
-                }
-
-                final boolean finalAnalysisExists = analysisExists;
-                if (finalAnalysisExists) {
-                    return spikeAnalysisTrains;
-                } else {
-                    return new Spike[0][];
-                }
-            } else {
-                return new Spike[0][];
-            }
-        } else {
-            return new Spike[0][];
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param filePath Id of the spike analysis for which the spike trains should be returned.
-     * @param callback Callback that's invoked when spike trains are retrieved from the database.
-     */
-    @Override public void getSpikeAnalysisByTrains(@NonNull final String filePath,
-        @Nullable final GetAnalysisCallback<Spike[][]> callback) {
-        final Runnable runnable = new Runnable() {
-            @Override public void run() {
-                final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
-                if (analysis != null) {
-                    final Train[] trains = trainDao.loadTrains(analysis.getId());
-                    if (trains.length > 0) {
-                        final Spike[][] spikeAnalysisTrains = new Spike[trains.length][];
-                        boolean analysisExists = false;
-                        for (int i = 0; i < trains.length; i++) {
-                            spikeAnalysisTrains[i] = spikeTrainDao.loadSpikes(trains[i].getId());
-                            if (spikeAnalysisTrains[i].length > 0) analysisExists = true;
-                        }
-
-                        final boolean finalAnalysisExists = analysisExists;
-                        appExecutors.mainThread().execute(new Runnable() {
-                            @Override public void run() {
-                                if (callback != null) {
-                                    if (finalAnalysisExists) {
-                                        callback.onAnalysisLoaded(spikeAnalysisTrains);
-                                    } else {
-                                        callback.onDataNotAvailable();
-                                    }
-                                }
-                            }
-                        });
-                    } else {
-                        appExecutors.mainThread().execute(new Runnable() {
-                            @Override public void run() {
-                                if (callback != null) callback.onDataNotAvailable();
-                            }
-                        });
-                    }
-                } else {
-                    appExecutors.mainThread().execute(new Runnable() {
-                        @Override public void run() {
-                            if (callback != null) callback.onDataNotAvailable();
-                        }
-                    });
-                }
-            }
-        };
-
-        appExecutors.diskIO().execute(runnable);
+    @Override public SpikeValueAndIndex[] getSpikesAnalysisTimesAndIndicesByTrainForRange(long trainId, int startIndex,
+        int endIndex) {
+        return spikeTrainDao.loadSpikeTimesAndIndicesForRange(trainId, startIndex, endIndex);
     }
 
     @Override public void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,

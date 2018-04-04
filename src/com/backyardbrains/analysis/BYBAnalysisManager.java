@@ -8,6 +8,7 @@ import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.data.AverageSpike;
 import com.backyardbrains.data.InterSpikeInterval;
+import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
@@ -98,10 +99,10 @@ public class BYBAnalysisManager {
     }
 
     /**
-     * Returns arrays of spikes sorted by trains for the specified range.
+     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for the specified range.
      */
-    public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
-        return analysisRepository.getSpikesByTrainsForRange(filePath, startIndex, endIndex);
+    public SpikeValueAndIndex[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
+        return analysisRepository.getSpikesByTrainForRange(trainId, startIndex, endIndex);
     }
 
     /**
@@ -179,6 +180,16 @@ public class BYBAnalysisManager {
     //=================================================
     //  SPIKE TRAINS
     //=================================================
+
+    /**
+     *
+     * @param filePath
+     * @param callback
+     */
+    public void getSpikeTrains(@NonNull String filePath,
+        @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
+        analysisRepository.getSpikeAnalysisTrains(filePath, callback);
+    }
 
     // Callback to be invoked when spike analysis (by trains) is retrieved from the analysis repository
     private class GetSpikeAnalysisByTrainsCallback implements AnalysisDataSource.GetAnalysisCallback<float[][]> {

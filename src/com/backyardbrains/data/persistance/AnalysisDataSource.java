@@ -2,6 +2,7 @@ package com.backyardbrains.data.persistance;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.utils.ThresholdOrientation;
@@ -31,9 +32,7 @@ public interface AnalysisDataSource {
 
     void getSpikeAnalysis(@NonNull String filePath, @Nullable GetAnalysisCallback<Spike[]> callback);
 
-    Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex);
-
-    void getSpikeAnalysisByTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<Spike[][]> callback);
+    SpikeValueAndIndex[] getSpikesAnalysisTimesAndIndicesByTrainForRange(long trainId, int startIndex, int endIndex);
 
     void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<float[][]> callback);

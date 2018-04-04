@@ -102,17 +102,19 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         private int sampleCount;
 
         @Override public void run() {
-            tvRms.setText(String.format(getString(R.string.template_rms), rms));
-            tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
-            tvSpikeCount0.setVisibility(firstTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
-            tvSpikeCount0.setText(String.format(getString(R.string.template_spike_count), firstTrainSpikeCount,
-                firstTrainSpikesPerSecond));
-            tvSpikeCount1.setVisibility(secondTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
-            tvSpikeCount1.setText(String.format(getString(R.string.template_spike_count), secondTrainSpikeCount,
-                secondTrainSpikesPerSecond));
-            tvSpikeCount2.setVisibility(thirdTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
-            tvSpikeCount2.setText(String.format(getString(R.string.template_spike_count), thirdTrainSpikeCount,
-                thirdTrainSpikesPerSecond));
+            if (getContext() != null) {
+                tvRms.setText(String.format(getString(R.string.template_rms), rms));
+                tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
+                tvSpikeCount0.setVisibility(firstTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+                tvSpikeCount0.setText(String.format(getString(R.string.template_spike_count), firstTrainSpikeCount,
+                    firstTrainSpikesPerSecond));
+                tvSpikeCount1.setVisibility(secondTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+                tvSpikeCount1.setText(String.format(getString(R.string.template_spike_count), secondTrainSpikeCount,
+                    secondTrainSpikesPerSecond));
+                tvSpikeCount2.setVisibility(thirdTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
+                tvSpikeCount2.setText(String.format(getString(R.string.template_spike_count), thirdTrainSpikeCount,
+                    thirdTrainSpikesPerSecond));
+            }
         }
 
         public void setRms(float rms) {
@@ -245,11 +247,11 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         renderer.setCallback(new SeekableWaveformRenderer.Callback() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
                     viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
                     viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    // we need to call it on UI thread because renderer is drawing on background thread
                     getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
                 }
             }
@@ -259,13 +261,16 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
             }
 
             @Override public void onHorizontalDrag(float dx) {
-                int progress = (int) (sbAudioProgress.getProgress() - dx);
-                if (progress < 0) progress = 0;
-                if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
-                playbackSeekRunnable.setProgress(progress);
-                playbackSeekRunnable.setUpdateProgressSeekBar(true);
-                playbackSeekRunnable.setUpdateProgressTimeLabel(true);
-                sbAudioProgress.post(playbackSeekRunnable);
+                if (getActivity() != null) {
+                    int progress = (int) (sbAudioProgress.getProgress() - dx);
+                    if (progress < 0) progress = 0;
+                    if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
+                    playbackSeekRunnable.setProgress(progress);
+                    playbackSeekRunnable.setUpdateProgressSeekBar(true);
+                    playbackSeekRunnable.setUpdateProgressTimeLabel(true);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(playbackSeekRunnable);
+                }
             }
 
             @Override public void onHorizontalDragEnd() {
@@ -285,7 +290,8 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                     rmsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
                     rmsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
                     rmsUpdateRunnable.setSampleCount(rmsSampleCount);
-                    tvRms.post(rmsUpdateRunnable);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(rmsUpdateRunnable);
                 }
             }
 

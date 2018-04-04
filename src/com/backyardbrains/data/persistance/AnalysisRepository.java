@@ -2,6 +2,7 @@ package com.backyardbrains.data.persistance;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.persistance.source.AnalysisLocalDataSource;
@@ -84,8 +85,8 @@ public class AnalysisRepository {
         analysisDataSource.getSpikeAnalysis(filePath, callback);
     }
 
-    @NonNull public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
-        return analysisDataSource.getSpikesByTrainsForRange(filePath, startIndex, endIndex);
+    @NonNull public SpikeValueAndIndex[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
+        return analysisDataSource.getSpikesAnalysisTimesAndIndicesByTrainForRange(trainId, startIndex, endIndex);
     }
 
     /**
