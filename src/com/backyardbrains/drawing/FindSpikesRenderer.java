@@ -2,6 +2,7 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.Size;
 import android.util.Log;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
@@ -18,8 +19,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
-    private long fromSample;
-    private long toSample;
+    private static final float[] WAVEFORM_COLOR = new float[] { .4f, .4f, .4f, .0f };
 
     private GlSpikes glSpikes;
     private float[] spikesVertices;
@@ -45,7 +45,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer,
         @NonNull String filePath) {
-        super(fragment, preparedBuffer);
+        super(filePath, fragment, preparedBuffer);
 
         this.filePath = filePath;
 
@@ -92,6 +92,10 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         updateThresholdHandles();
     }
 
+    @Override protected boolean drawSpikes() {
+        return false;
+    }
+
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
@@ -101,14 +105,24 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             //long start = System.currentTimeMillis();
 
             // let's save start and end sample positions that are being drawn before triggering the actual draw
-            toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
-            fromSample = Math.max(0, toSample - glWindowWidth);
+            long toSample = getAudioService() != null ? getAudioService().getPlaybackProgress() : 0;
+            long fromSample = Math.max(0, toSample - glWindowWidth);
+
+            LOGD(TAG, "FROM: " + fromSample + ", TO: " + toSample);
+            LOGD(TAG, "START: " + drawStartIndex + ", END: " + drawEndIndex);
 
             constructSpikesAndColorsBuffers(glWindowWidth, fromSample, toSample);
             glSpikes.draw(gl, spikesVertices, spikesColors);
 
             //LOGD(TAG, (System.currentTimeMillis() - start) + " AFTER DRAWING SPIKES");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override @Size(4) protected float[] getWaveformColor() {
+        return WAVEFORM_COLOR;
     }
 
     //=================================================

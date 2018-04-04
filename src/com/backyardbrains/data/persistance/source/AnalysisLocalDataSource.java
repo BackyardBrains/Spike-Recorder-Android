@@ -11,8 +11,8 @@ import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.SpikeTrain;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.utils.AppExecutors;
+import com.backyardbrains.utils.ThresholdOrientation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -147,6 +147,40 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
         };
 
         appExecutors.diskIO().execute(runnable);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param filePath Absolute path of the audio file for which we want to retrieve the spikes.
+     * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
+     * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
+     * @return Array of spikes between specified {@code startIndex} and {@code endIndex}.
+     */
+    @Override public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
+        final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+        if (analysis != null) {
+            final Train[] trains = trainDao.loadTrains(analysis.getId());
+            if (trains.length > 0) {
+                final Spike[][] spikeAnalysisTrains = new Spike[trains.length][];
+                boolean analysisExists = false;
+                for (int i = 0; i < trains.length; i++) {
+                    spikeAnalysisTrains[i] = spikeTrainDao.loadSpikesForRange(trains[i].getId(), startIndex, endIndex);
+                    if (spikeAnalysisTrains[i].length > 0) analysisExists = true;
+                }
+
+                final boolean finalAnalysisExists = analysisExists;
+                if (finalAnalysisExists) {
+                    return spikeAnalysisTrains;
+                } else {
+                    return new Spike[0][];
+                }
+            } else {
+                return new Spike[0][];
+            }
+        } else {
+            return new Spike[0][];
+        }
     }
 
     /**

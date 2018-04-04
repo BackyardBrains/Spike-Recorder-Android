@@ -21,6 +21,7 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -32,6 +33,8 @@ public class WaveformRenderer extends BYBBaseRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
+    private static final float[] DEFAULT_WAVEFORM_COLOR = new float[] { 0f, 1f, 0f, 1f };
+
     private GlWaveform glWaveform;
     private GlEventMarker glEventMarker;
     private Context context;
@@ -42,6 +45,9 @@ public class WaveformRenderer extends BYBBaseRenderer {
         context = fragment.getContext();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
@@ -49,17 +55,27 @@ public class WaveformRenderer extends BYBBaseRenderer {
         glEventMarker = new GlEventMarker(context, gl);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
 
         // draw waveform
-        glWaveform.draw(gl, waveformVertices);
+        glWaveform.draw(gl, waveformVertices, getWaveformColor());
         // draw markers
         final float verticalHalfSize = glWindowHeight * .5f;
         for (int i = 0; i < markers.size(); i++) {
             glEventMarker.draw(gl, markers.valueAt(i), markers.keyAt(i), -verticalHalfSize, verticalHalfSize, scaleX,
                 scaleY);
         }
+    }
+
+    /**
+     * Returns the color of the waveform in rgba format. By default green is returned.
+     */
+    protected @Size(4) float[] getWaveformColor() {
+        return DEFAULT_WAVEFORM_COLOR;
     }
 }

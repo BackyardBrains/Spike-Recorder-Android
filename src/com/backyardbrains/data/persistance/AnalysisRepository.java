@@ -5,8 +5,8 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.persistance.source.AnalysisLocalDataSource;
-import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.utils.AppExecutors;
+import com.backyardbrains.utils.ThresholdOrientation;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com.
@@ -82,6 +82,10 @@ public class AnalysisRepository {
     public void getSpikeAnalysis(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
         analysisDataSource.getSpikeAnalysis(filePath, callback);
+    }
+
+    @NonNull public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
+        return analysisDataSource.getSpikesByTrainsForRange(filePath, startIndex, endIndex);
     }
 
     /**

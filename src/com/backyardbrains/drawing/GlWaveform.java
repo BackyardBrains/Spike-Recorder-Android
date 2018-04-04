@@ -1,5 +1,6 @@
 package com.backyardbrains.drawing;
 
+import android.support.annotation.Size;
 import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -26,9 +27,9 @@ public class GlWaveform {
         waveformVFB = waveformVBB.asFloatBuffer();
     }
 
-    public void draw(GL10 gl, float[] waveformVertices) {
+    public void draw(GL10 gl, float[] waveformVertices, @Size(4) float[] waveformColor) {
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glColor4f(0f, 1f, 0f, 1f);
+        gl.glColor4f(waveformColor[0], waveformColor[1], waveformColor[2], waveformColor[3]);
         gl.glLineWidth(LINE_WIDTH);
         waveformVFB.put(waveformVertices);
         waveformVFB.position(0);
