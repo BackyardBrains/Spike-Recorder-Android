@@ -14,7 +14,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,13 +27,6 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSampleSource.class);
-
-    private static final int MAX_EVENTS_IN_BATCH_COUNT = AudioUtils.SAMPLE_RATE * 6;
-    private static final String[] EVENT_INIT_BUFFER = new String[MAX_EVENTS_IN_BATCH_COUNT];
-
-    static {
-        Arrays.fill(EVENT_INIT_BUFFER, null);
-    }
 
     // Path to the audio file
     private final String filePath;
@@ -152,7 +144,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                         progress.set(raf.getFilePointer());
 
                         // update buffer capacity when switching from seeking to playing
-                        if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
+                        //if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
                         if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
 
                         // index of the sample up to which we check the events
@@ -249,7 +241,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 }
 
                 // update buffer capacity when switching from playing to seeking
-                if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
+                //if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
                 if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
 
                 // index of the sample up to which we check the events
@@ -496,7 +488,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             s = samples;
             e = events;
         }
-        System.arraycopy(EVENT_INIT_BUFFER, 0, e, 0, e.length);
+        BufferUtils.emptyStringBuffer(e);
         int len = eventsInCurrentBatch.size();
         for (int i = 0; i < len; i++) {
             e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);

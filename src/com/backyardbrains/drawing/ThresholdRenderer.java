@@ -35,6 +35,7 @@ public class ThresholdRenderer extends WaveformRenderer {
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
     private float threshold;
+    private float[] waveformVertices;
 
     private Callback callback;
 
@@ -106,20 +107,21 @@ public class ThresholdRenderer extends WaveformRenderer {
         if (glWindowWidth > samples.length) setGlWindowWidth(samples.length);
         glWindowWidth = getGlWindowWidth();
 
-        float[] arr = new float[glWindowWidth * 2]; // array to fill
+        int size = glWindowWidth * 2;
+        if (waveformVertices == null || waveformVertices.length != size) waveformVertices = new float[size];
         int j = 0; // index of arr
         try {
             int start = (int) ((samples.length - glWindowWidth) * .5);
             int end = (int) ((samples.length + glWindowWidth) * .5);
             for (int i = start; i < end && i < samples.length; i++) {
-                arr[j++] = i - start;
-                arr[j++] = samples[i];
+                waveformVertices[j++] = i - start;
+                waveformVertices[j++] = samples[i];
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             Log.e(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
-        return arr;
+        return waveformVertices;
     }
 
     private void updateThresholdHandle() {
@@ -127,7 +129,6 @@ public class ThresholdRenderer extends WaveformRenderer {
     }
 
     private void adjustThresholdValue(float dy) {
-        Log.d(TAG, "adjustThresholdValue " + dy);
         if (dy == 0) return;
 
         threshold = dy;

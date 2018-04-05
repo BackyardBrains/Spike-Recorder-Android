@@ -136,7 +136,6 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         renderer.setCallback(new BYBBaseRenderer.CallbackAdapter() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null && getAudioService() != null) {
                     viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
                     viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);

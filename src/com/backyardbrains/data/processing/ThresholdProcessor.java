@@ -44,6 +44,9 @@ public class ThresholdProcessor implements SampleProcessor {
     // Default sample rate used when processing incoming data
     private static final int DEFAULT_SAMPLE_RATE = AudioUtils.SAMPLE_RATE;
 
+    // Runnable that triggers updated of the trigger value
+    private final UpdateTriggerValueRunnable updateTriggerValueRunnable = new UpdateTriggerValueRunnable();
+
     // Max number of seconds that can be processed at any given moment
     private double maxProcessedSeconds = DEFAULT_MAX_PROCESSED_SECONDS;
     // Dead period in seconds during which incoming samples shouldn't be processed
@@ -75,13 +78,14 @@ public class ThresholdProcessor implements SampleProcessor {
     private ArrayList<short[]> samplesForCalculation;
     private ArrayList<Samples> unfinishedSamplesForCalculation;
     private Handler handler;
-    private int triggerValue = Integer.MAX_VALUE;
     private int lastTriggeredValue;
     private double lastMaxProcessedSeconds;
     private double lastDeadPeriod;
     private int lastAveragedSampleCount;
     private int lastSampleRate;
     private short prevSample;
+    // Threshold value that triggers the averaging
+    @SuppressWarnings("WeakerAccess") int triggerValue = Integer.MAX_VALUE;
     // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
     private HeartbeatHelper heartbeatHelper = new HeartbeatHelper(sampleRate);
     // Index of the sample that triggered the threshold hit
@@ -91,6 +95,22 @@ public class ThresholdProcessor implements SampleProcessor {
     private int deadPeriodSampleCounter;
     private boolean inDeadPeriod;
     private boolean processBpm;
+
+    /**
+     * Runnable that update the trigger value above which new averaging array is added
+     */
+    private class UpdateTriggerValueRunnable implements Runnable {
+
+        private int threshold;
+
+        @Override public void run() {
+            triggerValue = threshold;
+        }
+
+        public void setThreshold(int threshold) {
+            this.threshold = threshold;
+        }
+    }
 
     /**
      * Creates new {@link ThresholdProcessor} that uses {@code size} number of sample sequences for average spike
@@ -173,12 +193,8 @@ public class ThresholdProcessor implements SampleProcessor {
      * Set's the sample frequency threshold.
      */
     public void setThreshold(final float threshold) {
-        handler.post(new Runnable() {
-            @Override public void run() {
-                LOGD(TAG, "setThreshold: " + threshold);
-                triggerValue = (int) threshold;
-            }
-        });
+        updateTriggerValueRunnable.setThreshold((int) threshold);
+        handler.post(updateTriggerValueRunnable);
     }
 
     /**
@@ -377,13 +393,13 @@ public class ThresholdProcessor implements SampleProcessor {
     // Represents a buffer for samples that are collected and included in averages calculation
     private class Samples {
         // Array of received samples
-        private short[] samples;
+        short[] samples;
         // Index of last sample that was included in averages calculations before new samples arrived
-        private int lastAveragedIndex;
+        int lastAveragedIndex;
         // Index of first "empty slot" at which future arriving samples will be appended
-        private int nextSampleIndex;
+        int nextSampleIndex;
 
-        private Samples(@NonNull short[] samples, int nextSampleIndex) {
+        Samples(@NonNull short[] samples, int nextSampleIndex) {
             this.samples = samples;
             this.lastAveragedIndex = 0;
             this.nextSampleIndex = nextSampleIndex;
@@ -399,11 +415,10 @@ public class ThresholdProcessor implements SampleProcessor {
         /**
          * Appends newly received samples and returns {@code true} if buffer is full, {@code false} otherwise.
          */
-        boolean append(short[] samples) {
+        void append(short[] samples) {
             final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, samples.length);
             System.arraycopy(samples, 0, this.samples, nextSampleIndex, samplesToCopy);
             nextSampleIndex += samplesToCopy;
-            return isPopulated();
         }
     }
 }

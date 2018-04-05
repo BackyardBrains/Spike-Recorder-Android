@@ -18,7 +18,7 @@ public abstract class AbstractSampleSource implements SampleSource {
     protected static final Filters FILTERS = new Filters();
 
     // 16MB for initial buffer size until sample rate is set
-    private static final int DEFAULT_BUFFER_SIZE = 16 * 1024;
+    //private static final int DEFAULT_BUFFER_SIZE = 16 * 1024;
     // Number of seconds processing buffer should hold
     private static final int BUFFERED_SECONDS = 2;
     // Initial processing buffer size
@@ -30,42 +30,47 @@ public abstract class AbstractSampleSource implements SampleSource {
      * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
      * ProcessingThread}.
      */
-    protected class ReadThread extends Thread {
-
-        private AtomicBoolean working = new AtomicBoolean(true);
-        private AtomicBoolean paused = new AtomicBoolean(false);
-
-        @Override public void run() {
-            while (working.get()) {
-                if (!paused.get()) {
-                    int size = readBuffer.peekSize();
-                    if (size > 0) {
-                        if (readBufferData == null || readBufferData.length != size) readBufferData = new byte[size];
-
-                        readBuffer.read(readBufferData, size, true);
-
-                        processingBuffer.write(readBufferData, 0, readBufferData.length, true);
-                    }
-                }
-            }
-        }
-
-        void pauseWorking() {
-            paused.set(true);
-        }
-
-        void resumeWorking() {
-            paused.set(false);
-        }
-
-        void stopWorking() {
-            working.set(false);
-        }
-    }
+    //protected class ReadThread extends Thread {
+    //
+    //    private AtomicBoolean working = new AtomicBoolean(true);
+    //    private AtomicBoolean paused = new AtomicBoolean(false);
+    //
+    //    @Override public void run() {
+    //        while (working.get()) {
+    //            if (!paused.get()) {
+    //                int size = readBuffer.getMarkedSize();
+    //                if (size > 0) {
+    //                    if (readBufferData == null || readBufferData.length != size) readBufferData = new byte[size];
+    //
+    //                    readBuffer.read(readBufferData, size, true);
+    //
+    //                    processingBuffer.mark();
+    //                    processingBuffer.write(readBufferData, 0, readBufferData.length, true);
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    void pauseWorking() {
+    //        paused.set(true);
+    //    }
+    //
+    //    void resumeWorking() {
+    //        paused.set(false);
+    //    }
+    //
+    //    void stopWorking() {
+    //        working.set(false);
+    //    }
+    //}
 
     /**
      * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
      * OnSamplesReceivedListener}.
+     */
+    /**
+     * Background thread that processes the data read from the local buffer filled by the derived class and passes it to
+     * {@link OnSamplesReceivedListener}.
      */
     protected class ProcessingThread extends Thread {
 
@@ -109,9 +114,9 @@ public abstract class AbstractSampleSource implements SampleSource {
         }
     }
 
-    private ReadThread readThread;
-    @SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
-    @SuppressWarnings("WeakerAccess") byte[] readBufferData;
+    //private ReadThread readThread;
+    //@SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer = new CircularByteBuffer(DEFAULT_BUFFER_SIZE);
+    //@SuppressWarnings("WeakerAccess") byte[] readBufferData;
     private ProcessingThread processingThread;
     @SuppressWarnings("WeakerAccess") final CircularByteBuffer processingBuffer;
     @SuppressWarnings("WeakerAccess") byte[] processingBufferData;
@@ -193,10 +198,10 @@ public abstract class AbstractSampleSource implements SampleSource {
             processingThread.start();
         }
         // start the read thread
-        if (readThread == null) {
-            readThread = new ReadThread();
-            readThread.start();
-        }
+        //if (readThread == null) {
+        //    readThread = new ReadThread();
+        //    readThread.start();
+        //}
         // give chance to subclass to init resources and start writing data to buffer
         onInputStart();
     }
@@ -206,7 +211,7 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     @Override public final void pause() {
         // pause threads
-        if (readThread != null) readThread.pauseWorking();
+        //if (readThread != null) readThread.pauseWorking();
         if (processingThread != null) processingThread.pauseWorking();
     }
 
@@ -216,7 +221,7 @@ public abstract class AbstractSampleSource implements SampleSource {
     @Override public final void resume() {
         // resume threads
         if (processingThread != null) processingThread.resumeWorking();
-        if (readThread != null) readThread.resumeWorking();
+        //if (readThread != null) readThread.resumeWorking();
     }
 
     /**
@@ -231,10 +236,10 @@ public abstract class AbstractSampleSource implements SampleSource {
             processingThread = null;
         }
         // stop the read thread
-        if (readThread != null) {
-            readThread.stopWorking();
-            readThread = null;
-        }
+        //if (readThread != null) {
+        //    readThread.stopWorking();
+        //    readThread = null;
+        //}
     }
 
     /**
@@ -242,18 +247,18 @@ public abstract class AbstractSampleSource implements SampleSource {
      *
      * @return Size of the buffer in bytes.
      */
-    protected final int getReadBufferSize() {
-        return readBuffer.getCapacity();
-    }
+    //protected final int getReadBufferSize() {
+    //    return readBuffer.getCapacity();
+    //}
 
     /**
      * Sets the size of the read buffer.
      *
      * @param size Size of the buffer in bytes.
      */
-    protected final void setReadBufferSize(int size) {
-        readBuffer.setCapacity(size);
-    }
+    //protected final void setReadBufferSize(int size) {
+    //    readBuffer.setCapacity(size);
+    //}
 
     /**
      * Returns size of the processing buffer.
@@ -277,7 +282,9 @@ public abstract class AbstractSampleSource implements SampleSource {
      * Subclasses should write any received data to buffer for further processing.
      */
     protected final void writeToBuffer(@NonNull byte[] data) {
-        readBuffer.write(data, 0, data.length, true);
+        //readBuffer.mark();
+        //readBuffer.write(data, 0, data.length, true);
+        processingBuffer.write(data, 0, data.length, true);
     }
 
     /**
