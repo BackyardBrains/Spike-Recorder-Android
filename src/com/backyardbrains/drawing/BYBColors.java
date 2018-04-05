@@ -15,19 +15,18 @@ public class BYBColors {
     public static final int white = 8;
     public static final int black = 9;
     // ----------------------------------------------------------------------------------------
-    public static final float[][] colors = {
-        { 1.0f, 0.0f, 0.0f, 1.0f },                        // red
-        { 0.0f, 1.0f, 0.0f, 1.0f },                // green
-        { 0.0f, 0.0f, 1.0f, 1.0f },                // blue
-        { 0.0f, 1.0f, 1.0f, 1.0f },                // cyan
-        { 1.0f, 0.0f, 1.0f, 1.0f },                // magenta
-        { 1.0f, 1.0f, 0.0f, 1.0f },                // yellow
-        { 1.0f, 0.5f, 0.0f, 1.0f },            // orange?
-        { 0.5f, 0.5f, 0.5f, 1.0f },            // gray
-        { 1.0f, 1.0f, 1.0f, 1.0f },                // white
-        { 0.0f, 0.0f, 0.0f, 1.0f },
-    };            // black
-    public static final float[][] chosenColors = { colors[red], colors[yellow], colors[cyan] };
+    private static final float[][] colors = {
+        { 1.0f, 0.0f, 0.0f, 1.0f },     // red
+        { 0.0f, 1.0f, 0.0f, 1.0f },     // green
+        { 0.0f, 0.0f, 1.0f, 1.0f },     // blue
+        { 0.0f, 1.0f, 1.0f, 1.0f },     // cyan
+        { 1.0f, 0.0f, 1.0f, 1.0f },     // magenta
+        { 1.0f, 1.0f, 0.0f, 1.0f },     // yellow
+        { 1.0f, 0.5f, 0.0f, 1.0f },     // orange?
+        { 0.5f, 0.5f, 0.5f, 1.0f },     // gray
+        { 1.0f, 1.0f, 1.0f, 1.0f },     // white
+        { 0.0f, 0.0f, 0.0f, 1.0f },     // black
+    };
 
     // ----------------------------------------------------------------------------------------
 
@@ -52,35 +51,22 @@ public class BYBColors {
         return argb;
     }
 
-    // ----------------------------------------------------------------------------------------
     public static int getColorAsHexById(int id) {
         return getGlColorAsHex(getColorAsGlById(id));
     }
 
-    // ----------------------------------------------------------------------------------------
     public static float[] getColorAsGlById(int id) {
         return colors[id];
     }
 
-    // ----------------------------------------------------------------------------------------
     public static int getGlColorAsHex(float[] glc) {
         int c = 0;
         for (int i = 0; i < glc.length; i++) {
             c |= (((int) (glc[i] * 0xff)) & 0xff) << ((3 - i) * 8);
         }
-        //		String msg = "getGlColor: ";
-        //		for(float a: glc){
-        //			msg += a + ", ";
-        //		}
-        //		msg += "AsHex: ";
-        //
-        //		msg+= Integer.toHexString(c);
-        //		//Log.d(TAG, msg);
-
         return c;
     }
 
-    // ----------------------------------------------------------------------------------------
     public static float[] getHexAsGlColor(int hex) {
         float[] c = new float[4];
         for (int i = 0; i < 4; i++) {

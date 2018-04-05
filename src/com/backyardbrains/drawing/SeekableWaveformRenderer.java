@@ -25,9 +25,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     private final GlSpikes glSpikes;
     private final float[] spikesVertices = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 2];
     private final float[] spikesColors = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 4];
-    private final float[] redColor = BYBColors.getColorAsGlById(BYBColors.red);
-    private final float[] yellowColor = BYBColors.getColorAsGlById(BYBColors.yellow);
-    private final float[] cyanColor = BYBColors.getColorAsGlById(BYBColors.cyan);
+    private final float[][] colors = new float[3][];
 
     private short[] rmsSamples;
     private float drawSampleCount;
@@ -46,8 +44,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         setScrollEnabled();
         setMeasureEnabled();
 
-        this.glMeasurementArea = new GlMeasurementArea();
-        this.glSpikes = new GlSpikes();
+        glMeasurementArea = new GlMeasurementArea();
+        glSpikes = new GlSpikes();
+
+        // populate train colors
+        colors[0] = new float[] { 1f, 0f, 0f, 1f };
+        colors[1] = new float[] { 1f, 1f, 0f, 1f };
+        colors[2] = new float[] { 0f, 1f, 1f, 1f };
 
         if (getAnalysisManager() != null) {
             getAnalysisManager().getSpikeTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
@@ -150,7 +153,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, i == 0 ? redColor : i == 1 ? yellowColor : cyanColor);
+                            fromSample, toSample, colors[i]);
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }
@@ -228,10 +231,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                                 : valueAndIndex.getIndex() - fromSample;
                         spikesVertices[verticesCounter++] = index;
                         spikesVertices[verticesCounter++] = valueAndIndex.getValue();
-
-                        for (int k = 0; k < 4; k++) {
-                            spikesColors[colorsCounter++] = color[k];
-                        }
+                        System.arraycopy(color, 0, spikesColors, colorsCounter, color.length);
+                        colorsCounter += 4;
                     }
                 }
             }
