@@ -34,11 +34,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private Callback callback;
     private String filePath;
 
-    interface Callback extends BYBBaseRenderer.Callback {
+    interface Callback extends SeekableWaveformRenderer.Callback {
         void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
     }
 
-    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
+    public static class CallbackAdapter extends SeekableWaveformRenderer.CallbackAdapter implements Callback {
         @Override public void onThresholdUpdate(@ThresholdOrientation int threshold, int value) {
         }
     }

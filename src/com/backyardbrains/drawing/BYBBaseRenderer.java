@@ -45,6 +45,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private float scaleX;
     private float scaleY;
 
+    private boolean allowScrolling;
+    private boolean allowMeasurement;
+
     private boolean autoScale;
 
     private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
@@ -55,26 +58,11 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     public interface Callback {
 
         void onDraw(int drawSurfaceWidth, int drawSurfaceHeight);
-
-        void onHorizontalDragStart();
-
-        void onHorizontalDrag(float dx);
-
-        void onHorizontalDragEnd();
     }
 
     public static class CallbackAdapter implements Callback {
 
         @Override public void onDraw(int drawSurfaceWidth, int drawSurfaceHeight) {
-        }
-
-        @Override public void onHorizontalDrag(float dx) {
-        }
-
-        @Override public void onHorizontalDragStart() {
-        }
-
-        @Override public void onHorizontalDragEnd() {
         }
     }
 
@@ -313,51 +301,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
-
-    protected void onMeasurementStart(float x) {
-    }
-
-    protected void onMeasure(float x) {
-    }
-
-    protected void onMeasurementEnd(float x) {
-    }
-
-    //==============================================
-    //  PRIVATE AND PACKAGE-PRIVATE METHODS
-    //==============================================
-
-    void startScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) {
-            if (callback != null) callback.onHorizontalDragStart();
-        }
-    }
-
-    void scroll(float dx) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * glWindowWidth / surfaceWidth);
-        }
-    }
-
-    void endScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying()) if (callback != null) callback.onHorizontalDragEnd();
-    }
-
-    void startMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementStart(x);
-    }
-
-    void measure(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasure(x);
-    }
-
-    void endMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementEnd(x);
-    }
-
     @NonNull protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
         @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
         //long start = System.currentTimeMillis();
@@ -385,6 +328,82 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         //LOGD(TAG, "END: " + (System.currentTimeMillis() - start));
 
         return tempBufferToDraws;
+    }
+
+    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
+
+    //==============================================
+    //  SCROLLING
+    //==============================================
+
+    /**
+     * Whether scrolling of the surface view is allowed or not.
+     */
+    public boolean isAllowScrolling() {
+        return allowScrolling;
+    }
+
+    /**
+     * Set whether scrolling of the surface view will be allowed or not.
+     */
+    public void setAllowScrolling(boolean allowScrolling) {
+        this.allowScrolling = allowScrolling;
+    }
+
+    /**
+     * Called when user start scrolling the GL surface. This method is called only if {@link #isAllowScrolling()} return {@code true}.
+     */
+    protected void onScrollStart() {
+    }
+
+    /**
+     * Called repeatedly while user scrolls the GL surface. This method is called only if {@link #isAllowScrolling()} return {@code true}.
+     */
+    protected void onScroll(float dx) {
+    }
+
+    /**
+     * Called when user stops scrolling the GL surface. This method is called only if {@link #isAllowScrolling()} return {@code true}.
+     */
+    protected void onScrollEnd() {
+    }
+
+    //==============================================
+    //  MEASUREMENT
+    //==============================================
+
+    /**
+     * Whether measurement of the signal is allowed or not.
+     */
+    public boolean isAllowMeasurement() {
+        return allowMeasurement;
+    }
+
+    /**
+     * Set whether measurement of the signal will be allowed or not.
+     */
+    public void setAllowMeasurement(boolean allowMeasurement) {
+        this.allowMeasurement = allowMeasurement;
+    }
+
+    /**
+     * Called when user start GL surface measurement. This method is called only if {@link #isAllowMeasurement()} return {@code true}.
+     */
+    protected void onMeasureStart(float x) {
+    }
+
+    /**
+     * Called repeatedly while GL surface is being measured. This method is called only if {@link #isAllowMeasurement()} return {@code true}.
+     */
+    protected void onMeasure(float x) {
+    }
+
+    /**
+     * Called when user stop GL surface measurement. This method is called only if {@link #isAllowMeasurement()} return {@code true}.
+     */
+    protected void onMeasureEnd(float x) {
     }
 
     //==============================================
@@ -443,17 +462,5 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     // ----------------------------------------------------------------------------------------
     public float pixelHeightToGlHeight(float pxHeight) {
         return BYBUtils.map(pxHeight, surfaceHeight, 0, -getGlWindowHeight() / 2, getGlWindowHeight() / 2);
-    }
-
-    private boolean getIsPlaybackMode() {
-        return getAudioService() != null && getAudioService().isPlaybackMode();
-    }
-
-    private boolean getIsNotPlaying() {
-        return getAudioService() == null || !getAudioService().isAudioPlaying();
-    }
-
-    private boolean getIsSeeking() {
-        return getAudioService() != null && getAudioService().isAudioSeeking();
     }
 }

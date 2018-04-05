@@ -43,12 +43,41 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     public interface Callback extends BYBBaseRenderer.Callback {
 
+        void onHorizontalDragStart();
+
+        void onHorizontalDrag(float dx);
+
+        void onHorizontalDragEnd();
+
         void onMeasurementStart();
 
         void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
             int rmsSampleCount);
 
         void onMeasurementEnd();
+    }
+
+    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
+
+        @Override public void onHorizontalDragStart() {
+        }
+
+        @Override public void onHorizontalDrag(float dx) {
+        }
+
+        @Override public void onHorizontalDragEnd() {
+        }
+
+        @Override public void onMeasurementStart() {
+        }
+
+        @Override
+        public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
+            int rmsSampleCount) {
+        }
+
+        @Override public void onMeasurementEnd() {
+        }
     }
 
     public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment,
@@ -169,24 +198,44 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         }
     }
 
-    @Override protected void onMeasurementStart(float x) {
-        measurementStartX = x;
-        measurementEndX = x;
-        measuring = true;
+    @Override protected void onScrollStart() {
+        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) {
+            if (callback != null) callback.onHorizontalDragStart();
+        }
+    }
 
-        if (callback != null) callback.onMeasurementStart();
+    @Override protected void onScroll(float dx) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            if (callback != null) callback.onHorizontalDrag(dx * getGlWindowWidth() / getSurfaceWidth());
+        }
+    }
+
+    @Override protected void onScrollEnd() {
+        if (getIsPlaybackMode() && getIsNotPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    }
+
+    @Override protected void onMeasureStart(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            measurementStartX = x;
+            measurementEndX = x;
+            measuring = true;
+
+            if (callback != null) callback.onMeasurementStart();
+        }
     }
 
     @Override protected void onMeasure(float x) {
-        measurementEndX = x;
+        if (getIsPlaybackMode() && getIsNotPlaying()) measurementEndX = x;
     }
 
-    @Override protected void onMeasurementEnd(float x) {
-        measuring = false;
-        measurementStartX = 0;
-        measurementEndX = 0;
+    @Override protected void onMeasureEnd(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            measuring = false;
+            measurementStartX = 0;
+            measurementEndX = 0;
 
-        if (callback != null) callback.onMeasurementEnd();
+            if (callback != null) callback.onMeasurementEnd();
+        }
     }
 
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
@@ -219,5 +268,20 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         }
 
         return verticesCounter;
+    }
+
+    // Check whether service is currently in playback mode
+    private boolean getIsPlaybackMode() {
+        return getAudioService() != null && getAudioService().isPlaybackMode();
+    }
+
+    // Check whether audio is currently in the paused state
+    private boolean getIsNotPlaying() {
+        return getAudioService() == null || !getAudioService().isAudioPlaying();
+    }
+
+    // Check whether audio is currently being sought
+    private boolean getIsSeeking() {
+        return getAudioService() != null && getAudioService().isAudioSeeking();
     }
 }

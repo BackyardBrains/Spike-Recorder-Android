@@ -54,9 +54,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
     public static final int MODE_ZOOM_IN_H = 0;
     public static final int MODE_ZOOM_OUT_H = 1;
-    public static final int MODE_MOVE = 2;
-    public static final int MODE_ZOOM_IN_V = 3;
-    public static final int MODE_ZOOM_OUT_V = 4;
+    public static final int MODE_ZOOM_IN_V = 2;
+    public static final int MODE_ZOOM_OUT_V = 3;
 
     protected ScaleGestureDetector scaleDetector;
     protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
@@ -64,10 +63,14 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
 
         @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            // if we are currently scrolling update the viewport and refresh the display
-            if (scrolling) renderer.scroll(-distanceX);
+            if (renderer.isAllowScrolling()) {
+                // if we are currently scrolling update the viewport and refresh the display
+                if (scrolling) renderer.onScroll(-distanceX);
 
-            return scrolling;
+                return scrolling;
+            }
+
+            return false;
         }
     };
 
@@ -99,7 +102,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             if (waitingForLongPress) {
                 waitingForLongPress = false;
                 scrolling = false;
-                renderer.startMeasurements(eventX.get());
+                renderer.onMeasureStart(eventX.get());
             }
         }
     };
@@ -192,43 +195,51 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         if (renderer != null) {
             if (scaleDetector != null && scaleDetector.onTouchEvent(event) && scaleDetector.isInProgress()) {
                 scrolling = false;
-                renderer.endScroll();
-                waitingForLongPress = false;
-                handler.removeCallbacks(longPress);
+                if (renderer.isAllowScrolling()) renderer.onScrollEnd();
+                if (renderer.isAllowMeasurement()) {
+                    waitingForLongPress = false;
+                    handler.removeCallbacks(longPress);
+                }
                 return true;
             } else if (scrollDetector != null && pointerCount == 1 && !scrollDetector.onTouchEvent(event)) {
                 // pass latest pointer x to long press runnable
-                longPress.setEventX((int) event.getX());
+                if (renderer.isAllowMeasurement()) longPress.setEventX((int) event.getX());
                 // and manually handle the event.
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         // start scrolling
                         scrolling = true;
-                        renderer.endMeasurements(event.getX());
-                        renderer.startScroll();
+                        if (renderer.isAllowMeasurement()) renderer.onMeasureEnd(event.getX());
+                        if (renderer.isAllowScrolling()) renderer.onScrollStart();
                         // and start waiting for long-press
-                        waitingForLongPress = true;
-                        handler.postDelayed(longPress, LONG_PRESS_TIMEOUT);
-                        prevX = event.getX();
+                        if (renderer.isAllowMeasurement()) {
+                            waitingForLongPress = true;
+                            handler.postDelayed(longPress, LONG_PRESS_TIMEOUT);
+                            prevX = event.getX();
+                        }
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        // if we moved before long press, stop waiting for it
-                        if (waitingForLongPress && Math.abs(prevX - event.getX()) > LONG_PRESS_X_OFFSET) {
-                            waitingForLongPress = false;
-                            handler.removeCallbacks(longPress);
-                        }
-                        // otherwise if we're not scrolling it means we are in measurement
-                        if (!scrolling) renderer.measure(event.getX());
+                        if (renderer.isAllowMeasurement()) {
+                            // if we moved before long press, stop waiting for it
+                            if (waitingForLongPress && Math.abs(prevX - event.getX()) > LONG_PRESS_X_OFFSET) {
+                                waitingForLongPress = false;
+                                handler.removeCallbacks(longPress);
+                            }
+                            // otherwise if we're not scrolling it means we are in measurement
+                            if (!scrolling) renderer.onMeasure(event.getX());
 
-                        prevX = event.getX();
+                            prevX = event.getX();
+                        }
                         break;
                     case MotionEvent.ACTION_CANCEL:
                     case MotionEvent.ACTION_UP:
                         // reset all flags
                         scrolling = false;
-                        renderer.endScroll();
-                        waitingForLongPress = false;
-                        handler.removeCallbacks(longPress);
+                        if (renderer.isAllowScrolling()) renderer.onScrollEnd();
+                        if (renderer.isAllowMeasurement()) {
+                            waitingForLongPress = false;
+                            handler.removeCallbacks(longPress);
+                        }
                         break;
                 }
             }
@@ -256,11 +267,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
     }
 
-    private void scaleRenderer(int zoomMode) {
-        if (renderer != null) scaleRenderer(renderer.getSurfaceWidth() * 0.5f, zoomMode);
-    }
-
-    private void scaleRenderer(float focusX, int zoomMode) {
+    void scaleRenderer(int zoomMode) {
         if (renderer != null && isScalingMode(zoomMode)) {
             float scaling = 1;
             if (isZoomIn(zoomMode)) {

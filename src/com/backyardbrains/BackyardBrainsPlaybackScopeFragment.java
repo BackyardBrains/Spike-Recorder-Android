@@ -39,7 +39,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     // Maximum time that should be processed in any given moment (in seconds)
     private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
 
-    // Runnable used for updating playback seekbar
+    // Runnable used for updating playback seek bar
     final protected PlaybackSeekRunnable playbackSeekRunnable = new PlaybackSeekRunnable();
     // Runnable used for updating selected samples measurements (RMS, spike count and spike frequency)
     final protected MeasurementsUpdateRunnable measurementsUpdateRunnable = new MeasurementsUpdateRunnable();
@@ -302,6 +302,8 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                 tvSpikeCount2.setVisibility(View.INVISIBLE);
             }
         });
+        renderer.setAllowScrolling(true);
+        renderer.setAllowMeasurement(true);
         return renderer;
     }
 
