@@ -137,7 +137,19 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final ThresholdRenderer renderer = new ThresholdRenderer(this, preparedBuffer);
-        renderer.setCallback(new ThresholdRenderer.CallbackAdapter() {
+        renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
+
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
+                if (getActivity() != null && getAudioService() != null) {
+                    viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
+                }
+            }
+        });
+        renderer.setOnThresholdChangeListener(new ThresholdRenderer.OnThresholdChangeListener() {
 
             @Override public void onThresholdPositionChange(final int position) {
                 if (getActivity() != null) {
@@ -148,20 +160,10 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
             }
 
             @Override public void onThresholdValueChange(final float value) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     updateDataProcessorThresholdRunnable.setValue(value);
-                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                }
-            }
-
-            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                if (getActivity() != null && getAudioService() != null) {
-                    viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
-                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
                     // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
+                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
                 }
             }
         });

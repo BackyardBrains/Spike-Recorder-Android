@@ -243,7 +243,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(filePath, this, preparedBuffer);
-        renderer.setCallback(new SeekableWaveformRenderer.Callback() {
+        renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
                 if (getActivity() != null) {
@@ -254,12 +254,14 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                     getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
                 }
             }
+        });
+        renderer.setOnScrollListener(new BYBBaseRenderer.OnScrollListener() {
 
-            @Override public void onHorizontalDragStart() {
+            @Override public void onScrollStart() {
                 startSeek();
             }
 
-            @Override public void onHorizontalDrag(float dx) {
+            @Override public void onScroll(float dx) {
                 if (getActivity() != null) {
                     int progress = (int) (sbAudioProgress.getProgress() - dx);
                     if (progress < 0) progress = 0;
@@ -272,29 +274,31 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                 }
             }
 
-            @Override public void onHorizontalDragEnd() {
+            @Override public void onScrollEnd() {
                 stopSeek();
             }
+        });
+        renderer.setOnMeasureListener(new BYBBaseRenderer.OnMeasureListener() {
 
-            @Override public void onMeasurementStart() {
+            @Override public void onMeasureStart() {
                 tvRms.setVisibility(View.VISIBLE);
                 tvRmsTime.setVisibility(View.VISIBLE);
             }
 
             @Override public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount,
-                int thirdTrainSpikeCount, int rmsSampleCount) {
+                int thirdTrainSpikeCount, int sampleCount) {
                 if (getActivity() != null) {
                     measurementsUpdateRunnable.setRms(rms);
                     measurementsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
                     measurementsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
                     measurementsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
-                    measurementsUpdateRunnable.setSampleCount(rmsSampleCount);
+                    measurementsUpdateRunnable.setSampleCount(sampleCount);
                     // we need to call it on UI thread because renderer is drawing on background thread
                     getActivity().runOnUiThread(measurementsUpdateRunnable);
                 }
             }
 
-            @Override public void onMeasurementEnd() {
+            @Override public void onMeasureEnd() {
                 tvRms.setVisibility(View.INVISIBLE);
                 tvRmsTime.setVisibility(View.INVISIBLE);
                 tvSpikeCount0.setVisibility(View.INVISIBLE);
@@ -302,8 +306,6 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                 tvSpikeCount2.setVisibility(View.INVISIBLE);
             }
         });
-        renderer.setAllowScrolling(true);
-        renderer.setAllowMeasurement(true);
         return renderer;
     }
 

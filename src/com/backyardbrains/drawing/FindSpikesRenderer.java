@@ -31,21 +31,28 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
     private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 
-    private Callback callback;
     private String filePath;
 
-    interface Callback extends SeekableWaveformRenderer.Callback {
-        void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
-    }
+    private OnThresholdUpdateListener listener;
 
-    public static class CallbackAdapter extends SeekableWaveformRenderer.CallbackAdapter implements Callback {
-        @Override public void onThresholdUpdate(@ThresholdOrientation int threshold, int value) {
-        }
+    /**
+     * Interface definition for a callback to be invoked when threshold is updated.
+     */
+    public interface OnThresholdUpdateListener {
+        /**
+         * Listener that is invoked when threshold is updated.
+         *
+         * @param threshold Which threshold is updated. One of {@link ThresholdOrientation} values.
+         * @param value New threshold value.
+         */
+        void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
     }
 
     public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer,
         @NonNull String filePath) {
         super(filePath, fragment, preparedBuffer);
+
+        setScrollEnabled();
 
         this.filePath = filePath;
 
@@ -58,10 +65,13 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //=================================================
 
-    public void setCallback(@Nullable Callback callback) {
-        super.setCallback(callback);
-
-        this.callback = callback;
+    /**
+     * Registers a callback to be invoked when threshold is updated.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnThresholdUpdateListener(@Nullable OnThresholdUpdateListener listener) {
+        this.listener = listener;
     }
 
     public int getThresholdScreenValue(@ThresholdOrientation int threshold) {
@@ -80,22 +90,34 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
 
         updateThresholdHandles();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void setGlWindowHeight(int newSize) {
         super.setGlWindowHeight(Math.abs(newSize));
 
         updateThresholdHandles();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected boolean drawSpikes() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
@@ -136,7 +158,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     private void updateThresholdHandle(@ThresholdOrientation int threshold) {
         if (threshold >= 0 && threshold < thresholds.length) {
-            if (callback != null) callback.onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
+            if (listener != null) listener.onThresholdUpdate(threshold, glHeightToPixelHeight(thresholds[threshold]));
         }
     }
 

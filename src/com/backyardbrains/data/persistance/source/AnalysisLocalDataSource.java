@@ -153,7 +153,7 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
-     * @param trainId Id of the {@link Train} for which spike times and indices should be queried.
+     * @param trainId Id of the {@link Train} for which spike values and indices should be queried.
      * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
      * @return Array of spike trains and indices located between specified {@code startIndex} and {@code endIndex}.

@@ -37,31 +37,36 @@ public class ThresholdRenderer extends WaveformRenderer {
     private float threshold;
     private float[] waveformVertices;
 
-    private Callback callback;
+    private OnThresholdChangeListener listener;
 
-    interface Callback extends BYBBaseRenderer.Callback {
+    /**
+     * Interface definition for a callback to be invoked when threshold position or value are changed.
+     */
+    public interface OnThresholdChangeListener {
+        /**
+         * Listener that is invoked when threshold position is changed.
+         *
+         * @param position New threshold position.
+         */
         void onThresholdPositionChange(int position);
 
+        /**
+         * Listener that is invoked when threshold value is changed.
+         */
         void onThresholdValueChange(float value);
-    }
-
-    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
-        @Override public void onThresholdPositionChange(int position) {
-        }
-
-        @Override public void onThresholdValueChange(float value) {
-
-        }
     }
 
     public ThresholdRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
         super(fragment, preparedBuffer);
     }
 
-    public void setCallback(Callback callback) {
-        super.setCallback(callback);
-
-        this.callback = callback;
+    /**
+     * Registers a callback to be invoked when threshold position or value are changed.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnThresholdChangeListener(OnThresholdChangeListener listener) {
+        this.listener = listener;
     }
 
     /**
@@ -78,30 +83,45 @@ public class ThresholdRenderer extends WaveformRenderer {
         adjustThresholdValue(pixelHeightToGlHeight(y));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
 
         updateThresholdHandle();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void setGlWindowHeight(int newSize) {
         super.setGlWindowHeight(newSize);
 
         updateThresholdHandle();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onLoadSettings(@NonNull Context context) {
         adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
 
         super.onLoadSettings(context);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSaveSettings(@NonNull Context context) {
         super.onSaveSettings(context);
 
         PrefUtils.setThreshold(context, getClass(), threshold);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @NonNull @Override protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
         @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
         if (glWindowWidth > samples.length) setGlWindowWidth(samples.length);
@@ -125,7 +145,7 @@ public class ThresholdRenderer extends WaveformRenderer {
     }
 
     private void updateThresholdHandle() {
-        if (callback != null) callback.onThresholdPositionChange(glHeightToPixelHeight(threshold));
+        if (listener != null) listener.onThresholdPositionChange(glHeightToPixelHeight(threshold));
     }
 
     private void adjustThresholdValue(float dy) {
@@ -133,6 +153,6 @@ public class ThresholdRenderer extends WaveformRenderer {
 
         threshold = dy;
 
-        if (callback != null) callback.onThresholdValueChange(threshold);
+        if (listener != null) listener.onThresholdValueChange(threshold);
     }
 }

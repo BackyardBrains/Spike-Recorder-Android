@@ -57,15 +57,17 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     public static final int MODE_ZOOM_IN_V = 2;
     public static final int MODE_ZOOM_OUT_V = 3;
 
+    BYBBaseRenderer renderer;
+
     protected ScaleGestureDetector scaleDetector;
     protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
     protected GestureDetector scrollDetector;
     protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
 
         @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            if (renderer.isAllowScrolling()) {
+            if (renderer.isScrollEnabled()) {
                 // if we are currently scrolling update the viewport and refresh the display
-                if (scrolling) renderer.onScroll(-distanceX);
+                if (scrolling) renderer.scroll(-distanceX);
 
                 return scrolling;
             }
@@ -73,8 +75,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             return false;
         }
     };
-
-    BYBBaseRenderer renderer;
 
     private boolean bZoomButtonsEnabled = false;
     float scalingFactor = 0.5f;
@@ -102,7 +102,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             if (waitingForLongPress) {
                 waitingForLongPress = false;
                 scrolling = false;
-                renderer.onMeasureStart(eventX.get());
+                renderer.startMeasurement(eventX.get());
             }
         }
     };
@@ -195,38 +195,38 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         if (renderer != null) {
             if (scaleDetector != null && scaleDetector.onTouchEvent(event) && scaleDetector.isInProgress()) {
                 scrolling = false;
-                if (renderer.isAllowScrolling()) renderer.onScrollEnd();
-                if (renderer.isAllowMeasurement()) {
+                if (renderer.isScrollEnabled()) renderer.endScroll();
+                if (renderer.isMeasureEnabled()) {
                     waitingForLongPress = false;
                     handler.removeCallbacks(longPress);
                 }
                 return true;
             } else if (scrollDetector != null && pointerCount == 1 && !scrollDetector.onTouchEvent(event)) {
                 // pass latest pointer x to long press runnable
-                if (renderer.isAllowMeasurement()) longPress.setEventX((int) event.getX());
+                if (renderer.isMeasureEnabled()) longPress.setEventX((int) event.getX());
                 // and manually handle the event.
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         // start scrolling
                         scrolling = true;
-                        if (renderer.isAllowMeasurement()) renderer.onMeasureEnd(event.getX());
-                        if (renderer.isAllowScrolling()) renderer.onScrollStart();
+                        if (renderer.isMeasureEnabled()) renderer.endMeasurement(event.getX());
+                        if (renderer.isScrollEnabled()) renderer.startScroll();
                         // and start waiting for long-press
-                        if (renderer.isAllowMeasurement()) {
+                        if (renderer.isMeasureEnabled()) {
                             waitingForLongPress = true;
                             handler.postDelayed(longPress, LONG_PRESS_TIMEOUT);
                             prevX = event.getX();
                         }
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        if (renderer.isAllowMeasurement()) {
+                        if (renderer.isMeasureEnabled()) {
                             // if we moved before long press, stop waiting for it
                             if (waitingForLongPress && Math.abs(prevX - event.getX()) > LONG_PRESS_X_OFFSET) {
                                 waitingForLongPress = false;
                                 handler.removeCallbacks(longPress);
                             }
                             // otherwise if we're not scrolling it means we are in measurement
-                            if (!scrolling) renderer.onMeasure(event.getX());
+                            if (!scrolling) renderer.measure(event.getX());
 
                             prevX = event.getX();
                         }
@@ -235,8 +235,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                     case MotionEvent.ACTION_UP:
                         // reset all flags
                         scrolling = false;
-                        if (renderer.isAllowScrolling()) renderer.onScrollEnd();
-                        if (renderer.isAllowMeasurement()) {
+                        if (renderer.isScrollEnabled()) renderer.endScroll();
+                        if (renderer.isMeasureEnabled()) {
                             waitingForLongPress = false;
                             handler.removeCallbacks(longPress);
                         }

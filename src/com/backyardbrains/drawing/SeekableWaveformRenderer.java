@@ -39,50 +39,12 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     @SuppressWarnings("WeakerAccess") Train[] spikeTrains;
     @SuppressWarnings("WeakerAccess") SpikeValueAndIndex[][] valuesAndIndexes;
 
-    private Callback callback;
-
-    public interface Callback extends BYBBaseRenderer.Callback {
-
-        void onHorizontalDragStart();
-
-        void onHorizontalDrag(float dx);
-
-        void onHorizontalDragEnd();
-
-        void onMeasurementStart();
-
-        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-            int rmsSampleCount);
-
-        void onMeasurementEnd();
-    }
-
-    public static class CallbackAdapter extends BYBBaseRenderer.CallbackAdapter implements Callback {
-
-        @Override public void onHorizontalDragStart() {
-        }
-
-        @Override public void onHorizontalDrag(float dx) {
-        }
-
-        @Override public void onHorizontalDragEnd() {
-        }
-
-        @Override public void onMeasurementStart() {
-        }
-
-        @Override
-        public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-            int rmsSampleCount) {
-        }
-
-        @Override public void onMeasurementEnd() {
-        }
-    }
-
     public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment,
         @NonNull float[] preparedBuffer) {
         super(fragment, preparedBuffer);
+
+        setScrollEnabled();
+        setMeasureEnabled();
 
         this.glMeasurementArea = new GlMeasurementArea();
         this.glSpikes = new GlSpikes();
@@ -105,16 +67,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    public void setCallback(Callback callback) {
-        super.setCallback(callback);
-
-        this.callback = callback;
-    }
-
     protected boolean drawSpikes() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         final int w = getSurfaceWidth();
 
@@ -125,6 +84,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         measurementEndX = width * measurementEndX / w;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
@@ -173,10 +135,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 }
             }
 
-            if (callback != null) {
-                callback.onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2],
-                    measureSampleCount);
-            }
+            onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
             // draw measurement area
             glMeasurementArea.draw(gl, measurementStartX * scaleX, measurementEndX * scaleX, -glWindowHeight * .5f,
@@ -198,43 +157,57 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         }
     }
 
-    @Override protected void onScrollStart() {
-        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) {
-            if (callback != null) callback.onHorizontalDragStart();
-        }
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void startScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) onScrollStart();
     }
 
-    @Override protected void onScroll(float dx) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * getGlWindowWidth() / getSurfaceWidth());
-        }
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void scroll(float dx) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onScroll(dx * getGlWindowWidth() / getSurfaceWidth());
     }
 
-    @Override protected void onScrollEnd() {
-        if (getIsPlaybackMode() && getIsNotPlaying()) if (callback != null) callback.onHorizontalDragEnd();
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void endScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onScrollEnd();
     }
 
-    @Override protected void onMeasureStart(float x) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void startMeasurement(float x) {
         if (getIsPlaybackMode() && getIsNotPlaying()) {
             measurementStartX = x;
             measurementEndX = x;
             measuring = true;
 
-            if (callback != null) callback.onMeasurementStart();
+            onMeasureStart();
         }
     }
 
-    @Override protected void onMeasure(float x) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void measure(float x) {
         if (getIsPlaybackMode() && getIsNotPlaying()) measurementEndX = x;
     }
 
-    @Override protected void onMeasureEnd(float x) {
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void endMeasurement(float x) {
         if (getIsPlaybackMode() && getIsNotPlaying()) {
             measuring = false;
             measurementStartX = 0;
             measurementEndX = 0;
 
-            if (callback != null) callback.onMeasurementEnd();
+            onMeasureEnd();
         }
     }
 
