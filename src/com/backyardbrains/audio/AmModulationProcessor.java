@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.utils.AudioUtils;
-import java.util.Arrays;
 import uk.me.berndporr.iirj.Butterworth;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -36,7 +35,8 @@ public class AmModulationProcessor implements SampleProcessor {
 
     // Whether we are in AM modulation or not
     private boolean amModulationDetected;
-    // Low pass
+    // Collection of processed samples
+    private short[] samples;
     // Band stop filters used for detection
     private Butterworth detectionLowPassFilter;
     private Butterworth detectionBandStopFilter;
@@ -129,7 +129,10 @@ public class AmModulationProcessor implements SampleProcessor {
                 if (filters != null) filteredSamples[i] = filters.apply(filteredSamples[i]);
             }
 
-            return Arrays.copyOfRange(filteredSamples, 0, sampleCount);
+            if (this.samples == null || this.samples.length != sampleCount) this.samples = new short[sampleCount];
+            System.arraycopy(filteredSamples, 0, this.samples, 0, sampleCount);
+
+            return this.samples;
         }
 
         if (amModulationDetected) {
@@ -139,46 +142,4 @@ public class AmModulationProcessor implements SampleProcessor {
 
         return samples;
     }
-
-    // TODO: 29-Jan-18  CODE FOR PROCESSING SAMPLES ONE BY ONE, LEAVE FOR NOW UNTIL WE COMPARE EXECUTION SPEED
-
-    //public short processSingle(short sample) {
-    //    return processIncomingSingle(sample);
-    //}
-
-    //private short processIncomingSingle(short sample) {
-    //    short s;
-    //    s = (short) detectionLowPassFilter.filter(sample);
-    //    rmsOfOriginalSignal = 0.0001 * Math.pow(s, 2) + 0.9999 * rmsOfOriginalSignal;
-    //    s = (short) detectionBandStopFilter.filter(s);
-    //    rmsOfNotchedAMSignal = 0.0001 * Math.pow(s, 2) + 0.9999 * rmsOfNotchedAMSignal;
-    //
-    //    if (Math.sqrt(rmsOfOriginalSignal) / Math.sqrt(rmsOfNotchedAMSignal) > 5) {
-    //        if (!amModulationDetected) {
-    //            amModulationDetected = true;
-    //            if (listener != null) listener.onAmModulationStart();
-    //        }
-    //
-    //        s = (short) amLowPassFilter1.filter(Math.abs(sample));
-    //        s = (short) amLowPassFilter2.filter(Math.abs(s));
-    //        s = (short) amLowPassFilter3.filter(Math.abs(s));
-    //
-    //        // calculate average sample
-    //        average = 0.00001 * s + 0.99999 * average;
-    //        // use average to remove offset
-    //        s = (short) (s - average);
-    //
-    //        // apply additional filtering if necessary
-    //        if (filters != null) s = filters.apply(s);
-    //
-    //        return s;
-    //    }
-    //
-    //    if (amModulationDetected) {
-    //        amModulationDetected = false;
-    //        if (listener != null) listener.onAmModulationEnd();
-    //    }
-    //
-    //    return sample;
-    //}
 }

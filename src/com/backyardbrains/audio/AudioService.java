@@ -280,6 +280,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
+    private static final String[] TEMP_EVENTS_BUFFER = new String[0];
+    private static final DataProcessor.SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
+        new DataProcessor.SamplesWithMarkers(TEMP_EVENTS_BUFFER);
+
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
@@ -287,7 +291,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      */
     @Override public void receiveAudio(@NonNull short[] data) {
         // any received audio needs to be process with AM Modulation processor
-        passToDataManager(new DataProcessor.SamplesWithMarkers(AM_MODULATION_DATA_PROCESSOR.process(data)));
+        TEMP_SAMPLES_WITH_MARKERS.samples = AM_MODULATION_DATA_PROCESSOR.process(data);
+        passToDataManager(TEMP_SAMPLES_WITH_MARKERS);
     }
 
     // Passes data to data manager so it can be consumed by renderer
@@ -296,8 +301,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                processingBuffer.addToBuffer(new DataProcessor.SamplesWithMarkers(getProcessor().process(
-                    samplesWithMarkers.samples)));
+                TEMP_SAMPLES_WITH_MARKERS.samples = getProcessor().process(samplesWithMarkers.samples);
+                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_MARKERS);
             } else {
                 // pass data to data manager
                 processingBuffer.addToBuffer(samplesWithMarkers);

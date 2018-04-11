@@ -15,6 +15,7 @@ import com.backyardbrains.analysis.BYBAnalysisManager;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
+import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
@@ -36,6 +37,9 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     // Max number of thresholds
     private static final int MAX_THRESHOLDS = 3;
 
+    // Runnable used for updating playback seek bar
+    final protected SetThresholdRunnable setThresholdRunnable = new SetThresholdRunnable();
+
     @BindView(R.id.threshold_handle_left) BYBThresholdHandle thresholdHandleLeft;
     @BindView(R.id.threshold_handle_right) BYBThresholdHandle thresholdHandleRight;
     @BindView(R.id.ibtn_remove_threshold) ImageButton ibtnRemoveThreshold;
@@ -49,6 +53,27 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
 
     // Index of the currently selected threshold
     int selectedThreshold;
+
+    /**
+     * Runnable that is executed on the UI thread every time one of the thresholds is updated.
+     */
+    protected class SetThresholdRunnable implements Runnable {
+
+        private @ThresholdOrientation int orientation;
+        private int value;
+
+        @Override public void run() {
+            setThreshold(orientation, value);
+        }
+
+        public void setOrientation(@ThresholdOrientation int orientation) {
+            this.orientation = orientation;
+        }
+
+        public void setValue(int value) {
+            this.value = value;
+        }
+    }
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -104,61 +129,50 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
 
     @Override protected FindSpikesRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(this, preparedBuffer, filePath);
-        renderer.setCallback(new FindSpikesRenderer.CallbackAdapter() {
-
-            @Override public void onThresholdUpdate(@ThresholdOrientation final int threshold, final int value) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setThreshold(threshold, value);
-                        }
-                    });
-                }
-            }
+        renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
                     viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
                     viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
                     viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
-                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable/*new Runnable() {
-                        @Override public void run() {
-                            if (getAudioService() != null) {
-                                setMilliseconds(
-                                    drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
-                            }
-
-                            setMillivolts(
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
-                        }
-                    }*/);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
                 }
             }
+        });
+        renderer.setOnScrollListener(new BYBBaseRenderer.OnScrollListener() {
 
-            @Override public void onHorizontalDragStart() {
+            @Override public void onScrollStart() {
                 startSeek();
             }
 
-            @Override public void onHorizontalDrag(float dx) {
-                int progress = (int) (sbAudioProgress.getProgress() - dx);
-                if (progress < 0) progress = 0;
-                if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
-                playbackSeekRunnable.setProgress(progress);
-                playbackSeekRunnable.setUpdateProgressSeekBar(true);
-                playbackSeekRunnable.setUpdateProgressTimeLabel(false);
-                //final int finalProgress = progress;
-                sbAudioProgress.post(playbackSeekRunnable/*new Runnable() {
-                    @Override public void run() {
-                        seek(finalProgress);
-                        sbAudioProgress.setProgress(finalProgress);
-                    }
-                }*/);
+            @Override public void onScroll(float dx) {
+                if (getActivity() != null) {
+                    int progress = (int) (sbAudioProgress.getProgress() - dx);
+                    if (progress < 0) progress = 0;
+                    if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
+                    playbackSeekRunnable.setProgress(progress);
+                    playbackSeekRunnable.setUpdateProgressSeekBar(true);
+                    playbackSeekRunnable.setUpdateProgressTimeLabel(true);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(playbackSeekRunnable);
+                }
             }
 
-            @Override public void onHorizontalDragEnd() {
+            @Override public void onScrollEnd() {
                 stopSeek();
+            }
+        });
+        renderer.setOnThresholdUpdateListener(new FindSpikesRenderer.OnThresholdUpdateListener() {
+
+            @Override public void onThresholdUpdate(@ThresholdOrientation final int threshold, final int value) {
+                // we need to call it on UI thread because renderer is drawing on background thread
+                if (getActivity() != null) {
+                    setThresholdRunnable.setOrientation(threshold);
+                    setThresholdRunnable.setValue(value);
+                    getActivity().runOnUiThread(setThresholdRunnable);
+                }
             }
         });
         return renderer;

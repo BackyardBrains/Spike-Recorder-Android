@@ -32,7 +32,6 @@ import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.UsbMuscleProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbNeuronProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbSerialFilterSettingsDialog;
-import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
@@ -134,22 +133,15 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final WaveformRenderer renderer = new WaveformRenderer(this, preparedBuffer);
-        renderer.setCallback(new BYBBaseRenderer.CallbackAdapter() {
+        renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            if (getAudioService() != null) {
-                                setMilliseconds(
-                                    drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
-                            }
-
-                            setMillivolts(
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
-                        }
-                    });
+                if (getActivity() != null && getAudioService() != null) {
+                    viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
                 }
             }
         });

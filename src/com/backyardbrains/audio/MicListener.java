@@ -19,11 +19,8 @@
 
 package com.backyardbrains.audio;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.media.AudioRecord;
 import android.support.annotation.NonNull;
-import com.backyardbrains.R;
 import com.backyardbrains.utils.AudioUtils;
 import com.crashlytics.android.Crashlytics;
 import java.nio.ByteBuffer;
@@ -45,8 +42,8 @@ class MicListener extends Thread {
     private static final String TAG = makeLogTag(MicListener.class);
 
     private final ReceivesAudio service;
-    private final int bufferSize;
     private final ByteBuffer buffer;
+    private final short[] samples;
 
     private AudioRecord recorder;
     private boolean done;
@@ -61,14 +58,10 @@ class MicListener extends Thread {
     MicListener(@NonNull ReceivesAudio service) {
         this.service = service;
 
-        bufferSize = AudioUtils.IN_BUFFER_SIZE;
-        buffer = ByteBuffer.allocateDirect(bufferSize);
+        buffer = ByteBuffer.allocateDirect(AudioUtils.IN_BUFFER_SIZE);
         buffer.order(ByteOrder.nativeOrder());
+        samples = new short[(int) (buffer.capacity() * .5)];
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-    }
-
-    int getBufferSize() {
-        return bufferSize;
     }
 
     /**
@@ -96,12 +89,6 @@ class MicListener extends Thread {
         LOGD(TAG, "Thread Launched");
         recorder = null;
 
-        final String prefsname = ((AudioService) service).getResources().getString(R.string.global_prefs);
-        final String speedPrefsKey = ((AudioService) service).getResources().getString(R.string.microphone_read_speed);
-
-        SharedPreferences prefs = ((AudioService) service).getSharedPreferences(prefsname, Context.MODE_PRIVATE);
-        String preferencesSpeed = prefs.getString(speedPrefsKey, "1");
-        final int readSpeedDivisor = Integer.parseInt(preferencesSpeed);
         try {
             recorder = AudioUtils.createAudioRecord();
             if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -111,11 +98,7 @@ class MicListener extends Thread {
 
             recorder.startRecording();
             LOGD(TAG, "Recorder Started");
-            int readAmt = buffer.limit() / readSpeedDivisor;
-            //((AudioService) service).setMicListenerBufferSizeInSamples(readAmt/2);
-            while (!done && recorder.read(buffer, readAmt) > 0) {
-                buffer.clear();
-                short[] samples = new short[readAmt / 2];
+            while (!done && recorder.read(buffer, buffer.capacity()) > 0) {
                 buffer.asShortBuffer().get(samples);
                 synchronized (service) {
                     service.receiveAudio(samples);

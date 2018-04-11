@@ -28,13 +28,13 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSampleSource.class);
 
-    // Audio playback thread
-    private PlaybackThread playbackThread;
-
     // Path to the audio file
     private final String filePath;
     // Whether file should start playing right away
     private final boolean autoPlay;
+
+    // Audio playback thread
+    private PlaybackThread playbackThread;
 
     // Size of buffer (chunk) for the audio file reading
     @SuppressWarnings("WeakerAccess") int bufferSize;
@@ -44,6 +44,10 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     @SuppressWarnings("WeakerAccess") short[] seekSamples;
     // Buffer that holds samples while playing
     @SuppressWarnings("WeakerAccess") short[] samples;
+    // Buffer that holds events while seeking
+    @SuppressWarnings("WeakerAccess") String[] seekEvents;
+    // Buffer that holds events while playing
+    @SuppressWarnings("WeakerAccess") String[] events;
     // Collection of events within currently processed data batch
     @SuppressWarnings("WeakerAccess") SparseArray<String> eventsInCurrentBatch = new SparseArray<>();
 
@@ -111,9 +115,11 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 seekBuffer = new byte[seekBufferSize];
                 seekSamples = new short[(int) (seekBufferSize * .5)];
+                seekEvents = new String[seekSamples.length];
 
                 final byte[] buffer = new byte[bufferSize];
                 samples = new short[(int) (bufferSize * .5)];
+                events = new String[samples.length];
                 while (working.get() && raf != null) {
                     if (playing.get()) {
                         // if we are playing after seek we need to fix it because of the different buffer sizes
@@ -138,6 +144,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                         progress.set(raf.getFilePointer());
 
                         // update buffer capacity when switching from seeking to playing
+                        //if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
                         if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
 
                         // index of the sample up to which we check the events
@@ -234,12 +241,11 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 }
 
                 // update buffer capacity when switching from playing to seeking
+                //if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
                 if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
 
                 // index of the sample up to which we check the events
                 long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
-
-                //LOGD(TAG, "START: " + startSampleIndex + ", END: " + endSampleIndex);
 
                 // check if there are any events in the currently read buffer
                 int len = allEvents.size();
@@ -468,18 +474,21 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     }
 
     @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
-        short[] s = new short[0];
-        if (data.length == bufferSize) {
-            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
-            s = samples;
-        } else if (data.length == seekBufferSize) {
+        short[] s;
+        String[] e;
+        if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asShortBuffer()
                 .get(seekSamples, 0, seekSamples.length);
             s = seekSamples;
+            e = seekEvents;
+        } else {
+            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
+            s = samples;
+            e = events;
         }
-        String[] e = new String[s.length];
+        BufferUtils.emptyStringBuffer(e);
         int len = eventsInCurrentBatch.size();
         for (int i = 0; i < len; i++) {
             e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);

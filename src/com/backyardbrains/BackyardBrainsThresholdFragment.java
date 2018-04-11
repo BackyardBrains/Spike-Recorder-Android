@@ -21,7 +21,6 @@ import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
-import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.view.BYBThresholdHandle;
@@ -47,10 +46,47 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     private static final double MAX_PROCESSING_TIME = 2.4; // 2.4 seconds
     private static final double DEAD_PERIOD_TIME = 0.005; // 5 millis
 
-    private static final ThresholdProcessor DATA_PROCESSOR =
+    static final ThresholdProcessor DATA_PROCESSOR =
         new ThresholdProcessor(AVERAGED_SAMPLE_COUNT, MAX_PROCESSING_TIME, DEAD_PERIOD_TIME);
 
+    final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
+        new SetThresholdHandlePositionRunnable();
+    final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
+        new UpdateDataProcessorThresholdRunnable();
+
     private Unbinder unbinder;
+
+    /**
+     * Runnable that is executed on the UI thread every time threshold position is changed.
+     */
+    private class SetThresholdHandlePositionRunnable implements Runnable {
+
+        private int position;
+
+        @Override public void run() {
+            setThresholdHandlePosition(position);
+        }
+
+        public void setPosition(int position) {
+            this.position = position;
+        }
+    }
+
+    /**
+     * Runnable that is executed on the UI thread every time threshold value is changed.
+     */
+    private class UpdateDataProcessorThresholdRunnable implements Runnable {
+
+        private float value;
+
+        @Override public void run() {
+            updateDataProcessorThreshold(value);
+        }
+
+        public void setValue(float value) {
+            this.value = value;
+        }
+    }
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -101,44 +137,33 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
 
     @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
         final ThresholdRenderer renderer = new ThresholdRenderer(this, preparedBuffer);
-        renderer.setCallback(new ThresholdRenderer.CallbackAdapter() {
+        renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
+
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
+                if (getActivity() != null && getAudioService() != null) {
+                    viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
+                }
+            }
+        });
+        renderer.setOnThresholdChangeListener(new ThresholdRenderer.OnThresholdChangeListener() {
 
             @Override public void onThresholdPositionChange(final int position) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            setThresholdHandlePosition(position);
-                        }
-                    });
+                    setThresholdHandlePositionRunnable.setPosition(position);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
                 }
             }
 
             @Override public void onThresholdValueChange(final float value) {
-                // we need to call it on UI thread because renderer is drawing on background thread
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            updateDataProcessorThreshold(value);
-                        }
-                    });
-                }
-            }
-
-            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                // we need to call it on UI thread because renderer is drawing on background thread
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override public void run() {
-                            if (getAudioService() != null) {
-                                setMilliseconds(
-                                    drawSurfaceWidth / (float) getAudioService().getSampleRate() * 1000 / 2);
-                            }
-
-                            setMillivolts(
-                                (float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
-                        }
-                    });
+                    updateDataProcessorThresholdRunnable.setValue(value);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
                 }
             }
         });
@@ -271,13 +296,13 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
     }
 
     // Sets the specified value for the threshold.
-    private void setThresholdHandlePosition(int value) {
+    void setThresholdHandlePosition(int value) {
         // can be null if callback is called after activity has finished
         if (thresholdHandle != null) thresholdHandle.setPosition(value);
     }
 
     // Updates data processor with the newly set threshold.
-    private void updateDataProcessorThreshold(float value) {
+    void updateDataProcessorThreshold(float value) {
         // can be null if callback is called after activity has finished
         //noinspection ConstantConditions
         if (DATA_PROCESSOR != null) DATA_PROCESSOR.setThreshold(value);

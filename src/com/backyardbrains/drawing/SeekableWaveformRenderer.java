@@ -4,7 +4,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.data.SpikeValueAndIndex;
+import com.backyardbrains.data.persistance.AnalysisDataSource;
+import com.backyardbrains.data.persistance.entity.Train;
+import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -18,17 +21,11 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private static final float RMS_QUANTIFIER = 0.005f;
 
-    private final String filePath;
-
-    private GlMeasurementArea glMeasurementArea;
-    private GlSpikes glSpikes;
-
-    private float[] spikesVertices;
-    private float[] spikesColors;
-
-    private float[] redColor = BYBColors.getColorAsGlById(BYBColors.red);
-    private float[] yellowColor = BYBColors.getColorAsGlById(BYBColors.yellow);
-    private float[] cyanColor = BYBColors.getColorAsGlById(BYBColors.cyan);
+    private final GlMeasurementArea glMeasurementArea;
+    private final GlSpikes glSpikes;
+    private final float[] spikesVertices = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 2];
+    private final float[] spikesColors = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 4];
+    private final float[][] colors = new float[3][];
 
     private short[] rmsSamples;
     private float drawSampleCount;
@@ -37,42 +34,49 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     private float measurementStartX;
     private float measurementEndX;
 
-    private Callback callback;
-
-    public interface Callback extends BYBBaseRenderer.Callback {
-
-        void onMeasurementStart();
-
-        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-            int rmsSampleCount);
-
-        void onMeasurementEnd();
-    }
+    @SuppressWarnings("WeakerAccess") Train[] spikeTrains;
+    @SuppressWarnings("WeakerAccess") SpikeValueAndIndex[][] valuesAndIndexes;
 
     public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment,
         @NonNull float[] preparedBuffer) {
         super(fragment, preparedBuffer);
 
-        this.filePath = filePath;
+        setScrollEnabled();
+        setMeasureEnabled(true);
 
         glMeasurementArea = new GlMeasurementArea();
         glSpikes = new GlSpikes();
+
+        // populate train colors
+        colors[0] = new float[] { 1f, 0f, 0f, 1f };
+        colors[1] = new float[] { 1f, 1f, 0f, 1f };
+        colors[2] = new float[] { 0f, 1f, 1f, 1f };
+
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().getSpikeTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
+                @Override public void onAnalysisLoaded(@NonNull Train[] result) {
+                    spikeTrains = result;
+                    valuesAndIndexes = new SpikeValueAndIndex[spikeTrains.length][];
+                }
+
+                @Override public void onDataNotAvailable() {
+                    spikeTrains = null;
+                }
+            });
+        }
     }
 
     //==============================================
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    public void setCallback(Callback callback) {
-        super.setCallback(callback);
-
-        this.callback = callback;
-    }
-
     protected boolean drawSpikes() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         final int w = getSurfaceWidth();
 
@@ -83,6 +87,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         measurementEndX = width * measurementEndX / w;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
@@ -90,11 +97,12 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         int toSample = getAudioService() != null ? (int) getAudioService().getPlaybackProgress() : 0;
         int fromSample = Math.max(0, toSample - glWindowWidth);
-        Spike[][] spikes = new Spike[0][];
         if (drawSpikes()) {
-            // draw spikes
-            if (getAnalysisManager() != null) {
-                spikes = getAnalysisManager().getSpikesByTrainsForRange(filePath, fromSample, toSample);
+            if (getAnalysisManager() != null && spikeTrains != null) {
+                for (int i = 0; i < spikeTrains.length; i++) {
+                    valuesAndIndexes[i] =
+                        getAnalysisManager().getSpikesByTrainForRange(spikeTrains[i].getId(), fromSample, toSample);
+                }
             }
         }
 
@@ -118,20 +126,19 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             final float rms = AnalysisUtils.RMS(rmsSamples, measureSampleCount) * RMS_QUANTIFIER;
 
             int[] spikeCounts = new int[] { -1, -1, -1 };
-            for (int i = 0; i < spikes.length; i++) {
-                spikeCounts[i] = 0;
-                for (int j = 0; j < spikes[i].length; j++) {
-                    if (fromSample + startIndex <= spikes[i][j].getIndex()
-                        && spikes[i][j].getIndex() <= fromSample + startIndex + measureSampleCount) {
-                        spikeCounts[i]++;
+            if (spikeTrains != null && valuesAndIndexes.length > 0) {
+                for (int i = 0; i < valuesAndIndexes.length; i++) {
+                    spikeCounts[i] = 0;
+                    for (int j = 0; j < valuesAndIndexes[i].length; j++) {
+                        if (fromSample + startIndex <= valuesAndIndexes[i][j].getIndex()
+                            && valuesAndIndexes[i][j].getIndex() <= fromSample + startIndex + measureSampleCount) {
+                            spikeCounts[i]++;
+                        }
                     }
                 }
             }
 
-            if (callback != null) {
-                callback.onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2],
-                    measureSampleCount);
-            }
+            onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
             // draw measurement area
             glMeasurementArea.draw(gl, measurementStartX * scaleX, measurementEndX * scaleX, -glWindowHeight * .5f,
@@ -142,73 +149,113 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             drawStartIndex, drawEndIndex, scaleX, scaleY);
 
         if (drawSpikes()) {
-            if (spikes.length > 0) {
-                for (int i = 0; i < spikes.length; i++) {
-                    constructSpikesAndColorsBuffers(spikes[i], glWindowWidth, fromSample, toSample,
-                        i == 0 ? redColor : i == 1 ? yellowColor : cyanColor);
-                    glSpikes.draw(gl, spikesVertices, spikesColors);
+            if (spikeTrains != null && valuesAndIndexes.length > 0) {
+                for (int i = 0; i < valuesAndIndexes.length; i++) {
+                    int verticesCount =
+                        fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
+                            fromSample, toSample, colors[i]);
+                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }
         }
     }
 
-    @Override protected void onMeasurementStart(float x) {
-        measurementStartX = x;
-        measurementEndX = x;
-        measuring = true;
-
-        if (callback != null) callback.onMeasurementStart();
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void startScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) onScrollStart();
     }
 
-    @Override protected void onMeasure(float x) {
-        measurementEndX = x;
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void scroll(float dx) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onScroll(dx * getGlWindowWidth() / getSurfaceWidth());
     }
 
-    @Override protected void onMeasurementEnd(float x) {
-        measuring = false;
-        measurementStartX = 0;
-        measurementEndX = 0;
-
-        if (callback != null) callback.onMeasurementEnd();
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void endScroll() {
+        if (getIsPlaybackMode() && getIsNotPlaying()) onScrollEnd();
     }
 
-    private void constructSpikesAndColorsBuffers(@NonNull Spike[] spikes, int glWindowWidth, long fromSample,
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void startMeasurement(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            measurementStartX = x;
+            measurementEndX = x;
+            measuring = true;
+
+            onMeasureStart();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void measure(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) measurementEndX = x;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void endMeasurement(float x) {
+        if (getIsPlaybackMode() && getIsNotPlaying()) {
+            measuring = false;
+            measurementStartX = 0;
+            measurementEndX = 0;
+
+            onMeasureEnd();
+        }
+    }
+
+    // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
+    private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
+        @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
         long toSample, @Size(4) float[] color) {
-        spikesVertices = null;
-        spikesColors = null;
-
+        int verticesCounter = 0;
         try {
-            if (spikes.length > 0) {
-                float[] arr = new float[spikes.length * 2];
-                float[] arr1 = new float[spikes.length * 4];
-                int i = 0, j = 0; // j as index of arr, k as index of arr1
+            if (valueAndIndices.length > 0) {
+                int colorsCounter = 0;
                 long index;
 
-                for (Spike spike : spikes) {
-                    if (fromSample <= spike.getIndex() && spike.getIndex() < toSample) {
-                        index = toSample - fromSample < glWindowWidth ? spike.getIndex() + glWindowWidth - toSample
-                            : spike.getIndex() - fromSample;
-                        arr[i++] = index;
-                        arr[i++] = spike.getValue();
-
-                        for (int k = 0; k < 4; k++) {
-                            arr1[j++] = color[k];
-                        }
+                for (SpikeValueAndIndex valueAndIndex : valueAndIndices) {
+                    if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
+                        index =
+                            toSample - fromSample < glWindowWidth ? valueAndIndex.getIndex() + glWindowWidth - toSample
+                                : valueAndIndex.getIndex() - fromSample;
+                        spikesVertices[verticesCounter++] = index;
+                        spikesVertices[verticesCounter++] = valueAndIndex.getValue();
+                        System.arraycopy(color, 0, spikesColors, colorsCounter, color.length);
+                        colorsCounter += 4;
                     }
                 }
-
-                spikesVertices = new float[i];
-                System.arraycopy(arr, 0, spikesVertices, 0, spikesVertices.length);
-
-                spikesColors = new float[j];
-                System.arraycopy(arr1, 0, spikesColors, 0, spikesColors.length);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
 
-        if (spikesVertices == null) spikesVertices = new float[0];
-        if (spikesColors == null) spikesColors = new float[0];
+        return verticesCounter;
+    }
+
+    // Check whether service is currently in playback mode
+    private boolean getIsPlaybackMode() {
+        return getAudioService() != null && getAudioService().isPlaybackMode();
+    }
+
+    // Check whether audio is currently in the paused state
+    private boolean getIsNotPlaying() {
+        return getAudioService() == null || !getAudioService().isAudioPlaying();
+    }
+
+    // Check whether audio is currently being sought
+    private boolean getIsSeeking() {
+        return getAudioService() != null && getAudioService().isAudioSeeking();
     }
 }

@@ -8,11 +8,13 @@ import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.data.AverageSpike;
 import com.backyardbrains.data.InterSpikeInterval;
+import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
@@ -36,8 +38,6 @@ public class BYBAnalysisManager {
 
     // Reference to the data manager that stores and processes the data
     @SuppressWarnings("WeakerAccess") final AnalysisRepository analysisRepository;
-
-    private List<List<Spike>> spikeTrains;
 
     @SuppressWarnings("WeakerAccess") int[][] autocorrelation;
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
@@ -78,7 +78,7 @@ public class BYBAnalysisManager {
                     // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
                 }
             } else {
-                analysisRepository.getSpikeAnalysis(filePath, getSpikesCallback);
+                analysisRepository.getSpikeAnalysisSpikes(filePath, getSpikesCallback);
             }
         } else {
             if (load(filePath)) {
@@ -90,18 +90,24 @@ public class BYBAnalysisManager {
     }
 
     /**
-     * Returns array of spikes found during the spike analysis.
+     * Returns spike analysis id for audio file located at specified {@code filePath}.
      */
-    public void getSpikes(@NonNull String filePath,
-        @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
-        analysisRepository.getSpikeAnalysis(filePath, callback);
+    public long getSpikeAnalysisId(@NonNull String filePath) {
+        return analysisRepository.getSpikeAnalysisId(filePath);
     }
 
     /**
-     * Returns arrays of spikes sorted by trains for the specified range.
+     * Returns array of spike values and indexes belonging to spike analysis with specified {@code analysisId} for the specified range.
      */
-    public Spike[][] getSpikesByTrainsForRange(@NonNull String filePath, int startIndex, int endIndex) {
-        return analysisRepository.getSpikesByTrainsForRange(filePath, startIndex, endIndex);
+    public SpikeValueAndIndex[] getSpikesForRange(long analysisId, int startIndex, int endIndex) {
+        return analysisRepository.getSpikeAnalysisValuesAndIndicesForRange(analysisId, startIndex, endIndex);
+    }
+
+    /**
+     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for the specified range.
+     */
+    public SpikeValueAndIndex[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
+        return analysisRepository.getSpikesByTrainForRange(trainId, startIndex, endIndex);
     }
 
     /**
@@ -179,6 +185,16 @@ public class BYBAnalysisManager {
     //=================================================
     //  SPIKE TRAINS
     //=================================================
+
+    /**
+     *
+     * @param filePath
+     * @param callback
+     */
+    public void getSpikeTrains(@NonNull String filePath,
+        @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
+        analysisRepository.getSpikeAnalysisTrains(filePath, callback);
+    }
 
     // Callback to be invoked when spike analysis (by trains) is retrieved from the analysis repository
     private class GetSpikeAnalysisByTrainsCallback implements AnalysisDataSource.GetAnalysisCallback<float[][]> {

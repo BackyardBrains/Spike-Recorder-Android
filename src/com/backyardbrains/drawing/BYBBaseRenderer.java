@@ -3,6 +3,7 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
@@ -28,7 +29,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private static int MAX_SAMPLES_COUNT = AudioUtils.SAMPLE_RATE * SECONDS_TO_RENDER; // 12 sec
 
-    private ProcessingBuffer processingBuffer;
+    private final ProcessingBuffer processingBuffer;
+    private final SparseArray<String> markersBuffer;
 
     private float[] tempBufferToDraws;
     private short[] samples;
@@ -44,37 +46,80 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private float scaleX;
     private float scaleY;
 
+    private boolean scrollEnabled;
+    private boolean measureEnabled;
+
     private boolean autoScale;
 
     private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
     private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
-    private Callback callback;
+    private OnDrawListener onDrawListener;
+    private OnScrollListener onScrollListener;
+    private OnMeasureListener onMeasureListener;
 
-    public interface Callback {
-
+    /**
+     * Interface definition for a callback to be invoked on every surface redraw.
+     */
+    public interface OnDrawListener {
+        /**
+         * Listener that is invoked when surface is redrawn.
+         *
+         * @param drawSurfaceWidth Draw surface width.
+         * @param drawSurfaceHeight Draw surface height.
+         */
         void onDraw(int drawSurfaceWidth, int drawSurfaceHeight);
-
-        void onHorizontalDragStart();
-
-        void onHorizontalDrag(float dx);
-
-        void onHorizontalDragEnd();
     }
 
-    public static class CallbackAdapter implements Callback {
+    /**
+     * Interface definition for a callback to be invoked while draw surface is scrolled.
+     */
+    public interface OnScrollListener {
 
-        @Override public void onDraw(int drawSurfaceWidth, int drawSurfaceHeight) {
-        }
+        /**
+         * Listener that is invoked when draw surface scroll starts.
+         */
+        void onScrollStart();
 
-        @Override public void onHorizontalDrag(float dx) {
-        }
+        /**
+         * Listener that is invoked while draw surface is being scrolled.
+         *
+         * @param dx Delta x from the previous method call.
+         */
+        void onScroll(float dx);
 
-        @Override public void onHorizontalDragStart() {
-        }
+        /**
+         * Listener that is invoked when draw surface scroll ends.
+         */
+        void onScrollEnd();
+    }
 
-        @Override public void onHorizontalDragEnd() {
-        }
+    /**
+     * Interface definition for a callback to be invoked while drawn signal is being measured.
+     */
+    public interface OnMeasureListener {
+
+        /**
+         * Listener that is invoked when signal measurement starts.
+         */
+        void onMeasureStart();
+
+        /**
+         * Listener that is invoked while drawn signal is being measured.
+         *
+         * @param rms RMS value of the selected part of drawn signal.
+         * @param firstTrainSpikeCount Number of spikes belonging to first train within selected part of drawn signal.
+         * @param secondTrainSpikeCount Number of spikes belonging to second train within selected part of drawn signal.
+         * @param thirdTrainSpikeCount Number of spikes belonging to third train within selected part of drawn signal.
+         * @param sampleCount Number of spikes within selected part of drawn signal.
+         */
+        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
+            int sampleCount);
+
+        /**
+         * Listener that is invoked when signal measurement ends.
+         */
+        void onMeasureEnd();
     }
 
     //==============================================
@@ -85,6 +130,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         super(fragment);
 
         processingBuffer = ProcessingBuffer.get();
+        markersBuffer = new SparseArray<>();
 
         this.tempBufferToDraws = preparedBuffer;
     }
@@ -108,8 +154,13 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    public void setCallback(Callback callback) {
-        this.callback = callback;
+    /**
+     * Registers a callback to be invoked on every surface redraw.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnDrawListener(@Nullable OnDrawListener listener) {
+        this.onDrawListener = listener;
     }
 
     /**
@@ -165,8 +216,18 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         return surfaceWidth;
     }
 
-    int getSurfaceHeight() {
+    @SuppressWarnings("unused") int getSurfaceHeight() {
         return surfaceHeight;
+    }
+
+    public float pixelHeightToGlHeight(float pxHeight) {
+        return BYBUtils.map(pxHeight, surfaceHeight, 0, -glWindowHeight / 2, glWindowHeight / 2);
+    }
+
+    int glHeightToPixelHeight(float glHeight) {
+        if (surfaceHeight <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
+
+        return BYBUtils.map(glHeight, -glWindowHeight / 2, glWindowHeight / 2, surfaceHeight, 0);
     }
 
     //==============================================
@@ -281,7 +342,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
         // construct waveform vertices and populate markers buffer
-        final SparseArray<String> markersBuffer = new SparseArray<>();
+        markersBuffer.clear();
         final float[] waveformVertices =
             getWaveformVertices(samples, markers, markersBuffer, glWindowWidth, drawStartIndex, drawEndIndex);
 
@@ -295,7 +356,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
             drawStartIndex, drawEndIndex, scaleX, scaleY);
 
         // invoke callback that the surface has been drawn
-        if (callback != null) callback.onDraw(glWindowWidth, glWindowHeight);
+        if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
         //LOGD(TAG, "" + (System.currentTimeMillis() - start));
         //LOGD(TAG, "================================================");
@@ -309,51 +370,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
             gl.glLoadIdentity();
             gl.glOrthof(0f, glWindowWidth - 1, -heightHalf, heightHalf, -1f, 1f);
         }
-    }
-
-    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
-
-    protected void onMeasurementStart(float x) {
-    }
-
-    protected void onMeasure(float x) {
-    }
-
-    protected void onMeasurementEnd(float x) {
-    }
-
-    //==============================================
-    //  PRIVATE AND PACKAGE-PRIVATE METHODS
-    //==============================================
-
-    void startScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) {
-            if (callback != null) callback.onHorizontalDragStart();
-        }
-    }
-
-    void scroll(float dx) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
-            if (callback != null) callback.onHorizontalDrag(dx * glWindowWidth / surfaceWidth);
-        }
-    }
-
-    void endScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying()) if (callback != null) callback.onHorizontalDragEnd();
-    }
-
-    void startMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementStart(x);
-    }
-
-    void measure(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasure(x);
-    }
-
-    void endMeasurements(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onMeasurementEnd(x);
     }
 
     @NonNull protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
@@ -385,11 +401,151 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         return tempBufferToDraws;
     }
 
+    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
+
+    //==============================================
+    //  SCROLLING
+    //==============================================
+
+    /**
+     * Registers a callback to be invoked on waveform scroll interaction.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnScrollListener(@Nullable OnScrollListener listener) {
+        this.onScrollListener = listener;
+    }
+
+    /**
+     * Whether scrolling of the surface view is enabled.
+     */
+    public boolean isScrollEnabled() {
+        return this.scrollEnabled;
+    }
+
+    /**
+     * Called when user starts scrolling the GL surface. This method is called only if {@link #isScrollEnabled()} returns {@code true}.
+     */
+    protected void startScroll() {
+    }
+
+    /**
+     * Called repeatedly while user scrolls the GL surface. This method is called only if {@link #isScrollEnabled()} returns {@code true}.
+     */
+    protected void scroll(float dx) {
+    }
+
+    /**
+     * Called when user stops scrolling the GL surface. This method is called only if {@link #isScrollEnabled()} returns {@code true}.
+     */
+    protected void endScroll() {
+    }
+
+    /**
+     * Triggers {@link OnScrollListener#onScrollStart()} call.
+     */
+    final void onScrollStart() {
+        if (onScrollListener != null) onScrollListener.onScrollStart();
+    }
+
+    /**
+     * Triggers {@link OnScrollListener#onScroll(float)} call.
+     */
+    final void onScroll(float dx) {
+        if (onScrollListener != null) onScrollListener.onScroll(dx);
+    }
+
+    /**
+     * Triggers {@link OnScrollListener#onScrollEnd()} call.
+     */
+    final void onScrollEnd() {
+        if (onScrollListener != null) onScrollListener.onScrollEnd();
+    }
+
+    /**
+     * Enables scrolling of the surface view.
+     */
+    void setScrollEnabled() {
+        this.scrollEnabled = true;
+    }
+
+    //==============================================
+    //  MEASUREMENT
+    //==============================================
+
+    /**
+     * Registers a callback to be invoked on signal measurement.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnMeasureListener(@Nullable OnMeasureListener listener) {
+        this.onMeasureListener = listener;
+    }
+
+    /**
+     * Whether measurement of the signal is enabled.
+     */
+    public boolean isMeasureEnabled() {
+        return measureEnabled;
+    }
+
+    /**
+     * Called when user start GL surface measurement. This method is called only if {@link #isMeasureEnabled()} returns {@code true}.
+     */
+    protected void startMeasurement(float x) {
+    }
+
+    /**
+     * Called repeatedly while GL surface is being measured. This method is called only if {@link #isMeasureEnabled()} returns {@code true}.
+     */
+    protected void measure(float x) {
+    }
+
+    /**
+     * Called when user stop GL surface measurement. This method is called only if {@link #isMeasureEnabled()} returns {@code true}.
+     */
+    protected void endMeasurement(float x) {
+    }
+
+    /**
+     * Triggers {@link OnMeasureListener#onMeasureStart()} call.
+     */
+    final void onMeasureStart() {
+        if (onMeasureListener != null) onMeasureListener.onMeasureStart();
+    }
+
+    /**
+     * Triggers {@link OnMeasureListener#onMeasure(float, int, int, int, int)} call.
+     */
+    final void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
+        int sampleCount) {
+        if (onMeasureListener != null) {
+            onMeasureListener.onMeasure(rms, firstTrainSpikeCount, secondTrainSpikeCount, thirdTrainSpikeCount,
+                sampleCount);
+        }
+    }
+
+    /**
+     * Triggers {@link OnMeasureListener#onMeasureEnd()} call.
+     */
+    final void onMeasureEnd() {
+        if (onMeasureListener != null) onMeasureListener.onMeasureEnd();
+    }
+
+    /**
+     * Sets whether measurement of the signal will be enabled.
+     */
+    void setMeasureEnabled(boolean enabled) {
+        this.measureEnabled = enabled;
+    }
+
     //==============================================
     //  AUTO-SCALE
     //==============================================
 
-    private void autoScaleCheck(@NonNull short[] samples) {
+    @SuppressWarnings("unused") private void autoScaleCheck(@NonNull short[] samples) {
         if (!isAutoScale()) if (samples.length > 0) autoSetFrame(samples);
     }
 
@@ -426,32 +582,5 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private float getMinimumDetectedPCMValue() {
         return minimumDetectedPCMValue;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------- UTILS
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // ----------------------------------------------------------------------------------------
-    int glHeightToPixelHeight(float glHeight) {
-        if (surfaceHeight <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
-
-        return BYBUtils.map(glHeight, -getGlWindowHeight() / 2, getGlWindowHeight() / 2, surfaceHeight, 0);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public float pixelHeightToGlHeight(float pxHeight) {
-        return BYBUtils.map(pxHeight, surfaceHeight, 0, -getGlWindowHeight() / 2, getGlWindowHeight() / 2);
-    }
-
-    private boolean getIsPlaybackMode() {
-        return getAudioService() != null && getAudioService().isPlaybackMode();
-    }
-
-    private boolean getIsNotPlaying() {
-        return getAudioService() == null || !getAudioService().isAudioPlaying();
-    }
-
-    private boolean getIsSeeking() {
-        return getAudioService() != null && getAudioService().isAudioSeeking();
     }
 }
