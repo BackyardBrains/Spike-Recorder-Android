@@ -53,8 +53,8 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 55
-        versionName '1.6.0'
+        versionCode 56
+        versionName '1.6.0.1'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
