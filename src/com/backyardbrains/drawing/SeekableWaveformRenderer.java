@@ -42,7 +42,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         super(fragment, preparedBuffer);
 
         setScrollEnabled();
-        setMeasureEnabled();
+        setMeasureEnabled(true);
 
         glMeasurementArea = new GlMeasurementArea();
         glSpikes = new GlSpikes();

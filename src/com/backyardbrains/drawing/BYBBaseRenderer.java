@@ -535,10 +535,10 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     }
 
     /**
-     * Enables measurement of the signal.
+     * Sets whether measurement of the signal will be enabled.
      */
-    void setMeasureEnabled() {
-        this.measureEnabled = true;
+    void setMeasureEnabled(boolean enabled) {
+        this.measureEnabled = enabled;
     }
 
     //==============================================

@@ -122,10 +122,19 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
+     * @param filePath Absolute path of the audio file for which we want to retrieve the spike analysis id.
+     */
+    public long getSpikeAnalysisId(@NonNull String filePath) {
+        return spikeAnalysisDao.loadSpikeAnalysisId(filePath);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @param filePath Absolute path of the audio file for which we want to retrieve the spikes.
      * @param callback Callback that's invoked when spikes are retrieved from the database.
      */
-    @Override public void getSpikeAnalysis(@NonNull final String filePath,
+    @Override public void getSpikeAnalysisSpikes(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<Spike[]> callback) {
         final Runnable runnable = new Runnable() {
             @Override public void run() {
@@ -153,14 +162,27 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
+     * @param analysisId Id of the {@link SpikeAnalysis} for which spike values nad indices should be queried.
+     * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
+     * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
+     * @return Array of spike values and indices located between specified {@code startIndex} and {@code endIndex}.
+     */
+    public SpikeValueAndIndex[] getSpikeAnalysisValuesAndIndicesForRange(long analysisId, int startIndex,
+        int endIndex) {
+        return spikeDao.loadSpikeValuesAndIndicesForRange(analysisId, startIndex, endIndex);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @param trainId Id of the {@link Train} for which spike values and indices should be queried.
      * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
-     * @return Array of spike trains and indices located between specified {@code startIndex} and {@code endIndex}.
+     * @return Array of spike values and indices located between specified {@code startIndex} and {@code endIndex}.
      */
-    @Override public SpikeValueAndIndex[] getSpikesAnalysisTimesAndIndicesByTrainForRange(long trainId, int startIndex,
+    @Override public SpikeValueAndIndex[] getSpikeAnalysisValuesAndIndicesByTrainForRange(long trainId, int startIndex,
         int endIndex) {
-        return spikeTrainDao.loadSpikeTimesAndIndicesForRange(trainId, startIndex, endIndex);
+        return spikeTrainDao.loadSpikeValuesAndIndicesForRange(trainId, startIndex, endIndex);
     }
 
     @Override public void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,

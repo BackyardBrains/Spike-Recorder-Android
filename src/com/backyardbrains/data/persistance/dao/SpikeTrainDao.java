@@ -16,7 +16,7 @@ import java.util.List;
     @Insert void insertSpikeTrains(List<SpikeTrain> spikeTrains);
 
     @Query("SELECT value, `index` FROM spikes INNER JOIN spike_trains ON spikes.id = spike_trains.spike_id WHERE spike_trains.train_id = :trainId AND spikes.`index` >= :startIndex AND spikes.`index` <= :endIndex ORDER BY spikes.`index`")
-    SpikeValueAndIndex[] loadSpikeTimesAndIndicesForRange(long trainId, int startIndex, int endIndex);
+    SpikeValueAndIndex[] loadSpikeValuesAndIndicesForRange(long trainId, int startIndex, int endIndex);
 
     @Query("SELECT time FROM spikes INNER JOIN spike_trains ON spikes.id = spike_trains.spike_id WHERE spike_trains.train_id = :trainId ORDER BY spikes.`index`")
     float[] loadSpikeTimes(long trainId);

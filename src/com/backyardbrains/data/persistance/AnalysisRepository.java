@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.persistance.source.AnalysisLocalDataSource;
 import com.backyardbrains.utils.AppExecutors;
@@ -74,19 +75,51 @@ public class AnalysisRepository {
     }
 
     /**
+     * Returns id of the {@link SpikeAnalysis} for audio file located at specified {@code filePath}.
+     *
+     * @param filePath Absolute path of the audio file for which we want to retrieve the spike analysis id.
+     */
+    public long getSpikeAnalysisId(@NonNull String filePath) {
+        return analysisDataSource.getSpikeAnalysisId(filePath);
+    }
+
+    /**
      * Returns collection of spikes for audio file located at specified {@code filePath} by invoking specified {@code
      * callback} and passing in the results.
      *
      * @param filePath Absolute path of the audio file for which we want to retrieve the spikes.
      * @param callback Callback that's invoked when spikes are retrieved from the database.
      */
-    public void getSpikeAnalysis(@NonNull String filePath,
+    public void getSpikeAnalysisSpikes(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
-        analysisDataSource.getSpikeAnalysis(filePath, callback);
+        analysisDataSource.getSpikeAnalysisSpikes(filePath, callback);
     }
 
+    /**
+     * Returns collection of {@link SpikeValueAndIndex} objects which contain values and indices for spikes belonging
+     * to {@link SpikeAnalysis} with specified {@code analysisId} and are positioned between {@code startIndex} and
+     * {@code endIndex}.
+     *
+     * @param analysisId Id of the spike analysis returned spike values and indexes belong to.
+     * @param startIndex Start index from which values and indexes of spikes should be returned.
+     * @param endIndex End index till which values and indexes of spikes should be returned.
+     */
+    @NonNull public SpikeValueAndIndex[] getSpikeAnalysisValuesAndIndicesForRange(long analysisId, int startIndex,
+        int endIndex) {
+        return analysisDataSource.getSpikeAnalysisValuesAndIndicesForRange(analysisId, startIndex, endIndex);
+    }
+
+    /**
+     * Returns collection of {@link SpikeValueAndIndex} objects which contain values and indices for spikes belonging
+     * to {@link Train} with specified {@code trainId} and are positioned between {@code startIndex} and
+     * {@code endIndex}.
+     *
+     * @param trainId Id of the train returned spike values and indexes belong to.
+     * @param startIndex Start index from which values and indexes of spikes should be returned.
+     * @param endIndex End index till which values and indexes of spikes should be returned.
+     */
     @NonNull public SpikeValueAndIndex[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
-        return analysisDataSource.getSpikesAnalysisTimesAndIndicesByTrainForRange(trainId, startIndex, endIndex);
+        return analysisDataSource.getSpikeAnalysisValuesAndIndicesByTrainForRange(trainId, startIndex, endIndex);
     }
 
     /**

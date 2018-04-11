@@ -14,6 +14,7 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
@@ -37,8 +38,6 @@ public class BYBAnalysisManager {
 
     // Reference to the data manager that stores and processes the data
     @SuppressWarnings("WeakerAccess") final AnalysisRepository analysisRepository;
-
-    private List<List<Spike>> spikeTrains;
 
     @SuppressWarnings("WeakerAccess") int[][] autocorrelation;
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
@@ -79,7 +78,7 @@ public class BYBAnalysisManager {
                     // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
                 }
             } else {
-                analysisRepository.getSpikeAnalysis(filePath, getSpikesCallback);
+                analysisRepository.getSpikeAnalysisSpikes(filePath, getSpikesCallback);
             }
         } else {
             if (load(filePath)) {
@@ -91,11 +90,17 @@ public class BYBAnalysisManager {
     }
 
     /**
-     * Returns array of spikes found during the spike analysis.
+     * Returns spike analysis id for audio file located at specified {@code filePath}.
      */
-    public void getSpikes(@NonNull String filePath,
-        @Nullable AnalysisDataSource.GetAnalysisCallback<Spike[]> callback) {
-        analysisRepository.getSpikeAnalysis(filePath, callback);
+    public long getSpikeAnalysisId(@NonNull String filePath) {
+        return analysisRepository.getSpikeAnalysisId(filePath);
+    }
+
+    /**
+     * Returns array of spike values and indexes belonging to spike analysis with specified {@code analysisId} for the specified range.
+     */
+    public SpikeValueAndIndex[] getSpikesForRange(long analysisId, int startIndex, int endIndex) {
+        return analysisRepository.getSpikeAnalysisValuesAndIndicesForRange(analysisId, startIndex, endIndex);
     }
 
     /**
