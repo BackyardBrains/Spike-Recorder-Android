@@ -27,6 +27,7 @@ public class ProcessingBuffer {
     private ProcessingBuffer() {
         sampleBuffer = new SampleBuffer(bufferSize);
         eventBuffer = new RingBuffer<>(String.class, bufferSize);
+        lastSampleIndex = 0;
     }
 
     /**
@@ -59,6 +60,8 @@ public class ProcessingBuffer {
 
         eventBuffer.clear();
         eventBuffer = new RingBuffer<>(String.class, bufferSize);
+
+        lastSampleIndex = 0;
 
         this.bufferSize = bufferSize;
     }
@@ -112,5 +115,6 @@ public class ProcessingBuffer {
     public void clearBuffer() {
         if (sampleBuffer != null) sampleBuffer.clear();
         if (eventBuffer != null) eventBuffer.clear();
+        this.lastSampleIndex = 0;
     }
 }
