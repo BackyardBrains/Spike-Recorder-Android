@@ -9,7 +9,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.1'
         classpath "io.fabric.tools:gradle:1.25.1"
-        classpath 'com.google.gms:google-services:3.1.1'
+        classpath 'com.google.gms:google-services:3.2.0'
     }
 }
 
@@ -83,10 +83,10 @@ android {
 }
 
 ext {
-    supportLibVersion = '27.1.0'
+    supportLibVersion = '27.1.1'
     architectureComponentsVersion = '1.0.0'
     constraintLayoutVersion = '1.0.2'
-    firebaseVersion = '11.8.0'
+    firebaseVersion = '12.0.1'
     butterknifeVersion = '8.8.1'
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
