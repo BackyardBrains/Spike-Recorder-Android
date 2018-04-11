@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.DataProcessor;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -151,8 +152,11 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
-        return processor.process(data);
+    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data,
+        long lastByteIndex) {
+        DataProcessor.SamplesWithMarkers swm = processor.process(data);
+        swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
+        return swm;
     }
 
     /**

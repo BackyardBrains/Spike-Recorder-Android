@@ -120,9 +120,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY);
+            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (getAnalysisManager() != null) {
             // retry getting spike analysis id until we have it
@@ -132,7 +132,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             }
 
             // let's save start and end sample positions that are being drawn before triggering the actual draw
-            int toSample = getAudioService() != null ? (int) getAudioService().getPlaybackProgress() : 0;
+            int toSample = (int) lastSampleIndex;
             int fromSample = Math.max(0, toSample - glWindowWidth);
             if (spikeAnalysisId > 0) {
                 final SpikeValueAndIndex[] valuesAndIndexes =

@@ -8,6 +8,7 @@ import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.SampleStreamUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Tihomir Leka <ticapeca at gmail.com.
@@ -26,10 +27,10 @@ public abstract class AbstractSampleSource implements SampleSource {
 
     @SuppressWarnings("WeakerAccess") final OnSamplesReceivedListener listener;
 
-    /**
-     * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
-     * ProcessingThread}.
-     */
+    ///**
+    // * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
+    // * ProcessingThread}.
+    // */
     //protected class ReadThread extends Thread {
     //
     //    private AtomicBoolean working = new AtomicBoolean(true);
@@ -64,10 +65,11 @@ public abstract class AbstractSampleSource implements SampleSource {
     //    }
     //}
 
-    /**
-     * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
-     * OnSamplesReceivedListener}.
-     */
+    ///**
+    // * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
+    // * OnSamplesReceivedListener}.
+    // */
+
     /**
      * Background thread that processes the data read from the local buffer filled by the derived class and passes it to
      * {@link OnSamplesReceivedListener}.
@@ -76,6 +78,7 @@ public abstract class AbstractSampleSource implements SampleSource {
 
         private AtomicBoolean working = new AtomicBoolean(true);
         private AtomicBoolean paused = new AtomicBoolean(false);
+        private AtomicLong lastByteIndex = new AtomicLong(0);
 
         @Override public void run() {
             while (working.get()) {
@@ -89,11 +92,12 @@ public abstract class AbstractSampleSource implements SampleSource {
 
                         if (listener == null) {
                             // we should process the incoming data even if there is no listener
-                            processIncomingData(processingBufferData);
+                            processIncomingData(processingBufferData, lastByteIndex.get());
                         } else {
                             // forward received samples to OnSamplesReceivedListener
                             synchronized (listener) {
-                                listener.onSamplesReceived(processIncomingData(processingBufferData));
+                                listener.onSamplesReceived(
+                                    processIncomingData(processingBufferData, lastByteIndex.get()));
                             }
                         }
                     }
@@ -111,6 +115,10 @@ public abstract class AbstractSampleSource implements SampleSource {
 
         void stopWorking() {
             working.set(false);
+        }
+
+        void setLastByteIndex(long lastByteIndex) {
+            this.lastByteIndex.set(lastByteIndex);
         }
     }
 
@@ -288,6 +296,15 @@ public abstract class AbstractSampleSource implements SampleSource {
     }
 
     /**
+     * Subclasses should write any received data to buffer for further processing. If available (when doing playback),
+     * subclasses should also pass an index of the last written byte.
+     */
+    protected final void writeToBuffer(@NonNull byte[] data, long lastByteIndex) {
+        processingBuffer.write(data, 0, data.length, true);
+        processingThread.setLastByteIndex(lastByteIndex);
+    }
+
+    /**
      * Called during data reading initialization from the input stream. Implementation should start the actual reading
      * of data from the concrete source.
      */
@@ -301,10 +318,11 @@ public abstract class AbstractSampleSource implements SampleSource {
 
     /**
      * Called by {@link OnSamplesReceivedListener} before triggering the listener to convert incoming byte data to
-     * sample data.
+     * sample data. If available (i.e. during playback) caller should also pass the index of the last passed byte
+     * (playhead).
      * <p>
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract DataProcessor.SamplesWithMarkers processIncomingData(byte[] data);
+    @NonNull protected abstract DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex);
 }

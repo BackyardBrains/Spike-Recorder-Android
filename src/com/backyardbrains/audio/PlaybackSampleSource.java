@@ -133,6 +133,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                             // reset input stream
                             rewind();
 
+                            writeToBuffer(new byte[bufferSize], 0);
+
                             LOGD(TAG, "Playback completed");
 
                             if (playbackListener != null) playbackListener.onStop();
@@ -159,7 +161,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                                 eventsInCurrentBatch.put((int) (sampleIndex - startSampleIndex), allEvents.valueAt(i));
                             }
                         }
-                        writeToBuffer(buffer);
+                        writeToBuffer(buffer, progress.get());
 
                         // trigger progress listener
                         if (playbackListener != null) playbackListener.onProgress(progress.get(), raf.sampleRate());
@@ -257,7 +259,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                     }
                 }
 
-                writeToBuffer(seekBuffer);
+                writeToBuffer(seekBuffer, Math.min(0, zerosPrependCount) + raf.getFilePointer());
             }
         }
 
@@ -367,13 +369,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     }
 
     /**
-     * Returns position of the current byte being played.
-     */
-    long getProgress() {
-        return playbackThread != null ? playbackThread.getProgress() : 0;
-    }
-
-    /**
      * Returns length of playback in bytes.
      */
     long getLength() {
@@ -473,7 +468,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data) {
+    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
         short[] s;
         String[] e;
         if (data.length == seekBufferSize) {
@@ -494,6 +489,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new DataProcessor.SamplesWithMarkers(s, e);
+        return new DataProcessor.SamplesWithMarkers(s, e, AudioUtils.getSampleCount(lastByteIndex));
     }
 }

@@ -70,6 +70,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
+    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES
     protected boolean drawSpikes() {
         return true;
     }
@@ -92,10 +93,10 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
 
         // let's save start and end sample positions that are being drawn before triggering the actual draw
-        int toSample = getAudioService() != null ? (int) getAudioService().getPlaybackProgress() : 0;
+        int toSample = (int) lastSampleIndex;
         int fromSample = Math.max(0, toSample - glWindowWidth);
         if (drawSpikes()) {
             if (getAnalysisManager() != null && spikeTrains != null) {
@@ -146,7 +147,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         }
 
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY);
+            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (drawSpikes()) {
             if (spikeTrains != null && valuesAndIndexes.length > 0) {
