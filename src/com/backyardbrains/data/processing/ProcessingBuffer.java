@@ -21,6 +21,7 @@ public class ProcessingBuffer {
     private SampleBuffer sampleBuffer;
     private RingBuffer<String> eventBuffer;
     private int bufferSize = MAX_BUFFER_SIZE;
+    private long lastSampleIndex;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
@@ -86,6 +87,14 @@ public class ProcessingBuffer {
     }
 
     /**
+     * Returns index of the last sample in the buffer. By default the value is {@code 0}, and is set only when
+     * processing samples during playback.
+     */
+    public long getLastSampleIndex() {
+        return lastSampleIndex;
+    }
+
+    /**
      * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
      */
     public void addToBuffer(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
@@ -93,6 +102,8 @@ public class ProcessingBuffer {
         if (sampleBuffer != null) sampleBuffer.add(samplesWithMarkers.samples);
         // add events to ring buffer
         if (eventBuffer != null) eventBuffer.add(samplesWithMarkers.events);
+        // save last sample index (playhead)
+        this.lastSampleIndex = samplesWithMarkers.lastSampleIndex;
     }
 
     /**

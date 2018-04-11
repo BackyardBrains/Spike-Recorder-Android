@@ -625,17 +625,6 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     /**
-     * Returns current playback progress.
-     *
-     * @return long Position of the playback current sample.
-     */
-    public long getPlaybackProgress() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(playbackSampleSource.getProgress());
-
-        return 0;
-    }
-
-    /**
      * Returns number of playback samples.
      */
     public long getPlaybackLength() {

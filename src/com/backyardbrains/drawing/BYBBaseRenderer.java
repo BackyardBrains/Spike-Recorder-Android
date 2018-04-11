@@ -335,6 +335,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         }
 
         final int sampleCount = samples.length;
+        final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
         // calculate necessary drawing parameters
         int drawStartIndex = Math.max(sampleCount - glWindowWidth, -glWindowWidth);
@@ -353,7 +354,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         // draw on surface
         draw(gl, samples, waveformVertices, markersBuffer, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY);
+            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
@@ -403,7 +404,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY);
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex);
 
     //==============================================
     //  SCROLLING

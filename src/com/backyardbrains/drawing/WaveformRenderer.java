@@ -60,7 +60,7 @@ public class WaveformRenderer extends BYBBaseRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY) {
+        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
 
         // draw waveform
         glWaveform.draw(gl, waveformVertices, getWaveformColor());
