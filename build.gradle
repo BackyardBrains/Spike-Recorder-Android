@@ -1,8 +1,8 @@
 buildscript {
     repositories {
+        google()
         jcenter()
         mavenCentral()
-        google()
         maven { url "https://jitpack.io" }
         maven { url 'https://maven.fabric.io/public' }
     }
@@ -13,126 +13,16 @@ buildscript {
     }
 }
 
-repositories {
-    jcenter()
-    mavenCentral()
-    google()
-    maven { url "https://jitpack.io" }
-    maven { url 'https://maven.fabric.io/public' }
-}
-
-apply plugin: 'com.android.application'
-apply plugin: 'io.fabric'
-
-android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
-    sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src']
-            resources.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
-            res.srcDirs = ['res']
-            assets.srcDirs = ['assets']
-        }
-
-        // Move the tests to tests/java, tests/res, etc...
-        //instrumentTest.setRoot('tests')
-
-        // Move the build types to build-types/<type>
-        // For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
-        // This moves them out of them default location under src/<type>/... which would
-        // conflict with src/ being used by the main source set.
-        // Adding new build types or product flavors should be accompanied
-        // by a similar customization.
-        //debug.setRoot('build-types/debug')
-        //release.setRoot('build-types/release')
-    }
-    defaultConfig {
-        minSdkVersion 17
-        targetSdkVersion 27
-        versionCode 56
-        versionName '1.6.0.1'
-
-        // Enabling vector drawables
-        vectorDrawables.useSupportLibrary = true
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments =
-                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
-                        toString()]
-            }
-        }
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            shrinkResources false
-            debuggable false
-        }
-        debug {
-            minifyEnabled false
-            debuggable true
-            ext.enableCrashlytics = false
-        }
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+        maven { url 'https://maven.fabric.io/public' }
     }
 }
 
-ext {
-    supportLibVersion = '27.1.1'
-    architectureComponentsVersion = '1.0.0'
-    constraintLayoutVersion = '1.0.2'
-    firebaseVersion = '12.0.1'
-    butterknifeVersion = '8.8.1'
-    materialDialogsVersion = '0.9.6.0'
-    simpleRangeBarVersion = '0.1.1'
-    crashlyticsVersion = '2.9.1@aar'
-    easyPermissionsVersion = '1.1.3'
-    eventBusVersion = '3.1.1'
-    eventBusAnnotationProcessorVersion = '3.0.1'
-    usbSerialVersion = '4.5.2'
-    iirFiltersVersion = '1.0.4'
-    commonsMathVersion = '3.6.1'
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
-
-dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    // support libraries
-    implementation "com.android.support:appcompat-v7:$supportLibVersion"
-    implementation "com.android.support:support-compat:$supportLibVersion"
-    implementation "com.android.support:design:$supportLibVersion"
-    implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
-    // db
-    implementation "android.arch.persistence.room:runtime:$architectureComponentsVersion"
-    annotationProcessor "android.arch.persistence.room:compiler:$architectureComponentsVersion"
-    // debug db
-    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
-    // view binding
-    implementation "com.jakewharton:butterknife:$butterknifeVersion"
-    annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
-    // material dialogs
-    implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
-    // range bar
-    implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
-    // permissions
-    implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
-    // event bus
-    implementation "org.greenrobot:eventbus:$eventBusVersion"
-    annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
-    // serial communication
-    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
-    // signal filtering
-    implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
-    implementation "org.apache.commons:commons-math3:$commonsMathVersion"
-    // firebase & crashlytics
-    implementation "com.google.firebase:firebase-core:$firebaseVersion"
-    implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
-        transitive = true
-    }
-}
-
-apply plugin: 'com.google.gms.google-services'
