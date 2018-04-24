@@ -175,8 +175,9 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
         if (files != null) {
             if (files.length > 0) {
                 Arrays.sort(files, new Comparator<File>() {
-                    @Override public int compare(File object1, File object2) {
-                        return (int) (object2.lastModified() - object1.lastModified());
+                    @Override public int compare(File file1, File file2) {
+                        //noinspection UseCompareMethod
+                        return Long.valueOf(file2.lastModified()).compareTo(file1.lastModified());
                     }
                 });
             }
