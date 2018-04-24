@@ -8,8 +8,8 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 56
-        versionName '1.6.0.1'
+        versionCode 57
+        versionName '1.6.0.2'
 
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
