@@ -24,8 +24,6 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-
-import com.backyardbrains.BuildConfig;
 import com.backyardbrains.analysis.BYBAnalysisType;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
@@ -178,7 +176,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             if (files.length > 0) {
                 Arrays.sort(files, new Comparator<File>() {
                     @Override public int compare(File object1, File object2) {
-                        return object2.lastModified() > object1.lastModified() ? 1 : -1;
+                        return (int) (object2.lastModified() - object1.lastModified());
                     }
                 });
             }
