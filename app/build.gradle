@@ -1,0 +1,114 @@
+apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
+
+android {
+    compileSdkVersion 27
+
+    defaultConfig {
+        applicationId "com.backyardbrains"
+        minSdkVersion 17
+        targetSdkVersion 27
+        versionCode 57
+        versionName '1.6.0.2'
+
+        // Enabling vector drawables
+        vectorDrawables.useSupportLibrary = true
+
+        resConfigs "en"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments =
+                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
+                        toString()]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
+            ext.enableCrashlytics = false
+        }
+    }
+
+    flavorDimensions "devProd"
+
+    productFlavors {
+        production {}
+        development {
+            minSdkVersion 21
+            resConfigs "en", "xxhdpi"
+        }
+    }
+
+    if (project.hasProperty('devBuild')) {
+        aaptOptions.cruncherEnabled = false
+    }
+
+    dexOptions {
+        maxProcessCount 3
+    }
+}
+
+ext {
+    supportLibVersion = '27.1.1'
+    architectureComponentsVersion = '1.0.0'
+    constraintLayoutVersion = '1.1.0'
+    firebaseVersion = '15.0.0'
+    butterknifeVersion = '8.8.1'
+    materialDialogsVersion = '0.9.6.0'
+    simpleRangeBarVersion = '0.1.1'
+    crashlyticsVersion = '2.9.1@aar'
+    easyPermissionsVersion = '1.2.0'
+    eventBusVersion = '3.1.1'
+    eventBusAnnotationProcessorVersion = '3.0.1'
+    usbSerialVersion = '4.5.2'
+    iirFiltersVersion = '1.0.4'
+    commonsMathVersion = '3.6.1'
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // support libraries
+    implementation "com.android.support:appcompat-v7:$supportLibVersion"
+    implementation "com.android.support:support-compat:$supportLibVersion"
+    implementation "com.android.support:design:$supportLibVersion"
+    implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+    // db
+    implementation "android.arch.persistence.room:runtime:$architectureComponentsVersion"
+    annotationProcessor "android.arch.persistence.room:compiler:$architectureComponentsVersion"
+    // debug db
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
+    // view binding
+    implementation "com.jakewharton:butterknife:$butterknifeVersion"
+    annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+    // material dialogs
+    implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+    // range bar
+    implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
+    // permissions
+    implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
+    // event bus
+    implementation "org.greenrobot:eventbus:$eventBusVersion"
+    annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+    // serial communication
+    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
+    // signal filtering
+    implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
+    implementation "org.apache.commons:commons-math3:$commonsMathVersion"
+    // firebase & crashlytics
+    implementation "com.google.firebase:firebase-core:$firebaseVersion"
+    implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
+        transitive = true
+    }
+}
+
+apply plugin: 'com.google.gms.google-services'

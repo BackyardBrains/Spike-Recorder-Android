@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Spike Recorder</string>
+
+    <string name="action_privacy_policy">Privacy Policy</string>
+
+    <string name="menu_item_scope">View/Record</string>
+    <string name="menu_item_threshold">Threshold</string>
+    <string name="menu_item_recordings">Recordings</string>
+
+    <string name="action_setting">Settings</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_close">Close</string>
+    <string name="action_set">Set</string>
+
+    <string name="analysis_isi">Inter Spike Interval (ISI)</string>
+    <string name="analysis_autocorrelation">Autocorrelation</string>
+    <string name="analysis_cross_correlation">Cross Correlation</string>
+    <string name="analysis_average_spike">Average Spike</string>
+    <string name="analysis_please_wait">Please wait…</string>
+
+    <string name="content_desc_back">Back to previous screen</string>
+    <string name="content_desc_threshold_remove">Remove current</string>
+    <string name="content_desc_threshold_select_one">Select threshold 1</string>
+    <string name="content_desc_threshold_select_two">Select threshold 2</string>
+    <string name="content_desc_threshold_select_three">Select threshold 3</string>
+    <string name="content_desc_threshold_new">New threshold</string>
+    <string name="content_desc_usb_connect">Connect to SpikerBox via USB</string>
+    <string name="content_desc_usb_disconnect">Disconnect from SpikerBox</string>
+    <string name="content_desc_sound_un_mute">Un-mute the sound</string>
+    <string name="content_desc_sound_mute">Mute the sound</string>
+    <string name="content_desc_am_modulation_filters">Apply filter</string>
+
+    <string name="template_beats_per_minute">%d BPM</string>
+    <string name="template_rms">RMS: %.3f mV</string>
+    <string name="template_spike_count">%1$d(%2$.1fHz)</string>
+
+    <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
+    <string name="label_custom_filter_low">Low</string>
+    <string name="label_custom_filter_high">High</string>
+
+    <string name="template_connected_to_board">Connected to\n%s</string>
+    <string name="board_type_plant">Plant SpikerBox</string>
+    <string name="board_type_muscle">Muscle SpikerBox</string>
+    <string name="board_type_heart">Heart and Brain SpikerBox</string>
+    <string name="board_type_muscle_pro">Muscle Pro SpikerBox</string>
+    <string name="board_type_neuron_pro">Neuron Pro SpikerBox</string>
+
+    <string name="stimulation">Configure Stimulation</string>
+    <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>
+    <string name="tap_to_stop_recording">Tap to stop recording\n%s</string>
+    <string name="read_speed_multiplier_label">Audio speed multiplier</string>
+    <string-array name="speeds_array">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+        <item>16</item>
+    </string-array>
+    <string name="read_speed_warning">Warning: changing this value to anything other than "1" could create instability and cause the program to behave unexpectedly. Once changing it, you will need to restart the Backyard Brains app for your changes to take effect.</string>
+    <string name="configuration">Configuration</string>
+    <!--  Key Names used in software -->
+    <string name="global_prefs">BackyardBrainsGlobalPreferences</string>
+    <string name="microphone_read_speed">MicrophoneReadSpeed</string>
+    <string name="filename">filename</string>
+    <string name="file_date">file_date</string>
+    <string name="filesize">filesize</string>
+    <string name="recording_button_background_image">Recording Button Background Image</string>
+    <string name="file_list_activity_launch_button">File List Activity Launch Button</string>
+    <string name="tickmarks_on_left_side_of_screen">Tickmarks on left side of screen</string>
+    <string name="default_milliseconds">0 ms</string>
+    <string name="no_files_found">No files found! Record some spikes!</string>
+    <string name="start_recording_button">Start Recording Button</string>
+    <string name="default_threshold_amount">1 x</string>
+    <string name="close_view_button">Close</string>
+    <string name="cd_threshold_handle">Threshold</string>
+    <string name="average_num_slider">Num Samples Averaged</string>
+    <string name="playhead_slider">Playhead</string>
+    <string name="analysis_title">Analysis Name</string>
+    <string name="find_spikes_not_done_title">Warning</string>
+    <string name="find_spikes_not_done_message">You need to Find Spikes before perfoming any analysis.</string>
+    <string name="analysis_wait_message">Please wait until analysis is finished.</string>
+    <string name="move_button">select to move sideways</string>
+    <string name="zoom_in_button_h">select to zoom in horizontally</string>
+    <string name="zoom_out_button_h">select to zoom out horizontally</string>
+    <string name="zoom_in_button_v">select to zoom in vertically</string>
+    <string name="zoom_out_button_v">select to zoom out vertically</string>
+    <string name="scaling_instructions">You can zoom in or zoom out by either clicking again the highlighted zoom button, click over the waveform for zooming that specific point or click and drag over the waveform to select the area to zoom.\nShould I show this message again?</string>
+    <string name="label_n_times">%dx</string>
+
+    <string name="rationale_record_audio">This app needs access to your microphone/sound input to be able to work.</string>
+    <string name="rationale_read_external_storage">This app needs to have read access to be able to list existing recordings.</string>
+    <string name="rationale_write_external_storage">This app needs to have write access to be able to store recordings.</string>
+    <string name="rationale_ask_again">This app may not work correctly without the requested permissions. Open the app settings screen to modify app permissions.</string>
+    <string name="title_settings_dialog">Permissions Required</string>
+    <string name="settings_dialog_canceled">Settings dialog canceled</string>
+    <string name="returned_from_app_settings_to_activity">Returned from app settings to MainActivity</string>
+
+    <string-array name="options_recording_no_spikes">
+        <item>File Details</item>
+        <item>Play this file</item>
+        <item>Find Spikes</item>
+        <item>Share</item>
+        <item>Rename this file</item>
+        <item>Delete this file</item>
+    </string-array>
+    <string-array name="options_recording">
+        <item>File Details</item>
+        <item>Play this file</item>
+        <item>Find Spikes</item>
+        <item>Autocorrelation</item>
+        <item>ISI</item>
+        <item>Cross Correlation</item>
+        <item>Average Spike</item>
+        <item>Share</item>
+        <item>Rename this file</item>
+        <item>Delete this file</item>
+    </string-array>
+
+    <!-- Error messages -->
+    <string name="error_message_files_no_file">The requested file could not be found. Please try again later.</string>
+    <string name="error_message_files_exists">File with the specified name already exists. Please use a different name.</string>
+    <string name="error_message_files_delete">The requested file could not be deleted. Please try again later.</string>
+    <string name="error_message_files_events_delete">The associated file that holds saved events could not be deleted. Please use any file manager app to delete the associated file manually.</string>
+    <string name="error_message_files_rename">The requested file could not be renamed. Please try again later.</string>
+    <string name="error_message_files_events_rename">The associated file that holds saved events could not be renamed. Please use any file manager app to rename the associated file manually. The name should be the same as the recording (.wav) file but with "-events" suffix.</string>
+    <string name="error_message_validation_file_name">Please enter the file name.</string>
+</resources>
