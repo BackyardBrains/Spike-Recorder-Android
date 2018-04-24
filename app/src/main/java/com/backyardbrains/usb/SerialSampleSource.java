@@ -157,7 +157,8 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      * {@inheritDoc}
      */
     @Override public void write(byte[] buffer) {
-        if (serialDevice != null) serialDevice.write(buffer);
+        //if (serialDevice != null) serialDevice.write(buffer);
+        if (serialDevice != null) serialDevice.syncWrite(buffer, 64);
     }
 
     /**
