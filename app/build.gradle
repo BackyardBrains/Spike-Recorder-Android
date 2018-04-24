@@ -19,8 +19,8 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments =
-                        [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
-                                toString()]
+                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
+                        toString()]
             }
         }
     }

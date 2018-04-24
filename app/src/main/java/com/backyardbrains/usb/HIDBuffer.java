@@ -11,8 +11,12 @@ class HIDBuffer {
     private byte[] readBuffer_compatible; // Read buffer for android < 4.2
 
     HIDBuffer() {
-        writeBuffer = new SynchronizedBuffer();
-        readBuffer_compatible = new byte[DEFAULT_READ_BUFFER_SIZE];
+        this(DEFAULT_READ_BUFFER_SIZE, DEFAULT_WRITE_BUFFER_SIZE);
+    }
+
+    HIDBuffer(int readBufferSize, int writeBufferSize) {
+        writeBuffer = new SynchronizedBuffer(writeBufferSize);
+        readBuffer_compatible = new byte[readBufferSize];
     }
 
     byte[] getBufferCompatible() {
@@ -38,9 +42,11 @@ class HIDBuffer {
     private class SynchronizedBuffer {
         private byte[] buffer;
         private int position;
+        private int bufferSize;
 
-        SynchronizedBuffer() {
-            this.buffer = new byte[DEFAULT_WRITE_BUFFER_SIZE];
+        SynchronizedBuffer(int bufferSize) {
+            this.bufferSize = bufferSize;
+            this.buffer = new byte[bufferSize];
             position = -1;
         }
 
@@ -49,11 +55,11 @@ class HIDBuffer {
             if (position == -1) position = 0;
 
             //Checking bounds. Source data does not fit in buffer
-            if (position + src.length > DEFAULT_WRITE_BUFFER_SIZE - 1) {
-                if (position < DEFAULT_WRITE_BUFFER_SIZE) {
-                    System.arraycopy(src, 0, buffer, position, DEFAULT_WRITE_BUFFER_SIZE - position);
+            if (position + src.length > bufferSize - 1) {
+                if (position < bufferSize) {
+                    System.arraycopy(src, 0, buffer, position, bufferSize - position);
                 }
-                position = DEFAULT_WRITE_BUFFER_SIZE;
+                position = bufferSize;
                 notify();
             } else // Source data fits in buffer
             {

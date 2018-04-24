@@ -110,6 +110,8 @@ class SampleStreamProcessor implements DataProcessor {
         channelCountChanged = true;
     }
 
+    //private short prevSample = 0;
+
     @NonNull private SamplesWithMarkers processIncomingData(@NonNull byte[] data) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
@@ -202,6 +204,11 @@ class SampleStreamProcessor implements DataProcessor {
                             msb = msb << 7;
                             lsb = lsb & REMOVER;
                             sample = (short) (((msb | lsb) - 512) * 30);
+
+                            //if ((sample - prevSample) > 1) {
+                            //    LOGD(TAG, "TEST: " + Arrays.toString(data));
+                            //}
+                            //prevSample = sample;
 
                             // calculate average sample
                             average = 0.0001 * sample + 0.9999 * average;

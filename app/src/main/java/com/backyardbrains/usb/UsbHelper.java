@@ -11,8 +11,8 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArraySet;
-import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
 import java.util.ArrayList;
@@ -126,33 +126,38 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         }
 
         @Override public void run() {
-            final UsbDeviceConnection connection = manager.openDevice(device);
-            if (AbstractUsbSampleSource.isSupported(device)) {
-                usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, service);
-                if (usbDevice != null) {
-                    if (usbDevice.open()) {
-                        if (listener != null) listener.onDataTransferStart();
+            if (manager != null) {
+                final UsbDeviceConnection connection = manager.openDevice(device);
+                if (AbstractUsbSampleSource.isSupported(device)) {
+                    usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, service);
+                    if (usbDevice != null) {
+                        if (usbDevice.open()) {
+                            if (listener != null) listener.onDataTransferStart();
 
-                        if (usbDevice != null) usbDevice.start();
+                            if (usbDevice != null) usbDevice.start();
 
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (usbDevice != null) usbDevice.checkHardwareType();
+                        } else {
+                            LOGD(TAG, "PORT NOT OPEN");
+                            Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
                         }
-
-                        if (usbDevice != null) usbDevice.checkHardwareType();
                     } else {
-                        LOGD(TAG, "PORT NOT OPEN");
-                        Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
+                        LOGD(TAG, "PORT IS NULL");
+                        Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
                     }
                 } else {
-                    LOGD(TAG, "PORT IS NULL");
-                    Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
+                    LOGD(TAG, "DEVICE NOT SUPPORTED");
+                    Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
                 }
             } else {
-                LOGD(TAG, "DEVICE NOT SUPPORTED");
-                Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
+                LOGD(TAG, "USB MANAGER NOT AVAILABLE");
+                Crashlytics.logException(new RuntimeException("USB Manager is not available!"));
             }
         }
     }
