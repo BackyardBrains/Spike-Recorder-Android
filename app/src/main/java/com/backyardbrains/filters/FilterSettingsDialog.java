@@ -177,8 +177,8 @@ public abstract class FilterSettingsDialog {
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
     private void updateLowCutOff() {
-        double lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
-        double highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
+        double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
+        double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
 
         // fix cut-off value if it's lower than minimum and higher than maximum
         lowCutOff = validateCutOffMinMax(lowCutOff);
@@ -191,8 +191,8 @@ public abstract class FilterSettingsDialog {
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
     private void updateHighCutOff() {
-        double lowCutOff = Integer.valueOf(etLowCutOff.getText().toString());
-        double highCutOff = Integer.valueOf(etHighCutOff.getText().toString());
+        double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
+        double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
 
         // fix cut-off value if it's lower than minimum and higher than maximum
         highCutOff = validateCutOffMinMax(highCutOff);
@@ -261,11 +261,11 @@ public abstract class FilterSettingsDialog {
             this.inflater = LayoutInflater.from(context);
         }
 
-        @Override public FilterViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        @NonNull @Override public FilterViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new FilterViewHolder(inflater.inflate(R.layout.item_filter, parent, false));
         }
 
-        @Override public void onBindViewHolder(FilterViewHolder holder, int position) {
+        @Override public void onBindViewHolder(@NonNull FilterViewHolder holder, int position) {
             holder.setFilter(getFilter(position));
         }
 

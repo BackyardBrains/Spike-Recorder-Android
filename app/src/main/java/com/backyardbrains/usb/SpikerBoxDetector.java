@@ -136,6 +136,8 @@ class SpikerBoxDetector {
      */
     class DetectionThread extends Thread {
 
+        private final String TAG = makeLogTag(DetectionThread.class);
+
         private boolean working = true;
         private boolean canceled = false;
         private int counter = 0;
@@ -162,7 +164,10 @@ class SpikerBoxDetector {
             while (working) {
                 if (canceled) return;
 
-                if (usbDevice != null) usbDevice.checkHardwareType();
+                if (usbDevice != null) {
+                    usbDevice.checkHardwareType();
+                    LOGD(TAG, counter + ". DETECTION ATTEMPT FOR DEVICE: " + usbDevice.getUsbDevice().getDeviceName());
+                }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
