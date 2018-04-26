@@ -55,8 +55,8 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     protected String filePath;
 
-    // Sample rate that should be used for audio playback
-    int sampleRate;
+    // Sample rate that should be used for audio playback (by default 44100)
+    int sampleRate = AudioUtils.SAMPLE_RATE;
 
     /**
      * Runnable that is executed on the UI thread every time recording's playhead is updated.
@@ -70,6 +70,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         @Override public void run() {
             seek(progress);
             if (updateProgressSeekBar) sbAudioProgress.setProgress(progress);
+            // avoid division by zero
             if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate);
         }
 
@@ -103,6 +104,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         @Override public void run() {
             if (getContext() != null) {
                 tvRms.setText(String.format(getString(R.string.template_rms), rms));
+                // avoid division by zero
                 tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
                 tvSpikeCount0.setVisibility(firstTrainSpikeCount >= 0 ? View.VISIBLE : View.INVISIBLE);
                 tvSpikeCount0.setText(String.format(getString(R.string.template_spike_count), firstTrainSpikeCount,
