@@ -49,7 +49,9 @@ public class RecordingUtils {
      * Creates and returns new {@link File} for accompanying events for the specified {@code file}.
      */
     public static File createEventsFile(@NonNull File file) {
-        String fileName = file.getName().substring(0, file.getName().lastIndexOf("."));
+        // PATCH FOR FILES THAT HAVE NO EXTENSION
+        int endIndex = file.getName().lastIndexOf(".");
+        String fileName = endIndex < 0 ? file.getName() : file.getName().substring(0, file.getName().lastIndexOf("."));
         return new File(BYB_DIRECTORY, fileName + BYB_EVENTS_NAME_SUFFIX + BYB_EVENTS_EXT);
     }
 
