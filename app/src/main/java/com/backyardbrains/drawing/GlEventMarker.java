@@ -85,7 +85,7 @@ public class GlEventMarker {
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 
         // draw label background
-        text.setScale(scaleX, scaleY);
+        text.setScale(1f, scaleY);
         float textW = text.getLength(eventName);
         float textH = text.getHeight();
         float labelW = textW * 1.3f;

@@ -37,9 +37,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     @SuppressWarnings("WeakerAccess") Train[] spikeTrains;
     @SuppressWarnings("WeakerAccess") SpikeValueAndIndex[][] valuesAndIndexes;
 
-    public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment,
-        @NonNull float[] preparedBuffer) {
-        super(fragment, preparedBuffer);
+    public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment) {
+        super(fragment);
 
         setScrollEnabled();
         setMeasureEnabled(true);
@@ -91,7 +90,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
 

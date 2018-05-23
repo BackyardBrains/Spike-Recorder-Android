@@ -11,6 +11,17 @@ android {
         versionCode 58
         versionName '1.6.0.3'
 
+        externalNativeBuild {
+            cmake {
+                // Pass arguments to CMake
+                arguments "-DANDROID_STL=c++_static"
+
+                cppFlags "-frtti" // Enables RTTI support.
+                cppFlags "-fexceptions" // Enables exception-handling support.
+                cppFlags "-std=c++11"
+            }
+        }
+
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
 
@@ -49,12 +60,14 @@ android {
         }
     }
 
-    if (project.hasProperty('devBuild')) {
-        aaptOptions.cruncherEnabled = false
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
     }
 
-    dexOptions {
-        maxProcessCount 3
+    if (project.hasProperty('devBuild')) {
+        aaptOptions.cruncherEnabled = false
     }
 }
 

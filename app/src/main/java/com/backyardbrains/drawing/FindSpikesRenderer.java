@@ -48,9 +48,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
     }
 
-    public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer,
-        @NonNull String filePath) {
-        super(filePath, fragment, preparedBuffer);
+    public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull String filePath) {
+        super(filePath, fragment);
 
         setMeasureEnabled(false);
 
@@ -118,7 +117,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,

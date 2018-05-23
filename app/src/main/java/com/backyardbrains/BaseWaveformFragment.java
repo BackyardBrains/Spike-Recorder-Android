@@ -35,8 +35,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     private BYBBaseRenderer renderer;
 
-    protected float[] bufferWithXs = BYBBaseRenderer.initTempBuffer();
-
     /**
      * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
      */
@@ -115,7 +113,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected abstract View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState);
 
-    protected abstract BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer);
+    protected abstract BYBBaseRenderer createRenderer();
 
     protected abstract boolean isBackable();
 
@@ -166,7 +164,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        renderer = createRenderer(bufferWithXs);
+        renderer = createRenderer();
         waveform.setRenderer(renderer);
 
         if (isBackable()) {

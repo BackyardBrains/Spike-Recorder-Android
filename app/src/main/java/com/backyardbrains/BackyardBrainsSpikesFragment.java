@@ -127,8 +127,8 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
     //=================================================
 
-    @Override protected FindSpikesRenderer createRenderer(@NonNull float[] preparedBuffer) {
-        final FindSpikesRenderer renderer = new FindSpikesRenderer(this, preparedBuffer, filePath);
+    @Override protected FindSpikesRenderer createRenderer() {
+        final FindSpikesRenderer renderer = new FindSpikesRenderer(this, filePath);
         renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {

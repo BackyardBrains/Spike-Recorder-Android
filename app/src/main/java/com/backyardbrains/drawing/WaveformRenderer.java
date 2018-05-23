@@ -39,8 +39,8 @@ public class WaveformRenderer extends BYBBaseRenderer {
     private GlEventMarker glEventMarker;
     private Context context;
 
-    public WaveformRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        super(fragment, preparedBuffer);
+    public WaveformRenderer(@NonNull BaseFragment fragment) {
+        super(fragment);
 
         context = fragment.getContext();
     }
@@ -58,10 +58,9 @@ public class WaveformRenderer extends BYBBaseRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
-
         // draw waveform
         glWaveform.draw(gl, waveformVertices, getWaveformColor());
         // draw markers

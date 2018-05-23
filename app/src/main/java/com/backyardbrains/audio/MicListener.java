@@ -91,9 +91,7 @@ class MicListener extends Thread {
 
         try {
             recorder = AudioUtils.createAudioRecord();
-            if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
-                throw new RuntimeException(recorder.toString());
-            }
+            if (recorder.getState() != AudioRecord.STATE_INITIALIZED) throw new RuntimeException(recorder.toString());
             LOGD(TAG, "Recorder Created");
 
             recorder.startRecording();

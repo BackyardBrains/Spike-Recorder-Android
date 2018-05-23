@@ -131,8 +131,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         return view;
     }
 
-    @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
-        final WaveformRenderer renderer = new WaveformRenderer(this, preparedBuffer);
+    @Override protected BYBBaseRenderer createRenderer() {
+        final WaveformRenderer renderer = new WaveformRenderer(this);
         renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
