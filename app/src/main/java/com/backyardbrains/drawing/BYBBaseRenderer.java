@@ -291,7 +291,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        //long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -339,7 +339,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // construct waveform vertices and populate markers buffer
         markersBuffer.clear();
         final short[] waveformVertices =
-            getWaveformVertices(samples, markers, markersBuffer, surfaceWidth, drawStartIndex, drawEndIndex);
+            getWaveformVertices(samples, markers, markersBuffer, drawStartIndex, drawEndIndex, surfaceWidth);
         final int verticesCount = (int) (waveformVertices.length * .5);
 
         // init surface before drawing
@@ -354,8 +354,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
-        //LOGD(TAG, "================================================");
+        LOGD(TAG, "" + (System.currentTimeMillis() - start));
+        LOGD(TAG, "================================================");
     }
 
     private void initDrawSurface(GL10 gl, int glWindowWidth, int glWindowHeight, boolean updateProjection) {
@@ -369,7 +369,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     }
 
     @NonNull protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
-        @NonNull SparseArray<String> markerBuffer, int returnCount, int drawStartIndex, int drawEndIndex) {
+        @NonNull SparseArray<String> markerBuffer, int fromSample, int toSample, int returnCount) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
         //LOGD(TAG, "START - " + samples.length);
@@ -383,7 +383,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
             //
             //    j += 2;
             //}
-            return NativePOC.prepareForWaveformDrawing(samples, drawStartIndex, drawEndIndex, returnCount);
+            return NativePOC.prepareForWaveformDrawing(samples, fromSample, toSample, returnCount);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);

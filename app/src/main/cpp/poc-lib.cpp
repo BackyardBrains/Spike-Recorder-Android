@@ -6,25 +6,8 @@
 #include <functional>
 #include <math.h>
 #include <climits>
-//#include <android/log.h>
 
 #define HELLO "Hello from C++"
-
-static void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
-    try {
-        throw; // This allows to determine the type of the exception
-    } catch (const std::exception &e) {
-        /* unknown exception (may derive from std::exception) */
-        jclass jc = env->FindClass("java/lang/Error");
-        if (jc) env->ThrowNew(jc, e.what());
-    } catch (...) {
-        /* Oops I missed identifying this exception! */
-        jclass jc = env->FindClass("java/lang/Error");
-        if (jc)
-            env->ThrowNew(jc, "Unidentified exception => "
-                    "Improve rethrow_cpp_exception_as_java_exception()");
-    }
-}
 
 static jboolean exception_check(JNIEnv *env) {
     if (env->ExceptionCheck()) {
@@ -39,45 +22,10 @@ static jboolean exception_check(JNIEnv *env) {
     return (JNI_FALSE);
 }
 
-extern "C"
-JNIEXPORT jstring
-JNICALL
-Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz) {
-    return env->NewStringUTF(HELLO);
-}
-
-extern "C"
-JNIEXPORT jshortArray
-JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, jobject thiz, jshortArray samples,
-                                                                   jint start, jint end) {
-//    jshortArray processedSamples =
-//    int size = returnCount * 2;
-//    if (waveformVertices == null || waveformVertices.length != size) waveformVertices = new short[size];
-//    int j = 0; // index of arr
-//    try {
-//        int start = (int) ((samples.length - returnCount) * .5);
-//        int end = (int) ((samples.length + returnCount) * .5);
-//        //for (int i = start; i < end && i < samples.length; i++) {
-//        //    waveformVertices[j++] = (short) (i - start);
-//        //    waveformVertices[j++] = samples[i];
-//        //}
-//        return NativePOC.prepareForThresholdDrawing(samples, start, end);
-//    } catch (ArrayIndexOutOfBoundsException e) {
-//        LOGE(TAG, e.getMessage());
-//        Crashlytics.logException(e);
-//    }
-}
-
-extern "C"
-JNIEXPORT jshortArray
-JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, jobject thiz, jshortArray samples,
-                                                                  jint start, jint end, jint returnCount) {
+static jshortArray envelope(JNIEnv *env, jshortArray samples, jint start, jint end, jint returnCount) {
     int drawSamplesCount = end - start;
     if (drawSamplesCount % 2 != 0) drawSamplesCount -= 1;
     if (drawSamplesCount < returnCount) returnCount = drawSamplesCount;
-    int resultLength = returnCount * 2;
 
     jshort *ptrSamples = new jshort[drawSamplesCount];
     env->GetShortArrayRegion(samples, start, drawSamplesCount, ptrSamples);
@@ -85,37 +33,31 @@ Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, j
     // exception check
     if (exception_check(env)) {
         delete[] ptrSamples;
-        return env->NewShortArray(0);
+        return NULL;
     }
 
-    jshort *ptrResult = new jshort[resultLength];
+    jshort *ptrResult = new jshort[drawSamplesCount];
 
     jshort sample;
     jshort min = SHRT_MAX, max = SHRT_MIN;
-    jshort x = 0;
     int samplesPerPixel = drawSamplesCount / returnCount;
     int samplesPerPixelRest = drawSamplesCount % returnCount;
     int samplesPerEnvelopeLow = samplesPerPixel * 2; // multiply by 2 because we save min and max
     int samplesPerEnvelopeHigh = samplesPerEnvelopeLow + 2;
     int envelopeCounter = 0, index = 0;
 
-//    const char *format = "ENVELOPE: %d, SAMPLE: %d\n";
-
     for (int i = 0; i < drawSamplesCount; i++) {
         sample = ptrSamples[i];
 
         if (samplesPerPixel == 1 && samplesPerPixelRest == 0) {
-            ptrResult[index++] = x++;
             ptrResult[index++] = sample;
         } else {
             if (sample > max) max = sample;
             if (sample < min) min = sample;
 
-            if (x < samplesPerPixelRest) {
+            if (index < samplesPerPixelRest) {
                 if (envelopeCounter == samplesPerEnvelopeHigh) {
-                    ptrResult[index++] = x++;
                     ptrResult[index++] = max;
-                    ptrResult[index++] = x++;
                     ptrResult[index++] = min;
 
                     envelopeCounter = 0;
@@ -124,9 +66,7 @@ Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, j
                 }
             } else {
                 if (envelopeCounter == samplesPerEnvelopeLow) {
-                    ptrResult[index++] = x++;
                     ptrResult[index++] = max;
-                    ptrResult[index++] = x++;
                     ptrResult[index++] = min;
 
                     envelopeCounter = 0;
@@ -139,17 +79,66 @@ Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, j
         }
     }
 
-//    __android_log_print(ANDROID_LOG_DEBUG, "poc-lib", "====================================");
-//    __android_log_print(ANDROID_LOG_DEBUG, "poc-lib", format, envelopeCounter, x);
+    jshortArray result = env->NewShortArray(index);
+    if (result == NULL) {
+        delete[] ptrSamples;
+        delete[] ptrResult;
+        return NULL;
+    }
 
-    jshortArray result = env->NewShortArray(x * 2);
+    env->SetShortArrayRegion(result, 0, index, ptrResult);
+    delete[] ptrSamples;
+    delete[] ptrResult;
+
+    // exception check
+    if (exception_check(env)) return NULL;
+
+    return result;
+}
+
+extern "C"
+JNIEXPORT jstring
+JNICALL
+Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz) {
+    return env->NewStringUTF(HELLO);
+}
+
+extern "C"
+JNIEXPORT jshortArray
+JNICALL
+Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, jobject thiz, jshortArray samples,
+                                                                  jint start, jint end, jint returnCount) {
+    jshortArray envelopedSamples = envelope(env, samples, start, end, returnCount);
+    if (envelopedSamples == NULL) return env->NewShortArray(0);
+
+    int len = env->GetArrayLength(envelopedSamples);
+    jshort *ptrSamples = new jshort[len];
+    env->GetShortArrayRegion(envelopedSamples, 0, len, ptrSamples);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] ptrSamples;
+        return env->NewShortArray(0);
+    }
+
+    int resultLength = len * 2;
+    jshort *ptrResult = new jshort[resultLength];
+
+    int index = 0;
+    jshort x = 0;
+    for (int i = 0; i < len; i++) {
+        ptrResult[index++] = x++;
+        ptrResult[index++] = ptrSamples[i];
+    }
+
+    jshortArray result = env->NewShortArray(resultLength);
     if (result == NULL) {
         delete[] ptrSamples;
         delete[] ptrResult;
         return env->NewShortArray(0);
     }
 
-    env->SetShortArrayRegion(result, 0, x * 2, ptrResult);
+    env->SetShortArrayRegion(result, 0, resultLength, ptrResult);
     delete[] ptrSamples;
     delete[] ptrResult;
 
@@ -157,5 +146,16 @@ Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, j
     if (exception_check(env)) return env->NewShortArray(0);
 
     return result;
+}
+extern "C"
+JNIEXPORT jshortArray
+JNICALL
+Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, jobject thiz, jshortArray samples,
+                                                                   jint start, jint end, jint returnCount) {
+    int drawSamplesCount = end - start;
+    int samplesCount = env->GetArrayLength(samples);
+    int from = (int) ((samplesCount - drawSamplesCount) * .5);
+    int to = (int) ((samplesCount + drawSamplesCount) * .5);
 
+    return Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(env, thiz, samples, from, to, returnCount);
 }

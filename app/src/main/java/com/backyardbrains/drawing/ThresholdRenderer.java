@@ -23,6 +23,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -35,7 +36,6 @@ public class ThresholdRenderer extends WaveformRenderer {
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
     private float threshold;
-    private short[] waveformVertices;
 
     private OnThresholdChangeListener listener;
 
@@ -123,21 +123,9 @@ public class ThresholdRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @NonNull @Override protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
-        @NonNull SparseArray<String> markerBuffer, int returnCount, int drawStartIndex, int drawEndIndex) {
-        if (returnCount > samples.length) setGlWindowWidth(samples.length);
-        returnCount = getGlWindowWidth();
-
-        int size = returnCount * 2;
-        if (waveformVertices == null || waveformVertices.length != size) waveformVertices = new short[size];
-        int j = 0; // index of arr
+        @NonNull SparseArray<String> markerBuffer, int fromSample, int toSample, int returnCount) {
         try {
-            int start = (int) ((samples.length - returnCount) * .5);
-            int end = (int) ((samples.length + returnCount) * .5);
-            for (int i = start; i < end && i < samples.length; i++) {
-                waveformVertices[j++] = (short) (i - start);
-                waveformVertices[j++] = samples[i];
-            }
-            //return NativePOC.prepareForThresholdDrawing(samples, start, end);
+            return NativePOC.prepareForThresholdDrawing(samples, fromSample, toSample, returnCount);
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
