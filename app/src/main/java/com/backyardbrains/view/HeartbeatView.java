@@ -24,7 +24,7 @@ import com.backyardbrains.utils.AudioUtils;
 /**
  * Pretty simple heartbeat pulsating view based on the small GitHub library (https://github.com/scottyab/HeartBeatView)
  *
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class HeartbeatView extends AppCompatImageView {
 

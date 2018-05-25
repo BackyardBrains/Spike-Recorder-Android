@@ -7,7 +7,7 @@ import com.backyardbrains.utils.ObjectUtils;
 import uk.me.berndporr.iirj.Butterworth;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class Filters {
 

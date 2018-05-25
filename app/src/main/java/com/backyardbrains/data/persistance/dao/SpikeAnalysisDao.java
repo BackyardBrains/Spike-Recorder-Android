@@ -8,7 +8,7 @@ import android.support.annotation.NonNull;
 import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Dao public interface SpikeAnalysisDao {
 

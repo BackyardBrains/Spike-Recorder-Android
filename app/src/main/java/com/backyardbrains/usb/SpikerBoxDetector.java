@@ -16,7 +16,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Helper class used for detection of hardware type of the connected USB device.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 class SpikerBoxDetector {
 

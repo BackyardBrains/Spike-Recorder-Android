@@ -7,7 +7,7 @@ import com.backyardbrains.utils.SpikerBoxHardwareType;
 /**
  * Defines common USB in/out operations.
  *
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface UsbSampleSource extends SampleSource {
 

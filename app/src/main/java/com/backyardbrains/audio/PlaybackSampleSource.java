@@ -22,7 +22,7 @@ import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class PlaybackSampleSource extends AbstractAudioSampleSource {
 

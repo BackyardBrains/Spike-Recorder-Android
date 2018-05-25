@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class WavAudioFile implements BYBAudioFile {
 

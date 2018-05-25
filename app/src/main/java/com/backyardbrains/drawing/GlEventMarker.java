@@ -12,7 +12,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Defines a visual representation of  marker
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class GlEventMarker {
 

@@ -9,7 +9,7 @@ import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.utils.ThresholdOrientation;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface AnalysisDataSource {
 

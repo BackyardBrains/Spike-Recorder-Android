@@ -17,7 +17,7 @@ import com.backyardbrains.R;
 import com.backyardbrains.utils.ViewUtils;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BybEmptyView extends FrameLayout {
 

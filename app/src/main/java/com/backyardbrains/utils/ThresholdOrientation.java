@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
     ThresholdOrientation.LEFT, ThresholdOrientation.RIGHT

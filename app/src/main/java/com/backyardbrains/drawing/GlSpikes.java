@@ -7,7 +7,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class GlSpikes {
 

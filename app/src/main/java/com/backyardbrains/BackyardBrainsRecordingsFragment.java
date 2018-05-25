@@ -56,7 +56,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BackyardBrainsRecordingsFragment extends BaseFragment implements EasyPermissions.PermissionCallbacks {
 

@@ -3,7 +3,7 @@ package com.backyardbrains.events;
 import com.backyardbrains.analysis.BYBAnalysisType;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AudioAnalysisDoneEvent {
 

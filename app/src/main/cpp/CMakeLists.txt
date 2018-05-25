@@ -12,6 +12,6 @@ cmake_minimum_required(VERSION 3.4.1)
 # and CMake builds them for you. When you build your app, Gradle
 # automatically packages shared libraries with your APK.
 
-add_library(poc-lib SHARED poc-lib.cpp)
+add_library(poc-lib SHARED poc-lib.cpp byb_lib.cpp)
 
 target_link_libraries(poc-lib android log)

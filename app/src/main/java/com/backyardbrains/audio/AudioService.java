@@ -63,7 +63,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  * Manages a thread which monitors default audio input and pushes raw audio data to bound activities.
  *
  * @author Nathan Dotz <nate@backyardbrains.com>
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  * @version 1
  */
 public class AudioService extends Service implements ReceivesAudio, AbstractSampleSource.OnSamplesReceivedListener {

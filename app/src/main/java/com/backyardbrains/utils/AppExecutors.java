@@ -6,7 +6,7 @@ import android.support.annotation.NonNull;
 import java.util.concurrent.Executor;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AppExecutors {
 

@@ -57,6 +57,7 @@ android {
         development {
             minSdkVersion 21
             resConfigs "en", "xxhdpi"
+            ndk.abiFilters 'armeabi-v7a'
         }
     }
 

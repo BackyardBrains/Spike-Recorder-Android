@@ -7,7 +7,7 @@ import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.entity.Spike;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Dao public interface SpikeDao {
 

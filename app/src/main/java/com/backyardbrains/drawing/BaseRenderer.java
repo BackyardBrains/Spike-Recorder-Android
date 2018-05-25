@@ -12,7 +12,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 abstract class BaseRenderer implements GLSurfaceView.Renderer {
 

@@ -17,7 +17,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB HID communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class HIDSampleSource extends AbstractUsbSampleSource {
 

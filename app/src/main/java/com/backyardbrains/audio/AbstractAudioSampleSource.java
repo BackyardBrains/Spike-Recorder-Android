@@ -4,7 +4,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class AbstractAudioSampleSource extends AbstractSampleSource {
 

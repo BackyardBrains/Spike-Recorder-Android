@@ -7,7 +7,7 @@ import android.support.annotation.Nullable;
  *
  * @param <T> input type
  * @param <V> output type
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface Func<T, V> {
     @Nullable V apply(@Nullable T source);

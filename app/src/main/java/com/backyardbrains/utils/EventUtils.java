@@ -8,7 +8,7 @@ import com.crashlytics.android.answers.ContentViewEvent;
 import com.crashlytics.android.answers.CustomEvent;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class EventUtils {
 

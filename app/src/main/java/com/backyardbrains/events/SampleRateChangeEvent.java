@@ -1,7 +1,7 @@
 package com.backyardbrains.events;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class SampleRateChangeEvent {
 

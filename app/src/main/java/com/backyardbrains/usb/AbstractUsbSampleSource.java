@@ -17,7 +17,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Wrapper for {@link UsbDevice} class. Device can only be one of supported BYB usb devices.
  *
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class AbstractUsbSampleSource extends AbstractSampleSource implements UsbSampleSource {
 

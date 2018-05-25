@@ -27,7 +27,7 @@ import com.example.roman.thesimplerangebar.SimpleRangeBar;
 import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class FilterSettingsDialog {
 

@@ -3,7 +3,7 @@ package com.backyardbrains.utils;
 import java.util.Arrays;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BufferUtils {
 

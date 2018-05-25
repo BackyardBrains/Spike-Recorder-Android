@@ -16,7 +16,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB serial communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 
 public class SerialSampleSource extends AbstractUsbSampleSource {
