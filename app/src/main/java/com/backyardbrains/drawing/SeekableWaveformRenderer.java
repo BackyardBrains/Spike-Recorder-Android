@@ -141,8 +141,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
             // draw measurement area
-            glMeasurementArea.draw(gl, measurementStartX * scaleX, measurementEndX * scaleX, -glWindowHeight * .5f,
-                glWindowHeight * .5f);
+            glMeasurementArea.draw(gl, measurementStartX, measurementEndX, -glWindowHeight * .5f, glWindowHeight * .5f);
         }
 
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
