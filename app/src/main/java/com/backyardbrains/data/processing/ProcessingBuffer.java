@@ -19,14 +19,16 @@ public class ProcessingBuffer {
     private static ProcessingBuffer INSTANCE;
 
     private SampleBuffer sampleBuffer;
-    private RingBuffer<String> eventBuffer;
+    private int[] eventIndices;
+    private String[] eventNames;
     private int bufferSize = MAX_BUFFER_SIZE;
     private long lastSampleIndex;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
         sampleBuffer = new SampleBuffer(bufferSize);
-        eventBuffer = new RingBuffer<>(String.class, bufferSize);
+        eventIndices = new int[0];
+        eventNames = new String[0];
         lastSampleIndex = 0;
     }
 
@@ -58,8 +60,8 @@ public class ProcessingBuffer {
         sampleBuffer.clear();
         sampleBuffer = new SampleBuffer(bufferSize);
 
-        eventBuffer.clear();
-        eventBuffer = new RingBuffer<>(String.class, bufferSize);
+        eventIndices = new int[0];
+        eventNames = new String[0];
 
         lastSampleIndex = 0;
 
@@ -83,10 +85,18 @@ public class ProcessingBuffer {
     }
 
     /**
-     * Returns an array of Strings that are representing all the events accompanying sames data.
+     * Returns an array of indices of events accompanying sample data currently in the buffer.
      */
-    @NonNull public String[] getEvents() {
-        return eventBuffer != null ? eventBuffer.getArray() : new String[0];
+    public int[] getEventIndices() {
+        return eventIndices;
+    }
+
+    /**
+     * Returns an array of event names accompanying sample data currently in the buffer.
+     */
+    @NonNull public String[] getEventNames() {
+        return eventNames;
+        //return eventBuffer != null ? eventBuffer.getArray() : new String[0];
     }
 
     /**
@@ -98,23 +108,46 @@ public class ProcessingBuffer {
     }
 
     /**
-     * Adds specified {@code samples} to the ring buffer and returns all the events from this sample batch if any.
+     * Adds specified {@code samplesWithMarkers} to the sample ring buffer and events collections.
      */
     public void addToBuffer(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
         // add samples to ring buffer
         if (sampleBuffer != null) sampleBuffer.add(samplesWithMarkers.samples);
-        // add events to ring buffer
-        if (eventBuffer != null) eventBuffer.add(samplesWithMarkers.events);
+
+        // add new events, update indices of existing events and remove events that are no longer visible
+        int removeIndices;
+        for (removeIndices = 0; removeIndices < eventIndices.length; removeIndices++) {
+            if (eventIndices[removeIndices] - samplesWithMarkers.samples.length < 0) continue;
+
+            break;
+        }
+        int newLen = eventIndices.length - removeIndices + samplesWithMarkers.eventIndices.length;
+        int[] newEventIndices = new int[newLen];
+        String[] newEventLabels = new String[newLen];
+        int eventCounter = 0;
+        for (int i = removeIndices; i < eventIndices.length; i++) {
+            newEventIndices[eventCounter] = eventIndices[i] - samplesWithMarkers.samples.length;
+            newEventLabels[eventCounter++] = eventNames[i];
+        }
+        int baseIndex = bufferSize - samplesWithMarkers.samples.length;
+        for (int i = 0; i < samplesWithMarkers.eventIndices.length; i++) {
+            newEventIndices[eventCounter] = baseIndex + samplesWithMarkers.eventIndices[i];
+            newEventLabels[eventCounter++] = samplesWithMarkers.eventLabels[i];
+        }
+        eventIndices = newEventIndices;
+        eventNames = newEventLabels;
+
         // save last sample index (playhead)
-        this.lastSampleIndex = samplesWithMarkers.lastSampleIndex;
+        lastSampleIndex = samplesWithMarkers.lastSampleIndex;
     }
 
     /**
-     * Clears the ring buffer and resets last read byte position
+     * Clears the sample data ring buffer, events collections and resets last read byte position
      */
     public void clearBuffer() {
         if (sampleBuffer != null) sampleBuffer.clear();
-        if (eventBuffer != null) eventBuffer.clear();
+        eventIndices = new int[0];
+        eventNames = new String[0];
         this.lastSampleIndex = 0;
     }
 }

@@ -85,6 +85,7 @@ int prepareForDrawing(short *output, const short *samples, int fromSample, int t
         output[index++] = x++;
         output[index++] = envelopedSamples[i];
     }
+    delete[] envelopedSamples;
 
     return index;
 }

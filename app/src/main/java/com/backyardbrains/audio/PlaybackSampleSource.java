@@ -45,9 +45,9 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     // Buffer that holds samples while playing
     @SuppressWarnings("WeakerAccess") short[] samples;
     // Buffer that holds events while seeking
-    @SuppressWarnings("WeakerAccess") String[] seekEvents;
+    //@SuppressWarnings("WeakerAccess") String[] seekEvents;
     // Buffer that holds events while playing
-    @SuppressWarnings("WeakerAccess") String[] events;
+    //@SuppressWarnings("WeakerAccess") String[] events;
     // Collection of events within currently processed data batch
     @SuppressWarnings("WeakerAccess") SparseArray<String> eventsInCurrentBatch = new SparseArray<>();
 
@@ -115,11 +115,11 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 seekBuffer = new byte[seekBufferSize];
                 seekSamples = new short[(int) (seekBufferSize * .5)];
-                seekEvents = new String[seekSamples.length];
+                //seekEvents = new String[seekSamples.length];
 
                 final byte[] buffer = new byte[bufferSize];
                 samples = new short[(int) (bufferSize * .5)];
-                events = new String[samples.length];
+                //events = new String[samples.length];
                 while (working.get() && raf != null) {
                     if (playing.get()) {
                         // if we are playing after seek we need to fix it because of the different buffer sizes
@@ -470,25 +470,29 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
     @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
         short[] s;
-        String[] e;
         if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asShortBuffer()
                 .get(seekSamples, 0, seekSamples.length);
             s = seekSamples;
-            e = seekEvents;
+            //e = seekEvents;
         } else {
             ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
             s = samples;
-            e = events;
+            //e = events;
         }
-        BufferUtils.emptyStringBuffer(e);
+        //BufferUtils.emptyStringBuffer(e);
         int len = eventsInCurrentBatch.size();
+        int[] eventIndices = new int[len];
+        String[] eventLabels = new String[len];
         for (int i = 0; i < len; i++) {
-            e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
+            eventIndices[i] = eventsInCurrentBatch.keyAt(i);
+            eventLabels[i] = eventsInCurrentBatch.valueAt(i);
+            //e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new DataProcessor.SamplesWithMarkers(s, e, AudioUtils.getSampleCount(lastByteIndex));
+        return new DataProcessor.SamplesWithMarkers(s, eventIndices, eventLabels,
+            AudioUtils.getSampleCount(lastByteIndex));
     }
 }

@@ -87,6 +87,7 @@ ext {
     usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
+    benchitVersion = 'v1.0.2'
 }
 
 dependencies {
@@ -123,6 +124,8 @@ dependencies {
     implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true
     }
+    // benchmark
+    implementation "com.github.T-Spoon:Benchit:$benchitVersion"
 }
 
 apply plugin: 'com.google.gms.google-services'

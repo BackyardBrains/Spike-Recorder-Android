@@ -280,9 +280,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final String[] TEMP_EVENTS_BUFFER = new String[0];
     private static final DataProcessor.SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
-        new DataProcessor.SamplesWithMarkers(TEMP_EVENTS_BUFFER);
+        new DataProcessor.SamplesWithMarkers(new int[0], new String[0]);
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.

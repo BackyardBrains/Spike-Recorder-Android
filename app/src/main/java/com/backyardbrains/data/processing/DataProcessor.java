@@ -12,30 +12,40 @@ public interface DataProcessor {
      */
     class SamplesWithMarkers {
         public short[] samples;
-        public String[] events;
+        public int[] eventIndices;
+        public String[] eventLabels;
+        //public String[] events;
         public long lastSampleIndex;
 
         public SamplesWithMarkers() {
-            samples = new short[0];
-            events = new String[0];
-            this.lastSampleIndex = -1;
-        }
-
-        public SamplesWithMarkers(@NonNull String[] events) {
             this.samples = new short[0];
-            this.events = events;
+            this.eventIndices = new int[0];
+            this.eventLabels = new String[0];
+            //this.events = new String[0];
             this.lastSampleIndex = -1;
         }
 
-        public SamplesWithMarkers(short[] samples, String[] events) {
-            this.samples = samples;
-            this.events = events;
+        public SamplesWithMarkers(int[] eventIndices, @NonNull String[] eventLabels) {
+            this.samples = new short[0];
+            this.eventIndices = eventIndices;
+            this.eventLabels = eventLabels;
+            //this.events = eventLabels;
             this.lastSampleIndex = -1;
         }
 
-        public SamplesWithMarkers(short[] samples, String[] events, long lastSampleIndex) {
+        public SamplesWithMarkers(short[] samples, int[] eventIndices, String[] eventLabels) {
             this.samples = samples;
-            this.events = events;
+            this.eventIndices = eventIndices;
+            this.eventLabels = eventLabels;
+            //this.events = eventLabels;
+            this.lastSampleIndex = -1;
+        }
+
+        public SamplesWithMarkers(short[] samples, int[] eventIndices, String[] eventLabels, long lastSampleIndex) {
+            this.samples = samples;
+            this.eventIndices = eventIndices;
+            this.eventLabels = eventLabels;
+            //this.events = eventLabels;
             this.lastSampleIndex = lastSampleIndex;
         }
     }

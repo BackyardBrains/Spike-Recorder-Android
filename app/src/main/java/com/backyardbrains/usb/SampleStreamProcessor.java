@@ -70,8 +70,12 @@ class SampleStreamProcessor implements DataProcessor {
     private int[] sampleCounters = new int[DEFAULT_CHANNEL_COUNT];
     // Holds samples from all channels processed in a single batch
     private short[][] channels = new short[DEFAULT_CHANNEL_COUNT][];
-    // Holds events processed in a single batch
-    private String[] events = new String[0];
+    // Holds count of processed events in the current sample batch
+    private int eventCounter;
+    // Holds event indices processed in a single batch
+    private int[] eventIndices = new int[0];
+    // Holds event labels processed in a single batch
+    private String[] eventLabels = new String[0];
 
     /**
      * Listens for responses sent by connected device as a response to custom messages sent by the application.
@@ -139,8 +143,10 @@ class SampleStreamProcessor implements DataProcessor {
         for (int i = 0; i < channelCount; i++) {
             channels[i] = new short[maxSampleCount];
         }
-        // init samples
-        events = new String[maxSampleCount];
+        // init events
+        eventCounter = 0;
+        eventIndices = new int[maxSampleCount];
+        eventLabels = new String[maxSampleCount];
 
         // init sample counter for all channels
         Arrays.fill(sampleCounters, 0);
@@ -263,7 +269,7 @@ class SampleStreamProcessor implements DataProcessor {
         //LOGD(TAG, "SIZE: " + data.length + ", TOOK: " + (System.currentTimeMillis() - start));
 
         return new SamplesWithMarkers(Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]),
-            Arrays.copyOfRange(events, 0, sampleCounters[CHANNEL_INDEX]));
+            Arrays.copyOfRange(eventIndices, 0, eventCounter), Arrays.copyOfRange(eventLabels, 0, eventCounter));
     }
 
     // Resets all variables used for processing escape sequences
@@ -287,7 +293,8 @@ class SampleStreamProcessor implements DataProcessor {
                 listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                     SampleStreamUtils.getChannelCount(message));
             } else if (SampleStreamUtils.isEventMsg(message)) {
-                events[sampleIndex] = SampleStreamUtils.getEventNumber(message);
+                eventIndices[eventCounter] = sampleIndex;
+                eventLabels[eventCounter++] = SampleStreamUtils.getEventNumber(message);
             }
         }
     }

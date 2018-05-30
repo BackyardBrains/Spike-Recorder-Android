@@ -84,15 +84,15 @@ class RecordingSaver {
                         // we first need to write all the events before start writing the samples
                         // so we get the precise times for events
                         int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                        int len = samplesWithMarkers.events.length;
+                        int len = samplesWithMarkers.eventIndices.length;
                         String event;
                         for (int i = 0; i < len; i++) {
-                            event = samplesWithMarkers.events[i];
+                            event = samplesWithMarkers.eventLabels[i];
                             if (event != null) {
                                 eventsFileContent.append("\n")
                                     .append(event)
                                     .append(",\t")
-                                    .append((writtenSamples + i) / (float) sampleRate);
+                                    .append((writtenSamples + samplesWithMarkers.eventIndices[i]) / (float) sampleRate);
                             }
                         }
 
@@ -112,15 +112,15 @@ class RecordingSaver {
                     // we first need to write all the events before start writing the samples
                     // so we get the precise times for events
                     int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                    int len = samplesWithMarkers.events.length;
+                    int len = samplesWithMarkers.eventIndices.length;
                     String event;
                     for (int j = 0; j < len; j++) {
-                        event = samplesWithMarkers.events[j];
+                        event = samplesWithMarkers.eventLabels[j];
                         if (event != null) {
                             eventsFileContent.append("\n")
                                 .append(event)
                                 .append(",\t")
-                                .append((writtenSamples + j) / (float) sampleRate);
+                                .append((writtenSamples + samplesWithMarkers.eventIndices[j]) / (float) sampleRate);
                         }
                     }
                     // now we can write to audio stream
