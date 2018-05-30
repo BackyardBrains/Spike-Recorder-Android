@@ -16,6 +16,8 @@ public class ProcessingBuffer {
     //
     public static final int MAX_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
 
+    private static final Object eventBufferLock = new Object();
+
     private static ProcessingBuffer INSTANCE;
 
     private SampleBuffer sampleBuffer;
@@ -60,8 +62,10 @@ public class ProcessingBuffer {
         sampleBuffer.clear();
         sampleBuffer = new SampleBuffer(bufferSize);
 
-        eventIndices = new int[0];
-        eventNames = new String[0];
+        synchronized (eventBufferLock) {
+            eventIndices = new int[0];
+            eventNames = new String[0];
+        }
 
         lastSampleIndex = 0;
 
@@ -85,18 +89,17 @@ public class ProcessingBuffer {
     }
 
     /**
-     * Returns an array of indices of events accompanying sample data currently in the buffer.
+     * Copies collections of event indices and event names accompanying sample data currently in the buffer to
+     * specified {@code indices} and {@code events} and returns number of copied events.
      */
-    public int[] getEventIndices() {
-        return eventIndices;
-    }
+    public int copyEvents(int[] indices, String[] events) {
+        synchronized (eventBufferLock) {
+            int copied = Math.min(eventIndices.length, eventNames.length);
+            System.arraycopy(eventIndices, 0, indices, 0, copied);
+            System.arraycopy(eventNames, 0, events, 0, copied);
 
-    /**
-     * Returns an array of event names accompanying sample data currently in the buffer.
-     */
-    @NonNull public String[] getEventNames() {
-        return eventNames;
-        //return eventBuffer != null ? eventBuffer.getArray() : new String[0];
+            return copied;
+        }
     }
 
     /**
@@ -115,27 +118,29 @@ public class ProcessingBuffer {
         if (sampleBuffer != null) sampleBuffer.add(samplesWithMarkers.samples);
 
         // add new events, update indices of existing events and remove events that are no longer visible
-        int removeIndices;
-        for (removeIndices = 0; removeIndices < eventIndices.length; removeIndices++) {
-            if (eventIndices[removeIndices] - samplesWithMarkers.samples.length < 0) continue;
+        synchronized (eventBufferLock) {
+            int removeIndices;
+            for (removeIndices = 0; removeIndices < eventIndices.length; removeIndices++) {
+                if (eventIndices[removeIndices] - samplesWithMarkers.samples.length < 0) continue;
 
-            break;
+                break;
+            }
+            int newLen = eventIndices.length - removeIndices + samplesWithMarkers.eventIndices.length;
+            int[] newEventIndices = new int[newLen];
+            String[] newEventLabels = new String[newLen];
+            int eventCounter = 0;
+            for (int i = removeIndices; i < eventIndices.length; i++) {
+                newEventIndices[eventCounter] = eventIndices[i] - samplesWithMarkers.samples.length;
+                newEventLabels[eventCounter++] = eventNames[i];
+            }
+            int baseIndex = bufferSize - samplesWithMarkers.samples.length;
+            for (int i = 0; i < samplesWithMarkers.eventIndices.length; i++) {
+                newEventIndices[eventCounter] = baseIndex + samplesWithMarkers.eventIndices[i];
+                newEventLabels[eventCounter++] = samplesWithMarkers.eventLabels[i];
+            }
+            eventIndices = newEventIndices;
+            eventNames = newEventLabels;
         }
-        int newLen = eventIndices.length - removeIndices + samplesWithMarkers.eventIndices.length;
-        int[] newEventIndices = new int[newLen];
-        String[] newEventLabels = new String[newLen];
-        int eventCounter = 0;
-        for (int i = removeIndices; i < eventIndices.length; i++) {
-            newEventIndices[eventCounter] = eventIndices[i] - samplesWithMarkers.samples.length;
-            newEventLabels[eventCounter++] = eventNames[i];
-        }
-        int baseIndex = bufferSize - samplesWithMarkers.samples.length;
-        for (int i = 0; i < samplesWithMarkers.eventIndices.length; i++) {
-            newEventIndices[eventCounter] = baseIndex + samplesWithMarkers.eventIndices[i];
-            newEventLabels[eventCounter++] = samplesWithMarkers.eventLabels[i];
-        }
-        eventIndices = newEventIndices;
-        eventNames = newEventLabels;
 
         // save last sample index (playhead)
         lastSampleIndex = samplesWithMarkers.lastSampleIndex;

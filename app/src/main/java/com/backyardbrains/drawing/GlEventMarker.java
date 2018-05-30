@@ -55,8 +55,9 @@ public class GlEventMarker {
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, @NonNull String eventName, float x, float y0, float y1, float scaleX,
-        float scaleY) {
+    public void draw(@NonNull GL10 gl, String eventName, float x, float y0, float y1, float scaleX, float scaleY) {
+        if (eventName == null) return;
+
         int len = eventName.length();
         int ascii;
         // we just use event up to the first unsupported character

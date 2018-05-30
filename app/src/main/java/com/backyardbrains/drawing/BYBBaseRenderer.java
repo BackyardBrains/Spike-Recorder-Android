@@ -303,14 +303,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int glWindowWidth = this.glWindowWidth;
         final int glWindowHeight = this.glWindowHeight;
 
-        final int[] indices;
-        final String[] events;
-        synchronized (processingBuffer.getEventIndices()) {
-            indices = new int[processingBuffer.getEventIndices().length];
-            System.arraycopy(processingBuffer.getEventIndices(), 0, indices, 0, indices.length);
-            events = new String[processingBuffer.getEventNames().length];
-            System.arraycopy(processingBuffer.getEventNames(), 0, events, 0, events.length);
-        }
+        final int[] indices = new int[MAX_EVENT_COUNT];
+        final String[] events = new String[MAX_EVENT_COUNT];
+        int copied = processingBuffer.copyEvents(indices, events);
 
         // let's reset dirty flags right away
         this.glWindowWidthDirty = false;
@@ -327,15 +322,12 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // samples are OK, we can move on
 
         // get event indices and event names from processing buffer and check if the're valid
-        if (eventIndices == null || eventIndices.length != indices.length) {
-            eventIndices = new int[indices.length];
-        }
-        System.arraycopy(indices, 0, eventIndices, 0, eventIndices.length);
-        if (eventNames == null || eventNames.length != events.length) {
-            eventNames = new String[events.length];
-        }
-        System.arraycopy(events, 0, eventNames, 0, eventNames.length);
+        if (eventIndices == null || eventIndices.length != copied) eventIndices = new int[copied];
+        System.arraycopy(indices, 0, eventIndices, 0, copied);
+        if (eventNames == null || eventNames.length != copied) eventNames = new String[copied];
+        System.arraycopy(events, 0, eventNames, 0, copied);
 
+        // calculate scale x and scale y
         if (surfaceSizeDirty || glWindowWidthDirty) {
             scaleX = surfaceWidth > 0 ? glWindowWidth / (float) surfaceWidth : (float) surfaceWidth;
         }
