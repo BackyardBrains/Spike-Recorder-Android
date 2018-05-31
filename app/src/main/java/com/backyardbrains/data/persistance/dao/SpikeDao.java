@@ -14,7 +14,7 @@ import com.backyardbrains.data.persistance.entity.Spike;
     @Insert void insertSpikes(Spike[] spikes);
 
     @Query("SELECT * FROM spikes WHERE analysis_id = :analysisId ORDER BY `index` ASC") Spike[] loadSpikes(
-            long analysisId);
+        long analysisId);
 
     @Query("SELECT value, `index` FROM spikes WHERE analysis_id = :analysisId AND spikes.`index` >= :startIndex AND spikes.`index` <= :endIndex ORDER BY spikes.`index`")
     SpikeValueAndIndex[] loadSpikeValuesAndIndicesForRange(long analysisId, int startIndex, int endIndex);

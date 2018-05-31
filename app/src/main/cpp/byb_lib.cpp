@@ -25,7 +25,6 @@ int envelope(short *output, const short *samples, int fromSample, int toSample, 
     int samplesPerPixel = drawSamplesCount / size;
     int samplesPerPixelRest = drawSamplesCount % size;
     int samplesPerEnvelopeLow = samplesPerPixel * 2; // multiply by 2 because we save min and max
-    int samplesPerEnvelopeHigh = samplesPerEnvelopeLow + 2;
     int envelopeCounter = 0, index = 0;
 
     int from = fromSample;
@@ -38,25 +37,13 @@ int envelope(short *output, const short *samples, int fromSample, int toSample, 
         } else {
             if (sample > max) max = sample;
             if (sample < min) min = sample;
+            if (envelopeCounter == samplesPerEnvelopeLow) {
+                output[index++] = max;
+                output[index++] = min;
 
-            if (index < samplesPerPixelRest) {
-                if (envelopeCounter == samplesPerEnvelopeHigh) {
-                    output[index++] = max;
-                    output[index++] = min;
-
-                    envelopeCounter = 0;
-                    min = SHRT_MAX;
-                    max = SHRT_MIN;
-                }
-            } else {
-                if (envelopeCounter == samplesPerEnvelopeLow) {
-                    output[index++] = max;
-                    output[index++] = min;
-
-                    envelopeCounter = 0;
-                    min = SHRT_MAX;
-                    max = SHRT_MIN;
-                }
+                envelopeCounter = 0;
+                min = SHRT_MAX;
+                max = SHRT_MIN;
             }
 
             envelopeCounter++;
@@ -76,7 +63,7 @@ int envelope(short *output, const short *samples, int fromSample, int toSample, 
  * @return
  */
 int prepareForDrawing(short *output, const short *samples, int fromSample, int toSample, int size) {
-    short *envelopedSamples = new short[size];
+    short *envelopedSamples = new short[size * 2];
     int returned = envelope(envelopedSamples, samples, fromSample, toSample, size);
 
     int index = 0;

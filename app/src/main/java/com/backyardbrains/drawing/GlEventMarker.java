@@ -33,8 +33,8 @@ public class GlEventMarker {
     private final ShortBuffer indicesBuffer;
     private final GLText text;
 
-    private final float[] lineVertices = new float[4];
-    private final float[] labelVertices = new float[8];
+    private final float[] lineVertices = new float[LINE_VERTICES_COUNT];
+    private final float[] labelVertices = new float[LABEL_VERTICES_COUNT];
 
     GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
         ByteBuffer lineVBB = ByteBuffer.allocateDirect(LINE_VERTICES_COUNT * 4);

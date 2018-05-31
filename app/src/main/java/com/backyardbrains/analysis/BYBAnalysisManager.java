@@ -14,7 +14,6 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
-import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;

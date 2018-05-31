@@ -1,6 +1,5 @@
 package com.backyardbrains.drawing;
 
-import com.backyardbrains.utils.AudioUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -11,25 +10,26 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlSpikes {
 
-    // We can maximally handle 6 seconds of sample data,
-    // we multiply by 2 because we need bytes
-    // and again by 2 because we have 2 vertices for every sample
-    private static final int MAX_VERTICES = AudioUtils.SAMPLE_RATE * 6 * 2 * 2;
+    // We can maximally handle 6 seconds of sample data and spike can appear max every 5 ms
+    // We multiply by 2 because we have 2 vertices for every spike
+    public static final int MAX_POINT_VERTICES = 1200 * 2;
+    // We multiply by 4 because we have 4 vertices for every color
+    public static final int MAX_COLOR_VERTICES = 1200 * 4;
 
     private static final float POINT_SIZE = 10f;
 
-    private final FloatBuffer spikesVFB;
-    private final FloatBuffer spikesColorVFB;
+    private FloatBuffer spikesVFB;
+    private FloatBuffer spikesColorVFB;
 
-    private float[] spikesVertices = new float[MAX_VERTICES];
-    private float[] spikesColors = new float[MAX_VERTICES];
+    private float[] spikesVertices = new float[MAX_POINT_VERTICES];
+    private float[] spikesColors = new float[MAX_COLOR_VERTICES];
 
     GlSpikes() {
-        ByteBuffer spikesVBB = ByteBuffer.allocateDirect(MAX_VERTICES * 4);
+        ByteBuffer spikesVBB = ByteBuffer.allocateDirect(MAX_POINT_VERTICES * 4);
         spikesVBB.order(ByteOrder.nativeOrder());
         spikesVFB = spikesVBB.asFloatBuffer();
 
-        ByteBuffer spikeColorsVBB = ByteBuffer.allocateDirect(MAX_VERTICES * 4);
+        ByteBuffer spikeColorsVBB = ByteBuffer.allocateDirect(MAX_COLOR_VERTICES * 4);
         spikeColorsVBB.order(ByteOrder.nativeOrder());
         spikesColorVFB = spikeColorsVBB.asFloatBuffer();
     }

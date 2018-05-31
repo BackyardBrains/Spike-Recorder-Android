@@ -6,7 +6,6 @@ import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.SpikeValueAndIndex;
-import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -21,8 +20,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private static final float[] WAVEFORM_COLOR = new float[] { .4f, .4f, .4f, .0f };
 
     private GlSpikes glSpikes;
-    private final float[] spikesVertices = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 2];
-    private final float[] spikesColors = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 4];
+    private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
+    private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
 
     private int[] thresholds = new int[2];
 
@@ -120,6 +119,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
             drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
@@ -134,11 +134,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             int toSample = (int) lastSampleIndex;
             int fromSample = Math.max(0, toSample - glWindowWidth);
             if (spikeAnalysisId > 0) {
-                final SpikeValueAndIndex[] valuesAndIndexes =
+                final SpikeValueAndIndex[] valuesAndIndices =
                     getAnalysisManager().getSpikesForRange(spikeAnalysisId, fromSample, toSample);
                 int verticesCount =
-                    fillSpikesAndColorsBuffers(valuesAndIndexes, spikesVertices, spikesColors, glWindowWidth,
-                        fromSample, toSample);
+                    fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth,
+                        fromSample, toSample, (long) (waveformVertices.length * .5));
                 glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
             }
         }
@@ -176,11 +176,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
         @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
-        long toSample) {
+        long toSample, long returnCount) {
         int verticesCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
                 int colorsCounter = 0;
+                float scaleX = (float) returnCount / glWindowWidth;
                 long index;
 
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
@@ -188,9 +189,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
                 for (SpikeValueAndIndex valueAndIndex : valueAndIndices) {
                     if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
-                        index =
-                            toSample - fromSample < glWindowWidth ? valueAndIndex.getIndex() + glWindowWidth - toSample
-                                : valueAndIndex.getIndex() - fromSample;
+                        if (toSample - fromSample < glWindowWidth) { // buffer contains 0 samples in front
+                            index = valueAndIndex.getIndex() + glWindowWidth - toSample;
+                        } else { // buffer only contains sample data (no 0 samples in front)
+                            index = valueAndIndex.getIndex() - fromSample;
+                        }
+                        index = (long) (index * scaleX);
                         spikesVertices[verticesCounter++] = index;
                         float spikeValue = valueAndIndex.getValue();
                         spikesVertices[verticesCounter++] = spikeValue;
