@@ -8,8 +8,8 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 58
-        versionName '1.6.0.3'
+        versionCode 59
+        versionName '1.6.0.4'
 
         externalNativeBuild {
             cmake {
@@ -74,20 +74,20 @@ android {
 
 ext {
     supportLibVersion = '27.1.1'
-    architectureComponentsVersion = '1.0.0'
+    architectureComponentsVersion = '1.1.0'
     constraintLayoutVersion = '1.1.0'
-    firebaseVersion = '15.0.0'
+    firebaseVersion = '16.0.0'
     butterknifeVersion = '8.8.1'
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
-    crashlyticsVersion = '2.9.2@aar'
+    crashlyticsVersion = '2.9.3@aar'
     easyPermissionsVersion = '1.2.0'
     eventBusVersion = '3.1.1'
     eventBusAnnotationProcessorVersion = '3.0.1'
     usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
-    benchitVersion = 'v1.0.2'
+    //    benchitVersion = 'v1.0.2'
 }
 
 dependencies {
@@ -125,7 +125,7 @@ dependencies {
         transitive = true
     }
     // benchmark
-    implementation "com.github.T-Spoon:Benchit:$benchitVersion"
+    //    implementation "com.github.T-Spoon:Benchit:$benchitVersion"
 }
 
 apply plugin: 'com.google.gms.google-services'
