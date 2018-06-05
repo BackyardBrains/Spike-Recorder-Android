@@ -3,6 +3,7 @@
 //
 
 #include <climits>
+#include <jni.h>
 
 #include "byb_lib.h"
 
@@ -17,14 +18,13 @@
  */
 int envelope(short *output, const short *samples, int fromSample, int toSample, int size) {
     int drawSamplesCount = toSample - fromSample;
-    if (drawSamplesCount % 2 != 0) drawSamplesCount -= 1;
     if (drawSamplesCount < size) size = drawSamplesCount;
 
     short sample;
     short min = SHRT_MAX, max = SHRT_MIN;
     int samplesPerPixel = drawSamplesCount / size;
     int samplesPerPixelRest = drawSamplesCount % size;
-    int samplesPerEnvelopeLow = samplesPerPixel * 2; // multiply by 2 because we save min and max
+    int samplesPerEnvelope = samplesPerPixel * 2; // multiply by 2 because we save min and max
     int envelopeCounter = 0, index = 0;
 
     int from = fromSample;
@@ -37,7 +37,7 @@ int envelope(short *output, const short *samples, int fromSample, int toSample, 
         } else {
             if (sample > max) max = sample;
             if (sample < min) min = sample;
-            if (envelopeCounter == samplesPerEnvelopeLow) {
+            if (envelopeCounter == samplesPerEnvelope) {
                 output[index++] = max;
                 output[index++] = min;
 
@@ -63,7 +63,7 @@ int envelope(short *output, const short *samples, int fromSample, int toSample, 
  * @return
  */
 int prepareForDrawing(short *output, const short *samples, int fromSample, int toSample, int size) {
-    short *envelopedSamples = new short[size * 2];
+    short *envelopedSamples = new short[size * 5];
     int returned = envelope(envelopedSamples, samples, fromSample, toSample, size);
 
     int index = 0;

@@ -176,12 +176,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
         @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
-        long toSample, long returnCount) {
+        long toSample, long drawSampleCount) {
         int verticesCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
                 int colorsCounter = 0;
-                float scaleX = (float) returnCount / glWindowWidth;
+                float scaleX = (float) drawSampleCount / glWindowWidth;
                 long index;
 
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);

@@ -27,7 +27,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     private final float[][] colors = new float[3][];
 
     private short[] rmsSamples;
-    private float drawSampleCount;
+    private float measureSampleCount;
 
     private boolean measuring;
     private float measurementStartX;
@@ -68,7 +68,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES
+    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES IF NECESSARY
     protected boolean drawSpikes() {
         return true;
     }
@@ -92,7 +92,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
         @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
         int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
-
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         int toSample = (int) lastSampleIndex;
         int fromSample = Math.max(0, toSample - glWindowWidth);
@@ -105,18 +104,22 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
+        long drawSampleCount = (long) (waveformVertices.length * .5);
+
         // draw measurement area
         if (measuring) {
-            // calculate necessary measurement parameters
-            final int drawSampleCount = drawEndIndex - drawStartIndex;
-            //final float coefficient = drawSampleCount * 1f / surfaceWidth;
-            final int measureStartIndex = Math.round(measurementStartX/* * coefficient*/);
-            final int measureEndIndex = Math.round(measurementEndX );
+            // calculate start and end measurement area draw coordinates
+            float drawScale = (float) drawSampleCount / surfaceWidth;
+            final float measurementAreaDrawStart = measurementStartX * drawScale;
+            final float measurementAreaDrawEnd = measurementEndX * drawScale;
+            final int measureStartIndex =
+                (int) (scaleX < 1 ? measurementAreaDrawStart : measurementAreaDrawStart * scaleX);
+            final int measureEndIndex = (int) (scaleX < 1 ? measurementAreaDrawEnd : measurementAreaDrawEnd * scaleX);
             final int measureSampleCount = Math.abs(measureEndIndex - measureStartIndex);
             // fill array of samples used for RMS calculation
-            if (rmsSamples == null || drawSampleCount != this.drawSampleCount) {
-                this.drawSampleCount = drawSampleCount;
-                rmsSamples = new short[drawSampleCount];
+            if (rmsSamples == null || measureSampleCount != this.measureSampleCount) {
+                this.measureSampleCount = measureSampleCount;
+                rmsSamples = new short[measureSampleCount];
             }
             final int startIndex = Math.min(measureStartIndex, measureEndIndex);
             final int measureFirstSampleIndex = drawStartIndex + startIndex;
@@ -139,8 +142,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
             onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
-            // draw measurement area
-            glMeasurementArea.draw(gl, measurementStartX, measurementEndX, -glWindowHeight * .5f, glWindowHeight * .5f);
+            //draw measurement area
+            glMeasurementArea.draw(gl, measurementAreaDrawStart, measurementAreaDrawEnd, -glWindowHeight * .5f,
+                glWindowHeight * .5f);
         }
 
         super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
@@ -151,7 +155,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, (long) (waveformVertices.length * .5), colors[i]);
+                            fromSample, toSample, drawSampleCount, colors[i]);
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }
@@ -215,12 +219,12 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
         @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
-        long toSample, long returnCount, @Size(4) float[] color) {
+        long toSample, long drawSampleCount, @Size(4) float[] color) {
         int verticesCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
                 int colorsCounter = 0;
-                float scaleX = (float) returnCount / glWindowWidth;
+                float scaleX = (float) drawSampleCount / glWindowWidth;
                 long index;
 
                 for (SpikeValueAndIndex valueAndIndex : valueAndIndices) {

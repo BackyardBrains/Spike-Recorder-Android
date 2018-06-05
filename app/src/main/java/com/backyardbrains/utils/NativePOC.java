@@ -9,12 +9,12 @@ public class NativePOC {
 
     public static native void testPassByRef(short[] test);
 
-    public static native short[] prepareForWaveformDrawing(short[] samples, int start, int end, int returnCount);
+    public static native short[] prepareForWaveformDrawing(short[] samples, int start, int end, int drawSurfaceWidth);
 
     public static native int[] prepareForMarkerDrawing(int[] eventIndices, int fromSample, int toSample,
-        int returnCount);
+        int drawSurfaceWidth);
 
-    public static native short[] prepareForThresholdDrawing(short[] samples, int start, int end, int returnCount);
+    public static native short[] prepareForThresholdDrawing(short[] samples, int start, int end, int drawSurfaceWidth);
 
     static {
         System.loadLibrary("poc-lib");

@@ -293,7 +293,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        //long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -327,14 +327,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         if (eventNames == null || eventNames.length != copied) eventNames = new String[copied];
         System.arraycopy(events, 0, eventNames, 0, copied);
 
-        // calculate scale x and scale y
-        if (surfaceSizeDirty || glWindowWidthDirty) {
-            scaleX = surfaceWidth > 0 ? glWindowWidth / (float) surfaceWidth : (float) surfaceWidth;
-        }
-        if (surfaceSizeDirty || glWindowHeightDirty) {
-            scaleY = surfaceHeight > 0 ? glWindowHeight / (float) surfaceHeight : (float) glWindowHeight;
-        }
-
         final int sampleCount = samples.length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
@@ -348,10 +340,18 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final short[] waveformVertices =
             getWaveformVertices(samples, eventIndices, eventNames, markersBuffer, drawStartIndex, drawEndIndex,
                 surfaceWidth);
-        final int verticesCount = (int) (waveformVertices.length * .5);
+        final int samplesDrawCount = (int) (waveformVertices.length * .5);
+
+        // calculate scale x and scale y
+        if (surfaceSizeDirty || glWindowWidthDirty) {
+            scaleX = samplesDrawCount > 0 ? (float) glWindowWidth / samplesDrawCount : 1f;
+        }
+        if (surfaceSizeDirty || glWindowHeightDirty) {
+            scaleY = surfaceHeight > 0 ? (float) glWindowHeight / surfaceHeight : 1f;
+        }
 
         // init surface before drawing
-        initDrawSurface(gl, verticesCount, glWindowHeight, surfaceSizeDirty || glWindowWidthDirty);
+        initDrawSurface(gl, samplesDrawCount, glWindowHeight, surfaceSizeDirty || glWindowWidthDirty);
 
         //autoScaleCheck(samples);
 
@@ -362,29 +362,29 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
-        //LOGD(TAG, "================================================");
+        LOGD(TAG, "" + (System.currentTimeMillis() - start));
+        LOGD(TAG, "================================================");
     }
 
-    private void initDrawSurface(GL10 gl, int glWindowWidth, int glWindowHeight, boolean updateProjection) {
+    private void initDrawSurface(GL10 gl, int samplesDrawCount, int glWindowHeight, boolean updateProjection) {
         BYBGlUtils.glClear(gl);
         if (updateProjection) {
             float heightHalf = glWindowHeight * .5f;
             gl.glMatrixMode(GL10.GL_PROJECTION);
             gl.glLoadIdentity();
-            gl.glOrthof(0f, glWindowWidth - 1, -heightHalf, heightHalf, -1f, 1f);
+            gl.glOrthof(0f, samplesDrawCount - 1, -heightHalf, heightHalf, -1f, 1f);
         }
     }
 
     @NonNull protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
         @NonNull String[] eventNames, SparseArray<String> markersBuffer, int fromSample, int toSample,
-        int returnCount) {
+        int drawSurfaceWidth) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
 
         try {
             int[] envelopedEventIndices =
-                NativePOC.prepareForMarkerDrawing(eventIndices, fromSample, toSample, returnCount);
+                NativePOC.prepareForMarkerDrawing(eventIndices, fromSample, toSample, drawSurfaceWidth);
             int indexBase = eventNames.length - envelopedEventIndices.length;
             for (int i = 0; i < envelopedEventIndices.length; i++) {
                 markersBuffer.put(envelopedEventIndices[i], eventNames[indexBase + i]);
@@ -395,7 +395,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
             //    index = (int) ((eventIndices[i] - fromSample) * scaleX);
             //    if (index >= 0) markersBuffer.put(index, eventNames[i]);
             //}
-            return NativePOC.prepareForWaveformDrawing(samples, fromSample, toSample, returnCount);
+            return NativePOC.prepareForWaveformDrawing(samples, fromSample, toSample, drawSurfaceWidth);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);

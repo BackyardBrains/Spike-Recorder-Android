@@ -64,9 +64,10 @@ public class WaveformRenderer extends BYBBaseRenderer {
         // draw waveform
         glWaveform.draw(gl, waveformVertices, getWaveformColor());
         // draw markers
+        float drawScale = (float) (waveformVertices.length * .5) / surfaceWidth;
         final float verticalHalfSize = glWindowHeight * .5f;
         for (int i = 0; i < markers.size(); i++) {
-            glEventMarker.draw(gl, markers.valueAt(i), markers.keyAt(i), -verticalHalfSize, verticalHalfSize, scaleX,
+            glEventMarker.draw(gl, markers.valueAt(i), markers.keyAt(i), -verticalHalfSize, verticalHalfSize, drawScale,
                 scaleY);
         }
     }

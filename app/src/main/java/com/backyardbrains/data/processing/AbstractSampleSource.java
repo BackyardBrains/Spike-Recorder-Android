@@ -301,7 +301,7 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected final void writeToBuffer(@NonNull byte[] data, long lastByteIndex) {
         processingBuffer.write(data, 0, data.length, true);
-        processingThread.setLastByteIndex(lastByteIndex);
+        if (processingThread != null) processingThread.setLastByteIndex(lastByteIndex);
     }
 
     /**

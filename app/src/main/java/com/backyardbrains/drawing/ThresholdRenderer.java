@@ -123,9 +123,9 @@ public class ThresholdRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @NonNull @Override protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
-        @NonNull String[] eventNames, SparseArray<String> markersBuffer, int fromSample, int toSample, int returnCount) {
+        @NonNull String[] eventNames, SparseArray<String> markersBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
         try {
-            return NativePOC.prepareForThresholdDrawing(samples, fromSample, toSample, returnCount);
+            return NativePOC.prepareForThresholdDrawing(samples, fromSample, toSample, drawSurfaceWidth);
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);

@@ -92,6 +92,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
      */
     protected class MeasurementsUpdateRunnable implements Runnable {
 
+        private boolean measuring;
         private float rms;
         private int firstTrainSpikeCount;
         private float firstTrainSpikesPerSecond;
@@ -102,7 +103,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
         private int sampleCount;
 
         @Override public void run() {
-            if (getContext() != null) {
+            if (getContext() != null && measuring) {
                 tvRms.setText(String.format(getString(R.string.template_rms), rms));
                 // avoid division by zero
                 tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
@@ -116,6 +117,10 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
                 tvSpikeCount2.setText(String.format(getString(R.string.template_spike_count), thirdTrainSpikeCount,
                     thirdTrainSpikesPerSecond));
             }
+        }
+
+        public void setMeasuring(boolean measuring) {
+            this.measuring = measuring;
         }
 
         public void setRms(float rms) {
@@ -285,22 +290,26 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
             @Override public void onMeasureStart() {
                 tvRms.setVisibility(View.VISIBLE);
                 tvRmsTime.setVisibility(View.VISIBLE);
+
+                measurementsUpdateRunnable.setMeasuring(true);
             }
 
             @Override public void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount,
                 int thirdTrainSpikeCount, int sampleCount) {
                 if (getActivity() != null) {
                     measurementsUpdateRunnable.setRms(rms);
+                    measurementsUpdateRunnable.setSampleCount(sampleCount);
                     measurementsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
                     measurementsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
                     measurementsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
-                    measurementsUpdateRunnable.setSampleCount(sampleCount);
                     // we need to call it on UI thread because renderer is drawing on background thread
                     getActivity().runOnUiThread(measurementsUpdateRunnable);
                 }
             }
 
             @Override public void onMeasureEnd() {
+                measurementsUpdateRunnable.setMeasuring(false);
+
                 tvRms.setVisibility(View.INVISIBLE);
                 tvRmsTime.setVisibility(View.INVISIBLE);
                 tvSpikeCount0.setVisibility(View.INVISIBLE);
