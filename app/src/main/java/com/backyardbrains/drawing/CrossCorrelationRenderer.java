@@ -44,24 +44,23 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         int margin = 20;
-        int maxSpikeTrains = 3;
         if (getCrossCorrelationAnalysis()) {
             if (crossCorrelationAnalysis != null) {
                 final int len = crossCorrelationAnalysis.length;
                 final int divider = (int) Math.sqrt(len);
                 if (thumbsView) {
-                    float d = (Math.min(surfaceWidth, surfaceHeight) / (float) (maxSpikeTrains + 1)) * 0.2f;
+                    float d = (Math.min(surfaceWidth, surfaceHeight) / (float) (divider + 1)) * 0.2f;
                     if (d < margin) {
                         margin = (int) d;
                     }
-                    float w = (surfaceWidth - margin * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
-                    float h = (surfaceHeight - (margin * 1.5f) * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
+                    float w = (surfaceWidth - margin * (divider + 1)) / (float) divider;
+                    float h = (surfaceHeight - (margin * 1.5f) * (divider + 1)) / (float) divider;
 
-                    thumbRects = new ofRectangle[maxSpikeTrains * maxSpikeTrains];
+                    thumbRects = new ofRectangle[divider * divider];
 
-                    for (int i = 0; i < maxSpikeTrains; i++) {
-                        for (int j = 0; j < maxSpikeTrains; j++) {
-                            thumbRects[i * maxSpikeTrains + j] =
+                    for (int i = 0; i < divider; i++) {
+                        for (int j = 0; j < divider; j++) {
+                            thumbRects[i * divider + j] =
                                 new ofRectangle(j * (w + margin) + margin, (h + (margin * 1.5f)) * i + (margin * 1.5f),
                                     w, h);
                         }
@@ -73,7 +72,7 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                     }
                 } else {
                     int s = selected;
-                    if (selected < 0 || selected >= maxSpikeTrains * maxSpikeTrains || selected >= len) {
+                    if (selected < 0 || selected >= divider * divider || selected >= len) {
                         s = 0;
                     }
                     mainRect = new ofRectangle(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
