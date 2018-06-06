@@ -205,7 +205,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
         if (event.isSuccess() && getAnalysisManager() != null) {
             getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-                @Override public void onSpikeAnalysisExistsResult(boolean exists) {
+                @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
                     if (!exists) addThreshold();
                     updateThresholdActions();
                 }

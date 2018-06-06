@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.entity.Spike;
-import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.utils.ThresholdOrientation;
 
@@ -24,7 +23,7 @@ public interface AnalysisDataSource {
     //=================================================
 
     interface SpikeAnalysisCheckCallback {
-        void onSpikeAnalysisExistsResult(boolean exists);
+        void onSpikeAnalysisExistsResult(boolean exists, int trainCount);
     }
 
     void spikeAnalysisExists(@NonNull String filePath, @Nullable SpikeAnalysisCheckCallback callback);
@@ -40,7 +39,7 @@ public interface AnalysisDataSource {
     SpikeValueAndIndex[] getSpikeAnalysisValuesAndIndicesByTrainForRange(long trainId, int startIndex, int endIndex);
 
     void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
-                                       @Nullable final GetAnalysisCallback<float[][]> callback);
+        @Nullable final GetAnalysisCallback<float[][]> callback);
 
     void getSpikeAnalysisIndicesByTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<int[][]> callback);
 
@@ -63,5 +62,5 @@ public interface AnalysisDataSource {
     void saveSpikeAnalysisTrain(@NonNull String filePath, @ThresholdOrientation int orientation, int value, int order);
 
     void removeSpikeAnalysisTrain(@NonNull String filePath, int trainOrder,
-                                  @Nullable RemoveSpikeAnalysisTrainCallback callback);
+        @Nullable RemoveSpikeAnalysisTrainCallback callback);
 }
