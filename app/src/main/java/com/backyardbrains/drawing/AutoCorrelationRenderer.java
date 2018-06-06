@@ -2,6 +2,7 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utils.BYBGlUtils;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -18,22 +19,20 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
-        // initialize GL
-        initGL(gl);
         // draw thumb rectangles and main rectangle
-        makeThumbAndMainRectangles();
+        makeThumbsAndMainRectangle();
 
         if (getAutocorrelationAnalysis()) {
             int len = autocorrelationAnalysis.length;
             if (len > 0) {
                 for (int i = 0; i < len; i++) {
-                    graphIntegerList(gl, autocorrelationAnalysis[i], thumbRects[i], BYBColors.getColorAsGlById(i),
+                    graphIntegerList(gl, autocorrelationAnalysis[i], thumbRects[i], BYBGlUtils.SPIKE_TRAIN_COLORS[i],
                         true);
                 }
                 int s = selected;
                 if (selected >= len || selected < 0) s = 0;
 
-                graphIntegerList(gl, autocorrelationAnalysis[s], mainRect, BYBColors.getColorAsGlById(s), true);
+                graphIntegerList(gl, autocorrelationAnalysis[s], mainRect, BYBGlUtils.SPIKE_TRAIN_COLORS[s], true);
             }
         }
     }

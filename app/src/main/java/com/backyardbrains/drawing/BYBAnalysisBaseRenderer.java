@@ -10,7 +10,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
@@ -122,7 +121,7 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        long start = System.currentTimeMillis();
+        //long start = System.currentTimeMillis();
 
         final int surfaceWidth = this.surfaceWidth;
         final int surfaceHeight = this.surfaceHeight;
@@ -130,28 +129,16 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
         BYBGlUtils.glClear(gl);
         draw(gl, surfaceWidth, surfaceHeight);
 
-        LOGD(TAG, "" + (System.currentTimeMillis() - start));
-        LOGD(TAG, "================================================");
+        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
+        //LOGD(TAG, "================================================");
     }
 
     abstract protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight);
 
-    // ----------------------------------------------------------------------------------------
-    void initGL(GL10 gl) {
-        // set viewport
-        gl.glViewport(0, 0, surfaceWidth, surfaceHeight);
-
-        BYBGlUtils.glClear(gl);
-        gl.glMatrixMode(GL10.GL_PROJECTION);
-        gl.glLoadIdentity();
-        gl.glOrthof(0f, surfaceWidth, surfaceHeight, 0f, -1f, 1f);
-        gl.glRotatef(0f, 0f, 0f, 1f);
-    }
-
     /**
      * Creates rectangles for graph thumbs and main graph that will be used as configs for drawing
      */
-    void makeThumbAndMainRectangles() {
+    void makeThumbsAndMainRectangle() {
         int maxSpikeTrains = 3;
         float margin = 20f;
         float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - margin * (maxSpikeTrains + 1)) / maxSpikeTrains;

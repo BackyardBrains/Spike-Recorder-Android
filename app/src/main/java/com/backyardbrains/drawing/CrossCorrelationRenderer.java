@@ -2,6 +2,7 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.view.ofRectangle;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -42,13 +43,13 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
-        initGL(gl);
         int margin = 20;
         int maxSpikeTrains = 3;
         if (getCrossCorrelationAnalysis()) {
             if (crossCorrelationAnalysis != null) {
+                final int len = crossCorrelationAnalysis.length;
+                final int divider = (int) Math.sqrt(len);
                 if (thumbsView) {
-
                     float d = (Math.min(surfaceWidth, surfaceHeight) / (float) (maxSpikeTrains + 1)) * 0.2f;
                     if (d < margin) {
                         margin = (int) d;
@@ -66,18 +67,18 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                         }
                     }
 
-                    for (int i = 0; i < crossCorrelationAnalysis.length; i++) {
-                        graphIntegerList(gl, crossCorrelationAnalysis[i], thumbRects[i], BYBColors.getColorAsGlById(i),
-                            true);
+                    for (int i = 0; i < len; i++) {
+                        graphIntegerList(gl, crossCorrelationAnalysis[i], thumbRects[i],
+                            BYBGlUtils.SPIKE_TRAIN_COLORS[i / divider], true);
                     }
                 } else {
                     int s = selected;
-                    if (selected < 0 || selected >= maxSpikeTrains * maxSpikeTrains
-                        || selected >= crossCorrelationAnalysis.length) {
+                    if (selected < 0 || selected >= maxSpikeTrains * maxSpikeTrains || selected >= len) {
                         s = 0;
                     }
                     mainRect = new ofRectangle(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
-                    graphIntegerList(gl, crossCorrelationAnalysis[s], mainRect, BYBColors.getColorAsGlById(s), true);
+                    graphIntegerList(gl, crossCorrelationAnalysis[s], mainRect,
+                        BYBGlUtils.SPIKE_TRAIN_COLORS[s / divider], true);
                 }
             }
         }

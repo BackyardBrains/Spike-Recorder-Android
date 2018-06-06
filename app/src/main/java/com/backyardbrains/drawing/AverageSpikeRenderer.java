@@ -3,6 +3,7 @@ package com.backyardbrains.drawing;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.AverageSpike;
+import com.backyardbrains.utils.BYBGlUtils;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -20,8 +21,6 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         int margin = 20;
-
-        initGL(gl);
         if (getAverageSpikeAnalysis()) {
             if (averageSpikeAnalysis != null) {
                 float aw = surfaceWidth - margin * averageSpikeAnalysis.length;
@@ -34,25 +33,6 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
                     float xInc = aw / averageSpikeAnalysis[i].getAverageSpike().length;
                     float yOffSet = ((margin + ah) * (i + 1));
 
-                    float[] lc = new float[4];
-                    lc[3] = 1.0f;
-                    switch (i) {
-                        case 0:
-                            lc[0] = 1.0f;
-                            lc[1] = 0.0f;
-                            lc[2] = 0.0f;
-                            break;
-                        case 1:
-                            lc[0] = 1.0f;
-                            lc[1] = 1.0f;
-                            lc[2] = 0.0f;
-                            break;
-                        case 2:
-                            lc[0] = 0.0f;
-                            lc[1] = 1.0f;
-                            lc[2] = 1.0f;
-                            break;
-                    }
                     if (averageSpikeAnalysis[i].getNormTopSTDLine().length > 0) {
                         float v0x = (margin * 2);
                         float v0y = yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[0] * ah;
@@ -64,7 +44,7 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
                             float yTop = yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[j] * ah;
                             float yBot = yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[j] * ah;
 
-                            mesh.addQuadSmooth(v0x, v0y, v0x, v1y, x, yTop, x, yBot, lc);
+                            mesh.addQuadSmooth(v0x, v0y, v0x, v1y, x, yTop, x, yBot, BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
 
                             v0x = x;
                             v0y = yTop;

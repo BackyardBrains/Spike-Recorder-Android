@@ -11,6 +11,14 @@ public class BYBGlUtils {
     public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
     public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
 
+    public static final float[][] SPIKE_TRAIN_COLORS = new float[3][];
+
+    static {
+        SPIKE_TRAIN_COLORS[0] = new float[] { 1f, 0f, 0f, 1f };
+        SPIKE_TRAIN_COLORS[1] = new float[] { 1f, 1f, 0f, 1f };
+        SPIKE_TRAIN_COLORS[2] = new float[] { 0f, 1f, 0f, 1f };
+    }
+
     // ----------------------------------------------------------------------------------------
     public static void glClear(GL10 gl) {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
