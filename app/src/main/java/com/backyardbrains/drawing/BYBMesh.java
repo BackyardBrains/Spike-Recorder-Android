@@ -137,7 +137,7 @@ public class BYBMesh {
 		addColor(color);
 		addQuad(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, color);
 
-		
+
 		addQuad(p2x, p2y, p3x, p3y, p2x, p2y+1, p3x, p3y+1);
 		addColor(color);
 		addColor(color);
@@ -148,8 +148,8 @@ public class BYBMesh {
 		addColor(c);
 		addColor(c);
 
-		
-		
+
+
 	}
 	public void addQuad(float p0x, float p0y, float p1x, float p1y, float p2x, float p2y, float p3x, float p3y){
 		addVertex(p0x, p0y);

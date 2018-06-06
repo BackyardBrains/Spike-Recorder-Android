@@ -10,12 +10,15 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
 
-public class BYBAnalysisBaseRenderer extends BaseRenderer {
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-    private static final String TAG = BYBAnalysisBaseRenderer.class.getCanonicalName();
+public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
 
-    protected int height;
-    protected int width;
+    private static final String TAG = makeLogTag(BYBAnalysisBaseRenderer.class);
+
+    protected int surfaceWidth;
+    protected int surfaceHeight;
 
     ofRectangle mainRect;
     ofRectangle[] thumbRects;
@@ -23,12 +26,17 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     private int touchDownRect = -1;
 
-    // ----------------------------------------------------------------------------------------
+    //==============================================
+    //  CONSTRUCTOR & SETUP
+    //==============================================
+
     BYBAnalysisBaseRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
     }
 
-    // ----------------------------------------------------------------------------------------
+    /**
+     * Cleans any occupied resources.
+     */
     public void close() {
     }
 
@@ -77,54 +85,67 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
         setSelected(i);
     }
 
-    // ----------------------------------------------------------------------------------------
-    @Override public void onDrawFrame(GL10 gl) {
-        preDrawingHandler();
-        BYBGlUtils.glClear(gl);
-        drawingHandler(gl);
-        postDrawingHandler(gl);
-    }
+    //==============================================
+    //  Renderer INTERFACE IMPLEMENTATIONS
+    //==============================================
 
-    // ----------------------------------------------------------------------------------------
-    private void preDrawingHandler() {
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void postDrawingHandler(GL10 gl) {
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void drawingHandler(GL10 gl) {
-    }
-
-    // ----------------------------------------------------------------------------------------
-    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
-        this.width = width;
-        this.height = height;
-    }
-
-    // ----------------------------------------------------------------------------------------
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        gl.glClearColor(0f, 0f, 0f, 1.0f);
+        gl.glEnable(GL10.GL_BLEND); // Enable Alpha Blend
+        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA); // Set Alpha Blend Function
+        gl.glDisable(GL10.GL_DEPTH_TEST);
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
+        gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
     }
 
-    // ----------------------------------------------------------------------------------------
-    void initGL(GL10 gl) {
-        // set viewport
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
+        this.surfaceWidth = width;
+        this.surfaceHeight = height;
+
         gl.glViewport(0, 0, width, height);
 
         BYBGlUtils.glClear(gl);
         gl.glMatrixMode(GL10.GL_PROJECTION);
         gl.glLoadIdentity();
-        gl.glOrthof(0f, width, height, 0f, -1f, 1f);
+        gl.glOrthof(0f, surfaceWidth, surfaceHeight, 0f, -1f, 1f);
         gl.glRotatef(0f, 0f, 0f, 1f);
+    }
 
-        gl.glClearColor(0f, 0f, 0f, 1.0f);
-        gl.glEnable(GL10.GL_BLEND); // Enable Alpha Blend
-        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA); // Set Alpha Blend Function
-        gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-        gl.glDisable(GL10.GL_DEPTH_TEST);
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onDrawFrame(GL10 gl) {
+        long start = System.currentTimeMillis();
+
+        final int surfaceWidth = this.surfaceWidth;
+        final int surfaceHeight = this.surfaceHeight;
+
+        BYBGlUtils.glClear(gl);
+        draw(gl, surfaceWidth, surfaceHeight);
+
+        LOGD(TAG, "" + (System.currentTimeMillis() - start));
+        LOGD(TAG, "================================================");
+    }
+
+    abstract protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight);
+
+    // ----------------------------------------------------------------------------------------
+    void initGL(GL10 gl) {
+        // set viewport
+        gl.glViewport(0, 0, surfaceWidth, surfaceHeight);
+
+        BYBGlUtils.glClear(gl);
+        gl.glMatrixMode(GL10.GL_PROJECTION);
+        gl.glLoadIdentity();
+        gl.glOrthof(0f, surfaceWidth, surfaceHeight, 0f, -1f, 1f);
+        gl.glRotatef(0f, 0f, 0f, 1f);
     }
 
     /**
@@ -133,7 +154,7 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
     void makeThumbAndMainRectangles() {
         int maxSpikeTrains = 3;
         float margin = 20f;
-        float thumbSize = (Math.min(width, height) - margin * (maxSpikeTrains + 1)) / maxSpikeTrains;
+        float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - margin * (maxSpikeTrains + 1)) / maxSpikeTrains;
 
         // create rectangles for thumbs
         thumbRects = new ofRectangle[maxSpikeTrains];
@@ -141,7 +162,8 @@ public class BYBAnalysisBaseRenderer extends BaseRenderer {
             thumbRects[i] = new ofRectangle(margin, margin + (thumbSize + margin) * i, thumbSize, thumbSize);
         }
         // create main rectangle
-        mainRect = new ofRectangle(2 * margin + thumbSize, margin, width - 3 * margin - thumbSize, height - 2 * margin);
+        mainRect = new ofRectangle(2 * margin + thumbSize, margin, surfaceWidth - 3 * margin - thumbSize,
+            surfaceHeight - 2 * margin);
     }
 
     // ----------------------------------------------------------------------------------------

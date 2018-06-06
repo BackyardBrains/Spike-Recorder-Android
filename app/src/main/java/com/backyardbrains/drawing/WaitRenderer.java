@@ -143,13 +143,7 @@ public class WaitRenderer extends BYBAnalysisBaseRenderer {
 
     }
 
-    //----------------------------------------------------------------------------------------
-    //----------------------------------------------------------------------------------------
-    @Override protected void postDrawingHandler(GL10 gl) {
-    }
-
-    //----------------------------------------------------------------------------------------
-    @Override protected void drawingHandler(GL10 gl) {
+    @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         ////Log.d(TAG, "draw");
         //	initGL(gl);
 		/*
@@ -157,19 +151,19 @@ public class WaitRenderer extends BYBAnalysisBaseRenderer {
 		gl.glLoadIdentity();
 
 
-		
-		
-		
-		
+
+
+
+
 		int clearMask = GLES20.GL_COLOR_BUFFER_BIT;
 
 		GLES20.glClear(clearMask);
-	
+
 		Matrix.multiplyMM(mVPMatrix, 0, mProjMatrix, 0, mVMatrix, 0);
-		
+
 		// TEST: render the entire font texture
 		glText.drawTexture( width/2, height/2, mVPMatrix);            // Draw the Entire Texture
-		
+
 		// TEST: render some strings with the font
 		glText.begin( 1.0f, 1.0f, 1.0f, 1.0f, mVPMatrix );         // Begin Text Rendering (Set Color WHITE)
 		glText.drawC("Test String 3D!", 0f, 0f, 0f, 0, -30, 0);
@@ -177,14 +171,14 @@ public class WaitRenderer extends BYBAnalysisBaseRenderer {
 		glText.draw( "Diagonal 1", 40, 40, 40);                // Draw Test String
 		glText.draw( "Column 1", 100, 100, 90);              // Draw Test String
 		glText.end();                                   // End Text Rendering
-		
+
 		glText.begin( 0.0f, 0.0f, 1.0f, 1.0f, mVPMatrix );         // Begin Text Rendering (Set Color BLUE)
 		glText.draw( "More Lines...", 50, 200 );        // Draw Test String
 		glText.draw( "The End.", 50, 200 + glText.getCharHeight(), 180);  // Draw Test String
 		glText.end();
 		mesh.draw(gl);
 		/*
-		
+
 		float [] values = new float [10];
 		for(int i = 0; i < values.length; i++){
 			values[i]=(float)Math.random();
@@ -206,7 +200,8 @@ public class WaitRenderer extends BYBAnalysisBaseRenderer {
         //		//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
         //		gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
     }
-/*	
+
+    /*
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		if(height == 0) { 						//Prevent A Divide By Zero By

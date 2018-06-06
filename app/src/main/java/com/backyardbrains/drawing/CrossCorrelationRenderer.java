@@ -41,7 +41,7 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
         }
     }
 
-    @Override protected void drawingHandler(GL10 gl) {
+    @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         initGL(gl);
         int margin = 20;
         int maxSpikeTrains = 3;
@@ -49,12 +49,12 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
             if (crossCorrelationAnalysis != null) {
                 if (thumbsView) {
 
-                    float d = (Math.min(width, height) / (float) (maxSpikeTrains + 1)) * 0.2f;
+                    float d = (Math.min(surfaceWidth, surfaceHeight) / (float) (maxSpikeTrains + 1)) * 0.2f;
                     if (d < margin) {
                         margin = (int) d;
                     }
-                    float w = (width - margin * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
-                    float h = (height - (margin * 1.5f) * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
+                    float w = (surfaceWidth - margin * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
+                    float h = (surfaceHeight - (margin * 1.5f) * (maxSpikeTrains + 1)) / (float) maxSpikeTrains;
 
                     thumbRects = new ofRectangle[maxSpikeTrains * maxSpikeTrains];
 
@@ -76,7 +76,7 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                         || selected >= crossCorrelationAnalysis.length) {
                         s = 0;
                     }
-                    mainRect = new ofRectangle(margin, margin, width - 2 * margin, height - 2 * margin);
+                    mainRect = new ofRectangle(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
                     graphIntegerList(gl, crossCorrelationAnalysis[s], mainRect, BYBColors.getColorAsGlById(s), true);
                 }
             }

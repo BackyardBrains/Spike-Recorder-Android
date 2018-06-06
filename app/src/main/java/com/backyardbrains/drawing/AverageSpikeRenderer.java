@@ -18,14 +18,15 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
         super(fragment);
     }
 
-    @Override protected void drawingHandler(GL10 gl) {
+    @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         int margin = 20;
 
         initGL(gl);
         if (getAverageSpikeAnalysis()) {
             if (averageSpikeAnalysis != null) {
-                float aw = width - margin * averageSpikeAnalysis.length;
-                float ah = (height - margin * (averageSpikeAnalysis.length + 1)) / (float) averageSpikeAnalysis.length;
+                float aw = surfaceWidth - margin * averageSpikeAnalysis.length;
+                float ah =
+                    (surfaceHeight - margin * (averageSpikeAnalysis.length + 1)) / (float) averageSpikeAnalysis.length;
 
                 BYBMesh rectMesh = new BYBMesh(BYBMesh.LINES);
                 for (int i = 0; i < averageSpikeAnalysis.length; i++) {
@@ -78,6 +79,7 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
                     }
 
                     gl.glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+                    gl.glLineWidth(3f);
                     line.draw(gl);
 
                     float[] c = { 0.2f, 0.2f, 0.2f, 1.0f };

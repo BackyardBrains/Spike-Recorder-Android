@@ -20,7 +20,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         super(fragment);
     }
 
-    @Override protected void drawingHandler(GL10 gl) {
+    @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         // initialize GL
         initGL(gl);
         // draw thumb rectangles and main rectangle
