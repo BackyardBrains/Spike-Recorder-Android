@@ -1,11 +1,14 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.MotionEvent;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.BYBGlUtils;
-import com.backyardbrains.view.ofRectangle;
+import java.util.ArrayList;
+import java.util.List;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -16,13 +19,17 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     private static final String TAG = makeLogTag(BYBAnalysisBaseRenderer.class);
 
+    private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
+    static final float MARGIN = 20f;
+
     protected int surfaceWidth;
     protected int surfaceHeight;
 
-    ofRectangle mainRect;
-    ofRectangle[] thumbRects;
     int selected = 0;
 
+    Rect graph;
+    List<Rect> graphThumbs = new ArrayList<>();
+    private float maxGraphThumbSize;
     private int touchDownRect = -1;
 
     //==============================================
@@ -31,6 +38,8 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     BYBAnalysisBaseRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
+
+        maxGraphThumbSize = DEFAULT_MAX_GRAPH_THUMB_SIZE * fragment.getResources().getDisplayMetrics().density;
     }
 
     /**
@@ -43,10 +52,10 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
     // ----------------------------------------- TOUCH
     // -----------------------------------------------------------------------------------------------------------------------------
     private int checkInsideAllThumbRects(float x, float y) {
-        if (thumbRects != null) {
-            for (int i = 0; i < thumbRects.length; i++) {
-                if (thumbRects[i] != null) {
-                    if (thumbRects[i].inside(x, y)) {
+        if (graphThumbs != null) {
+            for (int i = 0; i < graphThumbs.size(); i++) {
+                if (graphThumbs.get(i) != null) {
+                    if (graphThumbs.get(i).inside(x, surfaceHeight - y)) {
                         return i;
                     }
                 }
@@ -113,8 +122,8 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
         BYBGlUtils.glClear(gl);
         gl.glMatrixMode(GL10.GL_PROJECTION);
         gl.glLoadIdentity();
-        gl.glOrthof(0f, surfaceWidth, surfaceHeight, 0f, -1f, 1f);
-        gl.glRotatef(0f, 0f, 0f, 1f);
+        gl.glOrthof(0f, surfaceWidth, 0f, surfaceHeight, -1f, 1f);
+        gl.glRotatef(0f, 0f, 0f, 0f);
     }
 
     /**
@@ -138,23 +147,44 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
     /**
      * Creates rectangles for graph thumbs and main graph that will be used as configs for drawing
      */
-    void makeThumbsAndMainRectangle() {
-        int maxSpikeTrains = 3;
-        float margin = 20f;
-        float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - margin * (maxSpikeTrains + 1)) / maxSpikeTrains;
+    void makeThumbRectangles(int surfaceWidth, int surfaceHeight) {
+        int maxSpikeTrains = AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+        float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (maxSpikeTrains + 1)) / maxSpikeTrains;
 
         // create rectangles for thumbs
-        thumbRects = new ofRectangle[maxSpikeTrains];
         for (int i = 0; i < maxSpikeTrains; i++) {
-            thumbRects[i] = new ofRectangle(margin, margin + (thumbSize + margin) * i, thumbSize, thumbSize);
+            graphThumbs.add(new Rect(MARGIN, MARGIN + (thumbSize + MARGIN) * i, thumbSize, thumbSize));
         }
         // create main rectangle
-        mainRect = new ofRectangle(2 * margin + thumbSize, margin, surfaceWidth - 3 * margin - thumbSize,
-            surfaceHeight - 2 * margin);
+        graph =
+            new Rect(2 * MARGIN + thumbSize, MARGIN, surfaceWidth - 3 * MARGIN - thumbSize, surfaceHeight - 2 * MARGIN);
+    }
+
+    void registerGraph(@NonNull Rect rect) {
+        graph = rect;
+    }
+
+    void registerThumb(@NonNull Rect rect) {
+        graphThumbs.add(rect);
+    }
+
+    @Nullable Rect getThumb(int index) {
+        return graphThumbs != null && graphThumbs.size() > index ? graphThumbs.get(index) : null;
+    }
+
+    /**
+     * Returns default size for the graph thumb.
+     */
+    float getDefaultGraphThumbSize(int surfaceWidth, int surfaceHeight) {
+        float result = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (AnalysisUtils.MAX_SPIKE_TRAIN_COUNT + 1))
+            / AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+        if (result > maxGraphThumbSize) result = maxGraphThumbSize;
+
+        return result;
     }
 
     // ----------------------------------------------------------------------------------------
-    void graphIntegerList(GL10 gl, int[] ac, ofRectangle r, float[] color, boolean bDrawBox) {
+    void graphIntegerList(GL10 gl, int[] ac, Rect r, float[] color, boolean bDrawBox) {
         graphIntegerList(gl, ac, r.x, r.y, r.width, r.height, color, bDrawBox);
     }
 
@@ -185,9 +215,50 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
         }
     }
 
+    int getSelectedGraph() {
+        return selected;
+    }
+
     private void setSelected(int s) {
         selected = s;
 
         EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
+    }
+
+    /**
+     * Represents
+     */
+    protected static class Rect {
+        public float x;
+        public float y;
+        public float width;
+        public float height;
+
+        Rect(float x, float y, float w, float height) {
+            this.x = x;
+            this.y = y;
+            this.width = w;
+            this.height = height;
+        }
+
+        boolean inside(float px, float py) {
+            return px > getMinX() && py > getMinY() && px < getMaxX() && py < getMaxY();
+        }
+
+        private float getMinX() {
+            return Math.min(x, x + width);
+        }
+
+        private float getMaxX() {
+            return Math.max(x, x + width);
+        }
+
+        private float getMinY() {
+            return Math.min(y, y + height);
+        }
+
+        private float getMaxY() {
+            return Math.max(y, y + height);
+        }
     }
 }

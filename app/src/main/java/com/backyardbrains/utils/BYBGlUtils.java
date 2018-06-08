@@ -5,13 +5,15 @@ import com.backyardbrains.drawing.BYBColors;
 import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utils.AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+
 public class BYBGlUtils {
 
     public static final int DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000;
     public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
     public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
 
-    public static final float[][] SPIKE_TRAIN_COLORS = new float[3][];
+    public static final float[][] SPIKE_TRAIN_COLORS = new float[MAX_SPIKE_TRAIN_COUNT][];
 
     static {
         SPIKE_TRAIN_COLORS[0] = new float[] { 1f, 0f, 0f, 1f };

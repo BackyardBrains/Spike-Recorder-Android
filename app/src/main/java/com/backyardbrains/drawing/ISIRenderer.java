@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.InterSpikeInterval;
 import com.backyardbrains.utils.BYBGlUtils;
-import com.backyardbrains.view.ofRectangle;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -23,18 +22,20 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
         // draw thumb rectangles and main rectangle
-        makeThumbsAndMainRectangle();
+        makeThumbRectangles(surfaceWidth, surfaceHeight);
 
         if (getInterSpikeIntervalAnalysis()) {
             int len = isiAnalysis.length;
             if (len > 0) {
+                Rect thumb;
                 for (int i = 0; i < len; i++) {
-                    drawISI(gl, isiAnalysis[i], thumbRects[i], BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
+                    thumb = getThumb(i);
+                    if (thumb != null) drawISI(gl, isiAnalysis[i], thumb, BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
                 }
                 int s = selected;
                 if (selected >= len || selected < 0) s = 0;
 
-                drawISI(gl, isiAnalysis[s], mainRect, BYBGlUtils.SPIKE_TRAIN_COLORS[s]);
+                drawISI(gl, isiAnalysis[s], graph, BYBGlUtils.SPIKE_TRAIN_COLORS[s]);
             }
         }
     }
@@ -57,7 +58,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         return false;
     }
 
-    private void drawISI(GL10 gl, InterSpikeInterval[] isi, ofRectangle r, float[] color) {
+    private void drawISI(GL10 gl, InterSpikeInterval[] isi, Rect r, float[] color) {
         drawISI(gl, isi, r.x, r.y, r.width, r.height, color);
     }
 
