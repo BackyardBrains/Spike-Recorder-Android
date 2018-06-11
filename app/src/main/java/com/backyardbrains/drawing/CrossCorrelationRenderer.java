@@ -1,9 +1,16 @@
 package com.backyardbrains.drawing;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
+import android.view.MotionEvent;
+import com.android.texample.GLText;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.BYBGlUtils;
+import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -14,10 +21,29 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
     private boolean thumbsView = true;
 
+    private Context context;
+    private GLText text;
+    private GlBarGraph glBarGraph;
+    private GlBarGraphThumb glBarGraphThumb;
+
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelationAnalysis;
 
     public CrossCorrelationRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
+
+        context = fragment.getContext();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        super.onSurfaceCreated(gl, config);
+
+        text = new GLText(gl, context.getAssets());
+        text.load("dos-437.ttf", 24, 5, 5);
+        glBarGraph = new GlBarGraph(context, gl);
+        glBarGraphThumb = new GlBarGraphThumb(context, gl);
     }
 
     /**
@@ -34,51 +60,50 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
         if (!thumbsView) thumbsView = true;
     }
 
-    @Override protected void thumbRectClicked(int i) {
+    @Override public void onTouchEvent(MotionEvent event) {
         if (thumbsView) {
-            thumbsView = false;
-            super.thumbRectClicked(i);
+            boolean graphThumbTouched = thumbTouchHelper.onTouch(event);
+            if (graphThumbTouched) {
+                thumbsView = false;
+                EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
+            }
         }
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
-        int margin = 20;
         if (getCrossCorrelationAnalysis()) {
             if (crossCorrelationAnalysis != null) {
                 final int len = crossCorrelationAnalysis.length;
-                final int divider = (int) Math.sqrt(len);
-                if (thumbsView) {
-                    float d = (Math.min(surfaceWidth, surfaceHeight) / (float) (divider + 1)) * 0.2f;
-                    if (d < margin) {
-                        margin = (int) d;
-                    }
-                    float w = (surfaceWidth - margin * (divider + 1)) / (float) divider;
-                    float h = (surfaceHeight - (margin * 1.5f) * (divider + 1)) / (float) divider;
+                if (len > 0) {
+                    final int trainCount = (int) Math.sqrt(len);
+                    if (thumbsView) {
+                        float d = (Math.min(surfaceWidth, surfaceHeight) / (float) trainCount) * 0.2f;
+                        float margin = MARGIN;
+                        // margin shouldn't be more than 20% of the graph size
+                        if (d < MARGIN) margin = (int) d;
 
-                    for (int i = 0; i < divider; i++) {
-                        for (int j = 0; j < divider; j++) {
-                            registerThumb(
-                                new Rect(j * (w + margin) + margin, (h + (margin * 1.5f)) * i + (margin * 1.5f), w, h));
-                            //graphThumbs[i * divider + j]
+                        float x, y;
+                        float w = (surfaceWidth - margin * (trainCount + 1)) / (float) trainCount;
+                        float h = (surfaceHeight - margin * (trainCount + 1)) / (float) trainCount;
+                        for (int i = 0; i < trainCount; i++) {
+                            for (int j = 0; j < trainCount; j++) {
+                                x = j * (w + margin) + margin;
+                                y = surfaceHeight - (h + margin) * (i + 1);
+                                thumbTouchHelper.registerGraphThumb(new Rect(x, y, w, h));
+                                glBarGraphThumb.draw(gl, x, y, w, h,
+                                    normalize(crossCorrelationAnalysis[i * trainCount + j]),
+                                    BYBGlUtils.SPIKE_TRAIN_COLORS[i], "");
+                            }
                         }
+                    } else {
+                        int selected = thumbTouchHelper.getSelectedGraphThumb();
+                        glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - MARGIN, surfaceHeight - MARGIN,
+                            normalize(crossCorrelationAnalysis[selected]),
+                            BYBGlUtils.SPIKE_TRAIN_COLORS[selected / trainCount], "");
+                        //graph = new Rect(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
+                        //graphIntegerList(gl, normalize(crossCorrelationAnalysis[selected]), graph,
+                        //    BYBGlUtils.SPIKE_TRAIN_COLORS[selected / divider], true);
                     }
-
-                    Rect thumb;
-                    for (int i = 0; i < len; i++) {
-                        thumb = getThumb(i);
-                        if (thumb != null) {
-                            graphIntegerList(gl, crossCorrelationAnalysis[i], thumb,
-                                BYBGlUtils.SPIKE_TRAIN_COLORS[i / divider], true);
-                        }
-                    }
-                } else {
-                    int s = selected;
-                    if (selected < 0 || selected >= divider * divider || selected >= len) {
-                        s = 0;
-                    }
-                    graph = new Rect(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
-                    graphIntegerList(gl, crossCorrelationAnalysis[s], graph, BYBGlUtils.SPIKE_TRAIN_COLORS[s / divider],
-                        true);
                 }
             }
         }
@@ -100,5 +125,26 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return false;
+    }
+
+    private float[] normalize(int[] ac) {
+        if (ac != null) {
+            if (ac.length > 0) {
+                int len = ac.length;
+                float[] values = new float[len];
+                int max = Integer.MIN_VALUE;
+                for (int y : ac) {
+                    if (max < y) max = y;
+                }
+                if (max == 0) max = 1;// avoid division by zero
+                for (int i = 0; i < len; i++) {
+                    values[i] = ((float) ac[i]) / (float) max;
+                }
+
+                return values;
+            }
+        }
+
+        return new float[0];
     }
 }

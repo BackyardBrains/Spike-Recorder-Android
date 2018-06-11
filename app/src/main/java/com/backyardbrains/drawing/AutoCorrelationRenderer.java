@@ -3,9 +3,9 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.BYBGlUtils;
-import com.backyardbrains.utils.LogUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -47,7 +47,7 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
-        if (getAutocorrelationAnalysis(surfaceWidth, surfaceHeight)) {
+        if (getAutocorrelationAnalysis()) {
             int len = autocorrelationAnalysis.length;
             if (len > 0) {
                 final float thumbSize = getDefaultGraphThumbSize(surfaceWidth, surfaceHeight);
@@ -59,7 +59,7 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
                     y = portraitOrientation ? MARGIN : (float) surfaceHeight - (MARGIN * (i + 1) + thumbSize * (i + 1));
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
-                    registerThumb(new Rect(x, y, thumbSize, thumbSize));
+                    thumbTouchHelper.registerGraphThumb(new Rect(x, y, thumbSize, thumbSize));
                     glBarGraphThumb.draw(gl, x, y, w, h, normalize(autocorrelationAnalysis[i]),
                         BYBGlUtils.SPIKE_TRAIN_COLORS[i], SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
@@ -68,44 +68,18 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
                 w = portraitOrientation ? surfaceWidth - 2 * MARGIN : surfaceWidth - 3 * MARGIN - thumbSize;
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
-                int s = getSelectedGraph();
-                if (selected >= len || selected < 0) s = 0;
-                registerGraph(new Rect(x, y, w, h));
-                glBarGraph.draw(gl, x, y, w, h, normalize(autocorrelationAnalysis[s]), BYBGlUtils.SPIKE_TRAIN_COLORS[s],
-                    SPIKE_TRAIN_THUMB_GRAPH_NAMES[s]);
-                //graphIntegerList(gl, autocorrelationAnalysis[s], rect, BYBGlUtils.SPIKE_TRAIN_COLORS[s], true);
+                int selected = thumbTouchHelper.getSelectedGraphThumb();
+                glBarGraph.draw(gl, x, y, w, h, normalize(autocorrelationAnalysis[selected]),
+                    BYBGlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
             }
         }
-    }
-
-    private float[] normalize(int[] ac) {
-        if (ac != null) {
-            if (ac.length > 0) {
-                int s = ac.length;
-                float[] values = new float[s];
-                int max = Integer.MIN_VALUE;
-                for (int i = 0; i < s; i++) {
-                    int y = ac[i];
-                    if (max < y) max = y;
-                }
-                if (max == 0) max = 1;// avoid division by zero
-                LogUtils.LOGD("GlBarGraphThumb", "VALUE: " + max);
-                for (int i = 0; i < s; i++) {
-                    values[i] = ((float) ac[i]) / (float) max;
-                }
-
-                return values;
-            }
-        }
-
-        return new float[0];
     }
 
     //=================================================
     //  PRIVATE METHODS
     //=================================================
 
-    private boolean getAutocorrelationAnalysis(int surfaceWidth, int surfaceHeight) {
+    private boolean getAutocorrelationAnalysis() {
         if (autocorrelationAnalysis != null && autocorrelationAnalysis.length > 0) return true;
 
         if (getAnalysisManager() != null) {
@@ -117,5 +91,26 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return false;
+    }
+
+    private float[] normalize(int[] ac) {
+        if (ac != null) {
+            if (ac.length > 0) {
+                int len = ac.length;
+                float[] values = new float[len];
+                int max = Integer.MIN_VALUE;
+                for (int y : ac) {
+                    if (max < y) max = y;
+                }
+                if (max == 0) max = 1;// avoid division by zero
+                for (int i = 0; i < len; i++) {
+                    values[i] = ((float) ac[i]) / (float) max;
+                }
+
+                return values;
+            }
+        }
+
+        return new float[0];
     }
 }

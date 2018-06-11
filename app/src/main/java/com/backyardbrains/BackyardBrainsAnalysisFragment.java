@@ -21,7 +21,7 @@ import com.backyardbrains.drawing.AverageSpikeRenderer;
 import com.backyardbrains.drawing.BYBAnalysisBaseRenderer;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
-import com.backyardbrains.drawing.TouchGLSurfaceView;
+import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.drawing.WaitRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
@@ -49,7 +49,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
     @BindView(R.id.tv_waiting) TextView tvWaiting;
 
     private Unbinder unbinder;
-    private TouchGLSurfaceView glSurface;
+    private TouchGlSurfaceView glSurface;
     private BYBAnalysisBaseRenderer currentRenderer;
 
     private String filePath;
@@ -216,7 +216,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
             flGL.removeAllViews();
             // create new GL surface
             if (glSurface != null) glSurface = null;
-            glSurface = new TouchGLSurfaceView(getContext());
+            glSurface = new TouchGlSurfaceView(getContext());
             glSurface.setRenderer(currentRenderer);
             glSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
             // and add GL surface to UI

@@ -1,5 +1,6 @@
 package com.backyardbrains.drawing;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.NonNull;
@@ -7,15 +8,15 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-public class TouchGLSurfaceView extends GLSurfaceView {
+public class TouchGlSurfaceView extends GLSurfaceView {
 
-    private BYBAnalysisBaseRenderer renderer;
+    private TouchEnabledRenderer renderer;
 
-    public TouchGLSurfaceView(Context context) {
+    public TouchGlSurfaceView(Context context) {
         this(context, null);
     }
 
-    public TouchGLSurfaceView(Context context, AttributeSet attrs) {
+    public TouchGlSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
@@ -43,14 +44,14 @@ public class TouchGLSurfaceView extends GLSurfaceView {
      *
      * @param renderer the renderer to use to perform OpenGL drawing.
      */
-    public void setRenderer(@NonNull BYBAnalysisBaseRenderer renderer) {
+    public void setRenderer(@NonNull TouchEnabledRenderer renderer) {
         this.renderer = renderer;
 
         super.setRenderer(renderer);
     }
 
     @Override public final void setRenderer(Renderer renderer) {
-        if (renderer instanceof BYBBaseRenderer) {
+        if (renderer instanceof TouchEnabledRenderer) {
             setRenderer(renderer);
             return;
         }
@@ -68,7 +69,7 @@ public class TouchGLSurfaceView extends GLSurfaceView {
         super.surfaceDestroyed(holder);
     }
 
-    @Override public boolean onTouchEvent(MotionEvent event) {
+    @SuppressLint("ClickableViewAccessibility") @Override public boolean onTouchEvent(MotionEvent event) {
         if (renderer != null) renderer.onTouchEvent(event);
 
         return true;

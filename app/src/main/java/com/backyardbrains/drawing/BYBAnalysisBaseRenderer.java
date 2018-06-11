@@ -1,21 +1,19 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.view.MotionEvent;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.BYBGlUtils;
-import java.util.ArrayList;
-import java.util.List;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
+public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements TouchEnabledRenderer {
 
     private static final String TAG = makeLogTag(BYBAnalysisBaseRenderer.class);
 
@@ -24,13 +22,9 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     protected int surfaceWidth;
     protected int surfaceHeight;
+    GlGraphThumbTouchHelper thumbTouchHelper = new GlGraphThumbTouchHelper();
 
-    int selected = 0;
-
-    Rect graph;
-    List<Rect> graphThumbs = new ArrayList<>();
     private float maxGraphThumbSize;
-    private int touchDownRect = -1;
 
     //==============================================
     //  CONSTRUCTOR & SETUP
@@ -48,54 +42,9 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
     public void close() {
     }
 
-    // -----------------------------------------------------------------------------------------------------------------------------
-    // ----------------------------------------- TOUCH
-    // -----------------------------------------------------------------------------------------------------------------------------
-    private int checkInsideAllThumbRects(float x, float y) {
-        if (graphThumbs != null) {
-            for (int i = 0; i < graphThumbs.size(); i++) {
-                if (graphThumbs.get(i) != null) {
-                    if (graphThumbs.get(i).inside(x, surfaceHeight - y)) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return -1;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    boolean onTouchEvent(MotionEvent event) {
-        if (event.getActionIndex() == 0) {
-            int insideRect = checkInsideAllThumbRects(event.getX(), event.getY());
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    touchDownRect = insideRect;
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    if (insideRect == -1 || insideRect != touchDownRect) touchDownRect = -1;
-                    break;
-                case MotionEvent.ACTION_CANCEL:
-                case MotionEvent.ACTION_OUTSIDE:
-                    touchDownRect = -1;
-                    break;
-                case MotionEvent.ACTION_UP:
-                    //valid click!!!
-                    if (insideRect == touchDownRect) thumbRectClicked(insideRect);
-                    break;
-            }
-        }
-        return false;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    protected void thumbRectClicked(int i) {
-        setSelected(i);
-    }
-
-    //==============================================
+    //=================================================
     //  Renderer INTERFACE IMPLEMENTATIONS
-    //==============================================
+    //=================================================
 
     /**
      * {@inheritDoc}
@@ -116,6 +65,8 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         this.surfaceWidth = width;
         this.surfaceHeight = height;
+
+        thumbTouchHelper.setSurfaceHeight(surfaceHeight);
 
         gl.glViewport(0, 0, width, height);
 
@@ -144,33 +95,30 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
 
     abstract protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight);
 
+    //=================================================
+    //  TouchEnabledRenderer INTERFACE IMPLEMENTATIONS
+    //=================================================
+
+    @Override public void onTouchEvent(MotionEvent event) {
+        boolean graphThumbTouched = thumbTouchHelper.onTouch(event);
+        if (graphThumbTouched) EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
+    }
+
     /**
      * Creates rectangles for graph thumbs and main graph that will be used as configs for drawing
      */
-    void makeThumbRectangles(int surfaceWidth, int surfaceHeight) {
-        int maxSpikeTrains = AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
-        float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (maxSpikeTrains + 1)) / maxSpikeTrains;
-
-        // create rectangles for thumbs
-        for (int i = 0; i < maxSpikeTrains; i++) {
-            graphThumbs.add(new Rect(MARGIN, MARGIN + (thumbSize + MARGIN) * i, thumbSize, thumbSize));
-        }
-        // create main rectangle
-        graph =
-            new Rect(2 * MARGIN + thumbSize, MARGIN, surfaceWidth - 3 * MARGIN - thumbSize, surfaceHeight - 2 * MARGIN);
-    }
-
-    void registerGraph(@NonNull Rect rect) {
-        graph = rect;
-    }
-
-    void registerThumb(@NonNull Rect rect) {
-        graphThumbs.add(rect);
-    }
-
-    @Nullable Rect getThumb(int index) {
-        return graphThumbs != null && graphThumbs.size() > index ? graphThumbs.get(index) : null;
-    }
+    //void makeThumbRectangles(int surfaceWidth, int surfaceHeight) {
+    //    int maxSpikeTrains = AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+    //    float thumbSize = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (maxSpikeTrains + 1)) / maxSpikeTrains;
+    //
+    //    // create rectangles for thumbs
+    //    for (int i = 0; i < maxSpikeTrains; i++) {
+    //        graphThumbs.add(new Rect(MARGIN, MARGIN + (thumbSize + MARGIN) * i, thumbSize, thumbSize));
+    //    }
+    //    // create main rectangle
+    //    graph =
+    //        new Rect(2 * MARGIN + thumbSize, MARGIN, surfaceWidth - 3 * MARGIN - thumbSize, surfaceHeight - 2 * MARGIN);
+    //}
 
     /**
      * Returns default size for the graph thumb.
@@ -212,53 +160,6 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer {
                 graph.setHorizontalAxis(0, ac.length, 6);
                 graph.draw(gl);
             }
-        }
-    }
-
-    int getSelectedGraph() {
-        return selected;
-    }
-
-    private void setSelected(int s) {
-        selected = s;
-
-        EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
-    }
-
-    /**
-     * Represents
-     */
-    protected static class Rect {
-        public float x;
-        public float y;
-        public float width;
-        public float height;
-
-        Rect(float x, float y, float w, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = w;
-            this.height = height;
-        }
-
-        boolean inside(float px, float py) {
-            return px > getMinX() && py > getMinY() && px < getMaxX() && py < getMaxY();
-        }
-
-        private float getMinX() {
-            return Math.min(x, x + width);
-        }
-
-        private float getMaxX() {
-            return Math.max(x, x + width);
-        }
-
-        private float getMinY() {
-            return Math.min(y, y + height);
-        }
-
-        private float getMaxY() {
-            return Math.max(y, y + height);
         }
     }
 }

@@ -20,53 +20,52 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
-        int margin = 20;
         if (getAverageSpikeAnalysis()) {
             if (averageSpikeAnalysis != null) {
-                float aw = surfaceWidth - margin * averageSpikeAnalysis.length;
-                float ah =
-                    (surfaceHeight - margin * (averageSpikeAnalysis.length + 1)) / (float) averageSpikeAnalysis.length;
+                int len = averageSpikeAnalysis.length;
+                if (len > 0) {
+                    // calculate width and height of average spike graph per spike train
+                    float aw = surfaceWidth - MARGIN * len;
+                    float ah = (surfaceHeight - MARGIN * (len + 1)) / (float) len;
 
-                BYBMesh rectMesh = new BYBMesh(BYBMesh.LINES);
-                for (int i = 0; i < averageSpikeAnalysis.length; i++) {
-                    BYBMesh line = new BYBMesh(BYBMesh.LINE_STRIP);
-                    float xInc = aw / averageSpikeAnalysis[i].getAverageSpike().length;
-                    float yOffSet = ((margin + ah) * (i + 1));
+                    for (int i = 0; i < len; i++) {
+                        float xInc = aw / averageSpikeAnalysis[i].getAverageSpike().length;
+                        float yOffSet = (MARGIN + ah) * (i + 1);
 
-                    if (averageSpikeAnalysis[i].getNormTopSTDLine().length > 0) {
-                        float v0x = (margin * 2);
-                        float v0y = yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[0] * ah;
-                        float v1y = yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[0] * ah;
-                        BYBMesh mesh = new BYBMesh(BYBMesh.TRIANGLES);
-                        for (int j = 1; j < averageSpikeAnalysis[i].getNormTopSTDLine().length; j++) {
+                        if (averageSpikeAnalysis[i].getNormTopSTDLine().length > 0) {
+                            float v0x = (MARGIN * 2);
+                            float v0y = surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[0] * ah);
+                            float v1y =
+                                surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[0] * ah);
+                            BYBMesh mesh = new BYBMesh(BYBMesh.TRIANGLES);
+                            for (int j = 1; j < averageSpikeAnalysis[i].getNormTopSTDLine().length; j++) {
+                                float x = xInc * j + (MARGIN * 2);
+                                float yTop =
+                                    surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[j] * ah);
+                                float yBot =
+                                    surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[j] * ah);
 
-                            float x = xInc * j + (margin * 2);
-                            float yTop = yOffSet - averageSpikeAnalysis[i].getNormTopSTDLine()[j] * ah;
-                            float yBot = yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[j] * ah;
+                                mesh.addQuadSmooth(v0x, v0y, v0x, v1y, x, yTop, x, yBot,
+                                    BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
 
-                            mesh.addQuadSmooth(v0x, v0y, v0x, v1y, x, yTop, x, yBot, BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
-
-                            v0x = x;
-                            v0y = yTop;
-                            v1y = yBot;
+                                v0x = x;
+                                v0y = yTop;
+                                v1y = yBot;
+                            }
+                            mesh.draw(gl);
                         }
-                        mesh.draw(gl);
+
+                        // draw average line
+                        BYBMesh line = new BYBMesh(BYBMesh.LINE_STRIP);
+                        for (int j = 0; j < averageSpikeAnalysis[i].getAverageSpike().length; j++) {
+                            line.addVertex(xInc * j + (MARGIN * 2),
+                                surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormAverageSpike()[j] * ah));
+                        }
+                        gl.glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+                        gl.glLineWidth(3f);
+                        line.draw(gl);
                     }
-
-                    for (int j = 0; j < averageSpikeAnalysis[i].getAverageSpike().length; j++) {
-                        line.addVertex(xInc * j + (margin * 2),
-                            yOffSet - averageSpikeAnalysis[i].getNormAverageSpike()[j] * ah);
-                    }
-
-                    gl.glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-                    gl.glLineWidth(3f);
-                    line.draw(gl);
-
-                    float[] c = { 0.2f, 0.2f, 0.2f, 1.0f };
-                    rectMesh.addRectangle(margin * 2, margin + (ah + margin) * i, aw, ah, c);
                 }
-
-                rectMesh.draw(gl);
             }
         }
     }
