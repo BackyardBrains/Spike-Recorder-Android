@@ -51,8 +51,8 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements To
      */
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         gl.glClearColor(0f, 0f, 0f, 1.0f);
-        gl.glEnable(GL10.GL_BLEND); // Enable Alpha Blend
-        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA); // Set Alpha Blend Function
+        gl.glEnable(GL10.GL_BLEND);
+        gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
         gl.glDisable(GL10.GL_DEPTH_TEST);
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
@@ -66,6 +66,7 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements To
         this.surfaceWidth = width;
         this.surfaceHeight = height;
 
+        thumbTouchHelper.resetGraphThumbs();
         thumbTouchHelper.setSurfaceHeight(surfaceHeight);
 
         gl.glViewport(0, 0, width, height);

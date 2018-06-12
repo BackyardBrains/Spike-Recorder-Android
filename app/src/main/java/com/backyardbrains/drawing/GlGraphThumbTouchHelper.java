@@ -39,6 +39,17 @@ public class GlGraphThumbTouchHelper {
         return selectedGraphThumb;
     }
 
+    /**
+     * Resets registered thumbs.
+     */
+    public void resetGraphThumbs() {
+        graphThumbs.clear();
+    }
+
+    /**
+     * Handles specified {@code event} by checking whether any of the registered graph thumbs has been clicked and
+     * returns {@code true} if it was, {@code false} otherwise.
+     */
     public boolean onTouch(MotionEvent event) {
         if (event.getActionIndex() == 0) {
             int selected = getSelectedGraphThumb(event.getX(), event.getY());

@@ -79,7 +79,7 @@ public class GlBarGraphThumb {
         @Size(4) float[] color) {
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glColor4f(color[0], color[1], color[2], color[3]);
-        float barWidth = /*(Math.abs(*/w/*) - BORDER_LINES_WIDTH)*/ / graphVertices.length;
+        float barWidth = w / graphVertices.length;
         int len = graphVertices.length;
         int i;
         short j = 0;
