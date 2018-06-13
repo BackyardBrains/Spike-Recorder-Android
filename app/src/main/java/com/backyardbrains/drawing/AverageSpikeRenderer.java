@@ -3,7 +3,7 @@ package com.backyardbrains.drawing;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.AverageSpike;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -46,7 +46,7 @@ public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
                                     surfaceHeight - (yOffSet - averageSpikeAnalysis[i].getNormBottomSTDLine()[j] * ah);
 
                                 mesh.addQuadSmooth(v0x, v0y, v0x, v1y, x, yTop, x, yBot,
-                                    BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
+                                    GlUtils.SPIKE_TRAIN_COLORS[i]);
 
                                 v0x = x;
                                 v0y = yTop;

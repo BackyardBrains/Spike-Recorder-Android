@@ -8,7 +8,7 @@ import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -39,8 +39,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private int surfaceWidth;
     private int surfaceHeight;
     private boolean surfaceSizeDirty;
-    private int glWindowWidth = BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
-    private int glWindowHeight = BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
+    private int glWindowWidth = GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
+    private int glWindowHeight = GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
     private boolean glWindowWidthDirty;
     private boolean glWindowHeightDirty;
     private float scaleX;
@@ -52,7 +52,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private boolean autoScale;
 
     private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
-    private float minimumDetectedPCMValue = BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
+    private float minimumDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
@@ -364,7 +364,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     }
 
     private void initDrawSurface(GL10 gl, int glWindowWidth, int glWindowHeight, boolean updateProjection) {
-        BYBGlUtils.glClear(gl);
+        GlUtils.glClear(gl);
         if (updateProjection) {
             float heightHalf = glWindowHeight * .5f;
             gl.glMatrixMode(GL10.GL_PROJECTION);

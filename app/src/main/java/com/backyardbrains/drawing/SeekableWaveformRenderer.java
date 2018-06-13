@@ -9,7 +9,7 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -149,7 +149,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, BYBGlUtils.SPIKE_TRAIN_COLORS[i]);
+                            fromSample, toSample, GlUtils.SPIKE_TRAIN_COLORS[i]);
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }

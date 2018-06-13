@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -15,6 +15,17 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
     static final String TAG = makeLogTag(AutoCorrelationRenderer.class);
+
+    private static final float[] H_GRAPH_AXIS_VALUES = new float[6];
+
+    static {
+        H_GRAPH_AXIS_VALUES[0] = 0f;
+        H_GRAPH_AXIS_VALUES[1] = .02f;
+        H_GRAPH_AXIS_VALUES[2] = .04f;
+        H_GRAPH_AXIS_VALUES[3] = .06f;
+        H_GRAPH_AXIS_VALUES[4] = .08f;
+        H_GRAPH_AXIS_VALUES[5] = .1f;
+    }
 
     private static final String[] SPIKE_TRAIN_THUMB_GRAPH_NAMES = new String[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT];
 
@@ -60,8 +71,8 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     thumbTouchHelper.registerGraphThumb(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, normalize(autocorrelationAnalysis[i]),
-                        BYBGlUtils.SPIKE_TRAIN_COLORS[i], SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
+                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i], GlUtils.SPIKE_TRAIN_COLORS[i],
+                        SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
                 x = MARGIN;
                 y = portraitOrientation ? 2 * MARGIN + thumbSize : MARGIN;
@@ -69,8 +80,8 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = thumbTouchHelper.getSelectedGraphThumb();
-                glBarGraph.draw(gl, x, y, w, h, normalize(autocorrelationAnalysis[selected]),
-                    BYBGlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
+                glBarGraph.draw(gl, x, y, w, h, autocorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
+                    GlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
             }
         }
     }
@@ -91,26 +102,5 @@ public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return false;
-    }
-
-    private float[] normalize(int[] ac) {
-        if (ac != null) {
-            if (ac.length > 0) {
-                int len = ac.length;
-                float[] values = new float[len];
-                int max = Integer.MIN_VALUE;
-                for (int y : ac) {
-                    if (max < y) max = y;
-                }
-                if (max == 0) max = 1;// avoid division by zero
-                for (int i = 0; i < len; i++) {
-                    values[i] = ((float) ac[i]) / (float) max;
-                }
-
-                return values;
-            }
-        }
-
-        return new float[0];
     }
 }

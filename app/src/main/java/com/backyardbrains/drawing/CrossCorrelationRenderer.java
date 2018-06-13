@@ -8,7 +8,7 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -109,8 +109,6 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
                         float textX, textY;
                         float textLongW = glText.getLength(SPIKE_TRAIN_GRAPH_NAMES[0]);
-                        float textShortW = glText.getLength(SPIKE_TRAIN_GRAPH_SHORT_NAMES[0]);
-                        float textW = textLongW <= w * .8f ? textLongW : textShortW;
                         String[] spNamesH =
                             textLongW <= w * .8f ? SPIKE_TRAIN_GRAPH_NAMES : SPIKE_TRAIN_GRAPH_SHORT_NAMES;
                         String[] spNamesV =
@@ -122,9 +120,8 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                                 x = textOffset + j * (w + margin) + margin;
                                 y = surfaceHeight - (textOffset + (h + margin) * (i + 1));
                                 thumbTouchHelper.registerGraphThumb(new Rect(x, y, w, h));
-                                glBarGraphThumb.draw(gl, x, y, w, h,
-                                    normalize(crossCorrelationAnalysis[i * trainCount + j]),
-                                    BYBGlUtils.SPIKE_TRAIN_COLORS[i], "");
+                                glBarGraphThumb.draw(gl, x, y, w, h, crossCorrelationAnalysis[i * trainCount + j],
+                                    GlUtils.SPIKE_TRAIN_COLORS[i], "");
 
                                 // draw spike train names
                                 gl.glEnable(GL10.GL_TEXTURE_2D);
@@ -145,12 +142,9 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                         }
                     } else {
                         int selected = thumbTouchHelper.getSelectedGraphThumb();
-                        glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - MARGIN, surfaceHeight - MARGIN,
-                            normalize(crossCorrelationAnalysis[selected]),
-                            BYBGlUtils.SPIKE_TRAIN_COLORS[selected / trainCount], "");
-                        //graph = new Rect(margin, margin, surfaceWidth - 2 * margin, surfaceHeight - 2 * margin);
-                        //graphIntegerList(gl, normalize(crossCorrelationAnalysis[selected]), graph,
-                        //    BYBGlUtils.SPIKE_TRAIN_COLORS[selected / divider], true);
+                        glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
+                            crossCorrelationAnalysis[selected], new float[0],
+                            GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount], "");
                     }
                 }
             }
@@ -173,26 +167,5 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return false;
-    }
-
-    private float[] normalize(int[] ac) {
-        if (ac != null) {
-            if (ac.length > 0) {
-                int len = ac.length;
-                float[] values = new float[len];
-                int max = Integer.MIN_VALUE;
-                for (int y : ac) {
-                    if (max < y) max = y;
-                }
-                if (max == 0) max = 1;// avoid division by zero
-                for (int i = 0; i < len; i++) {
-                    values[i] = ((float) ac[i]) / (float) max;
-                }
-
-                return values;
-            }
-        }
-
-        return new float[0];
     }
 }

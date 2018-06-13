@@ -7,7 +7,7 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.InterSpikeInterval;
 import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -62,7 +62,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     thumbTouchHelper.registerGraphThumb(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, normalize(isiAnalysis[i]), BYBGlUtils.SPIKE_TRAIN_COLORS[i],
+                    glBarGraphThumb.draw(gl, x, y, w, h, getYValues(isiAnalysis[i]), GlUtils.SPIKE_TRAIN_COLORS[i],
                         SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
                 x = MARGIN;
@@ -71,8 +71,8 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = thumbTouchHelper.getSelectedGraphThumb();
-                glBarGraph.draw(gl, x, y, w, h, normalize(isiAnalysis[selected]),
-                    BYBGlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
+                glBarGraph.draw(gl, x, y, w, h, getYValues(isiAnalysis[selected]), getXValues(isiAnalysis[selected]),
+                    GlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
             }
         }
     }
@@ -95,19 +95,29 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         return false;
     }
 
-    private float[] normalize(@Nullable InterSpikeInterval[] isi) {
+    private int[] getYValues(@Nullable InterSpikeInterval[] isi) {
+        if (isi != null) {
+            if (isi.length > 0) {
+                int len = isi.length;
+                int[] values = new int[len];
+                for (int i = 0; i < len; i++) {
+                    values[i] = isi[i].getY();
+                }
+
+                return values;
+            }
+        }
+
+        return new int[0];
+    }
+
+    private float[] getXValues(@Nullable InterSpikeInterval[] isi) {
         if (isi != null) {
             if (isi.length > 0) {
                 int len = isi.length;
                 float[] values = new float[len];
-                int max = Integer.MIN_VALUE;
-                for (InterSpikeInterval anIsi : isi) {
-                    int y = anIsi.getY();
-                    if (max < y) max = y;
-                }
-                if (max == 0) max = 1; // avoid division by zero
                 for (int i = 0; i < len; i++) {
-                    values[i] = ((float) isi[i].getY()) / (float) max;
+                    values[i] = isi[i].getX();
                 }
 
                 return values;

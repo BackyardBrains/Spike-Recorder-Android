@@ -1,5 +1,6 @@
 package com.backyardbrains.utils;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 import com.backyardbrains.drawing.BYBColors;
 import java.nio.FloatBuffer;
@@ -7,11 +8,14 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
 
-public class BYBGlUtils {
+public class GlUtils {
 
     public static final int DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000;
     public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
     public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
+
+    public static final int V_AXIS_VALUES_COUNT = 0;
+    public static final int V_AXIS_VALUES_STEP = 1;
 
     public static final float[][] SPIKE_TRAIN_COLORS = new float[MAX_SPIKE_TRAIN_COUNT][];
 
@@ -37,7 +41,53 @@ public class BYBGlUtils {
         //        gl.glDrawArrays(GL10.GL_LINES, 0, 2);
         //        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 
-        BYBGlUtils.drawArray2D(gl, line, color, 2);
+        GlUtils.drawArray2D(gl, line, color, 2);
+    }
+
+    public static int normalize(@NonNull int[] inValues, @NonNull float[] outValues) {
+        if (inValues.length > 0) {
+            int len = inValues.length;
+            int max = Integer.MIN_VALUE;
+            for (int y : inValues) {
+                if (max < y) max = y;
+            }
+            if (max == 0) max = 1;// avoid division by zero
+            for (int i = 0; i < len; i++) {
+                outValues[i] = ((float) inValues[i]) / (float) max;
+            }
+
+            return max;
+        }
+
+        return 0;
+    }
+
+    public static int[] calculateVAxisCountAndStep(int max, int maxVAxisValues) {
+        int counter = 1;
+        float divider, vAxisValuesCount;
+        while (true) {
+            divider = (float) Math.pow(10, counter);
+            vAxisValuesCount = max / divider; // divide by 10, 100, 1000 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new int[] { (int) vAxisValuesCount, (int) (divider) };
+            }
+
+            vAxisValuesCount *= .5f; // divide by 20, 200, 200 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new int[] { (int) vAxisValuesCount, (int) (divider * 2) };
+            }
+
+            vAxisValuesCount *= .4f; // divide by 50, 500, 5000 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new int[] { (int) vAxisValuesCount, (int) (divider * 5) };
+            }
+
+            counter++;
+
+            if (counter > 10) break; // max divider can be 10^10
+        }
+
+        return new int[2];
     }
 
     public static void drawArray2D(GL10 gl, float[] array, int color, float lineWidth) {
@@ -47,7 +97,7 @@ public class BYBGlUtils {
     public static void drawArray2D(GL10 gl, float[] array, int color, float lineWidth, int mode) {
         FloatBuffer buffer = BYBUtils.getFloatBufferFromFloatArray(array, array.length);
         if (array.length % 2 != 0) {
-            Log.e("BYBGlUtils", "drawArray2D incorrect array size. array.length%2 !=0");
+            Log.e("GlUtils", "drawArray2D incorrect array size. array.length%2 !=0");
         }
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         float[] glColor = BYBColors.getHexAsGlColor(color);
@@ -58,10 +108,5 @@ public class BYBGlUtils {
 
         gl.glDrawArrays(mode, 0, (int) Math.floor(array.length / 2.0));//GL10.GL_LINES
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-    }
-
-    public static void drawRectangle(GL10 gl, int x, int y, int w, int h, int color) {
-        float[] array = new float[] { x, y, x + w, y, x, y + h, x + w, y + h };
-        drawArray2D(gl, array, color, 1, GL10.GL_TRIANGLE_STRIP);
     }
 }

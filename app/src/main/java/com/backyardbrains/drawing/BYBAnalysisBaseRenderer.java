@@ -6,7 +6,7 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.BYBGlUtils;
+import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -71,7 +71,7 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements To
 
         gl.glViewport(0, 0, width, height);
 
-        BYBGlUtils.glClear(gl);
+        GlUtils.glClear(gl);
         gl.glMatrixMode(GL10.GL_PROJECTION);
         gl.glLoadIdentity();
         gl.glOrthof(0f, surfaceWidth, 0f, surfaceHeight, -1f, 1f);
@@ -87,7 +87,7 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements To
         final int surfaceWidth = this.surfaceWidth;
         final int surfaceHeight = this.surfaceHeight;
 
-        BYBGlUtils.glClear(gl);
+        GlUtils.glClear(gl);
         draw(gl, surfaceWidth, surfaceHeight);
 
         //LOGD(TAG, "" + (System.currentTimeMillis() - start));

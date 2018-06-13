@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
 import com.android.texample.GLText;
+import com.backyardbrains.utils.GlUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -46,10 +47,15 @@ public class GlBarGraphThumb {
         text.load("dos-437.ttf", 48, 5, 5);
     }
 
-    public void draw(@NonNull GL10 gl, float x, float y, float w, float h, float[] graphVertices,
+    public void draw(@NonNull GL10 gl, float x, float y, float w, float h, @Nullable int[] values,
         @Size(4) float[] color, @Nullable String graphName) {
+        if (values == null) return;
+
+        float[] normalizedValues = new float[values.length];
+        GlUtils.normalize(values, normalizedValues);
+
         // draw graph
-        drawGraph(gl, x, y, w, h, graphVertices, color);
+        drawGraph(gl, x, y, w, h, normalizedValues, color);
         // draw border lines
         drawGraphBorders(gl, x, y, w, h);
         // draw graph name if there is one
@@ -75,12 +81,12 @@ public class GlBarGraphThumb {
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
     }
 
-    private void drawGraph(@NonNull GL10 gl, float x, float y, float w, float h, float[] graphVertices,
+    private void drawGraph(@NonNull GL10 gl, float x, float y, float w, float h, float[] values,
         @Size(4) float[] color) {
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glColor4f(color[0], color[1], color[2], color[3]);
-        float barWidth = w / graphVertices.length;
-        int len = graphVertices.length;
+        float barWidth = w / values.length;
+        int len = values.length;
         int i;
         short j = 0;
         // calculate indices
@@ -107,9 +113,9 @@ public class GlBarGraphThumb {
             vertices[j] = x + barWidth * i;
             vertices[j + 1] = y;
             vertices[j + 2] = x + barWidth * i;
-            vertices[j + 3] = y + h * graphVertices[i];
+            vertices[j + 3] = y + h * values[i];
             vertices[j + 4] = x + barWidth * (i + 1);
-            vertices[j + 5] = y + h * graphVertices[i];
+            vertices[j + 5] = y + h * values[i];
         }
         vertices[j] = x + barWidth * i;
         vertices[j + 1] = y;
