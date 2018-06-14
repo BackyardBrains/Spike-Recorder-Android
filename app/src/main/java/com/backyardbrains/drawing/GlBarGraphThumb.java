@@ -51,8 +51,7 @@ public class GlBarGraphThumb {
         @Size(4) float[] color, @Nullable String graphName) {
         if (values == null) return;
 
-        float[] normalizedValues = new float[values.length];
-        GlUtils.normalize(values, normalizedValues);
+        float[] normalizedValues = GlUtils.normalize(values);
 
         // draw graph
         drawGraph(gl, x, y, w, h, normalizedValues, color);

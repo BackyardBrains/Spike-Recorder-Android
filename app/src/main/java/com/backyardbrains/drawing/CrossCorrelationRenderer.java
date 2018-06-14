@@ -20,6 +20,16 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
 
     private static final String TAG = makeLogTag(CrossCorrelationRenderer.class);
 
+    private static final float[] H_GRAPH_AXIS_VALUES = new float[5];
+
+    static {
+        H_GRAPH_AXIS_VALUES[0] = -.1f;
+        H_GRAPH_AXIS_VALUES[1] = -.05f;
+        H_GRAPH_AXIS_VALUES[2] = 0f;
+        H_GRAPH_AXIS_VALUES[3] = .05f;
+        H_GRAPH_AXIS_VALUES[4] = .1f;
+    }
+
     private static final String[] SPIKE_TRAIN_GRAPH_NAMES = new String[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT];
 
     static {
@@ -143,7 +153,7 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                     } else {
                         int selected = thumbTouchHelper.getSelectedGraphThumb();
                         glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
-                            crossCorrelationAnalysis[selected], new float[0],
+                            crossCorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
                             GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount], "");
                     }
                 }

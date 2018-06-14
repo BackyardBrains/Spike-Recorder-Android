@@ -18,7 +18,7 @@ public abstract class BYBAnalysisBaseRenderer extends BaseRenderer implements To
     private static final String TAG = makeLogTag(BYBAnalysisBaseRenderer.class);
 
     private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
-    static final float MARGIN = 20f;
+    static final float MARGIN = 30f;
 
     protected int surfaceWidth;
     protected int surfaceHeight;

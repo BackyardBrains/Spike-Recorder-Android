@@ -10,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -19,25 +21,36 @@ public class GlBarGraph {
 
     private static final int MAX_AXIS_VALUES = 5;
     private static final float AXES_VALUES_MARGIN = 20f;
-    private static final float AXES_SCALE_WIDTH = 10f;
+    private static final float AXES_SCALE_SIZE = 10f;
 
     private static final float GRAPH_NAME_MARGIN = 5f;
     private static final float AXES_WIDTH = 2f;
     private static final int AXES_VERTICES_COUNT = 6;
     private static final short[] AXES_INDICES = { 0, 1, 0, 2 };
-    private final static int VERTICES_PER_SPRITE = 3;
-    private final static int INDICES_PER_SPRITE = 6;
+    private static final int VERTICES_PER_SPRITE = 3;
+    private static final int INDICES_PER_SPRITE = 6;
+
+    private static final NumberFormat DEFAULT_FORMATTER = new DecimalFormat("#0.0#");
 
     private final GLText glText;
     private final FloatBuffer axesVFB;
     private final ShortBuffer axesISB;
     private FloatBuffer vAxisValuesVFB;
+    private FloatBuffer hAxisValuesVFB;
     private FloatBuffer graphVFB;
     private ShortBuffer graphISB;
+
+    private NumberFormat formatter;
 
     private final float[] borderVertices = new float[AXES_VERTICES_COUNT];
 
     GlBarGraph(@NonNull Context context, @NonNull GL10 gl) {
+        this(context, gl, DEFAULT_FORMATTER);
+    }
+
+    GlBarGraph(@NonNull Context context, @NonNull GL10 gl, @NonNull NumberFormat hAxisValuesFormatter) {
+        this.formatter = hAxisValuesFormatter;
+
         ByteBuffer axesVBB = ByteBuffer.allocateDirect(AXES_VERTICES_COUNT * 4);
         axesVBB.order(ByteOrder.nativeOrder());
         axesVFB = axesVBB.asFloatBuffer();
@@ -56,18 +69,21 @@ public class GlBarGraph {
         float[] hAxisValues, @Size(4) float[] color, @Nullable String graphName) {
         if (vAxisValues == null) return;
 
-        float[] normalizedValues = new float[vAxisValues.length];
-        int max = GlUtils.normalize(vAxisValues, normalizedValues);
-        float vGraphOffset = x + glText.getLength(String.valueOf(max)) + AXES_VALUES_MARGIN + AXES_SCALE_WIDTH;
+        int[] vAxisMinMax = GlUtils.getMinMax(vAxisValues);
+        float[] vAxisNormalizedValues = GlUtils.normalize(vAxisValues);
+        float vGraphOffset =
+            glText.getLength(String.valueOf(vAxisMinMax[GlUtils.MAX_VALUE])) + AXES_VALUES_MARGIN + AXES_SCALE_SIZE;
+        float hGraphOffset = glText.getHeight() + AXES_VALUES_MARGIN + AXES_SCALE_SIZE;
 
         // draw graph
-        drawGraph(gl, vGraphOffset, y, w - vGraphOffset, h, normalizedValues, color);
+        drawGraph(gl, x + vGraphOffset, y + hGraphOffset, w - vGraphOffset, h - hGraphOffset, vAxisNormalizedValues,
+            color);
         // draw graph axes
-        drawGraphAxes(gl, vGraphOffset, y, w - vGraphOffset, h);
+        drawGraphAxes(gl, x + vGraphOffset, y + hGraphOffset, w - vGraphOffset, h - hGraphOffset);
         // draw vertical axis values
-        drawGraphVAxisValues(gl, x, y, h, vGraphOffset, max);
+        drawGraphVAxisValues(gl, x, y + hGraphOffset, h - hGraphOffset, vGraphOffset, vAxisMinMax[GlUtils.MAX_VALUE]);
         // draw horizontal axis values
-        drawGraphHAxesValues(gl, x, y, w, h);
+        drawGraphHAxesValues(gl, x + vGraphOffset, y, w - vGraphOffset, hGraphOffset, hAxisValues);
         // draw graph name if there is one
         //if (graphName != null) drawGraphName(gl, x, y, w, h, graphName);
     }
@@ -139,9 +155,8 @@ public class GlBarGraph {
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
     }
 
-    private void drawGraphVAxisValues(@NonNull GL10 gl, float x, float y, float h, float vGraphOffset,
-        int graphMaxValue) {
-        float yAxesValueW = glText.getLength(String.valueOf(graphMaxValue));
+    private void drawGraphVAxisValues(@NonNull GL10 gl, float x, float y, float h, float vOffset, int graphMaxValue) {
+        float vAxesValueW = glText.getLength(String.valueOf(graphMaxValue));
         int[] res = GlUtils.calculateVAxisCountAndStep(graphMaxValue, MAX_AXIS_VALUES);
         int vAxisValuesCount = res[GlUtils.V_AXIS_VALUES_COUNT] + 1; // +1 for zero
         int vAxisValuesStep = res[GlUtils.V_AXIS_VALUES_STEP];
@@ -156,9 +171,9 @@ public class GlBarGraph {
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         for (int i = 0; i < vAxisValuesCount; i++) {
             float value = y + h * vAxisValuesNormalizedStep * i;
-            vAxisValuesVertices[j++] = vGraphOffset - AXES_SCALE_WIDTH;
+            vAxisValuesVertices[j++] = x + vOffset - AXES_SCALE_SIZE;
             vAxisValuesVertices[j++] = value;
-            vAxisValuesVertices[j++] = vGraphOffset;
+            vAxisValuesVertices[j++] = x + vOffset;
             vAxisValuesVertices[j++] = value;
 
             values[i] = value;
@@ -179,14 +194,51 @@ public class GlBarGraph {
         glText.begin(1f, 1f, 1f, 1f);
         for (int i = 0; i < vAxisValuesCount; i++) {
             String value = String.valueOf(vAxisValuesStep * i);
-            glText.drawCY(value, x + (yAxesValueW - glText.getLength(value)), values[i]);
+            glText.drawCY(value, x + (vAxesValueW - glText.getLength(value)), values[i]);
         }
         glText.end();
         gl.glDisable(GL10.GL_TEXTURE_2D);
     }
 
-    private void drawGraphHAxesValues(@NonNull GL10 gl, float x, float y, float w, float h) {
+    private void drawGraphHAxesValues(@NonNull GL10 gl, float x, float y, float w, float hOffset, float[] hAxisValues) {
+        int len = hAxisValues.length;
+        float hAxisValuesStep = w / (len - 1);
+        float[] hAxisValuesVertices = new float[len * 4];
+        float[] values = new float[len];
+        int j = 0;
 
+        // draw scales
+        gl.glColor4f(1f, 1f, 1f, 1f);
+        gl.glLineWidth(2f);
+        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+        for (int i = 0; i < len; i++) {
+            float value = x + hAxisValuesStep * i;
+            hAxisValuesVertices[j++] = value;
+            hAxisValuesVertices[j++] = y + hOffset - AXES_SCALE_SIZE;
+            hAxisValuesVertices[j++] = value;
+            hAxisValuesVertices[j++] = y + hOffset;
+
+            values[i] = value;
+        }
+        if (hAxisValuesVFB == null || hAxisValuesVFB.capacity() != hAxisValuesVertices.length) {
+            ByteBuffer vAxisValuesVBB = ByteBuffer.allocateDirect(hAxisValuesVertices.length * 4);
+            vAxisValuesVBB.order(ByteOrder.nativeOrder());
+            hAxisValuesVFB = vAxisValuesVBB.asFloatBuffer();
+        }
+        hAxisValuesVFB.put(hAxisValuesVertices);
+        hAxisValuesVFB.position(0);
+        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, hAxisValuesVFB);
+        gl.glDrawArrays(GL10.GL_LINES, 0, (int) (hAxisValuesVertices.length * .5f));
+        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+
+        // draw scale values
+        gl.glEnable(GL10.GL_TEXTURE_2D);
+        glText.begin(1f, 1f, 1f, 1f);
+        for (int i = 0; i < len; i++) {
+            glText.drawCX(formatter.format(hAxisValues[i]), values[i], y);
+        }
+        glText.end();
+        gl.glDisable(GL10.GL_TEXTURE_2D);
     }
 
     private void drawGraphName(@NonNull GL10 gl, float x, float y, float w, float h, @Nullable String graphName) {

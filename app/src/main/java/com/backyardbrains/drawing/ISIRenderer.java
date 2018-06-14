@@ -8,6 +8,7 @@ import com.backyardbrains.data.InterSpikeInterval;
 import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
+import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -17,6 +18,16 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class ISIRenderer extends BYBAnalysisBaseRenderer {
 
     private static final String TAG = makeLogTag(ISIRenderer.class);
+
+    private static final float[] H_GRAPH_AXIS_VALUES = new float[5];
+
+    static {
+        H_GRAPH_AXIS_VALUES[0] = (float) 1E-3;
+        H_GRAPH_AXIS_VALUES[1] = (float) 1E-2;
+        H_GRAPH_AXIS_VALUES[2] = (float) 1E-1;
+        H_GRAPH_AXIS_VALUES[3] = (float) 1E0;
+        H_GRAPH_AXIS_VALUES[4] = (float) 1E1;
+    }
 
     private static final String[] SPIKE_TRAIN_THUMB_GRAPH_NAMES = new String[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT];
 
@@ -44,7 +55,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        glBarGraph = new GlBarGraph(context, gl);
+        glBarGraph = new GlBarGraph(context, gl, new DecimalFormat("0E0"));
         glBarGraphThumb = new GlBarGraphThumb(context, gl);
     }
 
@@ -71,7 +82,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = thumbTouchHelper.getSelectedGraphThumb();
-                glBarGraph.draw(gl, x, y, w, h, getYValues(isiAnalysis[selected]), getXValues(isiAnalysis[selected]),
+                glBarGraph.draw(gl, x, y, w, h, getYValues(isiAnalysis[selected]), H_GRAPH_AXIS_VALUES,
                     GlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
             }
         }
@@ -109,21 +120,5 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return new int[0];
-    }
-
-    private float[] getXValues(@Nullable InterSpikeInterval[] isi) {
-        if (isi != null) {
-            if (isi.length > 0) {
-                int len = isi.length;
-                float[] values = new float[len];
-                for (int i = 0; i < len; i++) {
-                    values[i] = isi[i].getX();
-                }
-
-                return values;
-            }
-        }
-
-        return new float[0];
     }
 }

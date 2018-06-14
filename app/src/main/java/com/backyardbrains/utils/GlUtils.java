@@ -14,6 +14,9 @@ public class GlUtils {
     public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
     public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
 
+    public static final int MIN_VALUE = 0;
+    public static final int MAX_VALUE = 1;
+
     public static final int V_AXIS_VALUES_COUNT = 0;
     public static final int V_AXIS_VALUES_STEP = 1;
 
@@ -44,26 +47,41 @@ public class GlUtils {
         GlUtils.drawArray2D(gl, line, color, 2);
     }
 
-    public static int normalize(@NonNull int[] inValues, @NonNull float[] outValues) {
-        if (inValues.length > 0) {
-            int len = inValues.length;
+    public static int[] getMinMax(@NonNull int[] values) {
+        if (values.length > 0) {
+            int min = Integer.MAX_VALUE;
             int max = Integer.MIN_VALUE;
-            for (int y : inValues) {
-                if (max < y) max = y;
-            }
-            if (max == 0) max = 1;// avoid division by zero
-            for (int i = 0; i < len; i++) {
-                outValues[i] = ((float) inValues[i]) / (float) max;
+            for (int value : values) {
+                if (min > value) min = value;
+                if (max < value) max = value;
             }
 
-            return max;
+            return new int[] { min, max };
         }
 
-        return 0;
+        return new int[2];
+    }
+
+    public static float[] normalize(@NonNull int[] values) {
+        if (values.length > 0) {
+            int len = values.length;
+            int[] minMax = getMinMax(values);
+            int max = minMax[MAX_VALUE];
+            if (max == 0) max = 1;// avoid division by zero
+
+            float[] result = new float[len];
+            for (int i = 0; i < len; i++) {
+                result[i] = ((float) values[i]) / (float) max;
+            }
+
+            return result;
+        }
+
+        return new float[0];
     }
 
     public static int[] calculateVAxisCountAndStep(int max, int maxVAxisValues) {
-        int counter = 1;
+        int counter = 0;
         float divider, vAxisValuesCount;
         while (true) {
             divider = (float) Math.pow(10, counter);
