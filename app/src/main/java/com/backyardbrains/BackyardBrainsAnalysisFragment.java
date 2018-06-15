@@ -22,7 +22,6 @@ import com.backyardbrains.drawing.BYBAnalysisBaseRenderer;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
-import com.backyardbrains.drawing.WaitRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
@@ -196,7 +195,6 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         // hide waiting screen
         showWaiting(false);
 
-        currentRenderer = new WaitRenderer(this);
         switch (rendererType) {
             case BYBAnalysisType.AUTOCORRELATION:
                 currentRenderer = new AutoCorrelationRenderer(this);
@@ -217,7 +215,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
             // create new GL surface
             if (glSurface != null) glSurface = null;
             glSurface = new TouchGlSurfaceView(getContext());
-            glSurface.setRenderer(currentRenderer);
+            if (currentRenderer != null) glSurface.setRenderer(currentRenderer);
             glSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
             // and add GL surface to UI
             flGL.addView(glSurface);
@@ -234,7 +232,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        reassignSurfaceView(analysisType);
+        //reassignSurfaceView(analysisType);
 
         ibtnBack.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {

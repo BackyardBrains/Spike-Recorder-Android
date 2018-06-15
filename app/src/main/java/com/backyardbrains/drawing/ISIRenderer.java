@@ -83,7 +83,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
 
                 int selected = thumbTouchHelper.getSelectedGraphThumb();
                 glBarGraph.draw(gl, x, y, w, h, getYValues(isiAnalysis[selected]), H_GRAPH_AXIS_VALUES,
-                    GlUtils.SPIKE_TRAIN_COLORS[selected], SPIKE_TRAIN_THUMB_GRAPH_NAMES[selected]);
+                    GlUtils.SPIKE_TRAIN_COLORS[selected]);
             }
         }
     }

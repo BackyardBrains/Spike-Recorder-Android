@@ -19,6 +19,7 @@ import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.view.BYBThresholdHandle;
 import java.util.List;
@@ -48,8 +49,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
 
     private Unbinder unbinder;
 
-    float[][] handleColors;
-    private int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ffff };
+    private int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ff00 };
 
     // Index of the currently selected threshold
     int selectedThreshold;
@@ -91,27 +91,6 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
-
-    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        handleColors = new float[3][4];
-
-        handleColors[0][0] = 1.0f;
-        handleColors[0][1] = 0.0f;
-        handleColors[0][2] = 0.0f;
-        handleColors[0][3] = 1.0f;
-
-        handleColors[1][0] = 1.0f;
-        handleColors[1][1] = 1.0f;
-        handleColors[1][2] = 0.0f;
-        handleColors[1][3] = 1.0f;
-
-        handleColors[2][0] = 0.0f;
-        handleColors[2][1] = 1.0f;
-        handleColors[2][2] = 1.0f;
-        handleColors[2][3] = 1.0f;
-    }
 
     @Override public void onResume() {
         super.onResume();
@@ -342,7 +321,7 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
                         thresholdHandleRight.setPosition(
                             getRenderer().getThresholdScreenValue(ThresholdOrientation.RIGHT));
 
-                        float[] currentColor = handleColors[selectedThreshold];
+                        float[] currentColor = GlUtils.SPIKE_TRAIN_COLORS[selectedThreshold];
                         getRenderer().setCurrentColor(currentColor);
                         thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
                         thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));

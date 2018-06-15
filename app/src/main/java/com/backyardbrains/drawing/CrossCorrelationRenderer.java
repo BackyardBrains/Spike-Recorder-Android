@@ -154,7 +154,7 @@ public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
                         int selected = thumbTouchHelper.getSelectedGraphThumb();
                         glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
                             crossCorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
-                            GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount], "");
+                            GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount]);
                     }
                 }
             }

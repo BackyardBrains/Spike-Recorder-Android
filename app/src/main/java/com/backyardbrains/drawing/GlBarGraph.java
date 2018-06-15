@@ -23,7 +23,6 @@ public class GlBarGraph {
     private static final float AXES_VALUES_MARGIN = 20f;
     private static final float AXES_SCALE_SIZE = 10f;
 
-    private static final float GRAPH_NAME_MARGIN = 5f;
     private static final float AXES_WIDTH = 2f;
     private static final int AXES_VERTICES_COUNT = 6;
     private static final short[] AXES_INDICES = { 0, 1, 0, 2 };
@@ -66,7 +65,7 @@ public class GlBarGraph {
     }
 
     public void draw(@NonNull GL10 gl, float x, float y, float w, float h, @Nullable int[] vAxisValues,
-        float[] hAxisValues, @Size(4) float[] color, @Nullable String graphName) {
+        @NonNull float[] hAxisValues, @Size(4) float[] color) {
         if (vAxisValues == null) return;
 
         int[] vAxisMinMax = GlUtils.getMinMax(vAxisValues);
@@ -237,16 +236,6 @@ public class GlBarGraph {
         for (int i = 0; i < len; i++) {
             glText.drawCX(formatter.format(hAxisValues[i]), values[i], y);
         }
-        glText.end();
-        gl.glDisable(GL10.GL_TEXTURE_2D);
-    }
-
-    private void drawGraphName(@NonNull GL10 gl, float x, float y, float w, float h, @Nullable String graphName) {
-        float textW = glText.getLength(graphName);
-        float textH = glText.getHeight();
-        gl.glEnable(GL10.GL_TEXTURE_2D);
-        glText.begin(1f, 1f, 1f, 1f);
-        glText.draw(graphName, x + w - (textW + GRAPH_NAME_MARGIN), y + h - (textH + GRAPH_NAME_MARGIN));
         glText.end();
         gl.glDisable(GL10.GL_TEXTURE_2D);
     }
