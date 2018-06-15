@@ -22,7 +22,7 @@ import com.backyardbrains.data.persistance.entity.Train;
                                                                                                         int order);
 
     @Query("SELECT * FROM trains WHERE analysis_id = :analysisId ORDER BY `order` ASC") Train[] loadTrains(
-            long analysisId);
+        long analysisId);
 
     @Query("SELECT COUNT(*) FROM trains WHERE analysis_id = :analysisId") int loadTrainCount(long analysisId);
 

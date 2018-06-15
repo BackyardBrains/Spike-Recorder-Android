@@ -75,13 +75,13 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
                     final int trainCount = trainDao.loadTrainCount(analysis.getId());
                     appExecutors.mainThread().execute(new Runnable() {
                         @Override public void run() {
-                            if (callback != null) callback.onSpikeAnalysisExistsResult(trainCount > 0);
+                            if (callback != null) callback.onSpikeAnalysisExistsResult(trainCount > 0, trainCount);
                         }
                     });
                 } else {
                     appExecutors.mainThread().execute(new Runnable() {
                         @Override public void run() {
-                            if (callback != null) callback.onSpikeAnalysisExistsResult(false);
+                            if (callback != null) callback.onSpikeAnalysisExistsResult(false, 0);
                         }
                     });
                 }
@@ -162,7 +162,7 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
-     * @param analysisId Id of the {@link SpikeAnalysis} for which spike values nad indices should be queried.
+     * @param analysisId Id of the {@link SpikeAnalysis} for which spike values and indices should be queried.
      * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
      * @return Array of spike values and indices located between specified {@code startIndex} and {@code endIndex}.
@@ -185,6 +185,12 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
         return spikeTrainDao.loadSpikeValuesAndIndicesForRange(trainId, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param filePath Absolute path of the audio file for which we want to retrieve spike times.
+     * @param callback Callback that's invoked when spike times are retrieved from the database.
+     */
     @Override public void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<float[][]> callback) {
         final Runnable runnable = new Runnable() {
@@ -232,6 +238,12 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
         appExecutors.diskIO().execute(runnable);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param filePath Absolute path of the audio file for which we want to retrieve spike indices.
+     * @param callback Callback that's invoked when spike indices are retrieved from the database.
+     */
     @Override public void getSpikeAnalysisIndicesByTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<int[][]> callback) {
         final Runnable runnable = new Runnable() {
@@ -286,7 +298,7 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
-     * @param filePath Id of the spike analysis for which trains should be retrieved.
+     * @param filePath Absolute path of the audio file for which trains should be retrieved.
      * @param callback Callback that's invoked when trains are retrieved from database.
      */
     @Override public void getSpikeAnalysisTrains(@NonNull final String filePath,

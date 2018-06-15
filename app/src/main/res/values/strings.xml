@@ -106,6 +106,17 @@
         <item>Rename this file</item>
         <item>Delete this file</item>
     </string-array>
+    <string-array name="options_recording_no_cross_correlation">
+        <item>File Details</item>
+        <item>Play this file</item>
+        <item>Find Spikes</item>
+        <item>Autocorrelation</item>
+        <item>ISI</item>
+        <item>Average Spike</item>
+        <item>Share</item>
+        <item>Rename this file</item>
+        <item>Delete this file</item>
+    </string-array>
     <string-array name="options_recording">
         <item>File Details</item>
         <item>Play this file</item>

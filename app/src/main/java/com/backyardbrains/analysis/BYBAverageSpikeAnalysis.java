@@ -96,7 +96,7 @@ class BYBAverageSpikeAnalysis extends BYBBaseAnalysis<AverageSpike> {
                     sampleIndex = train[j];
                     // if we cannot make a batch of 4ms go to next sample
                     if ((sampleIndex + batchSpikeHalfCount) >= totalSamples || sampleIndex - batchSpikeHalfCount < 0) {
-                        break;
+                        continue;
                     }
 
                     // add spike to average buffer

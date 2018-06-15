@@ -14,7 +14,6 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
-import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
@@ -187,9 +186,11 @@ public class BYBAnalysisManager {
     //=================================================
 
     /**
+     * Returns spike trains for the audio file with specified {@code filePath} by invoking specified {@code callback}
+     * and passing in the result.
      *
-     * @param filePath
-     * @param callback
+     * @param filePath Absolute path of the audio file for which spike trains should be retrieved.
+     * @param callback Callback to be invoked when spike trains are returned.
      */
     public void getSpikeTrains(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {

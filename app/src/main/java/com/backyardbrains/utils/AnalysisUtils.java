@@ -2,6 +2,8 @@ package com.backyardbrains.utils;
 
 public class AnalysisUtils {
 
+    public static final int MAX_SPIKE_TRAIN_COUNT = 3;
+
     /**
      * Calculates and returns standard deviation for the provided {@code data}.
      */

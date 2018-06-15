@@ -151,9 +151,8 @@ public class AnalysisRepository {
     //=================================================
 
     /**
-     * Returns collection of threshold ranges for spike analysis with specified {@code spikeAnalysisId} that filter
-     * collection of spikes for one of existing analysis by invoking specified {@code callback} and passing in the
-     * results.
+     * Returns collection of threshold ranges for audio file with specified {@code filePath} that filter collection of
+     * spikes for one of existing analysis by invoking specified {@code callback} and passing in the results.
      *
      * @param filePath Absolute path of the audio file for which trains should be retrieved.
      * @param callback Callback that's invoked when trains are retrieved from database.
