@@ -45,7 +45,7 @@ public class PrefUtils {
 
     public static int getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz) {
         return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_HORIZONTAL_SIZE),
-            BYBGlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+            GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
     }
 
     public static void setGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
@@ -62,7 +62,7 @@ public class PrefUtils {
 
     public static int getGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz) {
         return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_VERTICAL_SIZE),
-            BYBGlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
+            GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
     }
 
     public static void setGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz,
@@ -124,7 +124,7 @@ public class PrefUtils {
 
     public static float getMinimumDetectedPcmValue(@NonNull Context context, @NonNull Class clazz) {
         return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_MINIMUM_DETECTED_PCM_VALUE),
-            BYBGlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE);
+            GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE);
     }
 
     public static void setMinimumDetectedPcmValue(@NonNull Context context, @NonNull Class clazz,

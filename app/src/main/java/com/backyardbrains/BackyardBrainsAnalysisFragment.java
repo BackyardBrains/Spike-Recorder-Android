@@ -21,8 +21,7 @@ import com.backyardbrains.drawing.AverageSpikeRenderer;
 import com.backyardbrains.drawing.BYBAnalysisBaseRenderer;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
-import com.backyardbrains.drawing.TouchGLSurfaceView;
-import com.backyardbrains.drawing.WaitRenderer;
+import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
@@ -49,7 +48,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
     @BindView(R.id.tv_waiting) TextView tvWaiting;
 
     private Unbinder unbinder;
-    private TouchGLSurfaceView glSurface;
+    private TouchGlSurfaceView glSurface;
     private BYBAnalysisBaseRenderer currentRenderer;
 
     private String filePath;
@@ -196,7 +195,6 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
         // hide waiting screen
         showWaiting(false);
 
-        currentRenderer = new WaitRenderer(this);
         switch (rendererType) {
             case BYBAnalysisType.AUTOCORRELATION:
                 currentRenderer = new AutoCorrelationRenderer(this);
@@ -216,8 +214,8 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
             flGL.removeAllViews();
             // create new GL surface
             if (glSurface != null) glSurface = null;
-            glSurface = new TouchGLSurfaceView(getContext());
-            glSurface.setRenderer(currentRenderer);
+            glSurface = new TouchGlSurfaceView(getContext());
+            if (currentRenderer != null) glSurface.setRenderer(currentRenderer);
             glSurface.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
             // and add GL surface to UI
             flGL.addView(glSurface);
@@ -234,7 +232,7 @@ public class BackyardBrainsAnalysisFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        reassignSurfaceView(analysisType);
+        //reassignSurfaceView(analysisType);
 
         ibtnBack.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {

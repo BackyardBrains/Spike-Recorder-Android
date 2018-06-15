@@ -9,6 +9,7 @@ import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.utils.AnalysisUtils;
+import com.backyardbrains.utils.GlUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -25,7 +26,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     private final GlSpikes glSpikes;
     private final float[] spikesVertices = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 2];
     private final float[] spikesColors = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 4];
-    private final float[][] colors = new float[3][];
 
     private short[] rmsSamples;
     private float drawSampleCount;
@@ -46,11 +46,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         glMeasurementArea = new GlMeasurementArea();
         glSpikes = new GlSpikes();
-
-        // populate train colors
-        colors[0] = new float[] { 1f, 0f, 0f, 1f };
-        colors[1] = new float[] { 1f, 1f, 0f, 1f };
-        colors[2] = new float[] { 0f, 1f, 1f, 1f };
 
         if (getAnalysisManager() != null) {
             getAnalysisManager().getSpikeTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
@@ -154,7 +149,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, colors[i]);
+                            fromSample, toSample, GlUtils.SPIKE_TRAIN_COLORS[i]);
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }

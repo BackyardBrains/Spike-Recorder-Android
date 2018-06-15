@@ -242,7 +242,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     // Starts analysis process for specified type and specified audio file
     private void startAnalysis(@NonNull final File file, @BYBAnalysisType final int type) {
         spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-            @Override public void onSpikeAnalysisExistsResult(boolean exists) {
+            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
                 if (exists) {
                     if (file.exists()) {
                         EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
@@ -421,17 +421,18 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
     // been found or not.
     void showRecordingOptions(@NonNull final File file) {
         spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-            @Override public void onSpikeAnalysisExistsResult(boolean exists) {
-                showDialog(file, exists);
+            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
+                showDialog(file, exists, trainCount > 1);
             }
         });
     }
 
     // Creates and opens recording options dialog
-    void showDialog(@NonNull final File file, final boolean canAnalyze) {
+    void showDialog(@NonNull final File file, final boolean canAnalyze, final boolean showCrossCorrelation) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Choose an action")
             .setCancelable(true)
-            .setItems(canAnalyze ? R.array.options_recording : R.array.options_recording_no_spikes,
+            .setItems(canAnalyze ? (showCrossCorrelation ? R.array.options_recording
+                    : R.array.options_recording_no_cross_correlation) : R.array.options_recording_no_spikes,
                 new DialogInterface.OnClickListener() {
 
                     @Override public void onClick(DialogInterface dialog, int which) {
@@ -461,19 +462,35 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                                 break;
                             case 5:
                                 if (canAnalyze) {
-                                    crossCorrelation(file);
+                                    if (showCrossCorrelation) {
+                                        crossCorrelation(file);
+                                    } else {
+                                        averageSpike(file);
+                                    }
                                 } else {
                                     deleteFile(file);
                                 }
                                 break;
                             case 6:
-                                averageSpike(file);
+                                if (showCrossCorrelation) {
+                                    averageSpike(file);
+                                } else {
+                                    emailFile(file);
+                                }
                                 break;
                             case 7:
-                                emailFile(file);
+                                if (showCrossCorrelation) {
+                                    emailFile(file);
+                                } else {
+                                    renameFile(file);
+                                }
                                 break;
                             case 8:
-                                renameFile(file);
+                                if (showCrossCorrelation) {
+                                    renameFile(file);
+                                } else {
+                                    deleteFile(file);
+                                }
                                 break;
                             case 9:
                                 deleteFile(file);
