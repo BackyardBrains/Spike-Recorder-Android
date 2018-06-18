@@ -39,7 +39,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // Returns the fragment reference and if reference is lost, logs the calling method.
-    @Nullable private BaseFragment getFragment(@NonNull String methodName) {
+    @Nullable protected BaseFragment getFragment(@NonNull String methodName) {
         final BaseFragment fragment = fragmentRef.get();
         if (fragment == null) LOGD(TAG, "Renderer lost Fragment reference, ignoring (" + methodName + ")");
 

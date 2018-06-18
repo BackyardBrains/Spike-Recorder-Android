@@ -34,6 +34,7 @@ import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
+import me.pqpo.librarylog4a.Log4a;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
 import org.greenrobot.eventbus.Subscribe;
@@ -142,6 +143,10 @@ public class BackyardBrainsMain extends AppCompatActivity
         saveSettings();
         // stop audio service
         stop();
+
+        // flush log to file and release resources
+        Log4a.flush();
+        Log4a.release();
     }
 
     //////////////////////////////////////////////////////////////////////////////
