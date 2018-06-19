@@ -24,7 +24,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
         fragmentRef = new WeakReference<>(fragment);
     }
 
-    @Nullable protected AudioService getAudioService() {
+    @Nullable AudioService getAudioService() {
         final BaseFragment fragment = getFragment("getAudioService()");
         if (fragment == null) return null;
 
@@ -39,7 +39,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
     }
 
     // Returns the fragment reference and if reference is lost, logs the calling method.
-    @Nullable protected BaseFragment getFragment(@NonNull String methodName) {
+    @Nullable private BaseFragment getFragment(@NonNull String methodName) {
         final BaseFragment fragment = fragmentRef.get();
         if (fragment == null) LOGD(TAG, "Renderer lost Fragment reference, ignoring (" + methodName + ")");
 

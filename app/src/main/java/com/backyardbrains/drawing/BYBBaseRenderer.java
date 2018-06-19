@@ -12,7 +12,6 @@ import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.PrefUtils;
-import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import com.tspoon.benchit.Benchit;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -385,14 +384,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
                 benchmarkPerSessionCounter = 0;
 
                 if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-                    final BaseFragment fragment = getFragment("getAudioService()");
-                    if (fragment != null && fragment.getActivity() != null) {
-                        fragment.getActivity().runOnUiThread(new Runnable() {
-                            @Override public void run() {
-                                ViewUtils.toast(fragment.getActivity(), "PRESS BACK BUTTON!!!!");
-                            }
-                        });
-                    }
+                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
                 }
 
                 benchmarkSessionCounter++;

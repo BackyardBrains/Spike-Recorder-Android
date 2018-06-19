@@ -6,10 +6,11 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
-import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
+import com.tspoon.benchit.Benchit;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -149,12 +150,46 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         processor.setChannelCount(channelCount);
     }
 
+    private static final String BENCHMARK_NAME = "PROCESS_SAMPLE_STREAM_TEST";
+    private static final int BENCHMARK_PER_SESSION_COUNTS = 999;
+    private static final int BENCHMARK_SESSION_COUNTS = 29;
+    private int benchmarkPerSessionCounter = 0;
+    private int benchmarkStartCounter = 0;
+    private int benchmarkSessionCounter = 0;
+    private boolean benchmarkStarted;
+
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data,
-        long lastByteIndex) {
-        DataProcessor.SamplesWithMarkers swm = processor.process(data);
+    @NonNull @Override protected final SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
+        if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
+            Benchit.begin(BENCHMARK_NAME);
+            benchmarkStarted = true;
+        } else {
+            benchmarkStartCounter++;
+        }
+
+        //SamplesWithMarkers swm = processor.process(data);
+        SamplesWithMarkers swm = NativePOC.processSampleStream(data);
+
+        if (benchmarkStarted) {
+            if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
+                Benchit.end(BENCHMARK_NAME);
+                Benchit.analyze(BENCHMARK_NAME).log();
+                benchmarkPerSessionCounter = 0;
+
+                if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
+                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+                }
+
+                benchmarkSessionCounter++;
+            } else {
+                Benchit.end(BENCHMARK_NAME);
+                benchmarkPerSessionCounter++;
+            }
+            System.gc();
+        }
+
         swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
         return swm;
     }

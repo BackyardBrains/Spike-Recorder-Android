@@ -1,6 +1,7 @@
 package com.backyardbrains.data.processing;
 
 import android.support.annotation.NonNull;
+import com.backyardbrains.usb.SamplesWithMarkers;
 import com.backyardbrains.utils.AudioUtils;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -113,7 +114,7 @@ public class ProcessingBuffer {
     /**
      * Adds specified {@code samplesWithMarkers} to the sample ring buffer and events collections.
      */
-    public void addToBuffer(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    public void addToBuffer(@NonNull SamplesWithMarkers samplesWithMarkers) {
         // add samples to ring buffer
         if (sampleBuffer != null) sampleBuffer.add(samplesWithMarkers.samples);
 

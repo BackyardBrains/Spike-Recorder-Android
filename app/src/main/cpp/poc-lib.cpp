@@ -14,6 +14,8 @@ JNIEXPORT jstring JNICALL
 Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test);
+JNIEXPORT jobject JNICALL
+Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data);
 JNIEXPORT jshortArray JNICALL
 Java_com_backyardbrains_utils_NativePOC_prepareForWaveformDrawing(JNIEnv *env, jobject thiz, jshortArray samples,
                                                                   jint start, jint end,
@@ -64,6 +66,18 @@ Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz,
 
     // exception check
     exception_check(env);
+}
+
+JNIEXPORT jobject JNICALL
+Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data) {
+    jshortArray samples = env->NewShortArray(0);
+    jintArray eventIndices = env->NewIntArray(0);
+    jobjectArray eventLabels = env->NewObjectArray(0,env->FindClass("java/lang/String"),env->NewStringUTF(""));
+    jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithMarkers");
+    jmethodID methodId = env->GetMethodID(cls, "<init>", "([S[I[Ljava/lang/String;)V");
+    jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+
+    return obj;
 }
 
 JNIEXPORT jshortArray JNICALL

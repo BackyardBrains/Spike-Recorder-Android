@@ -20,7 +20,7 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.data.processing.DataProcessor;
+import com.backyardbrains.usb.SamplesWithMarkers;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
@@ -54,7 +54,7 @@ class RecordingSaver {
         private final OutputStream outputStream;
         private final File eventsFile;
         private final AtomicBoolean working = new AtomicBoolean(true);
-        private final List<DataProcessor.SamplesWithMarkers> samples = new CopyOnWriteArrayList<>();
+        private final List<SamplesWithMarkers> samples = new CopyOnWriteArrayList<>();
 
         private int sampleRate = AudioUtils.SAMPLE_RATE;
         private StringBuilder eventsFileContent = new StringBuilder(EVENT_MARKERS_FILE_HEADER_CONTENT);
@@ -80,7 +80,7 @@ class RecordingSaver {
             try {
                 while (working.get()) {
                     if (samples.size() > 0) {
-                        DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.remove(0);
+                        SamplesWithMarkers samplesWithMarkers = samples.remove(0);
                         // we first need to write all the events before start writing the samples
                         // so we get the precise times for events
                         int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
@@ -108,7 +108,7 @@ class RecordingSaver {
                 }
                 // let's record all left samples
                 for (int i = 0; i < samples.size(); i++) {
-                    DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.get(i);
+                    SamplesWithMarkers samplesWithMarkers = samples.get(i);
                     // we first need to write all the events before start writing the samples
                     // so we get the precise times for events
                     int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
@@ -143,7 +143,7 @@ class RecordingSaver {
         /**
          * Appends specified {@code samples} to previously saved ones.
          */
-        void writeData(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+        void writeData(@NonNull SamplesWithMarkers samplesWithMarkers) {
             if (working.get()) this.samples.add(samplesWithMarkers);
         }
 
@@ -221,7 +221,7 @@ class RecordingSaver {
     /**
      * Writes specified {@code samples} to the audio stream.
      */
-    void writeAudioWithEvents(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    void writeAudioWithEvents(@NonNull SamplesWithMarkers samplesWithMarkers) {
         if (writeThread != null) writeThread.writeData(samplesWithMarkers);
     }
 

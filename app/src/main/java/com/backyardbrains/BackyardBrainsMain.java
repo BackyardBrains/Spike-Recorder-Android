@@ -30,7 +30,9 @@ import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
@@ -309,20 +311,29 @@ public class BackyardBrainsMain extends AppCompatActivity
     //  EVENT BUS
     //=================================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
         loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onFindSpikesEvent(FindSpikesEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onFindSpikesEvent(FindSpikesEvent event) {
         loadFragment(FIND_SPIKES_VIEW, event.getFilePath());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
         loadFragment(ANALYSIS_VIEW, event.getFilePath(), event.getType());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
         loadFragment(RECORDINGS_VIEW);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onShowToastEvent(ShowToastEvent event) {
+        ViewUtils.toast(this, event.getToast());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {

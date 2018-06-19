@@ -27,7 +27,6 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
-import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.events.AmModulationDetectionEvent;
@@ -44,6 +43,7 @@ import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.usb.AbstractUsbSampleSource;
+import com.backyardbrains.usb.SamplesWithMarkers;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
@@ -270,9 +270,9 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
      * saver.
      *
-     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(DataProcessor.SamplesWithMarkers)
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(SamplesWithMarkers)
      */
-    @Override public void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    @Override public void onSamplesReceived(@NonNull SamplesWithMarkers samplesWithMarkers) {
         passToDataManager(samplesWithMarkers);
     }
 
@@ -280,8 +280,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final DataProcessor.SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
-        new DataProcessor.SamplesWithMarkers(new int[0], new String[0]);
+    private static final SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
+        new SamplesWithMarkers(new int[0], new String[0]);
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
@@ -295,7 +295,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    private void passToDataManager(@NonNull SamplesWithMarkers samplesWithMarkers) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
@@ -313,7 +313,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    private void passToRecorder(@NonNull SamplesWithMarkers samplesWithMarkers) {
         if (recordingSaver != null) record(samplesWithMarkers);
     }
 
@@ -783,7 +783,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Pass audio and events to the active RecordingSaver instance
-    private void record(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    private void record(@NonNull SamplesWithMarkers samplesWithMarkers) {
         try {
             if (recordingSaver != null) {
                 recordingSaver.writeAudioWithEvents(samplesWithMarkers);

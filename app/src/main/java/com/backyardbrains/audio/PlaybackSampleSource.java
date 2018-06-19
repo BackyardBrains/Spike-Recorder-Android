@@ -4,7 +4,7 @@ import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.data.processing.DataProcessor;
+import com.backyardbrains.usb.SamplesWithMarkers;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.MarkerUtils;
@@ -468,7 +468,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
+    @NonNull @Override protected SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
         short[] s;
         if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
@@ -492,7 +492,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             //e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new DataProcessor.SamplesWithMarkers(s, eventIndices, eventLabels,
-            AudioUtils.getSampleCount(lastByteIndex));
+        return new SamplesWithMarkers(s, eventIndices, eventLabels, AudioUtils.getSampleCount(lastByteIndex));
     }
 }

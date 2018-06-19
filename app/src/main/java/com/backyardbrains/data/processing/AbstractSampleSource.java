@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import com.angrygoat.buffer.CircularByteBuffer;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
+import com.backyardbrains.usb.SamplesWithMarkers;
 import com.backyardbrains.utils.SampleStreamUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -324,5 +325,5 @@ public abstract class AbstractSampleSource implements SampleSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex);
+    @NonNull protected abstract SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex);
 }
