@@ -5,7 +5,8 @@
 #include <jni.h>
 #include <string>
 
-#include "byb_lib.h"
+#include "drawing.h"
+#include "processing.h"
 
 #define HELLO "Hello from C++"
 
@@ -72,10 +73,53 @@ JNIEXPORT jobject JNICALL
 Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data) {
     jshortArray samples = env->NewShortArray(0);
     jintArray eventIndices = env->NewIntArray(0);
-    jobjectArray eventLabels = env->NewObjectArray(0,env->FindClass("java/lang/String"),env->NewStringUTF(""));
+    jobjectArray eventLabels = env->NewObjectArray(0, env->FindClass("java/lang/String"), env->NewStringUTF(""));
     jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithMarkers");
     jmethodID methodId = env->GetMethodID(cls, "<init>", "([S[I[Ljava/lang/String;)V");
     jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+
+
+    int len = env->GetArrayLength(data);
+    jbyte *pData = new jbyte[len];
+    env->GetByteArrayRegion(data, 0, len, pData);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] pData;
+        return obj;
+    }
+
+    jshort *outSamples = new jshort[MAX_BYTES];
+    jint *outEventIndices = new jint[MAX_EVENTS];
+    std::string *outEventLabels = new std::string[MAX_EVENTS];
+    jint *outCounts = new jint[2];
+    processIncomingData(pData, len, outSamples, outEventIndices, outEventLabels,
+                        outCounts);
+
+    samples = env->NewShortArray(outCounts[0]);
+    eventIndices = env->NewIntArray(outCounts[1]);
+//    eventLabels = env->NewObjectArray(counts[1], env->FindClass("java/lang/String"), env->NewStringUTF(""));
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] pData;
+        delete[] outSamples;
+        delete[] outEventIndices;
+        delete[] outEventLabels;
+        delete[] outCounts;
+        return obj;
+    }
+
+    env->SetShortArrayRegion(samples, 0, outCounts[0], outSamples);
+    env->SetIntArrayRegion(eventIndices, 0, outCounts[1], outEventIndices);
+    delete[] pData;
+    delete[] outSamples;
+    delete[] outEventIndices;
+    delete[] outEventLabels;
+    delete[] outCounts;
+
+    obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+    //env->SetByteArrayRegion(result, 0, sampleCount, pData);
 
     return obj;
 }

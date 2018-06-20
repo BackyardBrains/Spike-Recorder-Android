@@ -49,6 +49,8 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
+//import me.pqpo.librarylog4a.Log4a;
+
 public class BackyardBrainsMain extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
 

@@ -12,6 +12,11 @@ cmake_minimum_required(VERSION 3.4.1)
 # and CMake builds them for you. When you build your app, Gradle
 # automatically packages shared libraries with your APK.
 
-add_library(poc-lib SHARED poc-lib.cpp byb_lib.cpp)
+add_library(byb-lib SHARED byb-lib.cpp drawing.cpp processing.cpp)
+add_library (log4a-lib SHARED log4a-lib.cpp AsyncFileFlush.cpp FlushBuffer.cpp LogBuffer.cpp LogBufferHeader.cpp)
+include_directories(includes/)
 
-target_link_libraries(poc-lib android log)
+find_library(log-lib log)
+
+target_link_libraries(byb-lib android log)
+target_link_libraries(log4a-lib ${log-lib})

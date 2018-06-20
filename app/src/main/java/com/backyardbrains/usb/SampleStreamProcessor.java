@@ -37,7 +37,6 @@ class SampleStreamProcessor implements DataProcessor {
     private final int MAX_SEQUENCE_LENGTH =
         ESCAPE_SEQUENCE_START.length + EVENT_MESSAGE_LENGTH + ESCAPE_SEQUENCE_END.length;
 
-    // Responsible for detecting and processing escape sequences within incoming data
     // Whether we are inside an escape sequence or not
     private boolean insideEscapeSequence;
     // Index of the byte within start or end of the escape sequence
@@ -121,7 +120,7 @@ class SampleStreamProcessor implements DataProcessor {
         //LOGD(TAG, ".........................................");
         //LOGD(TAG, "START - "/* + data.length*/);
 
-        // if channel count has changed during processing  previous data chunk we should disregard
+        // if channel count has changed during processing  previous data chunk we should reset
         if (channelCountChanged) {
             frameStarted = false;
             sampleStarted = false;

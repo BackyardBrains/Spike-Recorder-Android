@@ -3,9 +3,8 @@
 //
 
 #include <climits>
-#include <jni.h>
 
-#include "byb_lib.h"
+#include "drawing.h"
 
 /**
  *

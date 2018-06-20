@@ -19,6 +19,7 @@ android {
                 cppFlags "-frtti" // Enables RTTI support.
                 cppFlags "-fexceptions" // Enables exception-handling support.
                 cppFlags "-std=c++11"
+                cppFlags "-lz"
             }
         }
 
@@ -87,8 +88,6 @@ ext {
     usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
-    //    benchitVersion = 'v1.0.2'
-    log4Version = 'v1.4.0'
 }
 
 dependencies {
@@ -125,9 +124,6 @@ dependencies {
     implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true
     }
-    // benchmark
-    //    implementation "com.github.T-Spoon:Benchit:$benchitVersion"
-    implementation "com.github.pqpo:Log4a:$log4Version"
 }
 
 apply plugin: 'com.google.gms.google-services'

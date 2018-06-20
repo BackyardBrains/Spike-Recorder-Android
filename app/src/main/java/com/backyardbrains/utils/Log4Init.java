@@ -13,6 +13,17 @@ import me.pqpo.librarylog4a.appender.FileAppender;
 import me.pqpo.librarylog4a.formatter.DateFileFormatter;
 import me.pqpo.librarylog4a.interceptor.Interceptor;
 import me.pqpo.librarylog4a.logger.AppenderLogger;
+//import java.text.SimpleDateFormat;
+//import java.util.Date;
+//import java.util.Locale;
+//import me.pqpo.librarylog4a.Level;
+//import me.pqpo.librarylog4a.Log4a;
+//import me.pqpo.librarylog4a.LogData;
+//import me.pqpo.librarylog4a.appender.AndroidAppender;
+//import me.pqpo.librarylog4a.appender.FileAppender;
+//import me.pqpo.librarylog4a.formatter.DateFileFormatter;
+//import me.pqpo.librarylog4a.interceptor.Interceptor;
+//import me.pqpo.librarylog4a.logger.AppenderLogger;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -22,7 +33,7 @@ public class Log4Init {
     public static final int BUFFER_SIZE = 1024 * 400; //400k
 
     public static void init(Context context) {
-        int level = Level.DEBUG;
+        int level = Level.VERBOSE;
         Interceptor wrapInterceptor = new Interceptor() {
             @Override public boolean intercept(LogData logData) {
                 logData.tag = "Log4a-" + logData.tag;

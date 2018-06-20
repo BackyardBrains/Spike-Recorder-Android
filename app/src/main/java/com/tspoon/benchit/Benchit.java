@@ -1,6 +1,5 @@
 package com.tspoon.benchit;
 
-import android.util.Log;
 import android.util.Pair;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -133,14 +132,14 @@ public class Benchit {
     }
 
     static void log(String message) {
-        Log.d(TAG, message);
-        //Log4a.v(TAG, message);
+        //Log.d(TAG, message);
+        Log4a.v(TAG, message);
     }
 
     static void log(String type, String tag, String result) {
         String log = String.format("%s [%s] --> %s", type, tag, result);
-        Log.d(TAG, log);
-        //Log4a.v(TAG, log);
+        //Log.d(TAG, log);
+        Log4a.v(TAG, log);
     }
 
     static void logMany(String tag, List<Pair<String, String>> stats) {
@@ -151,7 +150,7 @@ public class Benchit {
         }
         sb.delete(sb.length() - 2, sb.length() - 1);
 
-        Log.d(TAG, sb.toString());
+        //Log.d(TAG, sb.toString());
         Log4a.v(TAG, sb.toString());
     }
 

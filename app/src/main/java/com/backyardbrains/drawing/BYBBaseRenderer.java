@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
+import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
@@ -16,6 +17,7 @@ import com.crashlytics.android.Crashlytics;
 import com.tspoon.benchit.Benchit;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
@@ -384,7 +386,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
                 benchmarkPerSessionCounter = 0;
 
                 if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+                    EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
                 }
 
                 benchmarkSessionCounter++;

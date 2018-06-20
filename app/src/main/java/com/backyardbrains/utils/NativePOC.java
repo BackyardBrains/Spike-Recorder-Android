@@ -21,6 +21,6 @@ public class NativePOC {
     public static native short[] prepareForThresholdDrawing(short[] samples, int start, int end, int drawSurfaceWidth);
 
     static {
-        System.loadLibrary("poc-lib");
+        System.loadLibrary("byb-lib");
     }
 }
