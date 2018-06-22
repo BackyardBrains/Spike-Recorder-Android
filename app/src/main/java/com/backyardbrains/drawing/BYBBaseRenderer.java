@@ -11,6 +11,7 @@ import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.MarkerUtils;
 import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -29,14 +30,15 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
-    private static final int MAX_EVENT_COUNT = 60;
 
     private final ProcessingBuffer processingBuffer;
-    private final SparseArray<String> markersBuffer;
+    private final SparseArray<String> eventsBuffer;
 
     private short[] samples;
-    private int[] eventIndices = new int[MAX_EVENT_COUNT];
-    private String[] eventNames = new String[MAX_EVENT_COUNT];
+    short[] envelopedSamples;
+    private int[] eventIndices = new int[MarkerUtils.MAX_EVENT_COUNT];
+    private String[] eventNames = new String[MarkerUtils.MAX_EVENT_COUNT];
+    private int[] envelopedEventIndices = new int[MarkerUtils.MAX_EVENT_COUNT];
 
     private int surfaceWidth;
     private int surfaceHeight;
@@ -132,7 +134,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         super(fragment);
 
         processingBuffer = ProcessingBuffer.get();
-        markersBuffer = new SparseArray<>();
+        eventsBuffer = new SparseArray<>();
     }
 
     /**
@@ -288,6 +290,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // set surface size dirty so we can recalculate scale
         surfaceSizeDirty = true;
 
+        int max = Math.max(width, height);
+        if (envelopedSamples == null || envelopedSamples.length < max) envelopedSamples = new short[max * 5];
+
         gl.glViewport(0, 0, width, height);
         initDrawSurface(gl, surfaceWidth, glWindowHeight, true);
     }
@@ -320,13 +325,12 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int glWindowWidth = this.glWindowWidth;
         final int glWindowHeight = this.glWindowHeight;
 
-        final int[] indices = new int[MAX_EVENT_COUNT];
-        final String[] events = new String[MAX_EVENT_COUNT];
-        int copied = processingBuffer.copyEvents(indices, events);
-
         // let's reset dirty flags right away
         this.glWindowWidthDirty = false;
         this.glWindowHeightDirty = false;
+
+        // get event indices and event names from processing buffer
+        final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
 
         // get samples from processing buffer and check if it's valid
         if (samples == null || samples.length != processingBuffer.getData().length) {
@@ -338,12 +342,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         // samples are OK, we can move on
 
-        // get event indices and event names from processing buffer and check if the're valid
-        if (eventIndices == null || eventIndices.length != copied) eventIndices = new int[copied];
-        System.arraycopy(indices, 0, eventIndices, 0, copied);
-        if (eventNames == null || eventNames.length != copied) eventNames = new String[copied];
-        System.arraycopy(events, 0, eventNames, 0, copied);
-
         final int sampleCount = samples.length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
@@ -353,11 +351,11 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
         // construct waveform vertices and populate eventIndices buffer
-        markersBuffer.clear();
-        final short[] waveformVertices =
-            getWaveformVertices(samples, eventIndices, eventNames, markersBuffer, drawStartIndex, drawEndIndex,
+        eventsBuffer.clear();
+        int verticesCount =
+            getWaveformVertices(samples, eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex,
                 surfaceWidth);
-        final int samplesDrawCount = (int) (waveformVertices.length * .5);
+        final int samplesDrawCount = (int) (verticesCount * .5);
 
         // calculate scale x and scale y
         if (surfaceSizeDirty || glWindowWidthDirty) {
@@ -373,8 +371,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         //autoScaleCheck(samples);
 
         // draw on surface
-        draw(gl, samples, waveformVertices, markersBuffer, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+        draw(gl, samples, envelopedSamples, verticesCount, eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth,
+            glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
@@ -411,39 +409,37 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    @NonNull protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
-        @NonNull String[] eventNames, SparseArray<String> markersBuffer, int fromSample, int toSample,
-        int drawSurfaceWidth) {
+    protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
+        @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
 
         try {
-            int[] envelopedEventIndices =
-                NativePOC.prepareForMarkerDrawing(eventIndices, fromSample, toSample, drawSurfaceWidth);
-            int indexBase = eventNames.length - envelopedEventIndices.length;
-            for (int i = 0; i < envelopedEventIndices.length; i++) {
-                markersBuffer.put(envelopedEventIndices[i], eventNames[indexBase + i]);
+            int[] counts =
+                NativePOC.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
+                    fromSample, toSample, drawSurfaceWidth);
+            //int envelopedEventCount =
+            //    NativePOC.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
+            //        drawSurfaceWidth);
+            int indexBase = eventCount - counts[1];
+            for (int i = 0; i < counts[1]; i++) {
+                eventsBuffer.put(envelopedEventIndices[i], eventNames[indexBase + i]);
             }
-            //float scaleX = (float) returnCount / (toSample - fromSample);
-            //int index;
-            //for (int i = 0; i < eventIndices.length; i++) {
-            //    index = (int) ((eventIndices[i] - fromSample) * scaleX);
-            //    if (index >= 0) markersBuffer.put(index, eventNames[i]);
-            //}
-            return NativePOC.prepareForWaveformDrawing(samples, fromSample, toSample, drawSurfaceWidth);
+            return counts[0];
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
 
-            return new short[0];
+            return 0;
         }
 
         //LOGD(TAG, "END: " + (System.currentTimeMillis() - start));
     }
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex);
+        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex);
 
     //==============================================
     //  SCROLLING

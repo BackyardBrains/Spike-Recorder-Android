@@ -59,12 +59,13 @@ public class WaveformRenderer extends BYBBaseRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex) {
         // draw waveform
-        glWaveform.draw(gl, waveformVertices, getWaveformColor());
+        glWaveform.draw(gl, waveformVertices, waveformVerticesCount, getWaveformColor());
         // draw markers
-        float drawScale = (float) (waveformVertices.length * .5) / surfaceWidth;
+        float drawScale = (float) (waveformVerticesCount * .5) / surfaceWidth;
         final float verticalHalfSize = glWindowHeight * .5f;
         for (int i = 0; i < markers.size(); i++) {
             glEventMarker.draw(gl, markers.valueAt(i), markers.keyAt(i), -verticalHalfSize, verticalHalfSize, drawScale,

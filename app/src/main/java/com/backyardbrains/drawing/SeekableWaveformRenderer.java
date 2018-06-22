@@ -90,8 +90,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         int toSample = (int) lastSampleIndex;
         int fromSample = Math.max(0, toSample - glWindowWidth);
@@ -104,7 +105,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        long drawSampleCount = (long) (waveformVertices.length * .5);
+        long drawSampleCount = (long) (waveformVerticesCount * .5);
 
         // draw measurement area
         if (measuring) {
@@ -147,8 +148,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 glWindowHeight * .5f);
         }
 
-        super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+        super.draw(gl, samples, waveformVertices, waveformVerticesCount, markers, surfaceWidth, surfaceHeight,
+            glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (drawSpikes()) {
             if (spikeTrains != null && valuesAndIndexes.length > 0) {

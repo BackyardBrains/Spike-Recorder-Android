@@ -12,6 +12,8 @@ import java.io.IOException;
  */
 public class MarkerUtils {
 
+    public static final int MAX_EVENT_COUNT = 100;
+
     /**
      * Checks if events text file for the wav file at specified {@code filePath} exists and if yes, tries to parse it
      * and returns {@link SparseArray} with all the events.

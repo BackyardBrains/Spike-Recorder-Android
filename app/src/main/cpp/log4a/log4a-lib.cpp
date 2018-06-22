@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <sstream>
 
-#include "includes/LogBuffer.h"
+#include "LogBuffer.h"
 
 static const char *const kClassDocScanner = "me/pqpo/librarylog4a/LogBuffer";
 

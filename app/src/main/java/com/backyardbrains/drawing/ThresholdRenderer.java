@@ -21,7 +21,6 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.PrefUtils;
@@ -122,16 +121,17 @@ public class ThresholdRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected short[] getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
-        @NonNull String[] eventNames, SparseArray<String> markersBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
+    @Override protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
+        @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
         try {
-            return NativePOC.prepareForThresholdDrawing(samples, fromSample, toSample, drawSurfaceWidth);
+            return NativePOC.prepareForThresholdDrawing(envelopedSamples, samples, fromSample, toSample,
+                drawSurfaceWidth);
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
 
-        return new short[0]; //waveformVertices;
+        return 0;
     }
 
     private void updateThresholdHandle() {

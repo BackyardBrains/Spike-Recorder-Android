@@ -30,7 +30,7 @@ import me.pqpo.librarylog4a.logger.AppenderLogger;
  */
 public class Log4Init {
 
-    public static final int BUFFER_SIZE = 1024 * 400; //400k
+    private static final int BUFFER_SIZE = 1024 * 400; //400k
 
     public static void init(Context context) {
         int level = Level.VERBOSE;
@@ -61,7 +61,7 @@ public class Log4Init {
         Log4a.setLogger(logger);
     }
 
-    public static File getLogDir(Context context) {
+    private static File getLogDir(Context context) {
         File log = context.getExternalFilesDir("logs");
         if (log == null) log = new File(context.getFilesDir(), "logs");
         if (!log.exists()) log.mkdir();

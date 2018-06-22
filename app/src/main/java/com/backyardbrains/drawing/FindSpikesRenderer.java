@@ -117,11 +117,12 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex) {
 
-        super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+        super.draw(gl, samples, waveformVertices, waveformVerticesCount, markers, surfaceWidth, surfaceHeight,
+            glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (getAnalysisManager() != null) {
             // retry getting spike analysis id until we have it
@@ -138,7 +139,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     getAnalysisManager().getSpikesForRange(spikeAnalysisId, fromSample, toSample);
                 int verticesCount =
                     fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth,
-                        fromSample, toSample, (long) (waveformVertices.length * .5));
+                        fromSample, toSample, (long) (waveformVerticesCount * .5));
                 glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
             }
         }

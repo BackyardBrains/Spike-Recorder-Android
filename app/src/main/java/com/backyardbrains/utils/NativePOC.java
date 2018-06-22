@@ -13,12 +13,14 @@ public class NativePOC {
 
     public static native SamplesWithMarkers processSampleStream(byte[] data);
 
-    public static native short[] prepareForWaveformDrawing(short[] samples, int start, int end, int drawSurfaceWidth);
+    public static native int[] prepareForDrawing(short[] envelopedSamples, short[] samples, int[] envelopedEventIndices,
+        int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
 
-    public static native int[] prepareForMarkerDrawing(int[] eventIndices, int fromSample, int toSample,
+    public static native int prepareForMarkerDrawing(int[] envelopedEventIndices, int[] eventIndices, int eventCount,
+        int start, int end, int drawSurfaceWidth);
+
+    public static native int prepareForThresholdDrawing(short[] envelopedSamples, short[] samples, int start, int end,
         int drawSurfaceWidth);
-
-    public static native short[] prepareForThresholdDrawing(short[] samples, int start, int end, int drawSurfaceWidth);
 
     static {
         System.loadLibrary("byb-lib");

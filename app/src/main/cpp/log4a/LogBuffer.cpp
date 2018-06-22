@@ -2,7 +2,7 @@
 // Created by pqpo on 2017/11/16.
 //
 
-#include "includes/LogBuffer.h"
+#include "LogBuffer.h"
 
 LogBuffer::LogBuffer(char *ptr, size_t buffer_size):
         buffer_ptr(ptr),
