@@ -180,7 +180,7 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
         }
     }
 
-//    if (sampleCounters[CHANNEL_INDEX] == 0) return new SamplesWithMarkers();
+//    if (sampleCounters[CHANNEL_INDEX] == 0) return new SamplesWithEvents();
 
     std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
     std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
@@ -207,11 +207,11 @@ void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) 
             listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                                                           SampleStreamUtils.getChannelCount(message));
         } else */
-    std::string message = reinterpret_cast<char *>(messageBytes);
-    if (isEventMsg(message)) {
-        eventIndices[eventCounter] = sampleIndex;
-        eventLabels[eventCounter++] = getEventNumber(message);
-    }
+//    std::string message = reinterpret_cast<char *>(messageBytes);
+//    if (isEventMsg(message)) {
+//        eventIndices[eventCounter] = sampleIndex;
+//        eventLabels[eventCounter++] = getEventNumber(message);
+//    }
     /*}*/
 }
 
@@ -222,6 +222,8 @@ bool isEventMsg(std::string message) {
 }
 
 std::string getEventNumber(std::string message) {
-    std::string eventNumber = message.replace(0, eventPrefix.length(), "");
-    return eventNumber.replace(eventNumber.length() - 1, 1, "");
+    message = message.replace(0, eventPrefix.length(), "");
+    std::size_t found = message.find(";");
+    if (found == std::string::npos) return message;
+    return message.replace(found, message.length() - found, "");
 }

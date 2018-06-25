@@ -2,7 +2,7 @@ package com.backyardbrains.data.processing;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import com.backyardbrains.usb.SamplesWithMarkers;
+import com.backyardbrains.usb.SamplesWithEvents;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -35,9 +35,9 @@ public interface SampleSource {
         /**
          * Called when chunk of data is received.
          *
-         * @param samplesWithMarkers The received data which contains processed samples and events.
+         * @param samplesWithEvents The received data which contains processed samples and events.
          */
-        void onSamplesReceived(@NonNull SamplesWithMarkers samplesWithMarkers);
+        void onSamplesReceived(@NonNull SamplesWithEvents samplesWithEvents);
     }
 
     /**

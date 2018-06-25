@@ -43,7 +43,7 @@ import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.usb.AbstractUsbSampleSource;
-import com.backyardbrains.usb.SamplesWithMarkers;
+import com.backyardbrains.usb.SamplesWithEvents;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
@@ -270,18 +270,18 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
      * saver.
      *
-     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(SamplesWithMarkers)
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(SamplesWithEvents)
      */
-    @Override public void onSamplesReceived(@NonNull SamplesWithMarkers samplesWithMarkers) {
-        passToDataManager(samplesWithMarkers);
+    @Override public void onSamplesReceived(@NonNull SamplesWithEvents samplesWithEvents) {
+        passToDataManager(samplesWithEvents);
     }
 
     //=================================================
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
-        new SamplesWithMarkers(new int[0], new String[0]);
+    private static final SamplesWithEvents TEMP_SAMPLES_WITH_MARKERS =
+        new SamplesWithEvents(new int[0], new String[0]);
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
@@ -295,26 +295,26 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(@NonNull SamplesWithMarkers samplesWithMarkers) {
+    private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                TEMP_SAMPLES_WITH_MARKERS.samples = getProcessor().process(samplesWithMarkers.samples);
+                TEMP_SAMPLES_WITH_MARKERS.samples = getProcessor().process(samplesWithEvents.samples);
                 processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_MARKERS);
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(samplesWithMarkers);
+                processingBuffer.addToBuffer(samplesWithEvents);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(samplesWithMarkers);
+        passToRecorder(samplesWithEvents);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(@NonNull SamplesWithMarkers samplesWithMarkers) {
-        if (recordingSaver != null) record(samplesWithMarkers);
+    private void passToRecorder(@NonNull SamplesWithEvents samplesWithEvents) {
+        if (recordingSaver != null) record(samplesWithEvents);
     }
 
     //=================================================
@@ -783,10 +783,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Pass audio and events to the active RecordingSaver instance
-    private void record(@NonNull SamplesWithMarkers samplesWithMarkers) {
+    private void record(@NonNull SamplesWithEvents samplesWithEvents) {
         try {
             if (recordingSaver != null) {
-                recordingSaver.writeAudioWithEvents(samplesWithMarkers);
+                recordingSaver.writeAudioWithEvents(samplesWithEvents);
 
                 // post current recording progress
                 EventBus.getDefault()

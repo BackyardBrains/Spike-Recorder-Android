@@ -98,10 +98,10 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @NonNull @Override public SamplesWithMarkers process(@NonNull byte[] data) {
+    @NonNull @Override public SamplesWithEvents process(@NonNull byte[] data) {
         if (data.length > 0) return processIncomingData(data);
 
-        return new SamplesWithMarkers();
+        return new SamplesWithEvents();
     }
 
     /**
@@ -115,7 +115,7 @@ class SampleStreamProcessor implements DataProcessor {
 
     //private short prevSample = 0;
 
-    @NonNull private SamplesWithMarkers processIncomingData(@NonNull byte[] data) {
+    @NonNull private SamplesWithEvents processIncomingData(@NonNull byte[] data) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
         //LOGD(TAG, "START - "/* + data.length*/);
@@ -263,11 +263,11 @@ class SampleStreamProcessor implements DataProcessor {
             }
         }
 
-        if (sampleCounters[CHANNEL_INDEX] == 0) return new SamplesWithMarkers();
+        if (sampleCounters[CHANNEL_INDEX] == 0) return new SamplesWithEvents();
 
         //LOGD(TAG, "SIZE: " + data.length + ", TOOK: " + (System.currentTimeMillis() - start));
 
-        return new SamplesWithMarkers(Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]),
+        return new SamplesWithEvents(Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]),
             Arrays.copyOfRange(eventIndices, 0, eventCounter), Arrays.copyOfRange(eventLabels, 0, eventCounter));
     }
 

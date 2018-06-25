@@ -6,7 +6,7 @@ import android.support.annotation.Nullable;
 import com.angrygoat.buffer.CircularByteBuffer;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
-import com.backyardbrains.usb.SamplesWithMarkers;
+import com.backyardbrains.usb.SamplesWithEvents;
 import com.backyardbrains.utils.SampleStreamUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,19 +86,19 @@ public abstract class AbstractSampleSource implements SampleSource {
                 if (!paused.get()) {
                     int size = processingBuffer.peekSize();
                     if (size > 0) {
-                        if (processingBufferData == null || processingBufferData.length != size) {
+                        if (processingBufferData == null || processingBufferData.length < size) {
                             processingBufferData = new byte[size];
                         }
                         processingBuffer.read(processingBufferData, size, true);
 
                         if (listener == null) {
                             // we should process the incoming data even if there is no listener
-                            processIncomingData(processingBufferData, lastByteIndex.get());
+                            processIncomingData(processingBufferData, size, lastByteIndex.get());
                         } else {
                             // forward received samples to OnSamplesReceivedListener
                             synchronized (listener) {
                                 listener.onSamplesReceived(
-                                    processIncomingData(processingBufferData, lastByteIndex.get()));
+                                    processIncomingData(processingBufferData, size, lastByteIndex.get()));
                             }
                         }
                     }
@@ -290,10 +290,8 @@ public abstract class AbstractSampleSource implements SampleSource {
     /**
      * Subclasses should write any received data to buffer for further processing.
      */
-    protected final void writeToBuffer(@NonNull byte[] data) {
-        //readBuffer.mark();
-        //readBuffer.write(data, 0, data.length, true);
-        processingBuffer.write(data, 0, data.length, true);
+    protected final void writeToBuffer(@NonNull byte[] data, int offset, int length) {
+        processingBuffer.write(data, offset, length, true);
     }
 
     /**
@@ -325,5 +323,5 @@ public abstract class AbstractSampleSource implements SampleSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex);
+    @NonNull protected abstract SamplesWithEvents processIncomingData(byte[] data, int length, long lastByteIndex);
 }

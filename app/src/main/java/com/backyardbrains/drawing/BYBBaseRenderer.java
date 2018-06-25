@@ -11,7 +11,7 @@ import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
-import com.backyardbrains.utils.MarkerUtils;
+import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.NativePOC;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -36,9 +36,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
     private short[] samples;
     short[] envelopedSamples;
-    private int[] eventIndices = new int[MarkerUtils.MAX_EVENT_COUNT];
-    private String[] eventNames = new String[MarkerUtils.MAX_EVENT_COUNT];
-    private int[] envelopedEventIndices = new int[MarkerUtils.MAX_EVENT_COUNT];
+    private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
+    private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
+    private int[] envelopedEventIndices = new int[EventUtils.MAX_EVENT_COUNT];
 
     private int surfaceWidth;
     private int surfaceHeight;

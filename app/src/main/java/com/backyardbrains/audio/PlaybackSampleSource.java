@@ -4,16 +4,17 @@ import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.usb.SamplesWithMarkers;
+import com.backyardbrains.usb.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
-import com.backyardbrains.utils.MarkerUtils;
+import com.backyardbrains.utils.EventUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,6 +33,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     private final String filePath;
     // Whether file should start playing right away
     private final boolean autoPlay;
+    // Updated during playback and returned to processing thread on every cicle
+    private final SamplesWithEvents samplesWithEvents;
 
     // Audio playback thread
     private PlaybackThread playbackThread;
@@ -90,7 +93,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 LOGD(TAG, "RandomAccessFile created");
 
-                allEvents = MarkerUtils.parseEvents(filePath, raf.sampleRate());
+                allEvents = EventUtils.parseEvents(filePath, raf.sampleRate());
 
                 duration.set(raf.length());
                 LOGD(TAG, "Audio file byte count is: " + duration.get());
@@ -115,7 +118,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 seekBuffer = new byte[seekBufferSize];
                 seekSamples = new short[(int) (seekBufferSize * .5)];
-                //seekEvents = new String[seekSamples.length];
 
                 final byte[] buffer = new byte[bufferSize];
                 samples = new short[(int) (bufferSize * .5)];
@@ -352,6 +354,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         super(listener);
         this.filePath = filePath;
         this.autoPlay = autoPlay;
+
+        this.samplesWithEvents = new SamplesWithEvents();
     }
 
     /**
@@ -468,30 +472,35 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
+    @NonNull @Override protected SamplesWithEvents processIncomingData(byte[] data, int length, long lastByteIndex) {
         short[] s;
+        int sampleCount = (int) (length * .5);
         if (data.length == seekBufferSize) {
             ByteBuffer.wrap(data)
                 .order(ByteOrder.LITTLE_ENDIAN)
                 .asShortBuffer()
-                .get(seekSamples, 0, seekSamples.length);
+                .get(seekSamples, 0, /*seekSamples.length*/sampleCount);
             s = seekSamples;
-            //e = seekEvents;
         } else {
-            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
+            ByteBuffer.wrap(data)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer()
+                .get(samples, 0, /*samples.length*/sampleCount);
             s = samples;
-            //e = events;
         }
-        //BufferUtils.emptyStringBuffer(e);
         int len = eventsInCurrentBatch.size();
         int[] eventIndices = new int[len];
         String[] eventLabels = new String[len];
         for (int i = 0; i < len; i++) {
             eventIndices[i] = eventsInCurrentBatch.keyAt(i);
             eventLabels[i] = eventsInCurrentBatch.valueAt(i);
-            //e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
         }
 
-        return new SamplesWithMarkers(s, eventIndices, eventLabels, AudioUtils.getSampleCount(lastByteIndex));
+        samplesWithEvents.samples = Arrays.copyOfRange(s, 0, sampleCount);
+        samplesWithEvents.eventIndices = eventIndices;
+        samplesWithEvents.eventLabels = eventLabels;
+        samplesWithEvents.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
+
+        return samplesWithEvents;
     }
 }

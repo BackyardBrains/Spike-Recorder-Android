@@ -160,7 +160,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
+    @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length,
+        long lastByteIndex) {
         //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
         //    Benchit.begin(BENCHMARK_NAME);
         //    benchmarkStarted = true;
@@ -169,8 +170,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         //}
 
         //LOGD(TAG, "DATA SIZE: " + data.length);
-        //SamplesWithMarkers swm = processor.process(data);
-        SamplesWithMarkers swm = NativePOC.processSampleStream(data);
+        //SamplesWithEvents swm = processor.process(data);
+        SamplesWithEvents swm = NativePOC.processSampleStream(data, length);
 
         //if (benchmarkStarted) {
         //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {

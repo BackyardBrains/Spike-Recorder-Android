@@ -16,7 +16,7 @@ Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test);
 JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data);
+Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length);
 JNIEXPORT jintArray JNICALL
 Java_com_backyardbrains_utils_NativePOC_prepareForDrawing(JNIEnv *env, jobject thiz,
                                                           jshortArray
@@ -82,18 +82,18 @@ Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz,
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data) {
+Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length) {
     jshortArray samples = env->NewShortArray(0);
     jintArray eventIndices = env->NewIntArray(0);
     jobjectArray eventLabels = env->NewObjectArray(0, env->FindClass("java/lang/String"), env->NewStringUTF(""));
-    jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithMarkers");
+    jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithEvents");
     jmethodID methodId = env->GetMethodID(cls, "<init>", "([S[I[Ljava/lang/String;)V");
     jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
 
 
-    int len = env->GetArrayLength(data);
-    jbyte *pData = new jbyte[len];
-    env->GetByteArrayRegion(data, 0, len, pData);
+//    int len = env->GetArrayLength(data);
+    jbyte *pData = new jbyte[length];
+    env->GetByteArrayRegion(data, 0, length, pData);
 
     // exception check
     if (exception_check(env)) {
@@ -101,14 +101,14 @@ Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject
         return obj;
     }
 
-    unsigned char *puData = new unsigned char[len];
-    std::copy(pData, pData + len, puData);
+    unsigned char *puData = new unsigned char[length];
+    std::copy(pData, pData + length, puData);
 
     jshort *outSamples = new jshort[MAX_BYTES];
     jint *outEventIndices = new jint[MAX_EVENTS];
     std::string *outEventLabels = new std::string[MAX_EVENTS];
     jint *outCounts = new jint[2];
-    processIncomingData(puData, len, outSamples, outEventIndices, outEventLabels,
+    processIncomingData(puData, length, outSamples, outEventIndices, outEventLabels,
                         outCounts);
 
     samples = env->NewShortArray(outCounts[0]);
