@@ -5,11 +5,15 @@ import com.backyardbrains.usb.SamplesWithEvents;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class NativePOC {
+public class NativeUtils {
 
     public static native String helloTest();
 
     public static native void testPassByRef(short[] test);
+
+    public static native void setSampleRate(int sampleRate);
+
+    public static native void setFilters(float lowCutOff, float highCutOff);
 
     public static native SamplesWithEvents processSampleStream(byte[] data, int length);
 

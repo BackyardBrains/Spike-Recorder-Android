@@ -2,6 +2,9 @@
 // Created by Tihomir Leka <tihomir at backyardbrains.com>
 //
 
+#include <FilterBase.h>
+#include <LowPassFilter.h>
+#include <HighPassFilter.h>
 #include "includes/processing.h"
 
 // Whether new frame is started being processed
@@ -40,6 +43,37 @@ std::string eventLabels[MAX_EVENTS];
 byte msb;
 // Average signal which we use to avoid signal offset
 double average;
+// Current filters
+bool lowPassEnabled = false;
+bool highPassEnabled = false;
+LowPassFilter lowPass;
+HighPassFilter highPass;
+// Determines what filter to use
+int sampleRate = 10000;
+
+void setSampleRate(int sampleRate) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "SAMPLE RATE: %d", sampleRate);
+    ::sampleRate = sampleRate;
+}
+
+void setFilters(float lowCutOff, float highCutOff) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "LOW: %1f, HIGH: %1f", lowCutOff, highCutOff);
+    lowPassEnabled = highCutOff != -1 && highCutOff != MAX_FILTER_CUTOFF;
+    if (lowPassEnabled) {
+        lowPass.initWithSamplingRate(sampleRate);
+        if (highCutOff > sampleRate / 2.0f) highCutOff = sampleRate / 2.0f;
+        lowPass.setCornerFrequency(highCutOff);
+        lowPass.setQ(0.5f);
+
+    }
+    highPassEnabled = lowCutOff != -1 && lowCutOff != MIN_FILTER_CUTOFF;
+    if (highPassEnabled) {
+        highPass.initWithSamplingRate(sampleRate);
+        if (lowCutOff > sampleRate / 2.0f) lowCutOff = sampleRate / 2.0f;
+        highPass.setCornerFrequency(lowCutOff);
+        highPass.setQ(0.5f);
+    }
+}
 
 void processIncomingData(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
                          std::string *outEventLabels, int *outCounts) {
@@ -116,7 +150,7 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
 
                         // if less significant byte is also grater then 127 drop whole frame
                         if (lsb > 127) {
-                            __android_log_print(ANDROID_LOG_ERROR, TAG, "LSB > 127! DROP WHOLE FRAME!");
+                            __android_log_print(ANDROID_LOG_DEBUG, TAG, "LSB > 127! DROP WHOLE FRAME!");
                             frameStarted = false;
                             sampleStarted = false;
                             currentChannel = 0;
@@ -134,9 +168,6 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
                         // use average to remove offset
                         sample = (short) (sample - average);
 
-                        // apply additional filtering if necessary
-//                        if (filters != null) sample = filters.apply(sample);
-
                         channels[currentChannel][sampleCounters[currentChannel]++] = sample;
 
                         sampleStarted = false;
@@ -145,7 +176,7 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
                         msb = b & CLEANER;
                         // we already started the frame so if msb is greater then 127 drop whole frame
                         if (msb > 127) {
-                            __android_log_print(ANDROID_LOG_ERROR, TAG,
+                            __android_log_print(ANDROID_LOG_DEBUG, TAG,
                                                 "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
 
                             frameStarted = false;
@@ -165,7 +196,7 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
                         frameStarted = true;
                         sampleStarted = true;
                     } else {
-                        __android_log_print(ANDROID_LOG_ERROR, TAG, "MSB < 128 AT FRAME START! DROP!");
+                        __android_log_print(ANDROID_LOG_DEBUG, TAG, "MSB < 128 AT FRAME START! DROP!");
 
                         frameStarted = false;
                         sampleStarted = false;
@@ -180,7 +211,14 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
         }
     }
 
-//    if (sampleCounters[CHANNEL_INDEX] == 0) return new SamplesWithEvents();
+
+    // apply additional filtering if necessary
+    if (lowPassEnabled) {
+        lowPass.filterIntData(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
+    }
+    if (highPassEnabled) {
+        highPass.filterIntData(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
+    }
 
     std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
     std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
@@ -207,11 +245,11 @@ void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) 
             listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                                                           SampleStreamUtils.getChannelCount(message));
         } else */
-//    std::string message = reinterpret_cast<char *>(messageBytes);
-//    if (isEventMsg(message)) {
-//        eventIndices[eventCounter] = sampleIndex;
-//        eventLabels[eventCounter++] = getEventNumber(message);
-//    }
+    std::string message = reinterpret_cast<char *>(messageBytes);
+    if (isEventMsg(message)) {
+        eventIndices[eventCounter] = sampleIndex;
+        eventLabels[eventCounter++] = getEventNumber(message);
+    }
     /*}*/
 }
 

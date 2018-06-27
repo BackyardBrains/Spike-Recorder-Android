@@ -32,11 +32,19 @@ static const int MAX_CHANNELS = 10;
 static const int MAX_BYTES = 5000;
 // We can maximally handle 6 seconds of sample data and spike can appear max every 200 ms
 static const int MAX_EVENTS = 600;
+// Minimum cut-off frequency
+static const float MIN_FILTER_CUTOFF = 0.0f;
+// Maximum cut-off frequency
+static const float MAX_FILTER_CUTOFF = 5000.0f;
 
 // Array of bytes which represent start of an escape sequence
 const unsigned char ESCAPE_SEQUENCE_START[ESCAPE_SEQUENCE_START_END_LENGTH] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
 // Array of bytes which represent end of an escape sequence
 const unsigned char ESCAPE_SEQUENCE_END[ESCAPE_SEQUENCE_START_END_LENGTH] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
+
+void setSampleRate(int sampleRate);
+
+void setFilters(float lowCutOff, float highCutOff);
 
 void processIncomingData(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
                          std::string *outEventLabels, int *outCounts);

@@ -165,6 +165,9 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
+
+        // reset filters
+        FILTERS.setSampleRate(sampleRate);
         // recreate buffer to hold 2 seconds of data
         this.processingBuffer.setCapacity(sampleRate * BUFFERED_SECONDS);
     }

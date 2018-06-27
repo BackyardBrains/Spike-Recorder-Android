@@ -12,27 +12,31 @@
 
 extern "C" {
 JNIEXPORT jstring JNICALL
-Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz);
+Java_com_backyardbrains_utils_NativeUtils_helloTest(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test);
+Java_com_backyardbrains_utils_NativeUtils_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_NativeUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_NativeUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff);
 JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length);
+Java_com_backyardbrains_utils_NativeUtils_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length);
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForDrawing(JNIEnv *env, jobject thiz,
-                                                          jshortArray
-                                                          envelopedSamples,
-                                                          jshortArray samples, jintArray
-                                                          envelopedEventIndices,
-                                                          jintArray eventIndices, jint
-                                                          eventCount, jint start, jint
-                                                          end,
-                                                          jint drawSurfaceWidth);
+Java_com_backyardbrains_utils_NativeUtils_prepareForDrawing(JNIEnv *env, jobject thiz,
+                                                            jshortArray
+                                                            envelopedSamples,
+                                                            jshortArray samples, jintArray
+                                                            envelopedEventIndices,
+                                                            jintArray eventIndices, jint
+                                                            eventCount, jint start, jint
+                                                            end,
+                                                            jint drawSurfaceWidth);
 JNIEXPORT jint JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForMarkerDrawing(JNIEnv *env, jobject thiz,
-                                                                jintArray envelopedEventIndices,
-                                                                jintArray eventIndices, jint eventCount,
-                                                                jint fromSample, jint toSample,
-                                                                jint drawSurfaceWidth);
+Java_com_backyardbrains_utils_NativeUtils_prepareForMarkerDrawing(JNIEnv *env, jobject thiz,
+                                                                  jintArray envelopedEventIndices,
+                                                                  jintArray eventIndices, jint eventCount,
+                                                                  jint fromSample, jint toSample,
+                                                                  jint drawSurfaceWidth);
 JNIEXPORT jintArray JNICALL
 Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
                                                                    jshortArray envelopedSamples,
@@ -55,19 +59,18 @@ static jboolean exception_check(JNIEnv *env) {
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_backyardbrains_utils_NativePOC_helloTest(JNIEnv *env, jobject thiz) {
+Java_com_backyardbrains_utils_NativeUtils_helloTest(JNIEnv *env, jobject thiz) {
     return env->NewStringUTF(HELLO);
 }
 
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test) {
+Java_com_backyardbrains_utils_NativeUtils_testPassByRef(JNIEnv *env, jobject thiz, jshortArray test) {
     int len = env->GetArrayLength(test);
     jshort *pTest = new jshort[len];
     env->GetShortArrayRegion(test, 0, len, pTest);
 
     // exception check
     if (exception_check(env)) delete[] pTest;
-
 
     int value = 10;
     for (int i = 0; i < len; i++) {
@@ -81,8 +84,19 @@ Java_com_backyardbrains_utils_NativePOC_testPassByRef(JNIEnv *env, jobject thiz,
     exception_check(env);
 }
 
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_NativeUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate) {
+    setSampleRate(sampleRate);
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_NativeUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff) {
+    setFilters(lowCutOff, highCutOff);
+}
+
+
 JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length) {
+Java_com_backyardbrains_utils_NativeUtils_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length) {
     jshortArray samples = env->NewShortArray(0);
     jintArray eventIndices = env->NewIntArray(0);
     jobjectArray eventLabels = env->NewObjectArray(0, env->FindClass("java/lang/String"), env->NewStringUTF(""));
@@ -91,7 +105,6 @@ Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject
     jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
 
 
-//    int len = env->GetArrayLength(data);
     jbyte *pData = new jbyte[length];
     env->GetByteArrayRegion(data, 0, length, pData);
 
@@ -142,11 +155,12 @@ Java_com_backyardbrains_utils_NativePOC_processSampleStream(JNIEnv *env, jobject
 }
 
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForDrawing(JNIEnv *env, jobject thiz,
-                                                          jshortArray envelopedSamples,
-                                                          jshortArray samples, jintArray envelopedEventIndices,
-                                                          jintArray eventIndices, jint eventCount, jint start, jint end,
-                                                          jint drawSurfaceWidth) {
+Java_com_backyardbrains_utils_NativeUtils_prepareForDrawing(JNIEnv *env, jobject thiz,
+                                                            jshortArray envelopedSamples,
+                                                            jshortArray samples, jintArray envelopedEventIndices,
+                                                            jintArray eventIndices, jint eventCount, jint start,
+                                                            jint end,
+                                                            jint drawSurfaceWidth) {
     int len = env->GetArrayLength(samples);
     jshort *inSamples = new jshort[len];
     env->GetShortArrayRegion(samples, 0, len, inSamples);
@@ -184,11 +198,11 @@ Java_com_backyardbrains_utils_NativePOC_prepareForDrawing(JNIEnv *env, jobject t
 }
 
 JNIEXPORT jint JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForMarkerDrawing(JNIEnv *env, jobject thiz,
-                                                                jintArray envelopedEventIndices,
-                                                                jintArray eventIndices, jint eventCount,
-                                                                jint fromSample, jint toSample,
-                                                                jint drawSurfaceWidth) {
+Java_com_backyardbrains_utils_NativeUtils_prepareForMarkerDrawing(JNIEnv *env, jobject thiz,
+                                                                  jintArray envelopedEventIndices,
+                                                                  jintArray eventIndices, jint eventCount,
+                                                                  jint fromSample, jint toSample,
+                                                                  jint drawSurfaceWidth) {
     jint *pEventIndices = new jint[eventCount];
     env->GetIntArrayRegion(eventIndices, 0, eventCount, pEventIndices);
 
@@ -227,8 +241,8 @@ Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, 
     int from = (int) ((samplesCount - drawSamplesCount) * .5);
     int to = (int) ((samplesCount + drawSamplesCount) * .5);
 
-    return Java_com_backyardbrains_utils_NativePOC_prepareForDrawing(env, thiz, envelopedSamples, samples,
-                                                                     envelopedEventIndices, eventIndices, eventCount,
-                                                                     from, to,
-                                                                     drawSurfaceWidth);
+    return Java_com_backyardbrains_utils_NativeUtils_prepareForDrawing(env, thiz, envelopedSamples, samples,
+                                                                       envelopedEventIndices, eventIndices, eventCount,
+                                                                       from, to,
+                                                                       drawSurfaceWidth);
 }

@@ -7,18 +7,15 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.EventUtils;
-import com.backyardbrains.utils.NativePOC;
+import com.backyardbrains.utils.NativeUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
-import com.tspoon.benchit.Benchit;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
@@ -310,12 +307,12 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
      */
     @Override public void onDrawFrame(GL10 gl) {
         //long start = System.currentTimeMillis();
-        if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
-            Benchit.begin(BENCHMARK_NAME);
-            benchmarkStarted = true;
-        } else {
-            benchmarkStartCounter++;
-        }
+        //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
+        //    Benchit.begin(BENCHMARK_NAME);
+        //    benchmarkStarted = true;
+        //} else {
+        //    benchmarkStartCounter++;
+        //}
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -377,23 +374,23 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        if (benchmarkStarted) {
-            if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
-                Benchit.end(BENCHMARK_NAME);
-                Benchit.analyze(BENCHMARK_NAME).log();
-                benchmarkPerSessionCounter = 0;
-
-                if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-                    EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-                }
-
-                benchmarkSessionCounter++;
-            } else {
-                Benchit.end(BENCHMARK_NAME);
-                benchmarkPerSessionCounter++;
-            }
-            System.gc();
-        }
+        //if (benchmarkStarted) {
+        //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
+        //        Benchit.end(BENCHMARK_NAME);
+        //        Benchit.analyze(BENCHMARK_NAME).log();
+        //        benchmarkPerSessionCounter = 0;
+        //
+        //        if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
+        //            EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+        //        }
+        //
+        //        benchmarkSessionCounter++;
+        //    } else {
+        //        Benchit.end(BENCHMARK_NAME);
+        //        benchmarkPerSessionCounter++;
+        //    }
+        //    System.gc();
+        //}
 
         //LOGD(TAG, "" + (System.currentTimeMillis() - start));
         //LOGD(TAG, "================================================");
@@ -416,10 +413,10 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         try {
             int[] counts =
-                NativePOC.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
+                NativeUtils.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
                     fromSample, toSample, drawSurfaceWidth);
             //int envelopedEventCount =
-            //    NativePOC.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
+            //    NativeUtils.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
             //        drawSurfaceWidth);
             int indexBase = eventCount - counts[1];
             for (int i = 0; i < counts[1]; i++) {

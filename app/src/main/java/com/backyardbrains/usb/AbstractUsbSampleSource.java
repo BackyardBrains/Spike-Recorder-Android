@@ -6,10 +6,12 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.NativePOC;
+import com.backyardbrains.utils.NativeUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
+import com.tspoon.benchit.Benchit;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -118,6 +120,26 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     /**
      * {@inheritDoc}
+     */
+    @CallSuper @Override public void setFilter(@Nullable Filter filter) {
+        super.setFilter(filter);
+
+        float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
+        float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
+        NativeUtils.setFilters(low, high);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @CallSuper @Override protected void setSampleRate(int sampleRate) {
+        super.setSampleRate(sampleRate);
+
+        NativeUtils.setSampleRate(sampleRate);
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * <p><em>Derived classes must call through to the super class's implementation of this method.</em></p>
      */
@@ -151,7 +173,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     private static final String BENCHMARK_NAME = "PROCESS_SAMPLE_STREAM_TEST";
     private static final int BENCHMARK_PER_SESSION_COUNTS = 9999;
-    private static final int BENCHMARK_SESSION_COUNTS = 29;
+    private static final int BENCHMARK_SESSION_COUNTS = 9;
     private int benchmarkPerSessionCounter = 0;
     private int benchmarkStartCounter = 0;
     private int benchmarkSessionCounter = 0;
@@ -162,34 +184,35 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      */
     @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length,
         long lastByteIndex) {
-        //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //    Benchit.begin(BENCHMARK_NAME);
-        //    benchmarkStarted = true;
-        //} else {
-        //    benchmarkStartCounter++;
-        //}
+        if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
+            Benchit.begin(BENCHMARK_NAME);
+            benchmarkStarted = true;
+        } else {
+            benchmarkStartCounter++;
+        }
 
         //LOGD(TAG, "DATA SIZE: " + data.length);
         //SamplesWithEvents swm = processor.process(data);
-        SamplesWithEvents swm = NativePOC.processSampleStream(data, length);
+        SamplesWithEvents swm = NativeUtils.processSampleStream(data, length);
 
-        //if (benchmarkStarted) {
-        //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        Benchit.analyze(BENCHMARK_NAME).log();
-        //        benchmarkPerSessionCounter = 0;
-        //
-        //        //if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-        //        //    EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        //        //}
-        //
-        //        benchmarkSessionCounter++;
-        //    } else {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        benchmarkPerSessionCounter++;
-        //    }
-        //    System.gc();
-        //}
+        if (benchmarkStarted) {
+            if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
+                Benchit.end(BENCHMARK_NAME);
+                //Benchit.analyze(BENCHMARK_NAME).log();
+                benchmarkPerSessionCounter = 0;
+
+                if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
+                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+                    Benchit.analyze(BENCHMARK_NAME).log();
+                }
+
+                benchmarkSessionCounter++;
+            } else {
+                Benchit.end(BENCHMARK_NAME);
+                benchmarkPerSessionCounter++;
+            }
+            System.gc();
+        }
 
         swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
         return swm;

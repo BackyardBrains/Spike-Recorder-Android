@@ -168,7 +168,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     //  EVENT BUS
     //==============================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will start microphone if we are coming from background
         if (getAudioService() != null) startActiveInput(getAudioService());
@@ -179,30 +179,32 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         setupUsbButton();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
         setupButtons(true);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
             WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate())));
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStoppedEvent(AudioRecordingStoppedEvent event) {
         setupButtons(true);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
         if (!event.isConnected() && getAudioService() != null) startMicrophone(getAudioService());
         // setup USB button
         setupUsbButton();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbPermissionEvent(UsbPermissionEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onUsbPermissionEvent(UsbPermissionEvent event) {
         if (!event.isGranted()) {
             if (getContext() != null) {
                 ViewUtils.toast(getContext(), "Please reconnect the device and grant permission to be able to use it");
@@ -215,7 +217,8 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         setupUsbButton();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         if (!event.isStarted()) if (getAudioService() != null) startMicrophone(getAudioService());
 
         // update filters button
@@ -224,7 +227,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         setupUsbButton();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
         final String spikerBoxBoard;
         Filter filter = null;
@@ -264,7 +267,7 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
         // setup filters button
         setupFiltersButton();
