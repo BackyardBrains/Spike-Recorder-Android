@@ -18,7 +18,7 @@ public:
 
     void setCoefficients();
 
-    void filterIntData(int16_t *data, int32_t numFrames, bool flush = false);
+    void filter(int16_t *data, int32_t numFrames, bool flush = false);
 
     void filterContiguousData(float *data, uint32_t numFrames, bool flush = false);
 

@@ -58,7 +58,7 @@ void setSampleRate(int sampleRate) {
 
 void setFilters(float lowCutOff, float highCutOff) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "LOW: %1f, HIGH: %1f", lowCutOff, highCutOff);
-    lowPassEnabled = highCutOff != -1 && highCutOff != MAX_FILTER_CUTOFF;
+    lowPassEnabled = highCutOff != -1 && highCutOff != MAX_FILTER_CUT_OFF;
     if (lowPassEnabled) {
         lowPass.initWithSamplingRate(sampleRate);
         if (highCutOff > sampleRate / 2.0f) highCutOff = sampleRate / 2.0f;
@@ -66,7 +66,7 @@ void setFilters(float lowCutOff, float highCutOff) {
         lowPass.setQ(0.5f);
 
     }
-    highPassEnabled = lowCutOff != -1 && lowCutOff != MIN_FILTER_CUTOFF;
+    highPassEnabled = lowCutOff != -1 && lowCutOff != MIN_FILTER_CUT_OFF;
     if (highPassEnabled) {
         highPass.initWithSamplingRate(sampleRate);
         if (lowCutOff > sampleRate / 2.0f) lowCutOff = sampleRate / 2.0f;
@@ -75,8 +75,8 @@ void setFilters(float lowCutOff, float highCutOff) {
     }
 }
 
-void processIncomingData(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
-                         std::string *outEventLabels, int *outCounts) {
+void processIncomingBytes(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
+                          std::string *outEventLabels, int *outCounts) {
     if (channelCountChanged) { // number of channels changed during processing of previous batch
         frameStarted = false;
         sampleStarted = false;
@@ -214,10 +214,10 @@ void processIncomingData(const unsigned char *inData, const int size, short *out
 
     // apply additional filtering if necessary
     if (lowPassEnabled) {
-        lowPass.filterIntData(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
+        lowPass.filter(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
     }
     if (highPassEnabled) {
-        highPass.filterIntData(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
+        highPass.filter(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
     }
 
     std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);

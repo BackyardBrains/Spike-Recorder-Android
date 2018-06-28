@@ -22,7 +22,7 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.utils.NativeUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -124,7 +124,7 @@ public class ThresholdRenderer extends WaveformRenderer {
     @Override protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
         @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
         try {
-            return NativeUtils.prepareForThresholdDrawing(envelopedSamples, samples, fromSample, toSample,
+            return JniUtils.prepareForThresholdDrawing(envelopedSamples, samples, fromSample, toSample,
                 drawSurfaceWidth);
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());

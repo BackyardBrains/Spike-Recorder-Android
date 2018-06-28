@@ -5,7 +5,7 @@ import com.backyardbrains.usb.SamplesWithEvents;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class NativeUtils {
+public class JniUtils {
 
     public static native String helloTest();
 
@@ -17,11 +17,12 @@ public class NativeUtils {
 
     public static native SamplesWithEvents processSampleStream(byte[] data, int length);
 
+    public static native SamplesWithEvents processAudioStream(short[] data, int length);
+
+    public static native boolean isAudioStreamAmModulated();
+
     public static native int[] prepareForDrawing(short[] envelopedSamples, short[] samples, int[] envelopedEventIndices,
         int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
-
-    public static native int prepareForMarkerDrawing(int[] envelopedEventIndices, int[] eventIndices, int eventCount,
-        int start, int end, int drawSurfaceWidth);
 
     public static native int prepareForThresholdDrawing(short[] envelopedSamples, short[] samples, int start, int end,
         int drawSurfaceWidth);

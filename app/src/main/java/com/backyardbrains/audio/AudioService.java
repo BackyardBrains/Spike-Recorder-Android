@@ -47,6 +47,7 @@ import com.backyardbrains.usb.SamplesWithEvents;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
@@ -86,8 +87,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
                 EventBus.getDefault().post(new AmModulationDetectionEvent(false));
             }
         };
-    private final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
-        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
+    //private final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
+    //    new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
 
     private final IBinder binder = new ServiceBinder();
 
@@ -259,6 +260,11 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      */
     public void setFilter(@Nullable Filter filter) {
         if (usbSampleSource != null) usbSampleSource.setFilter(filter);
+        if (filter != null) {
+            JniUtils.setFilters((float) filter.getLowCutOffFrequency(), (float) filter.getHighCutOffFrequency());
+        } else {
+            JniUtils.setFilters(-1f, -1f);
+        }
         FILTERS.setFilter(filter);
     }
 
@@ -280,18 +286,23 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final SamplesWithEvents TEMP_SAMPLES_WITH_MARKERS =
-        new SamplesWithEvents(new int[0], new String[0]);
+    private static final SamplesWithEvents TEMP_SAMPLES_WITH_MARKERS = new SamplesWithEvents(new int[0], new String[0]);
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
-     * @see ReceivesAudio#receiveAudio(short[])
+     * @see ReceivesAudio#receiveAudio(short[], int)
      */
-    @Override public void receiveAudio(@NonNull short[] data) {
+    @Override public void receiveAudio(@NonNull short[] data, int length) {
+        //LOGD(TAG, ".........................................");
+        //long start = System.currentTimeMillis();
+
         // any received audio needs to be process with AM Modulation processor
-        TEMP_SAMPLES_WITH_MARKERS.samples = AM_MODULATION_DATA_PROCESSOR.process(data);
-        passToDataManager(TEMP_SAMPLES_WITH_MARKERS);
+        //TEMP_SAMPLES_WITH_MARKERS.samples = AM_MODULATION_DATA_PROCESSOR.process(data);
+        //passToDataManager(TEMP_SAMPLES_WITH_MARKERS);
+        passToDataManager(JniUtils.processAudioStream(data, length));
+
+        //LOGD(TAG, "TOOK: " + (System.currentTimeMillis() - start));
     }
 
     // Passes data to data manager so it can be consumed by renderer
@@ -415,7 +426,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Whether AM modulation is currently detected.
      */
     public boolean isAmModulationDetected() {
-        return AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
+        return JniUtils.isAudioStreamAmModulated(); //AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
     }
 
     //=================================================

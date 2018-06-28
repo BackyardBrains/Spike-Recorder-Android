@@ -24,7 +24,6 @@ import android.support.annotation.NonNull;
 import com.backyardbrains.utils.AudioUtils;
 import com.crashlytics.android.Crashlytics;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
@@ -42,7 +41,6 @@ class MicListener extends Thread {
     private static final String TAG = makeLogTag(MicListener.class);
 
     private final ReceivesAudio service;
-    private final ByteBuffer buffer;
     private final short[] samples;
 
     private AudioRecord recorder;
@@ -58,9 +56,7 @@ class MicListener extends Thread {
     MicListener(@NonNull ReceivesAudio service) {
         this.service = service;
 
-        buffer = ByteBuffer.allocateDirect(AudioUtils.IN_BUFFER_SIZE);
-        buffer.order(ByteOrder.nativeOrder());
-        samples = new short[(int) (buffer.capacity() * .5)];
+        samples = new short[(int) (AudioUtils.IN_BUFFER_SIZE * .5)];
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
     }
 
@@ -96,10 +92,10 @@ class MicListener extends Thread {
 
             recorder.startRecording();
             LOGD(TAG, "Recorder Started");
-            while (!done && recorder.read(buffer, buffer.capacity()) > 0) {
-                buffer.asShortBuffer().get(samples);
+            int read;
+            while (!done && (read = recorder.read(samples, 0, samples.length)) > 0) {
                 synchronized (service) {
-                    service.receiveAudio(samples);
+                    service.receiveAudio(samples, read);
                 }
             }
         } catch (Throwable e) {

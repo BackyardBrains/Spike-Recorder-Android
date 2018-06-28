@@ -11,7 +11,7 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.EventUtils;
-import com.backyardbrains.utils.NativeUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -413,10 +413,10 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         try {
             int[] counts =
-                NativeUtils.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
+                JniUtils.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
                     fromSample, toSample, drawSurfaceWidth);
             //int envelopedEventCount =
-            //    NativeUtils.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
+            //    JniUtils.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
             //        drawSurfaceWidth);
             int indexBase = eventCount - counts[1];
             for (int i = 0; i < counts[1]; i++) {

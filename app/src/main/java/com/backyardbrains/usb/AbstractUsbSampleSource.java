@@ -8,7 +8,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.NativeUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.tspoon.benchit.Benchit;
@@ -126,7 +126,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
         float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
         float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
-        NativeUtils.setFilters(low, high);
+        JniUtils.setFilters(low, high);
     }
 
     /**
@@ -135,7 +135,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     @CallSuper @Override protected void setSampleRate(int sampleRate) {
         super.setSampleRate(sampleRate);
 
-        NativeUtils.setSampleRate(sampleRate);
+        JniUtils.setSampleRate(sampleRate);
     }
 
     /**
@@ -193,7 +193,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
         //LOGD(TAG, "DATA SIZE: " + data.length);
         //SamplesWithEvents swm = processor.process(data);
-        SamplesWithEvents swm = NativeUtils.processSampleStream(data, length);
+        SamplesWithEvents swm = JniUtils.processSampleStream(data, length);
 
         if (benchmarkStarted) {
             if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {

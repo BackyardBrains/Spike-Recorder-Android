@@ -38,7 +38,7 @@ void FilterBase::setCoefficients() {
 //
 // Filter integer data buffer
 //
-void FilterBase::filterIntData(int16_t *data, int32_t numFrames, bool flush) {
+void FilterBase::filter(int16_t *data, int32_t numFrames, bool flush) {
     float *tempFloatBuffer = (float *) std::malloc(numFrames * sizeof(float));
     for (int32_t i = numFrames - 1; i >= 0; i--) {
         tempFloatBuffer[i] = (float) data[i];
