@@ -124,8 +124,10 @@ public class ThresholdRenderer extends WaveformRenderer {
     @Override protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
         @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
         try {
-            return JniUtils.prepareForThresholdDrawing(envelopedSamples, samples, fromSample, toSample,
-                drawSurfaceWidth);
+            int[] counts =
+                JniUtils.prepareForThresholdDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices,
+                    eventCount, fromSample, toSample, drawSurfaceWidth);
+            return counts[0];
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);

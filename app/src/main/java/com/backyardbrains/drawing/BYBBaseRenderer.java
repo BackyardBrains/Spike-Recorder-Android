@@ -35,7 +35,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     short[] envelopedSamples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
-    private int[] envelopedEventIndices = new int[EventUtils.MAX_EVENT_COUNT];
+    int[] envelopedEventIndices = new int[EventUtils.MAX_EVENT_COUNT];
 
     private int surfaceWidth;
     private int surfaceHeight;

@@ -24,8 +24,8 @@ public class JniUtils {
     public static native int[] prepareForDrawing(short[] envelopedSamples, short[] samples, int[] envelopedEventIndices,
         int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
 
-    public static native int prepareForThresholdDrawing(short[] envelopedSamples, short[] samples, int start, int end,
-        int drawSurfaceWidth);
+    public static native int[] prepareForThresholdDrawing(short[] envelopedSamples, short[] samples,
+        int[] envelopedEventIndices, int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
 
     static {
         System.loadLibrary("byb-lib");

@@ -28,21 +28,16 @@ Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject t
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz,
-                                                         jshortArray
-                                                         envelopedSamples,
-                                                         jshortArray samples, jintArray
-                                                         envelopedEventIndices,
-                                                         jintArray eventIndices, jint
-                                                         eventCount, jint start, jint
-                                                         end,
+Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jshortArray envelopedSamples,
+                                                         jshortArray samples, jintArray envelopedEventIndices,
+                                                         jintArray eventIndices, jint eventCount, jint start, jint end,
                                                          jint drawSurfaceWidth);
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
-                                                                   jshortArray envelopedSamples,
-                                                                   jshortArray samples, jintArray envelopedEventIndices,
-                                                                   jintArray eventIndices, jint eventCount, jint start,
-                                                                   jint end, jint drawSurfaceWidth);
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
+                                                                  jshortArray envelopedSamples, jshortArray samples,
+                                                                  jintArray envelopedEventIndices,
+                                                                  jintArray eventIndices, jint eventCount, jint start,
+                                                                  jint end, jint drawSurfaceWidth);
 }
 
 AmModulationProcessor amModulationProcessor;
@@ -250,11 +245,11 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject th
 }
 
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_NativePOC_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
-                                                                   jshortArray envelopedSamples,
-                                                                   jshortArray samples, jintArray envelopedEventIndices,
-                                                                   jintArray eventIndices, jint eventCount, jint start,
-                                                                   jint end, jint drawSurfaceWidth) {
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
+                                                                  jshortArray envelopedSamples,
+                                                                  jshortArray samples, jintArray envelopedEventIndices,
+                                                                  jintArray eventIndices, jint eventCount, jint start,
+                                                                  jint end, jint drawSurfaceWidth) {
     int drawSamplesCount = end - start;
     int samplesCount = env->GetArrayLength(samples);
     int from = (int) ((samplesCount - drawSamplesCount) * .5);
