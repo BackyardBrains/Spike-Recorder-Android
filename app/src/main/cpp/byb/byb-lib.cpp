@@ -10,6 +10,8 @@
 #include "includes/drawing.h"
 #include "includes/processing.h"
 
+using namespace std;
+
 #define HELLO "Hello from C++"
 
 extern "C" {
@@ -21,23 +23,24 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff);
-JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length);
-JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jshortArray data, jint length);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray data,
+                                                           jint length);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                          jint length);
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jshortArray envelopedSamples,
-                                                         jshortArray samples, jintArray envelopedEventIndices,
-                                                         jintArray eventIndices, jint eventCount, jint start, jint end,
-                                                         jint drawSurfaceWidth);
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
-                                                                  jshortArray envelopedSamples, jshortArray samples,
-                                                                  jintArray envelopedEventIndices,
-                                                                  jintArray eventIndices, jint eventCount, jint start,
-                                                                  jint end, jint drawSurfaceWidth);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                         jintArray inEventIndices, jint eventCount, jint start,
+                                                         jint end, jint drawSurfaceWidth);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz, jobject out,
+                                                                  jshortArray inSamples,
+                                                                  jintArray inEventIndices, jint eventCount,
+                                                                  jint start, jint end,
+                                                                  jint drawSurfaceWidth);
 }
 
 AmModulationProcessor amModulationProcessor;
@@ -95,105 +98,118 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfl
 }
 
 
-JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jbyteArray data, jint length) {
-    jshortArray samples = env->NewShortArray(0);
-    jintArray eventIndices = env->NewIntArray(0);
-    jobjectArray eventLabels = env->NewObjectArray(0, env->FindClass("java/lang/String"), env->NewStringUTF(""));
-    jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithEvents");
-    jmethodID methodId = env->GetMethodID(cls, "<init>", "([S[I[Ljava/lang/String;)V");
-    jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray data,
+                                                           jint length) {
+    jclass cls = env->GetObjectClass(out);
+    // get samples field
+    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
+    jobject samplesObj = env->GetObjectField(out, samplesFid);
+    jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
+    // get sampleCount field
+    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
+    // get eventIndices field
+    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
+    jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
+    // get eventNames field
+    jfieldID eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
+    jobject eventNamesObj = env->GetObjectField(out, eventNamesFid);
+    jobjectArray eventNames = reinterpret_cast<jobjectArray>(eventNamesObj);
+    // get eventCount field
+    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
 
+    int sampleCount = env->GetArrayLength(samples);
+    int eventCount = env->GetArrayLength(eventIndices);
 
-    jbyte *pData = new jbyte[length];
-    env->GetByteArrayRegion(data, 0, length, pData);
+    jbyte *dataPtr = new jbyte[length];
+    env->GetByteArrayRegion(data, 0, length, dataPtr);
 
     // exception check
     if (exception_check(env)) {
-        delete[] pData;
-        return obj;
+        delete[] dataPtr;
+        return;
     }
 
-    unsigned char *puData = new unsigned char[length];
-    std::copy(pData, pData + length, puData);
+    unsigned char *uDataPtr = new unsigned char[length];
+    copy(dataPtr, dataPtr + length, uDataPtr);
 
-    jshort *outSamples = new jshort[MAX_BYTES];
-    jint *outEventIndices = new jint[MAX_EVENTS];
-    std::string *outEventLabels = new std::string[MAX_EVENTS];
+    jshort *outSamplesPtr = new jshort[sampleCount];
+    jint *outEventIndicesPtr = new jint[eventCount];
+    string *outEventNamesPtr = new string[eventCount];
     jint *outCounts = new jint[2];
-    processIncomingBytes(puData, length, outSamples, outEventIndices, outEventLabels,
+    processIncomingBytes(uDataPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr,
                          outCounts);
 
-    samples = env->NewShortArray(outCounts[0]);
-    eventIndices = env->NewIntArray(outCounts[1]);
-    eventLabels = env->NewObjectArray(outCounts[1], env->FindClass("java/lang/String"), env->NewStringUTF(""));
+    // if we did get some events create array of strings that represent event names adn populate it
     for (int i = 0; i < outCounts[1]; i++) {
-        env->SetObjectArrayElement(eventLabels, i, env->NewStringUTF(outEventLabels[i].c_str()));
+        env->SetObjectArrayElement(eventNames, i, env->NewStringUTF(outEventNamesPtr[i].c_str()));
     }
 
     // exception check
     if (exception_check(env)) {
-        delete[] pData;
-        delete[] puData;
-        delete[] outSamples;
-        delete[] outEventIndices;
-        delete[] outEventLabels;
+        delete[] dataPtr;
+        delete[] uDataPtr;
+        delete[] outSamplesPtr;
+        delete[] outEventIndicesPtr;
+        delete[] outEventNamesPtr;
         delete[] outCounts;
-        return obj;
+        return;
     }
 
-    env->SetShortArrayRegion(samples, 0, outCounts[0], outSamples);
-    env->SetIntArrayRegion(eventIndices, 0, outCounts[1], outEventIndices);
-    delete[] pData;
-    delete[] puData;
-    delete[] outSamples;
-    delete[] outEventIndices;
-    delete[] outEventLabels;
+    env->SetShortArrayRegion(samples, 0, outCounts[0], outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, outCounts[0]);
+    env->SetIntArrayRegion(eventIndices, 0, outCounts[1], outEventIndicesPtr);
+    env->SetIntField(out, eventCountFid, outCounts[1]);
+    delete[] dataPtr;
+    delete[] uDataPtr;
+    delete[] outSamplesPtr;
+    delete[] outEventIndicesPtr;
+    delete[] outEventNamesPtr;
     delete[] outCounts;
 
-    return env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+//    env->NewObject(cls, methodId, samples, eventIndices, eventLabels)
 }
 
-JNIEXPORT jobject JNICALL
-Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jshortArray data, jint length) {
-    jshortArray samples = env->NewShortArray(0);
-    jintArray eventIndices = env->NewIntArray(0);
-    jobjectArray eventLabels = env->NewObjectArray(0, env->FindClass("java/lang/String"), env->NewStringUTF(""));
-    jclass cls = env->FindClass("com/backyardbrains/usb/SamplesWithEvents");
-    jmethodID methodId = env->GetMethodID(cls, "<init>", "([S[I[Ljava/lang/String;)V");
-    jobject obj = env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                          jint length) {
+    jclass cls = env->GetObjectClass(out);
+    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
+    jobject samplesObj = env->GetObjectField(out, samplesFid);
+    jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
+    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
 
-    jshort *inSamples = new jshort[length];
-    env->GetShortArrayRegion(data, 0, length, inSamples);
+    jshort *inSamplesPtr = new jshort[length];
+    env->GetShortArrayRegion(inSamples, 0, length, inSamplesPtr);
 
     // exception check
     if (exception_check(env)) {
-        delete[] inSamples;
-        return obj;
+        delete[] inSamplesPtr;
+        return;
     }
 
-    jshort *outSamples = new jshort[length];
+    jshort *outSamplesPtr = new jshort[length];
     jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
-    amModulationProcessor.process(inSamples, outSamples, length);
+    amModulationProcessor.process(inSamplesPtr, outSamplesPtr, length);
     jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
     if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
         jniHelper.invokeVoid(env, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
     }
 
-    samples = env->NewShortArray(length);
-
     // exception check
     if (exception_check(env)) {
-        delete[] inSamples;
-        delete[] outSamples;
-        return obj;
+        delete[] inSamplesPtr;
+        delete[] outSamplesPtr;
+        return;
     }
 
-    env->SetShortArrayRegion(samples, 0, length, outSamples);
-    delete[] inSamples;
-    delete[] outSamples;
+    env->SetShortArrayRegion(samples, 0, length, outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, length);
+    delete[] inSamplesPtr;
+    delete[] outSamplesPtr;
 
-    return env->NewObject(cls, methodId, samples, eventIndices, eventLabels);
+    return;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -201,62 +217,66 @@ Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, job
     return static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
 }
 
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz,
-                                                         jshortArray envelopedSamples,
-                                                         jshortArray samples, jintArray envelopedEventIndices,
-                                                         jintArray eventIndices, jint eventCount, jint start,
-                                                         jint end,
-                                                         jint drawSurfaceWidth) {
-    int len = env->GetArrayLength(samples);
-    jshort *inSamples = new jshort[len];
-    env->GetShortArrayRegion(samples, 0, len, inSamples);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                         jintArray inEventIndices, jint eventCount, jint start,
+                                                         jint end, jint drawSurfaceWidth) {
+    jclass cls = env->GetObjectClass(out);
+    // get samples field
+    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
+    jobject samplesObj = env->GetObjectField(out, samplesFid);
+    jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
+    // get sampleCount field
+    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
+    // get eventIndices field
+    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
+    jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
+    // get eventCount field
+    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
 
-    jint *inEventIndices = new jint[eventCount];
-    env->GetIntArrayRegion(eventIndices, 0, eventCount, inEventIndices);
+    int len = env->GetArrayLength(inSamples);
+    jshort *inSamplesPtr = new jshort[len];
+    env->GetShortArrayRegion(inSamples, 0, len, inSamplesPtr);
+
+    jint *inEventIndicesPtr = new jint[eventCount];
+    env->GetIntArrayRegion(inEventIndices, 0, eventCount, inEventIndicesPtr);
 
     // exception check
     if (exception_check(env)) {
-        delete[] inSamples;
-        delete[] inEventIndices;
-        return env->NewIntArray(2);
+        delete[] inSamplesPtr;
+        delete[] inEventIndicesPtr;
+        return;
     }
 
     int maxSampleCount = drawSurfaceWidth * 5; // can't be more than x4 when enveloping (from experience)
     int maxEventCount = 100;
-    jshort *oSamples = new jshort[maxSampleCount];
-    jint *oEventIndices = new int[maxEventCount];
-    int *returned = prepareForDrawing(oSamples, inSamples, oEventIndices, inEventIndices, eventCount, start, end,
-                                      drawSurfaceWidth);
+    jshort *outSamplesPtr = new jshort[maxSampleCount];
+    jint *outEventIndicesPtr = new int[maxEventCount];
+    int *returned = prepareForDrawing(outSamplesPtr, inSamplesPtr, outEventIndicesPtr, inEventIndicesPtr, eventCount,
+                                      start, end, drawSurfaceWidth);
 
-    jintArray result = env->NewIntArray(2);
-    env->SetIntArrayRegion(result, 0, 2, returned);
-    env->SetShortArrayRegion(envelopedSamples, 0, returned[0], oSamples);
-    env->SetIntArrayRegion(envelopedEventIndices, 0, returned[1], oEventIndices);
-    delete[] inSamples;
-    delete[] inEventIndices;
-    delete[] oSamples;
-    delete[] oEventIndices;
-
-    // exception check
-    if (exception_check(env)) return env->NewIntArray(2);
-
-    return result;
+    env->SetShortArrayRegion(samples, 0, returned[0], outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, returned[0]);
+    env->SetIntArrayRegion(eventIndices, 0, returned[1], outEventIndicesPtr);
+    env->SetIntField(out, eventCountFid, returned[1]);
+    delete[] inSamplesPtr;
+    delete[] inEventIndicesPtr;
+    delete[] outSamplesPtr;
+    delete[] outEventIndicesPtr;
+    delete[] returned;
 }
 
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz,
-                                                                  jshortArray envelopedSamples,
-                                                                  jshortArray samples, jintArray envelopedEventIndices,
-                                                                  jintArray eventIndices, jint eventCount, jint start,
-                                                                  jint end, jint drawSurfaceWidth) {
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz, jobject out,
+                                                                  jshortArray inSamples, jintArray inEventIndices,
+                                                                  jint eventCount, jint start, jint end,
+                                                                  jint drawSurfaceWidth) {
     int drawSamplesCount = end - start;
-    int samplesCount = env->GetArrayLength(samples);
+    int samplesCount = env->GetArrayLength(inSamples);
     int from = (int) ((samplesCount - drawSamplesCount) * .5);
     int to = (int) ((samplesCount + drawSamplesCount) * .5);
 
-    return Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(env, thiz, envelopedSamples, samples,
-                                                                    envelopedEventIndices, eventIndices, eventCount,
-                                                                    from, to,
-                                                                    drawSurfaceWidth);
+    Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(env, thiz, out, inSamples, inEventIndices, eventCount,
+                                                             from, to, drawSurfaceWidth);
 }

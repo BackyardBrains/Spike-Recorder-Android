@@ -1,6 +1,6 @@
 package com.backyardbrains.utils;
 
-import com.backyardbrains.usb.SamplesWithEvents;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -15,17 +15,17 @@ public class JniUtils {
 
     public static native void setFilters(float lowCutOff, float highCutOff);
 
-    public static native SamplesWithEvents processSampleStream(byte[] data, int length);
+    public static native void processSampleStream(SamplesWithEvents out, byte[] data, int length);
 
-    public static native SamplesWithEvents processAudioStream(short[] data, int length);
+    public static native void processAudioStream(SamplesWithEvents out, short[] inSamples, int length);
 
     public static native boolean isAudioStreamAmModulated();
 
-    public static native int[] prepareForDrawing(short[] envelopedSamples, short[] samples, int[] envelopedEventIndices,
-        int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
+    public static native void prepareForDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
+        int eventCount, int start, int end, int drawSurfaceWidth);
 
-    public static native int[] prepareForThresholdDrawing(short[] envelopedSamples, short[] samples,
-        int[] envelopedEventIndices, int[] eventIndices, int eventCount, int start, int end, int drawSurfaceWidth);
+    public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
+        int eventCount, int start, int end, int drawSurfaceWidth);
 
     static {
         System.loadLibrary("byb-lib");

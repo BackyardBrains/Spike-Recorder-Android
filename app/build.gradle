@@ -85,6 +85,7 @@ ext {
     easyPermissionsVersion = '1.2.0'
     eventBusVersion = '3.1.1'
     eventBusAnnotationProcessorVersion = '3.0.1'
+    essentialsVersion = '3.0.0-RC1'
     usbSerialVersion = '4.5.2'
     iirFiltersVersion = '1.0.4'
     commonsMathVersion = '3.6.1'
@@ -114,6 +115,8 @@ dependencies {
     // event bus
     implementation "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+    // utils
+    implementation "org.greenrobot:essentials:$essentialsVersion"
     // serial communication
     implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
     // signal filtering

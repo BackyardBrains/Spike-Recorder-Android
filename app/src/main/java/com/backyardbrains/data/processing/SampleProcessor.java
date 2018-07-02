@@ -10,5 +10,5 @@ public interface SampleProcessor {
     /**
      * Takes incoming {@code samples} and returns them back processed.
      */
-    @NonNull short[] process(@NonNull short[] samples);
+    @NonNull short[] process(@NonNull short[] samples, int length);
 }

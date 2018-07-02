@@ -7,6 +7,8 @@
 #include <HighPassFilter.h>
 #include "includes/processing.h"
 
+using namespace std;
+
 // Whether new frame is started being processed
 bool frameStarted = false;
 // Whether new sample is started being processed
@@ -38,7 +40,7 @@ int eventCounter;
 // Holds event indices processed in a single batch
 int eventIndices[MAX_EVENTS];
 // Holds event labels processed in a single batch
-std::string eventLabels[MAX_EVENTS];
+string eventLabels[MAX_EVENTS];
 // Most significant and least significant bytes
 byte msb;
 // Average signal which we use to avoid signal offset
@@ -76,7 +78,7 @@ void setFilters(float lowCutOff, float highCutOff) {
 }
 
 void processIncomingBytes(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
-                          std::string *outEventLabels, int *outCounts) {
+                          string *outEventLabels, int *outCounts) {
     if (channelCountChanged) { // number of channels changed during processing of previous batch
         frameStarted = false;
         sampleStarted = false;
@@ -107,22 +109,22 @@ void processIncomingBytes(const unsigned char *inData, const int size, short *ou
         if (insideEscapeSequence) { // we are inside escape sequence
             sampleIndex = sampleCounters[currentChannel] == 0 ? 0 : sampleCounters[currentChannel] - 1;
             if (eventMessageIndex >= EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
-                unsigned char *copy = new unsigned char[eventMessageIndex];
-                std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
+                unsigned char *cpy = new unsigned char[eventMessageIndex];
+                copy(eventMessage, eventMessage + eventMessageIndex, cpy);
                 // let's process incoming message
-                processEscapeSequenceMessage(copy, sampleIndex);
+                processEscapeSequenceMessage(cpy, sampleIndex);
 
-                delete[] copy;
+                delete[] cpy;
                 reset();
             } else if (ESCAPE_SEQUENCE_END[tmpIndex] == uc) {
                 tmpIndex++;
                 if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
-                    unsigned char *copy = new unsigned char[eventMessageIndex];
-                    std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
+                    unsigned char *cpy = new unsigned char[eventMessageIndex];
+                    copy(eventMessage, eventMessage + eventMessageIndex, cpy);
                     // let's process incoming message
-                    processEscapeSequenceMessage(copy, sampleIndex);
+                    processEscapeSequenceMessage(cpy, sampleIndex);
 
-                    delete[] copy;
+                    delete[] cpy;
                     reset();
                 }
             } else {
@@ -139,7 +141,7 @@ void processIncomingBytes(const unsigned char *inData, const int size, short *ou
             }
 
             unsigned char *sequence = new unsigned char[escapeSequenceIndex];
-            std::copy(escapeSequence, escapeSequence + escapeSequenceIndex, sequence);
+            copy(escapeSequence, escapeSequence + escapeSequenceIndex, sequence);
             for (int j = 0; j < escapeSequenceIndex; j++) {
                 b = sequence[j];
                 // check if we have unfinished frame
@@ -220,9 +222,9 @@ void processIncomingBytes(const unsigned char *inData, const int size, short *ou
         highPass.filter(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
     }
 
-    std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
-    std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
-    std::copy(eventLabels, eventLabels + eventCounter, outEventLabels);
+    copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
+    copy(eventIndices, eventIndices + eventCounter, outEventIndices);
+    copy(eventLabels, eventLabels + eventCounter, outEventLabels);
     outCounts[0] = sampleCounters[CHANNEL_INDEX];
     outCounts[1] = eventCounter;
 }
@@ -245,7 +247,7 @@ void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) 
             listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
                                                           SampleStreamUtils.getChannelCount(message));
         } else */
-    std::string message = reinterpret_cast<char *>(messageBytes);
+    string message = reinterpret_cast<char *>(messageBytes);
     if (isEventMsg(message)) {
         eventIndices[eventCounter] = sampleIndex;
         eventLabels[eventCounter++] = getEventNumber(message);
@@ -253,15 +255,15 @@ void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) 
     /*}*/
 }
 
-const std::string eventPrefix = "EVNT:";
+const string eventPrefix = "EVNT:";
 
-bool isEventMsg(std::string message) {
+bool isEventMsg(string message) {
     return message.compare(0, eventPrefix.length(), eventPrefix) == 0;
 }
 
-std::string getEventNumber(std::string message) {
+string getEventNumber(string message) {
     message = message.replace(0, eventPrefix.length(), "");
-    std::size_t found = message.find(";");
-    if (found == std::string::npos) return message;
+    size_t found = message.find(";");
+    if (found == string::npos) return message;
     return message.replace(found, message.length() - found, "");
 }

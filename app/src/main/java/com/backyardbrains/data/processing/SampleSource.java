@@ -2,7 +2,6 @@ package com.backyardbrains.data.processing;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import com.backyardbrains.usb.SamplesWithEvents;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 

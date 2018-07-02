@@ -1,7 +1,6 @@
 package com.backyardbrains.data.processing;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.usb.SamplesWithEvents;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>

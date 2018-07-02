@@ -7,9 +7,11 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -32,10 +34,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private final SparseArray<String> eventsBuffer;
 
     private short[] samples;
-    short[] envelopedSamples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
-    int[] envelopedEventIndices = new int[EventUtils.MAX_EVENT_COUNT];
+    @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
 
     private int surfaceWidth;
     private int surfaceHeight;
@@ -58,6 +59,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
+
+    private final Benchmark benchmark;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -131,7 +134,18 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         super(fragment);
 
         processingBuffer = ProcessingBuffer.get();
-        eventsBuffer = new SparseArray<>();
+        eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
+
+        benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(1000)
+            .sessions(10)
+            .measuresPerSession(1000)
+            .logBySession(false)
+            .logToFile(true)
+            .listener(new Benchmark.OnBenchmarkListener() {
+                @Override public void onEnd() {
+                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+                }
+            });
     }
 
     /**
@@ -288,31 +302,22 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         surfaceSizeDirty = true;
 
         int max = Math.max(width, height);
-        if (envelopedSamples == null || envelopedSamples.length < max) envelopedSamples = new short[max * 5];
+        if (samplesWithEvents == null || samplesWithEvents.samples.length < max) {
+            samplesWithEvents = new SamplesWithEvents(max * 5);
+        }
+        //if (envelopedSamples == null || envelopedSamples.length < max) envelopedSamples = new short[max * 5];
 
         gl.glViewport(0, 0, width, height);
         initDrawSurface(gl, surfaceWidth, glWindowHeight, true);
     }
-
-    private static final String BENCHMARK_NAME = "RENDERER_DRAW_TEST";
-    private static final int BENCHMARK_PER_SESSION_COUNTS = 999;
-    private static final int BENCHMARK_SESSION_COUNTS = 9;
-    private int benchmarkPerSessionCounter = 0;
-    private int benchmarkStartCounter = 0;
-    private int benchmarkSessionCounter = 0;
-    private boolean benchmarkStarted;
 
     /**
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
         //long start = System.currentTimeMillis();
-        //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //    Benchit.begin(BENCHMARK_NAME);
-        //    benchmarkStarted = true;
-        //} else {
-        //    benchmarkStartCounter++;
-        //}
+
+        //benchmark.start();
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -349,10 +354,9 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         // construct waveform vertices and populate eventIndices buffer
         eventsBuffer.clear();
-        int verticesCount =
-            getWaveformVertices(samples, eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex,
-                surfaceWidth);
-        final int samplesDrawCount = (int) (verticesCount * .5);
+        getWaveformVertices(samplesWithEvents, samples, eventIndices, eventNames, copiedEventsCount, drawStartIndex,
+            drawEndIndex, surfaceWidth);
+        final int samplesDrawCount = (int) (samplesWithEvents.sampleCount * .5);
 
         // calculate scale x and scale y
         if (surfaceSizeDirty || glWindowWidthDirty) {
@@ -368,29 +372,14 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         //autoScaleCheck(samples);
 
         // draw on surface
-        draw(gl, samples, envelopedSamples, verticesCount, eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth,
-            glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+        draw(gl, samples, samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer, surfaceWidth,
+            surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
+            lastSampleIndex);
 
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        //if (benchmarkStarted) {
-        //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        Benchit.analyze(BENCHMARK_NAME).log();
-        //        benchmarkPerSessionCounter = 0;
-        //
-        //        if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-        //            EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        //        }
-        //
-        //        benchmarkSessionCounter++;
-        //    } else {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        benchmarkPerSessionCounter++;
-        //    }
-        //    System.gc();
-        //}
+        //benchmark.end();
 
         //LOGD(TAG, "" + (System.currentTimeMillis() - start));
         //LOGD(TAG, "================================================");
@@ -406,28 +395,22 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         }
     }
 
-    protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
-        @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
+    protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
+        int drawSurfaceWidth) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
 
         try {
-            int[] counts =
-                JniUtils.prepareForDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices, eventCount,
-                    fromSample, toSample, drawSurfaceWidth);
-            //int envelopedEventCount =
-            //    JniUtils.prepareForMarkerDrawing(envelopedEventIndices, eventIndices, eventCount, fromSample, toSample,
-            //        drawSurfaceWidth);
-            int indexBase = eventCount - counts[1];
-            for (int i = 0; i < counts[1]; i++) {
-                eventsBuffer.put(envelopedEventIndices[i], eventNames[indexBase + i]);
+            JniUtils.prepareForDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample, toSample,
+                drawSurfaceWidth);
+            int indexBase = eventCount - samplesWithEvents.eventCount;
+            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
+                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
             }
-            return counts[0];
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
-
-            return 0;
         }
 
         //LOGD(TAG, "END: " + (System.currentTimeMillis() - start));

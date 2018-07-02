@@ -32,5 +32,5 @@ public interface ReceivesAudio {
     /**
      * Called by microphone thread to pass audio data to the service.
      */
-    void receiveAudio(@NonNull short[] data, int length);
+    void receiveAudio(@NonNull short[] samples, int length);
 }

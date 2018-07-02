@@ -20,7 +20,7 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.usb.SamplesWithEvents;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
@@ -84,10 +84,10 @@ class RecordingSaver {
                         // we first need to write all the events before start writing the samples
                         // so we get the precise times for events
                         int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                        int len = samplesWithEvents.eventIndices.length;
+                        int len = samplesWithEvents.eventCount;
                         String event;
                         for (int i = 0; i < len; i++) {
-                            event = samplesWithEvents.eventLabels[i];
+                            event = samplesWithEvents.eventNames[i];
                             if (event != null) {
                                 eventsFileContent.append("\n")
                                     .append(event)
@@ -97,8 +97,8 @@ class RecordingSaver {
                         }
 
                         // now we can write to audio stream
-                        bb = ByteBuffer.allocate(samplesWithEvents.samples.length * 2).order(ByteOrder.nativeOrder());
-                        bb.asShortBuffer().put(samplesWithEvents.samples);
+                        bb = ByteBuffer.allocate(samplesWithEvents.sampleCount * 2).order(ByteOrder.nativeOrder());
+                        bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
                         try {
                             outputStream.write(bb.array());
                         } catch (IOException e) {
@@ -112,10 +112,10 @@ class RecordingSaver {
                     // we first need to write all the events before start writing the samples
                     // so we get the precise times for events
                     int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                    int len = samplesWithEvents.eventIndices.length;
+                    int len = samplesWithEvents.eventCount;
                     String event;
                     for (int j = 0; j < len; j++) {
-                        event = samplesWithEvents.eventLabels[j];
+                        event = samplesWithEvents.eventNames[j];
                         if (event != null) {
                             eventsFileContent.append("\n")
                                 .append(event)
@@ -124,8 +124,8 @@ class RecordingSaver {
                         }
                     }
                     // now we can write to audio stream
-                    bb = ByteBuffer.allocate(samplesWithEvents.samples.length * 2).order(ByteOrder.nativeOrder());
-                    bb.asShortBuffer().put(samplesWithEvents.samples);
+                    bb = ByteBuffer.allocate(samplesWithEvents.sampleCount * 2).order(ByteOrder.nativeOrder());
+                    bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
                     try {
                         outputStream.write(bb.array());
                     } catch (IOException e) {

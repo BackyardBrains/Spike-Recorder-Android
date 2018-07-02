@@ -31,7 +31,7 @@ static const int MAX_CHANNELS = 10;
 // Max number of bytes we can process in one batch
 static const int MAX_BYTES = 5000;
 // We can maximally handle 6 seconds of sample data and spike can appear max every 200 ms
-static const int MAX_EVENTS = 600;
+static const int MAX_EVENTS = 100;
 // Minimum cut-off frequency
 static const float MIN_FILTER_CUT_OFF = 0.0f;
 // Maximum cut-off frequency

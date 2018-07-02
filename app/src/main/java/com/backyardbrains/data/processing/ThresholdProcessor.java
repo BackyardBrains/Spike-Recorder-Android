@@ -129,9 +129,9 @@ public class ThresholdProcessor implements SampleProcessor {
         handler = new Handler();
     }
 
-    @NonNull @Override public short[] process(@NonNull short[] samples) {
+    @NonNull @Override public short[] process(@NonNull short[] samples, int length) {
         if (samples.length > 0) {
-            processIncomingData(samples);
+            processIncomingData(samples, length);
 
             return averagedSamples;
         }
@@ -238,7 +238,7 @@ public class ThresholdProcessor implements SampleProcessor {
     }
 
     // Processes the incoming data and triggers all necessary calculations.
-    private void processIncomingData(short[] incomingSamples) {
+    private void processIncomingData(short[] incomingSamples, int length) {
         // reset buffers if threshold changed
         if (lastTriggeredValue != triggerValue) {
             LOGD(TAG, "Resetting because trigger value has changed");
@@ -272,13 +272,13 @@ public class ThresholdProcessor implements SampleProcessor {
 
         // append unfinished sample buffers whit incoming samples
         for (Samples samples : unfinishedSamplesForCalculation) {
-            samples.append(incomingSamples);
+            samples.append(incomingSamples, length);
         }
 
         short currentSample;
         int copyLength;
         // loop through incoming samples and listen for the threshold hit
-        for (int i = 0; i < incomingSamples.length; i++) {
+        for (int i = 0; i < length; i++) {
             currentSample = incomingSamples[i];
 
             // heartbeat processing
@@ -300,7 +300,7 @@ public class ThresholdProcessor implements SampleProcessor {
 
                     // create new samples for current threshold
                     final short[] centeredWave = new short[sampleCount];
-                    copyLength = Math.min(bufferSampleCount, incomingSamples.length);
+                    copyLength = Math.min(bufferSampleCount, length);
                     System.arraycopy(buffer.getArray(), i, centeredWave, 0, buffer.getArray().length - i);
                     System.arraycopy(incomingSamples, 0, centeredWave, buffer.getArray().length - i, copyLength);
 
@@ -330,7 +330,7 @@ public class ThresholdProcessor implements SampleProcessor {
         }
 
         // add samples to local buffer
-        buffer.add(incomingSamples);
+        buffer.add(incomingSamples, length);
 
         // add incoming samples to calculation of averages
         int len = unfinishedSamplesForCalculation.size();
@@ -415,8 +415,8 @@ public class ThresholdProcessor implements SampleProcessor {
         /**
          * Appends newly received samples and returns {@code true} if buffer is full, {@code false} otherwise.
          */
-        void append(short[] samples) {
-            final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, samples.length);
+        void append(short[] samples, int length) {
+            final int samplesToCopy = Math.min(this.samples.length - nextSampleIndex, length);
             System.arraycopy(samples, 0, this.samples, nextSampleIndex, samplesToCopy);
             nextSampleIndex += samplesToCopy;
         }

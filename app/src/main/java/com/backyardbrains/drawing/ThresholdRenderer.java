@@ -22,6 +22,7 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -121,19 +122,16 @@ public class ThresholdRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected int getWaveformVertices(@NonNull short[] samples, @NonNull int[] eventIndices,
-        @NonNull String[] eventNames, int eventCount, int fromSample, int toSample, int drawSurfaceWidth) {
+    @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
+        int drawSurfaceWidth) {
         try {
-            int[] counts =
-                JniUtils.prepareForThresholdDrawing(envelopedSamples, samples, envelopedEventIndices, eventIndices,
-                    eventCount, fromSample, toSample, drawSurfaceWidth);
-            return counts[0];
+            JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample,
+                toSample, drawSurfaceWidth);
         } catch (ArrayIndexOutOfBoundsException e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
-
-        return 0;
     }
 
     private void updateThresholdHandle() {

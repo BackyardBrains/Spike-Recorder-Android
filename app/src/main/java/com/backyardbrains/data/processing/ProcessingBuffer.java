@@ -1,8 +1,7 @@
 package com.backyardbrains.data.processing;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.usb.SamplesWithEvents;
-import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -16,7 +15,7 @@ public class ProcessingBuffer {
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
     //
-    public static final int MAX_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6; // 6 seconds
+    public static final int MAX_BUFFER_SIZE = BufferUtils.MAX_SAMPLE_BUFFER_SIZE; // 6 seconds of audio data
 
     private static final Object eventBufferLock = new Object();
 
@@ -118,31 +117,58 @@ public class ProcessingBuffer {
      */
     public void addToBuffer(@NonNull SamplesWithEvents samplesWithEvents) {
         // add samples to ring buffer
-        if (sampleBuffer != null) sampleBuffer.add(samplesWithEvents.samples);
+        if (sampleBuffer != null) sampleBuffer.add(samplesWithEvents.samples, samplesWithEvents.sampleCount);
 
         // add new events, update indices of existing events and remove events that are no longer visible
         synchronized (eventBufferLock) {
             int removeIndices;
             for (removeIndices = 0; removeIndices < eventCount; removeIndices++) {
-                if (eventIndices[removeIndices] - samplesWithEvents.samples.length < 0) continue;
+                if (eventIndices[removeIndices] - samplesWithEvents.sampleCount < 0) continue;
 
                 break;
             }
             int eventCounter = 0;
             for (int i = removeIndices; i < eventCount; i++) {
-                eventIndices[eventCounter] = eventIndices[i] - samplesWithEvents.samples.length;
+                eventIndices[eventCounter] = eventIndices[i] - samplesWithEvents.sampleCount;
                 eventNames[eventCounter++] = eventNames[i];
             }
-            int baseIndex = bufferSize - samplesWithEvents.samples.length;
-            for (int i = 0; i < samplesWithEvents.eventIndices.length; i++) {
+            int baseIndex = bufferSize - samplesWithEvents.sampleCount;
+            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
                 eventIndices[eventCounter] = baseIndex + samplesWithEvents.eventIndices[i];
-                eventNames[eventCounter++] = samplesWithEvents.eventLabels[i];
+                eventNames[eventCounter++] = samplesWithEvents.eventNames[i];
             }
-            eventCount = eventCount - removeIndices + samplesWithEvents.eventIndices.length;
+            eventCount = eventCount - removeIndices + samplesWithEvents.eventCount;
         }
 
         // save last sample index (playhead)
         lastSampleIndex = samplesWithEvents.lastSampleIndex;
+
+        // add samples to ring buffer
+        //if (sampleBuffer != null) sampleBuffer.add(samplesWithEvents.samples);
+        //
+        //// add new events, update indices of existing events and remove events that are no longer visible
+        //synchronized (eventBufferLock) {
+        //    int removeIndices;
+        //    for (removeIndices = 0; removeIndices < eventCount; removeIndices++) {
+        //        if (eventIndices[removeIndices] - samplesWithEvents.samples.length < 0) continue;
+        //
+        //        break;
+        //    }
+        //    int eventCounter = 0;
+        //    for (int i = removeIndices; i < eventCount; i++) {
+        //        eventIndices[eventCounter] = eventIndices[i] - samplesWithEvents.samples.length;
+        //        eventNames[eventCounter++] = eventNames[i];
+        //    }
+        //    int baseIndex = bufferSize - samplesWithEvents.samples.length;
+        //    for (int i = 0; i < samplesWithEvents.eventIndices.length; i++) {
+        //        eventIndices[eventCounter] = baseIndex + samplesWithEvents.eventIndices[i];
+        //        eventNames[eventCounter++] = samplesWithEvents.eventLabels[i];
+        //    }
+        //    eventCount = eventCount - removeIndices + samplesWithEvents.eventIndices.length;
+        //}
+        //
+        //// save last sample index (playhead)
+        //lastSampleIndex = samplesWithEvents.lastSampleIndex;
     }
 
     /**

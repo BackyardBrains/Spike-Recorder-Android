@@ -6,12 +6,12 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
-import com.tspoon.benchit.Benchit;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -27,6 +27,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
+
+    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents((byte) 0);
 
     /**
      * Interface definition for a callback to be invoked when SpikerBox hardware type is detected after connection.
@@ -172,7 +174,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     }
 
     private static final String BENCHMARK_NAME = "PROCESS_SAMPLE_STREAM_TEST";
-    private static final int BENCHMARK_PER_SESSION_COUNTS = 9999;
+    private static final int BENCHMARK_PER_SESSION_COUNTS = 999;
     private static final int BENCHMARK_SESSION_COUNTS = 9;
     private int benchmarkPerSessionCounter = 0;
     private int benchmarkStartCounter = 0;
@@ -184,38 +186,36 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      */
     @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length,
         long lastByteIndex) {
-        if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
-            Benchit.begin(BENCHMARK_NAME);
-            benchmarkStarted = true;
-        } else {
-            benchmarkStartCounter++;
-        }
+        //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
+        //    Benchit.begin(BENCHMARK_NAME);
+        //    benchmarkStarted = true;
+        //} else {
+        //    benchmarkStartCounter++;
+        //}
 
-        //LOGD(TAG, "DATA SIZE: " + data.length);
         //SamplesWithEvents swm = processor.process(data);
-        SamplesWithEvents swm = JniUtils.processSampleStream(data, length);
+        JniUtils.processSampleStream(samplesWithEvents, data, length);
 
-        if (benchmarkStarted) {
-            if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
-                Benchit.end(BENCHMARK_NAME);
-                //Benchit.analyze(BENCHMARK_NAME).log();
-                benchmarkPerSessionCounter = 0;
+        //if (benchmarkStarted) {
+        //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
+        //        Benchit.end(BENCHMARK_NAME);
+        //        benchmarkPerSessionCounter = 0;
+        //
+        //        if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
+        //            Benchit.analyze(BENCHMARK_NAME).log();
+        //            benchmarkSessionCounter = 0;
+        //        }
+        //
+        //        benchmarkSessionCounter++;
+        //    } else {
+        //        Benchit.end(BENCHMARK_NAME);
+        //        benchmarkPerSessionCounter++;
+        //    }
+        //    System.gc();
+        //}
 
-                if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-                    Benchit.analyze(BENCHMARK_NAME).log();
-                }
-
-                benchmarkSessionCounter++;
-            } else {
-                Benchit.end(BENCHMARK_NAME);
-                benchmarkPerSessionCounter++;
-            }
-            System.gc();
-        }
-
-        swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
-        return swm;
+        samplesWithEvents.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
+        return samplesWithEvents;
     }
 
     /**
