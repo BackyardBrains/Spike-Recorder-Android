@@ -555,7 +555,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                 }
                 tvFileSize.setText(waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate()) : "UNKNOWN");
                 date.setTime(file.lastModified());
-                tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
+                tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));
             }
         }
     }
