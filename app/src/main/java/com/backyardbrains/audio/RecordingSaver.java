@@ -50,6 +50,8 @@ class RecordingSaver {
 
     private class WriteThread extends Thread {
 
+        private static final int BUFFER_SIZE = 5000;
+
         private final File audioFile;
         private final OutputStream outputStream;
         private final File eventsFile;
@@ -71,6 +73,9 @@ class RecordingSaver {
                 throw new IOException("could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
                     e);
             }
+
+            // crate byte buffer that will be used for converting shorts to bytes
+            bb = ByteBuffer.allocate(BUFFER_SIZE).order(ByteOrder.nativeOrder());
 
             // create events file
             eventsFile = RecordingUtils.createEventsFile(audioFile);
@@ -97,10 +102,9 @@ class RecordingSaver {
                         }
 
                         // now we can write to audio stream
-                        bb = ByteBuffer.allocate(samplesWithEvents.sampleCount * 2).order(ByteOrder.nativeOrder());
                         bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
                         try {
-                            outputStream.write(bb.array());
+                            outputStream.write(bb.array(), 0, samplesWithEvents.sampleCount * 2);
                         } catch (IOException e) {
                             throw new IllegalStateException("Could not write sample to file", e);
                         }
@@ -123,11 +127,11 @@ class RecordingSaver {
                                 .append((writtenSamples + samplesWithEvents.eventIndices[j]) / (float) sampleRate);
                         }
                     }
+
                     // now we can write to audio stream
-                    bb = ByteBuffer.allocate(samplesWithEvents.sampleCount * 2).order(ByteOrder.nativeOrder());
                     bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
                     try {
-                        outputStream.write(bb.array());
+                        outputStream.write(bb.array(), 0, samplesWithEvents.sampleCount * 2);
                     } catch (IOException e) {
                         throw new IllegalStateException("Could not write sample to file!", e);
                     }

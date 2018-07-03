@@ -71,6 +71,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     private BYBSlidingView stopRecButton;
     private Unbinder unbinder;
 
+    private StringBuilder stringBuilder;
+    private int tapToStopLength;
+
     private final FilterSettingsDialog.FilterSelectionListener FILTER_SELECTION_LISTENER =
         new FilterSettingsDialog.FilterSelectionListener() {
             @Override public void onFilterSelected(@NonNull Filter filter) {
@@ -85,6 +88,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
     @Override public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+
+        stringBuilder = new StringBuilder(getString(R.string.tap_to_stop_recording));
+        tapToStopLength = stringBuilder.length();
     }
 
     @Override public void onStart() {
@@ -186,8 +192,11 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
-        tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
-            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate())));
+        stringBuilder.replace(tapToStopLength, stringBuilder.length(),
+            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate()));
+        tvStopRecording.setText(stringBuilder);
+        //tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
+        //    WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate())));
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)

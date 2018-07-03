@@ -11,7 +11,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.events.SampleRateChangeEvent;
-import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.WaveformLayout;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -49,7 +48,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
                 setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
             }
 
-            setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
+            //setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
         }
 
         public void setSampleRate(int sampleRate) {
@@ -152,7 +151,8 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //  EVENT BUS
     //==============================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
         LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
         onSampleRateChange(event.getSampleRate());

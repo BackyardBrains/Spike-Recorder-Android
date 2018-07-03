@@ -513,11 +513,11 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             notifyDataSetChanged();
         }
 
-        @Override public FileViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        @NonNull @Override public FileViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new FileViewHolder(inflater.inflate(R.layout.item_recording, parent, false), callback);
         }
 
-        @Override public void onBindViewHolder(FileViewHolder holder, int position) {
+        @Override public void onBindViewHolder(@NonNull FileViewHolder holder, int position) {
             holder.setFile(files.get(position));
         }
 
@@ -531,6 +531,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             @BindView(R.id.tv_file_last_modified) TextView tvFileLasModified;
 
             File file;
+            Date date = new Date();
 
             FileViewHolder(View view, final Callback callback) {
                 super(view);
@@ -553,6 +554,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                 } catch (IOException ignored) {
                 }
                 tvFileSize.setText(waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate()) : "UNKNOWN");
+                date.setTime(file.lastModified());
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
             }
         }
