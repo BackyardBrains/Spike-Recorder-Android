@@ -1,5 +1,6 @@
 package com.backyardbrains.data.processing;
 
+import android.support.annotation.NonNull;
 import com.backyardbrains.utils.EventUtils;
 
 /**
@@ -29,6 +30,11 @@ public class SamplesWithEvents {
         this.samples = new short[sampleBufferSize];
         this.eventIndices = new int[EVENT_BUFFER_SIZE];
         this.eventNames = new String[EVENT_BUFFER_SIZE];
+    }
+
+    public void setAll(@NonNull SamplesWithEvents samplesWithEvents) {
+        setAll(samplesWithEvents.samples, samplesWithEvents.sampleCount, samplesWithEvents.eventIndices,
+            samplesWithEvents.eventNames, samplesWithEvents.eventCount, samplesWithEvents.lastSampleIndex);
     }
 
     public void setAll(short[] samples, int sampleCount, int[] eventIndices, String[] eventNames, int eventCount,
