@@ -19,7 +19,6 @@
         android:id="@+id/iv_threshold_handle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:contentDescription="@string/cd_threshold_handle"
         android:src="@drawable/handle_white_left"
         android:background="@android:color/transparent"
         app:layout_constraintLeft_toLeftOf="parent"

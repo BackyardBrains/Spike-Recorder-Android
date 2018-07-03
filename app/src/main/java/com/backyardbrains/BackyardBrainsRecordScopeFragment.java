@@ -192,11 +192,9 @@ public class BackyardBrainsRecordScopeFragment extends BaseWaveformFragment
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
-        stringBuilder.replace(tapToStopLength, stringBuilder.length(),
-            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate()));
+        stringBuilder.delete(tapToStopLength, stringBuilder.length());
+        stringBuilder.append(WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate()));
         tvStopRecording.setText(stringBuilder);
-        //tvStopRecording.setText(String.format(getString(R.string.tap_to_stop_recording),
-        //    WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate())));
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)

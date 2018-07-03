@@ -13,7 +13,6 @@ public class Formats {
     private static final String UNIT_MILLIS = "msec";
     private static final String UNIT_SECS = "s";
     private static final String UNIT_MILLIVOLTS = "mV";
-    private static final String FORMAT_MM_SS = "%02d:%02d";
 
     private static final DecimalFormat timeFormat = new DecimalFormat("#.0");
     private static final DecimalFormat signalFormat = new DecimalFormat("#.##");
@@ -29,7 +28,6 @@ public class Formats {
 
         final double time = ms < 1000 ? ms : ms / 1000;
         timeFormat.format(time, stringBuilder, fieldPosition);
-        //final String unit = ms < 1000 ? UNIT_MILLIS : UNIT_SECS;
         return stringBuilder.append(" ").append(ms < 1000 ? UNIT_MILLIS : UNIT_SECS).toString();
     }
 

@@ -29,6 +29,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -43,7 +44,6 @@ import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.filters.Filter;
 import com.backyardbrains.usb.AbstractUsbSampleSource;
-import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
@@ -833,9 +833,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     // Pass audio and events to the active RecordingSaver instance
     private void record(@NonNull SamplesWithEvents samplesWithEvents) {
         try {
-            if (recordingSaver != null) {
-                recordingSaver.writeAudioWithEvents(samplesWithEvents);
+            if (recordingSaver != null) recordingSaver.writeAudioWithEvents(samplesWithEvents);
 
+            // recordingSaver can be set to null if stopRecording() is called between this and previous line
+            if (recordingSaver != null) {
                 // post current recording progress
                 EventBus.getDefault()
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
