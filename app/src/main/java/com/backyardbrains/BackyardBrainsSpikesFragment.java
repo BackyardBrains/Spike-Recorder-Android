@@ -19,6 +19,7 @@ import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.view.BYBThresholdHandle;
 import java.util.List;
@@ -199,6 +200,16 @@ public class BackyardBrainsSpikesFragment extends BackyardBrainsPlaybackScopeFra
     //=================================================
     //  EVENT BUS
     //=================================================
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN) @Override
+    public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
+        super.onAudioPlaybackStartedEvent(event);
+
+        // let's set the playhead so that the begining of the waveform is at the middle of the screen
+        int playhead = (int) (getRenderer().getGlWindowWidth() * .5f);
+        seek(playhead);
+        sbAudioProgress.setProgress(playhead);
+    }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioAnalysisDoneEvent(AudioAnalysisDoneEvent event) {

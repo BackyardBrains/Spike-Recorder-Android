@@ -405,7 +405,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
 
     @CallSuper @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        // this will start playback if we are coming from background
+        // this will init playback if we are coming from background
         startPlaying(false);
     }
 
@@ -413,7 +413,7 @@ public class BackyardBrainsPlaybackScopeFragment extends BaseWaveformFragment {
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         LOGD(TAG, "Start audio playback - " + event.getLength());
         sampleRate = event.getSampleRate();
-        if (event.getLength() > 0) {
+        if (event.getLength() > 0) { // we are starting playback, not resuming
             sbAudioProgress.setMax((int) event.getLength());
             EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
         }
