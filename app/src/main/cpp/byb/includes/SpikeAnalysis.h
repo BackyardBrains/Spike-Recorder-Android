@@ -19,12 +19,12 @@ public:
 
     ~SpikeAnalysis();
 
-    int *findSpikes(const short *samples, int sampleCount, float sampleRate, short *valuesPos, int *indicesPos,
-                    float *timesPos, int startIndexPos, int acceptablePos, short *valuesNeg, int *indicesNeg,
-                    float *timesNeg, int startIndexNeg, int acceptableNeg);
+    int *findSpikes(const short *inSamples, int sampleCount, float sampleRate, short *outValuesPos, int *outIndicesPos,
+                    float *outTimesPos, int startIndexPos, int acceptablePos, short *outValuesNeg, int *outIndicesNeg,
+                    float *outTimesNeg, int startIndexNeg, int acceptableNeg);
 
-    int *filterSpikes(short *valuesPos, int *indicesPos, float *timesPos, int positivesCount, short *valuesNeg,
-                      int *indicesNeg, float *timesNeg, int negativesCount);
+    int *filterSpikes(short *outValuesPos, int *outIndicesPos, float *outTimesPos, int positivesCount,
+                      short *outValuesNeg, int *outIndicesNeg, float *outTimesNeg, int negativesCount);
 
 private:
     static const char *TAG;

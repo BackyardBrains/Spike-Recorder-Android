@@ -36,6 +36,9 @@ public class JniUtils {
     public static native int[] filterSpikes(short[] valuesPos, int[] indicesPos, float[] timesPos, int positivesCount,
         short[] valuesNeg, int[] indicesNeg, float[] timesNeg, int negativesCount);
 
+    public static native void autocorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
+        int[][] analysis, int analysisBinCount);
+
     static {
         System.loadLibrary("byb-lib");
     }

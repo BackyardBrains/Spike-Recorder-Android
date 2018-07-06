@@ -49,8 +49,6 @@ private:
     // Used for signal demodulation
     LowPassFilter amDemodulationLowPassFilter[AM_DEMODULATION_LOW_PASS_FILTER_COUNT];
 
-    // Temporary buffer
-    short *amBuffer;
     // Used to detect whether signal is modulated or not
     float rmsOfOriginalSignal = 0;
     float rmsOfNotchedAMSignal = 0;

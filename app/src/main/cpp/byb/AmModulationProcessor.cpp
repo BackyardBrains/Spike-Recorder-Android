@@ -43,7 +43,7 @@ bool AmModulationProcessor::isReceivingAmSignal() {
 }
 
 void AmModulationProcessor::process(const short *inSamples, short *outSamples, const int length) {
-    amBuffer = new short[length];
+    short *amBuffer = new short[length];
     std::copy(inSamples, inSamples + length, amBuffer);
 
     amDetectionLowPassFilter.filter(amBuffer, length);

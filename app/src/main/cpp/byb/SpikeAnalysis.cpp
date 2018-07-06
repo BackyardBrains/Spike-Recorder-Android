@@ -12,16 +12,16 @@ SpikeAnalysis::SpikeAnalysis() {
 SpikeAnalysis::~SpikeAnalysis() {
 }
 
-int *
-SpikeAnalysis::findSpikes(const short *samples, int sampleCount, float sampleRate, short *valuesPos, int *indicesPos,
-                          float *timesPos, int startIndexPos, int acceptablePos, short *valuesNeg, int *indicesNeg,
-                          float *timesNeg, int startIndexNeg, int acceptableNeg) {
+int *SpikeAnalysis::findSpikes(const short *inSamples, int sampleCount, float sampleRate, short *outValuesPos,
+                               int *outIndicesPos, float *outTimesPos, int startIndexPos, int acceptablePos,
+                               short *outValuesNeg, int *outIndicesNeg, float *outTimesNeg, int startIndexNeg,
+                               int acceptableNeg) {
     float sampleRateDivider = (float) 1 / sampleRate;
     int peaksCounterPos = 0;
     int peaksCounterNeg = 0;
     //noinspection ForLoopReplaceableByForEach
     for (int i = 0; i < sampleCount; i++) {
-        sample = samples[i];
+        sample = inSamples[i];
         // determine state of positive schmitt trigger
         if (schmittPosState == SCHMITT_OFF) {
             if (sample > acceptablePos) {
@@ -31,9 +31,9 @@ SpikeAnalysis::findSpikes(const short *samples, int sampleCount, float sampleRat
         } else {
             if (sample < 0) {
                 schmittPosState = SCHMITT_OFF;
-                valuesPos[startIndexPos + peaksCounterPos] = maxPeakValue;
-                indicesPos[startIndexPos + peaksCounterPos] = maxPeakIndex;
-                timesPos[startIndexPos + peaksCounterPos] = maxPeakTime;
+                outValuesPos[startIndexPos + peaksCounterPos] = maxPeakValue;
+                outIndicesPos[startIndexPos + peaksCounterPos] = maxPeakIndex;
+                outTimesPos[startIndexPos + peaksCounterPos] = maxPeakTime;
                 peaksCounterPos++;
             } else if (sample > maxPeakValue) {
                 maxPeakValue = sample;
@@ -51,9 +51,9 @@ SpikeAnalysis::findSpikes(const short *samples, int sampleCount, float sampleRat
         } else {
             if (sample > 0) {
                 schmittNegState = SCHMITT_OFF;
-                valuesNeg[startIndexNeg + peaksCounterNeg] = minPeakValue;
-                indicesNeg[startIndexNeg + peaksCounterNeg] = minPeakIndex;
-                timesNeg[startIndexNeg + peaksCounterNeg] = minPeakTime;
+                outValuesNeg[startIndexNeg + peaksCounterNeg] = minPeakValue;
+                outIndicesNeg[startIndexNeg + peaksCounterNeg] = minPeakIndex;
+                outTimesNeg[startIndexNeg + peaksCounterNeg] = minPeakTime;
                 peaksCounterNeg++;
             } else if (sample < minPeakValue) {
                 minPeakValue = sample;
@@ -69,22 +69,21 @@ SpikeAnalysis::findSpikes(const short *samples, int sampleCount, float sampleRat
     return new int[2]{peaksCounterPos, peaksCounterNeg};
 }
 
-int *
-SpikeAnalysis::filterSpikes(short *valuesPos, int *indicesPos, float *timesPos, int positivesCount, short *valuesNeg,
-                            int *indicesNeg, float *timesNeg, int negativesCount) {
+int *SpikeAnalysis::filterSpikes(short *outValuesPos, int *outIndicesPos, float *outTimesPos, int positivesCount,
+                                 short *outValuesNeg, int *outIndicesNeg, float *outTimesNeg, int negativesCount) {
     int len = positivesCount;
     int removedCounter = 0;
     int removedNegCounter = 0;
     int i;
     if (len > 0) { // Filter positive spikes using kill interval
         for (i = 0; i < len - 1; i++) { // look on the right
-            if (valuesPos[i] < valuesPos[i + 1]) {
-                if ((timesPos[i + 1] - timesPos[i]) < KILL_INTERVAL) {
+            if (outValuesPos[i] < outValuesPos[i + 1]) {
+                if ((outTimesPos[i + 1] - outTimesPos[i]) < KILL_INTERVAL) {
                     int numMoved = len - i - 1;
                     if (numMoved > 0) {
-                        std::move(valuesPos + i + 1, valuesPos + i + numMoved, valuesPos + i);
-                        std::move(indicesPos + i + 1, indicesPos + i + numMoved, indicesPos + i);
-                        std::move(timesPos + i + 1, timesPos + i + numMoved, timesPos + i);
+                        std::move(outValuesPos + i + 1, outValuesPos + i + numMoved, outValuesPos + i);
+                        std::move(outIndicesPos + i + 1, outIndicesPos + i + numMoved, outIndicesPos + i);
+                        std::move(outTimesPos + i + 1, outTimesPos + i + numMoved, outTimesPos + i);
                     }
                     len--;
                     removedCounter++;
@@ -94,13 +93,13 @@ SpikeAnalysis::filterSpikes(short *valuesPos, int *indicesPos, float *timesPos, 
         }
         len = i;
         for (i = 1; i < len; i++) { // look on the left neighbor
-            if (valuesPos[i] < valuesPos[i - 1]) {
-                if ((timesPos[i] - timesPos[i - 1]) < KILL_INTERVAL) {
+            if (outValuesPos[i] < outValuesPos[i - 1]) {
+                if ((outTimesPos[i] - outTimesPos[i - 1]) < KILL_INTERVAL) {
                     int numMoved = len - i - 1;
                     if (numMoved > 0) {
-                        std::move(valuesPos + i + 1, valuesPos + i + numMoved, valuesPos + i);
-                        std::move(indicesPos + i + 1, indicesPos + i + numMoved, indicesPos + i);
-                        std::move(timesPos + i + 1, timesPos + i + numMoved, timesPos + i);
+                        std::move(outValuesPos + i + 1, outValuesPos + i + numMoved, outValuesPos + i);
+                        std::move(outIndicesPos + i + 1, outIndicesPos + i + numMoved, outIndicesPos + i);
+                        std::move(outTimesPos + i + 1, outTimesPos + i + numMoved, outTimesPos + i);
                     }
                     len--;
                     removedCounter++;
@@ -112,13 +111,13 @@ SpikeAnalysis::filterSpikes(short *valuesPos, int *indicesPos, float *timesPos, 
     len = negativesCount;
     if (len > 0) { // Filter negative spikes using kill interval
         for (i = 0; i < len - 1; i++) { // look on the right
-            if (valuesNeg[i] > valuesNeg[i + 1]) {
-                if ((timesNeg[i + 1] - timesNeg[i]) < KILL_INTERVAL) {
+            if (outValuesNeg[i] > outValuesNeg[i + 1]) {
+                if ((outTimesNeg[i + 1] - outTimesNeg[i]) < KILL_INTERVAL) {
                     int numMoved = len - i - 1;
                     if (numMoved > 0) {
-                        std::move(valuesNeg + i + 1, valuesNeg + i + numMoved, valuesNeg + i);
-                        std::move(indicesNeg + i + 1, indicesNeg + i + numMoved, indicesNeg + i);
-                        std::move(timesNeg + i + 1, timesNeg + i + numMoved, timesNeg + i);
+                        std::move(outValuesNeg + i + 1, outValuesNeg + i + numMoved, outValuesNeg + i);
+                        std::move(outIndicesNeg + i + 1, outIndicesNeg + i + numMoved, outIndicesNeg + i);
+                        std::move(outTimesNeg + i + 1, outTimesNeg + i + numMoved, outTimesNeg + i);
                     }
                     len--;
                     removedNegCounter++;
@@ -128,13 +127,13 @@ SpikeAnalysis::filterSpikes(short *valuesPos, int *indicesPos, float *timesPos, 
         }
         len = i;
         for (i = 1; i < len; i++) { // look on the left neighbor
-            if (valuesNeg[i] > valuesNeg[i - 1]) {
-                if ((timesNeg[i] - timesNeg[i - 1]) < KILL_INTERVAL) {
+            if (outValuesNeg[i] > outValuesNeg[i - 1]) {
+                if ((outTimesNeg[i] - outTimesNeg[i - 1]) < KILL_INTERVAL) {
                     int numMoved = len - i - 1;
                     if (numMoved > 0) {
-                        std::move(valuesNeg + i + 1, valuesNeg + i + numMoved, valuesNeg + i);
-                        std::move(indicesNeg + i + 1, indicesNeg + i + numMoved, indicesNeg + i);
-                        std::move(timesNeg + i + 1, timesNeg + i + numMoved, timesNeg + i);
+                        std::move(outValuesNeg + i + 1, outValuesNeg + i + numMoved, outValuesNeg + i);
+                        std::move(outIndicesNeg + i + 1, outIndicesNeg + i + numMoved, outIndicesNeg + i);
+                        std::move(outTimesNeg + i + 1, outTimesNeg + i + numMoved, outTimesNeg + i);
                     }
                     len--;
                     removedNegCounter++;
