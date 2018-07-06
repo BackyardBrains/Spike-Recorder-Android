@@ -3,14 +3,16 @@
 //
 
 #include <jni.h>
+#include <algorithm>
 #include <string>
-#include <AmModulationProcessor.h>
-#include <JniHelper.h>
+
+#include "AmModulationProcessor.h"
+#include "SampleStreamProcessor.h"
+#include "AnalysisUtils.h"
+#include "SpikeAnalysis.h"
+#include "JniHelper.h"
 
 #include "includes/drawing.h"
-#include "includes/processing.h"
-
-using namespace std;
 
 #define HELLO "Hello from C++"
 
@@ -41,9 +43,25 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
                                                                   jintArray inEventIndices, jint eventCount,
                                                                   jint start, jint end,
                                                                   jint drawSurfaceWidth);
+JNIEXPORT jfloat JNICALL
+Java_com_backyardbrains_utils_JniUtils_calculateStandardDeviation(JNIEnv *env, jobject thiz, jshortArray samples,
+                                                                  jint length);
+JNIEXPORT jintArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jshortArray samples, jint sampleCount,
+                                                  jfloat sampleRate, jshortArray valuesPos, jintArray indicesPos,
+                                                  jfloatArray timesPos, jint startIndexPos, jint acceptablePos,
+                                                  jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
+                                                  jint startIndexNeg, jint acceptableNeg, jint maxSpikes);
+JNIEXPORT jintArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_filterSpikes(JNIEnv *env, jobject thiz, jshortArray valuesPos,
+                                                    jintArray indicesPos, jfloatArray timesPos, jint positivesCount,
+                                                    jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
+                                                    jint negativesCount);
 }
 
 AmModulationProcessor amModulationProcessor;
+SampleStreamProcessor sampleStreamProcessor;
+SpikeAnalysis spikeAnalysis;
 JniHelper jniHelper;
 
 static jboolean exception_check(JNIEnv *env) {
@@ -87,14 +105,14 @@ Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jobject thiz, 
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate) {
-    setSampleRate(sampleRate);
     amModulationProcessor.setSampleRate(sampleRate);
+    sampleStreamProcessor.setSampleRate(sampleRate);
 }
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff) {
-    setFilters(lowCutOff, highCutOff);
     amModulationProcessor.setFilters(lowCutOff, highCutOff);
+    sampleStreamProcessor.setFilters(lowCutOff, highCutOff);
 }
 
 
@@ -132,14 +150,13 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
     }
 
     unsigned char *uDataPtr = new unsigned char[length];
-    copy(dataPtr, dataPtr + length, uDataPtr);
+    std::copy(dataPtr, dataPtr + length, uDataPtr);
 
     jshort *outSamplesPtr = new jshort[sampleCount];
     jint *outEventIndicesPtr = new jint[eventCount];
-    string *outEventNamesPtr = new string[eventCount];
+    std::string *outEventNamesPtr = new std::string[eventCount];
     jint *outCounts = new jint[2];
-    processIncomingBytes(uDataPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr,
-                         outCounts);
+    sampleStreamProcessor.process(uDataPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr, outCounts);
 
     // if we did get some events create array of strings that represent event names adn populate it
     for (int i = 0; i < outCounts[1]; i++) {
@@ -279,4 +296,168 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
 
     Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(env, thiz, out, inSamples, inEventIndices, eventCount,
                                                              from, to, drawSurfaceWidth);
+}
+
+JNIEXPORT jfloat JNICALL
+Java_com_backyardbrains_utils_JniUtils_calculateStandardDeviation(JNIEnv *env, jobject thiz, jshortArray samples,
+                                                                  jint length) {
+    jshort *inSamplesPtr = new jshort[length];
+    env->GetShortArrayRegion(samples, 0, length, inSamplesPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSamplesPtr;
+        return 0.0f;
+    }
+
+    jfloat sd = AnalysisUtils::SD(inSamplesPtr, length);
+    delete[] inSamplesPtr;
+
+    return sd;
+}
+
+JNIEXPORT jintArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jshortArray samples, jint sampleCount,
+                                                  jfloat sampleRate, jshortArray valuesPos, jintArray indicesPos,
+                                                  jfloatArray timesPos, jint startIndexPos, jint acceptablePos,
+                                                  jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
+                                                  jint startIndexNeg, jint acceptableNeg, jint maxSpikes) {
+    // get pointer to samples array
+    jshort *samplesPtr = new jshort[sampleCount];
+    env->GetShortArrayRegion(samples, 0, sampleCount, samplesPtr);
+    // get pointer to positive values array
+    jshort *valuesPosPtr = new jshort[maxSpikes];
+    env->GetShortArrayRegion(valuesPos, 0, maxSpikes, valuesPosPtr);
+    // get pointer to positive indices array
+    jint *indicesPosPtr = new jint[maxSpikes];
+    env->GetIntArrayRegion(indicesPos, 0, maxSpikes, indicesPosPtr);
+    // get pointer to positive times array
+    jfloat *timesPosPtr = new jfloat[maxSpikes];
+    env->GetFloatArrayRegion(timesPos, 0, maxSpikes, timesPosPtr);
+    // get pointer to negative values array
+    jshort *valuesNegPtr = new jshort[maxSpikes];
+    env->GetShortArrayRegion(valuesNeg, 0, maxSpikes, valuesNegPtr);
+    // get pointer to negative indices array
+    jint *indicesNegPtr = new jint[maxSpikes];
+    env->GetIntArrayRegion(indicesNeg, 0, maxSpikes, indicesNegPtr);
+    // get pointer to negative times array
+    jfloat *timesNegPtr = new jfloat[maxSpikes];
+    env->GetFloatArrayRegion(timesNeg, 0, maxSpikes, timesNegPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] samplesPtr;
+        delete[] valuesPosPtr;
+        delete[] indicesPosPtr;
+        delete[] timesPosPtr;
+        delete[] valuesNegPtr;
+        delete[] indicesNegPtr;
+        delete[] timesNegPtr;
+        return env->NewIntArray(2);
+    }
+
+
+    jint *resultPtr = spikeAnalysis.findSpikes(samplesPtr, sampleCount, sampleRate, valuesPosPtr, indicesPosPtr,
+                                               timesPosPtr, startIndexPos, acceptablePos, valuesNegPtr, indicesNegPtr,
+                                               timesNegPtr, startIndexNeg, acceptableNeg);
+
+    jintArray result = env->NewIntArray(2);
+    env->SetIntArrayRegion(result, 0, 2, resultPtr);
+
+    if (exception_check(env)) {
+        delete[] samplesPtr;
+        delete[] valuesPosPtr;
+        delete[] indicesPosPtr;
+        delete[] timesPosPtr;
+        delete[] valuesNegPtr;
+        delete[] indicesNegPtr;
+        delete[] timesNegPtr;
+        delete[] resultPtr;
+        return env->NewIntArray(2);
+    }
+
+    env->SetShortArrayRegion(valuesPos, 0, startIndexPos + resultPtr[0], valuesPosPtr);
+    env->SetIntArrayRegion(indicesPos, 0, startIndexPos + resultPtr[0], indicesPosPtr);
+    env->SetFloatArrayRegion(timesPos, 0, startIndexPos + resultPtr[0], timesPosPtr);
+    env->SetShortArrayRegion(valuesNeg, 0, startIndexNeg + resultPtr[1], valuesNegPtr);
+    env->SetIntArrayRegion(indicesNeg, 0, startIndexNeg + resultPtr[1], indicesNegPtr);
+    env->SetFloatArrayRegion(timesNeg, 0, startIndexNeg + resultPtr[1], timesNegPtr);
+    delete[] samplesPtr;
+    delete[] valuesPosPtr;
+    delete[] indicesPosPtr;
+    delete[] timesPosPtr;
+    delete[] valuesNegPtr;
+    delete[] indicesNegPtr;
+    delete[] timesNegPtr;
+    delete[] resultPtr;
+
+    return result;
+}
+
+JNIEXPORT jintArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_filterSpikes(JNIEnv *env, jobject thiz, jshortArray valuesPos,
+                                                    jintArray indicesPos, jfloatArray timesPos, jint positivesCount,
+                                                    jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
+                                                    jint negativesCount) {
+    jshort *valuesPosPtr = new jshort[positivesCount];
+    env->GetShortArrayRegion(valuesPos, 0, positivesCount, valuesPosPtr);
+    // get pointer to positive indices array
+    jint *indicesPosPtr = new jint[positivesCount];
+    env->GetIntArrayRegion(indicesPos, 0, positivesCount, indicesPosPtr);
+    // get pointer to positive times array
+    jfloat *timesPosPtr = new jfloat[positivesCount];
+    env->GetFloatArrayRegion(timesPos, 0, positivesCount, timesPosPtr);
+    // get pointer to negative values array
+    jshort *valuesNegPtr = new jshort[negativesCount];
+    env->GetShortArrayRegion(valuesNeg, 0, negativesCount, valuesNegPtr);
+    // get pointer to negative indices array
+    jint *indicesNegPtr = new jint[negativesCount];
+    env->GetIntArrayRegion(indicesNeg, 0, negativesCount, indicesNegPtr);
+    // get pointer to negative times array
+    jfloat *timesNegPtr = new jfloat[negativesCount];
+    env->GetFloatArrayRegion(timesNeg, 0, negativesCount, timesNegPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] valuesPosPtr;
+        delete[] indicesPosPtr;
+        delete[] timesPosPtr;
+        delete[] valuesNegPtr;
+        delete[] indicesNegPtr;
+        delete[] timesNegPtr;
+        return env->NewIntArray(2);
+    }
+
+    jint *resultPtr = spikeAnalysis.filterSpikes(valuesPosPtr, indicesPosPtr, timesPosPtr, positivesCount, valuesNegPtr,
+                                                 indicesNegPtr, timesNegPtr, negativesCount);
+
+    jintArray result = env->NewIntArray(2);
+    env->SetIntArrayRegion(result, 0, 2, resultPtr);
+
+    if (exception_check(env)) {
+        delete[] valuesPosPtr;
+        delete[] indicesPosPtr;
+        delete[] timesPosPtr;
+        delete[] valuesNegPtr;
+        delete[] indicesNegPtr;
+        delete[] timesNegPtr;
+        delete[] resultPtr;
+        return env->NewIntArray(2);
+    }
+
+    env->SetShortArrayRegion(valuesPos, 0, positivesCount - resultPtr[0], valuesPosPtr);
+    env->SetIntArrayRegion(indicesPos, 0, positivesCount - resultPtr[0], indicesPosPtr);
+    env->SetFloatArrayRegion(timesPos, 0, positivesCount - resultPtr[0], timesPosPtr);
+    env->SetShortArrayRegion(valuesNeg, 0, negativesCount - resultPtr[1], valuesNegPtr);
+    env->SetIntArrayRegion(indicesNeg, 0, negativesCount - resultPtr[1], indicesNegPtr);
+    env->SetFloatArrayRegion(timesNeg, 0, negativesCount - resultPtr[1], timesNegPtr);
+    delete[] valuesPosPtr;
+    delete[] indicesPosPtr;
+    delete[] timesPosPtr;
+    delete[] valuesNegPtr;
+    delete[] indicesNegPtr;
+    delete[] timesNegPtr;
+    delete[] resultPtr;
+
+    return result;
 }

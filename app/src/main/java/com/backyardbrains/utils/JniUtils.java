@@ -27,6 +27,15 @@ public class JniUtils {
     public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
         int eventCount, int start, int end, int drawSurfaceWidth);
 
+    public static native float calculateStandardDeviation(short[] samples, int length);
+
+    public static native int[] findSpikes(short[] samples, int sampleCount, float sampleRate, short[] valuesPos,
+        int[] indicesPos, float[] timesPos, int startIndexPos, int acceptablePos, short[] valuesNeg, int[] indicesNeg,
+        float[] timesNeg, int startIndexNeg, int acceptableNeg, int maxSpikes);
+
+    public static native int[] filterSpikes(short[] valuesPos, int[] indicesPos, float[] timesPos, int positivesCount,
+        short[] valuesNeg, int[] indicesNeg, float[] timesNeg, int negativesCount);
+
     static {
         System.loadLibrary("byb-lib");
     }

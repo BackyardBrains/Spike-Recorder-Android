@@ -5,33 +5,27 @@
 #ifndef SPIKE_RECORDER_ANDROID_AMMODULATIONPROCESSOR_H
 #define SPIKE_RECORDER_ANDROID_AMMODULATIONPROCESSOR_H
 
-
+#include "Processor.h"
 #include "NotchFilter.h"
 #include "LowPassFilter.h"
 #include "HighPassFilter.h"
 #include <math.h>
+#include <algorithm>
 #include <string>
 #include <android/log.h>
 
-#define SAMPLE_RATE 44100.0f
-#define AM_CARRIER_FREQUENCY 5000.0f
-#define AM_DETECTION_CUTOFF  6000.0f
-#define AM_DEMODULATION_LOW_PASS_FILTER_COUNT 3
-#define AM_DEMODULATION_CUTOFF 500.0f
-// Minimum cut-off frequency
-#define MIN_FILTER_CUTOFF 0.0f
-// Maximum cut-off frequency
-#define MAX_FILTER_CUTOFF 5000.0f
+namespace processing {
+    class AmModulationProcessor;
+}
 
-class AmModulationProcessor {
+
+class AmModulationProcessor : public Processor {
 public:
     AmModulationProcessor();
 
     ~AmModulationProcessor();
 
-    void setSampleRate(int sampleRate);
-
-    void setFilters(float lowCutOff, float highCutOff);
+    void setSampleRate(float sampleRate);
 
     bool isReceivingAmSignal();
 
@@ -40,16 +34,21 @@ public:
 private:
     static const char *TAG;
 
+    static constexpr float SAMPLE_RATE = 44100.0f;
+    static constexpr float AM_CARRIER_FREQUENCY = 5000.0f;
+    static constexpr float AM_DETECTION_CUTOFF = 6000.0f;
+    static constexpr int AM_DEMODULATION_LOW_PASS_FILTER_COUNT = 3;
+    static constexpr float AM_DEMODULATION_CUTOFF = 500.0f;
+
     void init();
 
-    LowPassFilter lowPassFilter;
-    HighPassFilter highPassFilter;
+    // Used for detection of the AM modulation
     LowPassFilter amDetectionLowPassFilter;
+    // Used for detection of the AM modulation
     NotchFilter amDetectionNotchFilter;
+    // Used for signal demodulation
     LowPassFilter amDemodulationLowPassFilter[AM_DEMODULATION_LOW_PASS_FILTER_COUNT];
 
-    // Current sample rate
-    float sampleRate = SAMPLE_RATE;
     // Temporary buffer
     short *amBuffer;
     // Used to detect whether signal is modulated or not
@@ -59,10 +58,6 @@ private:
     float average;
     // Whether we are currently receiving modulated signal
     bool receivingAmSignal = false;
-    // Whether additional low pass filter should be used
-    bool lowPassFilteringEnabled = false;
-    // Whether additional high pass filter should be used
-    bool highPassFilterEnabled = false;
 };
 
 

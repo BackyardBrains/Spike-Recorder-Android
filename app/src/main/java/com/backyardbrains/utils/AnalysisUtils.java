@@ -9,7 +9,7 @@ public class AnalysisUtils {
         float mean = 0;
         float squares = 0;
         float number;
-        for (int i = 0; i <= length; i++) {
+        for (int i = 0; i < length; i++) {
             number = data[i];
             mean += number;
             squares += number * number;

@@ -107,10 +107,6 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 if (autoPlay) playing.set(true);
 
-                LOGD(TAG, "Playback started");
-
-                if (playbackListener != null) playbackListener.onStart(duration.get(), raf.sampleRate());
-
                 // number of bytes that should be read during playback
                 int bytesToReadWhilePlaying = AudioUtils.getOutBufferSize(raf.sampleRate());
                 // number of bytes actually read during single read
@@ -122,6 +118,12 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                 buffer = new byte[bufferSize];
                 samples = new short[(int) (bufferSize * .5)];
                 samplesWithEvents = new SamplesWithEvents(samples.length);
+
+                LOGD(TAG, "Playback started");
+
+                // inform any interested parties that playback has started
+                if (playbackListener != null) playbackListener.onStart(duration.get(), raf.sampleRate());
+
                 while (working.get() && raf != null) {
                     if (playing.get()) {
                         // if we are playing after seek we need to fix it because of the different buffer sizes

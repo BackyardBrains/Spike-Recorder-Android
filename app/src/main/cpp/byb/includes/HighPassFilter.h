@@ -7,6 +7,10 @@
 
 #include "FilterBase.h"
 
+namespace filters {
+    class HighPassFilter;
+}
+
 class HighPassFilter : public FilterBase {
 public:
     HighPassFilter();

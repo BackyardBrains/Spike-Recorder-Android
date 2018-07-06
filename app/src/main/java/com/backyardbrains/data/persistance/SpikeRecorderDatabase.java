@@ -19,7 +19,7 @@ import com.backyardbrains.data.persistance.entity.Train;
  */
 @Database(entities = {
     SpikeAnalysis.class, Spike.class, Train.class, SpikeTrain.class
-}, version = 3) public abstract class SpikeRecorderDatabase extends RoomDatabase {
+}, version = 4) public abstract class SpikeRecorderDatabase extends RoomDatabase {
 
     private static SpikeRecorderDatabase INSTANCE;
 

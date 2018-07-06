@@ -7,6 +7,10 @@
 
 #include <stdint.h>
 
+namespace filters {
+    class FilterBase;
+}
+
 //
 // Base class that is inherited by all filters
 //
