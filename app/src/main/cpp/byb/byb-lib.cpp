@@ -15,7 +15,9 @@
 
 #include "includes/drawing.h"
 
-#define HELLO "Hello from C++"
+#define DR_WAV_IMPLEMENTATION
+
+#include "dr_wav.h"
 
 extern "C" {
 JNIEXPORT jstring JNICALL
@@ -40,24 +42,14 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject th
                                                          jint end, jint drawSurfaceWidth);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jobject thiz, jobject out,
-                                                                  jshortArray inSamples,
-                                                                  jintArray inEventIndices, jint eventCount,
-                                                                  jint start, jint end,
+                                                                  jshortArray inSamples, jintArray inEventIndices,
+                                                                  jint eventCount, jint start, jint end,
                                                                   jint drawSurfaceWidth);
-JNIEXPORT jfloat JNICALL
-Java_com_backyardbrains_utils_JniUtils_calculateStandardDeviation(JNIEnv *env, jobject thiz, jshortArray samples,
-                                                                  jint length);
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jshortArray samples, jint sampleCount,
-                                                  jfloat sampleRate, jshortArray valuesPos, jintArray indicesPos,
-                                                  jfloatArray timesPos, jint startIndexPos, jint acceptablePos,
-                                                  jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
-                                                  jint startIndexNeg, jint acceptableNeg, jint maxSpikes);
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_filterSpikes(JNIEnv *env, jobject thiz, jshortArray valuesPos,
-                                                    jintArray indicesPos, jfloatArray timesPos, jint positivesCount,
-                                                    jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
-                                                    jint negativesCount);
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jstring filePath, jshortArray valuesPos,
+                                                  jintArray indicesPos, jfloatArray timesPos, jshortArray valuesNeg,
+                                                  jintArray indicesNeg, jfloatArray timesNeg, jint maxSpikes);
+
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jobject thiz, jobjectArray spikeTrains,
                                                                jint spikeTrainCount, jintArray spikeCounts,
@@ -85,7 +77,7 @@ static jboolean exception_check(JNIEnv *env) {
 
 JNIEXPORT jstring JNICALL
 Java_com_backyardbrains_utils_JniUtils_helloTest(JNIEnv *env, jobject thiz) {
-    return env->NewStringUTF(HELLO);
+    return env->NewStringUTF("Hello from C++");
 }
 
 JNIEXPORT void JNICALL
@@ -304,33 +296,13 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
                                                              from, to, drawSurfaceWidth);
 }
 
-JNIEXPORT jfloat JNICALL
-Java_com_backyardbrains_utils_JniUtils_calculateStandardDeviation(JNIEnv *env, jobject thiz, jshortArray samples,
-                                                                  jint length) {
-    jshort *inSamplesPtr = new jshort[length];
-    env->GetShortArrayRegion(samples, 0, length, inSamplesPtr);
-
-    // exception check
-    if (exception_check(env)) {
-        delete[] inSamplesPtr;
-        return 0.0f;
-    }
-
-    jfloat sd = AnalysisUtils::SD(inSamplesPtr, length);
-    delete[] inSamplesPtr;
-
-    return sd;
-}
 
 JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jshortArray samples, jint sampleCount,
-                                                  jfloat sampleRate, jshortArray valuesPos, jintArray indicesPos,
-                                                  jfloatArray timesPos, jint startIndexPos, jint acceptablePos,
-                                                  jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
-                                                  jint startIndexNeg, jint acceptableNeg, jint maxSpikes) {
-    // get pointer to samples array
-    jshort *samplesPtr = new jshort[sampleCount];
-    env->GetShortArrayRegion(samples, 0, sampleCount, samplesPtr);
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jstring filePath, jshortArray valuesPos,
+                                                  jintArray indicesPos, jfloatArray timesPos, jshortArray valuesNeg,
+                                                  jintArray indicesNeg, jfloatArray timesNeg, jint maxSpikes) {
+    // get pointer to file path string
+    const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
     // get pointer to positive values array
     jshort *valuesPosPtr = new jshort[maxSpikes];
     env->GetShortArrayRegion(valuesPos, 0, maxSpikes, valuesPosPtr);
@@ -352,8 +324,7 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jsh
 
     // exception check
     if (exception_check(env)) {
-        delete[] samplesPtr;
-        delete[] valuesPosPtr;
+        env->ReleaseStringUTFChars(filePath, filePathPtr);
         delete[] indicesPosPtr;
         delete[] timesPosPtr;
         delete[] valuesNegPtr;
@@ -362,16 +333,14 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jsh
         return env->NewIntArray(2);
     }
 
-
-    jint *resultPtr = spikeAnalysis.findSpikes(samplesPtr, sampleCount, sampleRate, valuesPosPtr, indicesPosPtr,
-                                               timesPosPtr, startIndexPos, acceptablePos, valuesNegPtr, indicesNegPtr,
-                                               timesNegPtr, startIndexNeg, acceptableNeg);
+    jint *resultPtr = spikeAnalysis.findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr,
+                                               indicesNegPtr, timesNegPtr);
 
     jintArray result = env->NewIntArray(2);
     env->SetIntArrayRegion(result, 0, 2, resultPtr);
 
     if (exception_check(env)) {
-        delete[] samplesPtr;
+        env->ReleaseStringUTFChars(filePath, filePathPtr);
         delete[] valuesPosPtr;
         delete[] indicesPosPtr;
         delete[] timesPosPtr;
@@ -382,81 +351,13 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jsh
         return env->NewIntArray(2);
     }
 
-    env->SetShortArrayRegion(valuesPos, 0, startIndexPos + resultPtr[0], valuesPosPtr);
-    env->SetIntArrayRegion(indicesPos, 0, startIndexPos + resultPtr[0], indicesPosPtr);
-    env->SetFloatArrayRegion(timesPos, 0, startIndexPos + resultPtr[0], timesPosPtr);
-    env->SetShortArrayRegion(valuesNeg, 0, startIndexNeg + resultPtr[1], valuesNegPtr);
-    env->SetIntArrayRegion(indicesNeg, 0, startIndexNeg + resultPtr[1], indicesNegPtr);
-    env->SetFloatArrayRegion(timesNeg, 0, startIndexNeg + resultPtr[1], timesNegPtr);
-    delete[] samplesPtr;
-    delete[] valuesPosPtr;
-    delete[] indicesPosPtr;
-    delete[] timesPosPtr;
-    delete[] valuesNegPtr;
-    delete[] indicesNegPtr;
-    delete[] timesNegPtr;
-    delete[] resultPtr;
-
-    return result;
-}
-
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_filterSpikes(JNIEnv *env, jobject thiz, jshortArray valuesPos,
-                                                    jintArray indicesPos, jfloatArray timesPos, jint positivesCount,
-                                                    jshortArray valuesNeg, jintArray indicesNeg, jfloatArray timesNeg,
-                                                    jint negativesCount) {
-    jshort *valuesPosPtr = new jshort[positivesCount];
-    env->GetShortArrayRegion(valuesPos, 0, positivesCount, valuesPosPtr);
-    // get pointer to positive indices array
-    jint *indicesPosPtr = new jint[positivesCount];
-    env->GetIntArrayRegion(indicesPos, 0, positivesCount, indicesPosPtr);
-    // get pointer to positive times array
-    jfloat *timesPosPtr = new jfloat[positivesCount];
-    env->GetFloatArrayRegion(timesPos, 0, positivesCount, timesPosPtr);
-    // get pointer to negative values array
-    jshort *valuesNegPtr = new jshort[negativesCount];
-    env->GetShortArrayRegion(valuesNeg, 0, negativesCount, valuesNegPtr);
-    // get pointer to negative indices array
-    jint *indicesNegPtr = new jint[negativesCount];
-    env->GetIntArrayRegion(indicesNeg, 0, negativesCount, indicesNegPtr);
-    // get pointer to negative times array
-    jfloat *timesNegPtr = new jfloat[negativesCount];
-    env->GetFloatArrayRegion(timesNeg, 0, negativesCount, timesNegPtr);
-
-    // exception check
-    if (exception_check(env)) {
-        delete[] valuesPosPtr;
-        delete[] indicesPosPtr;
-        delete[] timesPosPtr;
-        delete[] valuesNegPtr;
-        delete[] indicesNegPtr;
-        delete[] timesNegPtr;
-        return env->NewIntArray(2);
-    }
-
-    jint *resultPtr = spikeAnalysis.filterSpikes(valuesPosPtr, indicesPosPtr, timesPosPtr, positivesCount, valuesNegPtr,
-                                                 indicesNegPtr, timesNegPtr, negativesCount);
-
-    jintArray result = env->NewIntArray(2);
-    env->SetIntArrayRegion(result, 0, 2, resultPtr);
-
-    if (exception_check(env)) {
-        delete[] valuesPosPtr;
-        delete[] indicesPosPtr;
-        delete[] timesPosPtr;
-        delete[] valuesNegPtr;
-        delete[] indicesNegPtr;
-        delete[] timesNegPtr;
-        delete[] resultPtr;
-        return env->NewIntArray(2);
-    }
-
-    env->SetShortArrayRegion(valuesPos, 0, positivesCount - resultPtr[0], valuesPosPtr);
-    env->SetIntArrayRegion(indicesPos, 0, positivesCount - resultPtr[0], indicesPosPtr);
-    env->SetFloatArrayRegion(timesPos, 0, positivesCount - resultPtr[0], timesPosPtr);
-    env->SetShortArrayRegion(valuesNeg, 0, negativesCount - resultPtr[1], valuesNegPtr);
-    env->SetIntArrayRegion(indicesNeg, 0, negativesCount - resultPtr[1], indicesNegPtr);
-    env->SetFloatArrayRegion(timesNeg, 0, negativesCount - resultPtr[1], timesNegPtr);
+    env->SetShortArrayRegion(valuesPos, 0, resultPtr[0], valuesPosPtr);
+    env->SetIntArrayRegion(indicesPos, 0, resultPtr[0], indicesPosPtr);
+    env->SetFloatArrayRegion(timesPos, 0, resultPtr[0], timesPosPtr);
+    env->SetShortArrayRegion(valuesNeg, 0, resultPtr[1], valuesNegPtr);
+    env->SetIntArrayRegion(indicesNeg, 0, resultPtr[1], indicesNegPtr);
+    env->SetFloatArrayRegion(timesNeg, 0, resultPtr[1], timesNegPtr);
+    env->ReleaseStringUTFChars(filePath, filePathPtr);
     delete[] valuesPosPtr;
     delete[] indicesPosPtr;
     delete[] timesPosPtr;
