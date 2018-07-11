@@ -47,6 +47,7 @@ import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
@@ -87,8 +88,8 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
                 EventBus.getDefault().post(new AmModulationDetectionEvent(false));
             }
         };
-    //private final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
-    //    new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
+    private final AmModulationProcessor AM_MODULATION_DATA_PROCESSOR =
+        new AmModulationProcessor(AM_MODULATION_DETECTION_LISTENER, FILTERS);
 
     private final IBinder binder = new ServiceBinder();
 
@@ -111,7 +112,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     // Maximum number of seconds data manager should hold at any time
     private double maxTime;
     // Buffer that holds processed samples
-    private short[] samples;
+    //private short[] samples;
     // Buffer that holds processed samples and events
     private SamplesWithEvents samplesWithEvents = new SamplesWithEvents((byte) 0);
     // Current input source
@@ -219,7 +220,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
         LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
         if (maxSeconds <= 0) return; // max time needs to be positive
 
-        if (processingBuffer != null) processingBuffer.setBufferSize((int) (maxSeconds * sampleRate));
+        if (processingBuffer != null) processingBuffer.setSize((int) (maxSeconds * sampleRate));
 
         this.maxTime = maxSeconds;
     }
@@ -290,14 +291,18 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final SamplesWithEvents TEMP_SAMPLES_WITH_MARKERS = new SamplesWithEvents();
-    private static final String BENCHMARK_NAME = "AUDIO_DATA_PROCESSING";
-    private static final int BENCHMARK_PER_SESSION_COUNTS = 99;
-    private static final int BENCHMARK_SESSION_COUNTS = 9;
-    private int benchmarkPerSessionCounter = 0;
-    private int benchmarkStartCounter = 0;
-    private int benchmarkSessionCounter = 0;
-    private boolean benchmarkStarted;
+    private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
+        .sessions(10)
+        .measuresPerSession(200)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
+    private static final SamplesWithEvents TEMP_SAMPLES_WITH_EVENTS = new SamplesWithEvents();
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
@@ -305,39 +310,16 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * @see ReceivesAudio#receiveAudio(short[], int)
      */
     @Override public void receiveAudio(@NonNull short[] samples, int length) {
-        //LOGD(TAG, ".........................................");
-        //long start = System.currentTimeMillis();
-        //if (benchmarkStartCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //    Benchit.begin(BENCHMARK_NAME);
-        //    benchmarkStarted = true;
-        //} else {
-        //    benchmarkStartCounter++;
-        //}
+        //benchmark.start();
 
         // any received audio needs to be process with AM Modulation processor
-        //TEMP_SAMPLES_WITH_MARKERS.samples = AM_MODULATION_DATA_PROCESSOR.process(data);
-        //passToDataManager(TEMP_SAMPLES_WITH_MARKERS);
+        //TEMP_SAMPLES_WITH_EVENTS.samples = AM_MODULATION_DATA_PROCESSOR.process(samples, length);
+        //TEMP_SAMPLES_WITH_EVENTS.sampleCount = length;
+        //passToDataManager(TEMP_SAMPLES_WITH_EVENTS);
         JniUtils.processAudioStream(samplesWithEvents, samples, length);
         passToDataManager(samplesWithEvents);
 
-        //if (benchmarkStarted) {
-        //    if (benchmarkPerSessionCounter == BENCHMARK_PER_SESSION_COUNTS) {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        benchmarkPerSessionCounter = 0;
-        //
-        //        if (benchmarkSessionCounter == BENCHMARK_SESSION_COUNTS) {
-        //            Benchit.analyze(BENCHMARK_NAME).log();
-        //        }
-        //
-        //        benchmarkSessionCounter++;
-        //    } else {
-        //        Benchit.end(BENCHMARK_NAME);
-        //        benchmarkPerSessionCounter++;
-        //    }
-        //    System.gc();
-        //}
-
-        //LOGD(TAG, "TOOK: " + (System.currentTimeMillis() - start));
+        //benchmark.end();
     }
 
     // Passes data to data manager so it can be consumed by renderer
@@ -346,10 +328,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                TEMP_SAMPLES_WITH_MARKERS.samples =
+                TEMP_SAMPLES_WITH_EVENTS.samples =
                     getProcessor().process(samplesWithEvents.samples, samplesWithEvents.sampleCount);
-                TEMP_SAMPLES_WITH_MARKERS.sampleCount = TEMP_SAMPLES_WITH_MARKERS.samples.length;
-                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_MARKERS);
+                TEMP_SAMPLES_WITH_EVENTS.sampleCount = TEMP_SAMPLES_WITH_EVENTS.samples.length;
+                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_EVENTS);
             } else {
                 // pass data to data manager
                 processingBuffer.addToBuffer(samplesWithEvents);

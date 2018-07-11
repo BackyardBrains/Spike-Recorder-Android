@@ -4,8 +4,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.data.processing.DataProcessor;
-import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import java.util.Arrays;
 
@@ -99,8 +99,8 @@ class SampleStreamProcessor implements DataProcessor {
         this.filters = filters;
     }
 
-    @NonNull @Override public SamplesWithEvents process(@NonNull byte[] data) {
-        if (data.length > 0) return processIncomingData(data);
+    @NonNull @Override public SamplesWithEvents process(@NonNull byte[] data, int length) {
+        if (length > 0) return processIncomingData(data, length);
 
         return new SamplesWithEvents();
     }
@@ -116,7 +116,7 @@ class SampleStreamProcessor implements DataProcessor {
 
     //private short prevSample = 0;
 
-    @NonNull private SamplesWithEvents processIncomingData(@NonNull byte[] data) {
+    @NonNull private SamplesWithEvents processIncomingData(@NonNull byte[] data, int length) {
         //long start = System.currentTimeMillis();
         //LOGD(TAG, ".........................................");
         //LOGD(TAG, "START - "/* + data.length*/);
@@ -138,7 +138,7 @@ class SampleStreamProcessor implements DataProcessor {
         byte b;
 
         // max number of samples can be number of incoming bytes divided by 2
-        int maxSampleCount = (int) (data.length * .5 + 1);
+        int maxSampleCount = (int) (length * .5 + 1);
         // init samples (by channels)
         for (int i = 0; i < channelCount; i++) {
             channels[i] = new short[maxSampleCount];
@@ -152,7 +152,7 @@ class SampleStreamProcessor implements DataProcessor {
         Arrays.fill(sampleCounters, 0);
 
         //noinspection ForLoopReplaceableByForEach
-        for (int i = 0; i < data.length; i++) {
+        for (int i = 0; i < length; i++) {
             // and next byte to custom message sent by SpikerBox
             escapeSequence[escapeSequenceIndex++] = data[i];
 
@@ -269,7 +269,8 @@ class SampleStreamProcessor implements DataProcessor {
         //LOGD(TAG, "SIZE: " + data.length + ", TOOK: " + (System.currentTimeMillis() - start));
 
         return new SamplesWithEvents(Arrays.copyOfRange(channels[CHANNEL_INDEX], 0, sampleCounters[CHANNEL_INDEX]),
-            Arrays.copyOfRange(eventIndices, 0, eventCounter), Arrays.copyOfRange(eventLabels, 0, eventCounter));
+            sampleCounters[CHANNEL_INDEX], Arrays.copyOfRange(eventIndices, 0, eventCounter),
+            Arrays.copyOfRange(eventLabels, 0, eventCounter), eventCounter);
     }
 
     // Resets all variables used for processing escape sequences

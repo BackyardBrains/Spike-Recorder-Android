@@ -10,5 +10,5 @@ public interface DataProcessor {
      * Takes incoming {@code byte[]}, processes it and returns array of samples. Additionally saves all the detected
      * events into the specified {@code events} collection.
      */
-    @NonNull SamplesWithEvents process(@NonNull byte[] data);
+    @NonNull SamplesWithEvents process(@NonNull byte[] data, int length);
 }

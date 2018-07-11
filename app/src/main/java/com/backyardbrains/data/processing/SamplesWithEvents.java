@@ -61,4 +61,15 @@ public class SamplesWithEvents {
         this.eventIndices = eventIndices;
         this.eventNames = eventNames;
     }
+
+    // USED FROM SampleStreamProcessor
+    public SamplesWithEvents(short[] samples, int sampleCount, int[] eventIndices, String[] eventNames,
+        int eventCount) {
+        this.samples = samples;
+        this.eventIndices = eventIndices;
+        this.eventNames = eventNames;
+
+        this.sampleCount = sampleCount;
+        this.eventCount = eventCount;
+    }
 }

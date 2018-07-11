@@ -90,7 +90,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
         int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
         long lastSampleIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
@@ -148,7 +148,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 glWindowHeight * .5f);
         }
 
-        super.draw(gl, samples, waveformVertices, waveformVerticesCount, markers, surfaceWidth, surfaceHeight,
+        super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
             glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (drawSpikes()) {

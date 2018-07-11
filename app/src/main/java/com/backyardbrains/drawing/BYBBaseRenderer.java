@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
+import com.backyardbrains.data.processing.SampleBuffer;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBGlUtils;
@@ -33,6 +34,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
 
+    private SampleBuffer sampleBuffer;
     private short[] samples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
@@ -59,8 +61,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
-
-    private final Benchmark benchmark;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -135,17 +135,6 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         processingBuffer = ProcessingBuffer.get();
         eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
-
-        benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(1000)
-            .sessions(10)
-            .measuresPerSession(1000)
-            .logBySession(false)
-            .logToFile(true)
-            .listener(new Benchmark.OnBenchmarkListener() {
-                @Override public void onEnd() {
-                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-                }
-            });
     }
 
     /**
@@ -177,7 +166,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         // recalculate width of the GL window
         int newSize = glWindowWidth;
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > processingBuffer.getBufferSize()) newSize = processingBuffer.getBufferSize();
+        if (newSize > processingBuffer.getSize()) newSize = processingBuffer.getSize();
         // save new GL window
         glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
@@ -188,7 +177,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         if (newSize < 0 || newSize == glWindowWidth) return;
 
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > processingBuffer.getBufferSize()) newSize = processingBuffer.getBufferSize();
+        if (newSize > processingBuffer.getSize()) newSize = processingBuffer.getSize();
         // save new GL windows width
         glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
@@ -305,19 +294,27 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         if (samplesWithEvents == null || samplesWithEvents.samples.length < max) {
             samplesWithEvents = new SamplesWithEvents(max * 5);
         }
-        //if (envelopedSamples == null || envelopedSamples.length < max) envelopedSamples = new short[max * 5];
 
         gl.glViewport(0, 0, width, height);
         initDrawSurface(gl, surfaceWidth, glWindowHeight, true);
     }
 
+    private final Benchmark benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(500)
+        .sessions(10)
+        .measuresPerSession(500)
+        .logBySession(false)
+        .logToFile(true)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
     /**
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        //long start = System.currentTimeMillis();
-
-        //benchmark.start();
+        benchmark.start();
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -335,16 +332,14 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
 
         // get samples from processing buffer and check if it's valid
-        if (samples == null || samples.length != processingBuffer.getData().length) {
-            samples = new short[processingBuffer.getData().length];
+        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getSize()) {
+            sampleBuffer = new SampleBuffer(processingBuffer.getSize());
+            samples = new short[processingBuffer.getSize()];
         }
-        System.arraycopy(processingBuffer.getData(), 0, samples, 0, samples.length);
-        // check if we have a valid buffer after filling it
-        if (samples.length <= 0) return;
+        int count = processingBuffer.get(samples);
+        if (count > 0) sampleBuffer.add(samples, count);
 
-        // samples are OK, we can move on
-
-        final int sampleCount = samples.length;
+        final int sampleCount = sampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
         // calculate necessary drawing parameters
@@ -354,8 +349,8 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
 
         // construct waveform vertices and populate eventIndices buffer
         eventsBuffer.clear();
-        getWaveformVertices(samplesWithEvents, samples, eventIndices, eventNames, copiedEventsCount, drawStartIndex,
-            drawEndIndex, surfaceWidth);
+        getWaveformVertices(samplesWithEvents, sampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
+            drawStartIndex, drawEndIndex, surfaceWidth);
         final int samplesDrawCount = (int) (samplesWithEvents.sampleCount * .5);
 
         // calculate scale x and scale y
@@ -372,17 +367,14 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
         //autoScaleCheck(samples);
 
         // draw on surface
-        draw(gl, samples, samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer, surfaceWidth,
-            surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
+        draw(gl, sampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
+            surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
             lastSampleIndex);
 
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        //benchmark.end();
-
-        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
-        //LOGD(TAG, "================================================");
+        benchmark.end();
     }
 
     private void initDrawSurface(GL10 gl, int samplesDrawCount, int glWindowHeight, boolean updateProjection) {
@@ -398,9 +390,7 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
     protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
         @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
         int drawSurfaceWidth) {
-        //long start = System.currentTimeMillis();
-        //LOGD(TAG, ".........................................");
-
+        //benchmark.start();
         try {
             JniUtils.prepareForDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample, toSample,
                 drawSurfaceWidth);
@@ -412,12 +402,11 @@ public abstract class BYBBaseRenderer extends BaseRenderer {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
-
-        //LOGD(TAG, "END: " + (System.currentTimeMillis() - start));
+        //benchmark.end();
     }
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        int waveformVerticesCount, @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight,
+        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
         int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
         long lastSampleIndex);
 

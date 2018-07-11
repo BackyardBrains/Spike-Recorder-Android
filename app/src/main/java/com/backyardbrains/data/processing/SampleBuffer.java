@@ -32,10 +32,14 @@ public class SampleBuffer {
 
     private short[] buffer;
 
-    SampleBuffer(int size) {
+    public SampleBuffer(int size) {
         this.size = size;
 
         buffer = new short[size];
+    }
+
+    public int getSize() {
+        return size;
     }
 
     /**
