@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
 import com.crashlytics.android.Crashlytics;
@@ -473,7 +474,20 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
+    private final Benchmark benchmark = new Benchmark("PLAYBACK_TEST").warmUp(200)
+        .sessions(10)
+        .measuresPerSession(200)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
     @NonNull @Override protected SamplesWithEvents processIncomingData(byte[] data, int length, long lastByteIndex) {
+        //benchmark.start();
+
         int sampleCount = (int) (length * .5);
         byteBuffer.put(data, 0, length);
         byteBuffer.clear();
@@ -487,6 +501,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
         samplesWithEvents.setAll(samples, sampleCount, eventIndices, eventNames, eventCount,
             AudioUtils.getSampleCount(lastByteIndex));
+
+        //benchmark.end();
 
         return samplesWithEvents;
     }
