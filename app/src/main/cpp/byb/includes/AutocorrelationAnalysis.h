@@ -17,8 +17,8 @@ public:
 
     ~AutocorrelationAnalysis();
 
-    void process(float **inSpikeTrains, int spikeTrainCount, const int *spikeCounts,
-                 int **outAnalysis, int analysisBinCount);
+    void process(float **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
+                 int **outAnalysis, const int analysisBinCount);
 
 private:
     static const char *TAG;

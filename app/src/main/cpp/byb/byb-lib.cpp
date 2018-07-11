@@ -5,6 +5,7 @@
 #include <jni.h>
 #include <algorithm>
 #include <string>
+#include <CrossCorrelationAnalysis.h>
 
 #include "AmModulationProcessor.h"
 #include "SampleStreamProcessor.h"
@@ -54,12 +55,18 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jobject thiz, jobjectArray spikeTrains,
                                                                jint spikeTrainCount, jintArray spikeCounts,
                                                                jobjectArray analysis, jint analysisBinCount);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jobject thiz, jobjectArray spikeTrains,
+                                                                jint spikeTrainCount, jintArray spikeCounts,
+                                                                jobjectArray analysis, jint analysisCount,
+                                                                jint analysisBinCount);
 }
 
 AmModulationProcessor amModulationProcessor;
 SampleStreamProcessor sampleStreamProcessor;
 SpikeAnalysis spikeAnalysis;
 AutocorrelationAnalysis autocorrelationAnalysis;
+CrossCorrelationAnalysis crossCorrelationAnalysis;
 JniHelper jniHelper;
 
 static jboolean exception_check(JNIEnv *env) {
@@ -421,6 +428,60 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jobj
         delete[] spikeTrainsPtr[i];
         delete[] analysisPtr[i];
     }
+    delete[] spikeCountsPtr;
+    delete[] spikeTrainsPtr;
+    delete[] analysisPtr;
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jobject thiz, jobjectArray spikeTrains,
+                                                                jint spikeTrainCount, jintArray spikeCounts,
+                                                                jobjectArray analysis, jint analysisCount,
+                                                                jint analysisBinCount) {
+    jint *spikeCountsPtr = new jint[spikeTrainCount];
+    env->GetIntArrayRegion(spikeCounts, 0, spikeTrainCount, spikeCountsPtr);
+
+    jfloat **spikeTrainsPtr = new jfloat *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
+
+        spikeTrainsPtr[i] = new jfloat[spikeCountsPtr[i]];
+        env->GetFloatArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
+
+        env->DeleteLocalRef(spikeTrain);
+    }
+    jint **analysisPtr = new jint *[analysisCount];
+    for (int i = 0; i < analysisCount; ++i) {
+        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+
+        analysisPtr[i] = new jint[analysisBinCount];
+        env->GetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        for (int i = 0; i < spikeTrainCount; i++) delete[] spikeTrainsPtr[i];
+        for (int i = 0; i < analysisCount; i++) delete[] analysisPtr[i];
+        delete[] spikeCountsPtr;
+        delete[] spikeTrainsPtr;
+        delete[] analysisPtr;
+        return;
+    }
+
+    crossCorrelationAnalysis.process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
+
+    for (int i = 0; i < analysisCount; ++i) {
+        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+
+        env->SetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
+        env->SetObjectArrayElement(analysis, i, trainAnalysis);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    for (int i = 0; i < spikeTrainCount; i++) delete[] spikeTrainsPtr[i];
+    for (int i = 0; i < analysisCount; i++) delete[] analysisPtr[i];
     delete[] spikeCountsPtr;
     delete[] spikeTrainsPtr;
     delete[] analysisPtr;
