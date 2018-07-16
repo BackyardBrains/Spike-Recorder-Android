@@ -5,14 +5,15 @@
 #include <jni.h>
 #include <algorithm>
 #include <string>
-#include <CrossCorrelationAnalysis.h>
-#include <IsiAnalysis.h>
 
 #include "AmModulationProcessor.h"
 #include "SampleStreamProcessor.h"
-#include "AnalysisUtils.h"
 #include "SpikeAnalysis.h"
 #include "AutocorrelationAnalysis.h"
+#include "CrossCorrelationAnalysis.h"
+#include "IsiAnalysis.h"
+#include "AverageSpikeAnalysis.h"
+#include "AnalysisUtils.h"
 #include "JniHelper.h"
 
 #include "includes/drawing.h"
@@ -65,6 +66,12 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, job
                                                                 jint spikeTrainCount, jintArray spikeCounts,
                                                                 jobjectArray analysis, jint analysisCount,
                                                                 jint analysisBinCount);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jobject thiz, jstring filePath,
+                                                            jobjectArray spikeTrains, jint spikeTrainCount,
+                                                            jintArray spikeCounts, jobjectArray averageSpike,
+                                                            jobjectArray normAverageSpike, jobjectArray normTopStdLine,
+                                                            jobjectArray normBottomStdLine, jint batchSpikeCount);
 }
 
 AmModulationProcessor amModulationProcessor;
@@ -72,6 +79,7 @@ SampleStreamProcessor sampleStreamProcessor;
 SpikeAnalysis spikeAnalysis;
 AutocorrelationAnalysis autocorrelationAnalysis;
 IsiAnalysis isiAnalysis;
+AverageSpikeAnalysis averageSpikeAnalysis;
 CrossCorrelationAnalysis crossCorrelationAnalysis;
 JniHelper jniHelper;
 
@@ -125,7 +133,6 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfl
     amModulationProcessor.setFilters(lowCutOff, highCutOff);
     sampleStreamProcessor.setFilters(lowCutOff, highCutOff);
 }
-
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray data,
@@ -309,7 +316,6 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
                                                              from, to, drawSurfaceWidth);
 }
 
-
 JNIEXPORT jintArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jstring filePath, jshortArray valuesPos,
                                                   jintArray indicesPos, jfloatArray timesPos, jshortArray valuesNeg,
@@ -439,7 +445,6 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jobj
     delete[] analysisPtr;
 }
 
-
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jobject thiz, jobjectArray spikeTrains,
                                                    jint spikeTrainCount, jintArray spikeCounts, jobjectArray analysis,
@@ -549,4 +554,135 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, job
     delete[] spikeCountsPtr;
     delete[] spikeTrainsPtr;
     delete[] analysisPtr;
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jobject thiz, jstring filePath,
+                                                            jobjectArray spikeTrains, jint spikeTrainCount,
+                                                            jintArray spikeCounts, jobjectArray averageSpike,
+                                                            jobjectArray normAverageSpike, jobjectArray normTopStdLine,
+                                                            jobjectArray normBottomStdLine, jint batchSpikeCount) {
+    // get pointer to file path string
+    const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
+
+    jint *spikeCountsPtr = new jint[spikeTrainCount];
+    env->GetIntArrayRegion(spikeCounts, 0, spikeTrainCount, spikeCountsPtr);
+
+    jint **spikeTrainsPtr = new jint *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jintArray spikeTrain = (jintArray) env->GetObjectArrayElement(spikeTrains, i);
+
+        spikeTrainsPtr[i] = new jint[spikeCountsPtr[i]];
+        env->GetIntArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
+
+        env->DeleteLocalRef(spikeTrain);
+    }
+
+    jfloat **averageSpikePtr = new jfloat *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
+
+        averageSpikePtr[i] = new jfloat[batchSpikeCount];
+        env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, averageSpikePtr[i]);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+
+    jfloat **normAverageSpikePtr = new jfloat *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
+
+        normAverageSpikePtr[i] = new jfloat[batchSpikeCount];
+        env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normAverageSpikePtr[i]);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+
+    jfloat **normTopStdLinePtr = new jfloat *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
+
+        normTopStdLinePtr[i] = new jfloat[batchSpikeCount];
+        env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normTopStdLinePtr[i]);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    jfloat **normBottomStdLinePtr = new jfloat *[spikeTrainCount];
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
+
+        normBottomStdLinePtr[i] = new jfloat[batchSpikeCount];
+        env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normBottomStdLinePtr[i]);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        env->ReleaseStringUTFChars(filePath, filePathPtr);
+        for (int i = 0; i < spikeTrainCount; i++) {
+            delete[] spikeTrainsPtr[i];
+            delete[] averageSpikePtr[i];
+            delete[] normAverageSpikePtr[i];
+            delete[] normTopStdLinePtr[i];
+            delete[] normBottomStdLinePtr[i];
+        }
+        delete[] spikeCountsPtr;
+        delete[] spikeTrainsPtr;
+        delete[] averageSpikePtr;
+        delete[] normAverageSpikePtr;
+        delete[] normTopStdLinePtr;
+        delete[] normBottomStdLinePtr;
+        return;
+    }
+
+    averageSpikeAnalysis.process(filePathPtr, spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, averageSpikePtr,
+                                 normAverageSpikePtr, normTopStdLinePtr, normBottomStdLinePtr, batchSpikeCount);
+
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
+
+        env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, averageSpikePtr[i]);
+        env->SetObjectArrayElement(averageSpike, i, trainAnalysis);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
+
+        env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normAverageSpikePtr[i]);
+        env->SetObjectArrayElement(normAverageSpike, i, trainAnalysis);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
+
+        env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normTopStdLinePtr[i]);
+        env->SetObjectArrayElement(normTopStdLine, i, trainAnalysis);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    for (int i = 0; i < spikeTrainCount; ++i) {
+        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
+
+        env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normBottomStdLinePtr[i]);
+        env->SetObjectArrayElement(normBottomStdLine, i, trainAnalysis);
+
+        env->DeleteLocalRef(trainAnalysis);
+    }
+    env->ReleaseStringUTFChars(filePath, filePathPtr);
+    for (int i = 0; i < spikeTrainCount; i++) {
+        delete[] spikeTrainsPtr[i];
+        delete[] averageSpikePtr[i];
+        delete[] normAverageSpikePtr[i];
+        delete[] normTopStdLinePtr[i];
+        delete[] normBottomStdLinePtr[i];
+    }
+    delete[] spikeCountsPtr;
+    delete[] spikeTrainsPtr;
+    delete[] averageSpikePtr;
+    delete[] normAverageSpikePtr;
+    delete[] normTopStdLinePtr;
+    delete[] normBottomStdLinePtr;
 }

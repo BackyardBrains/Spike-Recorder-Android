@@ -39,6 +39,10 @@ public class JniUtils {
     public static native void crossCorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
         int[][] analysis, int analysisCount, int binCount);
 
+    public static native void averageSpikeAnalysis(String filePath, int[][] trains, int trainCount, int[] spikeCounts,
+        float[][] averageSpike, float[][] normAverageSpike, float[][] normTopStdLine, float[][] normBottomStdLine,
+        int batchSpikeCount);
+
     static {
         System.loadLibrary("byb-lib");
     }

@@ -6,11 +6,8 @@
 #define SPIKE_RECORDER_ANDROID_SPIKEANALYSIS_H
 
 #include <functional>
-#include <climits>
 #include <algorithm>
-#include <math.h>
 #include <android/log.h>
-#include <sys/time.h>
 
 #include "dr_wav.h"
 #include "AnalysisUtils.h"
