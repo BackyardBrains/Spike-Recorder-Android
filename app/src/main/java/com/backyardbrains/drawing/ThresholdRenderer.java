@@ -21,13 +21,14 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
-import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class ThresholdRenderer extends WaveformRenderer {
@@ -35,7 +36,6 @@ public class ThresholdRenderer extends WaveformRenderer {
     private static final String TAG = makeLogTag(ThresholdRenderer.class);
 
     private float threshold;
-    private float[] waveformVertices;
 
     private OnThresholdChangeListener listener;
 
@@ -56,8 +56,8 @@ public class ThresholdRenderer extends WaveformRenderer {
         void onThresholdValueChange(float value);
     }
 
-    public ThresholdRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        super(fragment, preparedBuffer);
+    public ThresholdRenderer(@NonNull BaseFragment fragment) {
+        super(fragment);
     }
 
     /**
@@ -122,26 +122,16 @@ public class ThresholdRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected float[] getWaveformVertices(@NonNull short[] samples, @NonNull String[] markers,
-        @NonNull SparseArray<String> markerBuffer, int glWindowWidth, int drawStartIndex, int drawEndIndex) {
-        if (glWindowWidth > samples.length) setGlWindowWidth(samples.length);
-        glWindowWidth = getGlWindowWidth();
-
-        int size = glWindowWidth * 2;
-        if (waveformVertices == null || waveformVertices.length != size) waveformVertices = new float[size];
-        int j = 0; // index of arr
+    @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
+        int drawSurfaceWidth) {
         try {
-            int start = (int) ((samples.length - glWindowWidth) * .5);
-            int end = (int) ((samples.length + glWindowWidth) * .5);
-            for (int i = start; i < end && i < samples.length; i++) {
-                waveformVertices[j++] = i - start;
-                waveformVertices[j++] = samples[i];
-            }
+            JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample,
+                toSample, drawSurfaceWidth);
         } catch (ArrayIndexOutOfBoundsException e) {
-            Log.e(TAG, e.getMessage());
+            LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
-        return waveformVertices;
     }
 
     private void updateThresholdHandle() {

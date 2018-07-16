@@ -11,6 +11,18 @@ android {
         versionCode 60
         versionName '1.6.0.5'
 
+        externalNativeBuild {
+            cmake {
+                // Pass arguments to CMake
+                arguments "-DANDROID_STL=c++_static"
+
+                cppFlags "-frtti" // Enables RTTI support.
+                cppFlags "-fexceptions" // Enables exception-handling support.
+                cppFlags "-std=c++11"
+                cppFlags "-lz"
+            }
+        }
+
         // Enabling vector drawables
         vectorDrawables.useSupportLibrary = true
 
@@ -46,32 +58,36 @@ android {
         development {
             minSdkVersion 21
             resConfigs "en", "xxhdpi"
+            ndk.abiFilters 'armeabi-v7a'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
         }
     }
 
     if (project.hasProperty('devBuild')) {
         aaptOptions.cruncherEnabled = false
     }
-
-    dexOptions {
-        maxProcessCount 3
-    }
 }
 
 ext {
     supportLibVersion = '27.1.1'
-    architectureComponentsVersion = '1.1.0'
+    roomVersion = '1.1.1'
     constraintLayoutVersion = '1.1.2'
-    firebaseVersion = '16.0.0'
+    firebaseVersion = '16.0.1'
     butterknifeVersion = '8.8.1'
     materialDialogsVersion = '0.9.6.0'
     simpleRangeBarVersion = '0.1.1'
-    crashlyticsVersion = '2.9.3@aar'
+    crashlyticsVersion = '2.9.4@aar'
     easyPermissionsVersion = '1.2.0'
     eventBusVersion = '3.1.1'
     eventBusAnnotationProcessorVersion = '3.0.1'
+    essentialsVersion = '3.0.0-RC1'
     usbSerialVersion = '4.5.2'
-    iirFiltersVersion = '1.0.4'
+    iirFiltersVersion = '1.1'
     commonsMathVersion = '3.6.1'
 }
 
@@ -83,10 +99,10 @@ dependencies {
     implementation "com.android.support:design:$supportLibVersion"
     implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
     // db
-    implementation "android.arch.persistence.room:runtime:$architectureComponentsVersion"
-    annotationProcessor "android.arch.persistence.room:compiler:$architectureComponentsVersion"
+    implementation "android.arch.persistence.room:runtime:$roomVersion"
+    annotationProcessor "android.arch.persistence.room:compiler:$roomVersion"
     // debug db
-    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
     // view binding
     implementation "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
@@ -99,6 +115,8 @@ dependencies {
     // event bus
     implementation "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+    // utils
+    implementation "org.greenrobot:essentials:$essentialsVersion"
     // serial communication
     implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
     // signal filtering

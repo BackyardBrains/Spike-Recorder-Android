@@ -31,7 +31,6 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:contentDescription="@string/content_desc_threshold_remove"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_delete_white_32dp"/>
 
@@ -42,8 +41,7 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/handle1"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_one"/>
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/threshold1"
@@ -52,8 +50,7 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle2"
             android:background="?selectableItemBackgroundBorderless"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_two"/>
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/threshold2"
@@ -62,8 +59,7 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle3"
             android:background="?selectableItemBackgroundBorderless"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_three"/>
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/ibtn_add_threshold"
@@ -71,7 +67,6 @@
             android:layout_height="48dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:background="?selectableItemBackgroundBorderless"
-            android:contentDescription="@string/content_desc_threshold_new"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_add_white_32dp"/>
     </LinearLayout>

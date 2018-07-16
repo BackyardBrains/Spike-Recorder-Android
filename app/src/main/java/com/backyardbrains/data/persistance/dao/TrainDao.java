@@ -7,7 +7,7 @@ import android.arch.persistence.room.Query;
 import com.backyardbrains.data.persistance.entity.Train;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Dao public interface TrainDao {
 

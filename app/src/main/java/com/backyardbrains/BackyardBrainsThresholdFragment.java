@@ -135,8 +135,8 @@ public class BackyardBrainsThresholdFragment extends BaseWaveformFragment {
         return view;
     }
 
-    @Override protected BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer) {
-        final ThresholdRenderer renderer = new ThresholdRenderer(this, preparedBuffer);
+    @Override protected BYBBaseRenderer createRenderer() {
+        final ThresholdRenderer renderer = new ThresholdRenderer(this);
         renderer.setOnDrawListener(new BYBBaseRenderer.OnDrawListener() {
 
             @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {

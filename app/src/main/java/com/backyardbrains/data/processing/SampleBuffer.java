@@ -32,23 +32,26 @@ public class SampleBuffer {
 
     private short[] buffer;
 
-    SampleBuffer(int size) {
+    public SampleBuffer(int size) {
         this.size = size;
 
         buffer = new short[size];
     }
 
+    public int getSize() {
+        return size;
+    }
+
     /**
      * Adds new {@code incoming} samples to the buffer.
      */
-    public void add(short[] incoming) {
+    public void add(short[] incoming, int length) {
         try {
-            System.arraycopy(buffer, incoming.length, buffer, 0, buffer.length - incoming.length);
-            System.arraycopy(incoming, 0, buffer, buffer.length - incoming.length, incoming.length);
+            System.arraycopy(buffer, length, buffer, 0, buffer.length - length);
+            System.arraycopy(incoming, 0, buffer, buffer.length - length, length);
         } catch (Exception e) {
             LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
-                + incoming.length + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length
-                - incoming.length));
+                + length + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length - length));
             Crashlytics.logException(e);
         }
     }

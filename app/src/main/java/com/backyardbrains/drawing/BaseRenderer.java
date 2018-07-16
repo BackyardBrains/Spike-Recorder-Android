@@ -12,7 +12,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 abstract class BaseRenderer implements GLSurfaceView.Renderer {
 
@@ -24,7 +24,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
         fragmentRef = new WeakReference<>(fragment);
     }
 
-    @Nullable protected AudioService getAudioService() {
+    @Nullable AudioService getAudioService() {
         final BaseFragment fragment = getFragment("getAudioService()");
         if (fragment == null) return null;
 

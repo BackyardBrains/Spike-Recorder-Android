@@ -3,7 +3,7 @@ package com.backyardbrains.audio;
 import java.io.IOException;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface BYBAudioFile {
 

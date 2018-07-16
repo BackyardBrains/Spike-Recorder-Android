@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,7 +15,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB serial communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 
 public class SerialSampleSource extends AbstractUsbSampleSource {
@@ -67,7 +66,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
             while (working.get()) {
                 if (serialDevice != null) {
                     int numberBytes = serialDevice.syncRead(dataBuffer, 64);
-                    if (numberBytes > 0) writeToBuffer(Arrays.copyOfRange(dataBuffer, 0, numberBytes));
+                    if (numberBytes > 0) writeToBuffer(dataBuffer, 0, numberBytes);
                 }
             }
         }

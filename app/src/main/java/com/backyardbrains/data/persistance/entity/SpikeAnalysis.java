@@ -7,7 +7,7 @@ import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Entity(tableName = "spike_analysis", indices = @Index(value = "file_path", unique = true)) public class SpikeAnalysis {
 

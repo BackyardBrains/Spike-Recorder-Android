@@ -6,8 +6,11 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
-import com.backyardbrains.data.processing.DataProcessor;
+import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -17,7 +20,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Wrapper for {@link UsbDevice} class. Device can only be one of supported BYB usb devices.
  *
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class AbstractUsbSampleSource extends AbstractSampleSource implements UsbSampleSource {
 
@@ -25,6 +28,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
+
+    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents((byte) 0);
 
     /**
      * Interface definition for a callback to be invoked when SpikerBox hardware type is detected after connection.
@@ -118,6 +123,26 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     /**
      * {@inheritDoc}
+     */
+    @CallSuper @Override public void setFilter(@Nullable Filter filter) {
+        super.setFilter(filter);
+
+        float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
+        float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
+        JniUtils.setFilters(low, high);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @CallSuper @Override protected void setSampleRate(int sampleRate) {
+        super.setSampleRate(sampleRate);
+
+        JniUtils.setSampleRate(sampleRate);
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * <p><em>Derived classes must call through to the super class's implementation of this method.</em></p>
      */
@@ -149,14 +174,31 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         processor.setChannelCount(channelCount);
     }
 
+    private final Benchmark benchmark = new Benchmark("PROCESS_SAMPLE_STREAM_TEST").warmUp(1000)
+        .sessions(10)
+        .measuresPerSession(2000)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data,
+    @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length,
         long lastByteIndex) {
-        DataProcessor.SamplesWithMarkers swm = processor.process(data);
-        swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
-        return swm;
+        //benchmark.start();
+
+        //samplesWithEvents = processor.process(data, length);
+        JniUtils.processSampleStream(samplesWithEvents, data, length);
+
+        //benchmark.end();
+
+        samplesWithEvents.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
+        return samplesWithEvents;
     }
 
     /**

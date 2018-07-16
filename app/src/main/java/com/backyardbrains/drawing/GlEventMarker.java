@@ -12,7 +12,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Defines a visual representation of  marker
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class GlEventMarker {
 
@@ -33,8 +33,8 @@ public class GlEventMarker {
     private final ShortBuffer indicesBuffer;
     private final GLText text;
 
-    private final float[] lineVertices = new float[4];
-    private final float[] labelVertices = new float[8];
+    private final float[] lineVertices = new float[LINE_VERTICES_COUNT];
+    private final float[] labelVertices = new float[LABEL_VERTICES_COUNT];
 
     GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
         ByteBuffer lineVBB = ByteBuffer.allocateDirect(LINE_VERTICES_COUNT * 4);
@@ -55,8 +55,9 @@ public class GlEventMarker {
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, @NonNull String eventName, float x, float y0, float y1, float scaleX,
-        float scaleY) {
+    public void draw(@NonNull GL10 gl, String eventName, float x, float y0, float y1, float scaleX, float scaleY) {
+        if (eventName == null) return;
+
         int len = eventName.length();
         int ascii;
         // we just use event up to the first unsupported character
@@ -85,7 +86,7 @@ public class GlEventMarker {
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 
         // draw label background
-        text.setScale(scaleX, scaleY);
+        text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
         float textW = text.getLength(eventName);
         float textH = text.getHeight();
         float labelW = textW * 1.3f;

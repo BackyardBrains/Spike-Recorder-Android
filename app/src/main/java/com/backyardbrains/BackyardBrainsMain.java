@@ -30,10 +30,13 @@ import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
+import me.pqpo.librarylog4a.Log4a;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
 import org.greenrobot.eventbus.Subscribe;
@@ -45,6 +48,8 @@ import pub.devrel.easypermissions.EasyPermissions;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
+//import me.pqpo.librarylog4a.Log4a;
 
 public class BackyardBrainsMain extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
@@ -142,6 +147,10 @@ public class BackyardBrainsMain extends AppCompatActivity
         saveSettings();
         // stop audio service
         stop();
+
+        // flush log to file and release resources
+        Log4a.flush();
+        Log4a.release();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -304,20 +313,29 @@ public class BackyardBrainsMain extends AppCompatActivity
     //  EVENT BUS
     //=================================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
         loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onFindSpikesEvent(FindSpikesEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onFindSpikesEvent(FindSpikesEvent event) {
         loadFragment(FIND_SPIKES_VIEW, event.getFilePath());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
         loadFragment(ANALYSIS_VIEW, event.getFilePath(), event.getType());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
         loadFragment(RECORDINGS_VIEW);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onShowToastEvent(ShowToastEvent event) {
+        ViewUtils.toast(this, event.getToast());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {

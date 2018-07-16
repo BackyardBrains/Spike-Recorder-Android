@@ -7,7 +7,7 @@ import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Entity(tableName = "trains", indices = @Index(value = {
     "analysis_id", "order"

@@ -27,9 +27,9 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
-import com.backyardbrains.data.processing.DataProcessor;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SampleProcessor;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -47,6 +47,8 @@ import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
@@ -63,7 +65,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  * Manages a thread which monitors default audio input and pushes raw audio data to bound activities.
  *
  * @author Nathan Dotz <nate@backyardbrains.com>
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  * @version 1
  */
 public class AudioService extends Service implements ReceivesAudio, AbstractSampleSource.OnSamplesReceivedListener {
@@ -109,6 +111,10 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     private int sampleRate;
     // Maximum number of seconds data manager should hold at any time
     private double maxTime;
+    // Buffer that holds processed samples
+    //private short[] samples;
+    // Buffer that holds processed samples and events
+    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents((byte) 0);
     // Current input source
     private InputSourceType source = InputSourceType.NONE;
 
@@ -214,7 +220,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
         LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
         if (maxSeconds <= 0) return; // max time needs to be positive
 
-        if (processingBuffer != null) processingBuffer.setBufferSize((int) (maxSeconds * sampleRate));
+        if (processingBuffer != null) processingBuffer.setSize((int) (maxSeconds * sampleRate));
 
         this.maxTime = maxSeconds;
     }
@@ -259,6 +265,11 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      */
     public void setFilter(@Nullable Filter filter) {
         if (usbSampleSource != null) usbSampleSource.setFilter(filter);
+        if (filter != null) {
+            JniUtils.setFilters((float) filter.getLowCutOffFrequency(), (float) filter.getHighCutOffFrequency());
+        } else {
+            JniUtils.setFilters(-1f, -1f);
+        }
         FILTERS.setFilter(filter);
     }
 
@@ -270,52 +281,70 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
      * saver.
      *
-     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(DataProcessor.SamplesWithMarkers)
+     * @see AbstractSampleSource.OnSamplesReceivedListener#onSamplesReceived(SamplesWithEvents)
      */
-    @Override public void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
-        passToDataManager(samplesWithMarkers);
+    @Override public void onSamplesReceived(@NonNull SamplesWithEvents samplesWithEvents) {
+        passToDataManager(samplesWithEvents);
     }
 
     //=================================================
     //  IMPLEMENTATIONS OF ReceivesAudio INTERFACE
     //=================================================
 
-    private static final String[] TEMP_EVENTS_BUFFER = new String[0];
-    private static final DataProcessor.SamplesWithMarkers TEMP_SAMPLES_WITH_MARKERS =
-        new DataProcessor.SamplesWithMarkers(TEMP_EVENTS_BUFFER);
+    private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
+        .sessions(10)
+        .measuresPerSession(200)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
+    private static final SamplesWithEvents TEMP_SAMPLES_WITH_EVENTS = new SamplesWithEvents();
 
     /**
      * Adds received audio to the ring buffer. If we're recording, it also passes it to the recording saver.
      *
-     * @see ReceivesAudio#receiveAudio(short[])
+     * @see ReceivesAudio#receiveAudio(short[], int)
      */
-    @Override public void receiveAudio(@NonNull short[] data) {
+    @Override public void receiveAudio(@NonNull short[] samples, int length) {
+        //benchmark.start();
+
         // any received audio needs to be process with AM Modulation processor
-        TEMP_SAMPLES_WITH_MARKERS.samples = AM_MODULATION_DATA_PROCESSOR.process(data);
-        passToDataManager(TEMP_SAMPLES_WITH_MARKERS);
+        //TEMP_SAMPLES_WITH_EVENTS.samples = AM_MODULATION_DATA_PROCESSOR.process(samples, length);
+        //TEMP_SAMPLES_WITH_EVENTS.sampleCount = length;
+        //passToDataManager(TEMP_SAMPLES_WITH_EVENTS);
+        JniUtils.processAudioStream(samplesWithEvents, samples, length);
+        passToDataManager(samplesWithEvents);
+
+        //benchmark.end();
     }
 
     // Passes data to data manager so it can be consumed by renderer
-    private void passToDataManager(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
         // data -> ProcessingBuffer up to 2 secs
         if (processingBuffer != null) {
             if (getProcessor() != null) {
                 // additionally process data if processor is provided before passing it to data manager
-                TEMP_SAMPLES_WITH_MARKERS.samples = getProcessor().process(samplesWithMarkers.samples);
-                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_MARKERS);
+                TEMP_SAMPLES_WITH_EVENTS.samples =
+                    getProcessor().process(samplesWithEvents.samples, samplesWithEvents.sampleCount);
+                TEMP_SAMPLES_WITH_EVENTS.sampleCount = TEMP_SAMPLES_WITH_EVENTS.samples.length;
+                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_EVENTS);
             } else {
                 // pass data to data manager
-                processingBuffer.addToBuffer(samplesWithMarkers);
+                processingBuffer.addToBuffer(samplesWithEvents);
             }
         }
 
         // pass data to RecordingSaver
-        passToRecorder(samplesWithMarkers);
+        passToRecorder(samplesWithEvents);
     }
 
     // Passes data to audio recorder
-    private void passToRecorder(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
-        if (recordingSaver != null) record(samplesWithMarkers);
+    private void passToRecorder(@NonNull SamplesWithEvents samplesWithEvents) {
+        if (recordingSaver != null) record(samplesWithEvents);
     }
 
     //=================================================
@@ -416,7 +445,7 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
      * Whether AM modulation is currently detected.
      */
     public boolean isAmModulationDetected() {
-        return AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
+        return JniUtils.isAudioStreamAmModulated(); //AM_MODULATION_DATA_PROCESSOR.isAmModulationDetected();
     }
 
     //=================================================
@@ -784,11 +813,12 @@ public class AudioService extends Service implements ReceivesAudio, AbstractSamp
     }
 
     // Pass audio and events to the active RecordingSaver instance
-    private void record(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
+    private void record(@NonNull SamplesWithEvents samplesWithEvents) {
         try {
-            if (recordingSaver != null) {
-                recordingSaver.writeAudioWithEvents(samplesWithMarkers);
+            if (recordingSaver != null) recordingSaver.writeAudioWithEvents(samplesWithEvents);
 
+            // recordingSaver can be set to null if stopRecording() is called between this and previous line
+            if (recordingSaver != null) {
                 // post current recording progress
                 EventBus.getDefault()
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),

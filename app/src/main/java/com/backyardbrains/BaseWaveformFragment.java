@@ -11,7 +11,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BYBBaseRenderer;
 import com.backyardbrains.events.SampleRateChangeEvent;
-import com.backyardbrains.utils.BYBConstants;
 import com.backyardbrains.view.WaveformLayout;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -20,7 +19,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class BaseWaveformFragment extends BaseFragment {
 
@@ -34,8 +33,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     private ImageButton ibtnBack;
 
     private BYBBaseRenderer renderer;
-
-    protected float[] bufferWithXs = BYBBaseRenderer.initTempBuffer();
 
     /**
      * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
@@ -51,7 +48,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
                 setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
             }
 
-            setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
+            //setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
         }
 
         public void setSampleRate(int sampleRate) {
@@ -115,7 +112,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected abstract View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState);
 
-    protected abstract BYBBaseRenderer createRenderer(@NonNull float[] preparedBuffer);
+    protected abstract BYBBaseRenderer createRenderer();
 
     protected abstract boolean isBackable();
 
@@ -154,7 +151,8 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //  EVENT BUS
     //==============================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
         LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
         onSampleRateChange(event.getSampleRate());
@@ -166,7 +164,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        renderer = createRenderer(bufferWithXs);
+        renderer = createRenderer();
         waveform.setRenderer(renderer);
 
         if (isBackable()) {

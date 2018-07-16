@@ -33,7 +33,7 @@ import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.DateUtils;
-import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.FabricUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
@@ -56,7 +56,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BackyardBrainsRecordingsFragment extends BaseFragment implements EasyPermissions.PermissionCallbacks {
 
@@ -305,7 +305,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                                         if (!ef.renameTo(newEventsFile)) {
                                             BYBUtils.showAlert(getActivity(), "Error",
                                                 getString(R.string.error_message_files_events_rename));
-                                            EventUtils.logCustom(
+                                            FabricUtils.logCustom(
                                                 "Renaming events file for the given recording " + f.getPath()
                                                     + " failed", null);
                                         }
@@ -315,7 +315,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                                 if (getContext() != null) {
                                     ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
                                 }
-                                EventUtils.logCustom("Renaming file " + f.getPath() + " failed", null);
+                                FabricUtils.logCustom("Renaming file " + f.getPath() + " failed", null);
                             }
                         } else {
                             if (getContext() != null) {
@@ -326,7 +326,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                         if (getContext() != null) {
                             ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
                         }
-                        EventUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
+                        FabricUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
                     }
                     // rescan the files
                     rescanFiles();
@@ -355,7 +355,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                                 if (!ef.delete()) {
                                     BYBUtils.showAlert(getActivity(), "Error",
                                         getString(R.string.error_message_files_events_delete));
-                                    EventUtils.logCustom(
+                                    FabricUtils.logCustom(
                                         "Deleting events file for the given recording " + f.getPath() + " failed",
                                         null);
                                 }
@@ -364,13 +364,13 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                             if (getContext() != null) {
                                 ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
                             }
-                            EventUtils.logCustom("Deleting file " + f.getPath() + " failed", null);
+                            FabricUtils.logCustom("Deleting file " + f.getPath() + " failed", null);
                         }
                     } else {
                         if (getContext() != null) {
                             ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
                         }
-                        EventUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
+                        FabricUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
                     }
                     rescanFiles();
                 }
@@ -530,11 +530,11 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             notifyDataSetChanged();
         }
 
-        @Override public FileViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        @NonNull @Override public FileViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new FileViewHolder(inflater.inflate(R.layout.item_recording, parent, false), callback);
         }
 
-        @Override public void onBindViewHolder(FileViewHolder holder, int position) {
+        @Override public void onBindViewHolder(@NonNull FileViewHolder holder, int position) {
             holder.setFile(files.get(position));
         }
 
@@ -548,6 +548,7 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
             @BindView(R.id.tv_file_last_modified) TextView tvFileLasModified;
 
             File file;
+            Date date = new Date();
 
             FileViewHolder(View view, final Callback callback) {
                 super(view);
@@ -570,7 +571,8 @@ public class BackyardBrainsRecordingsFragment extends BaseFragment implements Ea
                 } catch (IOException ignored) {
                 }
                 tvFileSize.setText(waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate()) : "UNKNOWN");
-                tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(new Date(file.lastModified())));
+                date.setTime(file.lastModified());
+                tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));
             }
         }
     }

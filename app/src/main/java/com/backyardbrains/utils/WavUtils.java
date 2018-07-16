@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class WavUtils {
 
@@ -21,7 +21,7 @@ public class WavUtils {
     /**
      * Converts specified {@code sampleCount} to wav time progress and returns it formatted as {@code mm:ss}.
      */
-    public static CharSequence formatWavProgress(int sampleCount, int sampleRate) {
+    public static String formatWavProgress(int sampleCount, int sampleRate) {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 

@@ -11,7 +11,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-
 import com.backyardbrains.BackyardBrainsMain;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BYBBaseRenderer;
@@ -22,7 +21,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class WaveformLayout extends ConstraintLayout {
 
@@ -91,7 +90,7 @@ public class WaveformLayout extends ConstraintLayout {
     /**
      * Updates time text view
      */
-    public void setMilliseconds(final float milliseconds) {
+    public void setMilliseconds(float milliseconds) {
         if (this.milliseconds == milliseconds) return;
 
         this.milliseconds = milliseconds;
@@ -101,7 +100,7 @@ public class WaveformLayout extends ConstraintLayout {
     /**
      * Updates signal text view
      */
-    public void setMillivolts(final float millivolts) {
+    public void setMillivolts(float millivolts) {
         if (this.millivolts == millivolts) return;
 
         this.millivolts = millivolts;

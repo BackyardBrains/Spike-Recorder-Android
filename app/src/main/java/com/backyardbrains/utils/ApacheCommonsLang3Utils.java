@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public final class ApacheCommonsLang3Utils {
 

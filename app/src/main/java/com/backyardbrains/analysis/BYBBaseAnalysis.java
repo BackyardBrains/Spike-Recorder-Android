@@ -89,16 +89,28 @@ abstract class BYBBaseAnalysis<T> {
     private static class AnalysisThread<T> extends Thread {
 
         private WeakReference<BYBBaseAnalysis<T>> analysisRef;
+        //private final Benchmark benchmark;
 
         AnalysisThread(BYBBaseAnalysis<T> analysis) {
             analysisRef = new WeakReference<>(analysis);
+            //benchmark = new Benchmark("ANALYSIS_" + analysis.getClass().getName()).sessions(1)
+            //    .measuresPerSession(1)
+            //    .logBySession(true)
+            //    .logToFile(false)
+            //    .listener(new Benchmark.OnBenchmarkListener() {
+            //        @Override public void onEnd() {
+            //            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            //        }
+            //    });
         }
 
         @Override public void run() {
             final BYBBaseAnalysis<T> analysis;
             if ((analysis = analysisRef.get()) != null) {
                 try {
+                    //benchmark.start();
                     analysis.asyncOnResult(analysis.process());
+                    //benchmark.end();
                 } catch (Exception e) {
                     analysis.asyncOnFailed();
                 }

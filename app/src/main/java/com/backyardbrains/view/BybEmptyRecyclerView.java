@@ -9,7 +9,7 @@ import android.view.View;
  * Subclass of {@link RecyclerView} that enables creator to set an empty view that will be displayed when there are no
  * items to show.
  *
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BybEmptyRecyclerView extends RecyclerView {
 

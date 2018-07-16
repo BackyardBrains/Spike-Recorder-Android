@@ -27,20 +27,21 @@ import com.example.roman.thesimplerangebar.SimpleRangeBar;
 import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class FilterSettingsDialog {
 
-    private static final Filter NO_FILTER = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
+    @SuppressWarnings("WeakerAccess") static final Filter NO_FILTER =
+        new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
 
     @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
     @BindView(R.id.et_high_cut_off) EditText etHighCutOff;
     @BindView(R.id.rb_cut_offs) SimpleRangeBar srbCutOffs;
 
     // Dialog for listing predefined filters
-    private MaterialDialog filterSettingsDialog;
+    @SuppressWarnings("WeakerAccess") MaterialDialog filterSettingsDialog;
     // Dialog for setting custom filter
-    private MaterialDialog customFilterDialog;
+    @SuppressWarnings("WeakerAccess") MaterialDialog customFilterDialog;
 
     private final SimpleRangeBarOnChangeListener rangeBarOnChangeListener = new SimpleRangeBarOnChangeListener() {
         @Override public void leftThumbValueChanged(long value) {
@@ -61,12 +62,12 @@ public abstract class FilterSettingsDialog {
         void onFilterSelected(@NonNull Filter filter);
     }
 
-    private final FilterSelectionListener listener;
+    @SuppressWarnings("WeakerAccess") final FilterSelectionListener listener;
     private final double minCutOffLog;
     private final double maxCutOffLog;
 
-    private Filter customFilter;
-    private Filter selectedFilter;
+    @SuppressWarnings("WeakerAccess") Filter customFilter;
+    @SuppressWarnings("WeakerAccess") Filter selectedFilter;
 
     public FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
         this.listener = listener;
@@ -132,7 +133,7 @@ public abstract class FilterSettingsDialog {
     }
 
     // Shows the custom filter dialog.
-    private void showCustomFilterDialog() {
+    @SuppressWarnings("WeakerAccess") void showCustomFilterDialog() {
         if (selectedFilter != null) {
             etLowCutOff.setText(String.valueOf(selectedFilter.getLowCutOffFrequency()));
             etHighCutOff.setText(String.valueOf(selectedFilter.getHighCutOffFrequency()));
@@ -176,7 +177,7 @@ public abstract class FilterSettingsDialog {
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
-    private void updateLowCutOff() {
+    @SuppressWarnings("WeakerAccess") void updateLowCutOff() {
         double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
         double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
 
@@ -190,7 +191,7 @@ public abstract class FilterSettingsDialog {
     }
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
-    private void updateHighCutOff() {
+    @SuppressWarnings("WeakerAccess") void updateHighCutOff() {
         double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
         double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
 
@@ -230,12 +231,6 @@ public abstract class FilterSettingsDialog {
         srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
     }
 
-    // Converts range value to a corresponding value withing logarithmic scale
-    private double thumbToCutOff(long thumbValue) {
-        return Math.exp(minCutOffLog + (thumbValue - getMinCutOff()) * (maxCutOffLog - minCutOffLog) / (getMaxCutOff()
-            - getMinCutOff()));
-    }
-
     // Converts value from logarithmic scale to a corresponding range value
     private long cutOffToThumb(double cutOffValue) {
         return (long) (
@@ -243,8 +238,14 @@ public abstract class FilterSettingsDialog {
                 + getMinCutOff());
     }
 
+    // Converts range value to a corresponding value withing logarithmic scale
+    @SuppressWarnings("WeakerAccess") double thumbToCutOff(long thumbValue) {
+        return Math.exp(minCutOffLog + (thumbValue - getMinCutOff()) * (maxCutOffLog - minCutOffLog) / (getMaxCutOff()
+            - getMinCutOff()));
+    }
+
     // Returns a new Filter with cut-off values currently set inside input fields
-    private Filter constructCustomFilter() {
+    @SuppressWarnings("WeakerAccess") Filter constructCustomFilter() {
         double lowCutOff = Double.valueOf(etLowCutOff.getText().toString());
         double highCutOff = Double.valueOf(etHighCutOff.getText().toString());
         return new Filter(lowCutOff, highCutOff);
@@ -321,7 +322,7 @@ public abstract class FilterSettingsDialog {
             }
         }
 
-        private String getFilterName(int position) {
+        String getFilterName(int position) {
             if (position == 0) {
                 return "Raw (No filter)";
             } else if (position == getFilters().length + 1) {

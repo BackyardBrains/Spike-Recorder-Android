@@ -11,7 +11,7 @@ public class AnalysisUtils {
         float mean = 0;
         float squares = 0;
         float number;
-        for (int i = 0; i <= length; i++) {
+        for (int i = 0; i < length; i++) {
             number = data[i];
             mean += number;
             squares += number * number;
@@ -27,7 +27,7 @@ public class AnalysisUtils {
     public static float RMS(short[] data, int length) {
         float squares = 0f;
         float number;
-        for (int i = 0; i <= length; i++) {
+        for (int i = 0; i < length; i++) {
             number = data[i];
             squares += number * number;
         }

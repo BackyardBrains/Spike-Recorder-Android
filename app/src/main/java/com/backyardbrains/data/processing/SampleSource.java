@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface SampleSource {
 
@@ -34,9 +34,9 @@ public interface SampleSource {
         /**
          * Called when chunk of data is received.
          *
-         * @param samplesWithMarkers The received data which contains processed samples and events.
+         * @param samplesWithEvents The received data which contains processed samples and events.
          */
-        void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers);
+        void onSamplesReceived(@NonNull SamplesWithEvents samplesWithEvents);
     }
 
     /**

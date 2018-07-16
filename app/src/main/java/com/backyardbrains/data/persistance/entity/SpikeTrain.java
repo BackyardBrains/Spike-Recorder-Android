@@ -6,7 +6,7 @@ import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.Index;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Entity(tableName = "spike_trains", primaryKeys = {
     "spike_id", "train_id"

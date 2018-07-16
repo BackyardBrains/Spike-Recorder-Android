@@ -39,8 +39,8 @@ public class WaveformRenderer extends BYBBaseRenderer {
     private GlEventMarker glEventMarker;
     private Context context;
 
-    public WaveformRenderer(@NonNull BaseFragment fragment, @NonNull float[] preparedBuffer) {
-        super(fragment, preparedBuffer);
+    public WaveformRenderer(@NonNull BaseFragment fragment) {
+        super(fragment);
 
         context = fragment.getContext();
     }
@@ -58,16 +58,17 @@ public class WaveformRenderer extends BYBBaseRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
-
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
+        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex) {
         // draw waveform
-        glWaveform.draw(gl, waveformVertices, getWaveformColor());
+        glWaveform.draw(gl, waveformVertices, waveformVerticesCount, getWaveformColor());
         // draw markers
+        float drawScale = (float) (waveformVerticesCount * .5) / surfaceWidth;
         final float verticalHalfSize = glWindowHeight * .5f;
-        for (int i = 0; i < markers.size(); i++) {
-            glEventMarker.draw(gl, markers.valueAt(i), markers.keyAt(i), -verticalHalfSize, verticalHalfSize, scaleX,
+        for (int i = 0; i < events.size(); i++) {
+            glEventMarker.draw(gl, events.valueAt(i), events.keyAt(i), -verticalHalfSize, verticalHalfSize, drawScale,
                 scaleY);
         }
     }

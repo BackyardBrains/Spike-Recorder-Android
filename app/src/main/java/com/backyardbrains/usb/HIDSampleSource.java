@@ -17,7 +17,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB HID communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class HIDSampleSource extends AbstractUsbSampleSource {
 
@@ -51,17 +51,18 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
         private UsbEndpoint inEndpoint;
         private AtomicBoolean working = new AtomicBoolean(true);
 
+        private byte[] dataReceived = new byte[HIDBuffer.DEFAULT_READ_BUFFER_SIZE];
+
         @Override public void run() {
-            byte[] dataReceived;
             while (working.get()) {
                 if (inEndpoint != null) {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
                     if (numberBytes > 0) {
-                        dataReceived = usbBuffer.getDataReceivedCompatible(numberBytes);
+                        usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
-                        writeToBuffer(Arrays.copyOfRange(dataReceived, 2, dataReceived.length));
+                        writeToBuffer(dataReceived, 2, numberBytes - 2);
                     }
                 }
             }

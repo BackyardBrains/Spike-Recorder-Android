@@ -10,7 +10,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AmModulationProcessor implements SampleProcessor {
 
@@ -70,7 +70,7 @@ public class AmModulationProcessor implements SampleProcessor {
         init();
     }
 
-    @NonNull @Override public short[] process(@NonNull short[] data) {
+    @NonNull @Override public short[] process(@NonNull short[] data, int length) {
         if (data.length > 0) return processIncomingData(data);
 
         return new short[0];
