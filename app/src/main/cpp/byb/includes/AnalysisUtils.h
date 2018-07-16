@@ -16,6 +16,11 @@ public:
     static float SD(short *data, int length);
 
     static float RMS(short *data, int length);
+
+    /**
+     * Generates a logarithmic scale of {@code size} values ranging between {@code min} and {@code max}.
+     */
+    static float *generateLogSpace(int min, int max, int size);
 };
 
 #endif //SPIKE_RECORDER_ANDROID_ANALYSISUTILS_H

@@ -27,3 +27,20 @@ float AnalysisUtils::RMS(short *data, int length) {
     }
     return sqrt(squares / length);
 }
+
+float *AnalysisUtils::generateLogSpace(int min, int max, int size) {
+    double logarithmicBase = M_E;
+    double minimums = pow(10.0f, min);
+    double maximums = pow(10.0f, max);
+    double logMin = log(minimums);
+    double logMax = log(maximums);
+    double delta = (logMax - logMin) / size;
+
+    double accDelta = 0;
+    float *logSpace = new float[size + 1];
+    for (int i = 0; i <= size; ++i) {
+        logSpace[i] = static_cast<float>(pow(logarithmicBase, logMin + accDelta));
+        accDelta += delta;
+    }
+    return logSpace;
+}

@@ -33,6 +33,9 @@ public class JniUtils {
     public static native void autocorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
         int[][] analysis, int analysisBinCount);
 
+    public static native void isiAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
+        int[][] analysis, int analysisBinCount);
+
     public static native void crossCorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
         int[][] analysis, int analysisCount, int binCount);
 
