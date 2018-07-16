@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.audio.BYBAudioFile;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.data.AverageSpike;
-import com.backyardbrains.data.InterSpikeInterval;
 import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
@@ -40,7 +39,7 @@ public class BYBAnalysisManager {
 
     @SuppressWarnings("WeakerAccess") int[][] autocorrelation;
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
-    @SuppressWarnings("WeakerAccess") InterSpikeInterval[][] isi;
+    @SuppressWarnings("WeakerAccess") int[][] isi;
     @SuppressWarnings("WeakerAccess") AverageSpike[] averageSpikes;
 
     public BYBAnalysisManager(@NonNull Context context) {
@@ -186,11 +185,9 @@ public class BYBAnalysisManager {
     //=================================================
 
     /**
-     * Returns spike trains for the audio file with specified {@code filePath} by invoking specified {@code callback}
-     * and passing in the result.
      *
-     * @param filePath Absolute path of the audio file for which spike trains should be retrieved.
-     * @param callback Callback to be invoked when spike trains are returned.
+     * @param filePath
+     * @param callback
      */
     public void getSpikeTrains(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
@@ -309,7 +306,7 @@ public class BYBAnalysisManager {
     /**
      * Returns results for the Inter Spike Interval analysis
      */
-    @Nullable public InterSpikeInterval[][] getISI() {
+    @Nullable public int[][] getISI() {
         return isi;
     }
 
@@ -317,20 +314,18 @@ public class BYBAnalysisManager {
     @SuppressWarnings("WeakerAccess") void isiAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "isiAnalysis()");
-        new BYBIsiAnalysis(filePath, spikeAnalysisByTrains,
-            new BYBBaseAnalysis.AnalysisListener<InterSpikeInterval[]>() {
-                @Override
-                public void onAnalysisDone(@NonNull String filePath, @Nullable InterSpikeInterval[][] results) {
-                    isi = results;
-                    // post event that audio file analysis successfully finished
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.ISI));
-                }
+        new BYBIsiAnalysis(filePath, spikeAnalysisByTrains, new BYBBaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
+                isi = results;
+                // post event that audio file analysis successfully finished
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, BYBAnalysisType.ISI));
+            }
 
-                @Override public void onAnalysisFailed(@NonNull String filePath) {
-                    // post event that audio file analysis failed
-                    EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.ISI));
-                }
-            }).startAnalysis();
+            @Override public void onAnalysisFailed(@NonNull String filePath) {
+                // post event that audio file analysis failed
+                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, BYBAnalysisType.ISI));
+            }
+        }).startAnalysis();
     }
 
     //=================================================
