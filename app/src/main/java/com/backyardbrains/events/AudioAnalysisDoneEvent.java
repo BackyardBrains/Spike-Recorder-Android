@@ -1,6 +1,6 @@
 package com.backyardbrains.events;
 
-import com.backyardbrains.analysis.BYBAnalysisType;
+import com.backyardbrains.analysis.AnalysisType;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -8,9 +8,9 @@ import com.backyardbrains.analysis.BYBAnalysisType;
 public class AudioAnalysisDoneEvent {
 
     private final boolean success;
-    private final @BYBAnalysisType int type;
+    private final @AnalysisType int type;
 
-    public AudioAnalysisDoneEvent(boolean success, @BYBAnalysisType int type) {
+    public AudioAnalysisDoneEvent(boolean success, @AnalysisType int type) {
         this.success = success;
         this.type = type;
     }
@@ -19,7 +19,7 @@ public class AudioAnalysisDoneEvent {
         return success;
     }
 
-    public @BYBAnalysisType int getType() {
+    public @AnalysisType int getType() {
         return type;
     }
 }

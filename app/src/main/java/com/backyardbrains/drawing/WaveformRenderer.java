@@ -24,12 +24,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
+import com.backyardbrains.drawing.gl.GlEventMarker;
+import com.backyardbrains.drawing.gl.GlWaveform;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class WaveformRenderer extends BYBBaseRenderer {
+public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 

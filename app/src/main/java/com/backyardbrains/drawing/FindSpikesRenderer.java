@@ -6,6 +6,7 @@ import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.SpikeValueAndIndex;
+import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;

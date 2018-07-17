@@ -6,18 +6,8 @@
 
 #include "includes/drawing.h"
 
-/**
- *
- * @param output
- * @param samples
- * @param fromSample
- * @param toSample
- * @param size
- * @return
- */
-int *
-envelope(short *outSamples, const short *samples, int *outEventIndices, const int *eventIndices, int eventIndicesCount,
-         int fromSample, int toSample, int size) {
+int *envelope(short *outSamples, const short *samples, int *outEventIndices, const int *eventIndices,
+              int eventIndicesCount, int fromSample, int toSample, int size) {
     int drawSamplesCount = toSample - fromSample;
     if (drawSamplesCount < size) size = drawSamplesCount;
 

@@ -7,6 +7,8 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
+import com.backyardbrains.drawing.gl.GlMeasurementArea;
+import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import com.crashlytics.android.Crashlytics;

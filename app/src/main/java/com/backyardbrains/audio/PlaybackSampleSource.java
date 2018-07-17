@@ -69,7 +69,7 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         private SparseArray<String> allEvents;
 
         // Random access file stream that holds audio file that's being played
-        private BYBAudioFile raf;
+        private AudioFile raf;
         // True if audio is currently being played, false if it's paused or stopped
         private AtomicBoolean playing = new AtomicBoolean(false);
         // Whether audio is currently being sought.
@@ -299,8 +299,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             LOGD(TAG, "RandomAccessFile closed");
         }
 
-        // Convenience function for creating new {@link BYBAudioFile} object from the audio file.
-        @Nullable private BYBAudioFile newRandomAccessFile() throws IOException {
+        // Convenience function for creating new {@link AudioFile} object from the audio file.
+        @Nullable private AudioFile newRandomAccessFile() throws IOException {
             final File file = new File(filePath);
             if (file.exists()) {
                 return new WavAudioFile(file);

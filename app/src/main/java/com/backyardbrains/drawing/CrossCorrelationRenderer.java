@@ -5,7 +5,9 @@ import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import com.android.texample.GLText;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.GlBarGraph;
+import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
@@ -16,7 +18,7 @@ import org.greenrobot.eventbus.EventBus;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class CrossCorrelationRenderer extends BYBAnalysisBaseRenderer {
+public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
 
     private static final String TAG = makeLogTag(CrossCorrelationRenderer.class);
 

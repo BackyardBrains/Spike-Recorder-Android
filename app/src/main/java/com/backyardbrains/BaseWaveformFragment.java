@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.view.WaveformLayout;
 import org.greenrobot.eventbus.Subscribe;
@@ -32,7 +32,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     private WaveformLayout waveform;
     private ImageButton ibtnBack;
 
-    private BYBBaseRenderer renderer;
+    private BaseWaveformRenderer renderer;
 
     /**
      * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
@@ -112,7 +112,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected abstract View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState);
 
-    protected abstract BYBBaseRenderer createRenderer();
+    protected abstract BaseWaveformRenderer createRenderer();
 
     protected abstract boolean isBackable();
 
@@ -137,7 +137,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     /**
      * Returns renderer for the surface view.
      */
-    protected BYBBaseRenderer getRenderer() {
+    protected BaseWaveformRenderer getRenderer() {
         return renderer;
     }
 

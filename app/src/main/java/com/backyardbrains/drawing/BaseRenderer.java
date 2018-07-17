@@ -4,7 +4,7 @@ import android.opengl.GLSurfaceView;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import java.lang.ref.WeakReference;
 
@@ -31,7 +31,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
         return fragment.getProvider() != null ? fragment.getProvider().audioService() : null;
     }
 
-    @Nullable protected BYBAnalysisManager getAnalysisManager() {
+    @Nullable protected AnalysisManager getAnalysisManager() {
         final BaseFragment fragment = getFragment("getAnalysisManager()");
         if (fragment == null) return null;
 

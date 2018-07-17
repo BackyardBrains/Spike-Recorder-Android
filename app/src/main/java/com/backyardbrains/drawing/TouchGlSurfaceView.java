@@ -56,7 +56,7 @@ public class TouchGlSurfaceView extends GLSurfaceView {
             return;
         }
 
-        throw new IllegalArgumentException("Renderer needs to be instance of BYBAnalysisBaseRenderer class");
+        throw new IllegalArgumentException("Renderer needs to be instance of BaseAnalysisRenderer class");
     }
 
     @Override public void surfaceCreated(SurfaceHolder holder) {

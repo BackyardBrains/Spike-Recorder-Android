@@ -19,94 +19,82 @@
 
 package com.backyardbrains.view;
 
-import android.util.Log;
-import android.util.Pair;
-import com.backyardbrains.drawing.BYBBaseRenderer;
-import com.backyardbrains.view.TwoDimensionScaleGestureDetector.Simple2DOnScaleGestureListener;
+import android.support.annotation.Nullable;
+import android.view.ScaleGestureDetector;
+import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.crashlytics.android.Crashlytics;
 
-public class ScaleListener extends Simple2DOnScaleGestureListener {
+import static com.backyardbrains.utils.LogUtils.LOGE;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-    private static final String TAG = "BYBScaleListener";
+public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
-    int xSizeAtBeginning = -1;
-    int ySizeAtBeginning = -1;
-    private BYBBaseRenderer renderer = null;
+    private static final String TAG = makeLogTag(ScaleListener.class);
 
-    private boolean bMutuallyExclusive = true;
-    private int frame = 0;
-    private static final int NUM_FRAMES_FOR_EXCL_DET = 0;
-    private static final int EXCLUSIVE_AXIS_HORIZONTAL = 0;
-    private static final int EXCLUSIVE_AXIS_VERTICAL = 1;
-    private static final int EXCLUSIVE_AXIS_NONE = -1;
-    private int exclusiveAxis = -1;
+    private final BaseWaveformRenderer renderer;
 
-    public ScaleListener() {
+    private int sizeAtBeginningX = -1;
+    private int sizeAtBeginningY = -1;
+    private float scaleFactorX = 1.f;
+    private float scaleFactorY = 1.f;
+    private boolean horizontalScaling;
+    private boolean scalingAxisDetermined;
+
+    public ScaleListener(@Nullable BaseWaveformRenderer r) {
         super();
-    }
 
-    public ScaleListener(BYBBaseRenderer r) {
-        super();
         this.renderer = r;
     }
 
-    public void setRenderer(BYBBaseRenderer r) {
-        renderer = r;
+    @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
+        if (renderer == null) return false;
+
+        sizeAtBeginningX = renderer.getGlWindowWidth();
+        sizeAtBeginningY = renderer.getGlWindowHeight();
+        scaleFactorX = 1.f;
+        scaleFactorY = 1.f;
+        scalingAxisDetermined = false;
+
+        return true;
     }
 
-    @Override public boolean onScaleBegin(TwoDimensionScaleGestureDetector detector) {
-        if (renderer != null) {
-            xSizeAtBeginning = renderer.getGlWindowWidth();
-            ySizeAtBeginning = renderer.getGlWindowHeight();
-            ////Log.d(TAG, "onScaleBegin");
-            //			return true;
-            frame = 0;
-            exclusiveAxis = EXCLUSIVE_AXIS_NONE;
-        }
-        return super.onScaleBegin(detector);
-    }
+    @Override public boolean onScale(ScaleGestureDetector detector) {
+        if (renderer == null) return false;
 
-    @Override public boolean onScale(TwoDimensionScaleGestureDetector detector) {
+        try {
+            // determine scale factors for both axis
+            scaleFactorX *= (1 + 2.5 * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
+            scaleFactorY *= (1 + 4 * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
 
-        if (renderer != null) {
-            try {
+            final float xDiff = Math.abs(detector.getPreviousSpanX() - detector.getCurrentSpanX());
+            final float yDiff = Math.abs(detector.getPreviousSpanY() - detector.getCurrentSpanY());
+            // checks if this is the first scale cycle
+            if (xDiff == 0 && yDiff == 0) return false;
 
-                if (frame == NUM_FRAMES_FOR_EXCL_DET && bMutuallyExclusive) {
-                    final Pair<Float, Float> span = detector.getCurrentSpan();
-                    if (span.first >= span.second) {
-                        exclusiveAxis = EXCLUSIVE_AXIS_HORIZONTAL;
-                    } else {
-                        exclusiveAxis = EXCLUSIVE_AXIS_VERTICAL;
-                    }
-                } else {
-                    final Pair<Float, Float> scaleModifier = detector.getScaleFactor();
-                    if (exclusiveAxis == EXCLUSIVE_AXIS_NONE || exclusiveAxis == EXCLUSIVE_AXIS_HORIZONTAL) {
-                        int newXsize = (int) (xSizeAtBeginning / scaleModifier.first);
-                        renderer.setGlWindowWidth(newXsize);
-                    }
-                    if (exclusiveAxis == EXCLUSIVE_AXIS_NONE || exclusiveAxis == EXCLUSIVE_AXIS_VERTICAL) {
-                        int newYsize = (int) (ySizeAtBeginning * scaleModifier.second);
-                        renderer.setGlWindowHeight(newYsize);
-                    }
-                }
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "Got invalid values back from Scale listener!");
-                Crashlytics.logException(e);
-                //				return false;
-            } catch (NullPointerException e) {
-                Log.e(TAG, "NPE while monitoring scale.");
-                Crashlytics.logException(e);
-                //				return false;
+            // determine scaling axis
+            if (!scalingAxisDetermined) {
+                horizontalScaling = xDiff > yDiff;
+                scalingAxisDetermined = true;
             }
-            //			return true;
+
+            // scale
+            if (horizontalScaling) {
+                renderer.setGlWindowWidth((int) (sizeAtBeginningX * scaleFactorX));
+            } else {
+                renderer.setGlWindowHeight((int) (sizeAtBeginningY * scaleFactorY));
+            }
+
+            return true;
+        } catch (IllegalStateException e) {
+            LOGE(TAG, "Got invalid values back from Scale listener!");
+            Crashlytics.logException(e);
+
+            return false;
+        } catch (NullPointerException e) {
+            LOGE(TAG, "NPE while monitoring scale.");
+            Crashlytics.logException(e);
+
+            return false;
         }
-        frame++;
-        //		return false;
-        return super.onScale(detector);
-    }
-
-    @Override public void onScaleEnd(TwoDimensionScaleGestureDetector detector) {
-
-        super.onScaleEnd(detector);
     }
 }

@@ -11,9 +11,9 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.backyardbrains.BackyardBrainsMain;
+import com.backyardbrains.MainActivity;
 import com.backyardbrains.R;
-import com.backyardbrains.drawing.BYBBaseRenderer;
+import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
 import com.backyardbrains.utils.Formats;
 
@@ -37,7 +37,7 @@ public class WaveformLayout extends ConstraintLayout {
     @BindView(R.id.ibtn_zoom_out_v) ImageButton ibtnZoomOutVertically;
 
     private InteractiveGLSurfaceView glSurface;
-    protected BYBZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
+    protected ZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
 
     private float millivolts;
     private float milliseconds;
@@ -73,7 +73,7 @@ public class WaveformLayout extends ConstraintLayout {
     /**
      * Initializes the surface view for drawing using specified {@code renderer}.
      */
-    public void setRenderer(@NonNull BYBBaseRenderer renderer) {
+    public void setRenderer(@NonNull BaseWaveformRenderer renderer) {
         LOGD(TAG, "setRenderer()");
 
         if (flGL != null) {
@@ -108,8 +108,8 @@ public class WaveformLayout extends ConstraintLayout {
     }
 
     // Convenience method that casts context to BaseActivity
-    BackyardBrainsMain activity() {
-        return (BackyardBrainsMain) getContext();
+    MainActivity activity() {
+        return (MainActivity) getContext();
     }
 
     // Initializes the view
@@ -127,14 +127,14 @@ public class WaveformLayout extends ConstraintLayout {
     }
 
     private void setupZoomButtons() {
-        zoomInButtonH = new BYBZoomButton(getContext(), ibtnZoomInHorizontally, R.drawable.plus_button_active,
+        zoomInButtonH = new ZoomButton(getContext(), ibtnZoomInHorizontally, R.drawable.plus_button_active,
             R.drawable.plus_button, InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
-        zoomOutButtonH = new BYBZoomButton(getContext(), ibtnZoomOutHorizontally, R.drawable.minus_button_active,
+        zoomOutButtonH = new ZoomButton(getContext(), ibtnZoomOutHorizontally, R.drawable.minus_button_active,
             R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_H);
         zoomInButtonV =
-            new BYBZoomButton(getContext(), ibtnZoomInVertically, R.drawable.plus_button_active, R.drawable.plus_button,
+            new ZoomButton(getContext(), ibtnZoomInVertically, R.drawable.plus_button_active, R.drawable.plus_button,
                 InteractiveGLSurfaceView.MODE_ZOOM_IN_V);
-        zoomOutButtonV = new BYBZoomButton(getContext(), ibtnZoomOutVertically, R.drawable.minus_button_active,
+        zoomOutButtonV = new ZoomButton(getContext(), ibtnZoomOutVertically, R.drawable.minus_button_active,
             R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
     }
 

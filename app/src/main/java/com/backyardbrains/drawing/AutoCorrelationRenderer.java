@@ -3,7 +3,9 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.GlBarGraph;
+import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -12,7 +14,7 @@ import javax.microedition.khronos.opengles.GL10;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class AutoCorrelationRenderer extends BYBAnalysisBaseRenderer {
+public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
 
     static final String TAG = makeLogTag(AutoCorrelationRenderer.class);
 

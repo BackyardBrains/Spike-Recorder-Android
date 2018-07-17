@@ -3,7 +3,9 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.GlBarGraph;
+import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import java.text.DecimalFormat;
@@ -13,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class ISIRenderer extends BYBAnalysisBaseRenderer {
+public class ISIRenderer extends BaseAnalysisRenderer {
 
     private static final String TAG = makeLogTag(ISIRenderer.class);
 

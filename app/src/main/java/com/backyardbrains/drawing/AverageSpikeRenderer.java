@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import com.android.texample.GLText;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.AverageSpike;
+import com.backyardbrains.drawing.gl.GlAverageSpikeGraph;
 import com.backyardbrains.utils.GlUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -16,7 +17,7 @@ import javax.microedition.khronos.opengles.GL10;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class AverageSpikeRenderer extends BYBAnalysisBaseRenderer {
+public class AverageSpikeRenderer extends BaseAnalysisRenderer {
 
     private static final String TAG = makeLogTag(AverageSpikeRenderer.class);
 

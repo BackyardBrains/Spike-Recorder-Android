@@ -13,7 +13,7 @@ import java.io.RandomAccessFile;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class WavAudioFile implements BYBAudioFile {
+public class WavAudioFile implements AudioFile {
 
     private final RandomAccessFile raf;
     private final WavUtils.WavInfo header;
