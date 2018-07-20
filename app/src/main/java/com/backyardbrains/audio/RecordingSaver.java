@@ -49,7 +49,9 @@ class RecordingSaver {
 
     private class WriteThread extends Thread {
 
-        private static final int BUFFER_SIZE = 5000;
+        private static final int BUFFER_SIZE_IN_SEC = 1;
+        private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
+        private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
         private final File audioFile;
         private final OutputStream outputStream;
@@ -59,8 +61,8 @@ class RecordingSaver {
         private int sampleRate = AudioUtils.SAMPLE_RATE;
         private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
         private SparseArray<String> events = new SparseArray<>();
-        private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE);
-        private byte[] byteBuffer = new byte[BUFFER_SIZE];
+        private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
+        private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
         private ByteBuffer bb;
 
         WriteThread() throws IOException {
@@ -76,7 +78,7 @@ class RecordingSaver {
             }
 
             // crate byte buffer that will be used for converting shorts to bytes
-            bb = ByteBuffer.allocate(BUFFER_SIZE).order(ByteOrder.nativeOrder());
+            bb = ByteBuffer.allocate(BUFFER_SIZE_IN_BYTES).order(ByteOrder.nativeOrder());
 
             // create events file
             eventsFile = RecordingUtils.createEventsFile(audioFile);

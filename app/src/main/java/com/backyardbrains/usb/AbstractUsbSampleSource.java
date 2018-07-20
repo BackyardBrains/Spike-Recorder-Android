@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.filters.Filter;
-import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -26,10 +25,12 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbSampleSource.class);
 
+    private static final int BUFFER_SIZE = 5000;
+
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
 
-    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents((byte) 0);
+    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents(BUFFER_SIZE);
 
     /**
      * Interface definition for a callback to be invoked when SpikerBox hardware type is detected after connection.
@@ -47,8 +48,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
-    AbstractUsbSampleSource(@NonNull UsbDevice device, @Nullable final OnSamplesReceivedListener listener) {
-        super(listener);
+    AbstractUsbSampleSource(@NonNull UsbDevice device, @Nullable final SampleSourceListener listener) {
+        super(BUFFER_SIZE, listener);
 
         this.device = device;
 
@@ -83,7 +84,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      * device.
      */
     static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         if (SerialSampleSource.isSupported(device)) {
             return SerialSampleSource.createUsbDevice(device, connection, listener);
         } else if (HIDSampleSource.isSupported(device)) {
@@ -152,7 +153,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     }
 
     @Override protected void onInputStop() {
-        LOGD(TAG, "onInputStart()");
+        LOGD(TAG, "onInputStop()");
     }
 
     /**
@@ -188,16 +189,11 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length,
-        long lastByteIndex) {
+    @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length) {
         //benchmark.start();
-
-        //samplesWithEvents = processor.process(data, length);
         JniUtils.processSampleStream(samplesWithEvents, data, length);
-
         //benchmark.end();
 
-        samplesWithEvents.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
         return samplesWithEvents;
     }
 

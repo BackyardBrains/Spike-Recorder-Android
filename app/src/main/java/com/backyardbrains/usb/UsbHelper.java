@@ -12,7 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArraySet;
 import com.backyardbrains.audio.AudioService;
-import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.data.processing.SampleSource;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
 import java.util.ArrayList;
@@ -162,7 +162,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         }
     }
 
-    @SuppressWarnings("WeakerAccess") final AbstractSampleSource.OnSamplesReceivedListener service;
+    @SuppressWarnings("WeakerAccess") final SampleSource.SampleSourceListener service;
     @SuppressWarnings("WeakerAccess") final UsbManager manager;
     @SuppressWarnings("WeakerAccess") final SpikerBoxDetector detector;
     @SuppressWarnings("WeakerAccess") final UsbListener listener;

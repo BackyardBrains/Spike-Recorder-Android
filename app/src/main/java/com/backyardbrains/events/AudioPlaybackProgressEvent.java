@@ -5,19 +5,25 @@ package com.backyardbrains.events;
  */
 public class AudioPlaybackProgressEvent {
 
-    private final long progress;
-    private final int sampleRate;
+    private long progress;
+    private int sampleRate;
 
-    public AudioPlaybackProgressEvent(long progress, int sampleRate) {
-        this.progress = progress;
-        this.sampleRate = sampleRate;
+    public AudioPlaybackProgressEvent() {
     }
 
     public long getProgress() {
         return progress;
     }
 
+    public void setProgress(long progress) {
+        this.progress = progress;
+    }
+
     public int getSampleRate() {
         return sampleRate;
+    }
+
+    public void setSampleRate(int sampleRate) {
+        this.sampleRate = sampleRate;
     }
 }

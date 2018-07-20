@@ -54,7 +54,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class MainActivity extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
 
-    private static final String TAG = makeLogTag(MainActivity.class);
+    static final String TAG = makeLogTag(MainActivity.class);
 
     public static final int INVALID_VIEW = -1;
     public static final int OSCILLOSCOPE_VIEW = 0;
@@ -81,14 +81,14 @@ public class MainActivity extends AppCompatActivity
     @BindView(R.id.bottom_menu) BottomNavigationView bottomMenu;
 
     private boolean audioServiceRunning = false;
-    private AudioService audioService;
+    AudioService audioService;
     private AnalysisManager analysisManager;
 
     //protected SlidingView sliding_drawer;
     private int currentFrag = -1;
 
-    private boolean showScalingInstructions = true;
-    private boolean showingScalingInstructions = false;
+    boolean showScalingInstructions = true;
+    boolean showingScalingInstructions = false;
 
     private enum FragTransaction {
         ADD, REPLACE, REMOVE
@@ -216,8 +216,7 @@ public class MainActivity extends AppCompatActivity
                     break;
                 //------------------------------
                 case PLAY_AUDIO_VIEW:
-                    frag = PlaybackScopeFragment.newInstance(
-                        args.length > 0 ? String.valueOf(args[0]) : null);
+                    frag = PlaybackScopeFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = BYB_PLAY_AUDIO_FRAGMENT;
                     break;
             }
@@ -338,7 +337,8 @@ public class MainActivity extends AppCompatActivity
         ViewUtils.toast(this, event.getToast());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onNoSubscriberEvent(NoSubscriberEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onNoSubscriberEvent(NoSubscriberEvent event) {
         // this is here to avoid EventBus exception
     }
 
@@ -408,7 +408,7 @@ public class MainActivity extends AppCompatActivity
         if (bottomMenu != null) bottomMenu.setVisibility(bShow ? View.VISIBLE : View.GONE);
     }
 
-    private void showScalingInstructions() {
+    void showScalingInstructions() {
         if (showScalingInstructions && !showingScalingInstructions) {
             showingScalingInstructions = true;
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
@@ -442,12 +442,12 @@ public class MainActivity extends AppCompatActivity
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, List<String> perms) {
+    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
-    @Override public void onPermissionsDenied(int requestCode, List<String> perms) {
-        if (perms != null && perms.contains(Manifest.permission.RECORD_AUDIO) && requestCode == BYB_RECORD_AUDIO_PERM) {
+    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
+        if (perms.contains(Manifest.permission.RECORD_AUDIO) && requestCode == BYB_RECORD_AUDIO_PERM) {
             LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
             if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
                 new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)

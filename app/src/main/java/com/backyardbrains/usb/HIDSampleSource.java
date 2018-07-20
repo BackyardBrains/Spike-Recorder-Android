@@ -127,7 +127,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
     }
 
     private HIDSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         super(device, listener);
 
         this.usbBuffer = new HIDBuffer();
@@ -146,7 +146,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
      * @return BYB USB device interface configured for HID communication
      */
     public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
+        @NonNull UsbDeviceConnection connection, @Nullable SampleSourceListener listener) {
         if (isSupported(device)) {
             return new HIDSampleSource(device, connection, listener);
         } else {
@@ -210,8 +210,6 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
      * {@inheritDoc}
      */
     @Override public void startReadingStream() {
-        // start reading data from USB
-        //if (readThread != null) readThread.getUsbRequest().queue(usbBuffer.getReadBuffer(), packetSize);
         // start the sample stream
         write(MSG_START_STREAM.getBytes());
         // and check maximal sample rate and number of channels

@@ -48,11 +48,11 @@ void AmModulationProcessor::process(const short *inSamples, short *outSamples, c
 
     amDetectionLowPassFilter.filter(amBuffer, length);
     for (int i = 0; i < length; i++) {
-        rmsOfOriginalSignal = 0.0001f * ((float) (amBuffer[i] * amBuffer[i])) + 0.9999f * rmsOfOriginalSignal;
+        rmsOfOriginalSignal = static_cast<float>(0.0001f * pow(amBuffer[i], 2.0f) + 0.9999f * rmsOfOriginalSignal);
     }
     amDetectionNotchFilter.filter(amBuffer, length);
-    for (int32_t i = 0; i < length; i++) {
-        rmsOfNotchedAMSignal = 0.0001f * ((float) (amBuffer[i] * amBuffer[i])) + 0.9999f * rmsOfNotchedAMSignal;
+    for (int i = 0; i < length; i++) {
+        rmsOfNotchedAMSignal = static_cast<float>(0.0001f * pow(amBuffer[i], 2.0f) + 0.9999f * rmsOfNotchedAMSignal);
     }
 
     delete[] amBuffer;
@@ -60,11 +60,8 @@ void AmModulationProcessor::process(const short *inSamples, short *outSamples, c
     if (sqrtf(rmsOfOriginalSignal) / sqrtf(rmsOfNotchedAMSignal) > 5) {
         if (!receivingAmSignal) receivingAmSignal = true;
 
-
-        std::copy(inSamples, inSamples + length, outSamples);
-
         for (int i = 0; i < length; i++) {
-            outSamples[i] = static_cast<short>(abs(outSamples[i]));
+            outSamples[i] = static_cast<short>(abs(inSamples[i]));
         }
         for (int i = 0; i < AM_DEMODULATION_LOW_PASS_FILTER_COUNT; i++) {
             amDemodulationLowPassFilter[i].filter(outSamples, length);

@@ -81,7 +81,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
     }
 
     private SerialSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         super(device, listener);
 
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
@@ -95,7 +95,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      * @return BYB USB device interface configured for serial communication
      */
     public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
+        @NonNull UsbDeviceConnection connection, @Nullable SampleSourceListener listener) {
         return new SerialSampleSource(device, connection, listener);
     }
 
@@ -156,7 +156,6 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      * {@inheritDoc}
      */
     @Override public void write(byte[] buffer) {
-        //if (serialDevice != null) serialDevice.write(buffer);
         if (serialDevice != null) serialDevice.syncWrite(buffer, 64);
     }
 

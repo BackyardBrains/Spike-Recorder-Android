@@ -18,7 +18,7 @@ float Processor::getSampleRate() {
 
 void Processor::applyFilters(short *data, int numFrames) {
     if (lowPassFilteringEnabled) lowPassFilter.filter(data, numFrames);
-    if (highPassFilteringEnabled) lowPassFilter.filter(data, numFrames);
+    if (highPassFilteringEnabled) highPassFilter.filter(data, numFrames);
 
 }
 

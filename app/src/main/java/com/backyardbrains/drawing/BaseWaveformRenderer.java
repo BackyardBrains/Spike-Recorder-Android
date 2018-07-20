@@ -314,7 +314,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        benchmark.start();
+        //benchmark.start();
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -374,7 +374,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
-        benchmark.end();
+        //benchmark.end();
     }
 
     private void initDrawSurface(GL10 gl, int samplesDrawCount, int glWindowHeight, boolean updateProjection) {

@@ -50,8 +50,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class RecordScopeFragment extends BaseWaveformFragment
-    implements EasyPermissions.PermissionCallbacks {
+public class RecordScopeFragment extends BaseWaveformFragment implements EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(RecordScopeFragment.class);
 
@@ -330,18 +329,17 @@ public class RecordScopeFragment extends BaseWaveformFragment
 
     // Opens a dialog with predefined filters that can be applied while processing incoming data
     void openFilterDialog() {
-        if (getContext() != null) {
-            filterSettingsDialog = getAudioService() != null && getAudioService().isAmModulationDetected()
-                ? new AmModulationFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
-                : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
-                    ? new UsbMuscleProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
-                    : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
-                        ? new UsbNeuronProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
-                        : new UsbSerialFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
+        if (getContext() != null && getAudioService() != null) {
+            filterSettingsDialog =
+                getAudioService().isAmModulationDetected() ? new AmModulationFilterSettingsDialog(getContext(),
+                    FILTER_SELECTION_LISTENER)
+                    : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
+                        ? new UsbMuscleProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+                        : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
+                            ? new UsbNeuronProFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER)
+                            : new UsbSerialFilterSettingsDialog(getContext(), FILTER_SELECTION_LISTENER);
             filterSettingsDialog.show(
-
-                getAudioService() != null && getAudioService().getFilter() != null ? getAudioService().getFilter()
-                    : new Filter());
+                getAudioService().getFilter() != null ? getAudioService().getFilter() : new Filter());
         }
     }
 

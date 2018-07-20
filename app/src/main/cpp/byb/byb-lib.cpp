@@ -32,11 +32,16 @@ Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray data,
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
                                                            jint length);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
-                                                          jint length);
+Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobject thiz, jobject out,
+                                                               jbyteArray inBytes, jint length);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
+                                                             jint length, jintArray inEventIndices,
+                                                             jobjectArray inEventNames, jint inEventCount, jlong start,
+                                                             jlong end, jint prependSamples);
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
@@ -135,7 +140,7 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfl
 }
 
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray data,
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
                                                            jint length) {
     jclass cls = env->GetObjectClass(out);
     // get samples field
@@ -155,36 +160,36 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
     // get eventCount field
     jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
 
-    int sampleCount = env->GetArrayLength(samples);
-    int eventCount = env->GetArrayLength(eventIndices);
+    jint sampleCount = env->GetArrayLength(samples);
+    jint eventCount = env->GetArrayLength(eventIndices);
 
-    jbyte *dataPtr = new jbyte[length];
-    env->GetByteArrayRegion(data, 0, length, dataPtr);
+    jbyte *inBytesPtr = new jbyte[length];
+    env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
 
     // exception check
     if (exception_check(env)) {
-        delete[] dataPtr;
+        delete[] inBytesPtr;
         return;
     }
 
-    unsigned char *uDataPtr = new unsigned char[length];
-    std::copy(dataPtr, dataPtr + length, uDataPtr);
+    unsigned char *uInBytesPtr = new unsigned char[length];
+    std::copy(inBytesPtr, inBytesPtr + length, uInBytesPtr);
 
     jshort *outSamplesPtr = new jshort[sampleCount];
     jint *outEventIndicesPtr = new jint[eventCount];
     std::string *outEventNamesPtr = new std::string[eventCount];
     jint *outCounts = new jint[2];
-    sampleStreamProcessor.process(uDataPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr, outCounts);
+    sampleStreamProcessor.process(uInBytesPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr, outCounts);
 
-    // if we did get some events create array of strings that represent event names adn populate it
+    // if we did get some events create array of strings that represent event names and populate it
     for (int i = 0; i < outCounts[1]; i++) {
         env->SetObjectArrayElement(eventNames, i, env->NewStringUTF(outEventNamesPtr[i].c_str()));
     }
 
     // exception check
     if (exception_check(env)) {
-        delete[] dataPtr;
-        delete[] uDataPtr;
+        delete[] inBytesPtr;
+        delete[] uInBytesPtr;
         delete[] outSamplesPtr;
         delete[] outEventIndicesPtr;
         delete[] outEventNamesPtr;
@@ -196,37 +201,36 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
     env->SetIntField(out, sampleCountFid, outCounts[0]);
     env->SetIntArrayRegion(eventIndices, 0, outCounts[1], outEventIndicesPtr);
     env->SetIntField(out, eventCountFid, outCounts[1]);
-    delete[] dataPtr;
-    delete[] uDataPtr;
+    delete[] inBytesPtr;
+    delete[] uInBytesPtr;
     delete[] outSamplesPtr;
     delete[] outEventIndicesPtr;
     delete[] outEventNamesPtr;
     delete[] outCounts;
-
-//    env->NewObject(cls, methodId, samples, eventIndices, eventLabels)
 }
 
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
-                                                          jint length) {
+Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobject thiz, jobject out,
+                                                               jbyteArray inBytes, jint length) {
     jclass cls = env->GetObjectClass(out);
     jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
     jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
 
-    jshort *inSamplesPtr = new jshort[length];
-    env->GetShortArrayRegion(inSamples, 0, length, inSamplesPtr);
+    jbyte *inBytesPtr = new jbyte[length];
+    env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
 
     // exception check
     if (exception_check(env)) {
-        delete[] inSamplesPtr;
+        delete[] inBytesPtr;
         return;
     }
 
-    jshort *outSamplesPtr = new jshort[length];
+    jint sampleCount = length / 2;
+    jshort *outSamplesPtr = new jshort[sampleCount];
     jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
-    amModulationProcessor.process(inSamplesPtr, outSamplesPtr, length);
+    amModulationProcessor.process(reinterpret_cast<short *>(inBytesPtr), outSamplesPtr, sampleCount);
     jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
     if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
         jniHelper.invokeVoid(env, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
@@ -234,17 +238,89 @@ Java_com_backyardbrains_utils_JniUtils_processAudioStream(JNIEnv *env, jobject t
 
     // exception check
     if (exception_check(env)) {
-        delete[] inSamplesPtr;
+        delete[] inBytesPtr;
         delete[] outSamplesPtr;
         return;
     }
 
-    env->SetShortArrayRegion(samples, 0, length, outSamplesPtr);
-    env->SetIntField(out, sampleCountFid, length);
-    delete[] inSamplesPtr;
+    env->SetShortArrayRegion(samples, 0, sampleCount, outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, sampleCount);
+    delete[] inBytesPtr;
     delete[] outSamplesPtr;
+}
 
-    return;
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
+                                                             jint length, jintArray inEventIndices,
+                                                             jobjectArray inEventNames, jint inEventCount, jlong start,
+                                                             jlong end, jint prependSamples) {
+    jclass cls = env->GetObjectClass(out);
+    // get samples field
+    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
+    jobject samplesObj = env->GetObjectField(out, samplesFid);
+    jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
+    // get sampleCount field
+    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
+    // get eventIndices field
+    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
+    jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
+    // get eventNames field
+    jfieldID eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
+    jobject eventNamesObj = env->GetObjectField(out, eventNamesFid);
+    jobjectArray eventNames = reinterpret_cast<jobjectArray>(eventNamesObj);
+    // get eventCount field
+    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
+    // get lastByteIndex field
+    jfieldID lastSampleIndexFid = env->GetFieldID(cls, "lastSampleIndex", "J");
+
+    jbyte *inBytesPtr = new jbyte[length];
+    env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
+
+    jint *inEventIndicesPtr = new jint[inEventCount];
+    env->GetIntArrayRegion(inEventIndices, 0, inEventCount, inEventIndicesPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inBytesPtr;
+        delete[] inEventIndicesPtr;
+        return;
+    }
+
+    jint sampleCount = length / 2;
+    jshort *outSamplesPtr = reinterpret_cast<short *>(inBytesPtr);
+    jint *outEventIndicesPtr = new jint[inEventCount];
+
+    jint eventCounter = 0;
+    jint prepend = std::min(0, prependSamples);
+    for (int i = 0; i < inEventCount; i++) {
+        jint sampleIndex = inEventIndicesPtr[i] - prepend;
+        if (start <= sampleIndex && sampleIndex < end) {
+            outEventIndicesPtr[eventCounter] = static_cast<jint>(sampleIndex - start);
+
+            jstring string = (jstring) (env->GetObjectArrayElement(inEventNames, i));
+            const char *rawString = env->GetStringUTFChars(string, JNI_FALSE);
+            env->SetObjectArrayElement(eventNames, eventCounter++, env->NewStringUTF(rawString));
+            env->ReleaseStringUTFChars(string, rawString);
+        }
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inBytesPtr;
+        delete[] inEventIndicesPtr;
+        delete[] outEventIndicesPtr;
+        return;
+    }
+
+    env->SetShortArrayRegion(samples, 0, sampleCount, outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, sampleCount);
+    env->SetIntArrayRegion(eventIndices, 0, eventCounter, outEventIndicesPtr);
+    env->SetIntField(out, eventCountFid, eventCounter);
+    env->SetLongField(out, lastSampleIndexFid, prepend + end);
+    delete[] inBytesPtr;
+    delete[] inEventIndicesPtr;
+    delete[] outEventIndicesPtr;
 }
 
 JNIEXPORT jboolean JNICALL

@@ -5,10 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
-import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.BufferUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
 /**
@@ -16,36 +13,61 @@ import org.greenrobot.essentials.io.CircularByteBuffer;
  */
 public abstract class AbstractSampleSource implements SampleSource {
 
-    // Number of seconds temp processing buffer should hold by default
-    private static final int DEFAULT_PROCESSING_BUFFER_SIZE_IN_SEC = 2;
-    // Number of seconds
-
     // Additional filters that should be applied to input data
     protected static final Filters FILTERS = new Filters();
 
     /**
-     * Background thread that processes the data read from the local buffer filled by the derived class and passes it to
-     * {@link OnSamplesReceivedListener}.
+     * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
+     * ProcessingThread}.
+     */
+    protected class ReadThread extends Thread {
+
+        private AtomicBoolean working = new AtomicBoolean(true);
+        private AtomicBoolean paused = new AtomicBoolean(false);
+
+        @Override public void run() {
+            while (working.get()) {
+                if (!paused.get()) {
+                    int size = readBuffer.get(readBufferData);
+                    if (size > 0) processingBuffer.put(readBufferData, 0, size);
+                }
+            }
+        }
+
+        void pauseWorking() {
+            paused.set(true);
+        }
+
+        void resumeWorking() {
+            paused.set(false);
+        }
+
+        void stopWorking() {
+            working.set(false);
+        }
+    }
+
+    /**
+     * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
+     * SampleSourceListener}.
      */
     protected class ProcessingThread extends Thread {
 
         private AtomicBoolean working = new AtomicBoolean(true);
         private AtomicBoolean paused = new AtomicBoolean(false);
-        private AtomicLong lastByteIndex = new AtomicLong(0);
 
         @Override public void run() {
             while (working.get()) {
                 if (!paused.get()) {
                     int size = processingBuffer.get(processingBufferData);
                     if (size > 0) {
-                        if (listener == null) {
+                        if (sampleSourceListener == null) {
                             // we should process the incoming data even if there is no listener
-                            processIncomingData(processingBufferData, size, lastByteIndex.get());
+                            processIncomingData(processingBufferData, size);
                         } else {
-                            // forward received samples to OnSamplesReceivedListener
-                            synchronized (listener) {
-                                listener.onSamplesReceived(
-                                    processIncomingData(processingBufferData, size, lastByteIndex.get()));
+                            // forward received samples to SampleSourceListener
+                            synchronized (sampleSourceListener) {
+                                sampleSourceListener.onSamplesReceived(processIncomingData(processingBufferData, size));
                             }
                         }
                     }
@@ -64,30 +86,31 @@ public abstract class AbstractSampleSource implements SampleSource {
         void stopWorking() {
             working.set(false);
         }
-
-        void setLastByteIndex(long lastByteIndex) {
-            this.lastByteIndex.set(lastByteIndex);
-        }
     }
 
-    @SuppressWarnings("WeakerAccess") final OnSamplesReceivedListener listener;
+    @SuppressWarnings("WeakerAccess") final SampleSourceListener sampleSourceListener;
+
+    private ReadThread readThread;
+    @SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer;
+    @SuppressWarnings("WeakerAccess") byte[] readBufferData;
 
     private ProcessingThread processingThread;
     @SuppressWarnings("WeakerAccess") CircularByteBuffer processingBuffer;
     @SuppressWarnings("WeakerAccess") byte[] processingBufferData;
 
+    private int bufferSize;
     private int sampleRate;
     private int channelCount;
 
-    public AbstractSampleSource(@Nullable OnSamplesReceivedListener listener) {
-        this.listener = listener;
+    public AbstractSampleSource(int bufferSize, @Nullable SampleSourceListener listener) {
+        this.bufferSize = bufferSize;
+        this.sampleSourceListener = listener;
 
-        sampleRate = AudioUtils.SAMPLE_RATE;
+        readBuffer = new CircularByteBuffer(bufferSize * 2);
+        readBufferData = new byte[bufferSize];
 
-        processingBuffer = new CircularByteBuffer(BufferUtils.MAX_SAMPLE_BUFFER_SIZE * 2);
-        processingBufferData = new byte[sampleRate * DEFAULT_PROCESSING_BUFFER_SIZE_IN_SEC];
-
-        FILTERS.setSampleRate(sampleRate);
+        processingBuffer = new CircularByteBuffer(bufferSize * 2);
+        processingBufferData = new byte[bufferSize];
     }
 
     /**
@@ -116,10 +139,11 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected void setSampleRate(int sampleRate) {
         if (this.sampleRate != sampleRate) {
-            processingBufferData = new byte[sampleRate * DEFAULT_PROCESSING_BUFFER_SIZE_IN_SEC];
-
             // reset filters
             FILTERS.setSampleRate(sampleRate);
+
+            // inform interested parties what is the sample rate of this sample source
+            if (sampleSourceListener != null) sampleSourceListener.onSampleRateDetected(sampleRate);
 
             this.sampleRate = sampleRate;
         }
@@ -140,17 +164,24 @@ public abstract class AbstractSampleSource implements SampleSource {
     }
 
     /**
-     * Whether this is an audio input source.
+     * Whether this is a microphone input source.
      */
-    public boolean isAudio() {
-        return getType() == Type.AUDIO;
+    public boolean isMicrophone() {
+        return getType() == Type.MICROPHONE;
     }
 
     /**
-     * Whether this is an USB input source.
+     * Whether this is an usb input source.
      */
     public boolean isUsb() {
         return getType() == Type.USB;
+    }
+
+    /**
+     * Whether this is a file input source.
+     */
+    public boolean isFile() {
+        return getType() == Type.FILE;
     }
 
     /**
@@ -162,6 +193,11 @@ public abstract class AbstractSampleSource implements SampleSource {
             processingThread = new ProcessingThread();
             processingThread.start();
         }
+        // start the read thread
+        if (readThread == null) {
+            readThread = new ReadThread();
+            readThread.start();
+        }
         // give chance to subclass to init resources and start writing data to buffer
         onInputStart();
     }
@@ -170,7 +206,8 @@ public abstract class AbstractSampleSource implements SampleSource {
      * {@inheritDoc}
      */
     @Override public final void pause() {
-        // pause thread
+        // pause threads
+        if (readThread != null) readThread.pauseWorking();
         if (processingThread != null) processingThread.pauseWorking();
     }
 
@@ -178,8 +215,9 @@ public abstract class AbstractSampleSource implements SampleSource {
      * {@inheritDoc}
      */
     @Override public final void resume() {
-        // resume thread
+        // resume threads
         if (processingThread != null) processingThread.resumeWorking();
+        if (readThread != null) readThread.resumeWorking();
     }
 
     /**
@@ -188,6 +226,11 @@ public abstract class AbstractSampleSource implements SampleSource {
     @Override public final void stop() {
         // give chance to subclass to clean resources
         onInputStop();
+        // stop the read thread
+        if (readThread != null) {
+            readThread.stopWorking();
+            readThread = null;
+        }
         // stop the processing thread
         if (processingThread != null) {
             processingThread.stopWorking();
@@ -196,28 +239,28 @@ public abstract class AbstractSampleSource implements SampleSource {
     }
 
     /**
-     * Sets the size of the processing buffer.
+     * Sets the size of the reading and processing buffers.
      *
-     * @param size Size of the buffer in bytes.
+     * @param size Size of the buffers in bytes.
      */
-    protected final void setProcessingBufferSize(int size) {
-        if (processingBufferData.length < size) processingBufferData = new byte[size];
+    protected final void setBufferSize(int size) {
+        if (bufferSize < size) {
+            bufferSize = size;
+
+            readBuffer = new CircularByteBuffer(bufferSize);
+            readBufferData = new byte[bufferSize];
+
+            processingBuffer = new CircularByteBuffer(bufferSize);
+            processingBufferData = new byte[bufferSize];
+        }
     }
 
     /**
      * Subclasses should write any received data to buffer for further processing.
      */
     protected final void writeToBuffer(@NonNull byte[] data, int offset, int length) {
-        processingBuffer.put(data, offset, length);
-    }
-
-    /**
-     * Subclasses should write any received data to buffer for further processing. If available (when doing playback),
-     * subclasses should also pass an index of the last written byte.
-     */
-    protected final void writeToBuffer(@NonNull byte[] data, int offset, int length, long lastByteIndex) {
-        processingBuffer.put(data, offset, length);
-        if (processingThread != null) processingThread.setLastByteIndex(lastByteIndex);
+        readBuffer.put(data, offset, length);
+        //processingBuffer.put(data, offset, length);
     }
 
     /**
@@ -233,12 +276,12 @@ public abstract class AbstractSampleSource implements SampleSource {
     protected abstract void onInputStop();
 
     /**
-     * Called by {@link OnSamplesReceivedListener} before triggering the listener to convert incoming byte data to
+     * Called by {@link SampleSourceListener} before triggering the listener to convert incoming byte data to
      * sample data. If available (i.e. during playback) caller should also pass the index of the last passed byte
      * (playhead).
      * <p>
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    @NonNull protected abstract SamplesWithEvents processIncomingData(byte[] data, int length, long lastByteIndex);
+    @NonNull protected abstract SamplesWithEvents processIncomingData(byte[] data, int length);
 }
