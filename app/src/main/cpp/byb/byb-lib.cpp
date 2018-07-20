@@ -88,6 +88,13 @@ AverageSpikeAnalysis averageSpikeAnalysis;
 CrossCorrelationAnalysis crossCorrelationAnalysis;
 JniHelper jniHelper;
 
+jfieldID samplesFid;
+jfieldID sampleCountFid;
+jfieldID eventIndicesFid;
+jfieldID eventNamesFid;
+jfieldID eventCountFid;
+jfieldID lastSampleIndexFid;
+
 static jboolean exception_check(JNIEnv *env) {
     if (env->ExceptionCheck()) {
 #ifndef NDEBUG
@@ -99,6 +106,24 @@ static jboolean exception_check(JNIEnv *env) {
     }
 
     return (JNI_FALSE);
+}
+
+JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return -1;
+    }
+
+    // let's cache fields of the SampleWithEvents java object
+    jclass cls = env->FindClass("com/backyardbrains/data/processing/SamplesWithEvents");
+    samplesFid = env->GetFieldID(cls, "samples", "[S");
+    sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
+    eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
+    eventCountFid = env->GetFieldID(cls, "eventCount", "I");
+    lastSampleIndexFid = env->GetFieldID(cls, "lastSampleIndex", "J");
+
+    return JNI_VERSION_1_6;
 }
 
 JNIEXPORT jstring JNICALL
@@ -142,23 +167,12 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfl
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
                                                            jint length) {
-    jclass cls = env->GetObjectClass(out);
-    // get samples field
-    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
-    // get sampleCount field
-    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
-    // get eventIndices field
-    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
     jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
     jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
-    // get eventNames field
-    jfieldID eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
     jobject eventNamesObj = env->GetObjectField(out, eventNamesFid);
     jobjectArray eventNames = reinterpret_cast<jobjectArray>(eventNamesObj);
-    // get eventCount field
-    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
 
     jint sampleCount = env->GetArrayLength(samples);
     jint eventCount = env->GetArrayLength(eventIndices);
@@ -212,11 +226,8 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobject thiz, jobject out,
                                                                jbyteArray inBytes, jint length) {
-    jclass cls = env->GetObjectClass(out);
-    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
-    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
 
     jbyte *inBytesPtr = new jbyte[length];
     env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
@@ -254,25 +265,12 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobjec
                                                              jint length, jintArray inEventIndices,
                                                              jobjectArray inEventNames, jint inEventCount, jlong start,
                                                              jlong end, jint prependSamples) {
-    jclass cls = env->GetObjectClass(out);
-    // get samples field
-    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
-    // get sampleCount field
-    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
-    // get eventIndices field
-    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
     jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
     jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
-    // get eventNames field
-    jfieldID eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
     jobject eventNamesObj = env->GetObjectField(out, eventNamesFid);
     jobjectArray eventNames = reinterpret_cast<jobjectArray>(eventNamesObj);
-    // get eventCount field
-    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
-    // get lastByteIndex field
-    jfieldID lastSampleIndexFid = env->GetFieldID(cls, "lastSampleIndex", "J");
 
     jbyte *inBytesPtr = new jbyte[length];
     env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
@@ -332,19 +330,10 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
                                                          jintArray inEventIndices, jint eventCount, jint start,
                                                          jint end, jint drawSurfaceWidth) {
-    jclass cls = env->GetObjectClass(out);
-    // get samples field
-    jfieldID samplesFid = env->GetFieldID(cls, "samples", "[S");
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
-    // get sampleCount field
-    jfieldID sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
-    // get eventIndices field
-    jfieldID eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
     jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
     jintArray eventIndices = reinterpret_cast<jintArray>(eventIndicesObj);
-    // get eventCount field
-    jfieldID eventCountFid = env->GetFieldID(cls, "eventCount", "I");
 
     int len = env->GetArrayLength(inSamples);
     jshort *inSamplesPtr = new jshort[len];
