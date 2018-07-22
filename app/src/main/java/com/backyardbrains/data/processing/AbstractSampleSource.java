@@ -244,13 +244,13 @@ public abstract class AbstractSampleSource implements SampleSource {
      * @param size Size of the buffers in bytes.
      */
     protected final void setBufferSize(int size) {
-        if (bufferSize < size) {
+        if (bufferSize != size) {
             bufferSize = size;
 
-            readBuffer = new CircularByteBuffer(bufferSize);
+            readBuffer = new CircularByteBuffer(bufferSize * 2);
             readBufferData = new byte[bufferSize];
 
-            processingBuffer = new CircularByteBuffer(bufferSize);
+            processingBuffer = new CircularByteBuffer(bufferSize * 2);
             processingBufferData = new byte[bufferSize];
         }
     }

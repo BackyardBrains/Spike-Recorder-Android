@@ -102,6 +102,9 @@ public class PlaybackSampleSource extends AbstractSampleSource {
 
                 while (working.get() && raf != null) {
                     if (playing.get()) {
+                        // set buffer size for playback
+                        setBufferSize(bytesToReadWhilePlaying);
+
                         // if we are playing after seek we need to fix position
                         if (Math.abs(raf.getFilePointer() - progress.get()) > bytesToReadWhilePlaying) {
                             raf.seek(progress.get());
@@ -142,6 +145,9 @@ public class PlaybackSampleSource extends AbstractSampleSource {
                         // play audio data if we're not seeking
                         track.write(buffer, 0, bytesRead);
                     } else if (seeking.get()) {
+                        // set buffer size for playback
+                        setBufferSize(bufferSize);
+
                         seekToPosition();
                     }
                 }
