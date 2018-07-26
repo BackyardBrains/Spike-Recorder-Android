@@ -30,6 +30,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
+    private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
 
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
@@ -55,7 +56,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
     private boolean autoScale;
 
-    private int minGlWindowWidth = (int) (AudioUtils.SAMPLE_RATE * .0004); // 0.2 millis
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
     private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
     private OnDrawListener onDrawListener;
@@ -160,24 +161,32 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * Sets current sample rate that should be used when calculating rendering parameters.
      */
     public void setSampleRate(int sampleRate) {
+        if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
+
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
-        minGlWindowWidth = (int) (sampleRate * .0004);
+        final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
+        final int maxGlWindowWidth = processingBuffer.getSize();
 
         // recalculate width of the GL window
         int newSize = glWindowWidth;
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > processingBuffer.getSize()) newSize = processingBuffer.getSize();
+        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
         // save new GL window
         glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
         glWindowWidthDirty = true;
+
+        this.sampleRate = sampleRate;
     }
 
     public void setGlWindowWidth(int newSize) {
         if (newSize < 0 || newSize == glWindowWidth) return;
 
+        final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
+        final int maxGlWindowWidth = processingBuffer.getSize();
+
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > processingBuffer.getSize()) newSize = processingBuffer.getSize();
+        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
         // save new GL windows width
         glWindowWidth = newSize;
         // set GL window size dirty so we can recalculate projection
@@ -337,7 +346,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
             samples = new short[processingBuffer.getSize()];
         }
         int count = processingBuffer.get(samples);
-        if (count > 0) sampleBuffer.add(samples, count);
+        if (count > 0) {
+            //LOGD(TAG, "DRAWING: " + count);
+            sampleBuffer.add(samples, count);
+        }
 
         final int sampleCount = sampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();

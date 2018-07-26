@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -59,6 +60,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
                     if (numberBytes > 0) {
+                        //LOGD(TAG, "READING: " + (numberBytes - 2));
                         usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes

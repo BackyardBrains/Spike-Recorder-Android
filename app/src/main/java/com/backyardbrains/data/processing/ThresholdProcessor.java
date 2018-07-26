@@ -300,7 +300,7 @@ public class ThresholdProcessor implements SampleProcessor {
 
                     // create new samples for current threshold
                     final short[] centeredWave = new short[sampleCount];
-                    copyLength = Math.min(bufferSampleCount, length);
+                    copyLength = Math.min(bufferSampleCount + i, length);
                     System.arraycopy(buffer.getArray(), i, centeredWave, 0, buffer.getArray().length - i);
                     System.arraycopy(incomingSamples, 0, centeredWave, buffer.getArray().length - i, copyLength);
 
@@ -316,8 +316,6 @@ public class ThresholdProcessor implements SampleProcessor {
                         lastTriggerSampleCounter = 0;
                     }
                     // end of heartbeat processing
-
-                    break;
                 }
             } else {
                 if (++deadPeriodSampleCounter > deadPeriodCount) {

@@ -30,8 +30,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
 
-    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents(BUFFER_SIZE);
-
     /**
      * Interface definition for a callback to be invoked when SpikerBox hardware type is detected after connection.
      */

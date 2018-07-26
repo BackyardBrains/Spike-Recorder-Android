@@ -14,8 +14,6 @@ public class ProcessingBuffer {
 
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
-    private static final int MAX_BUFFER_SIZE = BufferUtils.MAX_SAMPLE_BUFFER_SIZE;
-
     private static final Object eventBufferLock = new Object();
 
     private static ProcessingBuffer INSTANCE;
@@ -24,8 +22,8 @@ public class ProcessingBuffer {
     private final int[] eventIndices;
     private final String[] eventNames;
     private int eventCount;
-    private int bufferSize = MAX_BUFFER_SIZE;
     private long lastSampleIndex;
+    private int bufferSize = BufferUtils.MAX_SAMPLE_BUFFER_SIZE;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {

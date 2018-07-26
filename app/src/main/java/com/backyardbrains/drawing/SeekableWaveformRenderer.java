@@ -21,6 +21,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(SeekableWaveformRenderer.class);
 
+    // Root mean square quantifier used when analyzing selected spikes
     private static final float RMS_QUANTIFIER = 0.005f;
 
     private final GlMeasurementArea glMeasurementArea;

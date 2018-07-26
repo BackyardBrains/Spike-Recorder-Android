@@ -66,7 +66,10 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
             while (working.get()) {
                 if (serialDevice != null) {
                     int numberBytes = serialDevice.syncRead(dataBuffer, 64);
-                    if (numberBytes > 0) writeToBuffer(dataBuffer, 0, numberBytes);
+                    if (numberBytes > 0) {
+                        //LOGD(TAG, "READING: " + (numberBytes - 2));
+                        writeToBuffer(dataBuffer, 0, numberBytes);
+                    }
                 }
             }
         }

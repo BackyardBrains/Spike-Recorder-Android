@@ -77,6 +77,8 @@ void AmModulationProcessor::process(const short *inSamples, short *outSamples, c
         applyFilters(outSamples, length);
 
         return;
+    } else {
+        std::copy(inSamples, inSamples + length, outSamples);
     }
 
     if (receivingAmSignal) receivingAmSignal = false;

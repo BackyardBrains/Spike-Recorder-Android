@@ -23,8 +23,8 @@ import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
-import com.backyardbrains.view.ThresholdHandle;
 import com.backyardbrains.view.HeartbeatView;
+import com.backyardbrains.view.ThresholdHandle;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -186,7 +186,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
     //  EVENT BUS
     //==============================================
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         LOGD(TAG, "Audio serviced connected. Refresh threshold for initial value");
         if (event.isConnected()) {
@@ -197,18 +197,20 @@ public class ThresholdFragment extends BaseWaveformFragment {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         // update BPM label
         updateBpmUI();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
         // update BPM UI
         updateBpmUI();
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN) public void onHeartbeatEvent(HeartbeatEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onHeartbeatEvent(HeartbeatEvent event) {
         tvBeatsPerMinute.setText(
             String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
         if (event.getBeatsPerMinute() > 0) {
@@ -234,6 +236,8 @@ public class ThresholdFragment extends BaseWaveformFragment {
         sbAvgSamplesCount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
+                // inform interested parties that the average sample count has changed
+                DATA_PROCESSOR.setAveragedSampleCount(seekBar.getProgress() > 0 ? seekBar.getProgress() : 1);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {
@@ -247,9 +251,6 @@ public class ThresholdFragment extends BaseWaveformFragment {
                 if (tvAvgSamplesCount != null) {
                     tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
                 }
-
-                // and inform interested parties that the average sample count has changed
-                if (fromUser) DATA_PROCESSOR.setAveragedSampleCount(progress);
             }
         });
         sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());

@@ -8,95 +8,55 @@ import com.backyardbrains.filters.Filter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class AbstractSampleSource implements SampleSource {
 
+    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractSampleSource.class);
+
     // Additional filters that should be applied to input data
     protected static final Filters FILTERS = new Filters();
 
     /**
-     * Background thread that reads data from the local buffer filled by the derived class and passes it to {@link
-     * ProcessingThread}.
-     */
-    protected class ReadThread extends Thread {
-
-        private AtomicBoolean working = new AtomicBoolean(true);
-        private AtomicBoolean paused = new AtomicBoolean(false);
-
-        @Override public void run() {
-            while (working.get()) {
-                if (!paused.get()) {
-                    int size = readBuffer.get(readBufferData);
-                    if (size > 0) processingBuffer.put(readBufferData, 0, size);
-                }
-            }
-        }
-
-        void pauseWorking() {
-            paused.set(true);
-        }
-
-        void resumeWorking() {
-            paused.set(false);
-        }
-
-        void stopWorking() {
-            working.set(false);
-        }
-    }
-
-    /**
-     * Background thread that processes the data read by the {@link ReadThread} and passes it to {@link
-     * SampleSourceListener}.
+     * Background thread that processes the data from the local buffer filled by the derived class and passes it to
+     * {@link SampleSourceListener}
      */
     protected class ProcessingThread extends Thread {
-
-        private AtomicBoolean working = new AtomicBoolean(true);
-        private AtomicBoolean paused = new AtomicBoolean(false);
-
         @Override public void run() {
             while (working.get()) {
                 if (!paused.get()) {
-                    int size = processingBuffer.get(processingBufferData);
+                    int size = ringBuffer.get(buffer);
                     if (size > 0) {
+                        //LOGD(TAG, "PROCESSING: " + size);
                         if (sampleSourceListener == null) {
                             // we should process the incoming data even if there is no listener
-                            processIncomingData(processingBufferData, size);
+                            processIncomingData(buffer, size);
                         } else {
                             // forward received samples to SampleSourceListener
                             synchronized (sampleSourceListener) {
-                                sampleSourceListener.onSamplesReceived(processIncomingData(processingBufferData, size));
+                                sampleSourceListener.onSamplesReceived(processIncomingData(buffer, size));
                             }
                         }
                     }
                 }
             }
         }
-
-        void pauseWorking() {
-            paused.set(true);
-        }
-
-        void resumeWorking() {
-            paused.set(false);
-        }
-
-        void stopWorking() {
-            working.set(false);
-        }
     }
 
     @SuppressWarnings("WeakerAccess") final SampleSourceListener sampleSourceListener;
 
-    private ReadThread readThread;
-    @SuppressWarnings("WeakerAccess") CircularByteBuffer readBuffer;
-    @SuppressWarnings("WeakerAccess") byte[] readBufferData;
+    @SuppressWarnings("WeakerAccess") AtomicBoolean working = new AtomicBoolean(true);
+    @SuppressWarnings("WeakerAccess") AtomicBoolean paused = new AtomicBoolean(false);
+    @SuppressWarnings("WeakerAccess") CircularByteBuffer ringBuffer;
+    @SuppressWarnings("WeakerAccess") byte[] buffer;
 
     private ProcessingThread processingThread;
-    @SuppressWarnings("WeakerAccess") CircularByteBuffer processingBuffer;
-    @SuppressWarnings("WeakerAccess") byte[] processingBufferData;
+
+    // Updated during processing and on every cycle
+    protected SamplesWithEvents samplesWithEvents;
 
     private int bufferSize;
     private int sampleRate;
@@ -106,11 +66,10 @@ public abstract class AbstractSampleSource implements SampleSource {
         this.bufferSize = bufferSize;
         this.sampleSourceListener = listener;
 
-        readBuffer = new CircularByteBuffer(bufferSize * 2);
-        readBufferData = new byte[bufferSize];
+        ringBuffer = new CircularByteBuffer(bufferSize * 2);
+        buffer = new byte[bufferSize];
 
-        processingBuffer = new CircularByteBuffer(bufferSize * 2);
-        processingBufferData = new byte[bufferSize];
+        samplesWithEvents = new SamplesWithEvents((int) (bufferSize * .5f));
     }
 
     /**
@@ -146,6 +105,21 @@ public abstract class AbstractSampleSource implements SampleSource {
             if (sampleSourceListener != null) sampleSourceListener.onSampleRateDetected(sampleRate);
 
             this.sampleRate = sampleRate;
+        }
+    }
+
+    /**
+     * Sets the size of the processing buffer.
+     *
+     * @param bufferSize Size of the buffer in bytes.
+     */
+    public final void setBufferSize(int bufferSize) {
+        if (this.bufferSize != bufferSize) {
+            ringBuffer = new CircularByteBuffer(bufferSize * 2);
+            buffer = new byte[bufferSize];
+            samplesWithEvents = new SamplesWithEvents(bufferSize);
+
+            this.bufferSize = bufferSize;
         }
     }
 
@@ -193,11 +167,6 @@ public abstract class AbstractSampleSource implements SampleSource {
             processingThread = new ProcessingThread();
             processingThread.start();
         }
-        // start the read thread
-        if (readThread == null) {
-            readThread = new ReadThread();
-            readThread.start();
-        }
         // give chance to subclass to init resources and start writing data to buffer
         onInputStart();
     }
@@ -206,9 +175,8 @@ public abstract class AbstractSampleSource implements SampleSource {
      * {@inheritDoc}
      */
     @Override public final void pause() {
-        // pause threads
-        if (readThread != null) readThread.pauseWorking();
-        if (processingThread != null) processingThread.pauseWorking();
+        // pause
+        paused.set(true);
     }
 
     /**
@@ -216,8 +184,7 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     @Override public final void resume() {
         // resume threads
-        if (processingThread != null) processingThread.resumeWorking();
-        if (readThread != null) readThread.resumeWorking();
+        paused.set(false);
     }
 
     /**
@@ -226,41 +193,16 @@ public abstract class AbstractSampleSource implements SampleSource {
     @Override public final void stop() {
         // give chance to subclass to clean resources
         onInputStop();
-        // stop the read thread
-        if (readThread != null) {
-            readThread.stopWorking();
-            readThread = null;
-        }
         // stop the processing thread
-        if (processingThread != null) {
-            processingThread.stopWorking();
-            processingThread = null;
-        }
-    }
-
-    /**
-     * Sets the size of the reading and processing buffers.
-     *
-     * @param size Size of the buffers in bytes.
-     */
-    protected final void setBufferSize(int size) {
-        if (bufferSize != size) {
-            bufferSize = size;
-
-            readBuffer = new CircularByteBuffer(bufferSize * 2);
-            readBufferData = new byte[bufferSize];
-
-            processingBuffer = new CircularByteBuffer(bufferSize * 2);
-            processingBufferData = new byte[bufferSize];
-        }
+        working.set(false);
+        if (processingThread != null) processingThread = null;
     }
 
     /**
      * Subclasses should write any received data to buffer for further processing.
      */
     protected final void writeToBuffer(@NonNull byte[] data, int offset, int length) {
-        readBuffer.put(data, offset, length);
-        //processingBuffer.put(data, offset, length);
+        ringBuffer.put(data, offset, length);
     }
 
     /**

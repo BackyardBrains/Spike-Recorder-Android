@@ -130,6 +130,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         turnOffMicrophone();
         turnOffPlayback();
 
+        processingBuffer.clearBuffer();
         processingBuffer = null;
 
         super.onDestroy();
@@ -188,7 +189,9 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
         if (maxSeconds <= 0) return; // max time needs to be positive
 
-        if (processingBuffer != null) processingBuffer.setSize((int) (maxSeconds * sampleRate));
+        final int bufferSize = (int) (maxSeconds * sampleRate);
+        if (processingBuffer != null) processingBuffer.setSize(bufferSize);
+        if (sampleSource != null) sampleSource.setBufferSize(bufferSize);
 
         this.maxTime = maxSeconds;
     }
@@ -269,7 +272,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     }
 
     /**
-     * Sets sample rate and updates processing buffer and max processing time in seconds.
+     * Sets sample rate and updates filters.
      *
      * @see SampleSource.SampleSourceListener#onSampleRateDetected(int)
      */
@@ -370,11 +373,9 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         turnOffPlayback();
 
         sampleSource = new MicrophoneSampleSource(this);
+        sampleSource.setBufferSize(processingBuffer.getSize());
         sampleSource.start();
         LOGD(TAG, "Microphone started");
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
     }
 
     private void turnOffMicrophone() {
@@ -384,9 +385,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         if (sampleSource != null) sampleSource.stop();
         sampleSource = null;
         LOGD(TAG, "Microphone stopped");
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
     }
 
     //========================================================
@@ -463,14 +461,12 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                         });
             }
             sampleSource = usbHelper.getUsbDevice();
+            sampleSource.setBufferSize(processingBuffer.getSize());
         }
 
         // resume communication with USB
         usbHelper.resume();
         LOGD(TAG, "USB communication started");
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
     }
 
     // Turns off USB input processing
@@ -481,9 +477,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         // pause communication with USB
         usbHelper.pause();
         LOGD(TAG, "USB communication ended");
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
     }
 
     // Starts listening attaching/detaching of USB devices
@@ -633,10 +626,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         LOGD(TAG, "turnOnPlayback()");
 
         if (sampleSource != null) sampleSource.start();
-        LOGD(TAG, "Microphone started");
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
+        LOGD(TAG, "Playback started");
     }
 
     private void turnOffPlayback() {
@@ -646,9 +636,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         // remove current USB input source
         if (sampleSource != null) sampleSource.stop();
         sampleSource = null;
-
-        // we should clear buffer
-        if (processingBuffer != null) processingBuffer.clearBuffer();
 
         // post event that audio playback has stopped
         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
@@ -661,6 +648,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
 
             turnOffPlayback();
             sampleSource = new PlaybackSampleSource(filePath, autoPlay, this);
+            sampleSource.setBufferSize(processingBuffer.getSize());
             ((PlaybackSampleSource) sampleSource).setPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
 
                 final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
@@ -689,8 +677,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                 }
 
                 @Override public void onStop() {
-                    // we should clear buffer
-                    if (processingBuffer != null) processingBuffer.clearBuffer();
                     // post event that audio playback has started
                     EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                 }

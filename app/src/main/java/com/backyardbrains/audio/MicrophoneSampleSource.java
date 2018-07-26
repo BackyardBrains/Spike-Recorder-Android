@@ -25,10 +25,15 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
 
     // Number of seconds buffers should hold by default
     private static final int BUFFER_SIZE_IN_SEC = 1;
+    // Number of samples buffers should hold by default
     private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
+    // Number of bytes buffers should hold by default
     private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
-    private class MicrophoneThread extends Thread {
+    /**
+     * Thread used for reading audio from microphone.
+     */
+    private class ReadThread extends Thread {
 
         private AudioRecord recorder;
         private byte[] buffer;
@@ -36,7 +41,7 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
         // Flag that indicates whether thread should be running
         private AtomicBoolean working = new AtomicBoolean(true);
 
-        MicrophoneThread() {
+        ReadThread() {
             buffer = new byte[AudioUtils.IN_BUFFER_SIZE];
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
         }
@@ -55,7 +60,10 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
                 LOGD(TAG, "Recorder Started");
                 int read;
                 while (working.get() && recorder != null) {
-                    if ((read = recorder.read(buffer, 0, buffer.length)) > 0) writeToBuffer(buffer, 0, read);
+                    if ((read = recorder.read(buffer, 0, buffer.length)) > 0) {
+                        //LOGD(TAG, "READING: " + read);
+                        writeToBuffer(buffer, 0, read);
+                    }
                 }
             } catch (Throwable e) {
                 LOGE(TAG, "Could not open audio source", e);
@@ -99,30 +107,26 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
     }
 
     // Microphone thread
-    private MicrophoneThread microphoneThread;
-
-    private SamplesWithEvents samplesWithEvents;
+    private ReadThread readThread;
 
     MicrophoneSampleSource(@Nullable SampleSourceListener listener) {
         super(BUFFER_SIZE_IN_BYTES, listener);
 
         setSampleRate(AudioUtils.SAMPLE_RATE);
-
-        samplesWithEvents = new SamplesWithEvents(BUFFER_SIZE_IN_SAMPLES);
     }
 
     @Override protected void onInputStart() {
-        if (microphoneThread == null) {
+        if (readThread == null) {
             // Start microphone in a thread
-            microphoneThread = new MicrophoneThread();
-            microphoneThread.start();
+            readThread = new ReadThread();
+            readThread.start();
         }
     }
 
     @Override protected void onInputStop() {
-        if (microphoneThread != null) {
-            microphoneThread.stopWorking();
-            microphoneThread = null;
+        if (readThread != null) {
+            readThread.stopWorking();
+            readThread = null;
 
             LOGD(TAG, "Microphone stopped");
         }
