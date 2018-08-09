@@ -6,33 +6,65 @@
 
 const char *ThresholdProcessor::TAG = "ThresholdProcessor";
 
-ThresholdProcessor::ThresholdProcessor() {
+ThresholdProcessor::ThresholdProcessor(OnHeartbeatListener *listener) {
+    heartbeatHelper = new HeartbeatHelper(getSampleRate(), listener);
 }
 
 ThresholdProcessor::~ThresholdProcessor() {
 }
 
+int ThresholdProcessor::getAveragedSampleCount() {
+    return averagedSampleCount;
+}
+
+void ThresholdProcessor::setAveragedSampleCount(int averagedSampleCount) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setAveragedSampleCount(%d)", averagedSampleCount);
+
+    if (averagedSampleCount <= 0 || ThresholdProcessor::averagedSampleCount == averagedSampleCount) return;
+
+    ThresholdProcessor::averagedSampleCount = averagedSampleCount;
+}
+
+void ThresholdProcessor::setThreshold(int threshold) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setThreshold(%d)", threshold);
+
+    ThresholdProcessor::triggerValue = threshold;
+}
+
+void ThresholdProcessor::setBpmProcessing(bool processBpm) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setBpmProcessing(%s)", processBpm ? "ON" : "OFF");
+
+    if (ThresholdProcessor::processBpm == processBpm) return;
+
+    // reset BPM if we stopped processing heartbeat
+    if (!processBpm) resetBpm();
+
+    ThresholdProcessor::processBpm = processBpm;
+}
+
 void ThresholdProcessor::process(const short *inSamples, short *outSamples, const int length) {
     // reset buffers if threshold changed
+    bool shouldReset = false;
     if (lastTriggeredValue != triggerValue) {
-//        LOGD(TAG, "Resetting because trigger value has changed");
-        reset();
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because trigger value has changed");
         lastTriggeredValue = triggerValue;
+        shouldReset = true;
     }
     // reset buffers if averages sample count changed
     if (lastAveragedSampleCount != averagedSampleCount) {
-//        LOGD(TAG, "Resetting because last averaged sample count has changed");
-        reset();
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because last averaged sample count has changed");
         lastAveragedSampleCount = averagedSampleCount;
+        shouldReset = true;
     }
     // reset buffers if sample rate changed
     if (lastSampleRate != getSampleRate()) {
-//        LOGD(TAG, "Resetting because sample rate has changed");
-        reset();
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because sample rate has changed");
         lastSampleRate = getSampleRate();
+        shouldReset = true;
     }
+    if (shouldReset) reset();
 
-    // append unfinished sample buffers whit incoming samples
+    // append unfinished sample buffers with incoming samples
     int samplesToCopy;
     for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
         samplesToCopy = std::min(sampleCount - unfinishedSamplesForCalculationCounts[i], length);
@@ -42,19 +74,19 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
     }
 
     short currentSample;
-    int copyFromNew, copyFromExisting;
+    int copyFromIncoming, copyFromBuffer;
     // loop through incoming samples and listen for the threshold hit
     for (int i = 0; i < length; i++) {
         currentSample = inSamples[i];
 
         // heartbeat processing
-//        if (processBpm) {
-//            sampleCounter++;
-//            lastTriggerSampleCounter++;
-//
-//            // check if minimum BPM reset period passed after last threshold hit and reset if necessary
-//            if (lastTriggerSampleCounter > minBpmResetPeriodCount) resetBpm();
-//        }
+        if (processBpm) {
+            sampleCounter++;
+            lastTriggerSampleCounter++;
+
+            // check if minimum BPM reset period passed after last threshold hit and reset if necessary
+            if (lastTriggerSampleCounter > minBpmResetPeriodCount) resetBpm();
+        }
         // end of heartbeat processing
 
         if (!inDeadPeriod) {
@@ -65,27 +97,27 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
                 inDeadPeriod = true;
 
                 // create new samples for current threshold
-                short *centeredWave = new short[sampleCount];
-                copyFromExisting = bufferSampleCount - i;
-                copyFromNew = std::min(bufferSampleCount + i, length);
-                std::copy(buffer, buffer + copyFromExisting, centeredWave);
-                std::copy(inSamples, inSamples + copyFromNew, centeredWave + copyFromExisting);
+                unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] = new short[sampleCount]{0};
+                copyFromBuffer = bufferSampleCount - i;
+                copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);
+                std::copy(buffer + i, buffer + bufferSampleCount,
+                          unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount]);
+                std::copy(inSamples, inSamples + copyFromIncoming,
+                          unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] + copyFromBuffer);
 
-                unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] = centeredWave;
-                unfinishedSamplesForCalculationCounts[unfinishedSamplesForCalculationCount++] =
-                        copyFromExisting + copyFromNew;
+                unfinishedSamplesForCalculationCounts[unfinishedSamplesForCalculationCount] =
+                        copyFromBuffer + copyFromIncoming;
+                unfinishedSamplesForCalculationAveragedCounts[unfinishedSamplesForCalculationCount++] = 0;
 
-                // heartbeat processing
-//                if (processBpm) {
-//                    // pass data to heartbeat helper
-//                    heartbeatHelper.beat(sampleCounter);
-//                    // reset the last triggered sample counter
-//                    // and start counting for next heartbeat reset period
-//                    lastTriggerSampleCounter = 0;
-//                }
+                // heartbeat processingA
+                if (processBpm) {
+                    // pass data to heartbeat helper
+                    heartbeatHelper->beat(sampleCounter);
+                    // reset the last triggered sample counter
+                    // and start counting for next heartbeat reset period
+                    lastTriggerSampleCounter = 0;
+                }
                 // end of heartbeat processing
-
-                break;
             }
         } else {
             if (++deadPeriodSampleCounter > deadPeriodCount) {
@@ -98,41 +130,103 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
     }
 
     // add samples to local buffer
-    std::move(buffer + length, buffer + bufferSampleCount, buffer);
+    std::copy(buffer + length, buffer + bufferSampleCount, buffer);
     std::copy(inSamples, inSamples + length, buffer + bufferSampleCount - length);
 
     // add incoming samples to calculation of averages
-//    int len = unfinishedSamplesForCalculation.size();
-//    for (int i = 0; i < len; i++) {
-//        addSamplesToCalculations(unfinishedSamplesForCalculation.get(i), i);
-//    }
+    for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
+        for (int j = unfinishedSamplesForCalculationAveragedCounts[i];
+             j < unfinishedSamplesForCalculationCounts[i]; j++) {
+            // if we are calculating averagedSampleCount + 1. sample we should subtract the oldest one in the sum
+            if (summedSamplesCounts[j] >= averagedSampleCount) {
+                // subtract the value and decrease summed samples count for current position
+                if (averagedSampleCount <= i) { // we look for the oldest one in the unfinished samples
+                    summedSamples[j] -=
+                            unfinishedSamplesForCalculation[i - averagedSampleCount][j];
+                } else { // we look for the oldest one in the already collected and calculated samples
+                    summedSamples[j] -=
+                            samplesForCalculation[samplesForCalculationCount - averagedSampleCount + i][j];
+                }
+                summedSamplesCounts[j]--;
+            }
+            // add new value and increase summed samples count for current position
+            summedSamples[j] += unfinishedSamplesForCalculation[i][j];
+            summedSamplesCounts[j]++;
+            // calculate the average
+            averagedSamples[j] = (short) (summedSamples[j] / summedSamplesCounts[j]);
+        }
+        unfinishedSamplesForCalculationAveragedCounts[i] = unfinishedSamplesForCalculationCounts[i];
+    }
 
     // move filled sample buffers from unfinished samples collection to finished samples collection
-//    final Iterator<Samples> iterator = unfinishedSamplesForCalculation.iterator();
-//    while (iterator.hasNext()) {
-//        final Samples samples = iterator.next();
-//        if (samples.isPopulated()) {
-//            if (samplesForCalculation.size() >= averagedSampleCount) samplesForCalculation.remove(0);
-//            samplesForCalculation.add(samples.samples);
-//            iterator.remove();
-//        }
-//    }
+    for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
+        if (unfinishedSamplesForCalculationCounts[i] == sampleCount) {
+            if (samplesForCalculationCount >= averagedSampleCount) {
+                delete[] samplesForCalculation[0];
+                if (samplesForCalculationCount > 1) {
+                    std::move(samplesForCalculation + 1, samplesForCalculation + samplesForCalculationCount,
+                              samplesForCalculation);
+                }
+                samplesForCalculationCount--;
+            }
+            samplesForCalculation[samplesForCalculationCount++] = unfinishedSamplesForCalculation[i];
+            if (unfinishedSamplesForCalculationCount > i + 1) {
+                std::move(unfinishedSamplesForCalculation + i + 1,
+                          unfinishedSamplesForCalculation + unfinishedSamplesForCalculationCount,
+                          unfinishedSamplesForCalculation + i);
+                std::move(unfinishedSamplesForCalculationCounts + i + 1,
+                          unfinishedSamplesForCalculationCounts + unfinishedSamplesForCalculationCount,
+                          unfinishedSamplesForCalculationCounts + i);
+                std::move(unfinishedSamplesForCalculationAveragedCounts + i + 1,
+                          unfinishedSamplesForCalculationAveragedCounts + unfinishedSamplesForCalculationCount,
+                          unfinishedSamplesForCalculationAveragedCounts + i);
+            }
+            unfinishedSamplesForCalculationCount--;
+            i--;
+        }
+    }
 
-    // TODO: 9/20/2017 We should dump unnecessary finished samples to release the memory
+    std::copy(averagedSamples, averagedSamples + sampleCount, outSamples);
 }
 
 void ThresholdProcessor::reset() {
     sampleCount = static_cast<int>(getSampleRate() * MAX_PROCESSED_SECONDS);
-    bufferSampleCount = static_cast<int>(getSampleRate() / 2);
-//    minBpmResetPeriodCount = (int) (sampleRate * minBpmResetPeriodSeconds);
+    bufferSampleCount = sampleCount / 2;
 
+    delete[] buffer;
     buffer = new short[bufferSampleCount];
-    samplesForCalculation = new short[averagedSampleCount];
-//    summedSamples = null;
-//    summedSamplesCounts = null;
-//    averagedSamples = new short[sampleCount];
+    // free memory before creating new arrays
+    if (samplesForCalculationCount > 0) {
+        for (int i = 0; i < samplesForCalculationCount; i++) {
+            delete[] samplesForCalculation[i];
+        }
+    }
+    delete[] samplesForCalculation;
+    samplesForCalculation = new short *[averagedSampleCount];
+    samplesForCalculationCount = 0;
+    // free memory before creating new arrays
+    delete[] summedSamples;
+    summedSamples = new int[sampleCount]{0};
+    // free memory before creating new arrays
+    delete[] summedSamplesCounts;
+    summedSamplesCounts = new int[sampleCount]{0};
+    // free memory before creating new arrays
+    delete[] averagedSamples;
+    averagedSamples = new short[sampleCount]{0};
+    // free memory before creating new arrays
+    if (unfinishedSamplesForCalculationCount > 0) {
+        for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
+            delete[] unfinishedSamplesForCalculation[i];
+        }
+    }
+    delete[] unfinishedSamplesForCalculation;
     unfinishedSamplesForCalculation = new short *[UNFINISHED_SAMPLES_COUNT];
+    unfinishedSamplesForCalculationCount = 0;
+    // free memory before creating new arrays
+    delete[] unfinishedSamplesForCalculationCounts;
     unfinishedSamplesForCalculationCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
+    // free memory before creating new arrays
+    delete[] unfinishedSamplesForCalculationAveragedCounts;
     unfinishedSamplesForCalculationAveragedCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
 
     deadPeriodCount = static_cast<int>(getSampleRate() * DEAD_PERIOD_SECONDS);
@@ -141,8 +235,15 @@ void ThresholdProcessor::reset() {
 
     prevSample = 0;
 
-//    heartbeatHelper.reset("reset()");
-//    heartbeatHelper.setSampleRate(sampleRate);
-//    lastTriggerSampleCounter = 0;
-//    sampleCounter = 0;
+    heartbeatHelper->reset();
+    heartbeatHelper->setSampleRate(getSampleRate());
+    minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
+    lastTriggerSampleCounter = 0;
+    sampleCounter = 0;
+}
+
+void ThresholdProcessor::resetBpm() {
+    heartbeatHelper->reset();
+    sampleCounter = 0;
+    lastTriggerSampleCounter = 0;
 }

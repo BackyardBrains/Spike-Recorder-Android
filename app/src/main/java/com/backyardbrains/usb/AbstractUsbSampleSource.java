@@ -7,7 +7,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.SamplesWithEvents;
-import com.backyardbrains.filters.Filter;
 import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -63,8 +62,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
                     LOGD(TAG, "NUM OF CHANNELS: " + channelCount);
                     setSampleRate(maxSampleRate);
                     setChannelCount(channelCount);
-
-                    processor.setChannelCount(channelCount);
                 }
             };
         processor = new SampleStreamProcessor(sampleStreamListener, FILTERS);
@@ -119,26 +116,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      * Starts reading data from the usb endpoint.
      */
     protected abstract void startReadingStream();
-
-    /**
-     * {@inheritDoc}
-     */
-    @CallSuper @Override public void setFilter(@Nullable Filter filter) {
-        super.setFilter(filter);
-
-        float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
-        float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
-        JniUtils.setFilters(low, high);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @CallSuper @Override protected void setSampleRate(int sampleRate) {
-        super.setSampleRate(sampleRate);
-
-        JniUtils.setSampleRate(sampleRate);
-    }
 
     /**
      * {@inheritDoc}

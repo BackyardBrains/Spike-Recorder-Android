@@ -239,36 +239,39 @@ public class ThresholdProcessor implements SampleProcessor {
 
     // Processes the incoming data and triggers all necessary calculations.
     private void processIncomingData(short[] incomingSamples, int length) {
+        boolean shouldReset = false;
         // reset buffers if threshold changed
         if (lastTriggeredValue != triggerValue) {
             LOGD(TAG, "Resetting because trigger value has changed");
-            reset();
             lastTriggeredValue = triggerValue;
+            shouldReset = true;
         }
         // reset buffers if max processed seconds changed
         if (lastMaxProcessedSeconds != maxProcessedSeconds) {
             LOGD(TAG, "Resetting because max number of processed seconds has changed");
-            reset();
             lastMaxProcessedSeconds = maxProcessedSeconds;
+            shouldReset = true;
         }
         // reset buffers if dead period changed
         if (lastDeadPeriod != deadPeriodSeconds) {
             LOGD(TAG, "Resetting because dead period has changed");
-            reset();
             lastDeadPeriod = deadPeriodSeconds;
+            shouldReset = true;
         }
         // reset buffers if averages sample count changed
         if (lastAveragedSampleCount != averagedSampleCount) {
             LOGD(TAG, "Resetting because last averaged sample count has changed");
-            reset();
             lastAveragedSampleCount = averagedSampleCount;
+            shouldReset = true;
         }
         // reset buffers if sample rate changed
         if (lastSampleRate != sampleRate) {
             LOGD(TAG, "Resetting because sample rate has changed");
-            reset();
             lastSampleRate = sampleRate;
+            shouldReset = true;
         }
+
+        if (shouldReset) reset();
 
         // append unfinished sample buffers whit incoming samples
         for (Samples samples : unfinishedSamplesForCalculation) {
@@ -297,6 +300,8 @@ public class ThresholdProcessor implements SampleProcessor {
                     triggerValue < 0 && currentSample < triggerValue && prevSample >= triggerValue)) {
                     // we hit the threshold, turn on dead period of 5ms
                     inDeadPeriod = true;
+
+                    LOGD(TAG, "THRESHOLD HIT!!! - " + triggerValue);
 
                     // create new samples for current threshold
                     final short[] centeredWave = new short[sampleCount];

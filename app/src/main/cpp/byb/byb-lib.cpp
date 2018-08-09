@@ -5,6 +5,7 @@
 #include <jni.h>
 #include <algorithm>
 #include <string>
+#include <ThresholdProcessor.h>
 
 #include "AmModulationProcessor.h"
 #include "SampleStreamProcessor.h"
@@ -42,6 +43,17 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobjec
                                                              jint length, jintArray inEventIndices,
                                                              jobjectArray inEventNames, jint inEventCount, jlong start,
                                                              jlong end, jint prependSamples);
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_getAveragedSampleCount(JNIEnv *env, jobject thiz);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setAveragedSampleCount(JNIEnv *env, jobject thiz, jint averagedSampleCount);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jobject thiz, jint threshold);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jobject thiz, jboolean processBpm);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                        jint length);
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
@@ -79,21 +91,50 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jobject
                                                             jobjectArray normBottomStdLine, jint batchSpikeCount);
 }
 
-AmModulationProcessor amModulationProcessor;
-SampleStreamProcessor sampleStreamProcessor;
-SpikeAnalysis spikeAnalysis;
-AutocorrelationAnalysis autocorrelationAnalysis;
-IsiAnalysis isiAnalysis;
-AverageSpikeAnalysis averageSpikeAnalysis;
-CrossCorrelationAnalysis crossCorrelationAnalysis;
+AmModulationProcessor *amModulationProcessor;
+SampleStreamProcessor *sampleStreamProcessor;
+ThresholdProcessor *thresholdProcessor;
+SpikeAnalysis *spikeAnalysis;
+AutocorrelationAnalysis *autocorrelationAnalysis;
+IsiAnalysis *isiAnalysis;
+AverageSpikeAnalysis *averageSpikeAnalysis;
+CrossCorrelationAnalysis *crossCorrelationAnalysis;
+
 JniHelper jniHelper;
 
+JavaVM *vm = NULL;
 jfieldID samplesFid;
 jfieldID sampleCountFid;
 jfieldID eventIndicesFid;
 jfieldID eventNamesFid;
 jfieldID eventCountFid;
 jfieldID lastSampleIndexFid;
+
+class HeartbeatListener : public OnHeartbeatListener {
+public:
+    HeartbeatListener() {}
+
+    ~HeartbeatListener() {}
+
+    void onHeartbeat(int bmp) { JniHelper::invokeVoid(vm, "onHeartbeat", "(I)V", bmp); }
+};
+
+class EventListener : public OnEventListenerListener {
+public:
+    EventListener() {}
+
+    ~EventListener() {}
+
+    void onSpikerBoxHardwareTypeDetected(int hardwareType) {
+        JniHelper::invokeVoid(vm, "onSpikerBoxHardwareTypeDetected", "(I)V", hardwareType);
+    };
+
+    void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) {
+        JniHelper::invokeVoid(vm, "onMaxSampleRateAndNumOfChannelsReply", "(II)V", maxSampleRate, channelCount);
+
+        sampleStreamProcessor->setChannelCount(channelCount);
+    };
+};
 
 static jboolean exception_check(JNIEnv *env) {
     if (env->ExceptionCheck()) {
@@ -109,10 +150,22 @@ static jboolean exception_check(JNIEnv *env) {
 }
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    // save VM for later reference
+    ::vm = vm;
+
     JNIEnv *env;
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
+
+    amModulationProcessor = new AmModulationProcessor();
+    sampleStreamProcessor = new SampleStreamProcessor(new EventListener());
+    thresholdProcessor = new ThresholdProcessor(new HeartbeatListener());
+    spikeAnalysis = new SpikeAnalysis();
+    autocorrelationAnalysis = new AutocorrelationAnalysis();
+    isiAnalysis = new IsiAnalysis();
+    averageSpikeAnalysis = new AverageSpikeAnalysis();
+    crossCorrelationAnalysis = new CrossCorrelationAnalysis();
 
     // let's cache fields of the SampleWithEvents java object
     jclass cls = env->FindClass("com/backyardbrains/data/processing/SamplesWithEvents");
@@ -154,14 +207,16 @@ Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jobject thiz, 
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate) {
-    amModulationProcessor.setSampleRate(sampleRate);
-    sampleStreamProcessor.setSampleRate(sampleRate);
+    amModulationProcessor->setSampleRate(sampleRate);
+    sampleStreamProcessor->setSampleRate(sampleRate);
+    thresholdProcessor->setSampleRate(sampleRate);
 }
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff) {
-    amModulationProcessor.setFilters(lowCutOff, highCutOff);
-    sampleStreamProcessor.setFilters(lowCutOff, highCutOff);
+    amModulationProcessor->setFilters(lowCutOff, highCutOff);
+    sampleStreamProcessor->setFilters(lowCutOff, highCutOff);
+    thresholdProcessor->setFilters(lowCutOff, highCutOff);
 }
 
 JNIEXPORT void JNICALL
@@ -193,7 +248,7 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
     jint *outEventIndicesPtr = new jint[eventCount];
     std::string *outEventNamesPtr = new std::string[eventCount];
     jint *outCounts = new jint[2];
-    sampleStreamProcessor.process(uInBytesPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr, outCounts);
+    sampleStreamProcessor->process(uInBytesPtr, length, outSamplesPtr, outEventIndicesPtr, outEventNamesPtr, outCounts);
 
     // if we did get some events create array of strings that represent event names and populate it
     for (int i = 0; i < outCounts[1]; i++) {
@@ -240,11 +295,11 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobj
 
     jint sampleCount = length / 2;
     jshort *outSamplesPtr = new jshort[sampleCount];
-    jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
-    amModulationProcessor.process(reinterpret_cast<short *>(inBytesPtr), outSamplesPtr, sampleCount);
-    jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
+    jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
+    amModulationProcessor->process(reinterpret_cast<short *>(inBytesPtr), outSamplesPtr, sampleCount);
+    jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
     if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
-        jniHelper.invokeVoid(env, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
+        jniHelper.invokeVoid(vm, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
     }
 
     // exception check
@@ -321,9 +376,66 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobjec
     delete[] outEventIndicesPtr;
 }
 
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_getAveragedSampleCount(JNIEnv *env, jobject thiz) {
+    return thresholdProcessor->getAveragedSampleCount();
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setAveragedSampleCount(JNIEnv *env, jobject thiz, jint averagedSampleCount) {
+    thresholdProcessor->setAveragedSampleCount(averagedSampleCount);
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jobject thiz, jint threshold) {
+    thresholdProcessor->setThreshold(threshold);
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jobject thiz, jboolean processBpm) {
+    thresholdProcessor->setBpmProcessing(processBpm);
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
+                                                        jint length) {
+    jobject samplesObj = env->GetObjectField(out, samplesFid);
+    jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
+
+    jshort *inSamplesPtr = new jshort[length];
+    env->GetShortArrayRegion(inSamples, 0, length, inSamplesPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSamplesPtr;
+        return;
+    }
+
+    jint sampleCount = thresholdProcessor->sampleCount;
+    jshort *outSamplesPtr = new jshort[sampleCount];
+//    jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
+    thresholdProcessor->process(inSamplesPtr, outSamplesPtr, length);
+//    jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
+//    if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
+//        jniHelper.invokeVoid(env, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
+//    }
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSamplesPtr;
+        delete[] outSamplesPtr;
+        return;
+    }
+
+    env->SetShortArrayRegion(samples, 0, sampleCount, outSamplesPtr);
+    env->SetIntField(out, sampleCountFid, sampleCount);
+    delete[] inSamplesPtr;
+    delete[] outSamplesPtr;
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz) {
-    return static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
+    return static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
 }
 
 JNIEXPORT void JNICALL
@@ -417,8 +529,8 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jobject thiz, jst
         return env->NewIntArray(2);
     }
 
-    jint *resultPtr = spikeAnalysis.findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr,
-                                               indicesNegPtr, timesNegPtr);
+    jint *resultPtr = spikeAnalysis->findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr,
+                                                indicesNegPtr, timesNegPtr);
 
     jintArray result = env->NewIntArray(2);
     env->SetIntArrayRegion(result, 0, 2, resultPtr);
@@ -491,7 +603,7 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jobj
         return;
     }
 
-    autocorrelationAnalysis.process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
+    autocorrelationAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
         jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
@@ -548,7 +660,7 @@ Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jobject thiz, jo
         return;
     }
 
-    isiAnalysis.process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
+    isiAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
         jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
@@ -604,7 +716,7 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, job
         return;
     }
 
-    crossCorrelationAnalysis.process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
+    crossCorrelationAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < analysisCount; ++i) {
         jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
@@ -701,8 +813,8 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jobject
         return;
     }
 
-    averageSpikeAnalysis.process(filePathPtr, spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, averageSpikePtr,
-                                 normAverageSpikePtr, normTopStdLinePtr, normBottomStdLinePtr, batchSpikeCount);
+    averageSpikeAnalysis->process(filePathPtr, spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, averageSpikePtr,
+                                  normAverageSpikePtr, normTopStdLinePtr, normBottomStdLinePtr, batchSpikeCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
         jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);

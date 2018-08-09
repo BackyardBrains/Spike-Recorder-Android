@@ -47,6 +47,7 @@ import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
@@ -64,7 +65,6 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  *
  * @author Nathan Dotz <nate@backyardbrains.com>
  * @author Tihomir Leka <tihomir at backyardbrains.com>
- * @version 1
  */
 public class AudioService extends Service implements SampleSource.SampleSourceListener {
 
@@ -90,6 +90,8 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     private int sampleRate;
     // Maximum number of seconds data manager should hold at any time
     private double maxTime;
+    // Whether incoming samples should be averaged using a threshold
+    private boolean averageSamples;
 
     // Reference to currently active sample source
     private AbstractSampleSource sampleSource;
@@ -158,22 +160,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     //  DATA PROCESSING
     //========================================================
 
-    // Returns the activity reference and if reference is lost, logs the calling method.
-    @Nullable @SuppressWarnings("WeakerAccess") SampleProcessor getProcessor() {
-        // case if data processor is not set at all
-        if (sampleProcessorRef == null) return null;
-
-        return sampleProcessorRef.get();
-    }
-
-    /**
-     * Sets the sample processor that will be used to additionally process incoming samples.
-     */
-    public void setSampleProcessor(@NonNull SampleProcessor processor) {
-        LOGD(TAG, "setDataProcessor() - " + processor.getClass().getName());
-        sampleProcessorRef = new WeakReference<>(processor);
-    }
-
     /**
      * Clears sample processor.
      */
@@ -194,6 +180,15 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         if (sampleSource != null) sampleSource.setBufferSize(bufferSize);
 
         this.maxTime = maxSeconds;
+    }
+
+    /**
+     * Sets whether incoming samples should be average by a threshold value.
+     */
+    public void setAverageSamples(boolean averageSamples) {
+        if (averageSamples == this.averageSamples) return;
+
+        this.averageSamples = averageSamples;
     }
 
     /**
@@ -280,22 +275,26 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         setSampleRate(sampleRate);
     }
 
-    private static final SamplesWithEvents TEMP_SAMPLES_WITH_EVENTS = new SamplesWithEvents();
+    private final Benchmark benchmark = new Benchmark("THRESHOLD_JAVA").warmUp(50)
+        .sessions(10)
+        .measuresPerSession(50)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
 
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (processingBuffer != null) {
-            if (getProcessor() != null) {
-                // additionally process data if processor is provided before passing it to data manager
-                TEMP_SAMPLES_WITH_EVENTS.samples =
-                    getProcessor().process(samplesWithEvents.samples, samplesWithEvents.sampleCount);
-                TEMP_SAMPLES_WITH_EVENTS.sampleCount = TEMP_SAMPLES_WITH_EVENTS.samples.length;
-                processingBuffer.addToBuffer(TEMP_SAMPLES_WITH_EVENTS);
-            } else {
-                // pass data to data manager
-                processingBuffer.addToBuffer(samplesWithEvents);
-            }
+        if (averageSamples) {
+            //benchmark.start();
+            JniUtils.processThreshold(samplesWithEvents, samplesWithEvents.samples, samplesWithEvents.sampleCount);
+            //benchmark.end();
         }
+        // pass data to data manager
+        if (processingBuffer != null) processingBuffer.addToBuffer(samplesWithEvents);
 
         // pass data to RecordingSaver
         passToRecorder(samplesWithEvents);

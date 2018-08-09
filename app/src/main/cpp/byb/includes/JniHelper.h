@@ -13,7 +13,7 @@
 class JniHelper {
 public:
 
-    static void invokeVoid(JNIEnv *env, const char *callbackName, const char *callbackSignature, ...);
+    static void invokeVoid(JavaVM *vm, const char *callbackName, const char *callbackSignature, ...);
 };
 
 

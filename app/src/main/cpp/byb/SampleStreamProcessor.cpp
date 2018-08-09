@@ -9,18 +9,23 @@ const char *SampleStreamProcessor::TAG = "SampleStreamProcessor";
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
 
-const std::string SampleStreamProcessor::EVENT_PREFIX = "EVNT:";
-
-SampleStreamProcessor::SampleStreamProcessor() {
+SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) {
     setSampleRate(SAMPLE_RATE);
+
+    SampleStreamProcessor::listener = listener;
 }
 
 SampleStreamProcessor::~SampleStreamProcessor() {
 }
 
-void
-SampleStreamProcessor::process(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
-                               std::string *outEventLabels, int *outCounts) {
+void SampleStreamProcessor::setChannelCount(int channelCount) {
+    SampleStreamProcessor::channelCount = channelCount;
+
+    channelCountChanged = true;
+}
+
+void SampleStreamProcessor::process(const unsigned char *inData, const int size, short *outSamples,
+                                    int *outEventIndices, std::string *outEventLabels, int *outCounts) {
     if (channelCountChanged) { // number of channels changed during processing of previous batch
         frameStarted = false;
         sampleStarted = false;
@@ -160,26 +165,23 @@ SampleStreamProcessor::process(const unsigned char *inData, const int size, shor
 
     std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
     std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
-    copy(eventLabels, eventLabels + eventCounter, outEventLabels);
+    std::copy(eventLabels, eventLabels + eventCounter, outEventLabels);
     outCounts[0] = sampleCounters[CHANNEL_INDEX];
     outCounts[1] = eventCounter;
 }
 
 void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) {
     // check if it's board type message
-    /*if (listener != null) {
-        if (SampleStreamUtils.isHardwareTypeMsg(message)) {
-            listener.onSpikerBoxHardwareTypeDetected(SampleStreamUtils.getBoardType(message));
-        } else if (SampleStreamUtils.isSampleRateAndNumOfChannelsMsg(message)) {
-            listener.onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils.getMaxSampleRate(message),
-                                                          SampleStreamUtils.getChannelCount(message));
-        } else */
     std::string message = reinterpret_cast<char *>(messageBytes);
-    if (isEventMsg(message)) {
+    if (SampleStreamUtils::isHardwareTypeMsg(message)) {
+        listener->onSpikerBoxHardwareTypeDetected(SampleStreamUtils::getBoardType(message));
+    } else if (SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
+        listener->onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils::getMaxSampleRate(message),
+                                                       SampleStreamUtils::getChannelCount(message));
+    } else if (SampleStreamUtils::isEventMsg(message)) {
         eventIndices[eventCounter] = sampleIndex;
-        eventLabels[eventCounter++] = getEventNumber(message);
+        eventLabels[eventCounter++] = SampleStreamUtils::getEventNumber(message);
     }
-    /*}*/
 }
 
 void SampleStreamProcessor::reset() {
@@ -187,15 +189,4 @@ void SampleStreamProcessor::reset() {
     tmpIndex = 0;
     escapeSequenceIndex = 0;
     eventMessageIndex = 0;
-}
-
-bool SampleStreamProcessor::isEventMsg(std::string message) {
-    return message.compare(0, EVENT_PREFIX.length(), EVENT_PREFIX) == 0;
-}
-
-std::string SampleStreamProcessor::getEventNumber(std::string message) {
-    message = message.replace(0, EVENT_PREFIX.length(), "");
-    size_t found = message.find(";");
-    if (found == std::string::npos) return message;
-    return message.replace(found, message.length() - found, "");
 }

@@ -8,6 +8,7 @@
 #include "Processor.h"
 #include "LowPassFilter.h"
 #include "HighPassFilter.h"
+#include "SampleStreamUtils.h"
 #include <algorithm>
 #include <string>
 #include <android/log.h>
@@ -18,9 +19,14 @@ namespace processing {
 
 class SampleStreamProcessor : public Processor {
 public:
-    SampleStreamProcessor();
+    SampleStreamProcessor(OnEventListenerListener *listener);
 
     ~SampleStreamProcessor();
+
+    /**
+     * Set number of channels in the sample stream.
+     */
+    void setChannelCount(int channelCount);
 
     void process(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
                  std::string *outEventLabels, int *outCounts);
@@ -56,8 +62,8 @@ private:
     // Array of bytes which represent end of an escape sequence
     static const unsigned char ESCAPE_SEQUENCE_END[];
 
-    // Prefix of the event escape sequence
-    static const std::string EVENT_PREFIX;
+    // Listener that's being invoked during sample stream processing on different event messages
+    OnEventListenerListener *listener;
 
     typedef unsigned int byte;
 
@@ -66,10 +72,6 @@ private:
 
     // Resets all variables used for processing escape sequences
     void reset();
-
-    bool isEventMsg(std::string message);
-
-    std::string getEventNumber(std::string);
 
     // Whether new frame is started being processed
     bool frameStarted = false;

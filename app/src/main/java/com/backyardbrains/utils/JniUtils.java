@@ -22,6 +22,16 @@ public class JniUtils {
     public static native void processPlaybackStream(SamplesWithEvents samplesWithEvents, byte[] data, int length,
         int[] eventIndices, String[] eventNames, int eventCount, long fromSample, long toSample, int prependSamples);
 
+    public static native int getAveragedSampleCount();
+
+    public static native void setAveragedSampleCount(int averagedSampleCount);
+
+    public static native void setThreshold(int threshold);
+
+    public static native void setBpmProcessing(boolean processBpm);
+
+    public static native void processThreshold(SamplesWithEvents samplesWithEvents, short[] samples, int length);
+
     public static native boolean isAudioStreamAmModulated();
 
     public static native void prepareForDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,

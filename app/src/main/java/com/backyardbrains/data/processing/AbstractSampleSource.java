@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.filters.Filter;
+import com.backyardbrains.utils.JniUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
@@ -84,6 +85,11 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     public void setFilter(@Nullable Filter filter) {
         FILTERS.setFilter(filter);
+
+        // pass filters to native code
+        float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
+        float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
+        JniUtils.setFilters(low, high);
     }
 
     /**
@@ -100,6 +106,9 @@ public abstract class AbstractSampleSource implements SampleSource {
         if (this.sampleRate != sampleRate) {
             // reset filters
             FILTERS.setSampleRate(sampleRate);
+
+            // pass sample rate to native code
+            JniUtils.setSampleRate(sampleRate);
 
             // inform interested parties what is the sample rate of this sample source
             if (sampleSourceListener != null) sampleSourceListener.onSampleRateDetected(sampleRate);

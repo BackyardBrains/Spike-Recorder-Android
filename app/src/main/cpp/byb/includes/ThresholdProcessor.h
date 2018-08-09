@@ -5,9 +5,11 @@
 #ifndef SPIKE_RECORDER_ANDROID_THRESHOLDPROCESSOR_H
 #define SPIKE_RECORDER_ANDROID_THRESHOLDPROCESSOR_H
 
-#include "Processor.h"
 #include <algorithm>
 #include <climits>
+
+#include "Processor.h"
+#include "HeartbeatHelper.h"
 
 namespace processing {
     class ThresholdProcessor;
@@ -15,11 +17,26 @@ namespace processing {
 
 class ThresholdProcessor : public Processor {
 public:
-    ThresholdProcessor();
+    ThresholdProcessor(OnHeartbeatListener *listener);
 
     ~ThresholdProcessor();
 
+    // Returns the number of sample sequences that should be summed to get the average spike value.
+    int getAveragedSampleCount();
+
+    // Sets the number of sample sequences that should be summed to get the average spike value.
+    void setAveragedSampleCount(int averagedSampleCount);
+
+    // Set's the sample frequency threshold.
+    void setThreshold(int threshold);
+
+    // Starts/stops processing heartbeat
+    void setBpmProcessing(bool processBpm);
+
     void process(const short *inSamples, short *outSamples, const int length);
+
+    // Number of samples that we collect for one sample stream
+    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
 
 private:
     static const char *TAG;
@@ -32,18 +49,21 @@ private:
     static constexpr float DEFAULT_SAMPLE_RATE = 44100.0f;
     // Max number of unfinished samples arrays
     static const int UNFINISHED_SAMPLES_COUNT = 200;
+    // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
+    static constexpr double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
+
+    // Resets all local variables used for the heartbeat processing
+    void resetBpm();
 
     // Resets all the fields used for calculations
     void reset();
 
-    // Number of samples that we collect for one sample stream
-    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
     // We need to buffer half of samples total count up to the sample that hit's threshold
     int bufferSampleCount = sampleCount / 2;
-    // Holds most recent 1.2 seconds of audio so we can prepend new sample buffers when threshold is hit
+    // Buffer that holds most recent 1.2 ms of audio so we can prepend new sample buffers when threshold is hit
     short *buffer;
     // Holds arrays of already populated and averaged samples
-    short *samplesForCalculation;
+    short **samplesForCalculation;
     // Number of arrays of already populated and averaged samples
     int samplesForCalculationCount;
     // Holds arrays of samples that still haven't been fully populated and averaged
@@ -54,6 +74,12 @@ private:
     int *unfinishedSamplesForCalculationAveragedCounts;
     // Number of unfinished sample arrays
     int unfinishedSamplesForCalculationCount;
+    // Holds averages of all the saved samples by index
+    short *averagedSamples;
+    // Holds sums of all the saved samples by index
+    int *summedSamples;
+    // Holds samples counts summed at specified position
+    int *summedSamplesCounts;
 
     // Dead period when we don't check for threshold after hitting one
     int deadPeriodCount = (int) (DEFAULT_SAMPLE_RATE * DEAD_PERIOD_SECONDS);
@@ -75,6 +101,18 @@ private:
 
     // Holds previously processed sample so we can compare whether we have a threshold hit
     short prevSample;
+
+    // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
+    HeartbeatHelper *heartbeatHelper;
+    // Period without heartbeat that we wait for before resetting the heartbeat helper
+    int minBpmResetPeriodCount = (int) (DEFAULT_SAMPLE_RATE * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
+    // Index of the sample that triggered the threshold hit
+    int lastTriggerSampleCounter;
+    // Counts samples between two resets that need to be passed to heartbeat helper
+    int sampleCounter;
+    // Whether BPM should be processed or not
+    bool processBpm;
+
 
 };
 

@@ -144,18 +144,21 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     /**
      * Subclasses should override this method if they need to do some work when sample rate changes.
      */
-    protected void onSampleRateChange(int sampleRate) {
-    }
+    //protected void onSampleRateChange(int sampleRate) {
+    //}
 
     //==============================================
     //  EVENT BUS
     //==============================================
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(
+        SampleRateChangeEvent event) {
         LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
-        onSampleRateChange(event.getSampleRate());
+        //onSampleRateChange(event.getSampleRate());
+    }
+
+    public final void onHardwareTypeChangeEvent() {
+
     }
 
     //==============================================

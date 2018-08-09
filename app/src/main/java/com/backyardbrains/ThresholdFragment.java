@@ -14,13 +14,13 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.audio.Filters;
-import com.backyardbrains.data.processing.ThresholdProcessor;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.view.HeartbeatView;
@@ -44,10 +44,6 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
     private static final int AVERAGED_SAMPLE_COUNT = 30;
     private static final double MAX_PROCESSING_TIME = 2.4; // 2.4 seconds
-    private static final double DEAD_PERIOD_TIME = 0.005; // 5 millis
-
-    static final ThresholdProcessor DATA_PROCESSOR =
-        new ThresholdProcessor(AVERAGED_SAMPLE_COUNT, MAX_PROCESSING_TIME, DEAD_PERIOD_TIME);
 
     final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
         new SetThresholdHandlePositionRunnable();
@@ -111,8 +107,8 @@ public class ThresholdFragment extends BaseWaveformFragment {
         super.onStop();
 
         if (getAudioService() != null) {
-            getAudioService().clearSampleProcessor();
             getAudioService().stopActiveInputSource();
+            getAudioService().setAverageSamples(false);
         }
     }
 
@@ -129,6 +125,9 @@ public class ThresholdFragment extends BaseWaveformFragment {
         @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_threshold, container, false);
         unbinder = ButterKnife.bind(this, view);
+
+        // we should set averaged sample count before UI setup
+        JniUtils.setAveragedSampleCount(AVERAGED_SAMPLE_COUNT);
 
         setupUI();
 
@@ -176,10 +175,6 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
     @Override protected ThresholdRenderer getRenderer() {
         return (ThresholdRenderer) super.getRenderer();
-    }
-
-    @Override protected void onSampleRateChange(int sampleRate) {
-        DATA_PROCESSOR.setSampleRate(sampleRate);
     }
 
     //==============================================
@@ -237,7 +232,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
                 // inform interested parties that the average sample count has changed
-                DATA_PROCESSOR.setAveragedSampleCount(seekBar.getProgress() > 0 ? seekBar.getProgress() : 1);
+                JniUtils.setAveragedSampleCount(seekBar.getProgress() > 0 ? seekBar.getProgress() : 1);
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) {
@@ -253,7 +248,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
                 }
             }
         });
-        sbAvgSamplesCount.setProgress(DATA_PROCESSOR.getAveragedSampleCount());
+        sbAvgSamplesCount.setProgress(JniUtils.getAveragedSampleCount());
         // BPM UI
         updateBpmUI();
         if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
@@ -267,7 +262,9 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
     // Updates BpPM UI
     private void updateBpmUI() {
-        DATA_PROCESSOR.setBpmProcessing(shouldShowBpm());
+        // update whether BPM processing should be on
+        JniUtils.setBpmProcessing(shouldShowBpm());
+
         tbSound.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
         vHeartbeat.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
         vHeartbeat.setMuteSound(getContext() != null && !PrefUtils.getBpmSound(getContext()));
@@ -290,8 +287,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
         if (getAudioService() != null) {
             getAudioService().startActiveInputSource();
 
-            DATA_PROCESSOR.setSampleRate(getAudioService().getSampleRate());
-            getAudioService().setSampleProcessor(DATA_PROCESSOR);
+            getAudioService().setAverageSamples(true);
             getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         }
     }
@@ -304,9 +300,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
     // Updates data processor with the newly set threshold.
     void updateDataProcessorThreshold(float value) {
-        // can be null if callback is called after activity has finished
-        //noinspection ConstantConditions
-        if (DATA_PROCESSOR != null) DATA_PROCESSOR.setThreshold(value);
+        JniUtils.setThreshold((int) value);
     }
 
     // Refreshes renderer thresholds
