@@ -360,6 +360,9 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
             sampleSource.setBufferSize(processingBuffer.getSize());
             sampleSource.start();
             LOGD(TAG, "Microphone started");
+
+            // clear the buffer before on start
+            processingBuffer.clearBuffer();
         }
     }
 
@@ -449,6 +452,9 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
             }
             sampleSource = usbHelper.getUsbDevice();
             sampleSource.setBufferSize(processingBuffer.getSize());
+
+            // clear the buffer before on start
+            processingBuffer.clearBuffer();
         }
 
         // resume communication with USB
@@ -676,6 +682,9 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                     }
                 });
                 turnOnPlayback(); // this will stop the microphone and in progress recording if any
+
+                // clear the buffer before on start
+                processingBuffer.clearBuffer();
             }
         }
     }

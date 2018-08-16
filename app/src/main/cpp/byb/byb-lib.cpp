@@ -374,7 +374,6 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jobjec
     jint prepend = std::min(0, prependSamples);
     for (int i = 0; i < inEventCount; i++) {
         jint sampleIndex = inEventIndicesPtr[i] - prepend;
-//        if (sampleCount > end) end = sampleCount;
         if (start <= sampleIndex && sampleIndex < end) {
             outEventIndicesPtr[eventCounter] = static_cast<jint>(sampleIndex - start);
 
