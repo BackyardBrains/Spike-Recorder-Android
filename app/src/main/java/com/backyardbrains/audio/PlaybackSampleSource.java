@@ -130,7 +130,6 @@ public class PlaybackSampleSource extends AbstractSampleSource {
 
                             continue;
                         }
-                        //LOGD(TAG, "READING: " + read);
 
                         // save progress
                         progress.set(raf.getFilePointer());
@@ -161,7 +160,7 @@ public class PlaybackSampleSource extends AbstractSampleSource {
                     : "Error reading random access file stream", e);
                 Crashlytics.logException(e);
 
-                onInputStop(); //stop();`
+                onInputStop();
             }
         }
 
@@ -178,17 +177,16 @@ public class PlaybackSampleSource extends AbstractSampleSource {
             fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
 
             // number of bytes actually read during single read
-            int read;
-            if ((read = raf.read(buffer)) > 0) {
-                //LOGD(TAG, "READING: " + read);
-
+            if (raf.read(buffer) > 0) {
                 if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
 
                 // number of samples to prepend
                 samplesToPrepend.set((int) (zerosPrependCount * .5));
 
                 // index of the sample up to which we check the events
-                toSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
+                long toByte = raf.getFilePointer();
+                if (bufferSize > toByte) toByte = bufferSize;
+                toSample.set(AudioUtils.getSampleCount(toByte));
 
                 // write data to buffer
                 writeToBuffer(buffer, 0, bufferSize);
