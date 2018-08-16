@@ -31,10 +31,14 @@ Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jobject thiz, 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, jint sampleRate);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jobject thiz, jint channelCount);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
-                                                           jint length);
+                                                           jint length, jobject sampleSourceObject);
+JNIEXPORT jboolean JNICALL
+Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobject thiz, jobject out,
                                                                jbyteArray inBytes, jint length);
@@ -54,8 +58,6 @@ Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jobject thi
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
                                                         jint length);
-JNIEXPORT jboolean JNICALL
-Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
                                                          jintArray inEventIndices, jint eventCount, jint start,
@@ -116,7 +118,7 @@ public:
 
     ~HeartbeatListener() {}
 
-    void onHeartbeat(int bmp) { JniHelper::invokeVoid(vm, "onHeartbeat", "(I)V", bmp); }
+    void onHeartbeat(int bmp) { JniHelper::invokeStaticVoid(vm, "onHeartbeat", "(I)V", bmp); }
 };
 
 class EventListener : public OnEventListenerListener {
@@ -125,16 +127,26 @@ public:
 
     ~EventListener() {}
 
+    void setSampleSourceObj(jobject object) {
+        EventListener::sampleSourceObj = object;
+    }
+
     void onSpikerBoxHardwareTypeDetected(int hardwareType) {
-        JniHelper::invokeVoid(vm, "onSpikerBoxHardwareTypeDetected", "(I)V", hardwareType);
+        JniHelper::invokeVoid(vm, sampleSourceObj, "setHardwareType", "(I)V", hardwareType);
     };
 
     void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) {
-        JniHelper::invokeVoid(vm, "onMaxSampleRateAndNumOfChannelsReply", "(II)V", maxSampleRate, channelCount);
+        JniHelper::invokeVoid(vm, sampleSourceObj, "setSampleRate", "(I)V", maxSampleRate);
+        JniHelper::invokeVoid(vm, sampleSourceObj, "setChannelCount", "(I)V", channelCount);
 
         sampleStreamProcessor->setChannelCount(channelCount);
     };
+
+private:
+    jobject sampleSourceObj;
 };
+
+EventListener *eventListener;
 
 static jboolean exception_check(JNIEnv *env) {
     if (env->ExceptionCheck()) {
@@ -159,7 +171,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     amModulationProcessor = new AmModulationProcessor();
-    sampleStreamProcessor = new SampleStreamProcessor(new EventListener());
+    eventListener = new EventListener();
+    sampleStreamProcessor = new SampleStreamProcessor(eventListener);
     thresholdProcessor = new ThresholdProcessor(new HeartbeatListener());
     spikeAnalysis = new SpikeAnalysis();
     autocorrelationAnalysis = new AutocorrelationAnalysis();
@@ -213,6 +226,11 @@ Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jobject thiz, 
 }
 
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jobject thiz, jint channelCount) {
+    sampleStreamProcessor->setChannelCount(channelCount);
+}
+
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfloat lowCutOff, jfloat highCutOff) {
     amModulationProcessor->setFilters(lowCutOff, highCutOff);
     sampleStreamProcessor->setFilters(lowCutOff, highCutOff);
@@ -221,7 +239,7 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jobject thiz, jfl
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject thiz, jobject out, jbyteArray inBytes,
-                                                           jint length) {
+                                                           jint length, jobject sampleSourceObject) {
     jobject samplesObj = env->GetObjectField(out, samplesFid);
     jshortArray samples = reinterpret_cast<jshortArray>(samplesObj);
     jobject eventIndicesObj = env->GetObjectField(out, eventIndicesFid);
@@ -243,6 +261,9 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
 
     unsigned char *uInBytesPtr = new unsigned char[length];
     std::copy(inBytesPtr, inBytesPtr + length, uInBytesPtr);
+
+    // pass sample source object to event listener so proper method can be triggered on it when necessary
+    eventListener->setSampleSourceObj(sampleSourceObject);
 
     jshort *outSamplesPtr = new jshort[sampleCount];
     jint *outEventIndicesPtr = new jint[eventCount];
@@ -278,6 +299,11 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jobject 
     delete[] outCounts;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz) {
+    return static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
+}
+
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobject thiz, jobject out,
                                                                jbyteArray inBytes, jint length) {
@@ -299,7 +325,7 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jobj
     amModulationProcessor->process(reinterpret_cast<short *>(inBytesPtr), outSamplesPtr, sampleCount);
     jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
     if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
-        jniHelper.invokeVoid(vm, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
+        jniHelper.invokeStaticVoid(vm, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
     }
 
     // exception check
@@ -413,12 +439,7 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thi
 
     jint sampleCount = thresholdProcessor->sampleCount;
     jshort *outSamplesPtr = new jshort[sampleCount];
-//    jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
     thresholdProcessor->process(inSamplesPtr, outSamplesPtr, length);
-//    jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor.isReceivingAmSignal());
-//    if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
-//        jniHelper.invokeVoid(env, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
-//    }
 
     // exception check
     if (exception_check(env)) {
@@ -431,11 +452,6 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thi
     env->SetIntField(out, sampleCountFid, sampleCount);
     delete[] inSamplesPtr;
     delete[] outSamplesPtr;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jobject thiz) {
-    return static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
 }
 
 JNIEXPORT void JNICALL

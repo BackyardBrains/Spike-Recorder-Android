@@ -5,7 +5,6 @@ import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import org.greenrobot.eventbus.EventBus;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -26,26 +25,5 @@ public class JniHelper {
     @SuppressWarnings("unused") @Keep public static void onHeartbeat(int bpm) {
         HEARTBEAT_EVENT.setBeatsPerMinute(bpm);
         EventBus.getDefault().post(HEARTBEAT_EVENT);
-    }
-
-    @SuppressWarnings("unused") @Keep
-    public static void onSpikerBoxHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType) {
-        LOGD(TAG, "BOARD TYPE: " + SampleStreamUtils.getSpikerBoxName(hardwareType));
-        //setHardwareType(hardwareType);
-
-        //HEARTBEAT_EVENT.setBeatsPerMinute(bpm);
-        //EventBus.getDefault().post(HEARTBEAT_EVENT);
-    }
-
-    @SuppressWarnings("unused") @Keep
-    public static void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) {
-        LOGD(TAG, "SAMPLE RATE: " + maxSampleRate);
-        LOGD(TAG, "NUM OF CHANNELS: " + channelCount);
-
-        //setSampleRate(maxSampleRate);
-        //setChannelCount(channelCount);
-
-        //HEARTBEAT_EVENT.setBeatsPerMinute(bpm);
-        //EventBus.getDefault().post(HEARTBEAT_EVENT);
     }
 }

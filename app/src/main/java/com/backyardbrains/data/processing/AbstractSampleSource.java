@@ -9,6 +9,7 @@ import com.backyardbrains.utils.JniUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -104,6 +105,8 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected void setSampleRate(int sampleRate) {
         if (this.sampleRate != sampleRate) {
+            LOGD(TAG, "SAMPLE RATE: " + sampleRate);
+
             // reset filters
             FILTERS.setSampleRate(sampleRate);
 
@@ -143,7 +146,11 @@ public abstract class AbstractSampleSource implements SampleSource {
      * Sets number of channels for this input source.
      */
     @CallSuper protected void setChannelCount(int channelCount) {
-        this.channelCount = channelCount;
+        if (this.channelCount != channelCount) {
+            LOGD(TAG, "CHANNEL COUNT: " + channelCount);
+
+            this.channelCount = channelCount;
+        }
     }
 
     /**

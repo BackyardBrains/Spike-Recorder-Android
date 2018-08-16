@@ -1,6 +1,7 @@
 package com.backyardbrains.utils;
 
 import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.usb.AbstractUsbSampleSource;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -13,9 +14,14 @@ public class JniUtils {
 
     public static native void setSampleRate(int sampleRate);
 
+    public static native void setChannelCount(int channelCount);
+
     public static native void setFilters(float lowCutOff, float highCutOff);
 
-    public static native void processSampleStream(SamplesWithEvents out, byte[] data, int length);
+    public static native void processSampleStream(SamplesWithEvents out, byte[] data, int length,
+        AbstractUsbSampleSource sampleSource);
+
+    public static native boolean isAudioStreamAmModulated();
 
     public static native void processMicrophoneStream(SamplesWithEvents out, byte[] data, int length);
 
@@ -31,8 +37,6 @@ public class JniUtils {
     public static native void setBpmProcessing(boolean processBpm);
 
     public static native void processThreshold(SamplesWithEvents samplesWithEvents, short[] samples, int length);
-
-    public static native boolean isAudioStreamAmModulated();
 
     public static native void prepareForDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
         int eventCount, int fromSample, int toSample, int drawSurfaceWidth);

@@ -147,7 +147,9 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     @Override protected final void setChannelCount(int channelCount) {
         super.setChannelCount(channelCount);
 
-        processor.setChannelCount(channelCount);
+        // pass channel count to native code
+        JniUtils.setChannelCount(channelCount);
+        //processor.setChannelCount(channelCount);
     }
 
     private final Benchmark benchmark = new Benchmark("PROCESS_SAMPLE_STREAM_TEST").warmUp(1000)
@@ -166,7 +168,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      */
     @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length) {
         //benchmark.start();
-        JniUtils.processSampleStream(samplesWithEvents, data, length);
+        JniUtils.processSampleStream(samplesWithEvents, data, length, this);
         //benchmark.end();
 
         return samplesWithEvents;
@@ -198,6 +200,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      */
     @SuppressWarnings("WeakerAccess") void setHardwareType(int hardwareType) {
         if (this.hardwareType == hardwareType) return;
+
+        LOGD(TAG, "BOARD TYPE: " + SampleStreamUtils.getSpikerBoxName(hardwareType));
 
         this.hardwareType = hardwareType;
 

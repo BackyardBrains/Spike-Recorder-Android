@@ -81,17 +81,23 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
          * Clean up {@link AudioRecord} resource before exiting thread.
          */
         void requestStop() {
+            LOGD(TAG, "Requesting Recorder stop");
             working.set(false);
             if (recorder != null) {
-                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) stopRecorder();
+                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                    LOGD(TAG, "Before Stop Recording");
+                    stopRecorder();
+                }
 
                 recorder = null;
             }
         }
 
         private void stopRecorder() {
+            LOGD(TAG, "Stopping Recorder");
             if (recorder != null) {
                 try {
+                    LOGD(TAG, "About to Release ");
                     recorder.stop();
                     recorder.release();
 

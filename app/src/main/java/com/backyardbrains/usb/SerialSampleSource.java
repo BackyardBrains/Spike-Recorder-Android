@@ -23,13 +23,30 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
     private static final String TAG = makeLogTag(SerialSampleSource.class);
 
     // Arduino Vendor ID
-    private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
+    private static final int ARDUINO_VENDOR_ID_1 = 0x2341; // 9025
     // Arduino Vendor ID
-    private static final int ARDUINO_VENDOR_ID_2 = 0x2A03;
+    private static final int ARDUINO_VENDOR_ID_2 = 0x2A03; // 10755
+    // Arduino Leonardo (bootloader) Product ID
+    private static final int ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID = 0x0036; // 54
+    // Arduino Micro (bootloader) Product ID
+    private static final int ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID = 0x0037; // 55
+    // Arduino Robot Control (bootloader) Product ID
+    private static final int ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID = 0x0038; // 56
+    // Arduino Robot Motor (bootloader) Product ID
+    private static final int ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID = 0x0039; // 57
+    // Arduino Micro ADK rev3 (bootloader) Product ID
+    private static final int ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID = 0x003A; // 58
+    // Arduino Explora (bootloader) Product ID
+    private static final int ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID = 0x003C; // 60
+    // Arduino Yun (bootloader) Product ID
+    private static final int ARDUINO_YUN_BOOTLOADER_PRODUCT_ID = 0x0041; // 65
+    // Arduino Zero Pro (bootloader) Product ID
+    private static final int ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID = 0x004D; // 77
+
     // FTDI Vendor ID
-    private static final int FTDI_VENDOR_ID = 0x0403;
+    private static final int FTDI_VENDOR_ID = 0x0403; // 1027
     // CH340 Chinese boards Vendor ID
-    private static final int CH340_VENDOR_ID = 0x1A86;
+    private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
     private static final int BAUD_RATE = 230400;
 
@@ -107,10 +124,23 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      */
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
-        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || vid == ARDUINO_VENDOR_ID_1
-            || vid == ARDUINO_VENDOR_ID_2 || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
+        int pid = device.getProductId();
+        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || (vid == ARDUINO_VENDOR_ID_1
+            && isNotArduinoBootloader(pid)) || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
+            || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
     }
 
+    // Checks whether specified PID is Arduino bootloader PID
+    private static boolean isNotArduinoBootloader(int pid) {
+        return pid != ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void onInputStart() {
         // prepare serial usb device for communication
         if (serialDevice != null) {

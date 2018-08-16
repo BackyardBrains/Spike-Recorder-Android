@@ -22,10 +22,10 @@ bool SampleStreamUtils::isHardwareTypeMsg(std::string message) {
 }
 
 int SampleStreamUtils::getBoardType(std::string message) {
-    if (std::strcmp(HARDWARE_TYPE_PLANT.c_str(), message.c_str())) return PLANT;
-    if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str())) return MUSCLE;
-    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str())) return HEART;
-    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str())) return HEART;
+    if (std::strcmp(HARDWARE_TYPE_PLANT.c_str(), message.c_str()) == 0) return PLANT;
+    if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str()) == 0) return MUSCLE;
+    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART;
+    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART;
     if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO;
     if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO;
     return UNKNOWN;

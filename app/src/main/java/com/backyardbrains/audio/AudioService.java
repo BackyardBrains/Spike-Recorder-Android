@@ -47,7 +47,6 @@ import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
@@ -161,14 +160,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     //========================================================
 
     /**
-     * Clears sample processor.
-     */
-    public void clearSampleProcessor() {
-        LOGD(TAG, "clearSampleProcessor()");
-        sampleProcessorRef = null;
-    }
-
-    /**
      * Sets the maximum time of incoming data to be processed at any given moment in seconds.
      */
     public void setMaxProcessingTimeInSeconds(double maxSeconds) {
@@ -275,16 +266,16 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         setSampleRate(sampleRate);
     }
 
-    private final Benchmark benchmark = new Benchmark("THRESHOLD_JAVA").warmUp(50)
-        .sessions(10)
-        .measuresPerSession(50)
-        .logBySession(false)
-        .logToFile(false)
-        .listener(new Benchmark.OnBenchmarkListener() {
-            @Override public void onEnd() {
-                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            }
-        });
+    //private final Benchmark benchmark = new Benchmark("THRESHOLD_JAVA").warmUp(50)
+    //    .sessions(10)
+    //    .measuresPerSession(50)
+    //    .logBySession(false)
+    //    .logToFile(false)
+    //    .listener(new Benchmark.OnBenchmarkListener() {
+    //        @Override public void onEnd() {
+    //            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //        }
+    //    });
 
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
@@ -359,30 +350,27 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         if (created) turnOnMicrophone();
     }
 
-    /**
-     * Stops processing Microphone input (Default).
-     */
-    public void stopMicrophone() {
-        if (created) turnOffMicrophone();
-    }
-
     private void turnOnMicrophone() {
         LOGD(TAG, "turnOnMicrophone()");
         turnOffUsb();
         turnOffPlayback();
 
-        sampleSource = new MicrophoneSampleSource(this);
-        sampleSource.setBufferSize(processingBuffer.getSize());
-        sampleSource.start();
-        LOGD(TAG, "Microphone started");
+        if (sampleSource == null) {
+            sampleSource = new MicrophoneSampleSource(this);
+            sampleSource.setBufferSize(processingBuffer.getSize());
+            sampleSource.start();
+            LOGD(TAG, "Microphone started");
+        }
     }
 
     private void turnOffMicrophone() {
         LOGD(TAG, "turnOffMicrophone()");
         stopRecording();
 
-        if (sampleSource != null) sampleSource.stop();
-        sampleSource = null;
+        if (sampleSource != null && sampleSource.isMicrophone()) {
+            sampleSource.stop();
+            sampleSource = null;
+        }
         LOGD(TAG, "Microphone stopped");
     }
 
@@ -475,6 +463,10 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
 
         // pause communication with USB
         usbHelper.pause();
+        if (sampleSource != null && sampleSource.isUsb()) {
+            sampleSource.stop();
+            sampleSource = null;
+        }
         LOGD(TAG, "USB communication ended");
     }
 
@@ -633,8 +625,10 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
             "turnOffPlayback() - playbackSampleSource " + (sampleSource != null ? "not null (stopping)" : "null"));
 
         // remove current USB input source
-        if (sampleSource != null) sampleSource.stop();
-        sampleSource = null;
+        if (sampleSource != null && sampleSource.isFile()) {
+            sampleSource.stop();
+            sampleSource = null;
+        }
 
         // post event that audio playback has stopped
         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
@@ -646,41 +640,43 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
             turnOffUsb();
 
             turnOffPlayback();
-            sampleSource = new PlaybackSampleSource(filePath, autoPlay, this);
-            sampleSource.setBufferSize(processingBuffer.getSize());
-            ((PlaybackSampleSource) sampleSource).setPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
+            if (sampleSource == null) {
+                sampleSource = new PlaybackSampleSource(filePath, autoPlay, this);
+                sampleSource.setBufferSize(processingBuffer.getSize());
+                ((PlaybackSampleSource) sampleSource).setPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
 
-                final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
+                    final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
 
-                @Override public void onStart(long length, int sampleRate) {
-                    // post event that audio playback has started, but post a sticky event
-                    // because the view might sill not be initialized
-                    EventBus.getDefault()
-                        .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length), sampleRate));
-                }
+                    @Override public void onStart(long length, int sampleRate) {
+                        // post event that audio playback has started, but post a sticky event
+                        // because the view might sill not be initialized
+                        EventBus.getDefault()
+                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length), sampleRate));
+                    }
 
-                @Override public void onResume(int sampleRate) {
-                    // post event that audio playback has started
-                    EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate));
-                }
+                    @Override public void onResume(int sampleRate) {
+                        // post event that audio playback has started
+                        EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate));
+                    }
 
-                @Override public void onProgress(long progress, int sampleRate) {
-                    progressEvent.setProgress(AudioUtils.getSampleCount(progress));
-                    progressEvent.setSampleRate(sampleRate);
-                    EventBus.getDefault().post(progressEvent);
-                }
+                    @Override public void onProgress(long progress, int sampleRate) {
+                        progressEvent.setProgress(AudioUtils.getSampleCount(progress));
+                        progressEvent.setSampleRate(sampleRate);
+                        EventBus.getDefault().post(progressEvent);
+                    }
 
-                @Override public void onPause() {
-                    // post event that audio playback has started
-                    EventBus.getDefault().post(new AudioPlaybackStoppedEvent(false));
-                }
+                    @Override public void onPause() {
+                        // post event that audio playback has started
+                        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(false));
+                    }
 
-                @Override public void onStop() {
-                    // post event that audio playback has started
-                    EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
-                }
-            });
-            turnOnPlayback(); // this will stop the microphone and in progress recording if any
+                    @Override public void onStop() {
+                        // post event that audio playback has started
+                        EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
+                    }
+                });
+                turnOnPlayback(); // this will stop the microphone and in progress recording if any
+            }
         }
     }
 

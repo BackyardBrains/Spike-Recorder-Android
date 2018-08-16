@@ -88,30 +88,32 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             final UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-                if (granted) {
-                    // check should we do detection or start the communication
-                    boolean detection = intent.getBooleanExtra(EXTRA_DETECTION, true);
-                    if (!detection) { // we already detected the hardware type
-                        if (listener != null) listener.onPermissionGranted();
+            if (AbstractUsbSampleSource.isSupported(device)) {
+                if (ACTION_USB_PERMISSION.equals(action)) {
+                    boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+                    if (granted) {
+                        // check should we do detection or start the communication
+                        boolean detection = intent.getBooleanExtra(EXTRA_DETECTION, true);
+                        if (!detection) { // we already detected the hardware type
+                            if (listener != null) listener.onPermissionGranted();
 
-                        communicationThread = new CommunicationThread(device);
-                        communicationThread.start();
+                            communicationThread = new CommunicationThread(device);
+                            communicationThread.start();
+                        } else {
+                            detector.startDetection(device);
+                        }
                     } else {
-                        detector.startDetection(device);
+                        // remove denied device from local collections
+                        removeDevice(device);
+                        // and inform listener about denied permission
+                        if (listener != null) listener.onPermissionDenied();
                     }
                 } else {
-                    // remove denied device from local collections
-                    removeDevice(device);
-                    // and inform listener about denied permission
-                    if (listener != null) listener.onPermissionDenied();
-                }
-            } else {
-                if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) close();
+                    if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) close();
 
-                // refresh list of connected and/or disconnected usb devices
-                refreshDevices(context);
+                    // refresh list of connected and/or disconnected usb devices
+                    refreshDevices(context);
+                }
             }
         }
     };
@@ -128,32 +130,27 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         @Override public void run() {
             if (manager != null) {
                 final UsbDeviceConnection connection = manager.openDevice(device);
-                if (AbstractUsbSampleSource.isSupported(device)) {
-                    usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, service);
-                    if (usbDevice != null) {
-                        if (usbDevice.open()) {
-                            if (listener != null) listener.onDataTransferStart();
+                usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, service);
+                if (usbDevice != null) {
+                    if (usbDevice.open()) {
+                        if (listener != null) listener.onDataTransferStart();
 
-                            if (usbDevice != null) usbDevice.start();
+                        if (usbDevice != null) usbDevice.start();
 
-                            try {
-                                Thread.sleep(2000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-                            if (usbDevice != null) usbDevice.checkHardwareType();
-                        } else {
-                            LOGD(TAG, "PORT NOT OPEN");
-                            Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
+
+                        if (usbDevice != null) usbDevice.checkHardwareType();
                     } else {
-                        LOGD(TAG, "PORT IS NULL");
-                        Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
+                        LOGD(TAG, "PORT NOT OPEN");
+                        Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
                     }
                 } else {
-                    LOGD(TAG, "DEVICE NOT SUPPORTED");
-                    Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
+                    LOGD(TAG, "PORT IS NULL");
+                    Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
                 }
             } else {
                 LOGD(TAG, "USB MANAGER NOT AVAILABLE");
@@ -294,7 +291,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         final UsbDevice device = devicesMap.get(deviceName);
         if (device != null) removeDevice(device);
 
-        // TODO: 05-Feb-18 SHOW THE REASON WHEY CONNECTION/COMMUNICATION WITH DEVICE FAILED
+        // TODO: 05-Feb-18 SHOW THE REASON WHY CONNECTION/COMMUNICATION WITH DEVICE FAILED
     }
 
     //==========================================================
