@@ -22,8 +22,8 @@ class AutocorrelationAnalysis extends BaseAnalysis<int[]> {
         this.trains = trains;
     }
 
-    @Nullable @Override int[][] process() throws Exception {
-        int binCount = (int) Math.ceil((MAX_TIME + BIN_SIZE) / BIN_SIZE) - 1;
+    @Nullable @Override int[][] process() {
+        int binCount = (int) Math.ceil((MAX_TIME + BIN_SIZE) / BIN_SIZE);
         final int[][] autoCorrelation = new int[trains.length][binCount];
         final int[] spikeCounts = new int[trains.length];
         for (int i = 0; i < trains.length; i++) spikeCounts[i] = trains[i].length;

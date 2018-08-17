@@ -46,5 +46,5 @@ float *AnalysisUtils::generateLogSpace(int min, int max, int size) {
 }
 
 float AnalysisUtils::map(float value, float inMin, float inMax, float outMin, float outMax) {
-    return ((value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+    return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }

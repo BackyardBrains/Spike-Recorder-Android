@@ -128,13 +128,13 @@ void AverageSpikeAnalysis::process(const char *filePath, int **inSpikeTrains, co
 void AverageSpikeAnalysis::allocateAverageSpikeData(AverageSpikeData *averageSpikeData, const int length,
                                                     drwav_uint64 batchSpikeCount) {
     for (int i = 0; i < length; i++) {
-        averageSpikeData[i].averageSpike = new float[batchSpikeCount];
-        averageSpikeData[i].topSTDLine = new float[batchSpikeCount];
-        averageSpikeData[i].bottomSTDLine = new float[batchSpikeCount];
+        averageSpikeData[i].averageSpike = new float[batchSpikeCount]{0};
+        averageSpikeData[i].topSTDLine = new float[batchSpikeCount]{0};
+        averageSpikeData[i].bottomSTDLine = new float[batchSpikeCount]{0};
 
-        averageSpikeData[i].normAverageSpike = new float[batchSpikeCount];
-        averageSpikeData[i].normTopSTDLine = new float[batchSpikeCount];
-        averageSpikeData[i].normBottomSTDLine = new float[batchSpikeCount];
+        averageSpikeData[i].normAverageSpike = new float[batchSpikeCount]{0};
+        averageSpikeData[i].normTopSTDLine = new float[batchSpikeCount]{0};
+        averageSpikeData[i].normBottomSTDLine = new float[batchSpikeCount]{0};
 
         averageSpikeData[i].countOfSpikes = 0;
     }

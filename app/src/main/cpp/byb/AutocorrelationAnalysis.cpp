@@ -18,7 +18,7 @@ void AutocorrelationAnalysis::process(float **inSpikeTrains, const int spikeTrai
                                       int **outAnalysis, const int analysisBinCount) {
     float diff;
     for (int i = 0; i < spikeTrainCount; i++) {
-        int *histogram = new int[analysisBinCount + 1]{0};
+        int *histogram = new int[analysisBinCount]{0};
 
         for (int j = 0; j < spikeCounts[i]; j++) {
             // check on left of spike
@@ -42,7 +42,7 @@ void AutocorrelationAnalysis::process(float **inSpikeTrains, const int spikeTrai
 
         }
 
-        std::copy(histogram + 1, histogram + 1 + analysisBinCount, outAnalysis[i]);
+        std::copy(histogram, histogram + analysisBinCount, outAnalysis[i]);
 
         delete[] histogram;
     }
