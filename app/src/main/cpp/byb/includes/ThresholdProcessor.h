@@ -58,6 +58,9 @@ private:
     // Resets all the fields used for calculations
     void reset();
 
+    // Whether processor has been initialized
+    bool initialized = false;
+
     // We need to buffer half of samples total count up to the sample that hit's threshold
     int bufferSampleCount = sampleCount / 2;
     // Buffer that holds most recent 1.2 ms of audio so we can prepend new sample buffers when threshold is hit
@@ -112,8 +115,6 @@ private:
     int sampleCounter;
     // Whether BPM should be processed or not
     bool processBpm;
-
-
 };
 
 
