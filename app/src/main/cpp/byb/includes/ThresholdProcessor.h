@@ -68,7 +68,7 @@ private:
     // Holds arrays of already populated and averaged samples
     short **samplesForCalculation;
     // Number of arrays of already populated and averaged samples
-    int samplesForCalculationCount;
+    int samplesForCalculationCount = 0;
     // Holds arrays of samples that still haven't been fully populated and averaged
     short **unfinishedSamplesForCalculation;
     // Holds counts of samples in unfinished sample arrays
@@ -76,7 +76,7 @@ private:
     // Holds counts of already averaged samples in unfinished sample arrays
     int *unfinishedSamplesForCalculationAveragedCounts;
     // Number of unfinished sample arrays
-    int unfinishedSamplesForCalculationCount;
+    int unfinishedSamplesForCalculationCount = 0;
     // Holds averages of all the saved samples by index
     short *averagedSamples;
     // Holds sums of all the saved samples by index
