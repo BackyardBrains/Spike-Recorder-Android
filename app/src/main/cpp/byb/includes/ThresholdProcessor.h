@@ -47,6 +47,8 @@ private:
     static constexpr float DEAD_PERIOD_SECONDS = 0.005f;
     // Default sample rate we start with
     static constexpr float DEFAULT_SAMPLE_RATE = 44100.0f;
+    // Default number of samples that needs to be summed to get the averaged sample
+    static constexpr int DEFAULT_AVERAGED_SAMPLE_COUNT = 1;
     // Max number of unfinished samples arrays
     static const int UNFINISHED_SAMPLES_COUNT = 200;
     // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
@@ -61,28 +63,39 @@ private:
     // Whether processor has been initialized
     bool initialized = false;
 
+    // Threshold value that triggers the averaging
+    int triggerValue = INT_MAX;
+    // Used to check whether threshold trigger value has changed since the last incoming sample batch
+    int lastTriggeredValue = 0;
+    // Number of samples that needs to be summed to get the averaged sample
+    int averagedSampleCount = DEFAULT_AVERAGED_SAMPLE_COUNT;
+    // Used to check whether number of averages samples has changed since the last incoming sample batch
+    int lastAveragedSampleCount = 0;
+    // Used to check whether sample rate has changed since the last incoming sample batch
+    float lastSampleRate = 0;
+
     // We need to buffer half of samples total count up to the sample that hit's threshold
     int bufferSampleCount = sampleCount / 2;
     // Buffer that holds most recent 1.2 ms of audio so we can prepend new sample buffers when threshold is hit
-    short *buffer;
+    short *buffer = new short[bufferSampleCount];
     // Holds arrays of already populated and averaged samples
-    short **samplesForCalculation;
+    short **samplesForCalculation = new short *[averagedSampleCount];
     // Number of arrays of already populated and averaged samples
     int samplesForCalculationCount = 0;
     // Holds arrays of samples that still haven't been fully populated and averaged
-    short **unfinishedSamplesForCalculation;
+    short **unfinishedSamplesForCalculation = new short *[UNFINISHED_SAMPLES_COUNT];
     // Holds counts of samples in unfinished sample arrays
-    int *unfinishedSamplesForCalculationCounts;
+    int *unfinishedSamplesForCalculationCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
     // Holds counts of already averaged samples in unfinished sample arrays
-    int *unfinishedSamplesForCalculationAveragedCounts;
+    int *unfinishedSamplesForCalculationAveragedCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
     // Number of unfinished sample arrays
     int unfinishedSamplesForCalculationCount = 0;
     // Holds averages of all the saved samples by index
-    short *averagedSamples;
+    short *averagedSamples = new short[sampleCount]{0};
     // Holds sums of all the saved samples by index
-    int *summedSamples;
+    int *summedSamples = new int[sampleCount]{0};
     // Holds samples counts summed at specified position
-    int *summedSamplesCounts;
+    int *summedSamplesCounts = new int[sampleCount]{0};
 
     // Dead period when we don't check for threshold after hitting one
     int deadPeriodCount = (int) (DEFAULT_SAMPLE_RATE * DEAD_PERIOD_SECONDS);
@@ -90,17 +103,6 @@ private:
     int deadPeriodSampleCounter;
     // Whether we are currently in dead period (not listening for threshold hit)
     bool inDeadPeriod;
-
-    // Threshold value that triggers the averaging
-    int triggerValue = INT_MAX;
-    // Used to check whether threshold trigger value has changed since the last incoming sample batch
-    int lastTriggeredValue;
-    // Number of samples that needs to be summed to get the averaged sample
-    int averagedSampleCount;
-    // Used to check whether number of averages samples has changed since the last incoming sample batch
-    int lastAveragedSampleCount;
-    // Used to check whether sample rate has changed since the last incoming sample batch
-    float lastSampleRate;
 
     // Holds previously processed sample so we can compare whether we have a threshold hit
     short prevSample;

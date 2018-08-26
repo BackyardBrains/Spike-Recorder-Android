@@ -193,7 +193,7 @@ void ThresholdProcessor::reset() {
     sampleCount = static_cast<int>(getSampleRate() * MAX_PROCESSED_SECONDS);
     bufferSampleCount = sampleCount / 2;
 
-    if (initialized) delete[] buffer;
+    delete[] buffer;
     buffer = new short[bufferSampleCount];
     // free memory before creating new arrays
     if (samplesForCalculationCount > 0) {
@@ -201,17 +201,17 @@ void ThresholdProcessor::reset() {
             delete[] samplesForCalculation[i];
         }
     }
-    if (initialized) delete[] samplesForCalculation;
+    delete[] samplesForCalculation;
     samplesForCalculation = new short *[averagedSampleCount];
     samplesForCalculationCount = 0;
-    // free memory before creating new arrays
-    if (initialized) delete[] summedSamples;
+    // free memory before creating new8 arrays
+    delete[] summedSamples;
     summedSamples = new int[sampleCount]{0};
     // free memory before creating new arrays
-    if (initialized) delete[] summedSamplesCounts;
+    delete[] summedSamplesCounts;
     summedSamplesCounts = new int[sampleCount]{0};
     // free memory before creating new arrays
-    if (initialized) delete[] averagedSamples;
+    delete[] averagedSamples;
     averagedSamples = new short[sampleCount]{0};
     // free memory before creating new arrays
     if (unfinishedSamplesForCalculationCount > 0) {
@@ -219,14 +219,14 @@ void ThresholdProcessor::reset() {
             delete[] unfinishedSamplesForCalculation[i];
         }
     }
-    if (initialized) delete[] unfinishedSamplesForCalculation;
+    delete[] unfinishedSamplesForCalculation;
     unfinishedSamplesForCalculation = new short *[UNFINISHED_SAMPLES_COUNT];
     unfinishedSamplesForCalculationCount = 0;
     // free memory before creating new arrays
-    if (initialized) delete[] unfinishedSamplesForCalculationCounts;
+    delete[] unfinishedSamplesForCalculationCounts;
     unfinishedSamplesForCalculationCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
     // free memory before creating new arrays
-    if (initialized) delete[] unfinishedSamplesForCalculationAveragedCounts;
+    delete[] unfinishedSamplesForCalculationAveragedCounts;
     unfinishedSamplesForCalculationAveragedCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
 
     deadPeriodCount = static_cast<int>(getSampleRate() * DEAD_PERIOD_SECONDS);
@@ -235,13 +235,10 @@ void ThresholdProcessor::reset() {
 
     prevSample = 0;
 
-    heartbeatHelper->reset();
     heartbeatHelper->setSampleRate(getSampleRate());
     minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
     lastTriggerSampleCounter = 0;
     sampleCounter = 0;
-
-    if (!initialized) initialized = true;
 }
 
 void ThresholdProcessor::resetBpm() {
