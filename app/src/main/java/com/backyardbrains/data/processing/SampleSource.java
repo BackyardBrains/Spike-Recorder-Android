@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public interface SampleSource {
 
@@ -14,33 +14,44 @@ public interface SampleSource {
      * Defines different sample source types.
      */
     @Retention(RetentionPolicy.SOURCE) @IntDef({
-        Type.AUDIO, Type.USB
+        Type.MICROPHONE, Type.USB, Type.FILE
     }) @interface Type {
         /**
          * Audio sample source.
          */
-        int AUDIO = 0;
+        int MICROPHONE = 0;
         /**
          * Usb sample source.
          */
         int USB = 1;
-    }
-
-    /**
-     * Interface definition for a callback to be invoked when chunk of data is received and processed from the sample
-     * source.
-     */
-    interface OnSamplesReceivedListener {
         /**
-         * Called when chunk of data is received.
-         *
-         * @param samplesWithMarkers The received data which contains processed samples and events.
+         * File sample source.
          */
-        void onSamplesReceived(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers);
+        int FILE = 2;
     }
 
     /**
-     * Starts reading sample source data and passing it to the set {@link OnSamplesReceivedListener}.
+     * An sample source listener receives notifications from a sample source. Notifications indicate sample source
+     * related events, such as when new batch of samples are available or sample source sample rate is detected.
+     */
+    interface SampleSourceListener {
+        /**
+         * Called when new chunk of data from the sample source is available.
+         *
+         * @param samplesWithEvents The received data which contains processed samples and events.
+         */
+        void onSamplesReceived(@NonNull SamplesWithEvents samplesWithEvents);
+
+        /**
+         * Called when sample source sample rate is detected.
+         *
+         * @param sampleRate The detected sample rate.
+         */
+        void onSampleRateDetected(int sampleRate);
+    }
+
+    /**
+     * Starts reading sample source data and passing it to the set {@link SampleSourceListener}.
      */
     void start();
 

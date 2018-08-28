@@ -7,7 +7,8 @@ import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.SpikeValueAndIndex;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.data.processing.ProcessingBuffer;
+import com.backyardbrains.drawing.gl.GlMeasurementArea;
+import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import com.crashlytics.android.Crashlytics;
@@ -20,15 +21,16 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(SeekableWaveformRenderer.class);
 
+    // Root mean square quantifier used when analyzing selected spikes
     private static final float RMS_QUANTIFIER = 0.005f;
 
     private final GlMeasurementArea glMeasurementArea;
     private final GlSpikes glSpikes;
-    private final float[] spikesVertices = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 2];
-    private final float[] spikesColors = new float[ProcessingBuffer.MAX_BUFFER_SIZE * 4];
+    private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
+    private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
 
     private short[] rmsSamples;
-    private float drawSampleCount;
+    private float measureSampleCount;
 
     private boolean measuring;
     private float measurementStartX;
@@ -37,9 +39,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     @SuppressWarnings("WeakerAccess") Train[] spikeTrains;
     @SuppressWarnings("WeakerAccess") SpikeValueAndIndex[][] valuesAndIndexes;
 
-    public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment,
-        @NonNull float[] preparedBuffer) {
-        super(fragment, preparedBuffer);
+    public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment) {
+        super(fragment);
 
         setScrollEnabled();
         setMeasureEnabled(true);
@@ -65,7 +66,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES
+    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES IF NECESSARY
     protected boolean drawSpikes() {
         return true;
     }
@@ -86,10 +87,10 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull float[] waveformVertices,
-        @NonNull SparseArray<String> markers, int surfaceWidth, int surfaceHeight, int glWindowWidth,
-        int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
-
+    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
+        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
+        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastSampleIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         int toSample = (int) lastSampleIndex;
         int fromSample = Math.max(0, toSample - glWindowWidth);
@@ -102,18 +103,22 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
+        long drawSampleCount = (long) (waveformVerticesCount * .5);
+
         // draw measurement area
         if (measuring) {
-            // calculate necessary measurement parameters
-            final int drawSampleCount = drawEndIndex - drawStartIndex;
-            final float coefficient = drawSampleCount * 1f / surfaceWidth;
-            final int measureStartIndex = Math.round(measurementStartX * coefficient);
-            final int measureEndIndex = Math.round(measurementEndX * coefficient);
+            // calculate start and end measurement area draw coordinates
+            float drawScale = (float) drawSampleCount / surfaceWidth;
+            final float measurementAreaDrawStart = measurementStartX * drawScale;
+            final float measurementAreaDrawEnd = measurementEndX * drawScale;
+            final int measureStartIndex =
+                (int) (scaleX < 1 ? measurementAreaDrawStart : measurementAreaDrawStart * scaleX);
+            final int measureEndIndex = (int) (scaleX < 1 ? measurementAreaDrawEnd : measurementAreaDrawEnd * scaleX);
             final int measureSampleCount = Math.abs(measureEndIndex - measureStartIndex);
             // fill array of samples used for RMS calculation
-            if (rmsSamples == null || drawSampleCount != this.drawSampleCount) {
-                this.drawSampleCount = drawSampleCount;
-                rmsSamples = new short[drawSampleCount];
+            if (rmsSamples == null || measureSampleCount != this.measureSampleCount) {
+                this.measureSampleCount = measureSampleCount;
+                rmsSamples = new short[measureSampleCount];
             }
             final int startIndex = Math.min(measureStartIndex, measureEndIndex);
             final int measureFirstSampleIndex = drawStartIndex + startIndex;
@@ -136,20 +141,20 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
             onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
-            // draw measurement area
-            glMeasurementArea.draw(gl, measurementStartX * scaleX, measurementEndX * scaleX, -glWindowHeight * .5f,
+            //draw measurement area
+            glMeasurementArea.draw(gl, measurementAreaDrawStart, measurementAreaDrawEnd, -glWindowHeight * .5f,
                 glWindowHeight * .5f);
         }
 
-        super.draw(gl, samples, waveformVertices, markers, surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight,
-            drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+        super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
+            glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
         if (drawSpikes()) {
             if (spikeTrains != null && valuesAndIndexes.length > 0) {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, GlUtils.SPIKE_TRAIN_COLORS[i]);
+                            fromSample, toSample, drawSampleCount, GlUtils.SPIKE_TRAIN_COLORS[i]);
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }
             }
@@ -213,11 +218,12 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
         @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
-        long toSample, @Size(4) float[] color) {
+        long toSample, long drawSampleCount, @Size(4) float[] color) {
         int verticesCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
                 int colorsCounter = 0;
+                float scaleX = (float) drawSampleCount / glWindowWidth;
                 long index;
 
                 for (SpikeValueAndIndex valueAndIndex : valueAndIndices) {
@@ -225,6 +231,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                         index =
                             toSample - fromSample < glWindowWidth ? valueAndIndex.getIndex() + glWindowWidth - toSample
                                 : valueAndIndex.getIndex() - fromSample;
+                        index = (long) (index * scaleX);
                         spikesVertices[verticesCounter++] = index;
                         spikesVertices[verticesCounter++] = valueAndIndex.getValue();
                         System.arraycopy(color, 0, spikesColors, colorsCounter, color.length);

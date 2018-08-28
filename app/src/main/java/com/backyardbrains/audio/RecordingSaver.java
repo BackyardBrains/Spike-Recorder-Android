@@ -20,9 +20,9 @@
 package com.backyardbrains.audio;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.data.processing.DataProcessor;
+import android.util.SparseArray;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
@@ -32,9 +32,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.greenrobot.essentials.io.CircularByteBuffer;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -50,14 +49,20 @@ class RecordingSaver {
 
     private class WriteThread extends Thread {
 
+        private static final int BUFFER_SIZE_IN_SEC = 1;
+        private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
+        private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
+
         private final File audioFile;
         private final OutputStream outputStream;
         private final File eventsFile;
         private final AtomicBoolean working = new AtomicBoolean(true);
-        private final List<DataProcessor.SamplesWithMarkers> samples = new CopyOnWriteArrayList<>();
 
         private int sampleRate = AudioUtils.SAMPLE_RATE;
-        private StringBuilder eventsFileContent = new StringBuilder(EVENT_MARKERS_FILE_HEADER_CONTENT);
+        private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
+        private SparseArray<String> events = new SparseArray<>();
+        private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
+        private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
         private ByteBuffer bb;
 
         WriteThread() throws IOException {
@@ -72,6 +77,9 @@ class RecordingSaver {
                     e);
             }
 
+            // crate byte buffer that will be used for converting shorts to bytes
+            bb = ByteBuffer.allocate(BUFFER_SIZE_IN_BYTES).order(ByteOrder.nativeOrder());
+
             // create events file
             eventsFile = RecordingUtils.createEventsFile(audioFile);
         }
@@ -79,57 +87,11 @@ class RecordingSaver {
         @Override public void run() {
             try {
                 while (working.get()) {
-                    if (samples.size() > 0) {
-                        DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.remove(0);
-                        // we first need to write all the events before start writing the samples
-                        // so we get the precise times for events
-                        int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                        int len = samplesWithMarkers.events.length;
-                        String event;
-                        for (int i = 0; i < len; i++) {
-                            event = samplesWithMarkers.events[i];
-                            if (event != null) {
-                                eventsFileContent.append("\n")
-                                    .append(event)
-                                    .append(",\t")
-                                    .append((writtenSamples + i) / (float) sampleRate);
-                            }
-                        }
-
-                        // now we can write to audio stream
-                        bb = ByteBuffer.allocate(samplesWithMarkers.samples.length * 2).order(ByteOrder.nativeOrder());
-                        bb.asShortBuffer().put(samplesWithMarkers.samples);
-                        try {
-                            outputStream.write(bb.array());
-                        } catch (IOException e) {
-                            throw new IllegalStateException("Could not write sample to file", e);
-                        }
-                    }
-                }
-                // let's record all left samples
-                for (int i = 0; i < samples.size(); i++) {
-                    DataProcessor.SamplesWithMarkers samplesWithMarkers = samples.get(i);
-                    // we first need to write all the events before start writing the samples
-                    // so we get the precise times for events
-                    int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
-                    int len = samplesWithMarkers.events.length;
-                    String event;
-                    for (int j = 0; j < len; j++) {
-                        event = samplesWithMarkers.events[j];
-                        if (event != null) {
-                            eventsFileContent.append("\n")
-                                .append(event)
-                                .append(",\t")
-                                .append((writtenSamples + j) / (float) sampleRate);
-                        }
-                    }
-                    // now we can write to audio stream
-                    bb = ByteBuffer.allocate(samplesWithMarkers.samples.length * 2).order(ByteOrder.nativeOrder());
-                    bb.asShortBuffer().put(samplesWithMarkers.samples);
                     try {
-                        outputStream.write(bb.array());
+                        int size = buffer.get(byteBuffer);
+                        if (size > 0) outputStream.write(byteBuffer, 0, size);
                     } catch (IOException e) {
-                        throw new IllegalStateException("Could not write sample to file!", e);
+                        throw new IllegalStateException("Could not write sample to file", e);
                     }
                 }
             } catch (IllegalStateException e) {
@@ -141,10 +103,24 @@ class RecordingSaver {
         }
 
         /**
-         * Appends specified {@code samples} to previously saved ones.
+         * Appends specified {@code sampleWithEvents} to previously saved ones.
          */
-        void writeData(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
-            if (working.get()) this.samples.add(samplesWithMarkers);
+        void writeData(@NonNull SamplesWithEvents samplesWithEvents) {
+            if (working.get()) {
+                // we need to save current recording length before writing the actual samples
+                int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
+
+                // save samples to buffer as bytes
+                bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
+                buffer.put(bb.array(), 0, samplesWithEvents.sampleCount * 2);
+
+                // save events
+                String event;
+                for (int i = 0; i < samplesWithEvents.eventCount; i++) {
+                    event = samplesWithEvents.eventNames[i];
+                    if (event != null) events.put(writtenSamples + samplesWithEvents.eventIndices[i], event);
+                }
+            }
         }
 
         /**
@@ -180,9 +156,7 @@ class RecordingSaver {
                 outputStream.close();
                 WavAudioFile.save(audioFile, sampleRate);
 
-                if (!ObjectUtils.equals(EVENT_MARKERS_FILE_HEADER_CONTENT, eventsFileContent.toString())) {
-                    saveEventFile();
-                }
+                if (events.size() > 0) saveEventFile();
 
                 writeThread = null;
             } catch (IOException e) {
@@ -192,11 +166,19 @@ class RecordingSaver {
 
         // Populates and saves file with all the events
         private void saveEventFile() throws IOException {
-            LOGD(TAG, eventsFileContent.toString());
-
+            // construct the events file content
+            int len = events.size();
+            for (int i = 0; i < len; i++) {
+                eventsFileContent.append("\n")
+                    .append(events.valueAt(i))
+                    .append(",\t")
+                    .append(events.keyAt(i) / (float) sampleRate);
+            }
             // there needs to be a RETURN char at the end of the events file
             // for the desktop app to be able to parse it properly
             eventsFileContent.append("\n");
+
+            LOGD(TAG, eventsFileContent.toString());
 
             final FileOutputStream outputStream;
             try {
@@ -219,10 +201,10 @@ class RecordingSaver {
     }
 
     /**
-     * Writes specified {@code samples} to the audio stream.
+     * Writes specified {@code sampleWithEvents} to the audio stream.
      */
-    void writeAudioWithEvents(@NonNull DataProcessor.SamplesWithMarkers samplesWithMarkers) {
-        if (writeThread != null) writeThread.writeData(samplesWithMarkers);
+    void writeAudioWithEvents(@NonNull SamplesWithEvents samplesWithEvents) {
+        if (writeThread != null) writeThread.writeData(samplesWithEvents);
     }
 
     /**

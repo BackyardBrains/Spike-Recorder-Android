@@ -1,17 +1,17 @@
 package com.backyardbrains.events;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.analysis.BYBAnalysisType;
+import com.backyardbrains.analysis.AnalysisType;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AnalyzeAudioFileEvent {
 
     private final String filePath;
-    private final @BYBAnalysisType int type;
+    private final @AnalysisType int type;
 
-    public AnalyzeAudioFileEvent(@NonNull String filePath, @BYBAnalysisType int type) {
+    public AnalyzeAudioFileEvent(@NonNull String filePath, @AnalysisType int type) {
         this.filePath = filePath;
         this.type = type;
     }
@@ -20,7 +20,7 @@ public class AnalyzeAudioFileEvent {
         return filePath;
     }
 
-    public @BYBAnalysisType int getType() {
+    public @AnalysisType int getType() {
         return type;
     }
 }

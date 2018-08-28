@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 /**
  * Executor that runs a task on a new background thread.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class DiskIOThreadExecutor implements Executor {
 

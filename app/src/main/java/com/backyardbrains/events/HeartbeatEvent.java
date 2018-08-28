@@ -1,11 +1,15 @@
 package com.backyardbrains.events;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class HeartbeatEvent {
 
-    private final int beatsPerMinute;
+    private int beatsPerMinute;
+
+    public HeartbeatEvent() {
+        this.beatsPerMinute = 0;
+    }
 
     public HeartbeatEvent(int beatsPerMinute) {
         this.beatsPerMinute = beatsPerMinute;
@@ -13,5 +17,9 @@ public class HeartbeatEvent {
 
     public int getBeatsPerMinute() {
         return beatsPerMinute;
+    }
+
+    public void setBeatsPerMinute(int beatsPerMinute) {
+        this.beatsPerMinute = beatsPerMinute;
     }
 }

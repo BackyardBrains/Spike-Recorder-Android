@@ -17,13 +17,13 @@
         android:required="false" />
 
     <application
-        android:name=".BackyardBrainsApplication"
+        android:name=".BybApplication"
         android:icon="@mipmap/ic_launcher_byb"
         android:label="@string/app_name"
         android:theme="@style/BYBAppStyle">
 
         <activity
-            android:name=".BackyardBrainsMain"
+            android:name=".MainActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name"
             android:launchMode="singleTask"

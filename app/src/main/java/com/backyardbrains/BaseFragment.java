@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import com.backyardbrains.analysis.BYBAnalysisManager;
+import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.audio.AudioService;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -12,7 +12,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class BaseFragment extends Fragment {
 
@@ -20,7 +20,7 @@ public class BaseFragment extends Fragment {
 
     /**
      * This interface needs to be implemented by the activities which contain this fragment so that it can have access
-     * to active {@link AudioService} and {@link BYBAnalysisManager}.
+     * to active {@link AudioService} and {@link AnalysisManager}.
      */
     @SuppressWarnings("WeakerAccess") public interface ResourceProvider {
         /**
@@ -29,9 +29,9 @@ public class BaseFragment extends Fragment {
         @Nullable AudioService audioService();
 
         /**
-         * Reference to active {@link BYBAnalysisManager}.
+         * Reference to active {@link AnalysisManager}.
          */
-        @Nullable BYBAnalysisManager analysisManager();
+        @Nullable AnalysisManager analysisManager();
     }
 
     @Override public void onAttach(Context context) {
@@ -66,7 +66,7 @@ public class BaseFragment extends Fragment {
         return provider != null ? provider.audioService() : null;
     }
 
-    @Nullable protected BYBAnalysisManager getAnalysisManager() {
+    @Nullable protected AnalysisManager getAnalysisManager() {
         return provider != null ? provider.analysisManager() : null;
     }
 

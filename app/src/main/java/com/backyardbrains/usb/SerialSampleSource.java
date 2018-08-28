@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,7 +15,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB serial communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 
 public class SerialSampleSource extends AbstractUsbSampleSource {
@@ -24,13 +23,30 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
     private static final String TAG = makeLogTag(SerialSampleSource.class);
 
     // Arduino Vendor ID
-    private static final int ARDUINO_VENDOR_ID_1 = 0x2341;
+    private static final int ARDUINO_VENDOR_ID_1 = 0x2341; // 9025
     // Arduino Vendor ID
-    private static final int ARDUINO_VENDOR_ID_2 = 0x2A03;
+    private static final int ARDUINO_VENDOR_ID_2 = 0x2A03; // 10755
+    // Arduino Leonardo (bootloader) Product ID
+    private static final int ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID = 0x0036; // 54
+    // Arduino Micro (bootloader) Product ID
+    private static final int ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID = 0x0037; // 55
+    // Arduino Robot Control (bootloader) Product ID
+    private static final int ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID = 0x0038; // 56
+    // Arduino Robot Motor (bootloader) Product ID
+    private static final int ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID = 0x0039; // 57
+    // Arduino Micro ADK rev3 (bootloader) Product ID
+    private static final int ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID = 0x003A; // 58
+    // Arduino Explora (bootloader) Product ID
+    private static final int ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID = 0x003C; // 60
+    // Arduino Yun (bootloader) Product ID
+    private static final int ARDUINO_YUN_BOOTLOADER_PRODUCT_ID = 0x0041; // 65
+    // Arduino Zero Pro (bootloader) Product ID
+    private static final int ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID = 0x004D; // 77
+
     // FTDI Vendor ID
-    private static final int FTDI_VENDOR_ID = 0x0403;
+    private static final int FTDI_VENDOR_ID = 0x0403; // 1027
     // CH340 Chinese boards Vendor ID
-    private static final int CH340_VENDOR_ID = 0x1A86;
+    private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
     private static final int BAUD_RATE = 230400;
 
@@ -67,7 +83,10 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
             while (working.get()) {
                 if (serialDevice != null) {
                     int numberBytes = serialDevice.syncRead(dataBuffer, 64);
-                    if (numberBytes > 0) writeToBuffer(Arrays.copyOfRange(dataBuffer, 0, numberBytes));
+                    if (numberBytes > 0) {
+                        //LOGD(TAG, "READING: " + (numberBytes - 2));
+                        writeToBuffer(dataBuffer, 0, numberBytes);
+                    }
                 }
             }
         }
@@ -82,7 +101,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
     }
 
     private SerialSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         super(device, listener);
 
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
@@ -96,7 +115,7 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      * @return BYB USB device interface configured for serial communication
      */
     public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
+        @NonNull UsbDeviceConnection connection, @Nullable SampleSourceListener listener) {
         return new SerialSampleSource(device, connection, listener);
     }
 
@@ -105,10 +124,23 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      */
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
-        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || vid == ARDUINO_VENDOR_ID_1
-            || vid == ARDUINO_VENDOR_ID_2 || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
+        int pid = device.getProductId();
+        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || (vid == ARDUINO_VENDOR_ID_1
+            && isNotArduinoBootloader(pid)) || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
+            || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
     }
 
+    // Checks whether specified PID is Arduino bootloader PID
+    private static boolean isNotArduinoBootloader(int pid) {
+        return pid != ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
+            && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void onInputStart() {
         // prepare serial usb device for communication
         if (serialDevice != null) {
@@ -157,7 +189,6 @@ public class SerialSampleSource extends AbstractUsbSampleSource {
      * {@inheritDoc}
      */
     @Override public void write(byte[] buffer) {
-        //if (serialDevice != null) serialDevice.write(buffer);
         if (serialDevice != null) serialDevice.syncWrite(buffer, 64);
     }
 

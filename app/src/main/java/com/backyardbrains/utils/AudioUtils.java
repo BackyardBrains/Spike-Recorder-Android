@@ -16,7 +16,7 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AudioUtils {
 
@@ -34,13 +34,14 @@ public class AudioUtils {
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     private static final int IN_CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int OUT_CHANNEL_CONFIG = AudioFormat.CHANNEL_OUT_MONO;
+    private static final int BUFFER_SIZE_FACTOR = 1;
 
     static {
         // in buffer size
         final int intBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, IN_CHANNEL_CONFIG, AUDIO_FORMAT);
         IN_BUFFER_SIZE =
             intBufferSize == AudioTrack.ERROR || intBufferSize == AudioTrack.ERROR_BAD_VALUE ? SAMPLE_RATE * 2
-                : intBufferSize;
+                : intBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**
@@ -73,7 +74,7 @@ public class AudioUtils {
         // out buffer size
         final int outBufferSize = AudioTrack.getMinBufferSize(sampleRate, OUT_CHANNEL_CONFIG, AUDIO_FORMAT);
         return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
-            : outBufferSize;
+            : outBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**

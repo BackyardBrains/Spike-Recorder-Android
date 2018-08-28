@@ -16,7 +16,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Helper class used for detection of hardware type of the connected USB device.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 class SpikerBoxDetector {
 
@@ -69,7 +69,7 @@ class SpikerBoxDetector {
      * Starts the hardware type detection process for the provided usb {@code device} in the background thread.
      */
     void startDetection(@NonNull UsbDevice device) {
-        if (manager != null && AbstractUsbSampleSource.isSupported(device)) {
+        if (manager != null) {
             final UsbDeviceConnection connection = manager.openDevice(device);
             final AbstractUsbSampleSource usbDevice = AbstractUsbSampleSource.createUsbDevice(device, connection, null);
             if (usbDevice != null) {

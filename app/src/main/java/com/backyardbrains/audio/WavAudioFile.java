@@ -11,12 +11,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class WavAudioFile implements BYBAudioFile {
+public class WavAudioFile implements AudioFile {
 
     private final RandomAccessFile raf;
     private final WavUtils.WavInfo header;
+    private final long length;
     private final String absolutePath;
 
     public WavAudioFile(@NonNull File file) throws IOException {
@@ -28,6 +29,7 @@ public class WavAudioFile implements BYBAudioFile {
         final byte[] headerBytes = new byte[WavUtils.HEADER_SIZE];
         raf.read(headerBytes, 0, headerBytes.length);
         header = WavUtils.readHeader(new ByteArrayInputStream(headerBytes));
+        length = raf.length();
     }
 
     /**
@@ -76,8 +78,8 @@ public class WavAudioFile implements BYBAudioFile {
         return header.getBitsPerSample();
     }
 
-    @Override public long length() throws IOException {
-        return raf.length() - WavUtils.HEADER_SIZE;
+    @Override public long length() {
+        return length - WavUtils.HEADER_SIZE;
     }
 
     @Override public void close() throws IOException {
@@ -85,7 +87,7 @@ public class WavAudioFile implements BYBAudioFile {
     }
 
     @Override public void seek(long offset) throws IOException {
-        offset = Math.min(offset + WavUtils.HEADER_SIZE, raf.length() - 1);
+        offset = Math.min(offset + WavUtils.HEADER_SIZE, length - 1);
         synchronized (raf) {
             raf.seek(offset);
         }

@@ -4,17 +4,19 @@ import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.data.processing.DataProcessor;
+import com.backyardbrains.data.processing.AbstractSampleSource;
+import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.BufferUtils;
-import com.backyardbrains.utils.MarkerUtils;
+import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -22,63 +24,33 @@ import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class PlaybackSampleSource extends AbstractAudioSampleSource {
+public class PlaybackSampleSource extends AbstractSampleSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSampleSource.class);
 
-    // Path to the audio file
-    private final String filePath;
-    // Whether file should start playing right away
-    private final boolean autoPlay;
-
-    // Audio playback thread
-    private PlaybackThread playbackThread;
-
-    // Size of buffer (chunk) for the audio file reading
-    @SuppressWarnings("WeakerAccess") int bufferSize;
-    // Size of buffer (chunk) to read when seeking (6 seconds)
-    @SuppressWarnings("WeakerAccess") int seekBufferSize;
-    // Buffer that holds samples while seeking
-    @SuppressWarnings("WeakerAccess") short[] seekSamples;
-    // Buffer that holds samples while playing
-    @SuppressWarnings("WeakerAccess") short[] samples;
-    // Buffer that holds events while seeking
-    @SuppressWarnings("WeakerAccess") String[] seekEvents;
-    // Buffer that holds events while playing
-    @SuppressWarnings("WeakerAccess") String[] events;
-    // Collection of events within currently processed data batch
-    @SuppressWarnings("WeakerAccess") SparseArray<String> eventsInCurrentBatch = new SparseArray<>();
+    // Number of seconds buffer should hold while seeking
+    private static final int SEEK_BUFFER_SIZE_IN_SEC = 6;
 
     /**
-     * Thread used for playing the audio file.
+     * Thread used for reading the audio file.
      */
-    protected class PlaybackThread extends Thread {
+    protected class ReadThread extends Thread {
 
         // Path to the audio file
         private final String filePath;
         // Whether file should start playing right away
         private final boolean autoPlay;
-        // Buffer that holds audio data while seeking
-        private byte[] seekBuffer;
-        // Holds all events saved for the played file
-        private SparseArray<String> allEvents;
+        // Size of buffer (chunk) to read when seeking (6 seconds)
+        private int bufferSize;
+        // Buffer that holds audio data
+        private byte[] buffer;
 
         // Random access file stream that holds audio file that's being played
-        private BYBAudioFile raf;
-        // True if audio is currently being played, false if it's paused or stopped
-        private AtomicBoolean playing = new AtomicBoolean(false);
-        // Whether audio is currently being sought.
-        private AtomicBoolean seeking = new AtomicBoolean(false);
-        // Flag that indicates whether thread should be running
-        private AtomicBoolean working = new AtomicBoolean(true);
-        // Position of the playback head
-        private AtomicLong progress = new AtomicLong();
-        // Length of the audio file in bytes
-        private AtomicLong duration = new AtomicLong();
+        private AudioFile raf;
 
-        PlaybackThread(@NonNull String filePath, boolean autoPlay) {
+        ReadThread(@NonNull String filePath, boolean autoPlay) {
             this.filePath = filePath;
             this.autoPlay = autoPlay;
         }
@@ -90,13 +62,21 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 LOGD(TAG, "RandomAccessFile created");
 
-                allEvents = MarkerUtils.parseEvents(filePath, raf.sampleRate());
+                // get all events from file and populate arrays with event indices and event names
+                allEvents = EventUtils.parseEvents(filePath, raf.sampleRate());
+                int len = allEvents.size();
+                eventIndices = new int[len];
+                eventNames = new String[len];
+                for (int i = 0; i < len; i++) {
+                    eventIndices[i] = allEvents.keyAt(i);
+                    eventNames[i] = allEvents.valueAt(i);
+                }
 
                 duration.set(raf.length());
                 LOGD(TAG, "Audio file byte count is: " + duration.get());
 
                 setSampleRate(raf.sampleRate());
-                LOGD(TAG, "Audio file sample rate is is: " + getSampleRate());
+                LOGD(TAG, "Audio file sample rate is: " + raf.sampleRate());
 
                 // setup audio track
                 final AudioTrack track = AudioUtils.createAudioTrack(raf.sampleRate());
@@ -105,35 +85,44 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
 
                 if (autoPlay) playing.set(true);
 
+                // number of bytes that should be read during playback
+                int bytesToReadWhilePlaying = AudioUtils.getOutBufferSize(raf.sampleRate());
+                // number of bytes actually read during single read
+                int read;
+
+                // set size of the buffer for seeking
+                // we need full buffer of 6 seconds (in bytes)
+                bufferSize = raf.sampleRate() * SEEK_BUFFER_SIZE_IN_SEC * 2;
+                buffer = new byte[bufferSize];
+                samplesWithEvents = new SamplesWithEvents((int) (bufferSize * .5));
+
+                setBufferSize(bufferSize);
+                LOGD(TAG, "Processing buffer size is: " + bufferSize);
+
                 LOGD(TAG, "Playback started");
 
+                // inform any interested parties that playback has started
                 if (playbackListener != null) playbackListener.onStart(duration.get(), raf.sampleRate());
 
-                // calculate sizes of buffers used for playback and seek
-                bufferSize = AudioUtils.getOutBufferSize(raf.sampleRate());
-                seekBufferSize = raf.sampleRate() * 6 * 2; // for seeking we need full buffer of 6 seconds (in bytes)
-
-                seekBuffer = new byte[seekBufferSize];
-                seekSamples = new short[(int) (seekBufferSize * .5)];
-                seekEvents = new String[seekSamples.length];
-
-                final byte[] buffer = new byte[bufferSize];
-                samples = new short[(int) (bufferSize * .5)];
-                events = new String[samples.length];
                 while (working.get() && raf != null) {
                     if (playing.get()) {
-                        // if we are playing after seek we need to fix it because of the different buffer sizes
-                        // when playing and seeking
-                        if (Math.abs(raf.getFilePointer() - progress.get()) > bufferSize) raf.seek(progress.get());
+                        // if we are playing after seek we need to fix position
+                        if (Math.abs(raf.getFilePointer() - progress.get()) > bytesToReadWhilePlaying) {
+                            raf.seek(progress.get());
+                        }
 
                         // index of the sample from which we check the events
-                        long startSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
+                        fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
 
-                        if (raf.read(buffer) < 0) { // audio playback reached end
+                        // number of samples to prepend
+                        samplesToPrepend.set(0);
+
+                        // check if audio playback reached end
+                        if ((read = raf.read(buffer, 0, bytesToReadWhilePlaying)) < 0) {
                             // reset input stream
                             rewind();
 
-                            writeToBuffer(new byte[bufferSize], 0);
+                            writeToBuffer(new byte[bufferSize], 0, bufferSize);
 
                             LOGD(TAG, "Playback completed");
 
@@ -145,29 +134,17 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                         // save progress
                         progress.set(raf.getFilePointer());
 
-                        // update buffer capacity when switching from seeking to playing
-                        //if (getReadBufferSize() != bufferSize) setReadBufferSize(bufferSize);
-                        if (getProcessingBufferSize() != bufferSize) setProcessingBufferSize(bufferSize);
-
                         // index of the sample up to which we check the events
-                        long endSampleIndex = AudioUtils.getSampleCount(progress.get());
+                        toSample.set(AudioUtils.getSampleCount(progress.get()));
 
-                        // check if there are any events in the currently read buffer
-                        int len = allEvents.size();
-                        eventsInCurrentBatch.clear();
-                        for (int i = 0; i < len; i++) {
-                            int sampleIndex = allEvents.keyAt(i);
-                            if (startSampleIndex <= sampleIndex && sampleIndex < endSampleIndex) {
-                                eventsInCurrentBatch.put((int) (sampleIndex - startSampleIndex), allEvents.valueAt(i));
-                            }
-                        }
-                        writeToBuffer(buffer, progress.get());
+                        // write data to buffer
+                        writeToBuffer(buffer, 0, read);
 
                         // trigger progress listener
                         if (playbackListener != null) playbackListener.onProgress(progress.get(), raf.sampleRate());
 
                         // play audio data if we're not seeking
-                        track.write(buffer, 0, buffer.length);
+                        track.write(buffer, 0, read);
                     } else if (seeking.get()) {
                         seekToPosition();
                     }
@@ -183,42 +160,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
                     : "Error reading random access file stream", e);
                 Crashlytics.logException(e);
 
-                onInputStop(); //stop();
+                onInputStop();
             }
-        }
-
-        long getProgress() {
-            return progress.get();
-        }
-
-        public void setProgress(int progress) {
-            this.progress.set(progress);
-        }
-
-        long getDuration() {
-            return duration.get();
-        }
-
-        void seek(boolean start) {
-            seeking.set(start);
-        }
-
-        boolean isSeeking() {
-            return seeking.get();
-        }
-
-        void playback(boolean start) {
-            playing.set(start);
-        }
-
-        boolean isPlaying() {
-            return playing.get();
-        }
-
-        void stopWorking() {
-            seeking.set(false);
-            playing.set(false);
-            working.set(false);
         }
 
         // This represents a single seek loop.
@@ -226,40 +169,27 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             // if we don't have file we can't seek
             if (raf == null) return;
 
-            final long zerosPrependCount = progress.get() - seekBuffer.length;
+            final long zerosPrependCount = progress.get() - bufferSize;
             final long seekPosition = Math.max(0, zerosPrependCount);
             raf.seek(seekPosition);
 
             // index of the sample from which we check the events
-            long startSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
+            fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
 
-            if (raf.read(seekBuffer) > 0) {
-                int sampleIndexPrepend = 0;
-                if (zerosPrependCount < 0) {
-                    final int zerosPrependCountAbs = (int) Math.abs(zerosPrependCount);
-                    seekBuffer = BufferUtils.shiftRight(seekBuffer, zerosPrependCountAbs);
+            // number of bytes actually read during single read
+            if (raf.read(buffer) > 0) {
+                if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
 
-                    sampleIndexPrepend = (int) (zerosPrependCountAbs * .5);
-                }
-
-                // update buffer capacity when switching from playing to seeking
-                //if (getReadBufferSize() != seekBufferSize) setReadBufferSize(seekBufferSize);
-                if (getProcessingBufferSize() != seekBufferSize) setProcessingBufferSize(seekBufferSize);
+                // number of samples to prepend
+                samplesToPrepend.set((int) (zerosPrependCount * .5));
 
                 // index of the sample up to which we check the events
-                long endSampleIndex = AudioUtils.getSampleCount(raf.getFilePointer());
+                long toByte = raf.getFilePointer();
+                if (bufferSize > toByte) toByte = bufferSize;
+                toSample.set(AudioUtils.getSampleCount(toByte));
 
-                // check if there are any events in the currently read buffer
-                int len = allEvents.size();
-                eventsInCurrentBatch.clear();
-                for (int i = 0; i < len; i++) {
-                    int sampleIndex = allEvents.keyAt(i) + sampleIndexPrepend;
-                    if (startSampleIndex <= sampleIndex && sampleIndex < endSampleIndex) {
-                        eventsInCurrentBatch.put((int) (sampleIndex - startSampleIndex), allEvents.valueAt(i));
-                    }
-                }
-
-                writeToBuffer(seekBuffer, Math.min(0, zerosPrependCount) + raf.getFilePointer());
+                // write data to buffer
+                writeToBuffer(buffer, 0, bufferSize);
             }
         }
 
@@ -273,6 +203,10 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             if (raf != null) raf.seek(0);
             // update progress to 0 and trigger listener
             progress.set(0);
+            // update from and to sample to start values
+            fromSample.set(0);
+            toSample.set(0);
+            samplesToPrepend.set(0);
             if (playbackListener != null) {
                 playbackListener.onProgress(progress.get(), raf != null ? raf.sampleRate() : 0);
             }
@@ -293,8 +227,8 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
             LOGD(TAG, "RandomAccessFile closed");
         }
 
-        // Convenience function for creating new {@link BYBAudioFile} object from the audio file.
-        @Nullable private BYBAudioFile newRandomAccessFile() throws IOException {
+        // Convenience function for creating new {@link AudioFile} object from the audio file.
+        @Nullable private AudioFile newRandomAccessFile() throws IOException {
             final File file = new File(filePath);
             if (file.exists()) {
                 return new WavAudioFile(file);
@@ -346,10 +280,41 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         void onStop();
     }
 
+    // Path to the audio file
+    private final String filePath;
+    // Whether file should start playing right away
+    private final boolean autoPlay;
+
     @SuppressWarnings("WeakerAccess") PlaybackListener playbackListener;
 
-    PlaybackSampleSource(@NonNull String filePath, boolean autoPlay, @Nullable OnSamplesReceivedListener listener) {
-        super(listener);
+    // Audio playback thread
+    private ReadThread playbackThread;
+    // Flag that indicates whether thread should be running
+    @SuppressWarnings("WeakerAccess") AtomicBoolean working = new AtomicBoolean(true);
+    // True if audio is currently being played, false if it's paused or stopped
+    @SuppressWarnings("WeakerAccess") AtomicBoolean playing = new AtomicBoolean(false);
+    // Whether audio is currently being sought.
+    @SuppressWarnings("WeakerAccess") AtomicBoolean seeking = new AtomicBoolean(false);
+    // Position of the playback head
+    @SuppressWarnings("WeakerAccess") AtomicLong progress = new AtomicLong();
+    // Length of the audio file in bytes
+    @SuppressWarnings("WeakerAccess") AtomicLong duration = new AtomicLong();
+    // Index of the first sample being played back
+    @SuppressWarnings("WeakerAccess") AtomicLong fromSample = new AtomicLong();
+    // Index of the last sample being played back
+    @SuppressWarnings("WeakerAccess") AtomicLong toSample = new AtomicLong();
+    // Number of samples that should be prepended while playing begining of the audio file
+    @SuppressWarnings("WeakerAccess") AtomicInteger samplesToPrepend = new AtomicInteger();
+    // Holds all events saved for the played file
+    @SuppressWarnings("WeakerAccess") SparseArray<String> allEvents;
+
+    // Used for passing event indices to samplesWithEvents
+    @SuppressWarnings("WeakerAccess") int[] eventIndices;
+    // Used for passing event names to samplesWithEvents
+    @SuppressWarnings("WeakerAccess") String[] eventNames;
+
+    PlaybackSampleSource(@NonNull String filePath, boolean autoPlay, @Nullable SampleSourceListener listener) {
+        super(0, listener);
         this.filePath = filePath;
         this.autoPlay = autoPlay;
     }
@@ -358,21 +323,21 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
      * Whether playback is in progress.
      */
     boolean isPlaying() {
-        return playbackThread != null && playbackThread.isPlaying();
+        return playing.get();
     }
 
     /**
      * Whether playback is being sought.
      */
     boolean isSeeking() {
-        return playbackThread != null && playbackThread.isSeeking();
+        return seeking.get();
     }
 
     /**
      * Returns length of playback in bytes.
      */
     long getLength() {
-        return playbackThread != null ? playbackThread.getDuration() : 0;
+        return duration.get();
     }
 
     /**
@@ -380,9 +345,9 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
      */
     void pausePlayback() {
         if (playbackThread != null) {
-            if (playbackThread.isSeeking()) return;
+            if (seeking.get()) return;
 
-            playbackThread.playback(false);
+            playing.set(false);
 
             LOGD(TAG, "Playback paused");
 
@@ -395,9 +360,9 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
      */
     void resumePlayback() {
         if (playbackThread != null) {
-            if (playbackThread.isSeeking()) return;
+            if (seeking.get()) return;
 
-            playbackThread.playback(true);
+            playing.set(true);
 
             LOGD(TAG, "Playback resumed");
 
@@ -406,11 +371,12 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
     }
 
     /**
-     * Seeks audio file to specified byte position.
+     * Seeks audio file to spec
+     * ified byte position.
      */
     void seek(int position) {
         if (playbackThread != null) {
-            playbackThread.setProgress(position);
+            progress.set(position);
 
             try {
                 playbackThread.seekToPosition();
@@ -427,9 +393,9 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
      */
     void seek(boolean start) {
         if (playbackThread != null) {
-            if (start && playbackThread.isPlaying()) pausePlayback();
+            if (start && playing.get()) pausePlayback();
 
-            playbackThread.seek(start);
+            seeking.set(start);
 
             try {
                 playbackThread.seekToPosition();
@@ -445,21 +411,31 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
      *
      * @param listener The callback that will be run. This value may be {@code null}.
      */
-    void setOnPlaybackListener(@Nullable PlaybackListener listener) {
+    void setPlaybackListener(@Nullable PlaybackListener listener) {
         this.playbackListener = listener;
+    }
+
+    // Stops the audio playback
+    private void stopPlayback() {
+        seeking.set(false);
+        playing.set(false);
+        working.set(false);
+        fromSample.set(0);
+        toSample.set(0);
+        samplesToPrepend.set(0);
     }
 
     @Override protected void onInputStart() {
         if (playbackThread == null) {
             // Start playback in a thread
-            playbackThread = new PlaybackThread(filePath, autoPlay);
+            playbackThread = new ReadThread(filePath, autoPlay);
             playbackThread.start();
         }
     }
 
     @Override protected void onInputStop() {
         if (playbackThread != null) {
-            playbackThread.stopWorking();
+            stopPlayback();
             playbackThread = null;
 
             LOGD(TAG, "Playback stopped");
@@ -468,27 +444,27 @@ public class PlaybackSampleSource extends AbstractAudioSampleSource {
         }
     }
 
-    @NonNull @Override protected DataProcessor.SamplesWithMarkers processIncomingData(byte[] data, long lastByteIndex) {
-        short[] s;
-        String[] e;
-        if (data.length == seekBufferSize) {
-            ByteBuffer.wrap(data)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .asShortBuffer()
-                .get(seekSamples, 0, seekSamples.length);
-            s = seekSamples;
-            e = seekEvents;
-        } else {
-            ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(samples, 0, samples.length);
-            s = samples;
-            e = events;
-        }
-        BufferUtils.emptyStringBuffer(e);
-        int len = eventsInCurrentBatch.size();
-        for (int i = 0; i < len; i++) {
-            e[eventsInCurrentBatch.keyAt(i)] = eventsInCurrentBatch.valueAt(i);
-        }
+    private final Benchmark benchmark = new Benchmark("PLAYBACK_TEST").warmUp(200)
+        .sessions(10)
+        .measuresPerSession(200)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
 
-        return new DataProcessor.SamplesWithMarkers(s, e, AudioUtils.getSampleCount(lastByteIndex));
+    @NonNull @Override protected SamplesWithEvents processIncomingData(byte[] data, int length) {
+        //benchmark.start();
+        JniUtils.processPlaybackStream(samplesWithEvents, data, length, eventIndices, eventNames, eventIndices.length,
+            fromSample.get(), toSample.get(), samplesToPrepend.get());
+        //benchmark.end();
+
+        return samplesWithEvents;
+    }
+
+    @Override public int getType() {
+        return Type.FILE;
     }
 }

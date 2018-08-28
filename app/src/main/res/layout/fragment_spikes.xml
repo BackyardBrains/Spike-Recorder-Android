@@ -4,14 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.backyardbrains.view.BYBThresholdHandle
+    <com.backyardbrains.view.ThresholdHandle
         android:id="@+id/threshold_handle_left"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="end|center_vertical"
         app:byb_orientation="left"/>
 
-    <com.backyardbrains.view.BYBThresholdHandle
+    <com.backyardbrains.view.ThresholdHandle
         android:id="@+id/threshold_handle_right"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -30,8 +30,7 @@
             android:id="@+id/ibtn_remove_threshold"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?selectableItemBackgroundBorderless"
-            android:contentDescription="@string/content_desc_threshold_remove"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_delete_white_32dp"/>
 
@@ -40,10 +39,9 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-            android:background="?selectableItemBackgroundBorderless"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/handle1"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_one"/>
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/threshold1"
@@ -51,9 +49,8 @@
             android:layout_height="48dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle2"
-            android:background="?selectableItemBackgroundBorderless"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_two"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/threshold2"
@@ -61,17 +58,15 @@
             android:layout_height="48dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle3"
-            android:background="?selectableItemBackgroundBorderless"
-            android:visibility="gone"
-            android:contentDescription="@string/content_desc_threshold_select_three"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"/>
 
         <ImageButton
             android:id="@+id/ibtn_add_threshold"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-            android:background="?selectableItemBackgroundBorderless"
-            android:contentDescription="@string/content_desc_threshold_new"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_add_white_32dp"/>
     </LinearLayout>

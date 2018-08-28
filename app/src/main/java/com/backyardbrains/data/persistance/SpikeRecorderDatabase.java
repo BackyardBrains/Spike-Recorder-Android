@@ -15,11 +15,11 @@ import com.backyardbrains.data.persistance.entity.SpikeTrain;
 import com.backyardbrains.data.persistance.entity.Train;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Database(entities = {
     SpikeAnalysis.class, Spike.class, Train.class, SpikeTrain.class
-}, version = 3) public abstract class SpikeRecorderDatabase extends RoomDatabase {
+}, version = 4) public abstract class SpikeRecorderDatabase extends RoomDatabase {
 
     private static SpikeRecorderDatabase INSTANCE;
 

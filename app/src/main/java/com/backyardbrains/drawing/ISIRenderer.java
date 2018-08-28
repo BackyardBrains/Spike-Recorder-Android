@@ -2,10 +2,10 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.InterSpikeInterval;
-import com.backyardbrains.drawing.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.GlBarGraph;
+import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import java.text.DecimalFormat;
@@ -15,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class ISIRenderer extends BYBAnalysisBaseRenderer {
+public class ISIRenderer extends BaseAnalysisRenderer {
 
     private static final String TAG = makeLogTag(ISIRenderer.class);
 
@@ -41,7 +41,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
     private GlBarGraph glBarGraph;
     private GlBarGraphThumb glBarGraphThumb;
 
-    @SuppressWarnings("WeakerAccess") InterSpikeInterval[][] isiAnalysis;
+    @SuppressWarnings("WeakerAccess") int[][] isiAnalysis;
 
     public ISIRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
@@ -73,7 +73,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     thumbTouchHelper.registerGraphThumb(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, getYValues(isiAnalysis[i]), GlUtils.SPIKE_TRAIN_COLORS[i],
+                    glBarGraphThumb.draw(gl, x, y, w, h, isiAnalysis[i], GlUtils.SPIKE_TRAIN_COLORS[i],
                         SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
                 x = MARGIN;
@@ -82,7 +82,7 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = thumbTouchHelper.getSelectedGraphThumb();
-                glBarGraph.draw(gl, x, y, w, h, getYValues(isiAnalysis[selected]), H_GRAPH_AXIS_VALUES,
+                glBarGraph.draw(gl, x, y, w, h, isiAnalysis[selected], H_GRAPH_AXIS_VALUES,
                     GlUtils.SPIKE_TRAIN_COLORS[selected]);
             }
         }
@@ -104,21 +104,5 @@ public class ISIRenderer extends BYBAnalysisBaseRenderer {
         }
 
         return false;
-    }
-
-    private int[] getYValues(@Nullable InterSpikeInterval[] isi) {
-        if (isi != null) {
-            if (isi.length > 0) {
-                int len = isi.length;
-                int[] values = new int[len];
-                for (int i = 0; i < len; i++) {
-                    values[i] = isi[i].getY();
-                }
-
-                return values;
-            }
-        }
-
-        return new int[0];
     }
 }

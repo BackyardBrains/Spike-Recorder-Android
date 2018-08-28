@@ -11,13 +11,14 @@ import android.support.annotation.Nullable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * Implementation of {@link AbstractUsbSampleSource} capable of USB HID communication with BYB hardware.
  *
- * @author Tihomir Leka <ticapeca at gmail.com.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class HIDSampleSource extends AbstractUsbSampleSource {
 
@@ -51,17 +52,19 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
         private UsbEndpoint inEndpoint;
         private AtomicBoolean working = new AtomicBoolean(true);
 
+        private byte[] dataReceived = new byte[HIDBuffer.DEFAULT_READ_BUFFER_SIZE];
+
         @Override public void run() {
-            byte[] dataReceived;
             while (working.get()) {
                 if (inEndpoint != null) {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
                     if (numberBytes > 0) {
-                        dataReceived = usbBuffer.getDataReceivedCompatible(numberBytes);
+                        //LOGD(TAG, "READING: " + (numberBytes - 2));
+                        usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
-                        writeToBuffer(Arrays.copyOfRange(dataReceived, 2, dataReceived.length));
+                        writeToBuffer(dataReceived, 2, numberBytes - 2);
                     }
                 }
             }
@@ -126,7 +129,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
     }
 
     private HIDSampleSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         super(device, listener);
 
         this.usbBuffer = new HIDBuffer();
@@ -145,7 +148,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
      * @return BYB USB device interface configured for HID communication
      */
     public static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection, @Nullable OnSamplesReceivedListener listener) {
+        @NonNull UsbDeviceConnection connection, @Nullable SampleSourceListener listener) {
         if (isSupported(device)) {
             return new HIDSampleSource(device, connection, listener);
         } else {
@@ -209,8 +212,6 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
      * {@inheritDoc}
      */
     @Override public void startReadingStream() {
-        // start reading data from USB
-        //if (readThread != null) readThread.getUsbRequest().queue(usbBuffer.getReadBuffer(), packetSize);
         // start the sample stream
         write(MSG_START_STREAM.getBytes());
         // and check maximal sample rate and number of channels

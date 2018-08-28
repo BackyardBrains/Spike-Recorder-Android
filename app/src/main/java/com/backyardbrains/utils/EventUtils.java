@@ -1,46 +1,44 @@
 package com.backyardbrains.utils;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.util.Pair;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.ContentViewEvent;
-import com.crashlytics.android.answers.CustomEvent;
+import android.util.SparseArray;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class EventUtils {
 
-    private static final String NO_ID = "NO_ID";
+    public static final int MAX_EVENT_COUNT = 100;
 
     /**
-     * Logs a {@link CustomEvent} with Fabric Answers.
+     * Checks if events text file for the wav file at specified {@code filePath} exists and if yes, tries to parse it
+     * and returns {@link SparseArray} with all the events.
      */
-    public static void logCustom(@NonNull String name, @Nullable Pair<String, String>[] customAttributes) {
-        final CustomEvent event = new CustomEvent("Video Played");
-        if (customAttributes != null) {
-            final int len = customAttributes.length;
-            for (Pair<String, String> customAttribute : customAttributes) {
-                event.putCustomAttribute(customAttribute.first, customAttribute.second);
+    public static SparseArray<String> parseEvents(@NonNull String filePath, int sampleRate) {
+        final SparseArray<String> events = new SparseArray<>();
+        final File file = RecordingUtils.getEventFile(new File(filePath));
+        if (file != null) {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(file));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (!line.startsWith("#")) {
+                        String[] lineArr = line.split(",\\s+");
+                        if (lineArr.length == 2) {
+                            events.put((int) (Float.valueOf(lineArr[1]) * sampleRate), lineArr[0]);
+                        }
+                    }
+                }
+                br.close();
+            } catch (IOException e) {
+                return new SparseArray<>();
             }
         }
-        Answers.getInstance().logCustom(event);
-    }
 
-    /**
-     * Logs a {@link ContentViewEvent} with Fabric Answers.
-     */
-    public static void logView(@NonNull String name, @NonNull String type, @Nullable String id,
-        @Nullable Pair<String, String>[] customAttributes) {
-        final ContentViewEvent event =
-            new ContentViewEvent().putContentName(name).putContentType(type).putContentId(id != null ? id : NO_ID);
-        if (customAttributes != null) {
-            final int len = customAttributes.length;
-            for (Pair<String, String> customAttribute : customAttributes) {
-                event.putCustomAttribute(customAttribute.first, customAttribute.second);
-            }
-        }
-        Answers.getInstance().logContentView(event);
+        return events;
     }
 }

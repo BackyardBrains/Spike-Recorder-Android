@@ -1,11 +1,15 @@
 package com.backyardbrains.events;
 
 /**
- * @author Tihomir Leka <ticapeca at gmail.com>
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class AmModulationDetectionEvent {
 
-    private final boolean start;
+    private boolean start;
+
+    public AmModulationDetectionEvent() {
+        start = false;
+    }
 
     public AmModulationDetectionEvent(boolean start) {
         this.start = start;
@@ -13,5 +17,9 @@ public class AmModulationDetectionEvent {
 
     public boolean isStart() {
         return start;
+    }
+
+    public void setStart(boolean start) {
+        this.start = start;
     }
 }

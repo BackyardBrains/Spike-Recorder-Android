@@ -23,8 +23,9 @@ class HIDBuffer {
         return readBuffer_compatible;
     }
 
-    byte[] getDataReceivedCompatible(int numberBytes) {
-        return Arrays.copyOfRange(readBuffer_compatible, 0, numberBytes);
+    void getDataReceivedCompatible(byte[] buffer, int length) {
+        System.arraycopy(readBuffer_compatible, 0, buffer, 0, length);
+        //return Arrays.copyOfRange(readBuffer_compatible, 0, size);
     }
 
     byte[] getWriteBuffer() {
@@ -56,9 +57,7 @@ class HIDBuffer {
 
             //Checking bounds. Source data does not fit in buffer
             if (position + src.length > bufferSize - 1) {
-                if (position < bufferSize) {
-                    System.arraycopy(src, 0, buffer, position, bufferSize - position);
-                }
+                if (position < bufferSize) System.arraycopy(src, 0, buffer, position, bufferSize - position);
                 position = bufferSize;
                 notify();
             } else // Source data fits in buffer

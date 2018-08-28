@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="BYBThresholdHandle">
+    <declare-styleable name="ThresholdHandle">
         <attr name="byb_color"
             format="reference"/>
         <attr name="byb_orientation"

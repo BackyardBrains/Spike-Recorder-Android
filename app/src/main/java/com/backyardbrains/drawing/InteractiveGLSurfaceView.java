@@ -35,9 +35,9 @@ import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.ViewConfiguration;
 
-import com.backyardbrains.BackyardBrainsApplication;
-import com.backyardbrains.view.BYBZoomButton;
-import com.backyardbrains.view.BybScaleListener;
+import com.backyardbrains.BybApplication;
+import com.backyardbrains.view.ZoomButton;
+import com.backyardbrains.view.ScaleListener;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.view.MotionEvent.TOOL_TYPE_FINGER;
@@ -58,7 +58,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     public static final int MODE_ZOOM_IN_V = 2;
     public static final int MODE_ZOOM_OUT_V = 3;
 
-    BYBBaseRenderer renderer;
+    BaseWaveformRenderer renderer;
 
     protected ScaleGestureDetector scaleDetector;
     protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
@@ -142,10 +142,10 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
      *
      * @param renderer the renderer to use to perform OpenGL drawing.
      */
-    public void setRenderer(@NonNull BYBBaseRenderer renderer) {
+    public void setRenderer(@NonNull BaseWaveformRenderer renderer) {
         this.renderer = renderer;
 
-        scaleListener = new BybScaleListener(renderer);
+        scaleListener = new ScaleListener(renderer);
         scaleDetector = new ScaleGestureDetector(getContext(), scaleListener);
         scrollDetector = new GestureDetector(getContext(), scrollListener);
         scrollDetector.setIsLongpressEnabled(false);
@@ -156,12 +156,12 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     @Override public final void setRenderer(Renderer renderer) {
-        if (renderer instanceof BYBBaseRenderer) {
-            setRenderer((BYBBaseRenderer) renderer);
+        if (renderer instanceof BaseWaveformRenderer) {
+            setRenderer((BaseWaveformRenderer) renderer);
             return;
         }
 
-        throw new IllegalArgumentException("Renderer needs to be instance of BYBBaseRenderer class");
+        throw new IllegalArgumentException("Renderer needs to be instance of BaseWaveformRenderer class");
     }
 
     @Override public void surfaceCreated(SurfaceHolder holder) {
@@ -263,7 +263,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         getHolder().setFormat(PixelFormat.RGBA_8888);
 
         if (getContext() != null) {
-            boolean bHasTouch = ((BackyardBrainsApplication) getContext().getApplicationContext()).isTouchSupported();
+            boolean bHasTouch = ((BybApplication) getContext().getApplicationContext()).isTouchSupported();
             enableZoomButtons(!bHasTouch);
         }
     }
@@ -333,7 +333,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     private void enableZoomButtonListeners(boolean reg) {
         if (getContext() != null) {
             if (reg) {
-                IntentFilter intentFilter = new IntentFilter(BYBZoomButton.broadcastAction);
+                IntentFilter intentFilter = new IntentFilter(ZoomButton.broadcastAction);
                 zoomButtonsListener = new ZoomButtonsListener();
                 getContext().registerReceiver(zoomButtonsListener, intentFilter);
             } else {

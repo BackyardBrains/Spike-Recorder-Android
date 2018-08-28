@@ -6,8 +6,9 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
-import com.backyardbrains.data.processing.DataProcessor;
-import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.utils.Benchmark;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -17,11 +18,13 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 /**
  * Wrapper for {@link UsbDevice} class. Device can only be one of supported BYB usb devices.
  *
- * @author Tihomir Leka <ticapeca at gmail.com>.
+ * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class AbstractUsbSampleSource extends AbstractSampleSource implements UsbSampleSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbSampleSource.class);
+
+    private static final int BUFFER_SIZE = 5000;
 
     @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
@@ -42,8 +45,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
-    AbstractUsbSampleSource(@NonNull UsbDevice device, @Nullable final OnSamplesReceivedListener listener) {
-        super(listener);
+    AbstractUsbSampleSource(@NonNull UsbDevice device, @Nullable final SampleSourceListener listener) {
+        super(BUFFER_SIZE, listener);
 
         this.device = device;
 
@@ -59,8 +62,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
                     LOGD(TAG, "NUM OF CHANNELS: " + channelCount);
                     setSampleRate(maxSampleRate);
                     setChannelCount(channelCount);
-
-                    processor.setChannelCount(channelCount);
                 }
             };
         processor = new SampleStreamProcessor(sampleStreamListener, FILTERS);
@@ -78,7 +79,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      * device.
      */
     static AbstractUsbSampleSource createUsbDevice(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection,
-        @Nullable OnSamplesReceivedListener listener) {
+        @Nullable SampleSourceListener listener) {
         if (SerialSampleSource.isSupported(device)) {
             return SerialSampleSource.createUsbDevice(device, connection, listener);
         } else if (HIDSampleSource.isSupported(device)) {
@@ -127,7 +128,7 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     }
 
     @Override protected void onInputStop() {
-        LOGD(TAG, "onInputStart()");
+        LOGD(TAG, "onInputStop()");
     }
 
     /**
@@ -146,17 +147,31 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
     @Override protected final void setChannelCount(int channelCount) {
         super.setChannelCount(channelCount);
 
-        processor.setChannelCount(channelCount);
+        // pass channel count to native code
+        JniUtils.setChannelCount(channelCount);
+        //processor.setChannelCount(channelCount);
     }
+
+    private final Benchmark benchmark = new Benchmark("PROCESS_SAMPLE_STREAM_TEST").warmUp(1000)
+        .sessions(10)
+        .measuresPerSession(2000)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
 
     /**
      * {@inheritDoc}
      */
-    @NonNull @Override protected final DataProcessor.SamplesWithMarkers processIncomingData(byte[] data,
-        long lastByteIndex) {
-        DataProcessor.SamplesWithMarkers swm = processor.process(data);
-        swm.lastSampleIndex = AudioUtils.getSampleCount(lastByteIndex);
-        return swm;
+    @NonNull @Override protected final SamplesWithEvents processIncomingData(byte[] data, int length) {
+        //benchmark.start();
+        JniUtils.processSampleStream(samplesWithEvents, data, length, this);
+        //benchmark.end();
+
+        return samplesWithEvents;
     }
 
     /**
@@ -185,6 +200,8 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
      */
     @SuppressWarnings("WeakerAccess") void setHardwareType(int hardwareType) {
         if (this.hardwareType == hardwareType) return;
+
+        LOGD(TAG, "BOARD TYPE: " + SampleStreamUtils.getSpikerBoxName(hardwareType));
 
         this.hardwareType = hardwareType;
 
