@@ -71,11 +71,11 @@ private:
     // Number of samples in one minute
     int minute = (int) (sampleRate * 60);
 
-    int *diffs;
+    int *diffs = new int[DIFFS_COUNT]{0};
     int diffsCounter = 0;
     int sampleCount = 0;
-    int prevSampleIndex = 0;
 };
+    int prevSampleIndex = 0;
 
 
 #endif //SPIKE_RECORDER_ANDROID_HEARTBEATHELPER_H

@@ -92,7 +92,7 @@ void HeartbeatHelper::reset() {
     maxDiffBetweenBeatsSampleCount = (int) (sampleRate * DEFAULT_MAX_DIFF_BETWEEN_BEATS_SECONDS);
     minute = (int) (sampleRate * 60);
 
-    if (diffsCounter > 0) delete[] diffs;
+    delete[] diffs;
     diffs = new int[DIFFS_COUNT]{0};
     diffsCounter = 0;
     sampleCount = 0;

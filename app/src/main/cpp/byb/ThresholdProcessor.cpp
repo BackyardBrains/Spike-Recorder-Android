@@ -204,7 +204,7 @@ void ThresholdProcessor::reset() {
     delete[] samplesForCalculation;
     samplesForCalculation = new short *[averagedSampleCount];
     samplesForCalculationCount = 0;
-    // free memory before creating new arrays
+    // free memory before creating new8 arrays
     delete[] summedSamples;
     summedSamples = new int[sampleCount]{0};
     // free memory before creating new arrays
@@ -235,7 +235,6 @@ void ThresholdProcessor::reset() {
 
     prevSample = 0;
 
-    heartbeatHelper->reset();
     heartbeatHelper->setSampleRate(getSampleRate());
     minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
     lastTriggerSampleCounter = 0;
