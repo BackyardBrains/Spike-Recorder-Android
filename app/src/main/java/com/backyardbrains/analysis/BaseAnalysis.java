@@ -2,6 +2,7 @@ package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.utils.Benchmark;
 import java.lang.ref.WeakReference;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -89,19 +90,19 @@ abstract class BaseAnalysis<T> {
     private static class AnalysisThread<T> extends Thread {
 
         private WeakReference<BaseAnalysis<T>> analysisRef;
-        //private final Benchmark benchmark;
+        private final Benchmark benchmark;
 
         AnalysisThread(BaseAnalysis<T> analysis) {
             analysisRef = new WeakReference<>(analysis);
-            //benchmark = new Benchmark("ANALYSIS_" + analysis.getClass().getName()).sessions(1)
-            //    .measuresPerSession(1)
-            //    .logBySession(true)
-            //    .logToFile(false)
-            //    .listener(new Benchmark.OnBenchmarkListener() {
-            //        @Override public void onEnd() {
-            //            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            //        }
-            //    });
+            benchmark = new Benchmark("ANALYSIS_" + analysis.getClass().getName()).sessions(1)
+                .measuresPerSession(1)
+                .logBySession(true)
+                .logToFile(false)
+                .listener(new Benchmark.OnBenchmarkListener() {
+                    @Override public void onEnd() {
+                        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+                    }
+                });
         }
 
         @Override public void run() {

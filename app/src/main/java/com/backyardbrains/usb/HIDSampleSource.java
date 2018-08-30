@@ -52,19 +52,22 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
         private UsbEndpoint inEndpoint;
         private AtomicBoolean working = new AtomicBoolean(true);
 
-        private byte[] dataReceived = new byte[HIDBuffer.DEFAULT_READ_BUFFER_SIZE];
+        private byte[] dataReceived;
 
         @Override public void run() {
             while (working.get()) {
                 if (inEndpoint != null) {
-                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
-                        HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
+                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(), HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
+                    if (dataReceived == null) dataReceived = new byte[HIDBuffer.DEFAULT_READ_BUFFER_SIZE];
                     if (numberBytes > 0) {
-                        //LOGD(TAG, "READING: " + (numberBytes - 2));
+                        LOGD(TAG, "READING: " + numberBytes);
                         usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
+                        LOGD(TAG, "DATA: " + Arrays.toString(dataReceived));
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
                         writeToBuffer(dataReceived, 2, numberBytes - 2);
+                    } else {
+                        LOGD(TAG, "READING: " + 0);
                     }
                 }
             }

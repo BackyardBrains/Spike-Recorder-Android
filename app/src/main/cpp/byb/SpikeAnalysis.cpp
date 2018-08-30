@@ -187,7 +187,7 @@ int *SpikeAnalysis::findSpikes(const char *filePath, short *outValuesPos, int *o
             }
         }
     }
-    i;
+//    i;
     len = spikeNegCounter;
     int removedNegCounter = 0;
     if (len > 0) { // Filter negative spikes using kill interval

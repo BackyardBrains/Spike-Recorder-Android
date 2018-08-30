@@ -25,7 +25,6 @@ class HIDBuffer {
 
     void getDataReceivedCompatible(byte[] buffer, int length) {
         System.arraycopy(readBuffer_compatible, 0, buffer, 0, length);
-        //return Arrays.copyOfRange(readBuffer_compatible, 0, size);
     }
 
     byte[] getWriteBuffer() {
