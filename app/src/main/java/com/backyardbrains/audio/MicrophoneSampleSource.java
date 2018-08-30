@@ -35,11 +35,7 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
      */
     private class ReadThread extends Thread {
 
-        private AudioRecord recorder;
         private byte[] buffer;
-
-        // Flag that indicates whether thread should be running
-        private AtomicBoolean working = new AtomicBoolean(true);
 
         ReadThread() {
             buffer = new byte[AudioUtils.IN_BUFFER_SIZE];
@@ -47,7 +43,7 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
         }
 
         @Override public void run() {
-            recorder = null;
+            stopRecorder();
 
             try {
                 recorder = AudioUtils.createAudioRecord();
@@ -72,48 +68,16 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
                 requestStop();
             }
         }
-
-        void stopWorking() {
-            working.set(false);
-        }
-
-        /**
-         * Clean up {@link AudioRecord} resource before exiting thread.
-         */
-        void requestStop() {
-            LOGD(TAG, "Requesting Recorder stop");
-            working.set(false);
-            if (recorder != null) {
-                if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                    LOGD(TAG, "Before Stop Recording");
-                    stopRecorder();
-                }
-
-                recorder = null;
-            }
-        }
-
-        private void stopRecorder() {
-            LOGD(TAG, "Stopping Recorder");
-            if (recorder != null) {
-                try {
-                    LOGD(TAG, "About to Release ");
-                    recorder.stop();
-                    recorder.release();
-
-                    LOGD(TAG, "Recorder resources released");
-                } catch (IllegalStateException e) {
-                    LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
-                    Crashlytics.logException(e);
-                }
-                recorder = null;
-            }
-            LOGD(TAG, "Recorder Released");
-        }
     }
 
     // Microphone thread
     private ReadThread readThread;
+    // AudioRecord instance
+    @SuppressWarnings("WeakerAccess") AudioRecord recorder;
+    // Flag that indicates whether thread should be running
+    @SuppressWarnings("WeakerAccess") AtomicBoolean working = new AtomicBoolean(true);
+
+    private static final Object lock = new Object();
 
     MicrophoneSampleSource(@Nullable SampleSourceListener listener) {
         super(BUFFER_SIZE_IN_BYTES, listener);
@@ -131,7 +95,7 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
 
     @Override protected void onInputStop() {
         if (readThread != null) {
-            readThread.stopWorking();
+            working.set(false);
             readThread = null;
 
             LOGD(TAG, "Microphone stopped");
@@ -159,5 +123,40 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
 
     @Override public int getType() {
         return Type.MICROPHONE;
+    }
+
+    /**
+     * Clean up {@link AudioRecord} resource before exiting thread.
+     */
+    @SuppressWarnings("WeakerAccess") void requestStop() {
+        LOGD(TAG, "Requesting Recorder stop");
+        working.set(false);
+        if (recorder != null) {
+            if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                LOGD(TAG, "Before Stop Recorder");
+                stopRecorder();
+            }
+            recorder = null;
+        }
+    }
+
+    @SuppressWarnings("WeakerAccess") void stopRecorder() {
+        synchronized (lock) {
+            LOGD(TAG, "Stopping Recorder");
+            if (recorder != null) {
+                try {
+                    LOGD(TAG, "About to Release");
+                    recorder.stop();
+                    recorder.release();
+
+                    LOGD(TAG, "Recorder resources released");
+                } catch (IllegalStateException e) {
+                    LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
+                    Crashlytics.logException(e);
+                }
+                recorder = null;
+            }
+            LOGD(TAG, "Recorder Released");
+        }
     }
 }
