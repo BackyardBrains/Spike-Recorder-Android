@@ -74,8 +74,8 @@ private:
     int *diffs = new int[DIFFS_COUNT]{0};
     int diffsCounter = 0;
     int sampleCount = 0;
-};
     int prevSampleIndex = 0;
+};
 
 
 #endif //SPIKE_RECORDER_ANDROID_HEARTBEATHELPER_H

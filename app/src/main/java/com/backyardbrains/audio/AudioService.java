@@ -47,6 +47,7 @@ import com.backyardbrains.usb.AbstractUsbSampleSource;
 import com.backyardbrains.usb.UsbHelper;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
@@ -234,16 +235,16 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     //  IMPLEMENTATIONS OF OnSamplesReceiveListener INTERFACE
     //========================================================
 
-    //private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
-    //    .sessions(10)
-    //    .measuresPerSession(200)
-    //    .logBySession(false)
-    //    .logToFile(false)
-    //    .listener(new Benchmark.OnBenchmarkListener() {
-    //        @Override public void onEnd() {
-    //            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-    //        }
-    //    });
+    private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
+        .sessions(10)
+        .measuresPerSession(200)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
 
     /**
      * Adds received samples and events to the ring buffer. If we're recording, it also passes it to the recording
@@ -266,23 +267,23 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         setSampleRate(sampleRate);
     }
 
-    //private final Benchmark benchmark = new Benchmark("THRESHOLD_JAVA").warmUp(50)
-    //    .sessions(10)
-    //    .measuresPerSession(50)
-    //    .logBySession(false)
-    //    .logToFile(false)
-    //    .listener(new Benchmark.OnBenchmarkListener() {
-    //        @Override public void onEnd() {
-    //            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-    //        }
-    //    });
+    private final Benchmark benchmarkT = new Benchmark("THRESHOLD_JAVA").warmUp(50)
+        .sessions(10)
+        .measuresPerSession(50)
+        .logBySession(false)
+        .logToFile(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
 
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
         if (averageSamples) {
-            //benchmark.start();
+            //benchmarkT.start();
             JniUtils.processThreshold(samplesWithEvents, samplesWithEvents.samples, samplesWithEvents.sampleCount);
-            //benchmark.end();
+            //benchmarkT.end();
         }
         // pass data to data manager
         if (processingBuffer != null) processingBuffer.addToBuffer(samplesWithEvents);
