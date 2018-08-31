@@ -43,7 +43,7 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
         }
 
         @Override public void run() {
-            stopRecorder();
+            recorder = null;
 
             try {
                 recorder = AudioUtils.createAudioRecord();
@@ -64,8 +64,6 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
             } catch (Throwable e) {
                 LOGE(TAG, "Could not open audio source", e);
                 Crashlytics.logException(e);
-            } finally {
-                requestStop();
             }
         }
     }
@@ -95,7 +93,8 @@ public class MicrophoneSampleSource extends AbstractSampleSource {
 
     @Override protected void onInputStop() {
         if (readThread != null) {
-            working.set(false);
+            requestStop();
+
             readThread = null;
 
             LOGD(TAG, "Microphone stopped");
