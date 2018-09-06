@@ -239,7 +239,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         .sessions(10)
         .measuresPerSession(200)
         .logBySession(false)
-        .logToFile(false)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
@@ -271,7 +270,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         .sessions(10)
         .measuresPerSession(50)
         .logBySession(false)
-        .logToFile(false)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));

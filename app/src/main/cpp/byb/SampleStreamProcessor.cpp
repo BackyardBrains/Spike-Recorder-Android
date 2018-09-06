@@ -173,6 +173,7 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
 void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) {
     // check if it's board type message
     std::string message = reinterpret_cast<char *>(messageBytes);
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "EVENT MESSAGE: %s", message.c_str());
     if (SampleStreamUtils::isHardwareTypeMsg(message)) {
         listener->onSpikerBoxHardwareTypeDetected(SampleStreamUtils::getBoardType(message));
     } else if (SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
