@@ -312,7 +312,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         .sessions(10)
         .measuresPerSession(500)
         .logBySession(false)
-        .logToFile(true)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));

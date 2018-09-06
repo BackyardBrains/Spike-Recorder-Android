@@ -4,17 +4,20 @@ import java.util.Arrays;
 
 class HIDBuffer {
 
-    static final int DEFAULT_READ_BUFFER_SIZE = 64;
+    private static final int PACKET_SIZE = 64;
+    private static final int BUFFER_MULTIPLIER = 8;
+    static final int DEFAULT_READ_BUFFER_SIZE = PACKET_SIZE * BUFFER_MULTIPLIER;
+    static final int DEFAULT_READ_PAYLOAD_BUFFER_SIZE = DEFAULT_READ_BUFFER_SIZE - BUFFER_MULTIPLIER * 2;
     private static final int DEFAULT_WRITE_BUFFER_SIZE = 255 * 2;
 
     private SynchronizedBuffer writeBuffer;
-    private byte[] readBuffer_compatible; // Read buffer for android < 4.2
+    private byte[] readBuffer_compatible;
 
     HIDBuffer() {
         this(DEFAULT_READ_BUFFER_SIZE, DEFAULT_WRITE_BUFFER_SIZE);
     }
 
-    HIDBuffer(int readBufferSize, int writeBufferSize) {
+    private HIDBuffer(int readBufferSize, int writeBufferSize) {
         writeBuffer = new SynchronizedBuffer(writeBufferSize);
         readBuffer_compatible = new byte[readBufferSize];
     }
@@ -24,7 +27,13 @@ class HIDBuffer {
     }
 
     void getDataReceivedCompatible(byte[] buffer, int length) {
-        System.arraycopy(readBuffer_compatible, 0, buffer, 0, length);
+        int counter = 0;
+        int copy;
+        for (int i = 0; i < length; i += PACKET_SIZE) {
+            copy = readBuffer_compatible[i + 1];
+            System.arraycopy(readBuffer_compatible, i + 2, buffer, counter, copy);
+            counter += copy;
+        }
     }
 
     byte[] getWriteBuffer() {

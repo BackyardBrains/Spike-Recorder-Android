@@ -19,7 +19,6 @@ public class Benchmark {
     private int sessions;
     private int measuresPerSession;
     private boolean logBySession;
-    private boolean logToFile;
     private OnBenchmarkListener listener;
 
     public interface OnBenchmarkListener {
@@ -56,12 +55,6 @@ public class Benchmark {
 
     public Benchmark listener(@Nullable OnBenchmarkListener listener) {
         this.listener = listener;
-
-        return this;
-    }
-
-    public Benchmark logToFile(boolean logToFile) {
-        this.logToFile = logToFile;
 
         return this;
     }

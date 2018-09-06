@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -52,22 +51,18 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
         private UsbEndpoint inEndpoint;
         private AtomicBoolean working = new AtomicBoolean(true);
 
-        private byte[] dataReceived;
+        private byte[] dataReceived = new byte[HIDBuffer.DEFAULT_READ_PAYLOAD_BUFFER_SIZE];
 
         @Override public void run() {
             while (working.get()) {
                 if (inEndpoint != null) {
-                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(), HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 64);
-                    if (dataReceived == null) dataReceived = new byte[HIDBuffer.DEFAULT_READ_BUFFER_SIZE];
+                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
+                        HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
                     if (numberBytes > 0) {
-                        LOGD(TAG, "READING: " + numberBytes);
                         usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
-                        LOGD(TAG, "DATA: " + Arrays.toString(dataReceived));
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
-                        writeToBuffer(dataReceived, 2, numberBytes - 2);
-                    } else {
-                        LOGD(TAG, "READING: " + 0);
+                        writeToBuffer(dataReceived, 0, dataReceived.length);
                     }
                 }
             }
@@ -108,7 +103,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
                         arr[1] = (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
 
                         System.arraycopy(temp, 0, arr, 2, temp.length);
-                        connection.bulkTransfer(outEndpoint, arr, arr.length, 255);  // send data to device
+                        connection.bulkTransfer(outEndpoint, arr, arr.length, 0);  // send data to device
                     }
 
                     // number of written bytes is less than 252
@@ -117,7 +112,7 @@ public class HIDSampleSource extends AbstractUsbSampleSource {
                     arr[1] = (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
 
                     System.arraycopy(data, 0, arr, 2, data.length);
-                    connection.bulkTransfer(outEndpoint, arr, arr.length, 255);  // send data to device
+                    connection.bulkTransfer(outEndpoint, arr, arr.length, 0);  // send data to device
                 }
             }
         }

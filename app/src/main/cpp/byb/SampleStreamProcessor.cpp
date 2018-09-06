@@ -56,7 +56,6 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
         if (insideEscapeSequence) { // we are inside escape sequence
             sampleIndex = sampleCounters[currentChannel] == 0 ? 0 : sampleCounters[currentChannel] - 1;
             if (eventMessageIndex >= EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
-                __android_log_print(ANDROID_LOG_DEBUG, TAG, "EVENT MESSAGE LONGER THEN 64 BYTES!");
                 unsigned char *copy = new unsigned char[eventMessageIndex];
                 std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                 // let's process incoming message
@@ -67,7 +66,6 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
             } else if (ESCAPE_SEQUENCE_END[tmpIndex] == uc) {
                 tmpIndex++;
                 if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
-                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "EVENT MESSAGE ESCAPE SEQUENCE ENDED!");
                     unsigned char *copy = new unsigned char[eventMessageIndex];
                     std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                     // let's process incoming message
@@ -83,7 +81,6 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
             if (ESCAPE_SEQUENCE_START[tmpIndex] == uc) {
                 tmpIndex++;
                 if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
-                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "EVENT MESSAGE ESCAPE SEQUENCE STARTED!");
                     tmpIndex = 0; // reset index, we need it for sequence end
                     insideEscapeSequence = true;
                 }

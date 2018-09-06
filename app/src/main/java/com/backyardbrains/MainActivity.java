@@ -36,7 +36,6 @@ import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
-import me.pqpo.librarylog4a.Log4a;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
 import org.greenrobot.eventbus.Subscribe;
@@ -48,8 +47,6 @@ import pub.devrel.easypermissions.EasyPermissions;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
-
-//import me.pqpo.librarylog4a.Log4a;
 
 public class MainActivity extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
@@ -147,10 +144,6 @@ public class MainActivity extends AppCompatActivity
         saveSettings();
         // stop audio service
         stop();
-
-        // flush log to file and release resources
-        Log4a.flush();
-        Log4a.release();
     }
 
     //////////////////////////////////////////////////////////////////////////////

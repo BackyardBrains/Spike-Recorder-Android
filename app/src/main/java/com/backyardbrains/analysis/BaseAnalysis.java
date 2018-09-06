@@ -97,7 +97,6 @@ abstract class BaseAnalysis<T> {
             benchmark = new Benchmark("ANALYSIS_" + analysis.getClass().getName()).sessions(1)
                 .measuresPerSession(1)
                 .logBySession(true)
-                .logToFile(false)
                 .listener(new Benchmark.OnBenchmarkListener() {
                     @Override public void onEnd() {
                         //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));

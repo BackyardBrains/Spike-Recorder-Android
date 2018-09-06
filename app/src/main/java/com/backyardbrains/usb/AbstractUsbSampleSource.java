@@ -156,7 +156,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         .sessions(10)
         .measuresPerSession(2000)
         .logBySession(false)
-        .logToFile(false)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
