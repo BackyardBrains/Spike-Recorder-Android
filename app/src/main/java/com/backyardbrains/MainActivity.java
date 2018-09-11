@@ -169,9 +169,9 @@ public class MainActivity extends AppCompatActivity
     public void loadFragment(int fragType, Object... args) {
         if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
-        } else if (fragType == R.id.action_threshold) {
+        }/* else if (fragType == R.id.action_threshold) {
             fragType = THRESHOLD_VIEW;
-        } else if (fragType == R.id.action_recordings) {
+        }*/ else if (fragType == R.id.action_recordings) {
             fragType = RECORDINGS_VIEW;
         }
         LOGD(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
@@ -186,10 +186,10 @@ public class MainActivity extends AppCompatActivity
                     fragName = BYB_RECORDINGS_FRAGMENT;
                     break;
                 //------------------------------
-                case THRESHOLD_VIEW:
-                    frag = ThresholdFragment.newInstance();
-                    fragName = BYB_THRESHOLD_FRAGMENT;
-                    break;
+                //case THRESHOLD_VIEW:
+                //    frag = ThresholdFragment.newInstance();
+                //    fragName = BYB_THRESHOLD_FRAGMENT;
+                //    break;
                 //------------------------------
                 case FIND_SPIKES_VIEW:
                     frag = FindSpikesFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
@@ -352,8 +352,8 @@ public class MainActivity extends AppCompatActivity
         switch (fragName) {
             case BYB_RECORDINGS_FRAGMENT:
                 return RECORDINGS_VIEW;
-            case BYB_THRESHOLD_FRAGMENT:
-                return THRESHOLD_VIEW;
+            //case BYB_THRESHOLD_FRAGMENT:
+            //    return THRESHOLD_VIEW;
             case BYB_SPIKES_FRAGMENT:
                 return FIND_SPIKES_VIEW;
             case BYB_ANALYSIS_FRAGMENT:
@@ -377,11 +377,11 @@ public class MainActivity extends AppCompatActivity
                 i = new Intent();
                 i.putExtra("tab", OSCILLOSCOPE_VIEW);
                 break;
-            case THRESHOLD_VIEW:
-                selectedButton = R.id.action_threshold;
-                i = new Intent();
-                i.putExtra("tab", THRESHOLD_VIEW);
-                break;
+            //case THRESHOLD_VIEW:
+            //    selectedButton = R.id.action_threshold;
+            //    i = new Intent();
+            //    i.putExtra("tab", THRESHOLD_VIEW);
+            //    break;
             case RECORDINGS_VIEW:
                 selectedButton = R.id.action_recordings;
                 i = new Intent();

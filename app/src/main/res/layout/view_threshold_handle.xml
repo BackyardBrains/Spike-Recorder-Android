@@ -17,12 +17,13 @@
 
     <ImageView
         android:id="@+id/iv_threshold_handle"
-        android:layout_width="wrap_content"
+        android:layout_width="@dimen/threshold_drag_surface_w"
         android:layout_height="wrap_content"
         android:src="@drawable/handle_white_left"
         android:background="@android:color/transparent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription"/>
 
     <View
         android:id="@+id/v_threshold_ruler"

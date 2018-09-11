@@ -184,6 +184,13 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     }
 
     /**
+     * Returns whether incoming samples are being averaged.
+     */
+    public boolean getAverageSamples() {
+        return averageSamples;
+    }
+
+    /**
      * Returns current sample rate.
      */
     public int getSampleRate() {

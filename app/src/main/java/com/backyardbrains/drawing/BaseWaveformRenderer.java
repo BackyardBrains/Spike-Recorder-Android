@@ -212,11 +212,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         return glWindowHeight;
     }
 
-    int getSurfaceWidth() {
+    @SuppressWarnings("WeakerAccess") public int getSurfaceWidth() {
         return surfaceWidth;
     }
 
-    @SuppressWarnings("unused") int getSurfaceHeight() {
+    public int getSurfaceHeight() {
         return surfaceHeight;
     }
 
@@ -242,11 +242,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
-        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, BaseWaveformRenderer.class));
         surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
         surfaceHeight = PrefUtils.getViewportHeight(context, BaseWaveformRenderer.class);
         surfaceSizeDirty = true;
+        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
+        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, BaseWaveformRenderer.class));
         setAutoScale(PrefUtils.getAutoScale(context, getClass()));
         minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }

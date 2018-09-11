@@ -11,6 +11,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.events.SampleRateChangeEvent;
+import com.backyardbrains.utils.Func;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.view.WaveformLayout;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -32,7 +34,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     private WaveformLayout waveform;
     private ImageButton ibtnBack;
 
-    private BaseWaveformRenderer renderer;
+    BaseWaveformRenderer renderer;
 
     /**
      * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
@@ -44,9 +46,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         private int drawSurfaceHeight;
 
         @Override public void run() {
-            if (getAudioService() != null) {
-                setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
-            }
+            if (getAudioService() != null) setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
 
             //setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
         }
@@ -142,23 +142,31 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     }
 
     /**
-     * Subclasses should override this method if they need to do some work when sample rate changes.
+     * Recreates renderer. This method should be called when
      */
-    //protected void onSampleRateChange(int sampleRate) {
-    //}
+    protected void recreateRenderer() {
+        // if renderer already exist we should save it's settings and then close it and and destroy it
+        if (renderer != null && getContext() != null) renderer.onSaveSettings(getContext());
+        destroyRenderer();
+        // create renderer and load it's settings
+        renderer = createRenderer();
+        waveform.setRenderer(renderer);
+        ViewUtils.playAfterNextLayout(waveform, new Func<View, Void>() {
+            @Nullable @Override public Void apply(@Nullable View source) {
+                if (renderer != null && getContext() != null) renderer.onLoadSettings(getContext());
+                return null;
+            }
+        });
+    }
 
     //==============================================
     //  EVENT BUS
     //==============================================
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(
-        SampleRateChangeEvent event) {
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
         LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
-        //onSampleRateChange(event.getSampleRate());
-    }
-
-    public final void onHardwareTypeChangeEvent() {
-
     }
 
     //==============================================

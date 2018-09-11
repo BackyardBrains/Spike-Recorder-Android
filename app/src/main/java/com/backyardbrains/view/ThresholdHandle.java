@@ -1,5 +1,6 @@
 package com.backyardbrains.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.AttrRes;
@@ -12,14 +13,11 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
-import com.backyardbrains.utils.Func;
-import com.backyardbrains.utils.ViewUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -55,6 +53,7 @@ public class ThresholdHandle extends ConstraintLayout {
     private @ColorInt int handleColor;
     private @Orientation int handleOrientation;
     private float handlePosition;
+
     private int handlePadding;
 
     /**
@@ -141,16 +140,13 @@ public class ThresholdHandle extends ConstraintLayout {
         LayoutInflater.from(getContext()).inflate(R.layout.view_threshold_handle, this);
         ButterKnife.bind(this);
 
-        setVisibility(INVISIBLE);
-
         // calculate handle padding
         handlePadding = (int) (HANDLE_PADDING * getResources().getDisplayMetrics().density);
 
         if (attrs != null) {
             final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.ThresholdHandle);
             try {
-                final @ColorRes int colorResId =
-                    a.getResourceId(R.styleable.ThresholdHandle_byb_color, R.color.white);
+                final @ColorRes int colorResId = a.getResourceId(R.styleable.ThresholdHandle_byb_color, R.color.white);
                 setColor(ContextCompat.getColor(getContext(), colorResId));
                 final int orientationInt = a.getInt(R.styleable.ThresholdHandle_byb_orientation, Orientation.LEFT);
                 setOrientation(orientationInt == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
@@ -163,38 +159,26 @@ public class ThresholdHandle extends ConstraintLayout {
     }
 
     // Initializes view's children
-    private void setupUI() {
-        vDragSurface.setOnTouchListener(new OnTouchListener() {
+    @SuppressLint("ClickableViewAccessibility") private void setupUI() {
+        ivHandle.setOnTouchListener(
+            new OnDragTouchListener(ivHandle, vDragSurface, new OnDragTouchListener.OnDragActionListener() {
+                private float pos = 0f;
 
-            @Override public boolean onTouch(View v, MotionEvent event) {
-                if (v.getVisibility() == View.VISIBLE) {
-                    // always track only the first pointer
-                    if (event.getActionIndex() == 0) {
-                        final float pos = setPosition(event.getY());
-                        if (event.getActionMasked() == MotionEvent.ACTION_UP) invokeCallback(pos);
-                    }
-
-                    return true;
+                @Override public void onDragStart(View view) {
                 }
-                return false;
-            }
-        });
 
-        ViewUtils.playAfterNextLayout(this, new Func<View, Void>() {
-            @Nullable @Override public Void apply(@Nullable View source) {
-                updateUI();
-                post(new Runnable() {
-                    @Override public void run() {
-                        setVisibility(VISIBLE);
-                    }
-                });
-                return null;
-            }
-        });
+                @Override public void onDrag(View view, float x, float y) {
+                    pos = setPosition(y + view.getHeight() / 2);
+                }
+
+                @Override public void onDragEnd(View view) {
+                    invokeCallback(pos);
+                }
+            }));
     }
 
     // Updates view's children
-    private void updateUI() {
+    void updateUI() {
         if (handlePosition < 0) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? -90 : 90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
@@ -214,7 +198,7 @@ public class ThresholdHandle extends ConstraintLayout {
     }
 
     // Invokes OnThresholdChangeListener.onChange() callback is set.
-    private void invokeCallback(float pos) {
+    void invokeCallback(float pos) {
         if (listener != null) listener.onChange(this, pos);
     }
 }
