@@ -20,6 +20,8 @@ import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Formats;
+import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import org.greenrobot.eventbus.EventBus;
@@ -35,9 +37,14 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     private static final String ARG_FILE_PATH = "bb_file_path";
     private static final String INT_SAMPLE_RATE = "bb_sample_rate";
+    private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
 
     // Maximum time that should be processed in any given moment (in seconds)
-    private static final double MAX_PROCESSING_TIME = 6; // 6 seconds
+    private static final double MAX_PLAYBACK_PROCESSING_TIME = 6; // 6 seconds
+    // Maximum time that should be processed when averaging signal
+    private static final double MAX_THRESHOLD_PROCESSING_TIME = 2.4; // 2.4 seconds
+    // Default number of sample sets that should be summed when averaging
+    private static final int AVERAGED_SAMPLE_COUNT = 30;
 
     // Runnable used for updating playback seek bar
     final protected PlaybackSeekRunnable playbackSeekRunnable = new PlaybackSeekRunnable();
@@ -57,6 +64,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Sample rate that should be used for audio playback (by default 44100)
     int sampleRate = AudioUtils.SAMPLE_RATE;
+    // Whether signal triggering is turned on or off
+    private boolean thresholdOn;
 
     /**
      * Runnable that is executed on the UI thread every time recording's playhead is updated.
@@ -192,6 +201,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         if (savedInstanceState != null) {
             sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.SAMPLE_RATE);
+            thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
         }
         seek(sbAudioProgress.getProgress());
     }
@@ -204,8 +214,6 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             return;
         }
 
-        // we should set max processing time to 6 seconds
-        if (getAudioService() != null) getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         // everything good, start playback if it hasn't already been started
         startPlaying(true);
     }
@@ -220,6 +228,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         super.onSaveInstanceState(outState);
 
         outState.putInt(INT_SAMPLE_RATE, sampleRate);
+        outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
     }
 
     //=================================================
@@ -237,6 +246,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         sbAudioProgress = view.findViewById(R.id.sb_audio_progress);
         tvProgressTime = view.findViewById(R.id.tv_progress_time);
         tvRmsTime = view.findViewById(R.id.tv_rms_time);
+
+        // we should set averaged sample count before UI setup
+        int averagedSampleCount = PrefUtils.getAveragedSampleCount(view.getContext(), RecordScopeFragment.class);
+        if (averagedSampleCount < 0) averagedSampleCount = AVERAGED_SAMPLE_COUNT;
+        JniUtils.setAveragedSampleCount(averagedSampleCount);
 
         setupUI();
 
@@ -368,7 +382,12 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
      * Starts playing audio file.
      */
     protected void startPlaying(boolean autoPlay) {
-        if (getAudioService() != null) getAudioService().startPlayback(filePath, autoPlay);
+        if (getAudioService() != null) {
+            getAudioService().setPlaybackSignalAveraging(!autoPlay && thresholdOn);
+            // we should set max processing time to 6 seconds
+            getAudioService().setMaxProcessingTimeInSeconds(MAX_PLAYBACK_PROCESSING_TIME);
+            getAudioService().startPlayback(filePath, autoPlay);
+        }
     }
 
     /**

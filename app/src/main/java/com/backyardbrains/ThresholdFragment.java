@@ -108,7 +108,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
 
         if (getAudioService() != null) {
             getAudioService().stopActiveInputSource();
-            getAudioService().setAverageSamples(false);
+            getAudioService().setSignalAveraging(false);
         }
     }
 
@@ -287,7 +287,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
         if (getAudioService() != null) {
             getAudioService().startActiveInputSource();
 
-            getAudioService().setAverageSamples(true);
+            getAudioService().setSignalAveraging(true);
             getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         }
     }

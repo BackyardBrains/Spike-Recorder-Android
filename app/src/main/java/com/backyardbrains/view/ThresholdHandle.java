@@ -53,6 +53,7 @@ public class ThresholdHandle extends ConstraintLayout {
     private @ColorInt int handleColor;
     private @Orientation int handleOrientation;
     private float handlePosition;
+    private float topOffset;
 
     private int handlePadding;
 
@@ -126,12 +127,30 @@ public class ThresholdHandle extends ConstraintLayout {
     }
 
     /**
+     *
+     * @param topOffset
+     */
+    public void setTopOffset(float topOffset) {
+        if (this.topOffset == topOffset) return;
+
+        this.topOffset = topOffset;
+        updateUI();
+    }
+
+    /**
      * Sets Y position of the handle.
      */
     public float setPosition(float position) {
         handlePosition = position;
         updateUI();
 
+        return handlePosition;
+    }
+
+    /**
+     * Returns Y position of the handle.
+     */
+    public float getPosition() {
         return handlePosition;
     }
 
@@ -148,8 +167,10 @@ public class ThresholdHandle extends ConstraintLayout {
             try {
                 final @ColorRes int colorResId = a.getResourceId(R.styleable.ThresholdHandle_byb_color, R.color.white);
                 setColor(ContextCompat.getColor(getContext(), colorResId));
-                final int orientationInt = a.getInt(R.styleable.ThresholdHandle_byb_orientation, Orientation.LEFT);
-                setOrientation(orientationInt == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
+                final int orientation = a.getInt(R.styleable.ThresholdHandle_byb_orientation, Orientation.LEFT);
+                setOrientation(orientation == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
+                final float topOffset = a.getFloat(R.styleable.ThresholdHandle_byb_topOffset, 0f);
+                setTopOffset(topOffset);
             } finally {
                 a.recycle();
             }
@@ -179,12 +200,12 @@ public class ThresholdHandle extends ConstraintLayout {
 
     // Updates view's children
     void updateUI() {
-        if (handlePosition < 0) {
+        if (handlePosition < handlePadding + topOffset) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? -90 : 90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
-            ivHandle.setY(handlePadding);
-        } else if (handlePosition > vDragSurface.getHeight()) {
+            ivHandle.setY(handlePadding + topOffset);
+        } else if (handlePosition > vDragSurface.getHeight() - handlePadding) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? 90 : -90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
@@ -194,7 +215,7 @@ public class ThresholdHandle extends ConstraintLayout {
             ivHandle.setX(handleOrientation == Orientation.LEFT ? 0 : vDragSurface.getX());
             ivHandle.setY(handlePosition - ivHandle.getHeight() / 2);
         }
-        vRuler.setY(handlePosition - vRuler.getHeight());
+        vRuler.setY(handlePosition - vRuler.getHeight() / 2);
     }
 
     // Invokes OnThresholdChangeListener.onChange() callback is set.

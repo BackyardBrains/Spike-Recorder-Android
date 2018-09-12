@@ -28,7 +28,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.data.processing.AbstractSampleSource;
 import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.data.processing.SampleProcessor;
 import com.backyardbrains.data.processing.SampleSource;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
@@ -53,7 +52,6 @@ import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import org.greenrobot.eventbus.EventBus;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -76,8 +74,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
 
     // Reference to the data manager that stores and processes the data
     ProcessingBuffer processingBuffer;
-    // Reference to the sample processor that will additionally process the samples
-    private WeakReference<SampleProcessor> sampleProcessorRef;
 
     // Reference to the USB serial data source
     private UsbHelper usbHelper;
@@ -90,8 +86,10 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     private int sampleRate;
     // Maximum number of seconds data manager should hold at any time
     private double maxTime;
-    // Whether incoming samples should be averaged using a threshold
-    private boolean averageSamples;
+    // Whether incoming live signal should be averaged
+    private boolean signalAveraging;
+    // Whether incoming signal should be averaged during playback
+    private boolean playbackSignalAveraging;
 
     // Reference to currently active sample source
     private AbstractSampleSource sampleSource;
@@ -175,19 +173,35 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     }
 
     /**
-     * Sets whether incoming samples should be average by a threshold value.
+     * Sets whether incoming live signal should be averaged.
      */
-    public void setAverageSamples(boolean averageSamples) {
-        if (averageSamples == this.averageSamples) return;
+    public void setSignalAveraging(boolean signalAveraging) {
+        if (signalAveraging == this.signalAveraging) return;
 
-        this.averageSamples = averageSamples;
+        this.signalAveraging = signalAveraging;
     }
 
     /**
-     * Returns whether incoming samples are being averaged.
+     * Returns whether incoming signal is being averaged.
      */
-    public boolean getAverageSamples() {
-        return averageSamples;
+    public boolean isSignalAveragingOn() {
+        return signalAveraging;
+    }
+
+    /**
+     * Sets whether incoming signal should be average during playback.
+     */
+    public void setPlaybackSignalAveraging(boolean playbackSignalAveraging) {
+        if (playbackSignalAveraging == this.playbackSignalAveraging) return;
+
+        this.playbackSignalAveraging = playbackSignalAveraging;
+    }
+
+    /**
+     * Returns whether incoming signal is being averaged during playback.
+     */
+    public boolean isPlaybackSignalAveraging() {
+        return playbackSignalAveraging;
     }
 
     /**
@@ -285,16 +299,18 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
 
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (averageSamples) {
+        // record
+        passToRecorder(samplesWithEvents);
+
+        // threshold if needed
+        if ((!isPlaybackMode() && signalAveraging) || (isPlaybackMode() && playbackSignalAveraging)) {
             //benchmarkT.start();
             JniUtils.processThreshold(samplesWithEvents, samplesWithEvents.samples, samplesWithEvents.sampleCount);
             //benchmarkT.end();
         }
+
         // pass data to data manager
         if (processingBuffer != null) processingBuffer.addToBuffer(samplesWithEvents);
-
-        // pass data to RecordingSaver
-        passToRecorder(samplesWithEvents);
     }
 
     // Passes data to audio recorder
@@ -431,7 +447,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     /**
      * Temporary method that returns USB device under specified {@code index}.
      */
-    public UsbDevice getDevice(int index) {
+    @Nullable public UsbDevice getDevice(int index) {
         return usbHelper.getDevice(index);
     }
 
@@ -729,11 +745,13 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         LOGD(TAG, "stopRecording()");
         try {
             // set current sample rate to be used when saving WAV file
-            if (recordingSaver != null) recordingSaver.requestStop();
-            recordingSaver = null;
+            if (recordingSaver != null) {
+                recordingSaver.requestStop();
+                recordingSaver = null;
 
-            // post that recording of audio has started
-            EventBus.getDefault().post(new AudioRecordingStoppedEvent());
+                // post that recording of audio has started
+                EventBus.getDefault().post(new AudioRecordingStoppedEvent());
+            }
         } catch (IllegalStateException e) {
             Crashlytics.logException(e);
             ViewUtils.toast(getApplicationContext(),
