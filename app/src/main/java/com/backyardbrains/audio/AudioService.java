@@ -184,7 +184,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     /**
      * Returns whether incoming signal is being averaged.
      */
-    public boolean isSignalAveragingOn() {
+    public boolean isSignalAveraging() {
         return signalAveraging;
     }
 

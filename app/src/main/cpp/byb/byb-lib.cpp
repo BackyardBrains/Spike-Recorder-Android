@@ -437,7 +437,7 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thi
         return;
     }
 
-    jint sampleCount = thresholdProcessor->sampleCount;
+    jint sampleCount = thresholdProcessor->getSampleCount();
     jshort *outSamplesPtr = new jshort[sampleCount];
     thresholdProcessor->process(inSamplesPtr, outSamplesPtr, length);
 

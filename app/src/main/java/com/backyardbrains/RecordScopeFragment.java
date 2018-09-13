@@ -182,20 +182,17 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
         new ThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
-                ((ThresholdRenderer) getRenderer()).adjustThreshold(
-                    y /*+ (getRenderer().getSurfaceHeight() - thresholdHandle.getHeight())*/);
+                ((ThresholdRenderer) getRenderer()).adjustThreshold(y);
             }
         };
 
     private final SlidingView.AnimationEndListener recordAnimationListener = new SlidingView.AnimationEndListener() {
         @Override public void onShowAnimationEnd() {
             thresholdHandle.setTopOffset(ibtnThreshold.getHeight() + tvStopRecording.getHeight());
-            //if (getRenderer() instanceof ThresholdRenderer) ((ThresholdRenderer) getRenderer()).refreshThreshold();
         }
 
         @Override public void onHideAnimationEnd() {
             thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-            //if (getRenderer() instanceof ThresholdRenderer) ((ThresholdRenderer) getRenderer()).refreshThreshold();
         }
     };
 
@@ -549,7 +546,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void setThresholdHandlePosition(int value) {
         // can be null if callback is called after activity has finished
         if (thresholdHandle != null) {
-            thresholdHandle.setPosition(value/* - (getRenderer().getSurfaceHeight() - thresholdHandle.getHeight())*/);
+            thresholdHandle.setPosition(value);
         }
     }
 
@@ -706,7 +703,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void setMaxProcessingTime() {
         if (getAudioService() != null) {
             getAudioService().setMaxProcessingTimeInSeconds(
-                getAudioService().isSignalAveragingOn() ? MAX_THRESHOLD_PROCESSING_TIME
+                getAudioService().isSignalAveraging() ? MAX_THRESHOLD_PROCESSING_TIME
                     : getAudioService().isUsbActiveInput() ? MAX_USB_PROCESSING_TIME : MAX_AUDIO_PROCESSING_TIME);
         }
     }

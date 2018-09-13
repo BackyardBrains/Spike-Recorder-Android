@@ -21,6 +21,10 @@ public:
 
     ~ThresholdProcessor();
 
+    void setSampleRate(float sampleRate);
+
+    int getSampleCount();
+
     // Returns the number of sample sequences that should be summed to get the average spike value.
     int getAveragedSampleCount();
 
@@ -34,9 +38,6 @@ public:
     void setBpmProcessing(bool processBpm);
 
     void process(const short *inSamples, short *outSamples, const int length);
-
-    // Number of samples that we collect for one sample stream
-    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
 
 private:
     static const char *TAG;
@@ -60,9 +61,8 @@ private:
     // Resets all the fields used for calculations
     void reset();
 
-    // Whether processor has been initialized
-    bool initialized = false;
-
+    // Number of samples that we collect for one sample stream
+    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
     // Threshold value that triggers the averaging
     int triggerValue = INT_MAX;
     // Used to check whether threshold trigger value has changed since the last incoming sample batch

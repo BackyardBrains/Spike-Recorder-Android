@@ -13,6 +13,18 @@ ThresholdProcessor::ThresholdProcessor(OnHeartbeatListener *listener) {
 ThresholdProcessor::~ThresholdProcessor() {
 }
 
+void ThresholdProcessor::setSampleRate(float sampleRate) {
+    Processor::setSampleRate(sampleRate);
+
+    sampleCount = (int) (sampleRate * MAX_PROCESSED_SECONDS);
+    deadPeriodCount = (int) (sampleRate * DEAD_PERIOD_SECONDS);
+    minBpmResetPeriodCount = (int) (sampleRate * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
+}
+
+int ThresholdProcessor::getSampleCount() {
+    return sampleCount;
+}
+
 int ThresholdProcessor::getAveragedSampleCount() {
     return averagedSampleCount;
 }
