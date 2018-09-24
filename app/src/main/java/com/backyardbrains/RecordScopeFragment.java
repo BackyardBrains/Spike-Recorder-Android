@@ -17,7 +17,6 @@ import butterknife.Unbinder;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
-import com.backyardbrains.drawing.ThresholdRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
@@ -63,12 +62,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
-    // Maximum time that should be processed when processing audio signal
-    private static final double MAX_AUDIO_PROCESSING_TIME = 6; // 6 seconds
-    // Maximum time that should be processed when processing usb signal
-    private static final double MAX_USB_PROCESSING_TIME = 12; // 12 seconds
-    // Maximum time that should be processed when averaging signal
-    private static final double MAX_THRESHOLD_PROCESSING_TIME = 2.4; // 2.4 seconds
     // Default number of sample sets that should be summed when averaging
     private static final int AVERAGED_SAMPLE_COUNT = 30;
 
@@ -161,7 +154,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             @Override public void onStopTrackingTouch(SeekBar seekBar) {
                 // average sample count has changed
                 int averagedSampleCount = seekBar.getProgress() > 0 ? seekBar.getProgress() : 1;
-                PrefUtils.setAveragedSampleCount(seekBar.getContext(), RecordScopeFragment.class, averagedSampleCount);
+                PrefUtils.setAveragedSampleCount(seekBar.getContext(), BaseWaveformFragment.class, averagedSampleCount);
                 JniUtils.setAveragedSampleCount(averagedSampleCount);
             }
 
@@ -182,7 +175,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
         new ThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
-                ((ThresholdRenderer) getRenderer()).adjustThreshold(y);
+                getRenderer().adjustThreshold(y);
             }
         };
 
@@ -259,7 +252,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         unbinder = ButterKnife.bind(this, view);
 
         // we should set averaged sample count before UI setup
-        int averagedSampleCount = PrefUtils.getAveragedSampleCount(view.getContext(), RecordScopeFragment.class);
+        int averagedSampleCount = PrefUtils.getAveragedSampleCount(view.getContext(), BaseWaveformFragment.class);
         if (averagedSampleCount < 0) averagedSampleCount = AVERAGED_SAMPLE_COUNT;
         JniUtils.setAveragedSampleCount(averagedSampleCount);
 
@@ -269,59 +262,47 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     @Override protected BaseWaveformRenderer createRenderer() {
-        if (thresholdOn) {
-            final ThresholdRenderer renderer = new ThresholdRenderer(this);
-            renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
+        final WaveformRenderer renderer = new WaveformRenderer(this);
+        renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
 
-                @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                    if (getActivity() != null && getAudioService() != null) {
-                        viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
-                        viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                        viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
-                        // we need to call it on UI thread because renderer is drawing on background thread
-                        getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-                    }
+            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
+                if (getActivity() != null && getAudioService() != null) {
+                    viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
                 }
-            });
-            renderer.setOnThresholdChangeListener(new ThresholdRenderer.OnThresholdChangeListener() {
+            }
+        });
+        renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
 
-                @Override public void onThresholdPositionChange(final int position) {
-                    if (getActivity() != null) {
-                        setThresholdHandlePositionRunnable.setPosition(position);
-                        // we need to call it on UI thread because renderer is drawing on background thread
-                        getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
-                    }
+            @Override public void onThresholdPositionChange(final int position) {
+                if (getActivity() != null) {
+                    setThresholdHandlePositionRunnable.setPosition(position);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
                 }
+            }
 
-                @Override public void onThresholdValueChange(final float value) {
-                    if (getActivity() != null) {
-                        updateDataProcessorThresholdRunnable.setValue(value);
-                        // we need to call it on UI thread because renderer is drawing on background thread
-                        getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                    }
+            @Override public void onThresholdValueChange(final float value) {
+                if (getActivity() != null) {
+                    updateDataProcessorThresholdRunnable.setValue(value);
+                    // we need to call it on UI thread because renderer is drawing on background thread
+                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
                 }
-            });
-            return renderer;
-        } else {
-            final WaveformRenderer renderer = new WaveformRenderer(this);
-            renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
-
-                @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                    if (getActivity() != null && getAudioService() != null) {
-                        viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
-                        viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                        viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
-                        // we need to call it on UI thread because renderer is drawing on background thread
-                        getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-                    }
-                }
-            });
-            return renderer;
-        }
+            }
+        });
+        renderer.setSignalAveraging(thresholdOn);
+        return renderer;
     }
 
     @Override protected boolean isBackable() {
         return false;
+    }
+
+    @Override protected WaveformRenderer getRenderer() {
+        return (WaveformRenderer) super.getRenderer();
     }
 
     //==============================================
@@ -462,7 +443,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // threshold button
         ViewUtils.playAfterNextLayout(ibtnThreshold, new Func<View, Void>() {
             @Nullable @Override public Void apply(@Nullable View source) {
-                thresholdHandle.setTopOffset(source.getHeight());
+                thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
                 return null;
             }
         });
@@ -525,29 +506,30 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Starts the threshold mode
     void startThresholdMode() {
         thresholdOn = true;
-        recreateRenderer();
-        if (getAudioService() != null) {
-            getAudioService().setSignalAveraging(thresholdOn);
-            setMaxProcessingTime();
-        }
+        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+
+        getRenderer().onSaveSettings(ibtnThreshold.getContext());
+        getRenderer().setSignalAveraging(thresholdOn);
+        getRenderer().onLoadSettings(ibtnThreshold.getContext());
     }
 
     // Stops the threshold mode
     void stopThresholdMode() {
         thresholdOn = false;
-        recreateRenderer();
-        if (getAudioService() != null) {
-            getAudioService().setSignalAveraging(thresholdOn);
-            setMaxProcessingTime();
-        }
+        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+
+        getRenderer().onSaveSettings(ibtnThreshold.getContext());
+        getRenderer().setSignalAveraging(thresholdOn);
+        getRenderer().onLoadSettings(ibtnThreshold.getContext());
+
+        // threshold should be reset every time it's enabled so let's reset every time on closing
+        JniUtils.resetThreshold();
     }
 
     // Sets the specified value for the threshold.
     void setThresholdHandlePosition(int value) {
         // can be null if callback is called after activity has finished
-        if (thresholdHandle != null) {
-            thresholdHandle.setPosition(value);
-        }
+        if (thresholdHandle != null) thresholdHandle.setPosition(value);
     }
 
     // Updates data processor with the newly set threshold.
@@ -685,27 +667,18 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void startActiveInput(@NonNull AudioService audioService) {
         audioService.setSignalAveraging(thresholdOn);
         audioService.startActiveInputSource();
-        setMaxProcessingTime();
+
+        // resume the threshold in case it was paused during playback
+        JniUtils.resumeThreshold();
     }
 
     private void startMicrophone(@NonNull AudioService audioService) {
-        setMaxProcessingTime();
         audioService.startMicrophone();
     }
 
     // Triggers
     private void startUsb(@NonNull AudioService audioService, @NonNull String deviceName) {
-        setMaxProcessingTime();
         audioService.startUsb(deviceName);
-    }
-
-    // Sets max processing time depending on the input source and whether threshold is turned on or not
-    private void setMaxProcessingTime() {
-        if (getAudioService() != null) {
-            getAudioService().setMaxProcessingTimeInSeconds(
-                getAudioService().isSignalAveraging() ? MAX_THRESHOLD_PROCESSING_TIME
-                    : getAudioService().isUsbActiveInput() ? MAX_USB_PROCESSING_TIME : MAX_AUDIO_PROCESSING_TIME);
-        }
     }
 
     //==============================================

@@ -88,8 +88,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     private double maxTime;
     // Whether incoming live signal should be averaged
     private boolean signalAveraging;
-    // Whether incoming signal should be averaged during playback
-    private boolean playbackSignalAveraging;
 
     // Reference to currently active sample source
     private AbstractSampleSource sampleSource;
@@ -112,6 +110,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         LOGD(TAG, "onCreate()");
 
         processingBuffer = ProcessingBuffer.get();
+
         // we need to listen for USB attach/detach
         startUsbDetection();
 
@@ -130,7 +129,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         turnOffMicrophone();
         turnOffPlayback();
 
-        processingBuffer.clearBuffer();
         processingBuffer = null;
 
         super.onDestroy();
@@ -159,49 +157,12 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     //========================================================
 
     /**
-     * Sets the maximum time of incoming data to be processed at any given moment in seconds.
-     */
-    public void setMaxProcessingTimeInSeconds(double maxSeconds) {
-        LOGD(TAG, "setMaxProcessingTimeInSeconds(" + maxSeconds + ")");
-        if (maxSeconds <= 0) return; // max time needs to be positive
-
-        final int bufferSize = (int) (maxSeconds * sampleRate);
-        if (processingBuffer != null) processingBuffer.setSize(bufferSize);
-        if (sampleSource != null) sampleSource.setBufferSize(bufferSize);
-
-        this.maxTime = maxSeconds;
-    }
-
-    /**
-     * Sets whether incoming live signal should be averaged.
+     * Sets whether incoming signal should be averaged.
      */
     public void setSignalAveraging(boolean signalAveraging) {
-        if (signalAveraging == this.signalAveraging) return;
-
         this.signalAveraging = signalAveraging;
-    }
 
-    /**
-     * Returns whether incoming signal is being averaged.
-     */
-    public boolean isSignalAveraging() {
-        return signalAveraging;
-    }
-
-    /**
-     * Sets whether incoming signal should be average during playback.
-     */
-    public void setPlaybackSignalAveraging(boolean playbackSignalAveraging) {
-        if (playbackSignalAveraging == this.playbackSignalAveraging) return;
-
-        this.playbackSignalAveraging = playbackSignalAveraging;
-    }
-
-    /**
-     * Returns whether incoming signal is being averaged during playback.
-     */
-    public boolean isPlaybackSignalAveraging() {
-        return playbackSignalAveraging;
+        if (processingBuffer != null) processingBuffer.setAveragingSignal(signalAveraging);
     }
 
     /**
@@ -219,7 +180,11 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         this.sampleRate = sampleRate;
 
         // recalculate max render time
-        setMaxProcessingTimeInSeconds(maxTime);
+        //setMaxProcessingTimeInSeconds(maxTime);
+        if (processingBuffer != null) {
+            processingBuffer.setSampleRate(sampleRate);
+            if (sampleSource != null) sampleSource.setBufferSize(processingBuffer.getBufferSize());
+        }
         // reset filters
         FILTERS.setSampleRate(sampleRate);
 
@@ -287,35 +252,13 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         setSampleRate(sampleRate);
     }
 
-    private final Benchmark benchmarkT = new Benchmark("THRESHOLD_JAVA").warmUp(50)
-        .sessions(10)
-        .measuresPerSession(50)
-        .logBySession(false)
-        .listener(new Benchmark.OnBenchmarkListener() {
-            @Override public void onEnd() {
-                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            }
-        });
-
     // Passes data to data manager so it can be consumed by renderer
     private void passToDataManager(@NonNull SamplesWithEvents samplesWithEvents) {
         // record
-        passToRecorder(samplesWithEvents);
-
-        // threshold if needed
-        if ((!isPlaybackMode() && signalAveraging) || (isPlaybackMode() && playbackSignalAveraging)) {
-            //benchmarkT.start();
-            JniUtils.processThreshold(samplesWithEvents, samplesWithEvents.samples, samplesWithEvents.sampleCount);
-            //benchmarkT.end();
-        }
+        if (recordingSaver != null) record(samplesWithEvents);
 
         // pass data to data manager
         if (processingBuffer != null) processingBuffer.addToBuffer(samplesWithEvents);
-    }
-
-    // Passes data to audio recorder
-    private void passToRecorder(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (recordingSaver != null) record(samplesWithEvents);
     }
 
     //========================================================
@@ -377,14 +320,12 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         turnOffUsb();
         turnOffPlayback();
 
+        if (processingBuffer != null) processingBuffer.setPlayback(false);
         if (sampleSource == null) {
             sampleSource = new MicrophoneSampleSource(this);
-            sampleSource.setBufferSize(processingBuffer.getSize());
+            sampleSource.setBufferSize(processingBuffer.getBufferSize());
             sampleSource.start();
             LOGD(TAG, "Microphone started");
-
-            // clear the buffer before on start
-            processingBuffer.clearBuffer();
         }
     }
 
@@ -457,6 +398,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         turnOffMicrophone();
         turnOffPlayback();
 
+        if (processingBuffer != null) processingBuffer.setPlayback(false);
         // set current USB input source
         if (usbHelper.getUsbDevice() != null) {
             if (usbHelper.getUsbDevice().getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
@@ -473,10 +415,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                         });
             }
             sampleSource = usbHelper.getUsbDevice();
-            sampleSource.setBufferSize(processingBuffer.getSize());
-
-            // clear the buffer before on start
-            processingBuffer.clearBuffer();
+            sampleSource.setBufferSize(processingBuffer.getBufferSize());
         }
 
         // resume communication with USB
@@ -558,8 +497,8 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
      * Triggers loading and playback of the file at specified {@code filePath}. If {@code autoPlay} is {@code true} file
      * starts playing as soon as first samples are loaded, if it's {@code false} file is initially paused.
      */
-    public void startPlayback(@NonNull String filePath, boolean autoPlay) {
-        if (created) startPlaybackSource(filePath, autoPlay);
+    public void startPlayback(@NonNull String filePath, boolean autoPlay, int position) {
+        if (created) startPlaybackSource(filePath, autoPlay, AudioUtils.getByteCount(position));
     }
 
     /**
@@ -581,7 +520,10 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
      * Stops the playback.
      */
     public void stopPlayback() {
-        if (created) turnOffPlayback();
+        if (created) {
+            if (isPlaybackMode()) ((PlaybackSampleSource) sampleSource).pausePlayback();
+            turnOffPlayback();
+        }
     }
 
     /**
@@ -635,6 +577,13 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
     }
 
     /**
+     * Whether playback is currently paused.
+     */
+    public boolean isAudioPaused() {
+        return isPlaybackMode() && !((PlaybackSampleSource) sampleSource).isPlaying();
+    }
+
+    /**
      * Whether playback is currenly in the seek mode.
      */
     public boolean isAudioSeeking() {
@@ -662,15 +611,16 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
     }
 
-    private void startPlaybackSource(@NonNull final String filePath, boolean autoPlay) {
+    private void startPlaybackSource(@NonNull final String filePath, boolean autoPlay, int position) {
         if (ApacheCommonsLang3Utils.isNotBlank(filePath)) {
             turnOffMicrophone();
             turnOffUsb();
 
             turnOffPlayback();
+            if (processingBuffer != null) processingBuffer.setPlayback(true);
             if (sampleSource == null) {
-                sampleSource = new PlaybackSampleSource(filePath, autoPlay, this);
-                sampleSource.setBufferSize(processingBuffer.getSize());
+                sampleSource = new PlaybackSampleSource(filePath, autoPlay, position, this);
+                sampleSource.setBufferSize(processingBuffer.getBufferSize());
                 ((PlaybackSampleSource) sampleSource).setPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
@@ -704,9 +654,6 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                     }
                 });
                 turnOnPlayback(); // this will stop the microphone and in progress recording if any
-
-                // clear the buffer before on start
-                processingBuffer.clearBuffer();
             }
         }
     }

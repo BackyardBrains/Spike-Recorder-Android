@@ -24,15 +24,15 @@ import com.crashlytics.android.Crashlytics;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class SampleBuffer {
+public class ShortBuffer {
 
-    private static final String TAG = makeLogTag(SampleBuffer.class);
+    private static final String TAG = makeLogTag(ShortBuffer.class);
 
     private final int size;
 
     private short[] buffer;
 
-    public SampleBuffer(int size) {
+    public ShortBuffer(int size) {
         this.size = size;
 
         buffer = new short[size];

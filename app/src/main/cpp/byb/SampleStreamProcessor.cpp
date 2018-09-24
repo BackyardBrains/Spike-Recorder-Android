@@ -56,8 +56,9 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
         if (insideEscapeSequence) { // we are inside escape sequence
             sampleIndex = sampleCounters[currentChannel] == 0 ? 0 : sampleCounters[currentChannel] - 1;
             if (eventMessageIndex >= EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
-                unsigned char *copy = new unsigned char[eventMessageIndex];
+                unsigned char *copy = new unsigned char[eventMessageIndex + 1];
                 std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
+                copy[eventMessageIndex] = 0;
                 // let's process incoming message
                 processEscapeSequenceMessage(copy, sampleIndex);
 
@@ -66,8 +67,9 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
             } else if (ESCAPE_SEQUENCE_END[tmpIndex] == uc) {
                 tmpIndex++;
                 if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
-                    unsigned char *copy = new unsigned char[eventMessageIndex];
+                    unsigned char *copy = new unsigned char[eventMessageIndex + 1];
                     std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
+                    copy[eventMessageIndex] = 0;
                     // let's process incoming message
                     processEscapeSequenceMessage(copy, sampleIndex);
 

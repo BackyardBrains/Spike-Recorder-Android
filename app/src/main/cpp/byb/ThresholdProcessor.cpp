@@ -43,6 +43,22 @@ void ThresholdProcessor::setThreshold(int threshold) {
     ThresholdProcessor::triggerValue = threshold;
 }
 
+void ThresholdProcessor::resetThreshold() {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "resetThreshold()");
+
+    ThresholdProcessor::resetOnNextBatch = true;
+}
+
+void ThresholdProcessor::setPaused(bool paused) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setPaused(%s)", paused ? "PAUSE" : "RESUME");
+
+    if (ThresholdProcessor::paused == paused) return;
+
+    if (paused) resetThreshold();
+
+    ThresholdProcessor::paused = paused;
+}
+
 void ThresholdProcessor::setBpmProcessing(bool processBpm) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "setBpmProcessing(%s)", processBpm ? "ON" : "OFF");
 
@@ -55,6 +71,8 @@ void ThresholdProcessor::setBpmProcessing(bool processBpm) {
 }
 
 void ThresholdProcessor::process(const short *inSamples, short *outSamples, const int length) {
+    if (paused) return;
+
     // reset buffers if threshold changed
     bool shouldReset = false;
     if (lastTriggeredValue != triggerValue) {
@@ -74,7 +92,10 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
         lastSampleRate = getSampleRate();
         shouldReset = true;
     }
-    if (shouldReset) reset();
+    if (shouldReset || resetOnNextBatch) {
+        reset();
+        resetOnNextBatch = false;
+    }
 
     // append unfinished sample buffers with incoming samples
     int samplesToCopy;
@@ -84,6 +105,7 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
                   unfinishedSamplesForCalculation[i] + unfinishedSamplesForCalculationCounts[i]);
         unfinishedSamplesForCalculationCounts[i] += samplesToCopy;
     }
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER APPENDING SAMPLE BUFFERS WITH INCOMING SAMPLES");
 
     short currentSample;
     int copyFromIncoming, copyFromBuffer;
@@ -110,10 +132,12 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
 
                 // create new samples for current threshold
                 unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] = new short[sampleCount]{0};
-                copyFromBuffer = bufferSampleCount - i;
+                copyFromBuffer = std::max(bufferSampleCount - i, 0);
                 copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);
-                std::copy(buffer + i, buffer + bufferSampleCount,
-                          unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount]);
+                if (copyFromBuffer > 0) {
+                    std::copy(buffer + i, buffer + bufferSampleCount,
+                              unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount]);
+                }
                 std::copy(inSamples, inSamples + copyFromIncoming,
                           unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] + copyFromBuffer);
 
@@ -140,10 +164,16 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
 
         prevSample = currentSample;
     }
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER THRESHOLD DETECTION AND CREATING NEW SAMPLE BUFFERS");
+
 
     // add samples to local buffer
-    std::copy(buffer + length, buffer + bufferSampleCount, buffer);
-    std::copy(inSamples, inSamples + length, buffer + bufferSampleCount - length);
+    copyFromBuffer = std::max(bufferSampleCount - length, 0);
+    copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, length);
+    if (copyFromBuffer > 0)std::copy(buffer + length, buffer + bufferSampleCount, buffer);
+    std::copy(inSamples, inSamples + copyFromIncoming, buffer + bufferSampleCount - copyFromIncoming);
+
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "FINISHED WITH SAVING FIRST HALF OF NEXT SAMPLE BUFFER");
 
     // add incoming samples to calculation of averages
     for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
@@ -169,6 +199,8 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
         }
         unfinishedSamplesForCalculationAveragedCounts[i] = unfinishedSamplesForCalculationCounts[i];
     }
+
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER ADDING INCOMING SAMPLES TO CALCULATION OF AVERAGES");
 
     // move filled sample buffers from unfinished samples collection to finished samples collection
     for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
@@ -198,10 +230,16 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
         }
     }
 
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER MOVING FILLED SAMPLE BUFFERS FROM UNFINISHED TO FINISHED");
+
     std::copy(averagedSamples, averagedSamples + sampleCount, outSamples);
+
+//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER POPULATING OUTPUT");
 }
 
 void ThresholdProcessor::reset() {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "reset()");
+
     sampleCount = static_cast<int>(getSampleRate() * MAX_PROCESSED_SECONDS);
     bufferSampleCount = sampleCount / 2;
 

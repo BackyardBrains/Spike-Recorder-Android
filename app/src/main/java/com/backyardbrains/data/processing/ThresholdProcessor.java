@@ -74,7 +74,7 @@ public class ThresholdProcessor implements SampleProcessor {
     private int[] summedSamplesCounts;
 
     // Buffer that holds most recent 680 ms of audio so we can prepend new sample buffers when threshold is hit
-    private SampleBuffer buffer;
+    private ShortBuffer buffer;
     private ArrayList<short[]> samplesForCalculation;
     private ArrayList<Samples> unfinishedSamplesForCalculation;
     private Handler handler;
@@ -222,7 +222,7 @@ public class ThresholdProcessor implements SampleProcessor {
         deadPeriodCount = (int) (sampleRate * deadPeriodSeconds);
         minBpmResetPeriodCount = (int) (sampleRate * minBpmResetPeriodSeconds);
 
-        buffer = new SampleBuffer(bufferSampleCount);
+        buffer = new ShortBuffer(bufferSampleCount);
         samplesForCalculation = new ArrayList<>(averagedSampleCount * 2);
         summedSamples = null;
         summedSamplesCounts = null;

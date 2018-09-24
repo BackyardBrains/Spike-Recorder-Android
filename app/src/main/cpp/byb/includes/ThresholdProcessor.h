@@ -34,6 +34,11 @@ public:
     // Set's the sample frequency threshold.
     void setThreshold(int threshold);
 
+    // Resets all the fields used for calculations when next batch comes
+    void resetThreshold();
+
+    void setPaused(bool paused);
+
     // Starts/stops processing heartbeat
     void setBpmProcessing(bool processBpm);
 
@@ -55,11 +60,11 @@ private:
     // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
     static constexpr double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
 
-    // Resets all local variables used for the heartbeat processing
-    void resetBpm();
-
     // Resets all the fields used for calculations
     void reset();
+
+    // Resets all local variables used for the heartbeat processing
+    void resetBpm();
 
     // Number of samples that we collect for one sample stream
     int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
@@ -73,6 +78,8 @@ private:
     int lastAveragedSampleCount = 0;
     // Used to check whether sample rate has changed since the last incoming sample batch
     float lastSampleRate = 0;
+    // Whether buffers need to be reset before processing next batch
+    bool resetOnNextBatch = false;
 
     // We need to buffer half of samples total count up to the sample that hit's threshold
     int bufferSampleCount = sampleCount / 2;
@@ -106,6 +113,9 @@ private:
 
     // Holds previously processed sample so we can compare whether we have a threshold hit
     short prevSample;
+
+    // Whether threshold is currently paused or not. If paused, processing returns values as if the threshold is always reset.
+    bool paused = false;
 
     // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
     HeartbeatHelper *heartbeatHelper;

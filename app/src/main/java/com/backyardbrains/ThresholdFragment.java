@@ -288,7 +288,7 @@ public class ThresholdFragment extends BaseWaveformFragment {
             getAudioService().startActiveInputSource();
 
             getAudioService().setSignalAveraging(true);
-            getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
+            //getAudioService().setMaxProcessingTimeInSeconds(MAX_PROCESSING_TIME);
         }
     }
 

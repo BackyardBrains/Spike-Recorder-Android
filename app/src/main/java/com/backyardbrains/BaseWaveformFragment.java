@@ -11,8 +11,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.events.SampleRateChangeEvent;
-import com.backyardbrains.utils.Func;
-import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.view.WaveformLayout;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -31,8 +29,8 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected final ViewableTimeSpanUpdateRunnable viewableTimeSpanUpdateRunnable =
         new ViewableTimeSpanUpdateRunnable();
 
-    private WaveformLayout waveform;
-    private ImageButton ibtnBack;
+    protected WaveformLayout waveform;
+    protected ImageButton ibtnBack;
 
     BaseWaveformRenderer renderer;
 
@@ -139,24 +137,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
      */
     protected BaseWaveformRenderer getRenderer() {
         return renderer;
-    }
-
-    /**
-     * Recreates renderer. This method should be called when
-     */
-    protected void recreateRenderer() {
-        // if renderer already exist we should save it's settings and then close it and and destroy it
-        if (renderer != null && getContext() != null) renderer.onSaveSettings(getContext());
-        destroyRenderer();
-        // create renderer and load it's settings
-        renderer = createRenderer();
-        waveform.setRenderer(renderer);
-        ViewUtils.playAfterNextLayout(waveform, new Func<View, Void>() {
-            @Nullable @Override public Void apply(@Nullable View source) {
-                if (renderer != null && getContext() != null) renderer.onLoadSettings(getContext());
-                return null;
-            }
-        });
     }
 
     //==============================================

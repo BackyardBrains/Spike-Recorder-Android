@@ -21,6 +21,7 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.JniUtils;
@@ -123,7 +124,7 @@ public class ThresholdRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
-        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, @NonNull SparseArray<String> eventsBuffer, int fromSample, int toSample,
         int drawSurfaceWidth) {
         try {
             JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample,
