@@ -17,22 +17,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.backyardbrains.data.processing;
+package com.backyardbrains.drawing;
 
 import com.crashlytics.android.Crashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class ShortBuffer {
+public class DrawBuffer {
 
-    private static final String TAG = makeLogTag(ShortBuffer.class);
+    private static final String TAG = makeLogTag(DrawBuffer.class);
 
     private final int size;
 
     private short[] buffer;
 
-    public ShortBuffer(int size) {
+    DrawBuffer(int size) {
         this.size = size;
 
         buffer = new short[size];

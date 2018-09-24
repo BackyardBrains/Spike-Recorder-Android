@@ -8,9 +8,11 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -23,6 +25,7 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
@@ -35,10 +38,12 @@ import com.backyardbrains.filters.UsbNeuronProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbSerialFilterSettingsDialog;
 import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
+import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SlidingView;
 import com.backyardbrains.view.ThresholdHandle;
 import com.crashlytics.android.Crashlytics;
@@ -70,11 +75,14 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @BindView(R.id.threshold_handle) ThresholdHandle thresholdHandle;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
-    @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
-    @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
     @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
     @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
+    @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
+    @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
+    @BindView(R.id.tb_sound) ToggleButton tbSound;
+    @BindView(R.id.hv_heartbeat) HeartbeatView vHeartbeat;
+    @BindView(R.id.tv_beats_per_minute) TextView tvBeatsPerMinute;
 
     private FilterSettingsDialog filterSettingsDialog;
     private SlidingView stopRecButton;
@@ -138,6 +146,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         @Override public void onClick(View v) {
             startThresholdMode();
             setupThresholdView();
+
+            // update BPM UI
+            updateBpmUI();
         }
     };
 
@@ -145,6 +156,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         @Override public void onClick(View v) {
             stopThresholdMode();
             setupThresholdView();
+
+            // update BPM UI
+            updateBpmUI();
         }
     };
 
@@ -332,6 +346,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupFiltersButton();
         // setup USB button
         setupUsbButton();
+        // setup BPM UI
+        updateBpmUI();
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -381,6 +397,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupFiltersButton();
         // setup USB button
         setupUsbButton();
+        // update BPM label
+        updateBpmUI();
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -432,6 +450,19 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             filterSettingsDialog.dismiss();
             filterSettingsDialog = null;
         }
+        // update BPM UI
+        updateBpmUI();
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onHeartbeatEvent(HeartbeatEvent event) {
+        tvBeatsPerMinute.setText(
+            String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
+        if (event.getBeatsPerMinute() > 0) {
+            vHeartbeat.beep();
+        } else {
+            vHeartbeat.off();
+        }
     }
 
     //==============================================
@@ -467,6 +498,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         });
         // set initial visibility
         setupButtons(false);
+        // BPM UI
+        updateBpmUI();
+        if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
+        tbSound.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                vHeartbeat.setMuteSound(!b);
+                if (getContext() != null) PrefUtils.setBpmSound(getContext(), b);
+            }
+        });
     }
 
     //==============================================
@@ -538,6 +578,32 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     //==============================================
+    // BPM
+    //==============================================
+
+    // Updates BpPM UI
+    void updateBpmUI() {
+        // update whether BPM processing should be on
+        JniUtils.setBpmProcessing(shouldShowBpm());
+
+        tbSound.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        vHeartbeat.setMuteSound(getContext() != null && !PrefUtils.getBpmSound(getContext()));
+        vHeartbeat.off();
+        tvBeatsPerMinute.setVisibility(shouldShowBpm() ? View.VISIBLE : View.INVISIBLE);
+        tvBeatsPerMinute.setText(String.format(getString(R.string.template_beats_per_minute), 0));
+    }
+
+    // Whether BPM label should be visible or not
+    private boolean shouldShowBpm() {
+        // BPM should be shown if either usb is active input source or we are in AM modulation,
+        // and if current filter is default EKG filter
+        return getAudioService() != null && thresholdOn && (getAudioService().isUsbActiveInput()
+            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getFilter(),
+            Filters.FILTER_HEART);
+    }
+
+    //==============================================
     // FILTERS
     //==============================================
 
@@ -576,6 +642,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Sets a filter that should be applied while processing incoming data
     void setFilter(@NonNull Filter filter) {
         if (getAudioService() != null) getAudioService().setFilter(filter);
+
+        // update BPM UI
+        updateBpmUI();
     }
 
     //==============================================

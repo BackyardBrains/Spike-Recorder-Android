@@ -113,6 +113,13 @@ public class ProcessingBuffer {
     }
 
     /**
+     * Returns size of the currently used sample buffer depending on whether averaging is on of off.
+     */
+    public int getSize() {
+        return averagingSignal ? averagedSamplesBuffer.capacity() : sampleBuffer.capacity();
+    }
+
+    /**
      * Returns size of the sample buffer.
      */
     public int getBufferSize() {

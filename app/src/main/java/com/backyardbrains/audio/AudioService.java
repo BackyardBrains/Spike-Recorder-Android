@@ -183,7 +183,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         //setMaxProcessingTimeInSeconds(maxTime);
         if (processingBuffer != null) {
             processingBuffer.setSampleRate(sampleRate);
-            if (sampleSource != null) sampleSource.setBufferSize(processingBuffer.getBufferSize());
+            if (sampleSource != null) sampleSource.setBufferSize(processingBuffer.getSize());
         }
         // reset filters
         FILTERS.setSampleRate(sampleRate);
@@ -323,7 +323,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
         if (processingBuffer != null) processingBuffer.setPlayback(false);
         if (sampleSource == null) {
             sampleSource = new MicrophoneSampleSource(this);
-            sampleSource.setBufferSize(processingBuffer.getBufferSize());
+            sampleSource.setBufferSize(processingBuffer.getSize());
             sampleSource.start();
             LOGD(TAG, "Microphone started");
         }
@@ -415,7 +415,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
                         });
             }
             sampleSource = usbHelper.getUsbDevice();
-            sampleSource.setBufferSize(processingBuffer.getBufferSize());
+            sampleSource.setBufferSize(processingBuffer.getSize());
         }
 
         // resume communication with USB
@@ -620,7 +620,7 @@ public class AudioService extends Service implements SampleSource.SampleSourceLi
             if (processingBuffer != null) processingBuffer.setPlayback(true);
             if (sampleSource == null) {
                 sampleSource = new PlaybackSampleSource(filePath, autoPlay, position, this);
-                sampleSource.setBufferSize(processingBuffer.getBufferSize());
+                sampleSource.setBufferSize(processingBuffer.getSize());
                 ((PlaybackSampleSource) sampleSource).setPlaybackListener(new PlaybackSampleSource.PlaybackListener() {
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();

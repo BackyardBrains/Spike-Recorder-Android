@@ -8,7 +8,6 @@ import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SamplesWithEvents;
-import com.backyardbrains.data.processing.ShortBuffer;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.Benchmark;
@@ -35,9 +34,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
 
-    private ShortBuffer sampleBuffer;
+    private DrawBuffer sampleBuffer;
     private short[] samples;
-    private ShortBuffer averagedSamplesBuffer;
+    private DrawBuffer averagedSamplesBuffer;
     private short[] averagedSamples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
@@ -169,7 +168,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getBufferSize();
+        final int maxGlWindowWidth = processingBuffer.getSize();
 
         // recalculate width of the GL window
         int newSize = glWindowWidth;
@@ -205,8 +204,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     public void resetAveragedSignal() {
         if (processingBuffer != null) {
-            averagedSamplesBuffer = new ShortBuffer(processingBuffer.getBufferSize());
-            averagedSamples = new short[processingBuffer.getBufferSize()];
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
         }
     }
 
@@ -214,7 +213,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         if (newSize < 0) return;
 
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getBufferSize();
+        final int maxGlWindowWidth = processingBuffer.getSize();
 
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
         if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
@@ -373,12 +372,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         // get samples from processing buffer and check if it's valid
         // FIXME: 24-Sep-18 CURRENTLY THE ONLY WAY TO SAVE DATA WHEN SWITCHING BETWEEN PLAYBACK AND THRESHOLD MODE WHILE PAUSING IS TO HAVE TWO DIFFERENT BUFFERS BUT THIS SHOULD BE IMPLEMENTED BETTER
         if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getBufferSize()) {
-            sampleBuffer = new ShortBuffer(processingBuffer.getBufferSize());
+            sampleBuffer = new DrawBuffer(processingBuffer.getBufferSize());
             samples = new short[processingBuffer.getBufferSize()];
         }
         if (averagedSamplesBuffer == null
             || averagedSamplesBuffer.getSize() != processingBuffer.getThresholdBufferSize()) {
-            averagedSamplesBuffer = new ShortBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
             averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
         }
         int count = processingBuffer.get(samples);
@@ -386,7 +385,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         count = processingBuffer.getAveraged(averagedSamples);
         if (count > 0) averagedSamplesBuffer.add(averagedSamples, count);
         // select buffer for drawing
-        ShortBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
+        DrawBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
 
         final int sampleCount = tmpSampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();

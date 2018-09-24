@@ -119,7 +119,9 @@ void ThresholdProcessor::process(const short *inSamples, short *outSamples, cons
             lastTriggerSampleCounter++;
 
             // check if minimum BPM reset period passed after last threshold hit and reset if necessary
-            if (lastTriggerSampleCounter > minBpmResetPeriodCount) resetBpm();
+            if (lastTriggerSampleCounter > minBpmResetPeriodCount) {
+                resetBpm();
+            }
         }
         // end of heartbeat processing
 
@@ -285,6 +287,7 @@ void ThresholdProcessor::reset() {
 
     prevSample = 0;
 
+    heartbeatHelper->reset();
     heartbeatHelper->setSampleRate(getSampleRate());
     minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
     lastTriggerSampleCounter = 0;
@@ -292,6 +295,8 @@ void ThresholdProcessor::reset() {
 }
 
 void ThresholdProcessor::resetBpm() {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "resetBpm()");
+
     heartbeatHelper->reset();
     sampleCounter = 0;
     lastTriggerSampleCounter = 0;

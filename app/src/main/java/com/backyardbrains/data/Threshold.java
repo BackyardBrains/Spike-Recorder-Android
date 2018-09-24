@@ -9,10 +9,6 @@ public class Threshold {
 
     private final int[] thresholds;
 
-    public Threshold() {
-        thresholds = new int[2];
-    }
-
     public Threshold(int leftThreshold, int rightThreshold) {
         thresholds = new int[2];
         this.thresholds[ThresholdOrientation.LEFT] = leftThreshold;
