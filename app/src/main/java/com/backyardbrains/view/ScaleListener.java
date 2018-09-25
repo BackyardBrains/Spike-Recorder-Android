@@ -31,6 +31,8 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
     private static final String TAG = makeLogTag(ScaleListener.class);
 
+    private static final float SCALE_FACTOR_MULTIPLIER = 1.5f;
+
     private final BaseWaveformRenderer renderer;
 
     private int sizeAtBeginningX = -1;
@@ -63,8 +65,8 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
         try {
             // determine scale factors for both axis
-            scaleFactorX *= (1 + 2.5 * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
-            scaleFactorY *= (1 + 4 * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
+            scaleFactorX *= (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
+            scaleFactorY *= (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
 
             final float xDiff = Math.abs(detector.getPreviousSpanX() - detector.getCurrentSpanX());
             final float yDiff = Math.abs(detector.getPreviousSpanY() - detector.getCurrentSpanY());
