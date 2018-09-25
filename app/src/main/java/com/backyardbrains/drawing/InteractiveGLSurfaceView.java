@@ -35,7 +35,6 @@ import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.ViewConfiguration;
 import com.backyardbrains.BybApplication;
-import com.backyardbrains.view.ScaleListener;
 import com.backyardbrains.view.ZoomButton;
 import java.util.concurrent.atomic.AtomicInteger;
 
