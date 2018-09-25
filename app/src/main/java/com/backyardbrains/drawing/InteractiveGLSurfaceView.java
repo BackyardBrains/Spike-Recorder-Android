@@ -59,6 +59,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     BaseWaveformRenderer renderer;
 
     protected ScaleGestureDetector scaleDetector;
+    protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
     protected GestureDetector scrollDetector;
     protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
 
@@ -69,12 +70,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
                 return scrolling;
             }
-
-            return false;
-        }
-
-        @Override public boolean onDoubleTap(MotionEvent e) {
-            if (renderer.isAutoScaleEnabled()) renderer.autoScale();
 
             return false;
         }
@@ -148,7 +143,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     public void setRenderer(@NonNull BaseWaveformRenderer renderer) {
         this.renderer = renderer;
 
-        scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener(renderer));
+        scaleListener = new ScaleListener(renderer);
+        scaleDetector = new ScaleGestureDetector(getContext(), scaleListener);
         scrollDetector = new GestureDetector(getContext(), scrollListener);
         scrollDetector.setIsLongpressEnabled(false);
 

@@ -30,7 +30,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
-    private static final float AUTO_SCALE_FACTOR = 1.5f;
 
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
@@ -278,7 +277,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         surfaceSizeDirty = true;
         setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
         setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, getClass()));
-        //setAutoScaleEnabled(PrefUtils.getAutoScale(context, getClass()));
+        setAutoScale(PrefUtils.getAutoScale(context, getClass()));
         minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
 
@@ -294,7 +293,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
         PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowHeight);
-        //PrefUtils.setAutoScale(context, getClass(), autoScale);
+        PrefUtils.setAutoScale(context, getClass(), autoScale);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minDetectedPCMValue);
     }
 
@@ -355,6 +354,18 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     @Override public void onDrawFrame(GL10 gl) {
         //benchmark.start();
 
+        final boolean surfaceSizeDirty = this.surfaceSizeDirty;
+        final int surfaceWidth = this.surfaceWidth;
+        final int surfaceHeight = this.surfaceHeight;
+        final boolean glWindowWidthDirty = this.glWindowWidthDirty;
+        final boolean glWindowHeightDirty = this.glWindowHeightDirty;
+        final int glWindowWidth = this.glWindowWidth;
+        final int glWindowHeight = this.glWindowHeight;
+
+        // let's reset dirty flags right away
+        this.glWindowWidthDirty = false;
+        this.glWindowHeightDirty = false;
+
         // get event indices and event names from processing buffer
         final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
 
@@ -375,24 +386,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         if (count > 0) averagedSamplesBuffer.add(averagedSamples, count);
         // select buffer for drawing
         DrawBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
-
-        // auto-scale before drawing if necessary
-        if (autoScale) {
-            autoScale(tmpSampleBuffer.getArray());
-            autoScale = false;
-        }
-
-        final boolean surfaceSizeDirty = this.surfaceSizeDirty;
-        final int surfaceWidth = this.surfaceWidth;
-        final int surfaceHeight = this.surfaceHeight;
-        final boolean glWindowWidthDirty = this.glWindowWidthDirty;
-        final boolean glWindowHeightDirty = this.glWindowHeightDirty;
-        final int glWindowWidth = this.glWindowWidth;
-        final int glWindowHeight = this.glWindowHeight;
-
-        // let's reset dirty flags right away
-        this.glWindowWidthDirty = false;
-        this.glWindowHeightDirty = false;
 
         final int sampleCount = tmpSampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
@@ -419,6 +412,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
         // init surface before drawing
         initDrawSurface(gl, samplesDrawCount, glWindowHeight, surfaceSizeDirty || glWindowWidthDirty);
+
+        //autoScaleCheck(samples);
 
         // draw on surface
         draw(gl, tmpSampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
@@ -482,6 +477,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
+     * Whether scrolling of the surface view is enabled.
+     */
+    public boolean isScrollEnabled() {
+        return this.scrollEnabled;
+    }
+
+    /**
      * Called when user starts scrolling the GL surface. This method is called only if {@link #isScrollEnabled()} returns {@code true}.
      */
     protected void startScroll() {
@@ -521,13 +523,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
-     * Whether scrolling of the surface view is enabled.
-     */
-    boolean isScrollEnabled() {
-        return this.scrollEnabled;
-    }
-
-    /**
      * Enables scrolling of the surface view.
      */
     void setScrollEnabled() {
@@ -545,6 +540,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     public void setOnMeasureListener(@Nullable OnMeasureListener listener) {
         this.onMeasureListener = listener;
+    }
+
+    /**
+     * Whether measurement of the signal is enabled.
+     */
+    public boolean isMeasureEnabled() {
+        return measureEnabled;
     }
 
     /**
@@ -591,13 +593,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
-     * Whether measurement of the signal is enabled.
-     */
-    boolean isMeasureEnabled() {
-        return measureEnabled;
-    }
-
-    /**
      * Sets whether measurement of the signal will be enabled.
      */
     void setMeasureEnabled(boolean enabled) {
@@ -608,36 +603,42 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     //  AUTO-SCALE
     //==============================================
 
-    /**
-     * Called when drawing surface is double-tapped. This method is called only if {@link #isAutoScaleEnabled()} returns {@code true}.
-     */
-    void autoScale() {
-        autoScale = true;
+    @SuppressWarnings("unused") private void autoScaleCheck(@NonNull short[] samples) {
+        if (!isAutoScale()) if (samples.length > 0) autoSetFrame(samples);
     }
 
-    /**
-     * Whether auto-scale of the signal on double-tap is enabled.
-     */
-    boolean isAutoScaleEnabled() {
-        return !signalAveraging;
+    private boolean isAutoScale() {
+        return autoScale;
     }
 
-    // Does actual auto-scaling
-    private void autoScale(@NonNull short[] samples) {
-        int max = 0, min = 0;
-        for (short sample : samples) {
-            if (max < sample) max = sample;
-            if (min > sample) min = sample;
+    private void setAutoScale(boolean isScaled) {
+        autoScale = isScaled;
+    }
+
+    private void autoSetFrame(short[] arrayToScaleTo) {
+        int theMax = 0;
+        int theMin = 0;
+
+        for (short anArrayToScaleTo : arrayToScaleTo) {
+            if (theMax < anArrayToScaleTo) theMax = anArrayToScaleTo;
+            if (theMin > anArrayToScaleTo) theMin = anArrayToScaleTo;
         }
 
-        if (max != 0 && min != 0) {
-            final int maxY;
-            if (Math.abs(max) >= Math.abs(min)) {
-                maxY = Math.abs(max) * 2;
+        if (theMax != 0 && theMin != 0) {
+            final int newyMax;
+            if (Math.abs(theMax) >= Math.abs(theMin)) {
+                newyMax = Math.abs(theMax) * 2;
             } else {
-                maxY = Math.abs(min) * 2;
+                newyMax = Math.abs(theMin) * 2;
             }
-            if (-maxY > minDetectedPCMValue) setGlWindowHeight((int) (maxY * AUTO_SCALE_FACTOR));
+            if (-newyMax > getMinDetectedPCMValue()) {
+                setGlWindowHeight(newyMax * 2);
+            }
         }
+        setAutoScale(true);
+    }
+
+    private float getMinDetectedPCMValue() {
+        return minDetectedPCMValue;
     }
 }

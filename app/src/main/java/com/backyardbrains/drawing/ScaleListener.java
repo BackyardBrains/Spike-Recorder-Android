@@ -41,7 +41,7 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
     private boolean horizontalScaling;
     private boolean scalingAxisDetermined;
 
-    ScaleListener(@Nullable BaseWaveformRenderer r) {
+    public ScaleListener(@Nullable BaseWaveformRenderer r) {
         super();
 
         this.renderer = r;
@@ -64,10 +64,8 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
         try {
             // determine scale factors for both axis
-            scaleFactorX *=
-                (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
-            scaleFactorY *=
-                (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
+            scaleFactorX *= (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
+            scaleFactorY *= (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
 
             final float xDiff = Math.abs(detector.getPreviousSpanX() - detector.getCurrentSpanX());
             final float yDiff = Math.abs(detector.getPreviousSpanY() - detector.getCurrentSpanY());
