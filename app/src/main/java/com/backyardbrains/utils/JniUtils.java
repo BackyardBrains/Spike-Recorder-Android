@@ -34,6 +34,12 @@ public class JniUtils {
 
     public static native void setThreshold(int threshold);
 
+    public static native void resetThreshold();
+
+    public static native void pauseThreshold();
+
+    public static native void resumeThreshold();
+
     public static native void setBpmProcessing(boolean processBpm);
 
     public static native void processThreshold(SamplesWithEvents samplesWithEvents, short[] samples, int length);

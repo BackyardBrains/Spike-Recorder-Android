@@ -74,7 +74,7 @@ public class WaveformLayout extends ConstraintLayout {
      * Initializes the surface view for drawing using specified {@code renderer}.
      */
     public void setRenderer(@NonNull BaseWaveformRenderer renderer) {
-        LOGD(TAG, "setRenderer()");
+        LOGD(TAG, "setRenderer(" + renderer.getClass().getSimpleName() + ")");
 
         if (flGL != null) {
             flGL.removeAllViews();
@@ -127,15 +127,17 @@ public class WaveformLayout extends ConstraintLayout {
     }
 
     private void setupZoomButtons() {
-        zoomInButtonH = new ZoomButton(getContext(), ibtnZoomInHorizontally, R.drawable.plus_button_active,
-            R.drawable.plus_button, InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
+        zoomInButtonH =
+            new ZoomButton(getContext(), ibtnZoomInHorizontally, R.drawable.plus_button_active, R.drawable.plus_button,
+                InteractiveGLSurfaceView.MODE_ZOOM_IN_H);
         zoomOutButtonH = new ZoomButton(getContext(), ibtnZoomOutHorizontally, R.drawable.minus_button_active,
             R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_H);
         zoomInButtonV =
             new ZoomButton(getContext(), ibtnZoomInVertically, R.drawable.plus_button_active, R.drawable.plus_button,
                 InteractiveGLSurfaceView.MODE_ZOOM_IN_V);
-        zoomOutButtonV = new ZoomButton(getContext(), ibtnZoomOutVertically, R.drawable.minus_button_active,
-            R.drawable.minus_button, InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
+        zoomOutButtonV =
+            new ZoomButton(getContext(), ibtnZoomOutVertically, R.drawable.minus_button_active, R.drawable.minus_button,
+                InteractiveGLSurfaceView.MODE_ZOOM_OUT_V);
     }
 
     private void showZoomUI(boolean bShow) {

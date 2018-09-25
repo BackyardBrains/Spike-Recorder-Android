@@ -20,7 +20,7 @@ public abstract class AbstractSampleSource implements SampleSource {
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractSampleSource.class);
 
     // Additional filters that should be applied to input data
-    protected static final Filters FILTERS = new Filters();
+    private static final Filters FILTERS = new Filters();
 
     /**
      * Background thread that processes the data from the local buffer filled by the derived class and passes it to
@@ -69,9 +69,9 @@ public abstract class AbstractSampleSource implements SampleSource {
         this.sampleSourceListener = listener;
 
         ringBuffer = new CircularByteBuffer(bufferSize * 2);
-        buffer = new byte[bufferSize];
+        buffer = new byte[bufferSize * 2];
 
-        samplesWithEvents = new SamplesWithEvents((int) (bufferSize * .5f));
+        samplesWithEvents = new SamplesWithEvents(bufferSize);
     }
 
     /**
@@ -105,7 +105,7 @@ public abstract class AbstractSampleSource implements SampleSource {
      */
     protected void setSampleRate(int sampleRate) {
         if (this.sampleRate != sampleRate) {
-            LOGD(TAG, "SAMPLE RATE: " + sampleRate);
+            LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
             // reset filters
             FILTERS.setSampleRate(sampleRate);
@@ -128,18 +128,11 @@ public abstract class AbstractSampleSource implements SampleSource {
     public final void setBufferSize(int bufferSize) {
         if (this.bufferSize != bufferSize) {
             ringBuffer = new CircularByteBuffer(bufferSize * 2);
-            buffer = new byte[bufferSize];
+            buffer = new byte[bufferSize * 2];
             samplesWithEvents = new SamplesWithEvents(bufferSize);
 
             this.bufferSize = bufferSize;
         }
-    }
-
-    /**
-     * Returns number of channels for this input source.
-     */
-    public int getChannelCount() {
-        return channelCount;
     }
 
     /**

@@ -54,6 +54,12 @@ Java_com_backyardbrains_utils_JniUtils_setAveragedSampleCount(JNIEnv *env, jobje
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jobject thiz, jint threshold);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jobject thiz);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jobject thiz);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resumeThreshold(JNIEnv *env, jobject thiz);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jobject thiz, jboolean processBpm);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thiz, jobject out, jshortArray inSamples,
@@ -418,6 +424,21 @@ Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jobject thiz, j
 }
 
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jobject thiz) {
+    thresholdProcessor->resetThreshold();
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jobject thiz) {
+    thresholdProcessor->setPaused(true);
+}
+
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resumeThreshold(JNIEnv *env, jobject thiz) {
+    thresholdProcessor->setPaused(false);
+}
+
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jobject thiz, jboolean processBpm) {
     thresholdProcessor->setBpmProcessing(processBpm);
 }
@@ -437,8 +458,8 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jobject thi
         return;
     }
 
-    jint sampleCount = thresholdProcessor->sampleCount;
-    jshort *outSamplesPtr = new jshort[sampleCount];
+    jint sampleCount = thresholdProcessor->getSampleCount();
+    jshort *outSamplesPtr = new jshort[sampleCount]{0};
     thresholdProcessor->process(inSamplesPtr, outSamplesPtr, length);
 
     // exception check

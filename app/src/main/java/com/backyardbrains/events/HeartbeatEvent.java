@@ -11,10 +11,6 @@ public class HeartbeatEvent {
         this.beatsPerMinute = 0;
     }
 
-    public HeartbeatEvent(int beatsPerMinute) {
-        this.beatsPerMinute = beatsPerMinute;
-    }
-
     public int getBeatsPerMinute() {
         return beatsPerMinute;
     }

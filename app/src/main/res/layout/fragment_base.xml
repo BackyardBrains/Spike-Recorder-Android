@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -19,8 +20,9 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:layout_marginStart="@dimen/activity_vertical_margin_half"
         android:layout_gravity="top|start"
         android:background="@android:color/transparent"
-        app:srcCompat="@drawable/ic_chevron_left_white_32dp"/>
+        app:srcCompat="@drawable/ic_chevron_left_white_32dp"
+        tools:ignore="ContentDescription"/>
 </FrameLayout>

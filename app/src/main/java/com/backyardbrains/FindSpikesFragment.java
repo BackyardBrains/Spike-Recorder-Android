@@ -15,8 +15,8 @@ import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.BYBColors;
+import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.events.AudioAnalysisDoneEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -107,6 +107,9 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
     //=================================================
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected FindSpikesRenderer createRenderer() {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(this, filePath);
         renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
@@ -158,10 +161,16 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         return renderer;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected FindSpikesRenderer getRenderer() {
         return (FindSpikesRenderer) super.getRenderer();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected View createPlaybackView(LayoutInflater inflater, @NonNull ViewGroup container) {
         final View view = inflater.inflate(R.layout.fragment_spikes, container, false);
         unbinder = ButterKnife.bind(this, view);
@@ -171,6 +180,16 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         return view;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected boolean showThresholdView() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void startPlaying(boolean autoPlay) {
         if (getAnalysisManager() != null) getAnalysisManager().findSpikes(filePath);
         super.startPlaying(false);

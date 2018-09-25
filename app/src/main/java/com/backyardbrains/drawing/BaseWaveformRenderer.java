@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.data.processing.SampleBuffer;
 import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
@@ -35,8 +34,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
 
-    private SampleBuffer sampleBuffer;
+    private DrawBuffer sampleBuffer;
     private short[] samples;
+    private DrawBuffer averagedSamplesBuffer;
+    private short[] averagedSamples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
@@ -55,6 +56,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private boolean measureEnabled;
 
     private boolean autoScale;
+
+    private boolean signalAveraging;
 
     private int sampleRate = AudioUtils.SAMPLE_RATE;
     private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
@@ -179,8 +182,35 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.sampleRate = sampleRate;
     }
 
+    /**
+     * Sets whether incoming signal should be averaged or not.
+     */
+    public void setSignalAveraging(boolean signalAveraging) {
+        this.signalAveraging = signalAveraging;
+
+        // we should reset buffers for averaged samples
+        if (signalAveraging) resetAveragedSignal();
+    }
+
+    /**
+     * Returns whether incoming signal is being averaged or not.
+     */
+    boolean isSignalAveraging() {
+        return signalAveraging;
+    }
+
+    /**
+     * Resets buffers for averaged samples
+     */
+    public void resetAveragedSignal() {
+        if (processingBuffer != null) {
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
+        }
+    }
+
     public void setGlWindowWidth(int newSize) {
-        if (newSize < 0 || newSize == glWindowWidth) return;
+        if (newSize < 0) return;
 
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
         final int maxGlWindowWidth = processingBuffer.getSize();
@@ -212,11 +242,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         return glWindowHeight;
     }
 
-    int getSurfaceWidth() {
+    @SuppressWarnings("WeakerAccess") public int getSurfaceWidth() {
         return surfaceWidth;
     }
 
-    @SuppressWarnings("unused") int getSurfaceHeight() {
+    public int getSurfaceHeight() {
         return surfaceHeight;
     }
 
@@ -242,11 +272,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
-        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, BaseWaveformRenderer.class));
         surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
-        surfaceHeight = PrefUtils.getViewportHeight(context, BaseWaveformRenderer.class);
+        surfaceHeight = PrefUtils.getViewportHeight(context, getClass());
         surfaceSizeDirty = true;
+        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
+        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, getClass()));
         setAutoScale(PrefUtils.getAutoScale(context, getClass()));
         minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
@@ -259,10 +289,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
-        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
-        PrefUtils.setGlWindowVerticalSize(context, BaseWaveformRenderer.class, glWindowHeight);
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
-        PrefUtils.setViewportHeight(context, BaseWaveformRenderer.class, surfaceHeight);
+        PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
+        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
+        PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowHeight);
         PrefUtils.setAutoScale(context, getClass(), autoScale);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minDetectedPCMValue);
     }
@@ -340,17 +370,24 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
 
         // get samples from processing buffer and check if it's valid
-        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getSize()) {
-            sampleBuffer = new SampleBuffer(processingBuffer.getSize());
-            samples = new short[processingBuffer.getSize()];
+        // FIXME: 24-Sep-18 CURRENTLY THE ONLY WAY TO SAVE DATA WHEN SWITCHING BETWEEN PLAYBACK AND THRESHOLD MODE WHILE PAUSING IS TO HAVE TWO DIFFERENT BUFFERS BUT THIS SHOULD BE IMPLEMENTED BETTER
+        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getBufferSize()) {
+            sampleBuffer = new DrawBuffer(processingBuffer.getBufferSize());
+            samples = new short[processingBuffer.getBufferSize()];
+        }
+        if (averagedSamplesBuffer == null
+            || averagedSamplesBuffer.getSize() != processingBuffer.getThresholdBufferSize()) {
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
         }
         int count = processingBuffer.get(samples);
-        if (count > 0) {
-            //LOGD(TAG, "DRAWING: " + count);
-            sampleBuffer.add(samples, count);
-        }
+        if (count > 0) sampleBuffer.add(samples, count);
+        count = processingBuffer.getAveraged(averagedSamples);
+        if (count > 0) averagedSamplesBuffer.add(averagedSamples, count);
+        // select buffer for drawing
+        DrawBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
 
-        final int sampleCount = sampleBuffer.getArray().length;
+        final int sampleCount = tmpSampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
         // calculate necessary drawing parameters
@@ -359,9 +396,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
         // construct waveform vertices and populate eventIndices buffer
+        getWaveformVertices(samplesWithEvents, tmpSampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
+            eventsBuffer, drawStartIndex, drawEndIndex, surfaceWidth);
         eventsBuffer.clear();
-        getWaveformVertices(samplesWithEvents, sampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
-            drawStartIndex, drawEndIndex, surfaceWidth);
+        getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
         final int samplesDrawCount = (int) (samplesWithEvents.sampleCount * .5);
 
         // calculate scale x and scale y
@@ -378,7 +416,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         //autoScaleCheck(samples);
 
         // draw on surface
-        draw(gl, sampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
+        draw(gl, tmpSampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
             surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
             lastSampleIndex);
 
@@ -399,21 +437,25 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
-        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
-        int drawSurfaceWidth) {
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount,
+        @NonNull SparseArray<String> eventsBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
         //benchmark.start();
         try {
             JniUtils.prepareForDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample, toSample,
                 drawSurfaceWidth);
-            int indexBase = eventCount - samplesWithEvents.eventCount;
-            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
-            }
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
         //benchmark.end();
+    }
+
+    protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames, int eventCount,
+        @NonNull SparseArray<String> eventsBuffer) {
+        int indexBase = eventCount - samplesWithEvents.eventCount;
+        for (int i = 0; i < samplesWithEvents.eventCount; i++) {
+            eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
+        }
     }
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,

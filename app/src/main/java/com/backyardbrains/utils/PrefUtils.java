@@ -148,6 +148,21 @@ public class PrefUtils {
     }
 
     /**
+     * Integer indicating the number of sample sets that should be summed when averaging incoming signal.
+     */
+    private static final String PREF_INT_AVERAGED_SAMPLE_COUNT = "_averaged_sample_count";
+
+    public static int getAveragedSampleCount(@NonNull Context context, @NonNull Class clazz) {
+        return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_INT_AVERAGED_SAMPLE_COUNT), -1);
+    }
+
+    public static void setAveragedSampleCount(@NonNull Context context, @NonNull Class clazz, int averagedSampleCount) {
+        getSharedPreferences(context).edit()
+            .putInt(constructPrefKey(clazz, PREF_INT_AVERAGED_SAMPLE_COUNT), averagedSampleCount)
+            .apply();
+    }
+
+    /**
      * Boolean indicating whether BPM sound is on or off.
      */
     private static final String PREF_BOOL_BPM_SOUND = "bpm_sound";
