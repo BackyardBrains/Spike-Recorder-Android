@@ -41,6 +41,8 @@
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
 
+    <string name="label_finding_spikes">Finding spikes…</string>
+
     <string name="template_connected_to_board">Connected to\n%s</string>
     <string name="board_type_plant">Plant SpikerBox</string>
     <string name="board_type_muscle">Muscle SpikerBox</string>

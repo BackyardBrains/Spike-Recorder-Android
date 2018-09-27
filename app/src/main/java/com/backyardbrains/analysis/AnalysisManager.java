@@ -14,7 +14,7 @@ import com.backyardbrains.data.persistance.AnalysisRepository;
 import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
 import com.backyardbrains.data.persistance.entity.Spike;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
@@ -55,7 +55,7 @@ public class AnalysisManager {
         new AnalysisDataSource.GetAnalysisCallback<Spike[]>() {
             @Override public void onAnalysisLoaded(@NonNull Spike[] spikes) {
                 // post event that audio file analysis was successfully finished
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
+                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
             }
 
             @Override public void onDataNotAvailable() {
@@ -149,12 +149,12 @@ public class AnalysisManager {
                 analysisRepository.saveSpikeAnalysis(filePath, results != null ? results : new Spike[0]);
 
                 // post event that audio file analysis successfully finished
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
+                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
             }
 
             @Override public void onAnalysisFailed(@NonNull String filePath) {
                 // post event that audio file analysis failed
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
+                EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
             }
         }).startAnalysis();
     }
@@ -221,7 +221,7 @@ public class AnalysisManager {
 
         @Override public void onDataNotAvailable() {
             // post event that audio file analysis failed
-            EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, analysisType));
+            EventBus.getDefault().post(new AnalysisDoneEvent(true, analysisType));
         }
     }
 
@@ -236,7 +236,7 @@ public class AnalysisManager {
 
                     @Override public void onDataNotAvailable() {
                         // post event that audio file analysis failed
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
+                        EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
                     }
                 });
         } else {
@@ -289,12 +289,12 @@ public class AnalysisManager {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
                 autocorrelation = results;
                 // post event that audio file analysis successfully finished
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.AUTOCORRELATION));
+                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AUTOCORRELATION));
             }
 
             @Override public void onAnalysisFailed(@NonNull String filePath) {
                 // post event that audio file analysis failed
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, AnalysisType.AUTOCORRELATION));
+                EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.AUTOCORRELATION));
             }
         }).startAnalysis();
     }
@@ -318,12 +318,12 @@ public class AnalysisManager {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
                 isi = results;
                 // post event that audio file analysis successfully finished
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.ISI));
+                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.ISI));
             }
 
             @Override public void onAnalysisFailed(@NonNull String filePath) {
                 // post event that audio file analysis failed
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, AnalysisType.ISI));
+                EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.ISI));
             }
         }).startAnalysis();
     }
@@ -347,12 +347,12 @@ public class AnalysisManager {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
                 crossCorrelation = results;
                 // post event that audio file analysis successfully finished
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.CROSS_CORRELATION));
+                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.CROSS_CORRELATION));
             }
 
             @Override public void onAnalysisFailed(@NonNull String filePath) {
                 // post event that audio file analysis failed
-                EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, AnalysisType.CROSS_CORRELATION));
+                EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.CROSS_CORRELATION));
             }
         }).startAnalysis();
     }
@@ -398,12 +398,12 @@ public class AnalysisManager {
                     @Override public void onAnalysisDone(@NonNull String filePath, @Nullable AverageSpike[] results) {
                         averageSpikes = results;
                         // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
+                        EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
                     }
 
                     @Override public void onAnalysisFailed(@NonNull String filePath) {
                         // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AudioAnalysisDoneEvent(false, AnalysisType.AVERAGE_SPIKE));
+                        EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.AVERAGE_SPIKE));
                     }
                 }).startAnalysis();
         }
