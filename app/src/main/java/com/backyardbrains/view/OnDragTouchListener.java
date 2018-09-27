@@ -97,11 +97,11 @@ public class OnDragTouchListener implements View.OnTouchListener {
     }
 
     private void updateParentBounds() {
-        maxLeft = 0;
+        maxLeft = mParent.getX();
         maxRight = maxLeft + mParent.getWidth();
 
-        maxTop = -mView.getHeight() / 2;
-        maxBottom = maxTop + mParent.getHeight() + mView.getHeight();
+        maxTop = mParent.getY()/* - mView.getHeight() / 2*/;
+        maxBottom = maxTop + mParent.getHeight()/* + mView.getHeight()*/;
     }
 
     @SuppressLint("ClickableViewAccessibility") @Override public boolean onTouch(View v, MotionEvent event) {

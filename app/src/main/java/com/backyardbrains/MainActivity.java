@@ -55,14 +55,12 @@ public class MainActivity extends AppCompatActivity
 
     public static final int INVALID_VIEW = -1;
     public static final int OSCILLOSCOPE_VIEW = 0;
-    public static final int THRESHOLD_VIEW = 1;
     public static final int RECORDINGS_VIEW = 2;
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
     public static final int PLAY_AUDIO_VIEW = 5;
 
     public static final String BYB_RECORDINGS_FRAGMENT = "RecordingsFragment";
-    public static final String BYB_THRESHOLD_FRAGMENT = "ThresholdFragment";
     public static final String BYB_SPIKES_FRAGMENT = "FindSpikesFragment";
     public static final String BYB_ANALYSIS_FRAGMENT = "AnalysisFragment";
     public static final String BYB_OSCILLOSCOPE_FRAGMENT = "OscilloscopeFragment";
@@ -154,7 +152,7 @@ public class MainActivity extends AppCompatActivity
         boolean bShouldPop = true;
         if (currentFrag == ANALYSIS_VIEW) {
             Fragment frag = getSupportFragmentManager().findFragmentByTag(BYB_ANALYSIS_FRAGMENT);
-            if (frag != null && frag instanceof AnalysisFragment) {
+            if (frag instanceof AnalysisFragment) {
                 bShouldPop = false;
                 ((AnalysisFragment) frag).onBackPressed();
             }
@@ -169,9 +167,7 @@ public class MainActivity extends AppCompatActivity
     public void loadFragment(int fragType, Object... args) {
         if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
-        }/* else if (fragType == R.id.action_threshold) {
-            fragType = THRESHOLD_VIEW;
-        }*/ else if (fragType == R.id.action_recordings) {
+        } else if (fragType == R.id.action_recordings) {
             fragType = RECORDINGS_VIEW;
         }
         LOGD(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
@@ -180,22 +176,14 @@ public class MainActivity extends AppCompatActivity
             Fragment frag;
             String fragName;
             switch (fragType) {
-                //------------------------------
                 case RECORDINGS_VIEW:
                     frag = RecordingsFragment.newInstance();
                     fragName = BYB_RECORDINGS_FRAGMENT;
                     break;
-                //------------------------------
-                //case THRESHOLD_VIEW:
-                //    frag = ThresholdFragment.newInstance();
-                //    fragName = BYB_THRESHOLD_FRAGMENT;
-                //    break;
-                //------------------------------
                 case FIND_SPIKES_VIEW:
                     frag = FindSpikesFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = BYB_SPIKES_FRAGMENT;
                     break;
-                //------------------------------
                 case ANALYSIS_VIEW:
                     frag = AnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null,
                         args.length > 0 ? (int) args[1] : AnalysisType.NONE);
@@ -352,8 +340,6 @@ public class MainActivity extends AppCompatActivity
         switch (fragName) {
             case BYB_RECORDINGS_FRAGMENT:
                 return RECORDINGS_VIEW;
-            //case BYB_THRESHOLD_FRAGMENT:
-            //    return THRESHOLD_VIEW;
             case BYB_SPIKES_FRAGMENT:
                 return FIND_SPIKES_VIEW;
             case BYB_ANALYSIS_FRAGMENT:
@@ -377,11 +363,6 @@ public class MainActivity extends AppCompatActivity
                 i = new Intent();
                 i.putExtra("tab", OSCILLOSCOPE_VIEW);
                 break;
-            //case THRESHOLD_VIEW:
-            //    selectedButton = R.id.action_threshold;
-            //    i = new Intent();
-            //    i.putExtra("tab", THRESHOLD_VIEW);
-            //    break;
             case RECORDINGS_VIEW:
                 selectedButton = R.id.action_recordings;
                 i = new Intent();

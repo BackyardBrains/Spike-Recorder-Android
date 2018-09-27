@@ -113,27 +113,19 @@ public class ThresholdHandle extends ConstraintLayout {
 
         handleOrientation = orientation;
 
-        LayoutParams lp = (LayoutParams) vDragSurface.getLayoutParams();
-        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : ivHandle.getId();
-        lp.rightToRight = orientation == Orientation.LEFT ? ivHandle.getId() : LayoutParams.PARENT_ID;
-        vDragSurface.setLayoutParams(lp);
-
-        lp = (LayoutParams) ivHandle.getLayoutParams();
-        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : LayoutParams.UNSET;
-        lp.rightToRight = orientation == Orientation.LEFT ? LayoutParams.UNSET : LayoutParams.PARENT_ID;
-        ivHandle.setImageResource(
-            orientation == Orientation.LEFT ? R.drawable.handle_white_left : R.drawable.handle_white_right);
-        ivHandle.setLayoutParams(lp);
+        updateUI();
     }
 
     /**
-     *
-     * @param topOffset
+     * Set top offset of the threshold handle.
      */
     public void setTopOffset(float topOffset) {
         if (this.topOffset == topOffset) return;
 
+        LOGD(TAG, "Top offset set: " + topOffset);
+
         this.topOffset = topOffset;
+
         updateUI();
     }
 
@@ -142,6 +134,7 @@ public class ThresholdHandle extends ConstraintLayout {
      */
     public float setPosition(float position) {
         handlePosition = position;
+
         updateUI();
 
         return handlePosition;
@@ -200,16 +193,35 @@ public class ThresholdHandle extends ConstraintLayout {
 
     // Updates view's children
     void updateUI() {
-        if (handlePosition < handlePadding + topOffset) {
+        LayoutParams lp = (LayoutParams) vDragSurface.getLayoutParams();
+        lp.leftToLeft = handleOrientation == Orientation.LEFT ? LayoutParams.PARENT_ID : ivHandle.getId();
+        lp.rightToRight = handleOrientation == Orientation.LEFT ? ivHandle.getId() : LayoutParams.PARENT_ID;
+        if (topOffset > 0) {
+            lp.topToTop = LayoutParams.UNSET;
+            lp.height = (int) (getHeight() - topOffset);
+        } else {
+            lp.topToTop = LayoutParams.PARENT_ID;
+            lp.height = LayoutParams.MATCH_CONSTRAINT;
+        }
+        vDragSurface.setLayoutParams(lp);
+
+        lp = (LayoutParams) ivHandle.getLayoutParams();
+        lp.leftToLeft = handleOrientation == Orientation.LEFT ? LayoutParams.PARENT_ID : LayoutParams.UNSET;
+        lp.rightToRight = handleOrientation == Orientation.LEFT ? LayoutParams.UNSET : LayoutParams.PARENT_ID;
+        ivHandle.setImageResource(
+            handleOrientation == Orientation.LEFT ? R.drawable.handle_white_left : R.drawable.handle_white_right);
+        ivHandle.setLayoutParams(lp);
+
+        if (handlePosition < topOffset) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? -90 : 90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
             ivHandle.setY(handlePadding + topOffset);
-        } else if (handlePosition > vDragSurface.getHeight() - handlePadding) {
+        } else if (handlePosition > vDragSurface.getBottom()) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? 90 : -90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
-            ivHandle.setY(vDragSurface.getHeight() - ivHandle.getHeight() - handlePadding);
+            ivHandle.setY(vDragSurface.getBottom() - ivHandle.getHeight() - handlePadding);
         } else {
             ivHandle.setRotation(0);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? 0 : vDragSurface.getX());

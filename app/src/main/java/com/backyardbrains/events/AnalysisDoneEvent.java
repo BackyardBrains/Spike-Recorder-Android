@@ -5,12 +5,12 @@ import com.backyardbrains.analysis.AnalysisType;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class AudioAnalysisDoneEvent {
+public class AnalysisDoneEvent {
 
     private final boolean success;
     private final @AnalysisType int type;
 
-    public AudioAnalysisDoneEvent(boolean success, @AnalysisType int type) {
+    public AnalysisDoneEvent(boolean success, @AnalysisType int type) {
         this.success = success;
         this.type = type;
     }
