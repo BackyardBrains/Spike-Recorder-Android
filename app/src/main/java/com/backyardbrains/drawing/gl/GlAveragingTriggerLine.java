@@ -19,20 +19,20 @@ public class GlAveragingTriggerLine {
         new float[] { .706f, .847f, .906f, 1f }, new float[] { .757f, .855f, .839f, 1f },
         new float[] { .675f, .82f, .914f, 1f }, new float[] { .682f, 1f, .682f, 1f }, new float[] { 1f, .925f, 1f, 1f }
     };
-    private static final float[] BLACK_COLOR = new float[] { 0f, 0f, 0f, 1f };
-    private static final float[] GRAY_COLOR = new float[] { .58824f, .58824f, .58824f, 1f };
+    private static final float[] BACKGROUND_LINE_COLOR = new float[] { 0f, 0f, 0f, 1f };
+    private static final float[] DASHED_LINE_COLOR = new float[] { .58824f, .58824f, .58824f, 1f };
     private static final int LINE_WIDTH = 2;
     private static final float DASH_HEIGHT = 12;
 
-    private final GlRectangle rect;
     private final GlVLine line;
     private final GlDashedVLine dashedLine;
+    private final GlRectangle rect;
     private final GLText text;
 
     public GlAveragingTriggerLine(@NonNull Context context, @NonNull GL10 gl) {
-        rect = new GlRectangle();
         line = new GlVLine();
         dashedLine = new GlDashedVLine();
+        rect = new GlRectangle();
         text = new GLText(gl, context.getAssets());
         text.load("dos-437.ttf", 48, 2, 2);
     }
@@ -40,10 +40,10 @@ public class GlAveragingTriggerLine {
     public void draw(@NonNull GL10 gl, @Nullable String eventName, float x, float y0, float y1, float scaleX,
         float scaleY) {
         // draw black line
-        line.draw(gl, x, y0, y1, LINE_WIDTH, BLACK_COLOR);
+        line.draw(gl, x, y0, y1, LINE_WIDTH, BACKGROUND_LINE_COLOR);
 
         // draw dashed gray line
-        dashedLine.draw(gl, x, y0, y1, DASH_HEIGHT * scaleY, LINE_WIDTH, GRAY_COLOR);
+        dashedLine.draw(gl, x, y0, y1, DASH_HEIGHT * scaleY, LINE_WIDTH, DASHED_LINE_COLOR);
 
         if (eventName != null) {
             int len = eventName.length();
