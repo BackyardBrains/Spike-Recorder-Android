@@ -37,7 +37,7 @@ public class GlWaveform {
         waveformVSB.put(waveformVertices, 0, waveformVerticesCount);
         waveformVSB.position(0);
         gl.glVertexPointer(2, GL10.GL_SHORT, 0, waveformVSB);
-        gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, (int) (waveformVerticesCount * .5));
+        gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, (int) (waveformVerticesCount * .5f));
         gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
     }
 }

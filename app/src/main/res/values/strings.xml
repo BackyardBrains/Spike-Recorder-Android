@@ -70,8 +70,6 @@
     <string name="file_date">file_date</string>
     <string name="filesize">filesize</string>
     <string name="recording_button_background_image">Recording Button Background Image</string>
-    <string name="file_list_activity_launch_button">File List Activity Launch Button</string>
-    <string name="tickmarks_on_left_side_of_screen">Tickmarks on left side of screen</string>
     <string name="default_milliseconds">0 ms</string>
     <string name="no_files_found">No files found! Record some spikes!</string>
     <string name="start_recording_button">Start Recording Button</string>
@@ -100,6 +98,19 @@
     <string name="settings_dialog_canceled">Settings dialog canceled</string>
     <string name="returned_from_app_settings_to_activity">Returned from app settings to MainActivity</string>
 
+    <string-array name="options_averaging_trigger_type">
+        <item>Signal</item>
+        <item>Event 1</item>
+        <item>Event 2</item>
+        <item>Event 3</item>
+        <item>Event 4</item>
+        <item>Event 5</item>
+        <item>Event 6</item>
+        <item>Event 7</item>
+        <item>Event 8</item>
+        <item>Event 9</item>
+        <item>Events</item>
+    </string-array>
     <string-array name="options_recording_no_spikes">
         <item>File Details</item>
         <item>Play this file</item>

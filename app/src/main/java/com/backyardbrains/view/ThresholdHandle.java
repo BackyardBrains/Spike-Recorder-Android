@@ -35,7 +35,7 @@ public class ThresholdHandle extends ConstraintLayout {
 
     @Retention(RetentionPolicy.SOURCE) @IntDef({
         Orientation.LEFT, Orientation.RIGHT
-    }) @interface Orientation {
+    }) public @interface Orientation {
         /**
          * Handle is aligned left.
          */

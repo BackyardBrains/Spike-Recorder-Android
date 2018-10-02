@@ -130,7 +130,7 @@ private:
     bool paused = false;
 
     // Current type of trigger we're averaging on
-    int triggerType = TRIGGER_ON_EVENTS;
+    int triggerType = TRIGGER_ON_THRESHOLD;
 
     // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
     HeartbeatHelper *heartbeatHelper;

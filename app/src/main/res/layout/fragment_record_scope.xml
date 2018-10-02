@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:animateLayoutChanges="true">
+    android:layout_height="match_parent">
 
     <com.backyardbrains.view.ThresholdHandle
         android:id="@+id/threshold_handle"
@@ -12,6 +11,7 @@
         android:layout_height="0dp"
         android:visibility="invisible"
         app:byb_color="@color/red"
+        app:byb_orientation="right"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -29,6 +29,18 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_filters"
         app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
+        tools:ignore="ContentDescription"/>
+
+    <ImageButton
+        android:id="@+id/ibtn_avg_trigger_type"
+        android:layout_width="41dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="@dimen/activity_vertical_margin_half"
+        android:background="@drawable/circle_gray_white"
+        android:src="@drawable/ic_trigger_threshold_black_24dp"
+        app:layout_constraintLeft_toLeftOf="@+id/ibtn_threshold"
+        app:layout_constraintRight_toRightOf="@+id/ibtn_threshold"
+        app:layout_constraintTop_toBottomOf="@+id/ibtn_threshold"
         tools:ignore="ContentDescription"/>
 
     <ImageButton

@@ -16,6 +16,7 @@ import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.audio.AudioService;
 import com.backyardbrains.audio.Filters;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
@@ -40,6 +41,7 @@ import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
@@ -71,9 +73,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final int AVERAGED_SAMPLE_COUNT = 30;
 
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
+    private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
 
     @BindView(R.id.threshold_handle) ThresholdHandle thresholdHandle;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
+    @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     @BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
     @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
     @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
@@ -93,6 +97,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Whether signal triggering is turned on or off
     private boolean thresholdOn;
+    // Holds the type of triggering that is used when averaging
+    private @SignalAveragingTriggerType int triggerType = SignalAveragingTriggerType.THRESHOLD;
 
     final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
         new SetThresholdHandlePositionRunnable();
@@ -186,6 +192,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
         };
 
+    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener = new View.OnClickListener() {
+        @Override public void onClick(View v) {
+            openAveragingTriggerTypeDialog();
+        }
+    };
+
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
         new ThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
@@ -217,7 +229,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        if (savedInstanceState != null) thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+        if (savedInstanceState != null) {
+            thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+            triggerType = savedInstanceState.getInt(INT_AVERAGING_TRIGGER_TYPE, SignalAveragingTriggerType.THRESHOLD);
+        }
     }
 
     @Override public void onStart() {
@@ -246,6 +261,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
+        outState.putInt(INT_AVERAGING_TRIGGER_TYPE, triggerType);
     }
 
     @Override public void onDestroyView() {
@@ -308,6 +324,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
         });
         renderer.setSignalAveraging(thresholdOn);
+        renderer.setAveragingTriggerType(triggerType);
         return renderer;
     }
 
@@ -513,15 +530,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // THRESHOLD
     //==============================================
 
-    // Sets up the threshold view (button, handle and averaged sample count
+    // Sets up the threshold view (threshold on/off button, threshold handle, averaged sample count and averaging trigger type button)
     void setupThresholdView() {
         if (thresholdOn) {
             // setup threshold button
             ibtnThreshold.setImageResource(R.drawable.ic_threshold_off);
             ibtnThreshold.setOnClickListener(stopThresholdOnClickListener);
-            // setup threshold handle
-            thresholdHandle.setVisibility(View.VISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.VISIBLE);
             sbAvgSamplesCount.setOnSeekBarChangeListener(averagedSampleCountChangeListener);
@@ -532,14 +546,67 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             // setup threshold button
             ibtnThreshold.setImageResource(R.drawable.ic_threshold);
             ibtnThreshold.setOnClickListener(startThresholdOnClickListener);
-            // setup threshold handle
-            thresholdHandle.setVisibility(View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(null);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.INVISIBLE);
             sbAvgSamplesCount.setOnSeekBarChangeListener(null);
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.INVISIBLE);
+        }
+        setupThresholdHandleAndAveragingTriggerTypeButtons();
+    }
+
+    // Sets up threshold handle and averaging trigger type button
+    void setupThresholdHandleAndAveragingTriggerTypeButtons() {
+        if (thresholdOn) {
+            // setup threshold handle
+            thresholdHandle.setVisibility(
+                triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
+            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
+            // setup averaging trigger type button
+            ibtnAvgTriggerType.setVisibility(View.VISIBLE);
+            switch (triggerType) {
+                case SignalAveragingTriggerType.ALL_EVENTS:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_all_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_1:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_1_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_2:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_2_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_3:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_3_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_4:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_4_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_5:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_5_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_6:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_6_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_7:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_7_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_8:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_8_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_9:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_9_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.THRESHOLD:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_threshold_black_24dp);
+                    break;
+            }
+            ibtnAvgTriggerType.setOnClickListener(changeAveragingTriggerTypeOnClickListener);
+        } else {
+            // setup threshold handle
+            thresholdHandle.setVisibility(View.INVISIBLE);
+            thresholdHandle.setOnHandlePositionChangeListener(null);
+            // setup averaging trigger type button
+            ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
+            ibtnAvgTriggerType.setOnClickListener(null);
         }
     }
 
@@ -566,7 +633,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         JniUtils.resetThreshold();
     }
 
-    // Sets the specified value for the threshold.
+    // Sets the specified value for the threshold handle.
     void setThresholdHandlePosition(int value) {
         // can be null if callback is called after activity has finished
         if (thresholdHandle != null) thresholdHandle.setPosition(value);
@@ -575,6 +642,33 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Updates data processor with the newly set threshold.
     void updateDataProcessorThreshold(float value) {
         JniUtils.setThreshold((int) value);
+    }
+
+    // Opens a dialog for averaging trigger type selection
+    void openAveragingTriggerTypeDialog() {
+        if (getContext() != null) {
+            MaterialDialog averagingTriggerTypeDialog =
+                new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
+                    .itemsCallback(new MaterialDialog.ListCallback() {
+                        @Override
+                        public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
+                            setTriggerType(position == 0 ? SignalAveragingTriggerType.THRESHOLD
+                                : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position);
+                        }
+                    })
+                    .build();
+            averagingTriggerTypeDialog.show();
+        }
+    }
+
+    // Sets the specified trigger type as the prefered averaging trigger type
+    void setTriggerType(@SignalAveragingTriggerType int triggerType) {
+        this.triggerType = triggerType;
+
+        setupThresholdHandleAndAveragingTriggerTypeButtons();
+
+        JniUtils.setAveragingTriggerType(triggerType);
+        getRenderer().setAveragingTriggerType(triggerType);
     }
 
     //==============================================
