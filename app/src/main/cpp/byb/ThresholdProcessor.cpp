@@ -57,6 +57,10 @@ void ThresholdProcessor::setPaused(bool paused) {
     ThresholdProcessor::paused = paused;
 }
 
+int ThresholdProcessor::getTriggerType() {
+    return triggerType;
+}
+
 void ThresholdProcessor::setTriggerType(int triggerType) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "setTriggerType(%d)", triggerType);
 

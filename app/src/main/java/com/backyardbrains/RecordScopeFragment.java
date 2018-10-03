@@ -324,7 +324,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
         });
         renderer.setSignalAveraging(thresholdOn);
-        renderer.setAveragingTriggerType(triggerType);
+        // if app is opened for the first time averaging trigger type will be THRESHOLD,
+        // otherwise it will be the last set value (we retrieve it from C++ code
+        renderer.setAveragingTriggerType(triggerType = JniUtils.getAveragingTriggerType());
         return renderer;
     }
 

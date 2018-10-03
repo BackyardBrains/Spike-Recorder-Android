@@ -39,6 +39,9 @@ public:
 
     void setPaused(bool paused);
 
+    // Returns current averaging trigger type
+    int getTriggerType();
+
     // Sets current averaging trigger type
     void setTriggerType(int triggerType);
 

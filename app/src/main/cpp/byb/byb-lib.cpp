@@ -57,6 +57,8 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jobject thiz);
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_getAveragingTriggerType(JNIEnv *env, jobject thiz);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setAveragingTriggerType(JNIEnv *env, jobject thiz, jint triggerType);
 JNIEXPORT void JNICALL
@@ -432,6 +434,11 @@ Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jobject thiz)
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jobject thiz) {
     thresholdProcessor->setPaused(true);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_getAveragingTriggerType(JNIEnv *env, jobject thiz) {
+    return thresholdProcessor->getTriggerType();
 }
 
 JNIEXPORT void JNICALL

@@ -12,6 +12,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.SeekableWaveformRenderer;
 import com.backyardbrains.drawing.WaveformRenderer;
@@ -25,6 +26,7 @@ import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.ThresholdHandle;
@@ -42,6 +44,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     private static final String ARG_FILE_PATH = "bb_file_path";
     private static final String INT_SAMPLE_RATE = "bb_sample_rate";
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
+    private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
     private static final String LONG_PLAYBACK_POSITION = "bb_playback_position";
 
     // Default number of sample sets that should be summed when averaging
@@ -60,6 +63,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     protected ThresholdHandle thresholdHandle;
     protected ImageButton ibtnThreshold;
+    protected ImageButton ibtnAvgTriggerType;
     protected SeekBar sbAvgSamplesCount;
     protected TextView tvAvgSamplesCount;
     protected TextView tvRms;
@@ -79,6 +83,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     boolean thresholdOn;
     // Holds position of the playback while in background
     int playbackPosition;
+    // Holds the type of triggering that is used when averaging
+    private @SignalAveragingTriggerType int triggerType = SignalAveragingTriggerType.THRESHOLD;
 
     /**
      * Runnable that is executed on the UI thread every time recording's playhead is updated.
@@ -100,11 +106,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             this.progress = progress;
         }
 
-        public void setUpdateProgressSeekBar(boolean updateProgressSeekBar) {
+        void setUpdateProgressSeekBar(boolean updateProgressSeekBar) {
             this.updateProgressSeekBar = updateProgressSeekBar;
         }
 
-        public void setUpdateProgressTimeLabel(boolean updateProgressTimeLabel) {
+        void setUpdateProgressTimeLabel(@SuppressWarnings("SameParameterValue") boolean updateProgressTimeLabel) {
             this.updateProgressTimeLabel = updateProgressTimeLabel;
         }
     }
@@ -141,11 +147,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         }
 
-        public void setMeasuring(boolean measuring) {
+        void setMeasuring(boolean measuring) {
             this.measuring = measuring;
         }
 
-        public void setRms(float rms) {
+        void setRms(float rms) {
             if (Float.isInfinite(rms) || Float.isNaN(rms)) {
                 this.rms = 0f;
                 return;
@@ -158,7 +164,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             this.sampleCount = sampleCount;
         }
 
-        public void setFirstTrainSpikeCount(int firstTrainSpikeCount) {
+        void setFirstTrainSpikeCount(int firstTrainSpikeCount) {
             this.firstTrainSpikeCount = firstTrainSpikeCount;
 
             firstTrainSpikesPerSecond = (firstTrainSpikeCount * sampleRate) / (float) sampleCount;
@@ -167,7 +173,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         }
 
-        public void setSecondTrainSpikeCount(int secondTrainSpikeCount) {
+        void setSecondTrainSpikeCount(int secondTrainSpikeCount) {
             this.secondTrainSpikeCount = secondTrainSpikeCount;
 
             secondTrainSpikesPerSecond = (secondTrainSpikeCount * sampleRate) / (float) sampleCount;
@@ -176,7 +182,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         }
 
-        public void setThirdTrainSpikeCount(int thirdTrainSpikeCount) {
+        void setThirdTrainSpikeCount(int thirdTrainSpikeCount) {
             this.thirdTrainSpikeCount = thirdTrainSpikeCount;
 
             thirdTrainSpikesPerSecond = (thirdTrainSpikeCount * sampleRate) / (float) sampleCount;
@@ -274,6 +280,12 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         };
 
+    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener = new View.OnClickListener() {
+        @Override public void onClick(View v) {
+            openAveragingTriggerTypeDialog();
+        }
+    };
+
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
         new ThresholdHandle.OnThresholdChangeListener() {
             @Override public void onChange(@NonNull View view, float y) {
@@ -297,6 +309,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (savedInstanceState != null) {
             sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.SAMPLE_RATE);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+            triggerType = savedInstanceState.getInt(INT_AVERAGING_TRIGGER_TYPE, SignalAveragingTriggerType.THRESHOLD);
             playbackPosition = savedInstanceState.getInt(LONG_PLAYBACK_POSITION, 0);
         }
     }
@@ -324,6 +337,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         outState.putInt(INT_SAMPLE_RATE, sampleRate);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
+        outState.putInt(INT_AVERAGING_TRIGGER_TYPE, triggerType);
         outState.putInt(LONG_PLAYBACK_POSITION, playbackPosition);
     }
 
@@ -336,6 +350,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         final View view = inflater.inflate(R.layout.fragment_playback_scope, container, false);
         thresholdHandle = view.findViewById(R.id.threshold_handle);
         ibtnThreshold = view.findViewById(R.id.ibtn_threshold);
+        ibtnAvgTriggerType = view.findViewById(R.id.ibtn_avg_trigger_type);
         sbAvgSamplesCount = view.findViewById(R.id.sb_averaged_sample_count);
         tvAvgSamplesCount = view.findViewById(R.id.tv_averaged_sample_count);
         tvRms = view.findViewById(R.id.tv_rms);
@@ -450,6 +465,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         });
         renderer.setSignalAveraging(thresholdOn);
+        // if app is opened for the first time averaging trigger type will be THRESHOLD,
+        // otherwise it will be the last set value (we retrieve it from C++ code
+        renderer.setAveragingTriggerType(triggerType = JniUtils.getAveragingTriggerType());
         return renderer;
     }
 
@@ -545,7 +563,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     /**
-     * Tells audio service that seek should stop.
+     * Tells audio service that seek should stop.f
      */
     protected void stopSeek() {
         if (getAudioService() != null) getAudioService().stopPlaybackSeek();
@@ -652,9 +670,6 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             // setup threshold button
             ibtnThreshold.setImageResource(R.drawable.ic_threshold_off);
             ibtnThreshold.setOnClickListener(stopThresholdOnClickListener);
-            // setup threshold handle
-            thresholdHandle.setVisibility(View.VISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.VISIBLE);
             sbAvgSamplesCount.setOnSeekBarChangeListener(averagedSampleCountChangeListener);
@@ -665,14 +680,67 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             // setup threshold button
             ibtnThreshold.setImageResource(R.drawable.ic_threshold);
             ibtnThreshold.setOnClickListener(startThresholdOnClickListener);
-            // setup threshold handle
-            thresholdHandle.setVisibility(View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(null);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.INVISIBLE);
             sbAvgSamplesCount.setOnSeekBarChangeListener(null);
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.INVISIBLE);
+        }
+        setupThresholdHandleAndAveragingTriggerTypeButtons();
+    }
+
+    // Sets up threshold handle and averaging trigger type button
+    void setupThresholdHandleAndAveragingTriggerTypeButtons() {
+        if (thresholdOn) {
+            // setup threshold handle
+            thresholdHandle.setVisibility(
+                triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
+            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
+            // setup averaging trigger type button
+            ibtnAvgTriggerType.setVisibility(View.VISIBLE);
+            switch (triggerType) {
+                case SignalAveragingTriggerType.ALL_EVENTS:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_all_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_1:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_1_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_2:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_2_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_3:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_3_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_4:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_4_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_5:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_5_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_6:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_6_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_7:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_7_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_8:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_8_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.EVENT_9:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_9_black_24dp);
+                    break;
+                case SignalAveragingTriggerType.THRESHOLD:
+                    ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_threshold_black_24dp);
+                    break;
+            }
+            ibtnAvgTriggerType.setOnClickListener(changeAveragingTriggerTypeOnClickListener);
+        } else {
+            // setup threshold handle
+            thresholdHandle.setVisibility(View.INVISIBLE);
+            thresholdHandle.setOnHandlePositionChangeListener(null);
+            // setup averaging trigger type button
+            ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
+            ibtnAvgTriggerType.setOnClickListener(null);
         }
     }
 
@@ -710,6 +778,33 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         JniUtils.setThreshold((int) value);
         // in case we are pausing just reset the renderer buffers
         getRenderer().resetAveragedSignal();
+    }
+
+    // Opens a dialog for averaging trigger type selection
+    void openAveragingTriggerTypeDialog() {
+        if (getContext() != null) {
+            MaterialDialog averagingTriggerTypeDialog =
+                new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
+                    .itemsCallback(new MaterialDialog.ListCallback() {
+                        @Override
+                        public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
+                            setTriggerType(position == 0 ? SignalAveragingTriggerType.THRESHOLD
+                                : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position);
+                        }
+                    })
+                    .build();
+            averagingTriggerTypeDialog.show();
+        }
+    }
+
+    // Sets the specified trigger type as the prefered averaging trigger type
+    void setTriggerType(@SignalAveragingTriggerType int triggerType) {
+        this.triggerType = triggerType;
+
+        setupThresholdHandleAndAveragingTriggerTypeButtons();
+
+        JniUtils.setAveragingTriggerType(triggerType);
+        getRenderer().setAveragingTriggerType(triggerType);
     }
 
     //==============================================

@@ -38,6 +38,8 @@ public class JniUtils {
 
     public static native void pauseThreshold();
 
+    public static native int getAveragingTriggerType();
+
     public static native void setAveragingTriggerType(int triggerType);
 
     public static native void resumeThreshold();
