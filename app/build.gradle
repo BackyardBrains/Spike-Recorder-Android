@@ -8,8 +8,8 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 17
         targetSdkVersion 27
-        versionCode 68
-        versionName '1.7.3.2'
+        versionCode 69
+        versionName '1.7.3.3'
 
         externalNativeBuild {
             cmake {
