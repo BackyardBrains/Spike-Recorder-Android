@@ -39,10 +39,17 @@ public:
 
     void setPaused(bool paused);
 
+    // Returns current averaging trigger type
+    int getTriggerType();
+
+    // Sets current averaging trigger type
+    void setTriggerType(int triggerType);
+
     // Starts/stops processing heartbeat
     void setBpmProcessing(bool processBpm);
 
-    void process(const short *inSamples, short *outSamples, const int length);
+    void process(short *outSamples, const short *inSamples, const int inSampleCount, const int *inEventIndices,
+                 const int *inEvents, const int inEventCount);
 
 private:
     static const char *TAG;
@@ -60,8 +67,16 @@ private:
     // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
     static constexpr double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
 
+    // Constants that define we are currently averaging when threshold is hit
+    static constexpr int TRIGGER_ON_THRESHOLD = -1;
+    // Constants that define we are currently averaging on all events
+    static constexpr int TRIGGER_ON_EVENTS = 0;
+
     // Resets all the fields used for calculations
     void reset();
+
+    // Prepares new sample collection for averaging
+    void prepareNewSamples(const short *inSamples, int length, int index);
 
     // Resets all local variables used for the heartbeat processing
     void resetBpm();
@@ -116,6 +131,9 @@ private:
 
     // Whether threshold is currently paused or not. If paused, processing returns values as if the threshold is always reset.
     bool paused = false;
+
+    // Current type of trigger we're averaging on
+    int triggerType = TRIGGER_ON_THRESHOLD;
 
     // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
     HeartbeatHelper *heartbeatHelper;

@@ -8,6 +8,7 @@ import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
 import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.Benchmark;
@@ -15,6 +16,7 @@ import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -59,6 +61,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private boolean autoScale;
 
     private boolean signalAveraging;
+    private @SignalAveragingTriggerType int averagingTriggerType;
 
     private int sampleRate = AudioUtils.SAMPLE_RATE;
     private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
@@ -66,6 +69,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
+
+    private GlAveragingTriggerLine glAveragingTrigger;
+    protected Context context;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -135,8 +141,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     //  CONSTRUCTOR & SETUP
     //==============================================
 
-    public BaseWaveformRenderer(@NonNull BaseFragment fragment) {
+    BaseWaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
+
+        context = fragment.getContext();
 
         processingBuffer = ProcessingBuffer.get();
         eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
@@ -184,6 +192,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
+     * Returns whether incoming signal is being averaged or not.
+     */
+    boolean isSignalAveraging() {
+        return signalAveraging;
+    }
+
+    /**
      * Sets whether incoming signal should be averaged or not.
      */
     public void setSignalAveraging(boolean signalAveraging) {
@@ -194,13 +209,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
-     * Returns whether incoming signal is being averaged or not.
-     */
-    boolean isSignalAveraging() {
-        return signalAveraging;
-    }
-
-    /**
      * Resets buffers for averaged samples
      */
     public void resetAveragedSignal() {
@@ -208,6 +216,20 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
             averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
             averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
         }
+    }
+
+    /**
+     * Returns current type of signal averaging.
+     */
+    public @SignalAveragingTriggerType int getAveragingTriggerType() {
+        return averagingTriggerType;
+    }
+
+    /**
+     * Sets type for signal averaging. Can be one of {@link SignalAveragingTriggerType}.
+     */
+    public void setAveragingTriggerType(@SignalAveragingTriggerType int averagingTriggerType) {
+        this.averagingTriggerType = averagingTriggerType;
     }
 
     public void setGlWindowWidth(int newSize) {
@@ -316,6 +338,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+
+        glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
     /**
@@ -425,6 +449,14 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
             surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
             lastSampleIndex);
 
+        // draw average triggering line
+        if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
+            final float drawScale = (float) (samplesWithEvents.sampleCount * .5) / surfaceWidth;
+            final float verticalHalfSize = glWindowHeight * .30f;
+            glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
+                samplesWithEvents.sampleCount * .25f, -verticalHalfSize, verticalHalfSize, drawScale, scaleY);
+        }
+
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
 
@@ -461,6 +493,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         for (int i = 0; i < samplesWithEvents.eventCount; i++) {
             eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
         }
+    }
+
+    @Nullable private String getAveragingTriggerEventName(String[] eventNames, int eventsCount) {
+        if (averagingTriggerType == SignalAveragingTriggerType.ALL_EVENTS && eventsCount > 0) {
+            return eventNames[eventsCount - 1];
+        }
+        return null;
     }
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,

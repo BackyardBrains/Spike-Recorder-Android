@@ -44,7 +44,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private GlWaveform glWaveform;
     private GlEventMarker glEventMarker;
-    private Context context;
 
     private float threshold;
 
@@ -174,7 +173,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         // draw waveform
         glWaveform.draw(gl, waveformVertices, waveformVerticesCount, getWaveformColor());
         // draw markers
-        float drawScale = (float) (waveformVerticesCount * .5) / surfaceWidth;
+        final float drawScale = (float) (waveformVerticesCount * .5) / surfaceWidth;
         final float verticalHalfSize = glWindowHeight * .5f;
         for (int i = 0; i < events.size(); i++) {
             glEventMarker.draw(gl, events.valueAt(i), events.keyAt(i), -verticalHalfSize, verticalHalfSize, drawScale,

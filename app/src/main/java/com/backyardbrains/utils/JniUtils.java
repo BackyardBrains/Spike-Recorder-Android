@@ -38,11 +38,15 @@ public class JniUtils {
 
     public static native void pauseThreshold();
 
+    public static native int getAveragingTriggerType();
+
+    public static native void setAveragingTriggerType(int triggerType);
+
     public static native void resumeThreshold();
 
     public static native void setBpmProcessing(boolean processBpm);
 
-    public static native void processThreshold(SamplesWithEvents samplesWithEvents, short[] samples, int length);
+    public static native void processThreshold(SamplesWithEvents samplesWithEvents);
 
     public static native void prepareForDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
         int eventCount, int fromSample, int toSample, int drawSurfaceWidth);

@@ -213,7 +213,7 @@ public class ProcessingBuffer {
         // average signal if necessary
         if (averagingSignal) {
             //benchmark.start();
-            JniUtils.processThreshold(samplesWithEvents, samplesWithEvents.samples, samplesWithEvents.sampleCount);
+            JniUtils.processThreshold(samplesWithEvents);
             //benchmark.end();
 
             // add samples to threshold ring buffer
