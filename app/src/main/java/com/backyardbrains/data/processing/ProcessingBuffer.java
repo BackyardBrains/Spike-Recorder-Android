@@ -47,6 +47,7 @@ public class ProcessingBuffer {
         averagedSamplesBuffer = new CircularShortBuffer((int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate));
         eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
         eventNames = new String[EventUtils.MAX_EVENT_COUNT];
+        eventCount = 0;
         lastSampleIndex = 0;
     }
 
