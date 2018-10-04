@@ -247,7 +247,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         super.onResume();
         LOGD(TAG, "onResume()");
 
-        setupButtons(false);
+        setupRecordingButtons(false);
     }
 
     @Override public void onStop() {
@@ -267,6 +267,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override public void onDestroyView() {
         super.onDestroyView();
         LOGD(TAG, "onDestroyView()");
+        // remove listener in case animation finishes after view has been unbind
+        stopRecButton.setAnimationEndListener(null);
+
         unbinder.unbind();
     }
 
@@ -371,7 +374,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
-        setupButtons(true);
+        setupRecordingButtons(true);
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -383,7 +386,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStoppedEvent(AudioRecordingStoppedEvent event) {
-        setupButtons(true);
+        setupRecordingButtons(true);
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -515,8 +518,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 if (getAudioService() != null) getAudioService().stopRecording();
             }
         });
-        // set initial visibility
-        setupButtons(false);
+        // recording buttons
+        setupRecordingButtons(false);
         // BPM UI
         updateBpmUI();
         if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
@@ -816,7 +819,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //==============================================
 
     // Set buttons visibility depending on whether audio is currently being recorded or not
-    private void setupButtons(boolean animate) {
+    private void setupRecordingButtons(boolean animate) {
         ibtnRecord.setVisibility(isRecording() ? View.GONE : View.VISIBLE);
         if (animate) {
             stopRecButton.show(isRecording());
