@@ -33,12 +33,12 @@ import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.DateUtils;
-import com.backyardbrains.utils.FabricUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.EmptyRecyclerView;
 import com.backyardbrains.view.EmptyView;
+import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -167,7 +167,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
-        final File[] files = RecordingUtils.BYB_DIRECTORY.listFiles(new FileFilter() {
+        final File[] files = RecordingUtils.getRecordingsDirectory().listFiles(new FileFilter() {
             @Override public boolean accept(File file) {
                 return !RecordingUtils.isEventsFile(file);
             }
@@ -305,9 +305,9 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                                         if (!ef.renameTo(newEventsFile)) {
                                             BYBUtils.showAlert(getActivity(), "Error",
                                                 getString(R.string.error_message_files_events_rename));
-                                            FabricUtils.logCustom(
+                                            Crashlytics.logException(new Throwable(
                                                 "Renaming events file for the given recording " + f.getPath()
-                                                    + " failed", null);
+                                                    + " failed"));
                                         }
                                     }
                                 }
@@ -315,7 +315,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                                 if (getContext() != null) {
                                     ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
                                 }
-                                FabricUtils.logCustom("Renaming file " + f.getPath() + " failed", null);
+                                Crashlytics.logException(new Throwable("Renaming file " + f.getPath() + " failed"));
                             }
                         } else {
                             if (getContext() != null) {
@@ -326,7 +326,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                         if (getContext() != null) {
                             ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
                         }
-                        FabricUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
+                        Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
                     }
                     // rescan the files
                     rescanFiles();
@@ -355,22 +355,21 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                                 if (!ef.delete()) {
                                     BYBUtils.showAlert(getActivity(), "Error",
                                         getString(R.string.error_message_files_events_delete));
-                                    FabricUtils.logCustom(
-                                        "Deleting events file for the given recording " + f.getPath() + " failed",
-                                        null);
+                                    Crashlytics.logException(new Throwable(
+                                        "Deleting events file for the given recording " + f.getPath() + " failed"));
                                 }
                             }
                         } else {
                             if (getContext() != null) {
                                 ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
                             }
-                            FabricUtils.logCustom("Deleting file " + f.getPath() + " failed", null);
+                            Crashlytics.logException(new Throwable("Deleting file " + f.getPath() + " failed"));
                         }
                     } else {
                         if (getContext() != null) {
                             ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
                         }
-                        FabricUtils.logCustom("File " + f.getPath() + " doesn't exist", null);
+                        Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
                     }
                     rescanFiles();
                 }
