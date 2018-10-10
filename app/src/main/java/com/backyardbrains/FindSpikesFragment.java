@@ -218,7 +218,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         if (event.isSuccess() && getAnalysisManager() != null) {
             getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
                 @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
-                    if (!exists) addThreshold();
+                    if (trainCount <= 0) addThreshold();
                     updateThresholdActions();
                 }
             });
@@ -241,6 +241,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         if (getAnalysisManager() != null) {
             getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
                 @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
+                    // if Find Spike analysis doesn't exist show loader until analysis is finished
                     if (!exists) llFindingSpikesProgress.setVisibility(View.VISIBLE);
                 }
             });

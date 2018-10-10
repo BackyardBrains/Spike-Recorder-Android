@@ -358,6 +358,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                                     FabricUtils.logCustom(
                                         "Deleting events file for the given recording " + f.getPath() + " failed",
                                         null);
+                                } else {
+                                    // TODO: 10-Oct-18 DELETE DB DATA FOR THE DELETED FILE
                                 }
                             }
                         } else {

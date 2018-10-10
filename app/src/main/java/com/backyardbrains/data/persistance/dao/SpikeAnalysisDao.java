@@ -13,7 +13,5 @@ import com.backyardbrains.data.persistance.entity.SpikeAnalysis;
 
     @Insert(onConflict = OnConflictStrategy.IGNORE) long insertSpikeAnalysis(SpikeAnalysis analysis);
 
-    @Query("SELECT * FROM spike_analysis WHERE file_path = :filePath") SpikeAnalysis loadSpikeAnalysis(String filePath);
-
     @Query("SELECT id FROM spike_analysis WHERE file_path = :filePath") long loadSpikeAnalysisId(String filePath);
 }
