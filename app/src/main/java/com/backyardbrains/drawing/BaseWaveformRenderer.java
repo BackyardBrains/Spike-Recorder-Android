@@ -490,8 +490,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames, int eventCount,
         @NonNull SparseArray<String> eventsBuffer) {
         int indexBase = eventCount - samplesWithEvents.eventCount;
-        for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-            eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
+        if (indexBase >= 0) {
+            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
+                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
+            }
         }
     }
 

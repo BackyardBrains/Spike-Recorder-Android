@@ -73,7 +73,7 @@ class RecordingSaver {
                 outputStream = new FileOutputStream(audioFile);
             } catch (FileNotFoundException e) {
                 Crashlytics.logException(e);
-                throw new IOException("could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
+                throw new IOException("Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
                     e);
             }
 

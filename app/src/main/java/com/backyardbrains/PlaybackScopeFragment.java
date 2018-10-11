@@ -629,6 +629,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             });
         } else {
             ibtnThreshold.setVisibility(View.INVISIBLE);
+            ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
         }
         // play/pause button
         setupPlayPauseButton();

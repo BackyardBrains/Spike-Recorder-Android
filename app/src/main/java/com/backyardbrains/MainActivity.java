@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -14,12 +15,14 @@ import android.os.IBinder;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.analysis.AnalysisManager;
@@ -31,6 +34,9 @@ import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.events.ShowToastEvent;
+import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.ImportUtils;
+import com.backyardbrains.utils.ImportUtils.ImportResult;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
@@ -112,8 +118,30 @@ public class MainActivity extends AppCompatActivity
         setupUI(savedInstanceState);
     }
 
+    @Override public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        // use the new intent, not the original one
+        setIntent(intent);
+    }
+
     @Override protected void onStart() {
         LOGD(TAG, "onStart()");
+
+        // check if we should process file import
+        if (getIntent() != null && ImportUtils.checkImport(getIntent())) {
+            @ImportResult int result =
+                ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
+            if (result != ImportResult.SUCCESS) {
+                showImportError(result);
+            } else {
+                ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
+                    Toast.LENGTH_LONG);
+                loadFragment(RECORDINGS_VIEW);
+            }
+
+            setIntent(null);
+        }
 
         // start the audio service for reads mic data, recording and playing recorded files
         start();
@@ -334,6 +362,27 @@ public class MainActivity extends AppCompatActivity
 
         // init bottom menu clicks
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
+    }
+
+    @SuppressLint("SwitchIntDef") private void showImportError(@ImportResult int result) {
+        final @StringRes int stringRes;
+        switch (result) {
+            case ImportResult.ERROR_EXISTS:
+                stringRes = R.string.error_message_import_exists;
+                break;
+            case ImportResult.ERROR_OPEN:
+                stringRes = R.string.error_message_import_open;
+                break;
+            case ImportResult.ERROR_SAVE:
+                stringRes = R.string.error_message_import_save;
+                break;
+            default:
+            case ImportResult.ERROR:
+                stringRes = R.string.error_message_import_error;
+                break;
+        }
+
+        BYBUtils.showAlert(this, "Error", getString(stringRes));
     }
 
     private int getFragmentTypeFromName(String fragName) {

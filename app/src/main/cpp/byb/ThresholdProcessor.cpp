@@ -50,8 +50,6 @@ void ThresholdProcessor::resetThreshold() {
 }
 
 void ThresholdProcessor::setPaused(bool paused) {
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setPaused(%s)", paused ? "PAUSE" : "RESUME");
-
     if (ThresholdProcessor::paused == paused) return;
 
     ThresholdProcessor::paused = paused;

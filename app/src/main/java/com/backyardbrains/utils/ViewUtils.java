@@ -30,12 +30,18 @@ public class ViewUtils {
     private static final int SOFT_KEYBOARD_DEFAULT_DELAY = 200;
 
     /**
-     * Shows system default toast with the specified {@code message}. If formatted string needs to be shown, caller can
-     * pass {@code args} that will be used when formatting the message.
+     * Shows system default toast with the specified {@code message} for a {@link Toast#LENGTH_SHORT} duration.
      */
-    @SuppressWarnings("UnusedReturnValue") public static Toast toast(@NonNull Context context,
-        @NonNull String message) {
-        final Toast toast = Toast.makeText(context, message, Toast.LENGTH_SHORT);
+    public static Toast toast(@NonNull Context context, @NonNull String message) {
+        return toast(context, message, Toast.LENGTH_SHORT);
+    }
+
+    /**
+     * Shows system default toast with the specified {@code message} for a specified {@code duration}. Duration should
+     * be either {@link Toast#LENGTH_SHORT} or {@link Toast#LENGTH_LONG}.
+     */
+    public static Toast toast(@NonNull Context context, @NonNull String message, int duration) {
+        final Toast toast = Toast.makeText(context, message, duration);
         toast.show();
 
         return toast;
@@ -110,7 +116,7 @@ public class ViewUtils {
     public static void hideSoftKeyboard(View v) {
         if (v != null) {
             InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+            if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
         }
     }
 
@@ -135,7 +141,7 @@ public class ViewUtils {
     public static void openSoftKeyboard(View v) {
         if (v != null) {
             InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT);
+            if (imm != null) imm.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT);
         }
     }
 
@@ -160,7 +166,7 @@ public class ViewUtils {
     public static void forceOpenSoftKeyboard(View v) {
         if (v != null) {
             InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(v, InputMethodManager.SHOW_FORCED);
+            if (imm != null) imm.showSoftInput(v, InputMethodManager.SHOW_FORCED);
         }
     }
 

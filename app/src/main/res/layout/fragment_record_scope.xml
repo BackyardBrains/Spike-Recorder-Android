@@ -116,7 +116,7 @@
     <TextView
         android:id="@+id/tv_stop_recording"
         android:layout_width="0dp"
-        android:layout_height="58dp"
+        android:layout_height="@dimen/mid_button_tappable_h"
         android:background="@color/red_orange"
         android:gravity="center"
         android:padding="@dimen/activity_vertical_margin_half"
