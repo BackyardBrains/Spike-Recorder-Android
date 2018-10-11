@@ -1,8 +1,11 @@
 package com.backyardbrains.data.processing;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.utils.BufferUtils;
+import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.SampleStreamUtils;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -14,22 +17,37 @@ public class ProcessingBuffer {
 
     private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
+    // Maximum time that should be processed when processing audio signal
+    private static final double MAX_AUDIO_PROCESSING_TIME = 6; // 6 seconds
+    // Maximum time that should be processed when processing sample stream
+    private static final double MAX_SAMPLE_STREAM_PROCESSING_TIME = 12; // 12 seconds
+    // Maximum time that should be processed when averaging signal
+    private static final double MAX_THRESHOLD_PROCESSING_TIME = 2.4; // 2.4 seconds
+
     private static final Object eventBufferLock = new Object();
 
     private static ProcessingBuffer INSTANCE;
 
-    private CircularShortBuffer ringBuffer;
+    // Circular buffer that holds incoming samples
+    private CircularShortBuffer sampleBuffer;
+    // Circular buffer that holds averaged incoming samples
+    private CircularShortBuffer averagedSamplesBuffer;
+
     private final int[] eventIndices;
     private final String[] eventNames;
     private int eventCount;
     private long lastSampleIndex;
-    private int bufferSize = BufferUtils.MAX_SAMPLE_BUFFER_SIZE;
+    private int sampleRate = AudioUtils.SAMPLE_RATE;
+    private boolean averagingSignal;
+    private boolean playback;
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
-        ringBuffer = new CircularShortBuffer(bufferSize);
+        sampleBuffer = new CircularShortBuffer((int) (MAX_AUDIO_PROCESSING_TIME * sampleRate));
+        averagedSamplesBuffer = new CircularShortBuffer((int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate));
         eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
         eventNames = new String[EventUtils.MAX_EVENT_COUNT];
+        eventCount = 0;
         lastSampleIndex = 0;
     }
 
@@ -50,38 +68,88 @@ public class ProcessingBuffer {
     //======================================================================
 
     /**
-     * Sets buffer size of the {@link SampleBuffer}.
+     * Sets sample rate of the incoming signal.
      */
-    public void setSize(int bufferSize) {
-        LOGD(TAG, "setSize(" + bufferSize + ")");
+    public void setSampleRate(int sampleRate) {
+        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
-        if (this.bufferSize == bufferSize) return;
-        if (bufferSize <= 0) return;
+        if (this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return;
 
-        ringBuffer.clear();
-        ringBuffer = new CircularShortBuffer(bufferSize);
+        final int bufferSize;
+        if (this.sampleRate == SampleStreamUtils.SAMPLE_RATE && !playback) {
+            bufferSize = (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate);
+        } else {
+            bufferSize = (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
+        }
+        sampleBuffer.clear();
+        sampleBuffer = new CircularShortBuffer(bufferSize);
+
+        averagedSamplesBuffer.clear();
+        averagedSamplesBuffer = new CircularShortBuffer((int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate));
 
         eventCount = 0;
 
         lastSampleIndex = 0;
 
-        this.bufferSize = bufferSize;
+        this.sampleRate = sampleRate;
     }
 
     /**
-     * Returns buffer size.
+     * Sets whether incoming signal is being averaged
+     */
+    public void setAveragingSignal(boolean averagingSignal) {
+        if (this.averagingSignal == averagingSignal) return;
+
+        this.averagingSignal = averagingSignal;
+    }
+
+    /**
+     * Sets whether incoming signal source is a file.
+     */
+    public void setPlayback(boolean playback) {
+        if (this.playback == playback) return;
+
+        this.playback = playback;
+    }
+
+    /**
+     * Returns size of the currently used sample buffer depending on whether averaging is on of off.
      */
     public int getSize() {
-        return bufferSize;
+        return averagingSignal ? averagedSamplesBuffer.capacity() : sampleBuffer.capacity();
     }
 
     /**
-     * Gets as many of the requested samples as available from this buffer.
+     * Returns size of the sample buffer.
+     */
+    public int getBufferSize() {
+        return sampleBuffer.capacity();
+    }
+
+    /**
+     * Returns size of the averaged samples buffer.
+     */
+    public int getThresholdBufferSize() {
+        return averagedSamplesBuffer.capacity();
+    }
+
+    /**
+     * Gets as many of the requested samples as available from the buffer.
      *
      * @return number of samples actually got from this buffer (0 if no samples are available)
      */
     public int get(@NonNull short[] data) {
-        return ringBuffer.get(data);
+        return sampleBuffer.get(data);
+    }
+
+    /**
+     * Gets as many of the requested averaged samples as available from the buffer.
+     *
+     * @return number of averaged samples actually got from this buffer (0 if no samples are available)
+     */
+    public int getAveraged(@NonNull short[] data) {
+        return averagedSamplesBuffer.get(data);
     }
 
     /**
@@ -105,12 +173,22 @@ public class ProcessingBuffer {
         return lastSampleIndex;
     }
 
+    private final Benchmark benchmark = new Benchmark("THRESHOLD").warmUp(50)
+        .sessions(10)
+        .measuresPerSession(50)
+        .logBySession(false)
+        .listener(new Benchmark.OnBenchmarkListener() {
+            @Override public void onEnd() {
+                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+            }
+        });
+
     /**
      * Adds specified {@code samplesWithEvents} to the sample ring buffer and events collections.
      */
     public void addToBuffer(@NonNull SamplesWithEvents samplesWithEvents) {
-        // add samples to ring buffer
-        if (ringBuffer != null) ringBuffer.put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
+        // add samples to signal ring buffer
+        if (sampleBuffer != null) sampleBuffer.put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
 
         // add new events, update indices of existing events and remove events that are no longer visible
         synchronized (eventBufferLock) {
@@ -125,12 +203,22 @@ public class ProcessingBuffer {
                 eventIndices[eventCounter] = eventIndices[i] - samplesWithEvents.sampleCount;
                 eventNames[eventCounter++] = eventNames[i];
             }
-            int baseIndex = bufferSize - samplesWithEvents.sampleCount;
+            int baseIndex = sampleBuffer.capacity() - samplesWithEvents.sampleCount;
             for (int i = 0; i < samplesWithEvents.eventCount; i++) {
                 eventIndices[eventCounter] = baseIndex + samplesWithEvents.eventIndices[i];
                 eventNames[eventCounter++] = samplesWithEvents.eventNames[i];
             }
             eventCount = eventCount - removeIndices + samplesWithEvents.eventCount;
+        }
+
+        // average signal if necessary
+        if (averagingSignal) {
+            //benchmark.start();
+            JniUtils.processThreshold(samplesWithEvents);
+            //benchmark.end();
+
+            // add samples to threshold ring buffer
+            averagedSamplesBuffer.put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
         }
 
         // save last sample index (playhead)
@@ -140,8 +228,9 @@ public class ProcessingBuffer {
     /**
      * Clears the sample data ring buffer, events collections and resets last read byte position
      */
-    public void clearBuffer() {
-        if (ringBuffer != null) ringBuffer.clear();
+    @SuppressWarnings("unused") public void clearBuffer() {
+        if (sampleBuffer != null) sampleBuffer.clear();
+        if (averagedSamplesBuffer != null) averagedSamplesBuffer.clear();
         eventCount = 0;
         lastSampleIndex = 0;
     }

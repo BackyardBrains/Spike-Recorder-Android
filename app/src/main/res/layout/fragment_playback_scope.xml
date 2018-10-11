@@ -5,6 +5,67 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.backyardbrains.view.ThresholdHandle
+        android:id="@+id/threshold_handle"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="invisible"
+        app:byb_color="@color/red"
+        app:byb_orientation="right"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <ImageButton
+        android:id="@+id/ibtn_threshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="58dp"
+        android:layout_marginTop="5dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_threshold"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription"/>
+
+    <ImageButton
+        android:id="@+id/ibtn_avg_trigger_type"
+        android:layout_width="41dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="@dimen/activity_vertical_margin_half"
+        android:background="@drawable/circle_gray_white"
+        android:src="@drawable/ic_trigger_threshold_black_24dp"
+        app:layout_constraintRight_toLeftOf="@+id/ibtn_threshold"
+        app:layout_constraintTop_toBottomOf="@+id/ibtn_threshold"
+        tools:ignore="ContentDescription"/>
+
+    <SeekBar
+        android:id="@+id/sb_averaged_sample_count"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:minHeight="10dp"
+        android:visibility="invisible"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="1"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"
+        app:layout_constraintTop_toTopOf="@+id/ibtn_threshold"
+        app:layout_constraintBottom_toBottomOf="@+id/ibtn_threshold"/>
+
+    <TextView
+        android:id="@+id/tv_averaged_sample_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:visibility="invisible"
+        android:text="@string/default_threshold_amount"
+        android:textColor="@color/green"
+        app:layout_constraintLeft_toRightOf="@+id/sb_averaged_sample_count"
+        app:layout_constraintTop_toTopOf="@+id/sb_averaged_sample_count"
+        app:layout_constraintBottom_toBottomOf="@+id/sb_averaged_sample_count"/>
+
     <FrameLayout
         android:id="@+id/playback_scope_content_container"
         android:layout_width="0dp"
@@ -18,8 +79,6 @@
         android:id="@+id/tv_rms"
         android:layout_width="160dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:layout_marginEnd="10dp"
         android:gravity="center"
         android:visibility="invisible"
         android:background="@color/black"
@@ -28,7 +87,8 @@
         android:textColor="@color/green"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        tools:text="RMS: 0.0009 mV"/>
+        tools:text="RMS: 0.0009 mV"
+        android:layout_marginTop="120dp"/>
 
     <TextView
         android:id="@+id/tv_spike_count0"
@@ -91,7 +151,8 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="@+id/sb_audio_progress"
         app:layout_constraintRight_toLeftOf="@+id/sb_audio_progress"
-        app:layout_constraintBottom_toBottomOf="@+id/sb_audio_progress"/>
+        app:layout_constraintBottom_toBottomOf="@+id/sb_audio_progress"
+        tools:ignore="ContentDescription"/>
 
     <SeekBar
         android:id="@+id/sb_audio_progress"

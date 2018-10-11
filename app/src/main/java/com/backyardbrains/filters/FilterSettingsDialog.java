@@ -69,7 +69,7 @@ public abstract class FilterSettingsDialog {
     @SuppressWarnings("WeakerAccess") Filter customFilter;
     @SuppressWarnings("WeakerAccess") Filter selectedFilter;
 
-    public FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
+    FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
         this.listener = listener;
         this.minCutOffLog = Math.log(1);
         this.maxCutOffLog = Math.log(getMaxCutOff());

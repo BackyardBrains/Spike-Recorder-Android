@@ -34,7 +34,7 @@ public class HeartbeatView extends AppCompatImageView {
     private static final float SCALE_FACTOR_PUMPED = 1.2f;
     private static final int HEARTBEAT_ANIMATION_DURATION = 50;
 
-    private Drawable heartDrawable;
+    Drawable heartDrawable;
 
     private SoundPool soundPool;
     private int soundId;
@@ -123,7 +123,7 @@ public class HeartbeatView extends AppCompatImageView {
     }
 
     // Set's up heartbeat animation and triggers it.
-    private void animate(float scale, @ColorRes int fromColor, @ColorRes int toColor, int duration,
+    void animate(float scale, @ColorRes int fromColor, @ColorRes int toColor, int duration,
         @Nullable Animator.AnimatorListener listener) {
         final ValueAnimator colorAnimation =
             ValueAnimator.ofObject(new ArgbEvaluator(), ContextCompat.getColor(getContext(), fromColor),

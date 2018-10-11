@@ -23,6 +23,9 @@ void HeartbeatHelper::beat(int sampleIndex) {
     // we shouldn't process beat if dead period didn't pass
     if (diffFromPrevBeat < deadPeriodSampleCount) {
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Difference between two beats is less than 0.2s");
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "CURRENT: %d, PREV: %d", sampleIndex, prevSampleIndex);
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "DIFF FROM PREV: %d, DEAD PERIOD: %d", diffFromPrevBeat,
+                            deadPeriodSampleCount);
         return;
     }
     // we should reset if time difference between current and last beat is longer then required

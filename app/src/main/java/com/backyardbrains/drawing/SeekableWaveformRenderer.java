@@ -68,7 +68,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES IF NECESSARY
     protected boolean drawSpikes() {
-        return true;
+        return !isSignalAveraging();
     }
 
     /**
@@ -165,28 +165,28 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void startScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying() && !getIsSeeking()) onScrollStart();
+        if (getIsPaused() && !getIsSeeking()) onScrollStart();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override protected void scroll(float dx) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onScroll(dx * getGlWindowWidth() / getSurfaceWidth());
+        if (getIsPaused()) onScroll(dx * getGlWindowWidth() / getSurfaceWidth());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override protected void endScroll() {
-        if (getIsPlaybackMode() && getIsNotPlaying()) onScrollEnd();
+        if (getIsPaused()) onScrollEnd();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override protected void startMeasurement(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
+        if (getIsPaused()) {
             measurementStartX = x;
             measurementEndX = x;
             measuring = true;
@@ -199,14 +199,14 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void measure(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) measurementEndX = x;
+        if (getIsPlaybackMode() && getIsPaused()) measurementEndX = x;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override protected void endMeasurement(float x) {
-        if (getIsPlaybackMode() && getIsNotPlaying()) {
+        if (getIsPaused()) {
             measuring = false;
             measurementStartX = 0;
             measurementEndX = 0;
@@ -253,8 +253,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     }
 
     // Check whether audio is currently in the paused state
-    private boolean getIsNotPlaying() {
-        return getAudioService() == null || !getAudioService().isAudioPlaying();
+    private boolean getIsPaused() {
+        return getAudioService() == null || getAudioService().isAudioPaused();
     }
 
     // Check whether audio is currently being sought

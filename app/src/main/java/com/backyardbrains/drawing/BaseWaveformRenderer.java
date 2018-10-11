@@ -7,8 +7,8 @@ import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
 import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.data.processing.SampleBuffer;
 import com.backyardbrains.data.processing.SamplesWithEvents;
+import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.Benchmark;
@@ -16,6 +16,7 @@ import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -31,12 +32,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
     private static final int MIN_GL_VERTICAL_SIZE = 400;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
+    private static final float AUTO_SCALE_FACTOR = 1.5f;
 
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
 
-    private SampleBuffer sampleBuffer;
+    private DrawBuffer sampleBuffer;
     private short[] samples;
+    private DrawBuffer averagedSamplesBuffer;
+    private short[] averagedSamples;
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
@@ -56,12 +60,18 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
     private boolean autoScale;
 
+    private boolean signalAveraging;
+    private @SignalAveragingTriggerType int averagingTriggerType;
+
     private int sampleRate = AudioUtils.SAMPLE_RATE;
     private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
+
+    private GlAveragingTriggerLine glAveragingTrigger;
+    protected Context context;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -131,8 +141,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     //  CONSTRUCTOR & SETUP
     //==============================================
 
-    public BaseWaveformRenderer(@NonNull BaseFragment fragment) {
+    BaseWaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
+
+        context = fragment.getContext();
 
         processingBuffer = ProcessingBuffer.get();
         eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
@@ -179,8 +191,49 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.sampleRate = sampleRate;
     }
 
+    /**
+     * Returns whether incoming signal is being averaged or not.
+     */
+    boolean isSignalAveraging() {
+        return signalAveraging;
+    }
+
+    /**
+     * Sets whether incoming signal should be averaged or not.
+     */
+    public void setSignalAveraging(boolean signalAveraging) {
+        this.signalAveraging = signalAveraging;
+
+        // we should reset buffers for averaged samples
+        if (signalAveraging) resetAveragedSignal();
+    }
+
+    /**
+     * Resets buffers for averaged samples
+     */
+    public void resetAveragedSignal() {
+        if (processingBuffer != null) {
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
+        }
+    }
+
+    /**
+     * Returns current type of signal averaging.
+     */
+    public @SignalAveragingTriggerType int getAveragingTriggerType() {
+        return averagingTriggerType;
+    }
+
+    /**
+     * Sets type for signal averaging. Can be one of {@link SignalAveragingTriggerType}.
+     */
+    public void setAveragingTriggerType(@SignalAveragingTriggerType int averagingTriggerType) {
+        this.averagingTriggerType = averagingTriggerType;
+    }
+
     public void setGlWindowWidth(int newSize) {
-        if (newSize < 0 || newSize == glWindowWidth) return;
+        if (newSize < 0) return;
 
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
         final int maxGlWindowWidth = processingBuffer.getSize();
@@ -212,11 +265,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         return glWindowHeight;
     }
 
-    int getSurfaceWidth() {
+    @SuppressWarnings("WeakerAccess") public int getSurfaceWidth() {
         return surfaceWidth;
     }
 
-    @SuppressWarnings("unused") int getSurfaceHeight() {
+    public int getSurfaceHeight() {
         return surfaceHeight;
     }
 
@@ -242,12 +295,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
-        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, BaseWaveformRenderer.class));
         surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
-        surfaceHeight = PrefUtils.getViewportHeight(context, BaseWaveformRenderer.class);
+        surfaceHeight = PrefUtils.getViewportHeight(context, getClass());
         surfaceSizeDirty = true;
-        setAutoScale(PrefUtils.getAutoScale(context, getClass()));
+        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
+        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, getClass()));
+        //setAutoScaleEnabled(PrefUtils.getAutoScale(context, getClass()));
         minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
 
@@ -259,11 +312,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
-        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
-        PrefUtils.setGlWindowVerticalSize(context, BaseWaveformRenderer.class, glWindowHeight);
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
-        PrefUtils.setViewportHeight(context, BaseWaveformRenderer.class, surfaceHeight);
-        PrefUtils.setAutoScale(context, getClass(), autoScale);
+        PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
+        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
+        PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowHeight);
+        //PrefUtils.setAutoScale(context, getClass(), autoScale);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minDetectedPCMValue);
     }
 
@@ -285,6 +338,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+
+        glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
     /**
@@ -312,7 +367,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         .sessions(10)
         .measuresPerSession(500)
         .logBySession(false)
-        .logToFile(true)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
@@ -324,6 +378,33 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     @Override public void onDrawFrame(GL10 gl) {
         //benchmark.start();
+
+        // get event indices and event names from processing buffer
+        final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
+
+        // get samples from processing buffer and check if it's valid
+        // FIXME: 24-Sep-18 CURRENTLY THE ONLY WAY TO SAVE DATA WHEN SWITCHING BETWEEN PLAYBACK AND THRESHOLD MODE WHILE PAUSING IS TO HAVE TWO DIFFERENT BUFFERS BUT THIS SHOULD BE IMPLEMENTED BETTER
+        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getBufferSize()) {
+            sampleBuffer = new DrawBuffer(processingBuffer.getBufferSize());
+            samples = new short[processingBuffer.getBufferSize()];
+        }
+        if (averagedSamplesBuffer == null
+            || averagedSamplesBuffer.getSize() != processingBuffer.getThresholdBufferSize()) {
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
+            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
+        }
+        int count = processingBuffer.get(samples);
+        if (count > 0) sampleBuffer.add(samples, count);
+        count = processingBuffer.getAveraged(averagedSamples);
+        if (count > 0) averagedSamplesBuffer.add(averagedSamples, count);
+        // select buffer for drawing
+        DrawBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
+
+        // auto-scale before drawing if necessary
+        if (autoScale) {
+            autoScale(tmpSampleBuffer.getArray());
+            autoScale = false;
+        }
 
         final boolean surfaceSizeDirty = this.surfaceSizeDirty;
         final int surfaceWidth = this.surfaceWidth;
@@ -337,21 +418,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.glWindowWidthDirty = false;
         this.glWindowHeightDirty = false;
 
-        // get event indices and event names from processing buffer
-        final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
-
-        // get samples from processing buffer and check if it's valid
-        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getSize()) {
-            sampleBuffer = new SampleBuffer(processingBuffer.getSize());
-            samples = new short[processingBuffer.getSize()];
-        }
-        int count = processingBuffer.get(samples);
-        if (count > 0) {
-            //LOGD(TAG, "DRAWING: " + count);
-            sampleBuffer.add(samples, count);
-        }
-
-        final int sampleCount = sampleBuffer.getArray().length;
+        final int sampleCount = tmpSampleBuffer.getArray().length;
         final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
         // calculate necessary drawing parameters
@@ -360,9 +427,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
 
         // construct waveform vertices and populate eventIndices buffer
+        getWaveformVertices(samplesWithEvents, tmpSampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
+            eventsBuffer, drawStartIndex, drawEndIndex, surfaceWidth);
         eventsBuffer.clear();
-        getWaveformVertices(samplesWithEvents, sampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
-            drawStartIndex, drawEndIndex, surfaceWidth);
+        getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
         final int samplesDrawCount = (int) (samplesWithEvents.sampleCount * .5);
 
         // calculate scale x and scale y
@@ -376,12 +444,18 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         // init surface before drawing
         initDrawSurface(gl, samplesDrawCount, glWindowHeight, surfaceSizeDirty || glWindowWidthDirty);
 
-        //autoScaleCheck(samples);
-
         // draw on surface
-        draw(gl, sampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
+        draw(gl, tmpSampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
             surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
             lastSampleIndex);
+
+        // draw average triggering line
+        if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
+            final float drawScale = (float) (samplesWithEvents.sampleCount * .5) / surfaceWidth;
+            final float verticalHalfSize = glWindowHeight * .30f;
+            glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
+                samplesWithEvents.sampleCount * .25f, -verticalHalfSize, verticalHalfSize, drawScale, scaleY);
+        }
 
         // invoke callback that the surface has been drawn
         if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
@@ -400,21 +474,34 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
-        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount, int fromSample, int toSample,
-        int drawSurfaceWidth) {
+        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount,
+        @NonNull SparseArray<String> eventsBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
         //benchmark.start();
         try {
             JniUtils.prepareForDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample, toSample,
                 drawSurfaceWidth);
-            int indexBase = eventCount - samplesWithEvents.eventCount;
-            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
-            }
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
         }
         //benchmark.end();
+    }
+
+    protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames, int eventCount,
+        @NonNull SparseArray<String> eventsBuffer) {
+        int indexBase = eventCount - samplesWithEvents.eventCount;
+        if (indexBase >= 0) {
+            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
+                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
+            }
+        }
+    }
+
+    @Nullable private String getAveragingTriggerEventName(String[] eventNames, int eventsCount) {
+        if (averagingTriggerType == SignalAveragingTriggerType.ALL_EVENTS && eventsCount > 0) {
+            return eventNames[eventsCount - 1];
+        }
+        return null;
     }
 
     abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
@@ -433,13 +520,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     public void setOnScrollListener(@Nullable OnScrollListener listener) {
         this.onScrollListener = listener;
-    }
-
-    /**
-     * Whether scrolling of the surface view is enabled.
-     */
-    public boolean isScrollEnabled() {
-        return this.scrollEnabled;
     }
 
     /**
@@ -482,6 +562,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
+     * Whether scrolling of the surface view is enabled.
+     */
+    boolean isScrollEnabled() {
+        return this.scrollEnabled;
+    }
+
+    /**
      * Enables scrolling of the surface view.
      */
     void setScrollEnabled() {
@@ -499,13 +586,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     public void setOnMeasureListener(@Nullable OnMeasureListener listener) {
         this.onMeasureListener = listener;
-    }
-
-    /**
-     * Whether measurement of the signal is enabled.
-     */
-    public boolean isMeasureEnabled() {
-        return measureEnabled;
     }
 
     /**
@@ -552,6 +632,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
+     * Whether measurement of the signal is enabled.
+     */
+    boolean isMeasureEnabled() {
+        return measureEnabled;
+    }
+
+    /**
      * Sets whether measurement of the signal will be enabled.
      */
     void setMeasureEnabled(boolean enabled) {
@@ -562,42 +649,36 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     //  AUTO-SCALE
     //==============================================
 
-    @SuppressWarnings("unused") private void autoScaleCheck(@NonNull short[] samples) {
-        if (!isAutoScale()) if (samples.length > 0) autoSetFrame(samples);
+    /**
+     * Called when drawing surface is double-tapped. This method is called only if {@link #isAutoScaleEnabled()} returns {@code true}.
+     */
+    void autoScale() {
+        autoScale = true;
     }
 
-    private boolean isAutoScale() {
-        return autoScale;
+    /**
+     * Whether auto-scale of the signal on double-tap is enabled.
+     */
+    boolean isAutoScaleEnabled() {
+        return !signalAveraging;
     }
 
-    private void setAutoScale(boolean isScaled) {
-        autoScale = isScaled;
-    }
-
-    private void autoSetFrame(short[] arrayToScaleTo) {
-        int theMax = 0;
-        int theMin = 0;
-
-        for (short anArrayToScaleTo : arrayToScaleTo) {
-            if (theMax < anArrayToScaleTo) theMax = anArrayToScaleTo;
-            if (theMin > anArrayToScaleTo) theMin = anArrayToScaleTo;
+    // Does actual auto-scaling
+    private void autoScale(@NonNull short[] samples) {
+        int max = 0, min = 0;
+        for (short sample : samples) {
+            if (max < sample) max = sample;
+            if (min > sample) min = sample;
         }
 
-        if (theMax != 0 && theMin != 0) {
-            final int newyMax;
-            if (Math.abs(theMax) >= Math.abs(theMin)) {
-                newyMax = Math.abs(theMax) * 2;
+        if (max != 0 && min != 0) {
+            final int maxY;
+            if (Math.abs(max) >= Math.abs(min)) {
+                maxY = Math.abs(max) * 2;
             } else {
-                newyMax = Math.abs(theMin) * 2;
+                maxY = Math.abs(min) * 2;
             }
-            if (-newyMax > getMinDetectedPCMValue()) {
-                setGlWindowHeight(newyMax * 2);
-            }
+            if (-maxY > minDetectedPCMValue) setGlWindowHeight((int) (maxY * AUTO_SCALE_FACTOR));
         }
-        setAutoScale(true);
-    }
-
-    private float getMinDetectedPCMValue() {
-        return minDetectedPCMValue;
     }
 }

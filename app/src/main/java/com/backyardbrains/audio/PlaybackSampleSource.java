@@ -42,6 +42,8 @@ public class PlaybackSampleSource extends AbstractSampleSource {
         private final String filePath;
         // Whether file should start playing right away
         private final boolean autoPlay;
+        // Position of the recording from which playback should start
+        private final int position;
         // Size of buffer (chunk) to read when seeking (6 seconds)
         private int bufferSize;
         // Buffer that holds audio data
@@ -50,9 +52,10 @@ public class PlaybackSampleSource extends AbstractSampleSource {
         // Random access file stream that holds audio file that's being played
         private AudioFile raf;
 
-        ReadThread(@NonNull String filePath, boolean autoPlay) {
+        ReadThread(@NonNull String filePath, boolean autoPlay, int position) {
             this.filePath = filePath;
             this.autoPlay = autoPlay;
+            this.position = position;
         }
 
         @Override public void run() {
@@ -74,6 +77,9 @@ public class PlaybackSampleSource extends AbstractSampleSource {
 
                 duration.set(raf.length());
                 LOGD(TAG, "Audio file byte count is: " + duration.get());
+
+                progress.set(position);
+                LOGD(TAG, "Audio file will start at position: " + progress.get());
 
                 setSampleRate(raf.sampleRate());
                 LOGD(TAG, "Audio file sample rate is: " + raf.sampleRate());
@@ -102,7 +108,9 @@ public class PlaybackSampleSource extends AbstractSampleSource {
                 LOGD(TAG, "Playback started");
 
                 // inform any interested parties that playback has started
-                if (playbackListener != null) playbackListener.onStart(duration.get(), raf.sampleRate());
+                if (playbackListener != null && position == 0) {
+                    playbackListener.onStart(duration.get(), raf.sampleRate());
+                }
 
                 while (working.get() && raf != null) {
                     if (playing.get()) {
@@ -119,10 +127,8 @@ public class PlaybackSampleSource extends AbstractSampleSource {
 
                         // check if audio playback reached end
                         if ((read = raf.read(buffer, 0, bytesToReadWhilePlaying)) < 0) {
-                            // reset input stream
-                            rewind();
-
-                            writeToBuffer(new byte[bufferSize], 0, bufferSize);
+                            // set playing flag
+                            playing.set(false);
 
                             LOGD(TAG, "Playback completed");
 
@@ -145,8 +151,6 @@ public class PlaybackSampleSource extends AbstractSampleSource {
 
                         // play audio data if we're not seeking
                         track.write(buffer, 0, read);
-                    } else if (seeking.get()) {
-                        seekToPosition();
                     }
                 }
 
@@ -194,22 +198,24 @@ public class PlaybackSampleSource extends AbstractSampleSource {
         }
 
         // Rewinds audio file.
-        private void rewind() throws IOException {
+        void rewind() {
             if (seeking.get()) return; // we can't rewind while seeking
 
-            // set playing flag
-            playing.set(false);
-            // seek to file start
-            if (raf != null) raf.seek(0);
+            try {
+                if (raf != null) raf.seek(0);
+            } catch (IOException e) {
+                LOGE(TAG, "IOException while rewinding: " + e.toString());
+                Crashlytics.logException(e);
+            }
             // update progress to 0 and trigger listener
             progress.set(0);
             // update from and to sample to start values
             fromSample.set(0);
             toSample.set(0);
             samplesToPrepend.set(0);
-            if (playbackListener != null) {
-                playbackListener.onProgress(progress.get(), raf != null ? raf.sampleRate() : 0);
-            }
+
+            BufferUtils.emptyBuffer(buffer);
+            writeToBuffer(buffer, 0, bufferSize);
 
             LOGD(TAG, "Audio file rewind");
         }
@@ -284,6 +290,8 @@ public class PlaybackSampleSource extends AbstractSampleSource {
     private final String filePath;
     // Whether file should start playing right away
     private final boolean autoPlay;
+    // Initial position of the recording
+    private final int position;
 
     @SuppressWarnings("WeakerAccess") PlaybackListener playbackListener;
 
@@ -313,10 +321,12 @@ public class PlaybackSampleSource extends AbstractSampleSource {
     // Used for passing event names to samplesWithEvents
     @SuppressWarnings("WeakerAccess") String[] eventNames;
 
-    PlaybackSampleSource(@NonNull String filePath, boolean autoPlay, @Nullable SampleSourceListener listener) {
+    PlaybackSampleSource(@NonNull String filePath, boolean autoPlay, int position,
+        @Nullable SampleSourceListener listener) {
         super(0, listener);
         this.filePath = filePath;
         this.autoPlay = autoPlay;
+        this.position = position;
     }
 
     /**
@@ -362,6 +372,9 @@ public class PlaybackSampleSource extends AbstractSampleSource {
         if (playbackThread != null) {
             if (seeking.get()) return;
 
+            // reset input stream
+            if (progress.get() == duration.get()) playbackThread.rewind();
+
             playing.set(true);
 
             LOGD(TAG, "Playback resumed");
@@ -396,13 +409,6 @@ public class PlaybackSampleSource extends AbstractSampleSource {
             if (start && playing.get()) pausePlayback();
 
             seeking.set(start);
-
-            try {
-                playbackThread.seekToPosition();
-            } catch (IOException e) {
-                Crashlytics.logException(e);
-                LOGE(TAG, "Error reading random access file stream", e);
-            }
         }
     }
 
@@ -428,7 +434,7 @@ public class PlaybackSampleSource extends AbstractSampleSource {
     @Override protected void onInputStart() {
         if (playbackThread == null) {
             // Start playback in a thread
-            playbackThread = new ReadThread(filePath, autoPlay);
+            playbackThread = new ReadThread(filePath, autoPlay, position);
             playbackThread.start();
         }
     }
@@ -448,7 +454,6 @@ public class PlaybackSampleSource extends AbstractSampleSource {
         .sessions(10)
         .measuresPerSession(200)
         .logBySession(false)
-        .logToFile(false)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));

@@ -1,14 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/ll_finding_spikes_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="56dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:indeterminate="true"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/activity_horizontal_margin_quarter"
+            android:paddingEnd="@dimen/activity_horizontal_margin_quarter"
+            android:text="@string/label_finding_spikes"
+            android:textColor="@color/orange"/>
+    </LinearLayout>
 
     <com.backyardbrains.view.ThresholdHandle
         android:id="@+id/threshold_handle_left"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="end|center_vertical"
+        android:visibility="invisible"
         app:byb_orientation="left"/>
 
     <com.backyardbrains.view.ThresholdHandle
@@ -16,6 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="start|center_vertical"
+        android:visibility="invisible"
         app:byb_orientation="right"/>
 
     <LinearLayout
@@ -32,7 +58,8 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_delete_white_32dp"/>
+            app:srcCompat="@drawable/ic_delete_white_32dp"
+            tools:ignore="ContentDescription"/>
 
         <ImageButton
             android:id="@+id/threshold0"
@@ -41,7 +68,8 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/handle1"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:ignore="ContentDescription"/>
 
         <ImageButton
             android:id="@+id/threshold1"
@@ -50,7 +78,8 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle2"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:ignore="ContentDescription"/>
 
         <ImageButton
             android:id="@+id/threshold2"
@@ -59,7 +88,8 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:src="@drawable/handle3"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:ignore="ContentDescription"/>
 
         <ImageButton
             android:id="@+id/ibtn_add_threshold"
@@ -68,6 +98,7 @@
             android:layout_marginStart="@dimen/activity_horizontal_margin_half"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_add_white_32dp"/>
+            app:srcCompat="@drawable/ic_add_white_32dp"
+            tools:ignore="ContentDescription"/>
     </LinearLayout>
 </FrameLayout>

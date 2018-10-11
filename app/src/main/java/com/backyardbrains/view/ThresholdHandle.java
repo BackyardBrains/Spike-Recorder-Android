@@ -1,5 +1,6 @@
 package com.backyardbrains.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.AttrRes;
@@ -12,14 +13,11 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
-import com.backyardbrains.utils.Func;
-import com.backyardbrains.utils.ViewUtils;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -37,7 +35,7 @@ public class ThresholdHandle extends ConstraintLayout {
 
     @Retention(RetentionPolicy.SOURCE) @IntDef({
         Orientation.LEFT, Orientation.RIGHT
-    }) @interface Orientation {
+    }) public @interface Orientation {
         /**
          * Handle is aligned left.
          */
@@ -55,6 +53,8 @@ public class ThresholdHandle extends ConstraintLayout {
     private @ColorInt int handleColor;
     private @Orientation int handleOrientation;
     private float handlePosition;
+    private float topOffset;
+
     private int handlePadding;
 
     /**
@@ -113,17 +113,20 @@ public class ThresholdHandle extends ConstraintLayout {
 
         handleOrientation = orientation;
 
-        LayoutParams lp = (LayoutParams) vDragSurface.getLayoutParams();
-        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : ivHandle.getId();
-        lp.rightToRight = orientation == Orientation.LEFT ? ivHandle.getId() : LayoutParams.PARENT_ID;
-        vDragSurface.setLayoutParams(lp);
+        updateUI();
+    }
 
-        lp = (LayoutParams) ivHandle.getLayoutParams();
-        lp.leftToLeft = orientation == Orientation.LEFT ? LayoutParams.PARENT_ID : LayoutParams.UNSET;
-        lp.rightToRight = orientation == Orientation.LEFT ? LayoutParams.UNSET : LayoutParams.PARENT_ID;
-        ivHandle.setImageResource(
-            orientation == Orientation.LEFT ? R.drawable.handle_white_left : R.drawable.handle_white_right);
-        ivHandle.setLayoutParams(lp);
+    /**
+     * Set top offset of the threshold handle.
+     */
+    public void setTopOffset(float topOffset) {
+        if (this.topOffset == topOffset) return;
+
+        LOGD(TAG, "Top offset set: " + topOffset);
+
+        this.topOffset = topOffset;
+
+        updateUI();
     }
 
     /**
@@ -131,8 +134,16 @@ public class ThresholdHandle extends ConstraintLayout {
      */
     public float setPosition(float position) {
         handlePosition = position;
+
         updateUI();
 
+        return handlePosition;
+    }
+
+    /**
+     * Returns Y position of the handle.
+     */
+    public float getPosition() {
         return handlePosition;
     }
 
@@ -141,19 +152,18 @@ public class ThresholdHandle extends ConstraintLayout {
         LayoutInflater.from(getContext()).inflate(R.layout.view_threshold_handle, this);
         ButterKnife.bind(this);
 
-        setVisibility(INVISIBLE);
-
         // calculate handle padding
         handlePadding = (int) (HANDLE_PADDING * getResources().getDisplayMetrics().density);
 
         if (attrs != null) {
             final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.ThresholdHandle);
             try {
-                final @ColorRes int colorResId =
-                    a.getResourceId(R.styleable.ThresholdHandle_byb_color, R.color.white);
+                final @ColorRes int colorResId = a.getResourceId(R.styleable.ThresholdHandle_byb_color, R.color.white);
                 setColor(ContextCompat.getColor(getContext(), colorResId));
-                final int orientationInt = a.getInt(R.styleable.ThresholdHandle_byb_orientation, Orientation.LEFT);
-                setOrientation(orientationInt == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
+                final int orientation = a.getInt(R.styleable.ThresholdHandle_byb_orientation, Orientation.LEFT);
+                setOrientation(orientation == Orientation.RIGHT ? Orientation.RIGHT : Orientation.LEFT);
+                final float topOffset = a.getFloat(R.styleable.ThresholdHandle_byb_topOffset, 0f);
+                setTopOffset(topOffset);
             } finally {
                 a.recycle();
             }
@@ -163,58 +173,65 @@ public class ThresholdHandle extends ConstraintLayout {
     }
 
     // Initializes view's children
-    private void setupUI() {
-        vDragSurface.setOnTouchListener(new OnTouchListener() {
+    @SuppressLint("ClickableViewAccessibility") private void setupUI() {
+        ivHandle.setOnTouchListener(
+            new OnDragTouchListener(ivHandle, vDragSurface, new OnDragTouchListener.OnDragActionListener() {
+                private float pos = 0f;
 
-            @Override public boolean onTouch(View v, MotionEvent event) {
-                if (v.getVisibility() == View.VISIBLE) {
-                    // always track only the first pointer
-                    if (event.getActionIndex() == 0) {
-                        final float pos = setPosition(event.getY());
-                        if (event.getActionMasked() == MotionEvent.ACTION_UP) invokeCallback(pos);
-                    }
-
-                    return true;
+                @Override public void onDragStart(View view) {
                 }
-                return false;
-            }
-        });
 
-        ViewUtils.playAfterNextLayout(this, new Func<View, Void>() {
-            @Nullable @Override public Void apply(@Nullable View source) {
-                updateUI();
-                post(new Runnable() {
-                    @Override public void run() {
-                        setVisibility(VISIBLE);
-                    }
-                });
-                return null;
-            }
-        });
+                @Override public void onDrag(View view, float x, float y) {
+                    pos = setPosition(y + view.getHeight() / 2);
+                }
+
+                @Override public void onDragEnd(View view) {
+                    invokeCallback(pos);
+                }
+            }));
     }
 
     // Updates view's children
-    private void updateUI() {
-        if (handlePosition < 0) {
+    void updateUI() {
+        LayoutParams lp = (LayoutParams) vDragSurface.getLayoutParams();
+        lp.leftToLeft = handleOrientation == Orientation.LEFT ? LayoutParams.PARENT_ID : ivHandle.getId();
+        lp.rightToRight = handleOrientation == Orientation.LEFT ? ivHandle.getId() : LayoutParams.PARENT_ID;
+        if (topOffset > 0) {
+            lp.topToTop = LayoutParams.UNSET;
+            lp.height = (int) (getHeight() - topOffset);
+        } else {
+            lp.topToTop = LayoutParams.PARENT_ID;
+            lp.height = LayoutParams.MATCH_CONSTRAINT;
+        }
+        vDragSurface.setLayoutParams(lp);
+
+        lp = (LayoutParams) ivHandle.getLayoutParams();
+        lp.leftToLeft = handleOrientation == Orientation.LEFT ? LayoutParams.PARENT_ID : LayoutParams.UNSET;
+        lp.rightToRight = handleOrientation == Orientation.LEFT ? LayoutParams.UNSET : LayoutParams.PARENT_ID;
+        ivHandle.setImageResource(
+            handleOrientation == Orientation.LEFT ? R.drawable.handle_white_left : R.drawable.handle_white_right);
+        ivHandle.setLayoutParams(lp);
+
+        if (handlePosition < topOffset) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? -90 : 90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
-            ivHandle.setY(handlePadding);
-        } else if (handlePosition > vDragSurface.getHeight()) {
+            ivHandle.setY(handlePadding + topOffset);
+        } else if (handlePosition > vDragSurface.getBottom()) {
             ivHandle.setRotation(handleOrientation == Orientation.LEFT ? 90 : -90);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? vDragSurface.getWidth() - ivHandle.getWidth() / 2
                 : vDragSurface.getX() - ivHandle.getWidth() / 2);
-            ivHandle.setY(vDragSurface.getHeight() - ivHandle.getHeight() - handlePadding);
+            ivHandle.setY(vDragSurface.getBottom() - ivHandle.getHeight() - handlePadding);
         } else {
             ivHandle.setRotation(0);
             ivHandle.setX(handleOrientation == Orientation.LEFT ? 0 : vDragSurface.getX());
             ivHandle.setY(handlePosition - ivHandle.getHeight() / 2);
         }
-        vRuler.setY(handlePosition - vRuler.getHeight());
+        vRuler.setY(handlePosition - vRuler.getHeight() / 2);
     }
 
     // Invokes OnThresholdChangeListener.onChange() callback is set.
-    private void invokeCallback(float pos) {
+    void invokeCallback(float pos) {
         if (listener != null) listener.onChange(this, pos);
     }
 }

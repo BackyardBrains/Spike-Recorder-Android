@@ -11,17 +11,18 @@ import java.util.Date;
  */
 public class RecordingUtils {
 
-    /**
-     * Holds BYB recordings directory.
-     */
-    public static final File BYB_DIRECTORY;
-
+    // Holds BYB recordings directory.
+    private static final File BYB_DIRECTORY;
     // Name of the BYB recording folder
     private static final String BYB_DIRECTORY_NAME = "BackyardBrains";
-    // Prefix for all BYB recordings
-    // BYB_Recording_2018-02-28_13.42.21.wav
-    // BYB_Recording_2018-02-28_13.42.21-events.txt
+    // Prefix for all internally recorded BYB recordings
+    // BYB_Recording_3-1-2018_4:30:33.wav
+    // BYB_Recording_3-1-2018+4:30:33-events.txt
     private static final String BYB_RECORDING_NAME_PREFIX = "BYB_Recording_";
+    // Prefix for all imported recording
+    private static final String BYB_SHARED_RECORDING_NAME_PREFIX = "Shared ";
+    // Prefix for all imported recordings which name wasn't retrievable
+    private static final String BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX = "Shared Recording ";
     // BYB audio file extension
     private static final String BYB_RECORDING_EXT = ".wav";
     // BYB events file suffix
@@ -37,18 +38,47 @@ public class RecordingUtils {
     }
 
     /**
+     * Returns {@link File} to the BYB recordings directory.
+     */
+    @NonNull public static File getRecordingsDirectory() {
+        return BYB_DIRECTORY;
+    }
+
+    /**
      * Creates and returns new {@link File} for recording.
      */
-    public static File createRecordingFile() {
+    @NonNull public static File createRecordingFile() {
         return new File(BYB_DIRECTORY,
             BYB_RECORDING_NAME_PREFIX + DateUtils.format_yyyy_MM_dd_HH_mm_ss(new Date(System.currentTimeMillis()))
                 + BYB_RECORDING_EXT);
     }
 
     /**
+     * Creates and returns new {@link File} for recordings with the specified {@code filename}. If parameter is {@code
+     * null} a generic shared name will be used (e.g. Shared Recording 1).
+     */
+    @SuppressWarnings("WeakerAccess") @NonNull public static File createSharedRecordingFile(@Nullable String filename) {
+        if (filename != null) {
+            return new File(BYB_DIRECTORY,
+                BYB_SHARED_RECORDING_NAME_PREFIX + filename + (filename.endsWith(BYB_RECORDING_EXT) ? ""
+                    : BYB_RECORDING_EXT));
+        } else {
+            int counter = 0;
+            String name = BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
+            File f = new File(BYB_DIRECTORY, name);
+            while (f.exists()) {
+                filename = BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
+                f = new File(BYB_DIRECTORY, filename);
+            }
+
+            return f;
+        }
+    }
+
+    /**
      * Creates and returns new {@link File} for accompanying events for the specified {@code file}.
      */
-    public static File createEventsFile(@NonNull File file) {
+    @NonNull public static File createEventsFile(@NonNull File file) {
         // PATCH FOR FILES THAT HAVE NO EXTENSION
         int endIndex = file.getName().lastIndexOf(".");
         String fileName = endIndex < 0 ? file.getName() : file.getName().substring(0, file.getName().lastIndexOf("."));

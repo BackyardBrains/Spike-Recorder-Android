@@ -21,6 +21,10 @@ public:
 
     ~ThresholdProcessor();
 
+    void setSampleRate(float sampleRate);
+
+    int getSampleCount();
+
     // Returns the number of sample sequences that should be summed to get the average spike value.
     int getAveragedSampleCount();
 
@@ -30,13 +34,22 @@ public:
     // Set's the sample frequency threshold.
     void setThreshold(int threshold);
 
+    // Resets all the fields used for calculations when next batch comes
+    void resetThreshold();
+
+    void setPaused(bool paused);
+
+    // Returns current averaging trigger type
+    int getTriggerType();
+
+    // Sets current averaging trigger type
+    void setTriggerType(int triggerType);
+
     // Starts/stops processing heartbeat
     void setBpmProcessing(bool processBpm);
 
-    void process(const short *inSamples, short *outSamples, const int length);
-
-    // Number of samples that we collect for one sample stream
-    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
+    void process(short *outSamples, const short *inSamples, const int inSampleCount, const int *inEventIndices,
+                 const int *inEvents, const int inEventCount);
 
 private:
     static const char *TAG;
@@ -54,15 +67,22 @@ private:
     // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
     static constexpr double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
 
-    // Resets all local variables used for the heartbeat processing
-    void resetBpm();
+    // Constants that define we are currently averaging when threshold is hit
+    static constexpr int TRIGGER_ON_THRESHOLD = -1;
+    // Constants that define we are currently averaging on all events
+    static constexpr int TRIGGER_ON_EVENTS = 0;
 
     // Resets all the fields used for calculations
     void reset();
 
-    // Whether processor has been initialized
-    bool initialized = false;
+    // Prepares new sample collection for averaging
+    void prepareNewSamples(const short *inSamples, int length, int index);
 
+    // Resets all local variables used for the heartbeat processing
+    void resetBpm();
+
+    // Number of samples that we collect for one sample stream
+    int sampleCount = (int) (DEFAULT_SAMPLE_RATE * MAX_PROCESSED_SECONDS);
     // Threshold value that triggers the averaging
     int triggerValue = INT_MAX;
     // Used to check whether threshold trigger value has changed since the last incoming sample batch
@@ -73,6 +93,8 @@ private:
     int lastAveragedSampleCount = 0;
     // Used to check whether sample rate has changed since the last incoming sample batch
     float lastSampleRate = 0;
+    // Whether buffers need to be reset before processing next batch
+    bool resetOnNextBatch = false;
 
     // We need to buffer half of samples total count up to the sample that hit's threshold
     int bufferSampleCount = sampleCount / 2;
@@ -106,6 +128,12 @@ private:
 
     // Holds previously processed sample so we can compare whether we have a threshold hit
     short prevSample;
+
+    // Whether threshold is currently paused or not. If paused, processing returns values as if the threshold is always reset.
+    bool paused = false;
+
+    // Current type of trigger we're averaging on
+    int triggerType = TRIGGER_ON_THRESHOLD;
 
     // Holds reference to HeartbeatHelper that processes threshold hits as heart beats
     HeartbeatHelper *heartbeatHelper;

@@ -3,10 +3,6 @@ package com.backyardbrains.drawing.gl;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.android.texample.GLText;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -24,33 +20,14 @@ public class GlEventMarker {
     };
     private static final int LINE_WIDTH = 2;
     private static final float LABEL_TOP = 230f;
-    private static final int LINE_VERTICES_COUNT = 4;
-    private static final int LABEL_VERTICES_COUNT = 8;
-    private static final short[] INDICES = { 0, 1, 2, 0, 2, 3 };
 
-    private final FloatBuffer lineVFB;
-    private final FloatBuffer labelVFB;
-    private final ShortBuffer indicesBuffer;
+    private final GlVLine line;
+    private final GlRectangle rect;
     private final GLText text;
 
-    private final float[] lineVertices = new float[LINE_VERTICES_COUNT];
-    private final float[] labelVertices = new float[LABEL_VERTICES_COUNT];
-
     public GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
-        ByteBuffer lineVBB = ByteBuffer.allocateDirect(LINE_VERTICES_COUNT * 4);
-        lineVBB.order(ByteOrder.nativeOrder());
-        lineVFB = lineVBB.asFloatBuffer();
-
-        ByteBuffer labelVBB = ByteBuffer.allocateDirect(LABEL_VERTICES_COUNT * 4);
-        labelVBB.order(ByteOrder.nativeOrder());
-        labelVFB = labelVBB.asFloatBuffer();
-
-        ByteBuffer ibb = ByteBuffer.allocateDirect(INDICES.length * 2);
-        ibb.order(ByteOrder.nativeOrder());
-        indicesBuffer = ibb.asShortBuffer();
-        indicesBuffer.put(INDICES);
-        indicesBuffer.position(0);
-
+        line = new GlVLine();
+        rect = new GlRectangle();
         text = new GLText(gl, context.getAssets());
         text.load("dos-437.ttf", 48, 2, 2);
     }
@@ -74,16 +51,7 @@ public class GlEventMarker {
         gl.glLineWidth(LINE_WIDTH);
 
         // draw line
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        lineVertices[0] = x;
-        lineVertices[1] = y0;
-        lineVertices[2] = x;
-        lineVertices[3] = y1;
-        lineVFB.put(lineVertices);
-        lineVFB.position(0);
-        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, lineVFB);
-        gl.glDrawArrays(GL10.GL_LINES, 0, 2);
-        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+        line.draw(gl, x, y0, y1, LINE_WIDTH, glColor);
 
         // draw label background
         text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
@@ -93,21 +61,7 @@ public class GlEventMarker {
         float labelH = textH * 1.3f;
         float labelX = x - labelW * .5f;
         float labelY = y1 - LABEL_TOP * scaleY;
-
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        labelVertices[0] = labelX;
-        labelVertices[1] = labelY;
-        labelVertices[2] = labelX;
-        labelVertices[3] = labelY + labelH;
-        labelVertices[4] = labelX + labelW;
-        labelVertices[5] = labelY + labelH;
-        labelVertices[6] = labelX + labelW;
-        labelVertices[7] = labelY;
-        labelVFB.put(labelVertices);
-        labelVFB.position(0);
-        gl.glVertexPointer(2, GL10.GL_FLOAT, 0, labelVFB);
-        gl.glDrawElements(GL10.GL_TRIANGLES, INDICES.length, GL10.GL_UNSIGNED_SHORT, indicesBuffer);
-        gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+        rect.draw(gl, labelX, labelY, labelW, labelH, glColor);
 
         // draw label text
         gl.glEnable(GL10.GL_TEXTURE_2D);

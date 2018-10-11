@@ -1,6 +1,7 @@
 package com.backyardbrains;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -14,12 +15,14 @@ import android.os.IBinder;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.analysis.AnalysisManager;
@@ -31,12 +34,14 @@ import com.backyardbrains.events.FindSpikesEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.events.ShowToastEvent;
+import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.ImportUtils;
+import com.backyardbrains.utils.ImportUtils.ImportResult;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
-import me.pqpo.librarylog4a.Log4a;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
 import org.greenrobot.eventbus.Subscribe;
@@ -49,8 +54,6 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-//import me.pqpo.librarylog4a.Log4a;
-
 public class MainActivity extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
 
@@ -58,14 +61,12 @@ public class MainActivity extends AppCompatActivity
 
     public static final int INVALID_VIEW = -1;
     public static final int OSCILLOSCOPE_VIEW = 0;
-    public static final int THRESHOLD_VIEW = 1;
     public static final int RECORDINGS_VIEW = 2;
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
     public static final int PLAY_AUDIO_VIEW = 5;
 
     public static final String BYB_RECORDINGS_FRAGMENT = "RecordingsFragment";
-    public static final String BYB_THRESHOLD_FRAGMENT = "ThresholdFragment";
     public static final String BYB_SPIKES_FRAGMENT = "FindSpikesFragment";
     public static final String BYB_ANALYSIS_FRAGMENT = "AnalysisFragment";
     public static final String BYB_OSCILLOSCOPE_FRAGMENT = "OscilloscopeFragment";
@@ -117,8 +118,30 @@ public class MainActivity extends AppCompatActivity
         setupUI(savedInstanceState);
     }
 
+    @Override public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        // use the new intent, not the original one
+        setIntent(intent);
+    }
+
     @Override protected void onStart() {
         LOGD(TAG, "onStart()");
+
+        // check if we should process file import
+        if (getIntent() != null && ImportUtils.checkImport(getIntent())) {
+            @ImportResult int result =
+                ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
+            if (result != ImportResult.SUCCESS) {
+                showImportError(result);
+            } else {
+                ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
+                    Toast.LENGTH_LONG);
+                loadFragment(RECORDINGS_VIEW);
+            }
+
+            setIntent(null);
+        }
 
         // start the audio service for reads mic data, recording and playing recorded files
         start();
@@ -147,10 +170,6 @@ public class MainActivity extends AppCompatActivity
         saveSettings();
         // stop audio service
         stop();
-
-        // flush log to file and release resources
-        Log4a.flush();
-        Log4a.release();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -161,7 +180,7 @@ public class MainActivity extends AppCompatActivity
         boolean bShouldPop = true;
         if (currentFrag == ANALYSIS_VIEW) {
             Fragment frag = getSupportFragmentManager().findFragmentByTag(BYB_ANALYSIS_FRAGMENT);
-            if (frag != null && frag instanceof AnalysisFragment) {
+            if (frag instanceof AnalysisFragment) {
                 bShouldPop = false;
                 ((AnalysisFragment) frag).onBackPressed();
             }
@@ -176,8 +195,6 @@ public class MainActivity extends AppCompatActivity
     public void loadFragment(int fragType, Object... args) {
         if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
-        } else if (fragType == R.id.action_threshold) {
-            fragType = THRESHOLD_VIEW;
         } else if (fragType == R.id.action_recordings) {
             fragType = RECORDINGS_VIEW;
         }
@@ -187,22 +204,14 @@ public class MainActivity extends AppCompatActivity
             Fragment frag;
             String fragName;
             switch (fragType) {
-                //------------------------------
                 case RECORDINGS_VIEW:
                     frag = RecordingsFragment.newInstance();
                     fragName = BYB_RECORDINGS_FRAGMENT;
                     break;
-                //------------------------------
-                case THRESHOLD_VIEW:
-                    frag = ThresholdFragment.newInstance();
-                    fragName = BYB_THRESHOLD_FRAGMENT;
-                    break;
-                //------------------------------
                 case FIND_SPIKES_VIEW:
                     frag = FindSpikesFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = BYB_SPIKES_FRAGMENT;
                     break;
-                //------------------------------
                 case ANALYSIS_VIEW:
                     frag = AnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null,
                         args.length > 0 ? (int) args[1] : AnalysisType.NONE);
@@ -355,12 +364,31 @@ public class MainActivity extends AppCompatActivity
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
     }
 
+    @SuppressLint("SwitchIntDef") private void showImportError(@ImportResult int result) {
+        final @StringRes int stringRes;
+        switch (result) {
+            case ImportResult.ERROR_EXISTS:
+                stringRes = R.string.error_message_import_exists;
+                break;
+            case ImportResult.ERROR_OPEN:
+                stringRes = R.string.error_message_import_open;
+                break;
+            case ImportResult.ERROR_SAVE:
+                stringRes = R.string.error_message_import_save;
+                break;
+            default:
+            case ImportResult.ERROR:
+                stringRes = R.string.error_message_import_error;
+                break;
+        }
+
+        BYBUtils.showAlert(this, "Error", getString(stringRes));
+    }
+
     private int getFragmentTypeFromName(String fragName) {
         switch (fragName) {
             case BYB_RECORDINGS_FRAGMENT:
                 return RECORDINGS_VIEW;
-            case BYB_THRESHOLD_FRAGMENT:
-                return THRESHOLD_VIEW;
             case BYB_SPIKES_FRAGMENT:
                 return FIND_SPIKES_VIEW;
             case BYB_ANALYSIS_FRAGMENT:
@@ -383,11 +411,6 @@ public class MainActivity extends AppCompatActivity
                 selectedButton = R.id.action_scope;
                 i = new Intent();
                 i.putExtra("tab", OSCILLOSCOPE_VIEW);
-                break;
-            case THRESHOLD_VIEW:
-                selectedButton = R.id.action_threshold;
-                i = new Intent();
-                i.putExtra("tab", THRESHOLD_VIEW);
                 break;
             case RECORDINGS_VIEW:
                 selectedButton = R.id.action_recordings;

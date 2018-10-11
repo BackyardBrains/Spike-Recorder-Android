@@ -11,10 +11,6 @@ public class AmModulationDetectionEvent {
         start = false;
     }
 
-    public AmModulationDetectionEvent(boolean start) {
-        this.start = start;
-    }
-
     public boolean isStart() {
         return start;
     }

@@ -26,7 +26,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
 
     private static final int BUFFER_SIZE = 5000;
 
-    @SuppressWarnings("WeakerAccess") final SampleStreamProcessor processor;
     private final UsbDevice device;
 
     /**
@@ -49,22 +48,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         super(BUFFER_SIZE, listener);
 
         this.device = device;
-
-        final SampleStreamProcessor.SampleStreamListener sampleStreamListener =
-            new SampleStreamProcessor.SampleStreamListener() {
-                @Override public void onSpikerBoxHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType) {
-                    LOGD(TAG, "BOARD TYPE: " + SampleStreamUtils.getSpikerBoxName(hardwareType));
-                    setHardwareType(hardwareType);
-                }
-
-                @Override public void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) {
-                    LOGD(TAG, "SAMPLE RATE: " + maxSampleRate);
-                    LOGD(TAG, "NUM OF CHANNELS: " + channelCount);
-                    setSampleRate(maxSampleRate);
-                    setChannelCount(channelCount);
-                }
-            };
-        processor = new SampleStreamProcessor(sampleStreamListener, FILTERS);
 
         // check if can determine board type right away (through VID and PID)
         setHardwareType(getHardwareType(device));
@@ -156,7 +139,6 @@ public abstract class AbstractUsbSampleSource extends AbstractSampleSource imple
         .sessions(10)
         .measuresPerSession(2000)
         .logBySession(false)
-        .logToFile(false)
         .listener(new Benchmark.OnBenchmarkListener() {
             @Override public void onEnd() {
                 //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));

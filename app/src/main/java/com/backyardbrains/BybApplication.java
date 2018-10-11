@@ -20,7 +20,6 @@
 package com.backyardbrains;
 
 import android.app.Application;
-import com.backyardbrains.utils.Log4Init;
 import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.core.CrashlyticsCore;
 import io.fabric.sdk.android.Fabric;
@@ -47,8 +46,5 @@ public class BybApplication extends Application {
             .sendNoSubscriberEvent(false)
             .throwSubscriberException(BuildConfig.DEBUG)
             .installDefaultEventBus();
-
-        // logging to file
-        Log4Init.init(this);
     }
 }

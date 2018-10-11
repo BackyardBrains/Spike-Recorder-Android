@@ -1,91 +1,92 @@
 package com.backyardbrains.view;
 
-import android.content.Context;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import com.backyardbrains.R;
+import android.view.ViewGroup;
 
 /**
  * Created by roy on 25-10-16.
  */
+public class SlidingView {
 
-public class SlidingView implements Animation.AnimationListener {
-    private View mView;
+    @SuppressWarnings("WeakerAccess") ObjectAnimator animShow;
+    @SuppressWarnings("WeakerAccess") ObjectAnimator animHide;
 
-    private boolean bAnimating;
-    private Animation animShow;
-    private Animation animHide;
-    private String name;
-    private final static String TAG = "SlidingView";
+    @SuppressWarnings("WeakerAccess") final View view;
+    @SuppressWarnings("WeakerAccess") AnimationEndListener listener;
 
-    public SlidingView(View view, Context context, String name, int animShowR, int animHideR) {
-        setup(view, context, name, animShowR, animHideR);
+    @SuppressWarnings("WeakerAccess") int viewHeight;
+
+    /**
+     * Callback used to indicate when the show/hide animation is finished.
+     */
+    public interface AnimationEndListener {
+        /**
+         * Called when show animation of the view is finished.
+         */
+        void onShowAnimationEnd();
+
+        /**
+         * Called when hide animation of the view is finished.
+         */
+        void onHideAnimationEnd();
     }
 
-    public SlidingView(View view, Context context, String name) {
-        setup(view, context, name, R.anim.slide_in_top, R.anim.slide_out_top);
+    public SlidingView(@NonNull View view, @Nullable AnimationEndListener listener) {
+        this.view = view;
+        this.listener = listener;
     }
 
-    private void setup(View view, Context context, String name, int animShowR, int animHideR) {
-        animShow = AnimationUtils.loadAnimation(context, animShowR);
-        animShow.setAnimationListener(this);
-        animHide = AnimationUtils.loadAnimation(context, animHideR);
-        animHide.setAnimationListener(this);
-
-        this.name = name;
-        mView = view;
-
-        //        mView.bringToFront();
-
-        bAnimating = false;
+    public void setAnimationEndListener(@Nullable AnimationEndListener listener) {
+        this.listener = listener;
     }
 
-    public boolean show(boolean bShow) {
-        // Log.w(TAG + name, "show: " + (bShow?"true":"false")+ "  isShowing: "+ (isShowing()?"true":"false"));
-        if (mView == null) return false;
-        if ((isShowing() != bShow) && !bAnimating) {
-            mView.startAnimation(bShow ? animShow : animHide);
+    public boolean show(boolean show) {
+        if (animShow == null || animHide == null) setup();
+        if (isShowing() != show) {
+            if (show) {
+                animShow.start();
+            } else {
+                animHide.start();
+            }
             return true;
         }
         return false;
     }
 
-    public boolean toggle() {
-        return show(!isShowing());
+    private boolean isShowing() {
+        return view.getVisibility() == View.VISIBLE;
     }
 
-    public boolean isShowing() {
-        return mView != null && mView.getVisibility() == View.VISIBLE;
+    private void setup() {
+        if (viewHeight == 0) determineViewHeight();
+        animShow = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, -viewHeight, 0);
+        animShow.setDuration(500);
+        animShow.addListener(new AnimatorListenerAdapter() {
+            @Override public void onAnimationStart(Animator animation) {
+                view.setVisibility(View.VISIBLE);
+            }
+
+            @Override public void onAnimationEnd(Animator animation) {
+                if (listener != null) listener.onShowAnimationEnd();
+            }
+        });
+        animHide = ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0, -viewHeight);
+        animHide.setDuration(500);
+        animHide.addListener(new AnimatorListenerAdapter() {
+            @Override public void onAnimationEnd(Animator animation) {
+                view.setVisibility(View.GONE);
+                if (listener != null) listener.onHideAnimationEnd();
+            }
+        });
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Animation Callbacks
-    //////////////////////////////////////////////////////////////////////////////
-    public void onAnimationStart(Animation animation) {
-        if (mView == null) return;
-        bAnimating = true;
-        //        mView.bringToFront();
-        if (animation == animHide) {
-            //            mView.setEnabled(false);
-            //            mView.setClickable(false);
-        } else if (animation == animShow) {
-            mView.setVisibility(View.VISIBLE);
-        }
-    }
-
-    public void onAnimationEnd(Animation animation) {
-        if (mView == null) return;
-        bAnimating = false;
-        if (animation == animShow) {
-            //            mView.setEnabled(true);
-            //            mView.setClickable(true);
-        } else if (animation == animHide) {
-            mView.setVisibility(View.GONE);
-        }
-        //        mView.bringToFront();
-    }
-
-    public void onAnimationRepeat(Animation animation) {
+    private void determineViewHeight() {
+        ViewGroup.LayoutParams params = view.getLayoutParams();
+        viewHeight = params.height;
     }
 }

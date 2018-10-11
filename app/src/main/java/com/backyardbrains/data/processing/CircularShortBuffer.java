@@ -23,11 +23,7 @@ public class CircularShortBuffer {
     private int idxGet;
     private int idxPut;
 
-    public CircularShortBuffer() {
-        this(8192);
-    }
-
-    public CircularShortBuffer(int capacity) {
+    CircularShortBuffer(int capacity) {
         this.capacity = capacity;
         buffer = new short[this.capacity];
     }

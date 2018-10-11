@@ -34,10 +34,8 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.ViewConfiguration;
-
 import com.backyardbrains.BybApplication;
 import com.backyardbrains.view.ZoomButton;
-import com.backyardbrains.view.ScaleListener;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static android.view.MotionEvent.TOOL_TYPE_FINGER;
@@ -61,7 +59,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     BaseWaveformRenderer renderer;
 
     protected ScaleGestureDetector scaleDetector;
-    protected ScaleGestureDetector.OnScaleGestureListener scaleListener;
     protected GestureDetector scrollDetector;
     protected GestureDetector.SimpleOnGestureListener scrollListener = new GestureDetector.SimpleOnGestureListener() {
 
@@ -72,6 +69,12 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
                 return scrolling;
             }
+
+            return false;
+        }
+
+        @Override public boolean onDoubleTap(MotionEvent e) {
+            if (renderer.isAutoScaleEnabled()) renderer.autoScale();
 
             return false;
         }
@@ -145,8 +148,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     public void setRenderer(@NonNull BaseWaveformRenderer renderer) {
         this.renderer = renderer;
 
-        scaleListener = new ScaleListener(renderer);
-        scaleDetector = new ScaleGestureDetector(getContext(), scaleListener);
+        scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener(renderer));
         scrollDetector = new GestureDetector(getContext(), scrollListener);
         scrollDetector.setIsLongpressEnabled(false);
 

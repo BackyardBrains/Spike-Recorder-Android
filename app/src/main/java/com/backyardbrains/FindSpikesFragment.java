@@ -15,13 +15,15 @@ import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.entity.Train;
-import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.BYBColors;
+import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.FindSpikesRenderer;
-import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
+import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.view.ThresholdHandle;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -42,6 +44,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Runnable used for updating playback seek bar
     final protected SetThresholdRunnable setThresholdRunnable = new SetThresholdRunnable();
 
+    @BindView(R.id.ll_finding_spikes_progress) ViewGroup llFindingSpikesProgress;
     @BindView(R.id.threshold_handle_left) ThresholdHandle thresholdHandleLeft;
     @BindView(R.id.threshold_handle_right) ThresholdHandle thresholdHandleRight;
     @BindView(R.id.ibtn_remove_threshold) ImageButton ibtnRemoveThreshold;
@@ -107,6 +110,9 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     //  ABSTRACT METHODS IMPLEMENTATIONS AND OVERRIDES
     //=================================================
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected FindSpikesRenderer createRenderer() {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(this, filePath);
         renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
@@ -158,10 +164,16 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         return renderer;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected FindSpikesRenderer getRenderer() {
         return (FindSpikesRenderer) super.getRenderer();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override protected View createPlaybackView(LayoutInflater inflater, @NonNull ViewGroup container) {
         final View view = inflater.inflate(R.layout.fragment_spikes, container, false);
         unbinder = ButterKnife.bind(this, view);
@@ -171,6 +183,16 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         return view;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected boolean showThresholdView() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override protected void startPlaying(boolean autoPlay) {
         if (getAnalysisManager() != null) getAnalysisManager().findSpikes(filePath);
         super.startPlaying(false);
@@ -191,7 +213,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAudioAnalysisDoneEvent(AudioAnalysisDoneEvent event) {
+    public void onAnalysisDoneEvent(AnalysisDoneEvent event) {
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
         if (event.isSuccess() && getAnalysisManager() != null) {
             getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
@@ -209,6 +231,21 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
     // Initializes user interface
     private void setupUI() {
+        ViewUtils.playAfterNextLayout(ibtnBack, new Func<View, Void>() {
+            @Nullable @Override public Void apply(@Nullable View source) {
+                thresholdHandleLeft.setTopOffset(ibtnBack.getHeight());
+                thresholdHandleRight.setTopOffset(ibtnBack.getHeight());
+                return null;
+            }
+        });
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().spikesAnalysisExists(filePath, new AnalysisDataSource.SpikeAnalysisCheckCallback() {
+                @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
+                    if (!exists) llFindingSpikesProgress.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+
         setupThresholdActions();
 
         ibtnPlayPause.setVisibility(View.GONE);
@@ -273,7 +310,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
                 break;
         }
         if (handle != null) {
-            if (handle.getVisibility() == View.GONE) handle.setVisibility(View.VISIBLE);
+            //if (handle.getVisibility() != View.VISIBLE) handle.setVisibility(View.VISIBLE);
             handle.setPosition(value);
         }
 
@@ -320,7 +357,10 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
             getAnalysisManager().getThresholds(filePath, new AnalysisManager.GetThresholdsCallback() {
                 @Override public void onThresholdsLoaded(@NonNull List<Threshold> thresholds) {
                     final int thresholdsSize = thresholds.size();
-                    if (thresholdsSize > 0 && selectedThreshold >= 0 && selectedThreshold < MAX_THRESHOLDS) {
+                    if (getRenderer() != null && thresholdsSize > 0 && selectedThreshold >= 0
+                        && selectedThreshold < MAX_THRESHOLDS) {
+                        llFindingSpikesProgress.setVisibility(View.GONE);
+
                         Threshold t = thresholds.get(selectedThreshold);
                         getRenderer().setThreshold(t.getThreshold(ThresholdOrientation.LEFT),
                             ThresholdOrientation.LEFT);
@@ -336,16 +376,20 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
                         getRenderer().setCurrentColor(currentColor);
                         thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
                         thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-                    }
-                    for (int i = 0; i < MAX_THRESHOLDS; i++) {
-                        if (i < thresholdsSize) {
-                            thresholdButtons.get(i).setVisibility(View.VISIBLE);
-                        } else {
-                            thresholdButtons.get(i).setVisibility(View.GONE);
+
+                        thresholdHandleLeft.setVisibility(View.VISIBLE);
+                        thresholdHandleRight.setVisibility(View.VISIBLE);
+
+                        for (int i = 0; i < MAX_THRESHOLDS; i++) {
+                            if (i < thresholdsSize) {
+                                thresholdButtons.get(i).setVisibility(View.VISIBLE);
+                            } else {
+                                thresholdButtons.get(i).setVisibility(View.GONE);
+                            }
                         }
+                        ibtnAddThreshold.setVisibility(thresholdsSize < MAX_THRESHOLDS ? View.VISIBLE : View.GONE);
+                        ibtnRemoveThreshold.setVisibility(thresholdsSize > 1 ? View.VISIBLE : View.GONE);
                     }
-                    ibtnAddThreshold.setVisibility(thresholdsSize < MAX_THRESHOLDS ? View.VISIBLE : View.GONE);
-                    ibtnRemoveThreshold.setVisibility(thresholdsSize > 1 ? View.VISIBLE : View.GONE);
                 }
             });
         }

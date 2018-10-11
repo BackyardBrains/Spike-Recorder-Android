@@ -29,10 +29,10 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected final ViewableTimeSpanUpdateRunnable viewableTimeSpanUpdateRunnable =
         new ViewableTimeSpanUpdateRunnable();
 
-    private WaveformLayout waveform;
-    private ImageButton ibtnBack;
+    protected WaveformLayout waveform;
+    protected ImageButton ibtnBack;
 
-    private BaseWaveformRenderer renderer;
+    BaseWaveformRenderer renderer;
 
     /**
      * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
@@ -44,9 +44,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         private int drawSurfaceHeight;
 
         @Override public void run() {
-            if (getAudioService() != null) {
-                setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
-            }
+            if (getAudioService() != null) setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
 
             //setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
         }
@@ -141,24 +139,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         return renderer;
     }
 
-    /**
-     * Subclasses should override this method if they need to do some work when sample rate changes.
-     */
-    //protected void onSampleRateChange(int sampleRate) {
-    //}
-
     //==============================================
     //  EVENT BUS
     //==============================================
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN) public final void onSampleRateChangeEvent(
-        SampleRateChangeEvent event) {
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
         LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
         if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
-        //onSampleRateChange(event.getSampleRate());
-    }
-
-    public final void onHardwareTypeChangeEvent() {
-
     }
 
     //==============================================

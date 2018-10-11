@@ -41,6 +41,8 @@
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
 
+    <string name="label_finding_spikes">Finding spikes…</string>
+
     <string name="template_connected_to_board">Connected to\n%s</string>
     <string name="board_type_plant">Plant SpikerBox</string>
     <string name="board_type_muscle">Muscle SpikerBox</string>
@@ -68,8 +70,6 @@
     <string name="file_date">file_date</string>
     <string name="filesize">filesize</string>
     <string name="recording_button_background_image">Recording Button Background Image</string>
-    <string name="file_list_activity_launch_button">File List Activity Launch Button</string>
-    <string name="tickmarks_on_left_side_of_screen">Tickmarks on left side of screen</string>
     <string name="default_milliseconds">0 ms</string>
     <string name="no_files_found">No files found! Record some spikes!</string>
     <string name="start_recording_button">Start Recording Button</string>
@@ -98,6 +98,19 @@
     <string name="settings_dialog_canceled">Settings dialog canceled</string>
     <string name="returned_from_app_settings_to_activity">Returned from app settings to MainActivity</string>
 
+    <string-array name="options_averaging_trigger_type">
+        <item>Signal</item>
+        <item>Event 1</item>
+        <item>Event 2</item>
+        <item>Event 3</item>
+        <item>Event 4</item>
+        <item>Event 5</item>
+        <item>Event 6</item>
+        <item>Event 7</item>
+        <item>Event 8</item>
+        <item>Event 9</item>
+        <item>Events</item>
+    </string-array>
     <string-array name="options_recording_no_spikes">
         <item>File Details</item>
         <item>Play this file</item>
@@ -130,6 +143,9 @@
         <item>Delete this file</item>
     </string-array>
 
+    <!-- Toasts -->
+    <string name="toast_import_successful">File successfully imported</string>
+
     <!-- Error messages -->
     <string name="error_message_files_no_file">The requested file could not be found. Please try again later.</string>
     <string name="error_message_files_exists">File with the specified name already exists. Please use a different name.</string>
@@ -138,4 +154,8 @@
     <string name="error_message_files_rename">The requested file could not be renamed. Please try again later.</string>
     <string name="error_message_files_events_rename">The associated file that holds saved events could not be renamed. Please use any file manager app to rename the associated file manually. The name should be the same as the recording (.wav) file but with "-events" suffix.</string>
     <string name="error_message_validation_file_name">Please enter the file name.</string>
+    <string name="error_message_import_error">An error occurred while trying to import a file. Please try again.</string>
+    <string name="error_message_import_open">An error occurred while tyring to import a file. File could not be opened. Please try again later.</string>
+    <string name="error_message_import_save">An error occurred while trying to import a file. File could not be saved. Please try again.</string>
+    <string name="error_message_import_exists">An error occurred while trying to import a file. File with the same name was already imported.</string>
 </resources>

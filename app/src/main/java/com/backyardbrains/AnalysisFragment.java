@@ -22,7 +22,7 @@ import com.backyardbrains.drawing.BaseAnalysisRenderer;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
-import com.backyardbrains.events.AudioAnalysisDoneEvent;
+import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.RedrawAudioAnalysisEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
@@ -133,7 +133,7 @@ public class AnalysisFragment extends BaseFragment {
     //=================================================
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onAudioAnalysisDoneEvent(AudioAnalysisDoneEvent event) {
+    public void onAnalysisDoneEvent(AnalysisDoneEvent event) {
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
         // if everything is OK set render and request GL surface render
         if (event.isSuccess()) setRenderer(event.getType());
