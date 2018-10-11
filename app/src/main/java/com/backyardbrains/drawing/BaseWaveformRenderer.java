@@ -300,7 +300,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         surfaceSizeDirty = true;
         setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
         setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, getClass()));
-        //setAutoScaleEnabled(PrefUtils.getAutoScale(context, getClass()));
         minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
     }
 
@@ -316,7 +315,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
         PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowHeight);
-        //PrefUtils.setAutoScale(context, getClass(), autoScale);
         PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minDetectedPCMValue);
     }
 

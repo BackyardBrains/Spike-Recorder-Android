@@ -3,7 +3,7 @@ package com.backyardbrains.data;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class SpikeValueAndIndex {
+public class SpikeIndexValue {
 
     private float value;
     private int index;
