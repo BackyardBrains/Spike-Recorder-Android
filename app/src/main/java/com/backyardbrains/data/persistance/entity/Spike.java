@@ -9,16 +9,33 @@ import android.arch.persistence.room.PrimaryKey;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-@Entity(tableName = "spikes", indices = @Index(value = "analysis_id"), foreignKeys = @ForeignKey(entity = SpikeAnalysis.class, parentColumns = "id", childColumns = "analysis_id", onDelete = ForeignKey.CASCADE))
+@Entity(tableName = "spikes", indices = {
+    @Index(value = { "train_id", "index", "value", "time" }), @Index(value = {
+    "analysis_id", "index", "value", "time"
+})
+}, foreignKeys = @ForeignKey(entity = SpikeAnalysis.class, parentColumns = "id", childColumns = "analysis_id", onDelete = ForeignKey.CASCADE))
 public class Spike {
 
     @PrimaryKey(autoGenerate = true) private long id;
     @ColumnInfo(name = "analysis_id") private long analysisId;
-    private float value;
+    @ColumnInfo(name = "train_id") private long trainId;
     private int index;
+    private float value;
     private float time;
 
+    public Spike() {
+    }
+
     public Spike(float value, int index, float time) {
+        this.trainId = 0;
+        this.value = value;
+        this.index = index;
+        this.time = time;
+    }
+
+    public Spike(long analysisId, long trainId, float value, int index, float time) {
+        this.analysisId = analysisId;
+        this.trainId = trainId;
         this.value = value;
         this.index = index;
         this.time = time;
@@ -40,12 +57,12 @@ public class Spike {
         this.analysisId = analysisId;
     }
 
-    public float getValue() {
-        return value;
+    public long getTrainId() {
+        return trainId;
     }
 
-    public void setValue(float value) {
-        this.value = value;
+    public void setTrainId(long trainId) {
+        this.trainId = trainId;
     }
 
     public int getIndex() {
@@ -54,6 +71,14 @@ public class Spike {
 
     public void setIndex(int index) {
         this.index = index;
+    }
+
+    public float getValue() {
+        return value;
+    }
+
+    public void setValue(float value) {
+        this.value = value;
     }
 
     public float getTime() {

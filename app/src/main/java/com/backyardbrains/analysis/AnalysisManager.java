@@ -7,7 +7,7 @@ import android.support.annotation.Nullable;
 import com.backyardbrains.audio.AudioFile;
 import com.backyardbrains.audio.WavAudioFile;
 import com.backyardbrains.data.AverageSpike;
-import com.backyardbrains.data.SpikeValueAndIndex;
+import com.backyardbrains.data.SpikeIndexValue;
 import com.backyardbrains.data.Threshold;
 import com.backyardbrains.data.persistance.AnalysisDataSource;
 import com.backyardbrains.data.persistance.AnalysisRepository;
@@ -51,15 +51,11 @@ public class AnalysisManager {
     //=================================================
 
     // Callback to be invoked when spikes are retrieved from the analysis repository
-    private AnalysisDataSource.GetAnalysisCallback<Spike[]> getSpikesCallback =
-        new AnalysisDataSource.GetAnalysisCallback<Spike[]>() {
-            @Override public void onAnalysisLoaded(@NonNull Spike[] spikes) {
+    private AnalysisDataSource.SpikeAnalysisCheckCallback spikeAnalysisCheckCallback =
+        new AnalysisDataSource.SpikeAnalysisCheckCallback() {
+            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
                 // post event that audio file analysis was successfully finished
                 EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
-            }
-
-            @Override public void onDataNotAvailable() {
-                findSpikes();
             }
         };
 
@@ -73,16 +69,24 @@ public class AnalysisManager {
                 if (load(filePath)) {
                     findSpikes();
                 } else {
-                    // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+                    // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCASTED
+                    // post event that audio file analysis failed
+                    EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
+
+                    Crashlytics.logException(new Throwable("Error while loading file during Find Spikes analysis"));
                 }
             } else {
-                analysisRepository.getSpikeAnalysisSpikes(filePath, getSpikesCallback);
+                spikesAnalysisExists(filePath, spikeAnalysisCheckCallback);
             }
         } else {
             if (load(filePath)) {
                 findSpikes();
             } else {
-                // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+                // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCASTED
+                // post event that audio file analysis failed
+                EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
+
+                Crashlytics.logException(new Throwable("Error while loading file during Find Spikes analysis"));
             }
         }
     }
@@ -97,14 +101,14 @@ public class AnalysisManager {
     /**
      * Returns array of spike values and indexes belonging to spike analysis with specified {@code analysisId} for the specified range.
      */
-    public SpikeValueAndIndex[] getSpikesForRange(long analysisId, int startIndex, int endIndex) {
+    public SpikeIndexValue[] getSpikesForRange(long analysisId, int startIndex, int endIndex) {
         return analysisRepository.getSpikeAnalysisValuesAndIndicesForRange(analysisId, startIndex, endIndex);
     }
 
     /**
      * Returns array of spike values and indexes belonging to train with specified {@code trainId} for the specified range.
      */
-    public SpikeValueAndIndex[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
+    public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
         return analysisRepository.getSpikesByTrainForRange(trainId, startIndex, endIndex);
     }
 

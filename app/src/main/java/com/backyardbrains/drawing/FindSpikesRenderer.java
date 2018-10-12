@@ -5,8 +5,9 @@ import android.support.annotation.Nullable;
 import android.support.annotation.Size;
 import android.util.SparseArray;
 import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.SpikeValueAndIndex;
+import com.backyardbrains.data.SpikeIndexValue;
 import com.backyardbrains.drawing.gl.GlSpikes;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -114,6 +115,9 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         return false;
     }
 
+    private final Benchmark benchmark =
+        new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
+
     /**
      * {@inheritDoc}
      */
@@ -136,8 +140,10 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             int toSample = (int) lastSampleIndex;
             int fromSample = Math.max(0, toSample - glWindowWidth);
             if (spikeAnalysisId > 0) {
-                final SpikeValueAndIndex[] valuesAndIndices =
+                //benchmark.start();
+                final SpikeIndexValue[] valuesAndIndices =
                     getAnalysisManager().getSpikesForRange(spikeAnalysisId, fromSample, toSample);
+                //benchmark.end();
                 int verticesCount =
                     fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth,
                         fromSample, toSample, (long) (waveformVerticesCount * .5));
@@ -176,7 +182,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     }
 
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private int fillSpikesAndColorsBuffers(@NonNull SpikeValueAndIndex[] valueAndIndices,
+    private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices,
         @NonNull float[] spikesVertices, @NonNull float[] spikesColors, int glWindowWidth, long fromSample,
         long toSample, long drawSampleCount) {
         int verticesCounter = 0;
@@ -189,7 +195,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
                 final int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
 
-                for (SpikeValueAndIndex valueAndIndex : valueAndIndices) {
+                for (SpikeIndexValue valueAndIndex : valueAndIndices) {
                     if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
                         if (toSample - fromSample < glWindowWidth) { // buffer contains 0 samples in front
                             index = valueAndIndex.getIndex() + glWindowWidth - toSample;

@@ -357,6 +357,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                                         getString(R.string.error_message_files_events_delete));
                                     Crashlytics.logException(new Throwable(
                                         "Deleting events file for the given recording " + f.getPath() + " failed"));
+                                } else {
+                                    // TODO: 10-Oct-18 DELETE DB DATA FOR THE DELETED FILE
                                 }
                             }
                         } else {
