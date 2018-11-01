@@ -21,6 +21,8 @@ import android.view.View;
 import com.backyardbrains.R;
 import com.backyardbrains.utils.AudioUtils;
 
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 /**
  * Pretty simple heartbeat pulsating view based on the small GitHub library (https://github.com/scottyab/HeartBeatView)
  *
@@ -28,7 +30,7 @@ import com.backyardbrains.utils.AudioUtils;
  */
 public class HeartbeatView extends AppCompatImageView {
 
-    private static final String TAG = "HeartBeatView";
+    private static final String TAG = makeLogTag(HeartbeatView.class);
 
     private static final float SCALE_FACTOR_NORMAL = 1f;
     private static final float SCALE_FACTOR_PUMPED = 1.2f;

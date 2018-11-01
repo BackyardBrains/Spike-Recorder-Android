@@ -2,7 +2,7 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import com.backyardbrains.BaseFragment;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;

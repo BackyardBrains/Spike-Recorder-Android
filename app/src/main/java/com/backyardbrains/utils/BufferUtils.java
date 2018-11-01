@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class BufferUtils {
 
     // Maximum buffer size for a buffer that holds samples
-    private static final int MAX_SAMPLE_BUFFER_SIZE = AudioUtils.SAMPLE_RATE * 6;
+    private static final int MAX_SAMPLE_BUFFER_SIZE = AudioUtils.DEFAULT_SAMPLE_RATE * 6;
     // Maximum buffer size for a buffer that holds data bytes
     private static final int MAX_BYTE_SIZE = MAX_SAMPLE_BUFFER_SIZE * 2;
     private static final byte[] EMPTY_DATA_BUFFER = new byte[MAX_BYTE_SIZE];

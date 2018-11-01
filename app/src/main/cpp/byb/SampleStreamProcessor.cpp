@@ -9,9 +9,8 @@ const char *SampleStreamProcessor::TAG = "SampleStreamProcessor";
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
 
-SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) {
-    setSampleRate(SAMPLE_RATE);
-
+SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) : Processor(SAMPLE_RATE,
+                                                                                            DEFAULT_CHANNEL_COUNT) {
     SampleStreamProcessor::listener = listener;
 }
 
@@ -19,13 +18,14 @@ SampleStreamProcessor::~SampleStreamProcessor() {
 }
 
 void SampleStreamProcessor::setChannelCount(int channelCount) {
-    SampleStreamProcessor::channelCount = channelCount;
+    Processor::setChannelCount(channelCount);
 
     channelCountChanged = true;
 }
 
-void SampleStreamProcessor::process(const unsigned char *inData, const int size, short *outSamples,
-                                    int *outEventIndices, std::string *outEventLabels, int *outCounts) {
+void
+SampleStreamProcessor::process(const unsigned char *inData, const int length, short **outSamples, int *outSampleCounts,
+                               int *outEventIndices, std::string *outEventLabels, int &outEventCount) {
     if (channelCountChanged) { // number of channels changed during processing of previous batch
         frameStarted = false;
         sampleStarted = false;
@@ -35,7 +35,7 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
     }
 
     // init samples (by channels)
-    for (int i = 0; i < channelCount; i++) {
+    for (int i = 0; i < getChannelCount(); i++) {
         sampleCounters[i] = 0;
     }
     // init events
@@ -47,7 +47,7 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
     byte b; // temp variable to hold currently processed bytes
     unsigned char uc; // temp variable to hold currently processed bytes as unsigned char
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < length; i++) {
         uc = inData[i];
 
         // and next byte to custom message sent by SpikerBox
@@ -122,7 +122,7 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
                         channels[currentChannel][sampleCounters[currentChannel]++] = sample;
 
                         sampleStarted = false;
-                        if (currentChannel >= channelCount - 1) frameStarted = false;
+                        if (currentChannel >= getChannelCount() - 1) frameStarted = false;
                     } else {
                         msb = b & CLEANER;
                         // we already started the frame so if msb is greater then 127 drop whole frame
@@ -162,14 +162,16 @@ void SampleStreamProcessor::process(const unsigned char *inData, const int size,
         }
     }
 
-    // apply additional filtering if necessary
-    applyFilters(channels[CHANNEL_INDEX], sampleCounters[CHANNEL_INDEX]);
-
-    std::copy(channels[CHANNEL_INDEX], channels[CHANNEL_INDEX] + sampleCounters[CHANNEL_INDEX], outSamples);
+    for (int i = 0; i < getChannelCount(); i++) {
+        // apply additional filtering if necessary
+        applyFilters(i, channels[i], sampleCounters[i]);
+        outSamples[i] = new short[sampleCounters[i]];
+        std::copy(channels[i], channels[i] + sampleCounters[i], outSamples[i]);
+        outSampleCounts[i] = sampleCounters[i];
+    }
     std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
     std::copy(eventLabels, eventLabels + eventCounter, outEventLabels);
-    outCounts[0] = sampleCounters[CHANNEL_INDEX];
-    outCounts[1] = eventCounter;
+    outEventCount = eventCounter;
 }
 
 void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) {

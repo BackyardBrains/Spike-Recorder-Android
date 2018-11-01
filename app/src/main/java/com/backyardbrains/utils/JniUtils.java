@@ -1,7 +1,7 @@
 package com.backyardbrains.utils;
 
-import com.backyardbrains.data.processing.SamplesWithEvents;
-import com.backyardbrains.usb.AbstractUsbSampleSource;
+import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -19,7 +19,7 @@ public class JniUtils {
     public static native void setFilters(float lowCutOff, float highCutOff);
 
     public static native void processSampleStream(SamplesWithEvents out, byte[] data, int length,
-        AbstractUsbSampleSource sampleSource);
+        AbstractUsbSignalSource sampleSource);
 
     public static native boolean isAudioStreamAmModulated();
 
@@ -31,6 +31,8 @@ public class JniUtils {
     public static native int getAveragedSampleCount();
 
     public static native void setAveragedSampleCount(int averagedSampleCount);
+
+    public static native void setSelectedChannel(int selectedChannel);
 
     public static native void setThreshold(int threshold);
 

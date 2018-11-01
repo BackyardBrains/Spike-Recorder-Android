@@ -5,10 +5,10 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
+import com.backyardbrains.dsp.ProcessingBuffer;
+import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.Benchmark;
@@ -63,7 +63,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int averagingTriggerType;
 
-    private int sampleRate = AudioUtils.SAMPLE_RATE;
+    private int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
     private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
 
     private OnDrawListener onDrawListener;
@@ -175,9 +175,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     public void setSampleRate(int sampleRate) {
         if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
 
+        //setGlWindowWidth(glWindowWidth);
+
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getSize();
+        final int maxGlWindowWidth =
+            signalAveraging ? processingBuffer.getAveragedSamplesBufferSize() : processingBuffer.getSampleBufferSize();
 
         // recalculate width of the GL window
         int newSize = glWindowWidth;
@@ -213,16 +216,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      */
     public void resetAveragedSignal() {
         if (processingBuffer != null) {
-            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
-            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getAveragedSamplesBufferSize());
+            averagedSamples = new short[processingBuffer.getAveragedSamplesBufferSize()];
         }
-    }
-
-    /**
-     * Returns current type of signal averaging.
-     */
-    public @SignalAveragingTriggerType int getAveragingTriggerType() {
-        return averagingTriggerType;
     }
 
     /**
@@ -232,11 +228,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.averagingTriggerType = averagingTriggerType;
     }
 
-    public void setGlWindowWidth(int newSize) {
+    void setGlWindowWidth(int newSize) {
         if (newSize < 0) return;
 
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getSize();
+        final int maxGlWindowWidth =
+            signalAveraging ? processingBuffer.getAveragedSamplesBufferSize() : processingBuffer.getSampleBufferSize();
 
         if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
         if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
@@ -250,7 +247,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         return glWindowWidth;
     }
 
-    public void setGlWindowHeight(int newSize) {
+    void setGlWindowHeight(int newSize) {
         if (newSize < 0 || newSize == glWindowHeight) return;
         if (newSize < MIN_GL_VERTICAL_SIZE) newSize = MIN_GL_VERTICAL_SIZE;
         if (newSize > PCM_MAXIMUM_VALUE) newSize = PCM_MAXIMUM_VALUE;
@@ -261,16 +258,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         glWindowHeightDirty = true;
     }
 
-    public int getGlWindowHeight() {
+    int getGlWindowHeight() {
         return glWindowHeight;
     }
 
-    @SuppressWarnings("WeakerAccess") public int getSurfaceWidth() {
+    int getSurfaceWidth() {
         return surfaceWidth;
-    }
-
-    public int getSurfaceHeight() {
-        return surfaceHeight;
     }
 
     public float pixelHeightToGlHeight(float pxHeight) {
@@ -365,10 +358,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         .sessions(10)
         .measuresPerSession(500)
         .logBySession(false)
-        .listener(new Benchmark.OnBenchmarkListener() {
-            @Override public void onEnd() {
-                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            }
+        .listener(() -> {
+            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
         });
 
     /**
@@ -382,14 +373,14 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
         // get samples from processing buffer and check if it's valid
         // FIXME: 24-Sep-18 CURRENTLY THE ONLY WAY TO SAVE DATA WHEN SWITCHING BETWEEN PLAYBACK AND THRESHOLD MODE WHILE PAUSING IS TO HAVE TWO DIFFERENT BUFFERS BUT THIS SHOULD BE IMPLEMENTED BETTER
-        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getBufferSize()) {
-            sampleBuffer = new DrawBuffer(processingBuffer.getBufferSize());
-            samples = new short[processingBuffer.getBufferSize()];
+        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getSampleBufferSize()) {
+            sampleBuffer = new DrawBuffer(processingBuffer.getSampleBufferSize());
+            samples = new short[processingBuffer.getSampleBufferSize()];
         }
         if (averagedSamplesBuffer == null
-            || averagedSamplesBuffer.getSize() != processingBuffer.getThresholdBufferSize()) {
-            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
-            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
+            || averagedSamplesBuffer.getSize() != processingBuffer.getAveragedSamplesBufferSize()) {
+            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getAveragedSamplesBufferSize());
+            averagedSamples = new short[processingBuffer.getAveragedSamplesBufferSize()];
         }
         int count = processingBuffer.get(samples);
         if (count > 0) sampleBuffer.add(samples, count);

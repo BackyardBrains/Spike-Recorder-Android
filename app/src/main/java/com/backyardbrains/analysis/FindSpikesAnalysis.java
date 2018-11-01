@@ -2,8 +2,8 @@ package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.AudioFile;
-import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.db.entity.Spike;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 

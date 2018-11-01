@@ -69,6 +69,10 @@ android {
     if (project.hasProperty('devBuild')) {
         aaptOptions.cruncherEnabled = false
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 ext {
@@ -92,6 +96,7 @@ ext {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+
     // support libraries
     implementation "com.android.support:appcompat-v7:$supportLibVersion"
     implementation "com.android.support:support-compat:$supportLibVersion"
@@ -99,35 +104,47 @@ dependencies {
     implementation "com.android.support:support-media-compat:$supportLibVersion"
     implementation "com.android.support:support-v4:$supportLibVersion"
     implementation "com.android.support.constraint:constraint-layout:$constraintLayoutVersion"
+
     // db
     implementation "android.arch.persistence.room:runtime:$roomVersion"
     annotationProcessor "android.arch.persistence.room:compiler:$roomVersion"
+
     // debug db
     debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
+
     // view binding
     implementation "com.jakewharton:butterknife:$butterknifeVersion"
     annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+
     // material dialogs
     implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+
     // range bar
     implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
+
     // permissions
     implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
+
     // event bus
     implementation "org.greenrobot:eventbus:$eventBusVersion"
     annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+
     // utils
     implementation "org.greenrobot:essentials:$essentialsVersion"
+
     // serial communication
     implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
+
     // signal filtering
     implementation "com.github.berndporr:iirj:v$iirFiltersVersion"
     implementation "org.apache.commons:commons-math3:$commonsMathVersion"
+
     // firebase & crashlytics
     implementation "com.google.firebase:firebase-core:$firebaseVersion"
     implementation("com.crashlytics.sdk.android:crashlytics:$crashlyticsVersion") {
         transitive = true
     }
+
     // benchmark
     implementation "com.github.T-Spoon:Benchit:$benchitVersion"
 }

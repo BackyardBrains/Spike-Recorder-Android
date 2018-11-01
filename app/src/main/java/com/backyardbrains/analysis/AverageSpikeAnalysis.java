@@ -1,8 +1,8 @@
 package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
-import com.backyardbrains.audio.AudioFile;
-import com.backyardbrains.data.AverageSpike;
+import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.vo.AverageSpike;
 import com.backyardbrains.utils.JniUtils;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;

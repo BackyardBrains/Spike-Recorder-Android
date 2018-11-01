@@ -3,9 +3,9 @@ package com.backyardbrains.drawing;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.BaseFragment;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.analysis.AnalysisManager;
-import com.backyardbrains.audio.AudioService;
+import com.backyardbrains.dsp.ProcessingService;
 import java.lang.ref.WeakReference;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -24,7 +24,7 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
         fragmentRef = new WeakReference<>(fragment);
     }
 
-    @Nullable AudioService getAudioService() {
+    @Nullable ProcessingService getAudioService() {
         final BaseFragment fragment = getFragment("getAudioService()");
         if (fragment == null) return null;
 

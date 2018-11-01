@@ -77,7 +77,7 @@ public class WavUtils {
         // sample rate
         int rate = buffer.getInt();
         // 8000, 44100, etc. (for not we support only 10000 and 44100)
-        check(rate == AudioUtils.SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE,
+        check(rate == AudioUtils.DEFAULT_SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE,
             "Unsupported sample rate: " + rate);
 
         // fast-forward to bits per sample

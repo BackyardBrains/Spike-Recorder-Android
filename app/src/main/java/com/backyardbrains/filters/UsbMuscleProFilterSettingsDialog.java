@@ -3,7 +3,7 @@ package com.backyardbrains.filters;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.Filters;
+import com.backyardbrains.dsp.Filters;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>

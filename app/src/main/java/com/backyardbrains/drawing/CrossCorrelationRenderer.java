@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import com.android.texample.GLText;
-import com.backyardbrains.BaseFragment;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
