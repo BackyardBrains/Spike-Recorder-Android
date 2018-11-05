@@ -88,7 +88,6 @@ void ThresholdProcessor::setBpmProcessing(bool processBpm) {
 void
 ThresholdProcessor::process(short **outSamples, short **inSamples, const int *inSampleCounts,
                             const int *inEventIndices, const int *inEvents, const int inEventCount) {
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "THRESHOLD STARTED WITH: %d", inSampleCounts[0]);
     if (paused) return;
 
     bool shouldReset = false;
@@ -130,106 +129,51 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         resetOnNextBatch = false;
     }
 
-    // append unfinished sample buffers with incoming samples
-    int *prevCounts = new int[channelCount]{0};
-    int from = INT_MAX, to = INT_MIN;
     int tmpInSampleCount;
     short *tmpInSamples;
-    int samplesToCopy;
     short **tmpSamples;
-    short **tmpUnfinishedSamples;
-    short *tmpUnfinishedSamplesRow;
-    int *tmpUnfinishedSamplesCounts;
-    int *tmpUnfinishedSamplesAveragedCounts;
-    short *tmpSamplesToSubtractFrom;
+    int *tmpSamplesCounts;
+    short *tmpSamplesRow;
     int *tmpSummedSampleCounts;
     int *tmpSummedSamples;
     short *tmpAveragedSamples;
+    int samplesToCopy;
+    int copyFromIncoming, copyFromBuffer;
     int i, j, k;
     int kStart, kEnd;
+
     for (i = 0; i < channelCount; i++) {
         tmpInSampleCount = inSampleCounts[i];
         tmpInSamples = inSamples[i];
         tmpSamples = samplesForCalculation[i];
-        tmpUnfinishedSamples = unfinishedSamplesForCalculation[i];
-        tmpUnfinishedSamplesCounts = unfinishedSamplesForCalculationCounts[i];
-        tmpUnfinishedSamplesAveragedCounts = unfinishedSamplesForCalculationAveragedCounts[i];
+        tmpSamplesCounts = samplesForCalculationCounts[i];
         tmpSummedSampleCounts = summedSamplesCounts[i];
         tmpSummedSamples = summedSamples[i];
 
-        for (j = 0; j < unfinishedSamplesForCalculationCount[i]; j++) {
-            tmpUnfinishedSamplesRow = tmpUnfinishedSamples[j];
-            if (averagedSampleCount <= j) { // we look for the oldest one in the unfinished samples
-                tmpSamplesToSubtractFrom = tmpUnfinishedSamples[j - averagedSampleCount];
-            } else { // we look for the oldest one in the already collected and calculated samples
-                tmpSamplesToSubtractFrom = tmpSamples[samplesForCalculationCount[i] - averagedSampleCount + j];
-            }
-            kStart = tmpUnfinishedSamplesCounts[j];
+        // append unfinished sample buffers with incoming samples
+        for (j = 0; j < samplesForCalculationCount[i]; j++) {
+            tmpSamplesRow = tmpSamples[j];
+            kStart = tmpSamplesCounts[j];
 
             // we just need to append enough to fill the unfinished rows till end (sampleCount)
             samplesToCopy = std::min(sampleCount - kStart, tmpInSampleCount);
-            std::copy(tmpInSamples, tmpInSamples + samplesToCopy, tmpUnfinishedSamplesRow + kStart);
+            std::copy(tmpInSamples, tmpInSamples + samplesToCopy, tmpSamplesRow + kStart);
 
             kEnd = kStart + samplesToCopy;
             for (k = kStart; k < kEnd; k++) {
-                // if we are calculating averagedSampleCount + 1. sample we should subtract the oldest one in the sum
-                if (tmpSummedSampleCounts[k] == averagedSampleCount) {
-                    // subtract the value and decrease summed samples count for current position
-                    tmpSummedSamples[k] -= tmpSamplesToSubtractFrom[k];
-                    tmpSummedSampleCounts[k]--;
-                }
                 // add new value and increase summed samples count for current position
-                tmpSummedSamples[k] += tmpUnfinishedSamplesRow[k];
+                tmpSummedSamples[k] += tmpSamplesRow[k];
                 tmpSummedSampleCounts[k]++;
             }
-            tmpUnfinishedSamplesCounts[j] = kEnd;
-
-            if (to < kEnd) to = kEnd;
-        }
-
-
-        // move filled unfinished sample rows to finished samples
-        for (j = 0; j < unfinishedSamplesForCalculationCount[i]; j++) {
-            tmpUnfinishedSamplesRow = tmpUnfinishedSamples[j];
-
-            // we are only interested in completed unfinished sample rows
-            if (tmpUnfinishedSamplesCounts[j] >= sampleCount) {
-                // if there are more filled sample rows than averagedSampleCount remove them from calculations
-                if (samplesForCalculationCount[i] >= averagedSampleCount) {
-                    delete[] tmpSamples[0];
-                    // shift rest of the filled sample rows to left
-                    if (samplesForCalculationCount[i] > 1) {
-                        std::move(tmpSamples + 1, tmpSamples + samplesForCalculationCount[i], tmpSamples);
-                    }
-                    samplesForCalculationCount[i]--;
-                }
-                // add filled unfinished sample row to finished samples
-                tmpSamples[samplesForCalculationCount[i]++] = tmpUnfinishedSamplesRow;
-                // shift rest of the unfinished sample rows and their appropriate counters to left
-                if (unfinishedSamplesForCalculationCount[i] > j + 1) {
-                    std::move(tmpUnfinishedSamples + j + 1,
-                              tmpUnfinishedSamples + unfinishedSamplesForCalculationCount[i],
-                              tmpUnfinishedSamples + j);
-                    std::move(tmpUnfinishedSamplesCounts + j + 1,
-                              tmpUnfinishedSamplesCounts + unfinishedSamplesForCalculationCount[i],
-                              tmpUnfinishedSamplesCounts + j);
-                    std::move(tmpUnfinishedSamplesAveragedCounts + j + 1,
-                              tmpUnfinishedSamplesAveragedCounts + unfinishedSamplesForCalculationCount[i],
-                              tmpUnfinishedSamplesAveragedCounts + j);
-                }
-                unfinishedSamplesForCalculationCount[i]--;
-                j--;
-            }
-
-            // save current unfinished sample counts so we can average only the new ones
-            prevCounts[i] = unfinishedSamplesForCalculationCount[i];
+            tmpSamplesCounts[j] = kEnd;
         }
     }
 
+
     short currentSample;
     // loop through incoming samples and listen for the threshold hit
-    for (i = 0; i < inSampleCounts[selectedChannel]; i++) {
-        currentSample = inSamples[selectedChannel][i];
+    for (i = 0; i < inSampleCounts[lastSelectedChannel]; i++) {
+        currentSample = inSamples[lastSelectedChannel][i];
 
         // heartbeat processing
         if (processBpm && triggerType == TRIGGER_ON_THRESHOLD) {
@@ -244,10 +188,12 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         if (triggerType == TRIGGER_ON_THRESHOLD) { // triggering by a threshold value
             if (!inDeadPeriod) {
                 // check if we hit the threshold
-                if ((triggerValue[selectedChannel] >= 0 && currentSample > triggerValue[selectedChannel] &&
-                     prevSample <= triggerValue[selectedChannel]) || (
-                            triggerValue[selectedChannel] < 0 && currentSample < triggerValue[selectedChannel] &&
-                            prevSample >= triggerValue[selectedChannel])) {
+                if ((lastTriggeredValue[lastSelectedChannel] >= 0 &&
+                     currentSample > lastTriggeredValue[lastSelectedChannel] &&
+                     prevSample <= lastTriggeredValue[lastSelectedChannel]) ||
+                    (lastTriggeredValue[lastSelectedChannel] < 0 &&
+                     currentSample < lastTriggeredValue[lastSelectedChannel] &&
+                     prevSample >= lastTriggeredValue[lastSelectedChannel])) {
                     // we hit the threshold, turn on dead period of 5ms
                     inDeadPeriod = true;
 
@@ -295,180 +241,126 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         prevSample = currentSample;
     }
 
-    // add samples to local buffer
-    int copyFromIncoming, copyFromBuffer;
     for (i = 0; i < channelCount; i++) {
         tmpInSampleCount = inSampleCounts[i];
         tmpInSamples = inSamples[i];
-        tmpSamples = samplesForCalculation[i];
-        tmpUnfinishedSamples = unfinishedSamplesForCalculation[i];
-        tmpUnfinishedSamplesCounts = unfinishedSamplesForCalculationCounts[i];
-        tmpUnfinishedSamplesAveragedCounts = unfinishedSamplesForCalculationAveragedCounts[i];
-        tmpSummedSampleCounts = summedSamplesCounts[i];
-        tmpSummedSamples = summedSamples[i];
 
+        // add samples to local buffer
         copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
         copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
-        if (copyFromBuffer > 0)std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
+        if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
         std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
-
-
-        // add incoming samples to calculation of averages
-        for (j = prevCounts[i]; j < unfinishedSamplesForCalculationCount[i]; j++) {
-            tmpUnfinishedSamplesRow = tmpUnfinishedSamples[j];
-            if (averagedSampleCount <= j) { // we look for the oldest one in the unfinished samples
-                tmpSamplesToSubtractFrom = tmpUnfinishedSamples[j - averagedSampleCount];
-            } else { // we look for the oldest one in the already collected and calculated samples
-                tmpSamplesToSubtractFrom = tmpSamples[samplesForCalculationCount[i] -
-                                                      averagedSampleCount + j];
-            }
-            kStart = tmpUnfinishedSamplesAveragedCounts[j];
-            if (from > kStart) from = kStart;
-
-            kEnd = tmpUnfinishedSamplesCounts[j];
-            for (k = kStart; k < kEnd; k++) {
-                // if we are calculating averagedSampleCount + 1. sample we should subtract the oldest one in the sum
-                if (tmpSummedSampleCounts[k] == averagedSampleCount) {
-                    // subtract the value and decrease summed samples count for current position
-                    tmpSummedSamples[k] -= tmpSamplesToSubtractFrom[k];
-                    tmpSummedSampleCounts[k]--;
-                }
-                // add new value and increase summed samples count for current position
-                tmpSummedSamples[k] += tmpUnfinishedSamplesRow[k];
-                tmpSummedSampleCounts[k]++;
-            }
-            tmpUnfinishedSamplesAveragedCounts[j] = kEnd;
-        }
     }
 
-    delete[] prevCounts;
-
-    from = from != INT_MAX ? from : 0;
-    to = to != INT_MIN ? to : 0;
-
+    int *counts = new int[lastAveragedSampleCount]{0};
     for (i = 0; i < channelCount; i++) {
         tmpSummedSampleCounts = summedSamplesCounts[i];
         tmpSummedSamples = summedSamples[i];
         tmpAveragedSamples = averagedSamples[i];
 
         // calculate the averages for all channels
-        for (j = from; j < to; j++)
+        for (j = 0; j < sampleCount; j++)
             if (tmpSummedSampleCounts[j] != 0)
                 tmpAveragedSamples[j] = (short) (tmpSummedSamples[j] / tmpSummedSampleCounts[j]);
+            else
+                tmpAveragedSamples[j] = 0;
         std::copy(tmpAveragedSamples, tmpAveragedSamples + sampleCount, outSamples[i]);
     }
+    delete[] counts;
 }
 
 void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, int channelIndex, int sampleIndex) {
     short **tmpSamples = samplesForCalculation[channelIndex];
-    short **tmpUnfinishedSamples = unfinishedSamplesForCalculation[channelIndex];
-    int *tmpUnfinishedSamplesCounts = unfinishedSamplesForCalculationCounts[channelIndex];
-    int *tmpUnfinishedSamplesAveragedCounts = unfinishedSamplesForCalculationAveragedCounts[channelIndex];
+    int *tmpSamplesCounts = samplesForCalculationCounts[channelIndex];
+    int *tmpSummedSamples = summedSamples[channelIndex];
+    int *tmpSummedSamplesCounts = summedSamplesCounts[channelIndex];
+    short *tmpSamplesRowZero;
+
+    // create new sample row
+    short *newSampleRow = new short[sampleCount]{0};
     int copyFromIncoming, copyFromBuffer;
-    // we filled unfinished sample rows, let's start deleting old ones
-    if (unfinishedSamplesForCalculationCount[channelIndex] >= UNFINISHED_SAMPLES_COUNT) {
-        // first delete oldest finished sample row if it exist
-        if (samplesForCalculationCount[channelIndex] > 0) {
-            delete[] tmpSamples[0];
-            // shift rest of the filled sample rows to left
-            if (samplesForCalculationCount[channelIndex] > 1) {
-                std::move(tmpSamples + 1,
-                          tmpSamples + samplesForCalculationCount[channelIndex],
-                          tmpSamples);
-            }
-            samplesForCalculationCount[channelIndex]--;
-        }
-        // then if oldest unfinished sample row has been filled move it to finished
-        if (samplesForCalculationCount[channelIndex] < averagedSampleCount &&
-            tmpUnfinishedSamplesCounts[0] >= sampleCount) {
-            // add filled unfinished sample row to finished samples
-            tmpSamples[samplesForCalculationCount[channelIndex]++] =
-                    tmpUnfinishedSamples[0];
-        }
-
-        // shift rest of the unfinished sample rows and their appropriate counters to left
-        std::move(tmpUnfinishedSamples + 1, tmpUnfinishedSamples + unfinishedSamplesForCalculationCount[channelIndex],
-                  tmpUnfinishedSamples);
-        std::move(tmpUnfinishedSamplesCounts + 1,
-                  tmpUnfinishedSamplesCounts + unfinishedSamplesForCalculationCount[channelIndex],
-                  tmpUnfinishedSamplesCounts);
-        std::move(tmpUnfinishedSamplesAveragedCounts + 1,
-                  tmpUnfinishedSamplesAveragedCounts + unfinishedSamplesForCalculationCount[channelIndex],
-                  tmpUnfinishedSamplesAveragedCounts);
-        unfinishedSamplesForCalculationCount[channelIndex]--;
-
-    }
-
-
-    tmpUnfinishedSamples[unfinishedSamplesForCalculationCount[channelIndex]] = new short[sampleCount]{
-            0};
     copyFromBuffer = std::max(bufferSampleCount - sampleIndex, 0);
     copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);
     if (copyFromBuffer > 0) {
-        std::copy(buffer[channelIndex] + sampleIndex, buffer[channelIndex] + bufferSampleCount,
-                  tmpUnfinishedSamples[unfinishedSamplesForCalculationCount[channelIndex]]);
+        std::copy(buffer[channelIndex] + sampleIndex, buffer[channelIndex] + bufferSampleCount, newSampleRow);
     }
-    std::copy(inSamples, inSamples + copyFromIncoming,
-              tmpUnfinishedSamples[unfinishedSamplesForCalculationCount[channelIndex]] +
-              copyFromBuffer);
+    std::copy(inSamples, inSamples + copyFromIncoming, newSampleRow + copyFromBuffer);
 
-    tmpUnfinishedSamplesCounts[unfinishedSamplesForCalculationCount[channelIndex]] =
-            copyFromBuffer + copyFromIncoming;
-    tmpUnfinishedSamplesAveragedCounts[unfinishedSamplesForCalculationCount[channelIndex]++] = 0;
+
+    tmpSamplesRowZero = tmpSamples[0];
+    int copySamples = copyFromBuffer + copyFromIncoming;
+    bool shouldDeleteOldestRow = samplesForCalculationCount[channelIndex] >= lastAveragedSampleCount;
+    int len = shouldDeleteOldestRow ? tmpSamplesCounts[0] : copySamples;
+    int i;
+    for (i = 0; i < len; i++) {
+        // subtract the value and decrease summed samples count for current position
+        if (shouldDeleteOldestRow) {
+            tmpSummedSamples[i] -= tmpSamplesRowZero[i];
+            tmpSummedSamplesCounts[i]--;
+        }
+        if (i < copySamples) {
+            // add new value and increase summed samples count for current position
+            tmpSummedSamples[i] += newSampleRow[i];
+            tmpSummedSamplesCounts[i]++;
+        }
+    }
+
+    // remove oldest sample row if we're full
+    if (shouldDeleteOldestRow) {
+        // delete the oldest sample row
+        delete[] tmpSamples[0];
+        // shift rest of the filled sample rows to left
+        std::move(tmpSamples + 1, tmpSamples + samplesForCalculationCount[channelIndex], tmpSamples);
+        std::move(tmpSamplesCounts + 1, tmpSamplesCounts + samplesForCalculationCount[channelIndex], tmpSamplesCounts);
+        samplesForCalculationCount[channelIndex]--;
+    }
+    // add new sample row
+    tmpSamples[samplesForCalculationCount[channelIndex]] = newSampleRow;
+    tmpSamplesCounts[samplesForCalculationCount[channelIndex]++] = copySamples;
 }
 
 void ThresholdProcessor::init() {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
+    float sampleRate = getSampleRate();
+    int channelCount = getChannelCount();
 
-    sampleCount = static_cast<int>(getSampleRate() * MAX_PROCESSED_SECONDS);
+    sampleCount = static_cast<int>(sampleRate * MAX_PROCESSED_SECONDS);
     bufferSampleCount = sampleCount / 2;
 
-    buffer = new short *[getChannelCount()];
-    unfinishedSamplesForCalculationCount = new int[getChannelCount()]{0};
-    unfinishedSamplesForCalculationCounts = new int *[getChannelCount()];
-    unfinishedSamplesForCalculationAveragedCounts = new int *[getChannelCount()];
-    unfinishedSamplesForCalculation = new short **[getChannelCount()];
-    samplesForCalculationCount = new int[getChannelCount()]{0};
-    samplesForCalculation = new short **[getChannelCount()];
-    summedSamplesCounts = new int *[getChannelCount()];
-    summedSamples = new int *[getChannelCount()];
-    averagedSamples = new short *[getChannelCount()];
-    for (int i = 0; i < getChannelCount(); i++) {
+    buffer = new short *[channelCount];
+    samplesForCalculationCount = new int[channelCount]{0};
+    samplesForCalculationCounts = new int *[channelCount];
+    samplesForCalculation = new short **[channelCount];
+    summedSamplesCounts = new int *[channelCount];
+    summedSamples = new int *[channelCount];
+    averagedSamples = new short *[channelCount];
+    for (int i = 0; i < channelCount; i++) {
         buffer[i] = new short[bufferSampleCount];
-        unfinishedSamplesForCalculationCounts[i] = new int[UNFINISHED_SAMPLES_COUNT + averagedSampleCount]{0};
-        unfinishedSamplesForCalculationAveragedCounts[i] = new int[UNFINISHED_SAMPLES_COUNT + averagedSampleCount]{
-                0};
-        unfinishedSamplesForCalculation[i] = new short *[UNFINISHED_SAMPLES_COUNT + averagedSampleCount];
+        samplesForCalculationCounts[i] = new int[averagedSampleCount]{0};
         samplesForCalculation[i] = new short *[averagedSampleCount];
         summedSamplesCounts[i] = new int[sampleCount]{0};
         summedSamples[i] = new int[sampleCount]{0};
         averagedSamples[i] = new short[sampleCount]{0};
     }
 
-    deadPeriodCount = static_cast<int>(getSampleRate() * DEAD_PERIOD_SECONDS);
+    deadPeriodCount = static_cast<int>(sampleRate * DEAD_PERIOD_SECONDS);
     deadPeriodSampleCounter = 0;
     inDeadPeriod = false;
 
     prevSample = 0;
 
     heartbeatHelper->reset();
-    heartbeatHelper->setSampleRate(getSampleRate());
-    minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
+    heartbeatHelper->setSampleRate(sampleRate);
+    minBpmResetPeriodCount = (int) (sampleRate * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
     lastTriggerSampleCounter = 0;
     sampleCounter = 0;
 }
 
 void ThresholdProcessor::clean(int channelCount) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "clean()");
     for (int i = 0; i < channelCount; i++) {
         delete[] buffer[i];
-        delete[] unfinishedSamplesForCalculationCounts[i];
-        delete[] unfinishedSamplesForCalculationAveragedCounts[i];
-        if (unfinishedSamplesForCalculationCount[i] > 0) {
-            for (int j = 0; j < unfinishedSamplesForCalculationCount[i]; j++) {
-                delete[] unfinishedSamplesForCalculation[i][j];
-            }
-        }
-        delete[] unfinishedSamplesForCalculation[i];
+        delete[] samplesForCalculationCounts[i];
         if (samplesForCalculationCount[i] > 0) {
             for (int j = 0; j < samplesForCalculationCount[i]; j++) {
                 delete[] samplesForCalculation[i][j];
@@ -480,11 +372,8 @@ void ThresholdProcessor::clean(int channelCount) {
         delete[] averagedSamples[i];
     }
     delete[] buffer;
-    delete[] unfinishedSamplesForCalculationCount;
-    delete[] unfinishedSamplesForCalculationCounts;
-    delete[] unfinishedSamplesForCalculationAveragedCounts;
-    delete[] unfinishedSamplesForCalculation;
     delete[] samplesForCalculationCount;
+    delete[] samplesForCalculationCounts;
     delete[] samplesForCalculation;
     delete[] summedSamplesCounts;
     delete[] averagedSamples;

@@ -61,8 +61,6 @@ private:
     static constexpr float DEAD_PERIOD_SECONDS = 0.005f;
     // Default number of samples that needs to be summed to get the averaged sample
     static constexpr int DEFAULT_AVERAGED_SAMPLE_COUNT = 1;
-    // Max number of unfinished samples arrays
-    static const int UNFINISHED_SAMPLES_COUNT = 241;
     // Minimum number of seconds without a heartbeat before resetting the heartbeat helper
     static constexpr double DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS = 3;
 
@@ -86,7 +84,7 @@ private:
     // Number of samples that we collect for one sample stream
     int sampleCount = 0;
     // Index of the channel against which we need to perform the threshold trigger check
-    int selectedChannel = 1;
+    int selectedChannel = 0;
     // Used to check whether channel has changed since the last incoming sample batch
     int lastSelectedChannel = 0;
     // Threshold value that triggers the averaging
@@ -108,23 +106,17 @@ private:
     int bufferSampleCount = sampleCount / 2;
     // Buffer that holds most recent 1.2 ms of audio so we can prepend new sample buffers when threshold is hit
     short **buffer;
-    // Number of unfinished sample arrays
-    int *unfinishedSamplesForCalculationCount;
-    // Holds counts of samples in unfinished sample arrays
-    int **unfinishedSamplesForCalculationCounts;
-    // Holds counts of already averaged samples in unfinished sample arrays
-    int **unfinishedSamplesForCalculationAveragedCounts;
-    // Holds arrays of samples that still haven't been fully populated and averaged
-    short ***unfinishedSamplesForCalculation;
-    // Number of arrays of already populated and averaged samples
+    // Holds number of sample rows that have been averaged
     int *samplesForCalculationCount;
-    // Holds arrays of already populated and averaged samples
+    // Holds number of samples in each sample row
+    int **samplesForCalculationCounts;
+    // Holds sample rows
     short ***samplesForCalculation;
-    // Holds samples counts summed at specified position
+    // Holds number of samples that have been summed at specified position
     int **summedSamplesCounts;
-    // Holds sums of all the saved samples by index
+    // Holds sums of all the samples at specified position
     int **summedSamples;
-    // Holds averages of all the saved samples by index
+    // Holds averages of all the samples at specified position
     short **averagedSamples;
 
     // Dead period when we don't check for threshold after hitting one
