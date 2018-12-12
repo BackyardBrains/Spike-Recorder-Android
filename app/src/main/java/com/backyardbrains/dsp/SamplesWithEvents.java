@@ -9,8 +9,10 @@ import com.backyardbrains.utils.EventUtils;
  */
 public class SamplesWithEvents {
 
-    private static final int SAMPLE_BUFFER_SIZE = 5000;
     private static final int EVENT_BUFFER_SIZE = EventUtils.MAX_EVENT_COUNT;
+
+    public int channelCount;
+    public int frameCount;
 
     public short[] samples;
     public int sampleCount;
@@ -21,44 +23,19 @@ public class SamplesWithEvents {
     public int eventCount;
     public long lastSampleIndex = -1;
 
-    public SamplesWithEvents() {
-        this.samples = new short[SAMPLE_BUFFER_SIZE];
+    public SamplesWithEvents(int channelCount, int frameCount) {
+        this.channelCount = channelCount;
+        this.frameCount = frameCount;
+
+        this.samples = new short[channelCount * frameCount];
+        this.sampleCount = 0;
+        this.samplesM = new short[channelCount][];
+        for (int i = 0; i < channelCount; i++) {
+            this.samplesM[i] = new short[frameCount];
+        }
+        this.sampleCountM = new int[channelCount];
         this.eventIndices = new int[EVENT_BUFFER_SIZE];
         this.eventNames = new String[EVENT_BUFFER_SIZE];
-    }
-
-    public SamplesWithEvents(int sampleBufferSize) {
-        this(1, sampleBufferSize);
-    }
-
-    public SamplesWithEvents(int channelCount, int sampleBufferSize) {
-        samples = new short[sampleBufferSize];
-        sampleCount = 0;
-        samplesM = new short[channelCount][];
-        for (int i = 0; i < channelCount; i++) {
-            samplesM[i] = new short[(int) Math.floor((float) sampleBufferSize / channelCount)];
-        }
-        sampleCountM = new int[channelCount];
-        eventIndices = new int[EVENT_BUFFER_SIZE];
-        eventNames = new String[EVENT_BUFFER_SIZE];
-        eventCount = 0;
-    }
-
-    // USED FROM C++
-    public SamplesWithEvents(short[] samples, int[] eventIndices, String[] eventNames) {
-        this.samples = samples;
-        this.eventIndices = eventIndices;
-        this.eventNames = eventNames;
-    }
-
-    // USED FROM SampleStreamProcessor
-    public SamplesWithEvents(short[] samples, int sampleCount, int[] eventIndices, String[] eventNames,
-        int eventCount) {
-        this.samples = samples;
-        this.eventIndices = eventIndices;
-        this.eventNames = eventNames;
-
-        this.sampleCount = sampleCount;
-        this.eventCount = eventCount;
+        this.eventCount = 0;
     }
 }

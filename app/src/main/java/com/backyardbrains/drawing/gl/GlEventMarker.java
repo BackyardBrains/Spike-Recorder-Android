@@ -3,6 +3,7 @@ package com.backyardbrains.drawing.gl;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.android.texample.GLText;
+import com.backyardbrains.drawing.Colors;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -12,21 +13,15 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlEventMarker {
 
-    private static final float[][] MARKER_COLORS = new float[][] {
-        new float[] { .847f, .706f, .906f, 1f }, new float[] { 1f, .314f, 0f, 1f }, new float[] { 1f, .925f, .58f, 1f },
-        new float[] { 1f, .682f, .682f, 1f }, new float[] { .69f, .898f, .486f, 1f },
-        new float[] { .706f, .847f, .906f, 1f }, new float[] { .757f, .855f, .839f, 1f },
-        new float[] { .675f, .82f, .914f, 1f }, new float[] { .682f, 1f, .682f, 1f }, new float[] { 1f, .925f, 1f, 1f }
-    };
     private static final int LINE_WIDTH = 2;
     private static final float LABEL_TOP = 230f;
 
-    private final GlVLine line;
+    private final GlVLine vLine;
     private final GlRectangle rect;
     private final GLText text;
 
     public GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
-        line = new GlVLine();
+        vLine = new GlVLine();
         rect = new GlRectangle();
         text = new GLText(gl, context.getAssets());
         text.load("dos-437.ttf", 48, 2, 2);
@@ -34,6 +29,9 @@ public class GlEventMarker {
 
     public void draw(@NonNull GL10 gl, String eventName, float x, float y0, float y1, float scaleX, float scaleY) {
         if (eventName == null) return;
+
+        gl.glPushMatrix();
+        gl.glTranslatef(x, 0f, 0f);
 
         int len = eventName.length();
         int ascii;
@@ -46,12 +44,12 @@ public class GlEventMarker {
             }
         }
         final char ch = eventName.length() > 0 ? eventName.charAt(0) : '1';
-        final float[] glColor = MARKER_COLORS[(ch - '0') % MARKER_COLORS.length];
+        final float[] glColor = Colors.MARKER_COLORS[(ch - '0') % Colors.MARKER_COLORS.length];
         gl.glColor4f(glColor[0], glColor[1], glColor[2], glColor[3]);
         gl.glLineWidth(LINE_WIDTH);
 
         // draw line
-        line.draw(gl, x, y0, y1, LINE_WIDTH, glColor);
+        vLine.draw(gl, y0, y1, LINE_WIDTH, glColor);
 
         // draw label background
         text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
@@ -59,9 +57,12 @@ public class GlEventMarker {
         float textH = text.getHeight();
         float labelW = textW * 1.3f;
         float labelH = textH * 1.3f;
-        float labelX = x - labelW * .5f;
+        float labelX = -labelW * .5f;
         float labelY = y1 - LABEL_TOP * scaleY;
-        rect.draw(gl, labelX, labelY, labelW, labelH, glColor);
+        gl.glPushMatrix();
+        gl.glTranslatef(labelX, labelY, 0f);
+        rect.draw(gl, labelW, labelH, glColor);
+        gl.glPopMatrix();
 
         // draw label text
         gl.glEnable(GL10.GL_TEXTURE_2D);
@@ -72,5 +73,7 @@ public class GlEventMarker {
         text.end();
         gl.glDisable(GL10.GL_BLEND);
         gl.glDisable(GL10.GL_TEXTURE_2D);
+
+        gl.glPopMatrix();
     }
 }

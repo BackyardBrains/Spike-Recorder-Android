@@ -100,16 +100,18 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 // we need full buffer of 6 seconds (in bytes)
                 bufferSize = raf.sampleRate() * SEEK_BUFFER_SIZE_IN_SEC * 2;
                 buffer = new byte[bufferSize];
-                samplesWithEvents = new SamplesWithEvents((int) (bufferSize * .5));
 
-                setBufferSize(bufferSize);
+                int sampleCount = (int) (bufferSize * .5);
+                int frameSize = (int) Math.floor((float) sampleCount / raf.numChannels());
+                samplesWithEvents = new SamplesWithEvents(raf.numChannels(), frameSize);
+
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
 
                 LOGD(TAG, "Playback started");
 
                 // inform any interested parties that playback has started
                 if (playbackListener != null && position == 0) {
-                    playbackListener.onStart(duration.get(), raf.sampleRate());
+                    playbackListener.onStart(duration.get(), raf.sampleRate(), raf.numChannels());
                 }
 
                 while (working.get() && raf != null) {
@@ -258,14 +260,14 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          * @param length Length of the playback in bytes.
          * @param sampleRate Sample rate of the played file.
          */
-        void onStart(long length, int sampleRate);
+        void onStart(long length, int sampleRate, int channelCount);
 
         /**
          * Triggered when playback resumes after pause.
          *
          * @param sampleRate Sample rate of the played file.
          */
-        void onResume(int sampleRate);
+        void onResume(int sampleRate, int channelCount);
 
         /**
          * Triggered constantly during playback progress.
@@ -322,7 +324,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     @SuppressWarnings("WeakerAccess") String[] eventNames;
 
     public PlaybackSignalSource(@NonNull String filePath, boolean autoPlay, int position) {
-        super(0);
+        super(0, 0, 0);
+
         this.filePath = filePath;
         this.autoPlay = autoPlay;
         this.position = position;
@@ -378,7 +381,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
             LOGD(TAG, "Playback resumed");
 
-            if (playbackListener != null) playbackListener.onResume(getSampleRate());
+            if (playbackListener != null) playbackListener.onResume(getSampleRate(), getChannelCount());
         }
     }
 
@@ -465,7 +468,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             }
         });
 
-    @Override public void processIncomingData(byte[] inData, int inDataLength, @NonNull SamplesWithEvents outData) {
+    @Override public void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
         //benchmark.start();
         JniUtils.processPlaybackStream(outData, inData, inDataLength, eventIndices, eventNames, eventIndices.length,
             fromSample.get(), toSample.get(), samplesToPrepend.get());

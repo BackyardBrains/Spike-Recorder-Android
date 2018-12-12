@@ -7,6 +7,7 @@ public class AudioPlaybackProgressEvent {
 
     private long progress;
     private int sampleRate;
+    private int channelCount;
 
     public AudioPlaybackProgressEvent() {
     }
@@ -25,5 +26,13 @@ public class AudioPlaybackProgressEvent {
 
     public void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
+    }
+
+    public int getChannelCount() {
+        return channelCount;
+    }
+
+    public void setChannelCount(int channelCount) {
+        this.channelCount = channelCount;
     }
 }

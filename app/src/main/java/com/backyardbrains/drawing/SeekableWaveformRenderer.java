@@ -3,15 +3,15 @@ package com.backyardbrains.drawing;
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import android.util.SparseArray;
-import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.drawing.gl.GlMeasurementArea;
 import com.backyardbrains.drawing.gl.GlSpikes;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.GlUtils;
+import com.backyardbrains.vo.SpikeIndexValue;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -91,13 +91,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastSampleIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
+        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
+        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
+        int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         int toSample = (int) lastSampleIndex;
-        int fromSample = Math.max(0, toSample - glWindowWidth);
+        int fromSample = (int) Math.max(0, toSample - glWindowWidth);
         if (drawSpikes()) {
             if (getAnalysisManager() != null && spikeTrains != null) {
                 for (int i = 0; i < spikeTrains.length; i++) {
@@ -109,7 +109,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        long drawSampleCount = (long) (waveformVerticesCount * .5);
+        long drawSampleCount = (long) (waveformVerticesCount[0] * .5);
 
         // draw measurement area
         if (measuring) {
@@ -148,12 +148,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             onMeasure(Float.isNaN(rms) ? 0f : rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], measureSampleCount);
 
             //draw measurement area
-            glMeasurementArea.draw(gl, measurementAreaDrawStart, measurementAreaDrawEnd, -glWindowHeight * .5f,
-                glWindowHeight * .5f);
+            glMeasurementArea.draw(gl, measurementAreaDrawStart, measurementAreaDrawEnd, -MAX_GL_VERTICAL_HALF_SIZE,
+                MAX_GL_VERTICAL_HALF_SIZE);
         }
 
         super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
-            glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+            glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
+            lastSampleIndex);
 
         if (drawSpikes()) {
             if (spikeTrains != null && valuesAndIndexes.length > 0) {
@@ -225,7 +226,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, @NonNull float[] spikesVertices,
-        @NonNull float[] spikesColors, int glWindowWidth, long fromSample, long toSample, long drawSampleCount,
+        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample, long drawSampleCount,
         @Size(4) float[] color) {
         int verticesCounter = 0;
         try {
@@ -236,9 +237,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
                 for (SpikeIndexValue valueAndIndex : valueAndIndices) {
                     if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
-                        index =
-                            toSample - fromSample < glWindowWidth ? valueAndIndex.getIndex() + glWindowWidth - toSample
-                                : valueAndIndex.getIndex() - fromSample;
+                        index = toSample - fromSample < glWindowWidth ? (long) (valueAndIndex.getIndex() + glWindowWidth
+                            - toSample) : valueAndIndex.getIndex() - fromSample;
                         index = (long) (index * scaleX);
                         spikesVertices[verticesCounter++] = index;
                         spikesVertices[verticesCounter++] = valueAndIndex.getValue();
@@ -257,16 +257,16 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     // Check whether service is currently in playback mode
     private boolean getIsPlaybackMode() {
-        return getAudioService() != null && getAudioService().isPlaybackMode();
+        return getProcessingService() != null && getProcessingService().isPlaybackMode();
     }
 
     // Check whether audio is currently in the paused state
     private boolean getIsPaused() {
-        return getAudioService() == null || getAudioService().isAudioPaused();
+        return getProcessingService() == null || getProcessingService().isAudioPaused();
     }
 
     // Check whether audio is currently being sought
     private boolean getIsSeeking() {
-        return getAudioService() != null && getAudioService().isAudioSeeking();
+        return getProcessingService() != null && getProcessingService().isAudioSeeking();
     }
 }

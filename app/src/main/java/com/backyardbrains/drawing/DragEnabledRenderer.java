@@ -6,7 +6,7 @@ import android.view.MotionEvent;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public interface TouchEnabledRenderer extends GLSurfaceView.Renderer {
+public interface DragEnabledRenderer extends GLSurfaceView.Renderer {
 
     boolean onTouchEvent(MotionEvent event);
 }

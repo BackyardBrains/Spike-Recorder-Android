@@ -28,7 +28,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.dsp.audio.AudioHelper;
 import com.backyardbrains.dsp.audio.PlaybackSignalSource;
-import com.backyardbrains.dsp.audio.RecordingSaver;
+import com.backyardbrains.dsp.audio.Recorder;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 import com.backyardbrains.dsp.usb.UsbHelper;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
@@ -37,8 +37,6 @@ import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
-import com.backyardbrains.events.ChannelCountChangeEvent;
-import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
@@ -79,14 +77,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     // Reference to the USB helper
     private UsbHelper usbHelper;
     // Reference to the audio recorder
-    private RecordingSaver recordingSaver;
+    private Recorder recorder;
 
     // Whether service is created
     private boolean created;
-    // Current sample rate
-    private int sampleRate;
-    // Current channel count
-    private int channelCount;
 
     // Reference to currently active sample source
     private AbstractSignalSource sampleSource;
@@ -163,51 +157,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * Returns current sample rate.
      */
     public int getSampleRate() {
-        return sampleRate;
-    }
-
-    /**
-     * Sets current sample rate
-     */
-    void setSampleRate(int sampleRate) {
-        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
-        if (sampleRate <= 0) return; // sample rate needs to be positive
-
-        this.sampleRate = sampleRate;
-
-        // pass sample rate to native code
-        JniUtils.setSampleRate(sampleRate);
-
-        // reset filters
-        FILTERS.setSampleRate(sampleRate);
-
-        // inform all interested parties that sample rate has changed
-        EventBus.getDefault().post(new SampleRateChangeEvent(sampleRate));
-    }
-
-    /**
-     * Returns current channel count.
-     */
-    public int getChannelCount() {
-        return channelCount;
-    }
-
-    // Set's current channel count
-
-    /**
-     * Sets curent channel count
-     */
-    void setChannelCount(int channelCount) {
-        LOGD(TAG, "setChannelCount(" + channelCount + ")");
-        if (channelCount <= 0) return; // channel count needs to be greater or equal to 1
-
-        this.channelCount = channelCount;
-
-        // pass channel count to native code
-        JniUtils.setChannelCount(channelCount);
-
-        // inform all interested parties that channel count has changed
-        EventBus.getDefault().post(new ChannelCountChangeEvent(channelCount));
+        return signalProcessor.getSampleRate();
     }
 
     /**
@@ -236,13 +186,6 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         if (signalProcessor != null) signalProcessor.setSignalAveraging(signalAveraging);
     }
 
-    /**
-     * Passes information about currently selected channel to data processor.
-     */
-    public void setSelectedChannel(int selectedChannel) {
-        if (signalProcessor != null) signalProcessor.setSelectedChannel(selectedChannel);
-    }
-
     //========================================================
     //  IMPLEMENTATIONS OF OnProcessingListener INTERFACE
     //========================================================
@@ -253,25 +196,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * @see SignalProcessor.OnProcessingListener#onDataProcessed(SamplesWithEvents)
      */
     @Override public void onDataProcessed(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (recordingSaver != null) record(samplesWithEvents);
-    }
-
-    /**
-     * Saves sample rate of the currently processed signal locally.
-     *
-     * @see SignalProcessor.OnProcessingListener#onDataSampleRateChange(int)
-     */
-    @Override public void onDataSampleRateChange(int sampleRate) {
-        setSampleRate(sampleRate);
-    }
-
-    /**
-     * Saves channel count of the currently processed signal locally.
-     *
-     * @see SignalProcessor.OnProcessingListener#onDataChannelCountChange(int)
-     */
-    @Override public void onDataChannelCountChange(int channelCount) {
-        setChannelCount(channelCount);
+        if (recorder != null) record(samplesWithEvents);
     }
 
     //========================================================
@@ -648,16 +573,17 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
 
-                    @Override public void onStart(long length, int sampleRate) {
+                    @Override public void onStart(long length, int sampleRate, int channelCount) {
                         // post event that audio playback has started, but post a sticky event
                         // because the view might sill not be initialized
                         EventBus.getDefault()
-                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length), sampleRate));
+                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length), sampleRate,
+                                channelCount));
                     }
 
-                    @Override public void onResume(int sampleRate) {
+                    @Override public void onResume(int sampleRate, int channelCount) {
                         // post event that audio playback has started
-                        EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate));
+                        EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount));
                     }
 
                     @Override public void onProgress(long progress, int sampleRate) {
@@ -675,8 +601,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                         // post event that audio playback has started
                         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                     }
-                });
-                turnOnPlayback(); // this will stop the microphone and in progress recording if any
+                }); turnOnPlayback(); // this will stop the microphone and in progress recording if any
             }
         }
     }
@@ -686,13 +611,14 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     //========================================================
 
     /**
-     * Starts recording from the active input source. If there is no active source microphone is turned on and recorded.
+     * Starts recording from the active input source.
      */
     public void startRecording() {
         LOGD(TAG, "startRecording()");
         try {
-            if (recordingSaver == null) recordingSaver = new RecordingSaver();
-            recordingSaver.setSampleRate(sampleRate);
+            if (recorder == null) {
+                recorder = new Recorder(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
+            }
 
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStartedEvent());
@@ -715,9 +641,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         LOGD(TAG, "stopRecording()");
         try {
             // set current sample rate to be used when saving WAV file
-            if (recordingSaver != null) {
-                recordingSaver.requestStop();
-                recordingSaver = null;
+            if (recorder != null) {
+                recorder.requestStop();
+                recorder = null;
 
                 // post that recording of audio has started
                 EventBus.getDefault().post(new AudioRecordingStoppedEvent());
@@ -735,20 +661,20 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * @return boolean {@code True} if active input is being recorded, {@code false} otherwise.
      */
     public boolean isRecording() {
-        return (recordingSaver != null);
+        return (recorder != null);
     }
 
-    // Pass audio and events to the active RecordingSaver instance
+    // Pass audio and events to the active Recorder instance
     private void record(@NonNull SamplesWithEvents samplesWithEvents) {
         try {
-            if (recordingSaver != null) recordingSaver.writeAudioWithEvents(samplesWithEvents);
+            if (recorder != null) recorder.writeAudioWithEvents(samplesWithEvents);
 
-            // recordingSaver can be set to null if stopRecording() is called between this and previous line
-            if (recordingSaver != null) {
+            // recorder can be set to null if stopRecording() is called between this and previous line
+            if (recorder != null) {
                 // post current recording progress
                 EventBus.getDefault()
-                    .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recordingSaver.getAudioLength()),
-                        sampleRate));
+                    .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),
+                        signalProcessor.getSampleRate(), signalProcessor.getChannelCount()));
             }
         } catch (IllegalStateException e) {
             Crashlytics.logException(e);

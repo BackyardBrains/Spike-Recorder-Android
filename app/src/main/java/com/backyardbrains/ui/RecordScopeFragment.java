@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -38,7 +37,6 @@ import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.UsbMuscleProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbNeuronProFilterSettingsDialog;
 import com.backyardbrains.filters.UsbSerialFilterSettingsDialog;
-import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -76,7 +74,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
 
-    @BindView(R.id.threshold_handle) ThresholdHandle thresholdHandle;
+    //@BindView(R.id.threshold_handle) ThresholdHandle thresholdHandle;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     @BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
@@ -101,72 +99,63 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Holds the type of triggering that is used when averaging
     private @SignalAveragingTriggerType int triggerType = SignalAveragingTriggerType.THRESHOLD;
 
-    final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
-        new SetThresholdHandlePositionRunnable();
-    final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
-        new UpdateDataProcessorThresholdRunnable();
+    //final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
+    //    new SetThresholdHandlePositionRunnable();
+    //final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
+    //    new UpdateDataProcessorThresholdRunnable();
 
     /**
      * Runnable that is executed on the UI thread every time threshold position is changed.
      */
-    private class SetThresholdHandlePositionRunnable implements Runnable {
-
-        private int position;
-
-        @Override public void run() {
-            setThresholdHandlePosition(position);
-        }
-
-        public void setPosition(int position) {
-            this.position = position;
-        }
-    }
+    //private class SetThresholdHandlePositionRunnable implements Runnable {
+    //
+    //    private int position;
+    //
+    //    @Override public void run() {
+    //        setThresholdHandlePosition(position);
+    //    }
+    //
+    //    public void setPosition(int position) {
+    //        this.position = position;
+    //    }
+    //}
 
     /**
      * Runnable that is executed on the UI thread every time threshold value is changed.
      */
-    private class UpdateDataProcessorThresholdRunnable implements Runnable {
-
-        private float value;
-
-        @Override public void run() {
-            updateDataProcessorThreshold(value);
-        }
-
-        public void setValue(float value) {
-            this.value = value;
-        }
-    }
+    //private class UpdateDataProcessorThresholdRunnable implements Runnable {
+    //
+    //    private float value;
+    //
+    //    @Override public void run() {
+    //        updateDataProcessorThreshold(value);
+    //    }
+    //
+    //    public void setValue(float value) {
+    //        this.value = value;
+    //    }
+    //}
 
     //==============================================
     // EVENT LISTENERS
     //==============================================
 
-    private final FilterSettingsDialog.FilterSelectionListener filterSelectionListener =
-        new FilterSettingsDialog.FilterSelectionListener() {
-            @Override public void onFilterSelected(@NonNull Filter filter) {
-                setFilter(filter);
-            }
-        };
+    private final FilterSettingsDialog.FilterSelectionListener filterSelectionListener = this::setFilter;
 
-    private final View.OnClickListener startThresholdOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            startThresholdMode();
-            setupThresholdView();
+    private final View.OnClickListener startThresholdOnClickListener = v -> {
+        startThresholdMode();
+        setupThresholdView();
 
-            // update BPM UI
-            updateBpmUI();
-        }
+        // update BPM UI
+        updateBpmUI();
     };
 
-    private final View.OnClickListener stopThresholdOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            stopThresholdMode();
-            setupThresholdView();
+    private final View.OnClickListener stopThresholdOnClickListener = v -> {
+        stopThresholdMode();
+        setupThresholdView();
 
-            // update BPM UI
-            updateBpmUI();
-        }
+        // update BPM UI
+        updateBpmUI();
     };
 
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
@@ -193,28 +182,21 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
         };
 
-    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            openAveragingTriggerTypeDialog();
-        }
-    };
+    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
+        v -> openAveragingTriggerTypeDialog();
 
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
-        new ThresholdHandle.OnThresholdChangeListener() {
-            @Override public void onChange(@NonNull View view, float y) {
-                getRenderer().adjustThreshold(y);
-            }
-        };
+        (view, y) -> getRenderer().adjustThreshold(y);
 
-    private final SlidingView.AnimationEndListener recordAnimationListener = new SlidingView.AnimationEndListener() {
-        @Override public void onShowAnimationEnd() {
-            thresholdHandle.setTopOffset(ibtnThreshold.getHeight() + tvStopRecording.getHeight());
-        }
-
-        @Override public void onHideAnimationEnd() {
-            thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-        }
-    };
+    //private final SlidingView.AnimationEndListener recordAnimationListener = new SlidingView.AnimationEndListener() {
+    //    @Override public void onShowAnimationEnd() {
+    //        thresholdHandle.setTopOffset(ibtnThreshold.getHeight() + tvStopRecording.getHeight());
+    //    }
+    //
+    //    @Override public void onHideAnimationEnd() {
+    //        thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
+    //    }
+    //};
 
     //==============================================
     // LIFECYCLE IMPLEMENTATIONS
@@ -297,11 +279,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
-        renderer.setOnDrawListener((drawSurfaceWidth, drawSurfaceHeight) -> {
+        renderer.setOnDrawListener((drawSurfaceWidth) -> {
             if (getActivity() != null && getAudioService() != null) {
                 viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
                 viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
                 // we need to call it on UI thread because renderer is drawing on background thread
                 getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
             }
@@ -309,19 +290,19 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
 
             @Override public void onThresholdPositionChange(final int position) {
-                if (getActivity() != null) {
-                    setThresholdHandlePositionRunnable.setPosition(position);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
-                }
+                //if (getActivity() != null) {
+                //    setThresholdHandlePositionRunnable.setPosition(position);
+                //    // we need to call it on UI thread because renderer is drawing on background thread
+                //    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
+                //}
             }
 
             @Override public void onThresholdValueChange(final float value) {
-                if (getActivity() != null) {
-                    updateDataProcessorThresholdRunnable.setValue(value);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                }
+                //if (getActivity() != null) {
+                //    updateDataProcessorThresholdRunnable.setValue(value);
+                //    // we need to call it on UI thread because renderer is drawing on background thread
+                //    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
+                //}
             }
         });
         renderer.setSignalAveraging(thresholdOn);
@@ -378,7 +359,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         stringBuilder.delete(tapToStopLength, stringBuilder.length());
-        stringBuilder.append(WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate()));
+        stringBuilder.append(
+            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate(), event.getChannelCount()));
         tvStopRecording.setText(stringBuilder);
     }
 
@@ -492,40 +474,30 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Initializes user interface
     private void setupUI() {
         // threshold button
-        ViewUtils.playAfterNextLayout(ibtnThreshold, new Func<View, Void>() {
-            @Nullable @Override public Void apply(@Nullable View source) {
-                thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-                return null;
-            }
-        });
+        //ViewUtils.playAfterNextLayout(ibtnThreshold, source -> {
+        //    thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
+        //    return null;
+        //});
         setupThresholdView();
         // filters button
         setupFiltersButton();
         // usb button
         setupUsbButton();
         // record button
-        ibtnRecord.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                startRecording();
-            }
-        });
+        ibtnRecord.setOnClickListener(v -> startRecording());
         // stop record button
-        stopRecButton = new SlidingView(tvStopRecording, recordAnimationListener);
-        tvStopRecording.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (getAudioService() != null) getAudioService().stopRecording();
-            }
+        stopRecButton = new SlidingView(tvStopRecording, null/*recordAnimationListener*/);
+        tvStopRecording.setOnClickListener(v -> {
+            if (getAudioService() != null) getAudioService().stopRecording();
         });
         // recording buttons
         setupRecordingButtons(false);
         // BPM UI
         updateBpmUI();
         if (getContext() != null) tbSound.setChecked(PrefUtils.getBpmSound(getContext()));
-        tbSound.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                vHeartbeat.setMuteSound(!b);
-                if (getContext() != null) PrefUtils.setBpmSound(getContext(), b);
-            }
+        tbSound.setOnCheckedChangeListener((compoundButton, b) -> {
+            vHeartbeat.setMuteSound(!b);
+            if (getContext() != null) PrefUtils.setBpmSound(getContext(), b);
         });
     }
 
@@ -562,9 +534,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void setupThresholdHandleAndAveragingTriggerTypeButtons() {
         if (thresholdOn) {
             // setup threshold handle
-            thresholdHandle.setVisibility(
-                triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
+            //thresholdHandle.setVisibility(
+            //    triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
+            //thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.VISIBLE);
             switch (triggerType) {
@@ -605,8 +577,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             ibtnAvgTriggerType.setOnClickListener(changeAveragingTriggerTypeOnClickListener);
         } else {
             // setup threshold handle
-            thresholdHandle.setVisibility(View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(null);
+            //thresholdHandle.setVisibility(View.INVISIBLE);
+            //thresholdHandle.setOnHandlePositionChangeListener(null);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
             ibtnAvgTriggerType.setOnClickListener(null);
@@ -637,34 +609,30 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     // Sets the specified value for the threshold handle.
-    void setThresholdHandlePosition(int value) {
-        // can be null if callback is called after activity has finished
-        if (thresholdHandle != null) thresholdHandle.setPosition(value);
-    }
+    //void setThresholdHandlePosition(int value) {
+    //    // can be null if callback is called after activity has finished
+    //    if (thresholdHandle != null) thresholdHandle.setPosition(value);
+    //}
 
     // Updates data processor with the newly set threshold.
-    void updateDataProcessorThreshold(float value) {
-        JniUtils.setThreshold((int) value);
-    }
+    //void updateDataProcessorThreshold(float value) {
+    //    //JniUtils.setThreshold((int) value);
+    //}
 
     // Opens a dialog for averaging trigger type selection
     void openAveragingTriggerTypeDialog() {
         if (getContext() != null) {
             MaterialDialog averagingTriggerTypeDialog =
                 new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
-                    .itemsCallback(new MaterialDialog.ListCallback() {
-                        @Override
-                        public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
-                            setTriggerType(position == 0 ? SignalAveragingTriggerType.THRESHOLD
-                                : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position);
-                        }
-                    })
+                    .itemsCallback((dialog, itemView, position, text) -> setTriggerType(
+                        position == 0 ? SignalAveragingTriggerType.THRESHOLD
+                            : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position))
                     .build();
             averagingTriggerTypeDialog.show();
         }
     }
 
-    // Sets the specified trigger type as the prefered averaging trigger type
+    // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
         this.triggerType = triggerType;
 
@@ -707,11 +675,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Sets up the filters button depending on the input source
     private void setupFiltersButton() {
         ibtnFilters.setVisibility(shouldShowFilterOptions() ? View.VISIBLE : View.GONE);
-        ibtnFilters.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                openFilterDialog();
-            }
-        });
+        ibtnFilters.setOnClickListener(v -> openFilterDialog());
     }
 
     // Whether filter options button should be visible or not
@@ -753,18 +717,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
         if (getAudioService() != null && getAudioService().isUsbActiveInput()) {
             ibtnUsb.setImageResource(R.drawable.ic_usb_off);
-            ibtnUsb.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    disconnectFromDevice();
-                }
-            });
+            ibtnUsb.setOnClickListener(v -> disconnectFromDevice());
         } else {
             ibtnUsb.setImageResource(R.drawable.ic_usb);
-            ibtnUsb.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    connectWithDevice();
-                }
-            });
+            ibtnUsb.setOnClickListener(v -> connectWithDevice());
         }
     }
 

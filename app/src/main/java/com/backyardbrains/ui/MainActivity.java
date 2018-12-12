@@ -512,10 +512,16 @@ public class MainActivity extends AppCompatActivity
     //  AUDIO SERVICE
     //==============================================
 
-    @Nullable @Override public ProcessingService audioService() {
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable @Override public ProcessingService processingService() {
         return processingService;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Nullable @Override public AnalysisManager analysisManager() {
         return analysisManager;
     }

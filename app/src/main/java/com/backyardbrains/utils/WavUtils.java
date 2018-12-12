@@ -21,24 +21,23 @@ public class WavUtils {
     /**
      * Converts specified {@code sampleCount} to wav time progress and returns it formatted as {@code mm:ss}.
      */
-    public static String formatWavProgress(int sampleCount, int sampleRate) {
+    public static String formatWavProgress(int sampleCount, int sampleRate, int channelCount) {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(toSeconds(byteCount, sampleRate)));
+        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(toSeconds(byteCount, sampleRate, channelCount)));
     }
 
     /**
      * Returns length of the wav file of specified {@code byteCount} length formatted as "XX s" or "XX m XX s".
      */
-    public static CharSequence formatWavLength(long byteCount, int sampleRate) {
+    public static CharSequence formatWavLength(long byteCount, int sampleRate, int channelCount) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s(toSeconds(byteCount, sampleRate));
+        return Formats.formatTime_m_s(toSeconds(byteCount, sampleRate, channelCount));
     }
 
-    public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelConfig, int audioFormat) {
-        final int channels = (channelConfig == AudioFormat.CHANNEL_IN_MONO ? 1 : 2);
+    public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelCount, int audioFormat) {
         final byte bitsPerSample;
         if (audioFormat == AudioFormat.ENCODING_PCM_8BIT) {
             bitsPerSample = 8;
@@ -47,7 +46,7 @@ public class WavUtils {
         }
 
         return writeHeader(totalAudioLength - HEADER_SIZE, totalAudioLength - HEADER_SIZE + 36, sampleRateInHz,
-            channels, bitsPerSample * sampleRateInHz * channels / 8, bitsPerSample);
+            channelCount, bitsPerSample * sampleRateInHz * channelCount / 8, bitsPerSample);
     }
 
     /**
@@ -69,11 +68,11 @@ public class WavUtils {
         // audio format
         int format = buffer.getShort();
         // PCM = 1 (i.e. Linear quantization) Values other than 1 indicate some form of compression.
-        check(format == 1, "Unsupported audio format: " + format); // 1 means
+        check(format == 1, "Unsupported audio format: " + format); // 1 means PCM
         // number of channels
         int channels = buffer.getShort();
-        // Mono = 1, Stereo = 2, etc. (for now we support only MONO)
-        check(channels == 1, "Unsupported number of channels: " + channels);
+        // Mono = 1, Stereo = 2, etc.
+        check(channels > 0, "Unsupported number of channels: " + channels);
         // sample rate
         int rate = buffer.getInt();
         // 8000, 44100, etc. (for not we support only 10000 and 44100)
@@ -98,18 +97,20 @@ public class WavUtils {
             buffer.rewind();
         }
         dataSize = buffer.getInt();
-        check(dataSize > 0, "@rong data size: " + dataSize);
+        check(dataSize > 0, "Wrong data size: " + dataSize);
 
         return new WavInfo(channels, rate, bits, dataSize);
     }
+    //bitrate = bitsPerSample * samplesPerSecond * channels;
+    //fileSize = (bitsPerSample * samplesPerSecond * channels * duration) / 8;
 
     // Converts specified byteCount to seconds
-    private static long toSeconds(long byteCount, int sampleRate) {
-        return byteCount / (sampleRate * 2);
+    private static long toSeconds(long byteCount, int sampleRate, int channelCount) {
+        return byteCount / (2 * sampleRate * channelCount);
     }
 
     // Writes and returns WAV header following specified parameters
-    private static byte[] writeHeader(long totalAudioLen, long totalDataLen, long sampleRate, int channels,
+    private static byte[] writeHeader(long totalAudioLen, long totalDataLen, long sampleRate, int channelCount,
         long byteRate, byte bitsPerSample) {
 
         byte[] header = new byte[HEADER_SIZE];
@@ -136,7 +137,7 @@ public class WavUtils {
         header[19] = 0;
         header[20] = 1; // format = 1
         header[21] = 0;
-        header[22] = (byte) channels;
+        header[22] = (byte) channelCount;
         header[23] = 0;
         header[24] = (byte) (sampleRate & 0xff);
         header[25] = (byte) ((sampleRate >> 8) & 0xff);
@@ -146,7 +147,7 @@ public class WavUtils {
         header[29] = (byte) ((byteRate >> 8) & 0xff);
         header[30] = (byte) ((byteRate >> 16) & 0xff);
         header[31] = (byte) ((byteRate >> 24) & 0xff);
-        header[32] = (byte) (channels * (bitsPerSample / 8)); // block align
+        header[32] = (byte) (channelCount * (bitsPerSample / 8)); // block align
         header[33] = 0;
         header[34] = bitsPerSample; // bits per sample
         header[35] = 0;

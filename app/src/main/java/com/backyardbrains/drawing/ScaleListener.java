@@ -30,14 +30,12 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
     private static final String TAG = makeLogTag(ScaleListener.class);
 
-    private static final float SCALE_FACTOR_MULTIPLIER = 1.5f;
+    private static final float SCALE_FACTOR_MULTIPLIER = 1.1f;
 
     private final BaseWaveformRenderer renderer;
 
-    private int sizeAtBeginningX = -1;
-    private int sizeAtBeginningY = -1;
+    private float sizeAtBeginningX = -1f;
     private float scaleFactorX = 1.f;
-    private float scaleFactorY = 1.f;
     private boolean horizontalScaling;
     private boolean scalingAxisDetermined;
 
@@ -51,9 +49,7 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
         if (renderer == null) return false;
 
         sizeAtBeginningX = renderer.getGlWindowWidth();
-        sizeAtBeginningY = renderer.getGlWindowHeight();
         scaleFactorX = 1.f;
-        scaleFactorY = 1.f;
         scalingAxisDetermined = false;
 
         return true;
@@ -66,8 +62,6 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
             // determine scale factors for both axis
             scaleFactorX *=
                 (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
-            scaleFactorY *=
-                (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanY() / detector.getPreviousSpanY()));
 
             final float xDiff = Math.abs(detector.getPreviousSpanX() - detector.getCurrentSpanX());
             final float yDiff = Math.abs(detector.getPreviousSpanY() - detector.getCurrentSpanY());
@@ -82,9 +76,9 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
             // scale
             if (horizontalScaling) {
-                renderer.setGlWindowWidth((int) (sizeAtBeginningX * scaleFactorX));
+                renderer.setGlWindowWidth(sizeAtBeginningX * scaleFactorX);
             } else {
-                renderer.setGlWindowHeight((int) (sizeAtBeginningY * scaleFactorY));
+                renderer.setWaveformScaleFactor((float) Math.pow(detector.getScaleFactor(), 2));
             }
 
             return true;

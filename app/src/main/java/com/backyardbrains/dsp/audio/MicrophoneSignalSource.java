@@ -8,7 +8,6 @@ import android.support.annotation.RequiresApi;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.crashlytics.android.Crashlytics;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,8 +27,6 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     private static final int BUFFER_SIZE_IN_SEC = 1;
     // Number of samples buffers should hold by default
     private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
-    // Number of bytes buffers should hold by default
-    private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
     /**
      * Thread used for reading audio from microphone.
@@ -80,12 +77,9 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     private static final Object lock = new Object();
 
     MicrophoneSignalSource(@NonNull AudioRecord recorder) {
-        super(BUFFER_SIZE_IN_BYTES);
+        super(recorder.getSampleRate(), recorder.getChannelCount(), BUFFER_SIZE_IN_SAMPLES);
 
         this.recorder = recorder;
-
-        setSampleRate(recorder.getSampleRate());
-        setChannelCount(recorder.getChannelCount());
     }
 
     @SuppressWarnings("WeakerAccess") @RequiresApi(api = Build.VERSION_CODES.M) AudioRecord updateRecorder(
@@ -127,15 +121,15 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
         }
     }
 
-    private final Benchmark benchmark = new Benchmark("MICROPHONE_TEST_WITH_AM_MODULATION").warmUp(200)
-        .sessions(10)
-        .measuresPerSession(200)
-        .logBySession(false)
-        .listener(() -> {
-            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        });
+    //private final Benchmark benchmark = new Benchmark("MICROPHONE_TEST_WITH_AM_MODULATION").warmUp(200)
+    //    .sessions(10)
+    //    .measuresPerSession(200)
+    //    .logBySession(false)
+    //    .listener(() -> {
+    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //    });
 
-    @Override public void processIncomingData(byte[] inData, int inDataLength, @NonNull SamplesWithEvents outData) {
+    @Override public void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
         //benchmark.start();
         JniUtils.processMicrophoneStream(outData, inData, inDataLength);
         //benchmark.end();

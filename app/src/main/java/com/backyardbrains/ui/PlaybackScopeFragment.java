@@ -24,7 +24,6 @@ import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Formats;
-import com.backyardbrains.utils.Func;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
@@ -44,6 +43,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     private static final String ARG_FILE_PATH = "bb_file_path";
     private static final String INT_SAMPLE_RATE = "bb_sample_rate";
+    private static final String INT_CHANNEL_COUNT = "bb_channel_count";
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
     private static final String LONG_PLAYBACK_POSITION = "bb_playback_position";
@@ -80,6 +80,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Sample rate that should be used for audio playback (by default 44100)
     int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
+    // Channel count that should be used for audio playback (by default 1)
+    int channelCount = AudioUtils.DEFAULT_CHANNEL_COUNT;
     // Whether signal triggering is turned on or off
     boolean thresholdOn;
     // Holds position of the playback while in background
@@ -100,7 +102,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             seek(progress);
             if (updateProgressSeekBar) sbAudioProgress.setProgress(progress);
             // avoid division by zero
-            if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate);
+            if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate, channelCount);
         }
 
         public void setProgress(int progress) {
@@ -241,18 +243,14 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     // EVENT LISTENERS
     //==============================================
 
-    private final View.OnClickListener startThresholdOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            startThresholdMode();
-            setupThresholdView();
-        }
+    private final View.OnClickListener startThresholdOnClickListener = v -> {
+        startThresholdMode();
+        setupThresholdView();
     };
 
-    private final View.OnClickListener stopThresholdOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            stopThresholdMode();
-            setupThresholdView();
-        }
+    private final View.OnClickListener stopThresholdOnClickListener = v -> {
+        stopThresholdMode();
+        setupThresholdView();
     };
 
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
@@ -281,18 +279,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         };
 
-    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener = new View.OnClickListener() {
-        @Override public void onClick(View v) {
-            openAveragingTriggerTypeDialog();
-        }
-    };
+    private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
+        v -> openAveragingTriggerTypeDialog();
 
     private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
-        new ThresholdHandle.OnThresholdChangeListener() {
-            @Override public void onChange(@NonNull View view, float y) {
-                getRenderer().adjustThreshold(y);
-            }
-        };
+        (view, y) -> getRenderer().adjustThreshold(y);
 
     //=================================================
     //  LIFECYCLE IMPLEMENTATIONS
@@ -309,6 +300,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         if (savedInstanceState != null) {
             sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.DEFAULT_SAMPLE_RATE);
+            channelCount = savedInstanceState.getInt(INT_CHANNEL_COUNT, AudioUtils.DEFAULT_CHANNEL_COUNT);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
             triggerType = savedInstanceState.getInt(INT_AVERAGING_TRIGGER_TYPE, SignalAveragingTriggerType.THRESHOLD);
             playbackPosition = savedInstanceState.getInt(LONG_PLAYBACK_POSITION, 0);
@@ -337,6 +329,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         super.onSaveInstanceState(outState);
 
         outState.putInt(INT_SAMPLE_RATE, sampleRate);
+        outState.putInt(INT_CHANNEL_COUNT, channelCount);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
         outState.putInt(INT_AVERAGING_TRIGGER_TYPE, triggerType);
         outState.putInt(LONG_PLAYBACK_POSITION, playbackPosition);
@@ -380,16 +373,12 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     @Override protected BaseWaveformRenderer createRenderer() {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(filePath, this);
-        renderer.setOnDrawListener(new BaseWaveformRenderer.OnDrawListener() {
-
-            @Override public void onDraw(final int drawSurfaceWidth, final int drawSurfaceHeight) {
-                if (getActivity() != null) {
-                    viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
-                    viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                    viewableTimeSpanUpdateRunnable.setDrawSurfaceHeight(drawSurfaceHeight);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-                }
+        renderer.setOnDrawListener((drawSurfaceWidth) -> {
+            if (getActivity() != null) {
+                viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
+                viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+                // we need to call it on UI thread because renderer is drawing on background thread
+                getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
             }
         });
         renderer.setOnScrollListener(new BaseWaveformRenderer.OnScrollListener() {
@@ -584,6 +573,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         LOGD(TAG, "Start audio playback - " + event.getLength());
         sampleRate = event.getSampleRate();
+        channelCount = event.getChannelCount();
         if (event.getLength() > 0) { // we are starting playback, not resuming
             sbAudioProgress.setMax((int) event.getLength());
             EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
@@ -601,7 +591,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (sbAudioProgress.getMax() == 0) sbAudioProgress.setMax(getLength());
 
         sbAudioProgress.setProgress((int) event.getProgress());
-        updateProgressTime((int) event.getProgress(), event.getSampleRate());
+        updateProgressTime((int) event.getProgress(), event.getSampleRate(), event.getChannelCount());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -622,11 +612,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             ibtnThreshold.setVisibility(View.VISIBLE);
             // threshold view
             setupThresholdView();
-            ViewUtils.playAfterNextLayout(ibtnThreshold, new Func<View, Void>() {
-                @Nullable @Override public Void apply(@Nullable View source) {
-                    thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-                    return null;
-                }
+            ViewUtils.playAfterNextLayout(ibtnThreshold, source -> {
+                thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
+                return null;
             });
         } else {
             ibtnThreshold.setVisibility(View.INVISIBLE);
@@ -634,11 +622,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         }
         // play/pause button
         setupPlayPauseButton();
-        ibtnPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                toggle(!isPlaying());
-            }
-        });
+        ibtnPlayPause.setOnClickListener(v -> toggle(!isPlaying()));
         // audio progress
         sbAudioProgress.setMax(getLength());
         sbAudioProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -777,7 +761,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Updates data processor with the newly set threshold.
     void updateDataProcessorThreshold(float value) {
-        JniUtils.setThreshold((int) value);
+        //JniUtils.setThreshold((int) value);
         // in case we are pausing just reset the renderer buffers
         getRenderer().resetAveragedSignal();
     }
@@ -787,13 +771,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (getContext() != null) {
             MaterialDialog averagingTriggerTypeDialog =
                 new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
-                    .itemsCallback(new MaterialDialog.ListCallback() {
-                        @Override
-                        public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
-                            setTriggerType(position == 0 ? SignalAveragingTriggerType.THRESHOLD
-                                : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position);
-                        }
-                    })
+                    .itemsCallback((dialog, itemView, position, text) -> setTriggerType(
+                        position == 0 ? SignalAveragingTriggerType.THRESHOLD
+                            : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position))
                     .build();
             averagingTriggerTypeDialog.show();
         }
@@ -821,8 +801,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     // Updates progress time according to progress
-    void updateProgressTime(int progress, int sampleRate) {
+    void updateProgressTime(int progress, int sampleRate, int channelCount) {
         playbackPosition = progress;
-        tvProgressTime.setText(WavUtils.formatWavProgress(progress, sampleRate));
+        tvProgressTime.setText(WavUtils.formatWavProgress(progress, sampleRate, channelCount));
     }
 }

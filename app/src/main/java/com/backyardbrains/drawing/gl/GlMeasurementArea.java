@@ -22,8 +22,8 @@ public class GlMeasurementArea {
 
     public void draw(GL10 gl, float x0, float x1, float y0, float y1) {
         // draw limit lines
-        line.draw(gl, x0, y0, y1, LIMIT_LINES_WIDTH, LIMIT_LINE_COLOR);
-        line.draw(gl, x1, y0, y1, LIMIT_LINES_WIDTH, LIMIT_LINE_COLOR);
+        line.draw(gl, y0, y1, LIMIT_LINES_WIDTH, LIMIT_LINE_COLOR);
+        line.draw(gl, y0, y1, LIMIT_LINES_WIDTH, LIMIT_LINE_COLOR);
 
         // draw measurement area
         area.draw(gl, x0, y0, x1 - x0, y1 - y0, AREA_COLOR);

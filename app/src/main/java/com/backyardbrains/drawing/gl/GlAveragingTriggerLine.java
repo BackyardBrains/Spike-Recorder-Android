@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.android.texample.GLText;
+import com.backyardbrains.drawing.Colors;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -13,37 +14,32 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlAveragingTriggerLine {
 
-    private static final float[][] MARKER_COLORS = new float[][] {
-        new float[] { .847f, .706f, .906f, 1f }, new float[] { 1f, .314f, 0f, 1f }, new float[] { 1f, .925f, .58f, 1f },
-        new float[] { 1f, .682f, .682f, 1f }, new float[] { .69f, .898f, .486f, 1f },
-        new float[] { .706f, .847f, .906f, 1f }, new float[] { .757f, .855f, .839f, 1f },
-        new float[] { .675f, .82f, .914f, 1f }, new float[] { .682f, 1f, .682f, 1f }, new float[] { 1f, .925f, 1f, 1f }
-    };
-    private static final float[] BACKGROUND_LINE_COLOR = new float[] { 0f, 0f, 0f, 1f };
-    private static final float[] DASHED_LINE_COLOR = new float[] { .58824f, .58824f, .58824f, 1f };
     private static final int LINE_WIDTH = 2;
     private static final float DASH_HEIGHT = 12;
 
-    private final GlVLine line;
-    private final GlDashedVLine dashedLine;
+    private final GlVLine vLine;
+    private final GlDashedVLine dashedVLine;
     private final GlRectangle rect;
     private final GLText text;
 
     public GlAveragingTriggerLine(@NonNull Context context, @NonNull GL10 gl) {
-        line = new GlVLine();
-        dashedLine = new GlDashedVLine();
+        vLine = new GlVLine();
+        dashedVLine = new GlDashedVLine();
         rect = new GlRectangle();
         text = new GLText(gl, context.getAssets());
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, @Nullable String eventName, float x, float y0, float y1, float scaleX,
+    public void draw(@NonNull GL10 gl, @Nullable String eventName, float x, float y1, float y2, float scaleX,
         float scaleY) {
+        gl.glPushMatrix();
+        gl.glTranslatef(x, 0f, 0f);
+
         // draw black line
-        line.draw(gl, x, y0, y1, LINE_WIDTH, BACKGROUND_LINE_COLOR);
+        vLine.draw(gl, y1, y2, LINE_WIDTH, Colors.BLACK);
 
         // draw dashed gray line
-        dashedLine.draw(gl, x, y0, y1, DASH_HEIGHT * scaleY, LINE_WIDTH, DASHED_LINE_COLOR);
+        dashedVLine.draw(gl, y1, y2, DASH_HEIGHT * scaleY, LINE_WIDTH, Colors.GRAY);
 
         if (eventName != null) {
             int len = eventName.length();
@@ -57,18 +53,22 @@ public class GlAveragingTriggerLine {
                 }
             }
             final char ch = eventName.length() > 0 ? eventName.charAt(0) : '1';
-            final float[] glColor = MARKER_COLORS[(ch - '0') % MARKER_COLORS.length];
+            final float[] glColor = Colors.MARKER_COLORS[(ch - '0') % Colors.MARKER_COLORS.length];
             gl.glColor4f(glColor[0], glColor[1], glColor[2], glColor[3]);
 
-            // draw label background
+            // scale text before drawing background so we have correct measurements
             text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
+            // draw label background
             float textW = text.getLength(eventName);
             float textH = text.getHeight();
             float labelW = textW * 1.3f;
             float labelH = textH * 1.3f;
-            float labelX = x + labelW * .5f;
-            float labelY = y1 - textH;
-            rect.draw(gl, labelX, labelY, labelW, labelH, glColor);
+            float labelX = labelW * .5f;
+            float labelY = y2 - textH;
+            gl.glPushMatrix();
+            gl.glTranslatef(labelX, labelY, 0f);
+            rect.draw(gl, labelW, labelH, glColor);
+            gl.glPopMatrix();
 
             // draw label text
             gl.glEnable(GL10.GL_TEXTURE_2D);
@@ -80,5 +80,7 @@ public class GlAveragingTriggerLine {
             gl.glDisable(GL10.GL_BLEND);
             gl.glDisable(GL10.GL_TEXTURE_2D);
         }
+
+        gl.glPopMatrix();
     }
 }

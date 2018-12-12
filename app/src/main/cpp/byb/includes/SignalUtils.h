@@ -11,7 +11,9 @@ namespace util {
 
 class SignalUtils {
 public:
-    static short **deinterleaveSignal(const short *samples, int length, int channelCount);
+    static short **deinterleaveSignal(const short *samples, int sampleCount, int channelCount);
+
+    static short *interleaveSignal(short **samples, int frameCount, int channelCount);
 };
 
 

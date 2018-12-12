@@ -4,11 +4,11 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import com.android.texample.GLText;
-import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
-import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.events.RedrawAnalysisGraphEvent;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -89,14 +89,18 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
         if (!thumbsView) thumbsView = true;
     }
 
-    @Override public void onTouchEvent(MotionEvent event) {
+    @Override public boolean onTouchEvent(MotionEvent event) {
         if (thumbsView) {
-            boolean graphThumbTouched = thumbTouchHelper.onTouch(event);
+            boolean graphThumbTouched = glGraphThumbTouchHelper.onTouch(event);
             if (graphThumbTouched) {
                 thumbsView = false;
-                EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
+                EventBus.getDefault().post(new RedrawAnalysisGraphEvent());
+
+                return true;
             }
         }
+
+        return false;
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
@@ -131,7 +135,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                                 // draw thumb
                                 x = textOffset + j * (w + margin) + margin;
                                 y = surfaceHeight - (textOffset + (h + margin) * (i + 1));
-                                thumbTouchHelper.registerGraphThumb(new Rect(x, y, w, h));
+                                glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, w, h));
                                 glBarGraphThumb.draw(gl, x, y, w, h, crossCorrelationAnalysis[i * trainCount + j],
                                     GlUtils.SPIKE_TRAIN_COLORS[i], "");
 
@@ -153,7 +157,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                             }
                         }
                     } else {
-                        int selected = thumbTouchHelper.getSelectedGraphThumb();
+                        int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
                         glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
                             crossCorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
                             GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount]);

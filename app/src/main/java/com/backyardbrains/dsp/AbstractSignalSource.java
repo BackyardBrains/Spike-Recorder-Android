@@ -20,26 +20,26 @@ public abstract class AbstractSignalSource implements SignalSource {
     // Updated during processing and on every cycle
     protected SamplesWithEvents samplesWithEvents;
 
-    // Size of the buffer this sample source
-    private int bufferSize;
+    // Size of the buffer for this sample source
+    private int frameSize;
     private int sampleRate;
     private int channelCount;
 
-    public AbstractSignalSource(int bufferSize) {
-        this.bufferSize = bufferSize;
-
-        samplesWithEvents = new SamplesWithEvents(channelCount, bufferSize);
+    public AbstractSignalSource(int sampleRate, int channelCount, int frameSize) {
+        this.frameSize = frameSize;
+        setSampleRate(sampleRate);
+        setChannelCount(channelCount);
     }
 
     /**
-     * Returns sample rate for this input source.
+     * Returns sample rate for this signal source.
      */
     public int getSampleRate() {
         return sampleRate;
     }
 
     /**
-     * Sets sample rate for this input source.
+     * Sets sample rate for this signal source.
      */
     protected void setSampleRate(int sampleRate) {
         if (this.sampleRate != sampleRate) {
@@ -66,7 +66,7 @@ public abstract class AbstractSignalSource implements SignalSource {
         if (this.channelCount != channelCount) {
             LOGD(TAG, "setChannelCount(" + channelCount + ")");
 
-            samplesWithEvents = new SamplesWithEvents(channelCount, bufferSize);
+            samplesWithEvents = new SamplesWithEvents(channelCount, frameSize);
 
             // inform interested parties what is the channel count of this sample source
             if (processor != null) processor.onChannelCountChanged(channelCount);
@@ -113,19 +113,6 @@ public abstract class AbstractSignalSource implements SignalSource {
     }
 
     /**
-     * Sets the size of the processing buffer.
-     *
-     * @param bufferSize Size of the buffer in bytes.
-     */
-    protected final void setBufferSize(int bufferSize) {
-        if (this.bufferSize != bufferSize) {
-            samplesWithEvents = new SamplesWithEvents(channelCount, bufferSize);
-
-            this.bufferSize = bufferSize;
-        }
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override public void pause() {
@@ -145,7 +132,7 @@ public abstract class AbstractSignalSource implements SignalSource {
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    public abstract void processIncomingData(byte[] inData, int inDataLength, @NonNull SamplesWithEvents outData);
+    public abstract void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength);
 
     /**
      * Returns type of the sample source. One of {@link SignalSource.Type} constants.

@@ -23,10 +23,15 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import android.util.SparseArray;
-import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.dsp.SamplesWithEvents;
+import android.view.MotionEvent;
+import com.backyardbrains.drawing.gl.GlDraggableThreshold;
+import com.backyardbrains.drawing.gl.GlDraggableWaveform;
 import com.backyardbrains.drawing.gl.GlEventMarker;
-import com.backyardbrains.drawing.gl.GlWaveform;
+import com.backyardbrains.drawing.gl.GlHandleDragHelper;
+import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
+import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.ui.BaseFragment;
+import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -40,14 +45,19 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
-    private static final float[] DEFAULT_WAVEFORM_COLOR = new float[] { 0f, 1f, 0f, 1f };
+    // Waveform channel colors
+    private static final float[][] DEFAULT_WAVEFORM_COLOR = new float[][] { Colors.GREEN, Colors.RED };
 
-    private GlWaveform glWaveform;
+    private final GlHandleDragHelper thresholdHandleDragHelper;
+
+    private final GlDraggableWaveform glDraggableWaveform;
+    private final GlDraggableThreshold glDraggableThreshold;
+
     private GlEventMarker glEventMarker;
 
-    private float threshold;
-
     private OnThresholdChangeListener listener;
+
+    @SuppressWarnings("WeakerAccess") float threshold;
 
     /**
      * Interface definition for a callback to be invoked when threshold position or value are changed.
@@ -70,7 +80,30 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         super(fragment);
 
         context = fragment.getContext();
+
+        glDraggableWaveform = new GlDraggableWaveform();
+        glDraggableThreshold = new GlDraggableThreshold();
+
+        thresholdHandleDragHelper = new GlHandleDragHelper(new GlHandleDragHelper.OnDragListener() {
+            @Override public void onDragStart(int index) {
+                // ignore
+            }
+
+            @Override public void onDrag(int index, float dy) {
+                adjustThresholdValue(threshold - surfaceHeightToGlHeight(dy) / getWaveformScaleFactor());
+
+                // pass new threshold to the c++ code
+                JniUtils.setThreshold(threshold);
+            }
+
+            @Override public void onDragStop(int index) {
+            }
+        });
     }
+
+    //=================================================
+    //  PUBLIC AND PROTECTED METHODS
+    //=================================================
 
     /**
      * Registers a callback to be invoked when threshold position or value are changed.
@@ -85,8 +118,20 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * Sets threshold to specified {@code y} value.
      */
     public void adjustThreshold(float y) {
-        adjustThresholdValue(pixelHeightToGlHeight(y));
+        adjustThresholdValue(surfaceYToGlY(y));
     }
+
+    /**
+     * Returns the color of the waveform for the specified {@code channel} in rgba format. If color is not defined
+     * green is returned.
+     */
+    protected @Size(4) float[] getWaveformColor(int channel) {
+        return DEFAULT_WAVEFORM_COLOR[DEFAULT_WAVEFORM_COLOR.length > channel ? channel : 0];
+    }
+
+    //=================================================
+    //  Renderer INTERFACE IMPLEMENTATIONS
+    //=================================================
 
     /**
      * {@inheritDoc}
@@ -94,7 +139,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        glWaveform = new GlWaveform();
         glEventMarker = new GlEventMarker(context, gl);
     }
 
@@ -104,17 +148,46 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
 
-        updateThresholdHandle();
+        thresholdHandleDragHelper.resetDraggableAreas();
+        thresholdHandleDragHelper.setSurfaceHeight(height);
+
+        //updateThresholdHandle();
+    }
+
+    //=================================================
+    //  BaseWaveformRenderer OVERRIDES
+    //=================================================
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onChannelCountChange(int channelCount) {
+        super.onChannelCountChange(channelCount);
+
+        thresholdHandleDragHelper.resetDraggableAreas();
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public void setGlWindowHeight(int newSize) {
-        super.setGlWindowHeight(newSize);
-
-        updateThresholdHandle();
+    @Override public boolean onTouchEvent(MotionEvent event) {
+        return super.onTouchEvent(event) || thresholdHandleDragHelper.onTouch(event);
     }
+
+    @Override void setSelectedChannel(int selectedChannel) {
+        super.setSelectedChannel(selectedChannel);
+
+        thresholdHandleDragHelper.resetDraggableAreas();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    //@Override void setWaveformScaleFactor(float scaleFactor) {
+    //    super.setWaveformScaleFactor(scaleFactor);
+    //
+    //    //updateThresholdHandle();
+    //}
 
     /**
      * {@inheritDoc}
@@ -123,6 +196,9 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         super.onLoadSettings(context);
 
         adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
+
+        // pass new threshold to the c++ code
+        JniUtils.setThreshold(threshold);
     }
 
     /**
@@ -137,20 +213,20 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
-        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount,
-        @NonNull SparseArray<String> eventsBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
+    @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents,
+        @NonNull short[][] samples, int frameCount, @NonNull int[] eventIndices, int eventCount, int fromSample,
+        int toSample, int drawSurfaceWidth) {
         if (isSignalAveraging()) {
             try {
-                JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample,
-                    toSample, drawSurfaceWidth);
+                JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount,
+                    fromSample, toSample, drawSurfaceWidth);
             } catch (ArrayIndexOutOfBoundsException e) {
                 LOGE(TAG, e.getMessage());
                 Crashlytics.logException(e);
             }
         } else {
-            super.getWaveformVertices(samplesWithEvents, samples, eventIndices, eventNames, eventCount, eventsBuffer,
-                fromSample, toSample, drawSurfaceWidth);
+            super.getWaveformVertices(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
+                toSample, drawSurfaceWidth);
         }
     }
 
@@ -166,37 +242,63 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastSampleIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
+        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
+        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
+        int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        final float samplesToDraw = waveformVerticesCount[0] * .5f;
+        final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
+        Rect rect = new Rect();
+
         // draw waveform
-        glWaveform.draw(gl, waveformVertices, waveformVerticesCount, getWaveformColor());
+        for (int i = 0; i < waveformVertices.length; i++) {
+            boolean showWaveformHandle = getChannelCount() > 1;
+            boolean selected = getSelectedChanel() == i;
+            boolean showThresholdHandle = selected && isSignalAveraging();
+            glDraggableWaveform.draw(gl, waveformVertices[i], waveformVerticesCount[i], waveformScaleFactors[i],
+                waveformPositions[i], drawScale, scaleY, getWaveformColor(i), selected, showWaveformHandle);
+            if (showWaveformHandle) {
+                glDraggableWaveform.getDragArea(rect);
+                glHandleDragHelper.registerDraggableArea(i,
+                    BYBUtils.map(rect.x, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+                    BYBUtils.map(rect.y, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight),
+                    BYBUtils.map(rect.width, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+                    glHeightToSurfaceHeight(rect.height));
+            }
+            if (showThresholdHandle) {
+                glDraggableThreshold.draw(gl, 0f, samplesToDraw - 1, threshold, waveformScaleFactors[i],
+                    waveformPositions[i], drawScale, scaleY, Colors.RED);
+                glDraggableThreshold.getDragArea(rect);
+                thresholdHandleDragHelper.registerDraggableArea(i,
+                    BYBUtils.map(rect.x, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+                    BYBUtils.map(rect.y, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight),
+                    BYBUtils.map(rect.width, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+                    glHeightToSurfaceHeight(rect.height));
+            }
+        }
+
         // draw markers
-        final float drawScale = (float) (waveformVerticesCount * .5) / surfaceWidth;
-        final float verticalHalfSize = glWindowHeight * .5f;
         for (int i = 0; i < events.size(); i++) {
-            glEventMarker.draw(gl, events.valueAt(i), events.keyAt(i), -verticalHalfSize, verticalHalfSize, drawScale,
-                scaleY);
+            glEventMarker.draw(gl, events.valueAt(i), events.keyAt(i), -MAX_GL_VERTICAL_HALF_SIZE,
+                MAX_GL_VERTICAL_HALF_SIZE, drawScale, scaleY);
         }
     }
 
-    /**
-     * Returns the color of the waveform in rgba format. By default green is returned.
-     */
-    protected @Size(4) float[] getWaveformColor() {
-        return DEFAULT_WAVEFORM_COLOR;
-    }
+    //=================================================
+    // PRIVATE METHODS
+    //=================================================
 
-    private void updateThresholdHandle() {
-        if (listener != null) listener.onThresholdPositionChange(glHeightToPixelHeight(threshold));
-    }
+    //private void updateThresholdHandle() {
+    //    if (listener != null) listener.onThresholdPositionChange(glYToSurfaceY(threshold));
+    //}
 
-    private void adjustThresholdValue(float dy) {
+    @SuppressWarnings("WeakerAccess") void adjustThresholdValue(float dy) {
         if (dy == 0) return;
 
         threshold = dy;
 
-        if (listener != null) listener.onThresholdValueChange(threshold);
+        // TODO: 29-Nov-18 WHEN IN PLAYBACK WE SHOULD ALSO RESET AVERAGED SIGNAL
+
+        //if (listener != null) listener.onThresholdValueChange(threshold);
     }
 }

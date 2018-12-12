@@ -9,21 +9,17 @@ const char *ThresholdProcessor::TAG = "ThresholdProcessor";
 ThresholdProcessor::ThresholdProcessor(OnHeartbeatListener *listener) {
     heartbeatHelper = new HeartbeatHelper(getSampleRate(), listener);
 
-    // we need to initialize initial trigger values because they depend on channel count
-    triggerValue = new int[getChannelCount()];
+    // we need to initialize initial trigger values and local buffer because they depend on channel count
+    triggerValue = new float[getChannelCount()];
     for (int i = 0; i < getChannelCount(); i++) {
         triggerValue[i] = INT_MAX;
     }
-    lastTriggeredValue = new int[getChannelCount()]{0};
+    lastTriggeredValue = new float[getChannelCount()]{0};
 
-    init();
+    init(true);
 }
 
 ThresholdProcessor::~ThresholdProcessor() {
-}
-
-int ThresholdProcessor::getSampleCount() {
-    return sampleCount;
 }
 
 int ThresholdProcessor::getAveragedSampleCount() {
@@ -44,8 +40,8 @@ void ThresholdProcessor::setSelectedChannel(int selectedChannel) {
     ThresholdProcessor::selectedChannel = selectedChannel;
 }
 
-void ThresholdProcessor::setThreshold(int threshold) {
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setThreshold(%d)", threshold);
+void ThresholdProcessor::setThreshold(float threshold) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setThreshold(%f)", threshold);
 
     ThresholdProcessor::triggerValue[selectedChannel] = threshold;
 }
@@ -86,11 +82,13 @@ void ThresholdProcessor::setBpmProcessing(bool processBpm) {
 }
 
 void
-ThresholdProcessor::process(short **outSamples, short **inSamples, const int *inSampleCounts,
-                            const int *inEventIndices, const int *inEvents, const int inEventCount) {
+ThresholdProcessor::process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
+                            const int *inEventIndices, const int *inEvents, const int inEventCount,
+                            const bool averageSamples) {
     if (paused) return;
 
     bool shouldReset = false;
+    bool shouldResetLocalBuffer = false;
     // reset buffers if selected channel has changed
     if (lastSelectedChannel != selectedChannel) {
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel has changed");
@@ -114,6 +112,7 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because sample rate has changed");
         lastSampleRate = getSampleRate();
         shouldReset = true;
+        shouldResetLocalBuffer = true;
     }
     // let's save last channel count so we can use it to delete all the arrays
     int channelCount = getChannelCount();
@@ -122,10 +121,12 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel count has changed");
         lastChannelCount = channelCount;
         shouldReset = true;
+        shouldResetLocalBuffer = true;
     }
     if (shouldReset || resetOnNextBatch) {
-        clean(tmpLastChannelCount);
-        init();
+        // reset rest of the data
+        clean(tmpLastChannelCount, shouldResetLocalBuffer);
+        init(shouldResetLocalBuffer);
         resetOnNextBatch = false;
     }
 
@@ -141,6 +142,21 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
     int copyFromIncoming, copyFromBuffer;
     int i, j, k;
     int kStart, kEnd;
+
+    // in case we don't need to average let's just add incoming samples to local buffer
+    if (!averageSamples) {
+        for (i = 0; i < channelCount; i++) {
+            tmpInSampleCount = inSampleCounts[i];
+            tmpInSamples = inSamples[i];
+
+            // add samples to local buffer
+            copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
+            copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
+            if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
+            std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
+        }
+        return;
+    }
 
     for (i = 0; i < channelCount; i++) {
         tmpInSampleCount = inSampleCounts[i];
@@ -172,10 +188,10 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
 
     short currentSample;
     // loop through incoming samples and listen for the threshold hit
-    for (i = 0; i < inSampleCounts[lastSelectedChannel]; i++) {
-        currentSample = inSamples[lastSelectedChannel][i];
+    for (i = 0; i < inSampleCounts[selectedChannel]; i++) {
+        currentSample = inSamples[selectedChannel][i];
 
-        // heartbeat processing
+        // heartbeat processing Can't add incoming to buffer, it's larger then buffer
         if (processBpm && triggerType == TRIGGER_ON_THRESHOLD) {
             sampleCounter++;
             lastTriggerSampleCounter++;
@@ -188,12 +204,10 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         if (triggerType == TRIGGER_ON_THRESHOLD) { // triggering by a threshold value
             if (!inDeadPeriod) {
                 // check if we hit the threshold
-                if ((lastTriggeredValue[lastSelectedChannel] >= 0 &&
-                     currentSample > lastTriggeredValue[lastSelectedChannel] &&
-                     prevSample <= lastTriggeredValue[lastSelectedChannel]) ||
-                    (lastTriggeredValue[lastSelectedChannel] < 0 &&
-                     currentSample < lastTriggeredValue[lastSelectedChannel] &&
-                     prevSample >= lastTriggeredValue[lastSelectedChannel])) {
+                if ((triggerValue[selectedChannel] >= 0 && currentSample > triggerValue[selectedChannel] &&
+                     prevSample <= triggerValue[selectedChannel]) ||
+                    (triggerValue[selectedChannel] < 0 && currentSample < triggerValue[selectedChannel] &&
+                     prevSample >= triggerValue[selectedChannel])) {
                     // we hit the threshold, turn on dead period of 5ms
                     inDeadPeriod = true;
 
@@ -252,7 +266,7 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
         std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
     }
 
-    int *counts = new int[lastAveragedSampleCount]{0};
+    int *counts = new int[averagedSampleCount]{0};
     for (i = 0; i < channelCount; i++) {
         tmpSummedSampleCounts = summedSamplesCounts[i];
         tmpSummedSamples = summedSamples[i];
@@ -265,6 +279,7 @@ ThresholdProcessor::process(short **outSamples, short **inSamples, const int *in
             else
                 tmpAveragedSamples[j] = 0;
         std::copy(tmpAveragedSamples, tmpAveragedSamples + sampleCount, outSamples[i]);
+        outSamplesCounts[i] = sampleCount;
     }
     delete[] counts;
 }
@@ -289,7 +304,7 @@ void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, i
 
     tmpSamplesRowZero = tmpSamples[0];
     int copySamples = copyFromBuffer + copyFromIncoming;
-    bool shouldDeleteOldestRow = samplesForCalculationCount[channelIndex] >= lastAveragedSampleCount;
+    bool shouldDeleteOldestRow = samplesForCalculationCount[channelIndex] >= averagedSampleCount;
     int len = shouldDeleteOldestRow ? tmpSamplesCounts[0] : copySamples;
     int i;
     for (i = 0; i < len; i++) {
@@ -319,7 +334,7 @@ void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, i
     tmpSamplesCounts[samplesForCalculationCount[channelIndex]++] = copySamples;
 }
 
-void ThresholdProcessor::init() {
+void ThresholdProcessor::init(bool resetLocalBuffer) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
     float sampleRate = getSampleRate();
     int channelCount = getChannelCount();
@@ -327,7 +342,7 @@ void ThresholdProcessor::init() {
     sampleCount = static_cast<int>(sampleRate * MAX_PROCESSED_SECONDS);
     bufferSampleCount = sampleCount / 2;
 
-    buffer = new short *[channelCount];
+    if (resetLocalBuffer)buffer = new short *[channelCount];
     samplesForCalculationCount = new int[channelCount]{0};
     samplesForCalculationCounts = new int *[channelCount];
     samplesForCalculation = new short **[channelCount];
@@ -335,7 +350,7 @@ void ThresholdProcessor::init() {
     summedSamples = new int *[channelCount];
     averagedSamples = new short *[channelCount];
     for (int i = 0; i < channelCount; i++) {
-        buffer[i] = new short[bufferSampleCount];
+        if (resetLocalBuffer) buffer[i] = new short[bufferSampleCount];
         samplesForCalculationCounts[i] = new int[averagedSampleCount]{0};
         samplesForCalculation[i] = new short *[averagedSampleCount];
         summedSamplesCounts[i] = new int[sampleCount]{0};
@@ -356,10 +371,10 @@ void ThresholdProcessor::init() {
     sampleCounter = 0;
 }
 
-void ThresholdProcessor::clean(int channelCount) {
+void ThresholdProcessor::clean(int channelCount, bool resetLocalBuffer) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "clean()");
     for (int i = 0; i < channelCount; i++) {
-        delete[] buffer[i];
+        if (resetLocalBuffer) delete[] buffer[i];
         delete[] samplesForCalculationCounts[i];
         if (samplesForCalculationCount[i] > 0) {
             for (int j = 0; j < samplesForCalculationCount[i]; j++) {
@@ -371,7 +386,7 @@ void ThresholdProcessor::clean(int channelCount) {
         delete[] summedSamples[i];
         delete[] averagedSamples[i];
     }
-    delete[] buffer;
+    if (resetLocalBuffer) delete[] buffer;
     delete[] samplesForCalculationCount;
     delete[] samplesForCalculationCounts;
     delete[] samplesForCalculation;

@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
@@ -42,11 +41,9 @@ import com.backyardbrains.view.EmptyRecyclerView;
 import com.backyardbrains.view.EmptyView;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
@@ -169,18 +166,13 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
-        final File[] files = RecordingUtils.getRecordingsDirectory().listFiles(new FileFilter() {
-            @Override public boolean accept(File file) {
-                return !RecordingUtils.isEventsFile(file);
-            }
-        });
+        final File[] files =
+            RecordingUtils.getRecordingsDirectory().listFiles(file -> !RecordingUtils.isEventsFile(file));
         if (files != null) {
             if (files.length > 0) {
-                Arrays.sort(files, new Comparator<File>() {
-                    @Override public int compare(File file1, File file2) {
-                        //noinspection UseCompareMethod
-                        return Long.valueOf(file2.lastModified()).compareTo(file1.lastModified());
-                    }
+                Arrays.sort(files, (file1, file2) -> {
+                    //noinspection UseCompareMethod
+                    return Long.valueOf(file2.lastModified()).compareTo(file1.lastModified());
                 });
             }
 
@@ -207,7 +199,9 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         }
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        details += "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate()) : "UNKNOWN");
+        details +=
+            "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate(), waf.numChannels())
+                : "UNKNOWN");
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
 
@@ -243,16 +237,14 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
     // Starts analysis process for specified type and specified audio file
     private void startAnalysis(@NonNull final File file, @AnalysisType final int type) {
-        spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
-                if (exists) {
-                    if (file.exists()) {
-                        EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
-                    }
-                } else {
-                    BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
-                        getString(R.string.find_spikes_not_done_message));
+        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> {
+            if (exists) {
+                if (file.exists()) {
+                    EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
                 }
+            } else {
+                BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
+                    getString(R.string.find_spikes_not_done_message));
             }
         });
     }
@@ -281,58 +273,55 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         new AlertDialog.Builder(this.getActivity()).setTitle("Rename File")
             .setMessage("Please enter the new name for your file.")
             .setView(e)
-            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    if (f.exists()) {
-                        final String filename = e.getText().toString().trim();
-                        // validate the new file name
-                        if (ApacheCommonsLang3Utils.isBlank(filename)) {
-                            if (getContext() != null) {
-                                ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
-                            }
-                            return;
+            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                if (f.exists()) {
+                    final String filename = e.getText().toString().trim();
+                    // validate the new file name
+                    if (ApacheCommonsLang3Utils.isBlank(filename)) {
+                        if (getContext() != null) {
+                            ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
                         }
-                        final File newFile = new File(f.getParent(), filename + ".wav");
-                        // validate if file with specified name already exists
-                        if (!newFile.exists()) {
-                            // get events file before renaming
-                            final File ef = RecordingUtils.getEventFile(f);
-                            // rename the file
-                            if (f.renameTo(newFile)) {
-                                // we need to rename events file as well, if it exists
-                                if (ef != null) {
-                                    final File newEventsFile = RecordingUtils.createEventsFile(newFile);
-                                    if (!newEventsFile.exists()) {
-                                        // let's rename events file
-                                        if (!ef.renameTo(newEventsFile)) {
-                                            BYBUtils.showAlert(getActivity(), "Error",
-                                                getString(R.string.error_message_files_events_rename));
-                                            Crashlytics.logException(new Throwable(
-                                                "Renaming events file for the given recording " + f.getPath()
-                                                    + " failed"));
-                                        }
+                        return;
+                    }
+                    final File newFile = new File(f.getParent(), filename + ".wav");
+                    // validate if file with specified name already exists
+                    if (!newFile.exists()) {
+                        // get events file before renaming
+                        final File ef = RecordingUtils.getEventFile(f);
+                        // rename the file
+                        if (f.renameTo(newFile)) {
+                            // we need to rename events file as well, if it exists
+                            if (ef != null) {
+                                final File newEventsFile = RecordingUtils.createEventsFile(newFile);
+                                if (!newEventsFile.exists()) {
+                                    // let's rename events file
+                                    if (!ef.renameTo(newEventsFile)) {
+                                        BYBUtils.showAlert(getActivity(), "Error",
+                                            getString(R.string.error_message_files_events_rename));
+                                        Crashlytics.logException(new Throwable(
+                                            "Renaming events file for the given recording " + f.getPath() + " failed"));
                                     }
                                 }
-                            } else {
-                                if (getContext() != null) {
-                                    ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
-                                }
-                                Crashlytics.logException(new Throwable("Renaming file " + f.getPath() + " failed"));
                             }
                         } else {
                             if (getContext() != null) {
-                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_exists));
+                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
                             }
+                            Crashlytics.logException(new Throwable("Renaming file " + f.getPath() + " failed"));
                         }
                     } else {
                         if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_exists));
                         }
-                        Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
                     }
-                    // rescan the files
-                    rescanFiles();
+                } else {
+                    if (getContext() != null) {
+                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                    }
+                    Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
                 }
+                // rescan the files
+                rescanFiles();
             })
             .setNegativeButton(android.R.string.cancel, null)
             .create()
@@ -343,40 +332,38 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     void deleteFile(@NonNull final File f) {
         new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
             .setMessage("Are you sure you want to delete " + f.getName() + "?")
-            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    // validate if the specified file already exists
-                    if (f.exists()) {
-                        // get events file before renaming
-                        final File ef = RecordingUtils.getEventFile(f);
-                        // delete the file
-                        if (f.delete()) {
-                            // we need to delete events file as well, if it exists
-                            if (ef != null && ef.exists()) {
-                                // let's delete events file
-                                if (!ef.delete()) {
-                                    BYBUtils.showAlert(getActivity(), "Error",
-                                        getString(R.string.error_message_files_events_delete));
-                                    Crashlytics.logException(new Throwable(
-                                        "Deleting events file for the given recording " + f.getPath() + " failed"));
-                                } else {
-                                    // TODO: 10-Oct-18 DELETE DB DATA FOR THE DELETED FILE
-                                }
+            .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                // validate if the specified file already exists
+                if (f.exists()) {
+                    // get events file before renaming
+                    final File ef = RecordingUtils.getEventFile(f);
+                    // delete the file
+                    if (f.delete()) {
+                        // we need to delete events file as well, if it exists
+                        if (ef != null && ef.exists()) {
+                            // let's delete events file
+                            if (!ef.delete()) {
+                                BYBUtils.showAlert(getActivity(), "Error",
+                                    getString(R.string.error_message_files_events_delete));
+                                Crashlytics.logException(new Throwable(
+                                    "Deleting events file for the given recording " + f.getPath() + " failed"));
+                            } else {
+                                // TODO: 10-Oct-18 DELETE DB DATA FOR THE DELETED FILE
                             }
-                        } else {
-                            if (getContext() != null) {
-                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
-                            }
-                            Crashlytics.logException(new Throwable("Deleting file " + f.getPath() + " failed"));
                         }
                     } else {
                         if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
                         }
-                        Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
+                        Crashlytics.logException(new Throwable("Deleting file " + f.getPath() + " failed"));
                     }
-                    rescanFiles();
+                } else {
+                    if (getContext() != null) {
+                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                    }
+                    Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
                 }
+                rescanFiles();
             })
             .setNegativeButton(android.R.string.cancel, null)
             .create()
@@ -390,23 +377,16 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
         ((MainActivity) getActivity()).showButtons(true);
 
-        adapter = new FilesAdapter(getContext(), null, new FilesAdapter.Callback() {
-            @Override public void onClick(@NonNull File file) {
-                showRecordingOptions(file);
-            }
-        });
+        adapter = new FilesAdapter(getContext(), null, file -> showRecordingOptions(file));
         rvFiles.setAdapter(adapter);
         rvFiles.setEmptyView(emptyView);
         rvFiles.setHasFixedSize(true);
         rvFiles.setLayoutManager(new LinearLayoutManager(getContext()));
         rvFiles.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
 
-        btnPrivacyPolicy.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                Intent browserIntent =
-                    new Intent(Intent.ACTION_VIEW, Uri.parse("http://backyardbrains.com/about/privacy"));
-                getActivity().startActivity(browserIntent);
-            }
+        btnPrivacyPolicy.setOnClickListener(v -> {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://backyardbrains.com/about/privacy"));
+            getActivity().startActivity(browserIntent);
         });
     }
 
@@ -423,11 +403,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     // Opens available options for a selected recording. Options are different depending on whether spikes have already
     // been found or not.
     void showRecordingOptions(@NonNull final File file) {
-        spikesAnalysisExists(file.getAbsolutePath(), new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
-                showDialog(file, exists, trainCount > 1);
-            }
-        });
+        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> showDialog(file, exists, trainCount > 1));
     }
 
     // Creates and opens recording options dialog
@@ -436,69 +412,66 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
             .setCancelable(true)
             .setItems(canAnalyze ? (showCrossCorrelation ? R.array.options_recording
                     : R.array.options_recording_no_cross_correlation) : R.array.options_recording_no_spikes,
-                new DialogInterface.OnClickListener() {
-
-                    @Override public void onClick(DialogInterface dialog, int which) {
-                        switch (which) {
-                            case 0:
-                                fileDetails(file);
-                                break;
-                            case 1:
-                                playAudioFile(file);
-                                break;
-                            case 2:
-                                findSpikes(file);
-                                break;
-                            case 3:
-                                if (canAnalyze) {
-                                    autocorrelation(file);
-                                } else {
-                                    emailFile(file);
-                                }
-                                break;
-                            case 4:
-                                if (canAnalyze) {
-                                    ISI(file);
-                                } else {
-                                    renameFile(file);
-                                }
-                                break;
-                            case 5:
-                                if (canAnalyze) {
-                                    if (showCrossCorrelation) {
-                                        crossCorrelation(file);
-                                    } else {
-                                        averageSpike(file);
-                                    }
-                                } else {
-                                    deleteFile(file);
-                                }
-                                break;
-                            case 6:
+                (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            fileDetails(file);
+                            break;
+                        case 1:
+                            playAudioFile(file);
+                            break;
+                        case 2:
+                            findSpikes(file);
+                            break;
+                        case 3:
+                            if (canAnalyze) {
+                                autocorrelation(file);
+                            } else {
+                                emailFile(file);
+                            }
+                            break;
+                        case 4:
+                            if (canAnalyze) {
+                                ISI(file);
+                            } else {
+                                renameFile(file);
+                            }
+                            break;
+                        case 5:
+                            if (canAnalyze) {
                                 if (showCrossCorrelation) {
+                                    crossCorrelation(file);
+                                } else {
                                     averageSpike(file);
-                                } else {
-                                    emailFile(file);
                                 }
-                                break;
-                            case 7:
-                                if (showCrossCorrelation) {
-                                    emailFile(file);
-                                } else {
-                                    renameFile(file);
-                                }
-                                break;
-                            case 8:
-                                if (showCrossCorrelation) {
-                                    renameFile(file);
-                                } else {
-                                    deleteFile(file);
-                                }
-                                break;
-                            case 9:
+                            } else {
                                 deleteFile(file);
-                                break;
-                        }
+                            }
+                            break;
+                        case 6:
+                            if (showCrossCorrelation) {
+                                averageSpike(file);
+                            } else {
+                                emailFile(file);
+                            }
+                            break;
+                        case 7:
+                            if (showCrossCorrelation) {
+                                emailFile(file);
+                            } else {
+                                renameFile(file);
+                            }
+                            break;
+                        case 8:
+                            if (showCrossCorrelation) {
+                                renameFile(file);
+                            } else {
+                                deleteFile(file);
+                            }
+                            break;
+                        case 9:
+                            deleteFile(file);
+                            break;
                     }
                 })
             .create()
@@ -557,10 +530,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                 super(view);
                 ButterKnife.bind(this, view);
 
-                view.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        if (callback != null) callback.onClick(file);
-                    }
+                view.setOnClickListener(v -> {
+                    if (callback != null) callback.onClick(file);
                 });
             }
 
@@ -573,7 +544,9 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                     waf = new WavAudioFile(file);
                 } catch (IOException ignored) {
                 }
-                tvFileSize.setText(waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate()) : "UNKNOWN");
+                tvFileSize.setText(
+                    waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate(), waf.numChannels())
+                        : "UNKNOWN");
                 date.setTime(file.lastModified());
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));
             }

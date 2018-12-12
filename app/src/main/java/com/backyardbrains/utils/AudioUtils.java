@@ -24,6 +24,10 @@ public class AudioUtils {
      */
     public static final int DEFAULT_SAMPLE_RATE = 44100;
     /**
+     * Default channel count that will be used for input audio source.
+     */
+    public static final int DEFAULT_CHANNEL_COUNT = 1;
+    /**
      * Default channel configuration that will be used for input audio source.
      */
     public static final int DEFAULT_CHANNEL_MASK = AudioFormat.CHANNEL_IN_MONO;
@@ -56,16 +60,16 @@ public class AudioUtils {
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(DEFAULT_ENCODING)
                     .setSampleRate(sampleRate)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .setChannelMask(DEFAULT_CHANNEL_MASK)
                     .build())
                 .setBufferSizeInBytes(getOutBufferSize(sampleRate))
                 .build();
         } else {
             //noinspection deprecation
-            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, getOutBufferSize(sampleRate), AudioTrack.MODE_STREAM);
+            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, DEFAULT_CHANNEL_MASK, DEFAULT_ENCODING,
+                getOutBufferSize(sampleRate), AudioTrack.MODE_STREAM);
         }
     }
 
@@ -74,8 +78,7 @@ public class AudioUtils {
      */
     public static int getOutBufferSize(int sampleRate) {
         // out buffer size
-        final int outBufferSize =
-            AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        final int outBufferSize = AudioTrack.getMinBufferSize(sampleRate, DEFAULT_CHANNEL_MASK, DEFAULT_CHANNEL_MASK);
         return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
             : outBufferSize * BUFFER_SIZE_FACTOR;
     }

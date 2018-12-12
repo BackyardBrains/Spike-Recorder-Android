@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 import android.util.SparseArray;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
@@ -38,14 +39,12 @@ import org.greenrobot.essentials.io.CircularByteBuffer;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class RecordingSaver {
+public class Recorder {
 
-    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(RecordingSaver.class);
+    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(Recorder.class);
 
     @SuppressWarnings("WeakerAccess") static final String EVENT_MARKERS_FILE_HEADER_CONTENT =
         "# Marker IDs can be arbitrary strings.\n# Marker ID,\tTime (in s)";
-
-    @SuppressWarnings("WeakerAccess") WriteThread writeThread;
 
     private class WriteThread extends Thread {
 
@@ -53,19 +52,26 @@ public class RecordingSaver {
         private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
         private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
+        // Sample rate of the recorded file
+        private final int sampleRate;
+        // Number of channels the recorded file should have
+        private final int channelCount;
+
         private final File audioFile;
         private final OutputStream outputStream;
         private final File eventsFile;
-        private final AtomicBoolean working = new AtomicBoolean(true);
+        private final ByteBuffer bb;
 
-        private int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
         private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
         private SparseArray<String> events = new SparseArray<>();
         private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
         private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
-        private ByteBuffer bb;
+        private short[] samples = new short[BUFFER_SIZE_IN_SAMPLES];
 
-        WriteThread() throws IOException {
+        WriteThread(int sampleRate, int channelCount) throws IOException {
+            this.sampleRate = sampleRate;
+            this.channelCount = channelCount;
+
             // create recording file
             audioFile = RecordingUtils.createRecordingFile();
             // and stream to write sample to
@@ -111,8 +117,9 @@ public class RecordingSaver {
                 int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
 
                 // save samples to buffer as bytes
-                bb.asShortBuffer().put(samplesWithEvents.samples, 0, samplesWithEvents.sampleCount);
-                buffer.put(bb.array(), 0, samplesWithEvents.sampleCount * 2);
+                int sampleCount = JniUtils.interleaveSignal(samples, samplesWithEvents);
+                bb.asShortBuffer().put(samples, 0, sampleCount);
+                buffer.put(bb.array(), 0, sampleCount * 2);
 
                 // save events
                 String event;
@@ -124,16 +131,6 @@ public class RecordingSaver {
         }
 
         /**
-         * Sets sample rate of the currently recorded audio file.
-         */
-        void setSampleRate(int sampleRate) {
-            if (this.sampleRate == sampleRate) return;
-            if (sampleRate <= 0) return; // sample rate need to be positive
-
-            this.sampleRate = sampleRate;
-        }
-
-        /**
          * Returns current length of the recorded file.
          *
          * @return Length of the recorded file in bytes.
@@ -142,19 +139,12 @@ public class RecordingSaver {
             return audioFile.length();
         }
 
-        /**
-         * Initiates ending of recording the audio.
-         */
-        void stopRecording() {
-            working.set(false);
-        }
-
         // Closes the audio stream and saves the audio file to storage
         private void saveFiles() {
             try {
                 outputStream.flush();
                 outputStream.close();
-                WavAudioFile.save(audioFile, sampleRate);
+                WavAudioFile.save(audioFile, sampleRate, channelCount);
 
                 if (events.size() > 0) saveEventFile();
 
@@ -194,9 +184,14 @@ public class RecordingSaver {
         }
     }
 
-    public RecordingSaver() throws IOException {
+    // Audio recording thread
+    @SuppressWarnings("WeakerAccess") WriteThread writeThread;
+    // Flag that indicates whether writing thread should be running
+    @SuppressWarnings("WeakerAccess") final AtomicBoolean working = new AtomicBoolean(true);
+
+    public Recorder(int sampleRate, int channelCount) throws IOException {
         // start sample writing thread
-        writeThread = new WriteThread();
+        writeThread = new WriteThread(sampleRate, channelCount);
         writeThread.start();
     }
 
@@ -205,13 +200,6 @@ public class RecordingSaver {
      */
     public void writeAudioWithEvents(@NonNull SamplesWithEvents samplesWithEvents) {
         if (writeThread != null) writeThread.writeData(samplesWithEvents);
-    }
-
-    /**
-     * Sets the sample rate tha will be used when saving WAV file.
-     */
-    public void setSampleRate(int sampleRate) {
-        if (writeThread != null) writeThread.setSampleRate(sampleRate);
     }
 
     /**
@@ -225,6 +213,6 @@ public class RecordingSaver {
      * Requests the recording to stop.
      */
     public void requestStop() {
-        if (writeThread != null) writeThread.stopRecording();
+        working.set(false);
     }
 }

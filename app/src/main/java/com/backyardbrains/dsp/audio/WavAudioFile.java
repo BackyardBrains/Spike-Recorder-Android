@@ -1,7 +1,7 @@
 package com.backyardbrains.dsp.audio;
 
-import android.media.AudioFormat;
 import android.support.annotation.NonNull;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.ByteArrayInputStream;
@@ -37,7 +37,7 @@ public class WavAudioFile implements AudioFile {
      *
      * @throws IOException
      */
-    public static boolean save(@NonNull File file, int sampleRate) throws IOException {
+    public static boolean save(@NonNull File file, int sampleRate, int channelCount) throws IOException {
         // create RandomAccessFile
         final RandomAccessFile raf;
         try {
@@ -49,8 +49,7 @@ public class WavAudioFile implements AudioFile {
 
         try {
             raf.seek(0);
-            raf.write(WavUtils.writeHeader(file.length(), sampleRate, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT));
+            raf.write(WavUtils.writeHeader(file.length(), sampleRate, channelCount, AudioUtils.DEFAULT_ENCODING));
             raf.close();
         } catch (IOException e) {
             Crashlytics.logException(e);

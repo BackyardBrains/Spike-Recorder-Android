@@ -26,7 +26,7 @@ public class BaseFragment extends Fragment {
         /**
          * Reference to active {@link ProcessingService}.
          */
-        @Nullable ProcessingService audioService();
+        @Nullable ProcessingService processingService();
 
         /**
          * Reference to active {@link AnalysisManager}.
@@ -63,7 +63,7 @@ public class BaseFragment extends Fragment {
     }
 
     @Nullable protected ProcessingService getAudioService() {
-        return provider != null ? provider.audioService() : null;
+        return provider != null ? provider.processingService() : null;
     }
 
     @Nullable protected AnalysisManager getAnalysisManager() {

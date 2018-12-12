@@ -7,10 +7,12 @@ public class AudioRecordingProgressEvent {
 
     private final long progress;
     private final int sampleRate;
+    private final int channelCount;
 
-    public AudioRecordingProgressEvent(long progress, int sampleRate) {
+    public AudioRecordingProgressEvent(long progress, int sampleRate, int channelCount) {
         this.progress = progress;
         this.sampleRate = sampleRate;
+        this.channelCount = channelCount;
     }
 
     public long getProgress() {
@@ -19,5 +21,9 @@ public class AudioRecordingProgressEvent {
 
     public int getSampleRate() {
         return sampleRate;
+    }
+
+    public int getChannelCount() {
+        return channelCount;
     }
 }

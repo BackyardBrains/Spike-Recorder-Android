@@ -25,7 +25,7 @@ import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
-import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.ViewUtils;
 import org.greenrobot.eventbus.EventBus;
@@ -60,8 +60,7 @@ public class AnalysisFragment extends BaseFragment {
      *
      * @return A new instance of fragment {@link AnalysisFragment}.
      */
-    public static AnalysisFragment newInstance(@Nullable String filePath,
-        @AnalysisType int analysisType) {
+    public static AnalysisFragment newInstance(@Nullable String filePath, @AnalysisType int analysisType) {
         final AnalysisFragment fragment = new AnalysisFragment();
         final Bundle args = new Bundle();
         args.putString(ARG_FILE_PATH, filePath);
@@ -141,7 +140,7 @@ public class AnalysisFragment extends BaseFragment {
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onRedrawAudioAnalysisEvent(RedrawAudioAnalysisEvent event) {
+    public void onRedrawAnalysisGraphEvent(RedrawAnalysisGraphEvent event) {
         redraw();
     }
 

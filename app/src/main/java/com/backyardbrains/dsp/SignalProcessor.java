@@ -3,15 +3,18 @@ package com.backyardbrains.dsp;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-class SignalProcessor implements SignalSource.Processor {
+public class SignalProcessor implements SignalSource.Processor {
+
+    private static final String TAG = makeLogTag(SignalProcessor.class);
 
     // Maximum time that should be processed when processing audio signal
     private static final float MAX_AUDIO_PROCESSING_TIME = 6f; // 6 seconds
@@ -19,24 +22,34 @@ class SignalProcessor implements SignalSource.Processor {
     private static final float MAX_SAMPLE_STREAM_PROCESSING_TIME = 12f; // 12 seconds
     // Maximum time that should be processed when averaging signal
     private static final float MAX_THRESHOLD_PROCESSING_TIME = 2.4f; // 2.4 seconds
+
     // Default samples buffer size
-    private static final int DEFAULT_SAMPLE_BUFFER_SIZE =
+    public static final int DEFAULT_SAMPLE_BUFFER_SIZE =
         (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
+    // Default averaged samples buffer size
+    public static final int DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE =
+        (int) (MAX_THRESHOLD_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
     // Default channel count
-    private static final int DEFAULT_CHANNEL_COUNT = 1;
+    public static final int DEFAULT_CHANNEL_COUNT = AudioUtils.DEFAULT_CHANNEL_COUNT;
+    // Default frame size (samples per channel)
+    public static final int DEFAULT_FRAME_SIZE =
+        (int) Math.floor((float) DEFAULT_SAMPLE_BUFFER_SIZE / DEFAULT_CHANNEL_COUNT);
+
+    private static int processedSamplesCount = (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
+    private static int processedAveragedSamplesCount =
+        (int) (MAX_THRESHOLD_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
+    private static int maxProcessedSamplesCount = processedSamplesCount;
+    // Lock used when reading/writing samples and events
+    private static final Object lock = new Object();
 
     /**
      * Interface definition for a callback to be invoked after incoming data has been processed.
      */
     interface OnProcessingListener {
         void onDataProcessed(@NonNull SamplesWithEvents samplesWithEvents);
-
-        void onDataSampleRateChange(int sampleRate);
-
-        void onDataChannelCountChange(int channelCount);
     }
 
-    private final OnProcessingListener listener;
+    private OnProcessingListener listener;
 
     /**
      * Background thread that processes the data from the local buffer filled by sample source and passes it to {@link
@@ -61,27 +74,28 @@ class SignalProcessor implements SignalSource.Processor {
     private ProcessingThread processingThread;
     @SuppressWarnings("WeakerAccess") AtomicBoolean working = new AtomicBoolean();
     @SuppressWarnings("WeakerAccess") AtomicBoolean paused = new AtomicBoolean();
-    @SuppressWarnings("WeakerAccess") CircularByteBuffer ringBuffer;
-    @SuppressWarnings("WeakerAccess") byte[] buffer;
-    SamplesWithEvents samplesWithEvents = new SamplesWithEvents(DEFAULT_CHANNEL_COUNT, DEFAULT_SAMPLE_BUFFER_SIZE);
+    @SuppressWarnings("WeakerAccess") final CircularByteBuffer ringBuffer =
+        new CircularByteBuffer(DEFAULT_SAMPLE_BUFFER_SIZE * 2);
+    @SuppressWarnings("WeakerAccess") final byte[] buffer = new byte[DEFAULT_SAMPLE_BUFFER_SIZE * 2];
+
+    private SamplesWithEvents samplesWithEvents = new SamplesWithEvents(DEFAULT_CHANNEL_COUNT, DEFAULT_FRAME_SIZE);
+    private SamplesWithEvents averagedSamplesWithEvents =
+        new SamplesWithEvents(DEFAULT_CHANNEL_COUNT, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
 
     // Reference to the data manager that stores and processes the data
     private ProcessingBuffer processingBuffer;
 
+    // Source if the incoming signal
     private AbstractSignalSource signalSource;
 
     // Whether incoming signal should be averaged or not
     private boolean signalAveraging;
-    // 0-based index of the selected channel
-    private int selectedChannel;
 
-    SignalProcessor(@Nullable OnProcessingListener onProcessingListener) {
-        this.listener = onProcessingListener;
+    SignalProcessor(@Nullable OnProcessingListener listener) {
+        this.listener = listener;
 
         processingThread = new ProcessingThread();
         processingBuffer = ProcessingBuffer.get();
-
-        setBufferSizes(AudioUtils.DEFAULT_SAMPLE_RATE);
     }
 
     /**
@@ -102,9 +116,14 @@ class SignalProcessor implements SignalSource.Processor {
     @Override public void onSampleRateChanged(int sampleRate) {
         if (sampleRate <= 0) return; // sample rate needs to be positive
 
-        setBufferSizes(sampleRate);
+        // calculate max number of processed samples
+        calculateMaxNumberOfProcessedSamples(sampleRate);
 
-        if (listener != null) listener.onDataSampleRateChange(sampleRate);
+        // pass sample rate to processing buffer
+        if (processingBuffer != null) processingBuffer.setSampleRate(sampleRate);
+
+        // pass sample rate to native code
+        JniUtils.setSampleRate(sampleRate);
     }
 
     /**
@@ -115,9 +134,56 @@ class SignalProcessor implements SignalSource.Processor {
     @Override public void onChannelCountChanged(int channelCount) {
         if (channelCount < 1) return; // channel count needs to be greater or equal to 1
 
-        samplesWithEvents = new SamplesWithEvents(channelCount, DEFAULT_SAMPLE_BUFFER_SIZE);
+        // pass channel count to processing buffer
+        if (processingBuffer != null) processingBuffer.setChannelCount(channelCount);
 
-        if (listener != null) listener.onDataChannelCountChange(channelCount);
+        synchronized (lock) {
+            // reset temp buffer for samples and events
+            samplesWithEvents = new SamplesWithEvents(channelCount, DEFAULT_FRAME_SIZE);
+            // reset temp buffer for threshold samples and events
+            averagedSamplesWithEvents = new SamplesWithEvents(channelCount, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
+        }
+
+        // pass channel count to native code
+        JniUtils.setChannelCount(channelCount);
+    }
+
+    /**
+     * Max number of samples that can be processed by the current signal source.
+     */
+    public static int getProcessedSamplesCount() {
+        return processedSamplesCount;
+    }
+
+    /**
+     * Max number of averaged samples that can be processed by the current signal source.
+     */
+    public static int getProcessedAveragedSamplesCount() {
+        return processedAveragedSamplesCount;
+    }
+
+    /**
+     * Max number of samples that can be processed by the current signal source. The difference between this method and
+     * {@link #getProcessedSamplesCount()} is that this method takes into account whether signal is being averaged or
+     * not.
+     */
+    public static int getMaxProcessedSamplesCount() {
+        return maxProcessedSamplesCount;
+    }
+
+    /**
+     * Returns sample rate for the current signal source.
+     */
+    int getSampleRate() {
+        return signalSource != null ? signalSource.getSampleRate() : AudioUtils.DEFAULT_SAMPLE_RATE;
+    }
+
+    /**
+     * Returns number of channel of the current signal source.
+     */
+
+    int getChannelCount() {
+        return signalSource != null ? signalSource.getChannelCount() : DEFAULT_CHANNEL_COUNT;
     }
 
     /**
@@ -127,6 +193,8 @@ class SignalProcessor implements SignalSource.Processor {
         signalSource.setProcessor(this);
 
         this.signalSource = signalSource;
+
+        if (processingBuffer != null) processingBuffer.clearBuffers();
 
         // let's notify any interested party of the data source initial sample rate and channel count
         onSampleRateChanged(signalSource.getSampleRate());
@@ -138,13 +206,9 @@ class SignalProcessor implements SignalSource.Processor {
      */
     void setSignalAveraging(boolean signalAveraging) {
         this.signalAveraging = signalAveraging;
-    }
 
-    /**
-     * Sets index of the currently selected channel.
-     */
-    void setSelectedChannel(int selectedChannel) {
-        this.selectedChannel = selectedChannel;
+        // calculate max number of processed samples
+        calculateMaxNumberOfProcessedSamples(getSampleRate());
     }
 
     /**
@@ -178,58 +242,43 @@ class SignalProcessor implements SignalSource.Processor {
         processingBuffer = null;
     }
 
-    private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
-        .sessions(10)
-        .measuresPerSession(200)
-        .logBySession(false)
-        .listener(() -> {
-            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        });
+    //private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
+    //    .sessions(10)
+    //    .measuresPerSession(200)
+    //    .logBySession(false)
+    //    .listener(() -> {
+    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //    });
 
-    private final Benchmark benchmarkT =
-        new Benchmark("THRESHOLD").warmUp(5).sessions(10).measuresPerSession(10).logBySession(false).listener(() -> {
-            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        });
+    //private final Benchmark benchmarkT =
+    //    new Benchmark("THRESHOLD").warmUp(10).sessions(10).measuresPerSession(10).logBySession(false).listener(() -> {
+    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //    });
 
     @SuppressWarnings("WeakerAccess") void processData(@NonNull byte[] buffer, int length) {
-        //benchmark.start();
-        signalSource.processIncomingData(buffer, length, samplesWithEvents);
+        synchronized (lock) {
+            //benchmark.start();
+            signalSource.processIncomingData(samplesWithEvents, buffer, length);
+            //benchmark.end();
+            //benchmarkT.start();
+            JniUtils.processThreshold(averagedSamplesWithEvents, samplesWithEvents, signalAveraging);
+            //benchmarkT.end();
 
-        if (listener != null) {
-            // forward received samples to Processor
-            synchronized (SignalProcessor.class) {
-                listener.onDataProcessed(samplesWithEvents);
-            }
-        }
-
-        // add to buffer
-        if (processingBuffer != null) processingBuffer.addToSampleBuffer(samplesWithEvents);
-        //benchmark.end();
-
-        // average signal if necessary
-        if (signalAveraging) {
-            benchmarkT.start();
-            JniUtils.processThreshold(samplesWithEvents);
-            benchmarkT.end();
+            // forward received samples to Processing Service
+            if (listener != null) listener.onDataProcessed(samplesWithEvents);
 
             // add to buffer
-            if (processingBuffer != null) processingBuffer.addToAveragedSamplesBuffer(samplesWithEvents);
+            if (processingBuffer != null) processingBuffer.add(samplesWithEvents, averagedSamplesWithEvents);
         }
     }
 
-    // Sets buffer sizes to global and local processing buffers
-    private void setBufferSizes(int sampleRate) {
-        if (processingBuffer != null) {
-            int bufferSize =
-                signalSource != null && signalSource.isUsb() ? (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate)
-                    : (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
-            processingBuffer.setSampleBufferSize(bufferSize);
-            processingBuffer.setAveragedSamplesBufferSize((int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate));
-
-            bufferSize = signalAveraging ? processingBuffer.getAveragedSamplesBufferSize()
-                : processingBuffer.getSampleBufferSize();
-            ringBuffer = new CircularByteBuffer(bufferSize * 2);
-            buffer = new byte[bufferSize * 2];
-        }
+    // Set max number of samples that can be processed usually and in threshold
+    private void calculateMaxNumberOfProcessedSamples(int sampleRate) {
+        processedSamplesCount =
+            signalSource != null && signalSource.isUsb() ? (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate)
+                : (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
+        processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
+        // this is queried by renderer to know how big drawing surface should be
+        maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
     }
 }

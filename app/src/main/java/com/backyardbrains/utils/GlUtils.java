@@ -7,8 +7,9 @@ import static com.backyardbrains.utils.AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
 
 public class GlUtils {
 
-    public static final int DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000;
-    public static final int DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000;
+    public static final float DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000f;
+    public static final float DEFAULT_GL_WINDOW_VERTICAL_SIZE = 10000f;
+    public static final float DEFAULT_WAVEFORM_SCALE_FACTOR = 20f;
     public static final float DEFAULT_MIN_DETECTED_PCM_VALUE = -5000000f;
 
     public static final int MIN_VALUE = 0;

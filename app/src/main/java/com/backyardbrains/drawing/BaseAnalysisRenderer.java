@@ -2,9 +2,9 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
-import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper;
-import com.backyardbrains.events.RedrawAudioAnalysisEvent;
+import com.backyardbrains.events.RedrawAnalysisGraphEvent;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -20,9 +20,10 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
     private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
     static final float MARGIN = 30f;
 
+    final GlGraphThumbTouchHelper glGraphThumbTouchHelper = new GlGraphThumbTouchHelper();
+
     private int surfaceWidth;
     private int surfaceHeight;
-    GlGraphThumbTouchHelper thumbTouchHelper = new GlGraphThumbTouchHelper();
 
     private float maxGraphThumbSize;
 
@@ -66,8 +67,8 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
         this.surfaceWidth = width;
         this.surfaceHeight = height;
 
-        thumbTouchHelper.resetGraphThumbs();
-        thumbTouchHelper.setSurfaceHeight(surfaceHeight);
+        glGraphThumbTouchHelper.resetTouchableAreas();
+        glGraphThumbTouchHelper.setSurfaceHeight(surfaceHeight);
 
         gl.glViewport(0, 0, width, height);
 
@@ -82,16 +83,11 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        //long start = System.currentTimeMillis();
-
         final int surfaceWidth = this.surfaceWidth;
         final int surfaceHeight = this.surfaceHeight;
 
         GlUtils.glClear(gl);
         draw(gl, surfaceWidth, surfaceHeight);
-
-        //LOGD(TAG, "" + (System.currentTimeMillis() - start));
-        //LOGD(TAG, "================================================");
     }
 
     abstract protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight);
@@ -100,9 +96,11 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
     //  TouchEnabledRenderer INTERFACE IMPLEMENTATIONS
     //=================================================
 
-    @Override public void onTouchEvent(MotionEvent event) {
-        boolean graphThumbTouched = thumbTouchHelper.onTouch(event);
-        if (graphThumbTouched) EventBus.getDefault().post(new RedrawAudioAnalysisEvent());
+    @Override public boolean onTouchEvent(MotionEvent event) {
+        boolean graphThumbTouched = glGraphThumbTouchHelper.onTouch(event);
+        if (graphThumbTouched) EventBus.getDefault().post(new RedrawAnalysisGraphEvent());
+
+        return graphThumbTouched;
     }
 
     /**

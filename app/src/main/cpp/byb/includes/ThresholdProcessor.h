@@ -17,11 +17,11 @@ namespace processing {
 
 class ThresholdProcessor : public Processor {
 public:
+    static constexpr int DEFAULT_SAMPLE_COUNT = static_cast<const int>(2.4f * 44100.0f);
+
     ThresholdProcessor(OnHeartbeatListener *listener);
 
     ~ThresholdProcessor();
-
-    int getSampleCount();
 
     // Returns the number of sample sequences that should be summed to get the average spike value.
     int getAveragedSampleCount();
@@ -33,7 +33,7 @@ public:
     void setSelectedChannel(int selectedChannel);
 
     // Sets the sample frequency threshold.
-    void setThreshold(int threshold);
+    void setThreshold(float threshold);
 
     // Resets all the fields used for calculations when next batch comes
     void resetThreshold();
@@ -49,8 +49,8 @@ public:
     // Starts/stops processing heartbeat
     void setBpmProcessing(bool processBpm);
 
-    void process(short **outSamples, short **inSamples, const int *inSampleCounts,
-                 const int *inEventIndices, const int *inEvents, const int inEventCount);
+    void process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
+                     const int *inEventIndices, const int *inEvents, const int inEventCount, const bool averageSamples);
 
 private:
     static const char *TAG;
@@ -73,10 +73,10 @@ private:
     void prepareNewSamples(const short *inSamples, int length, int channelIndex, int sampleIndex);
 
     // Creates and initializes all the fields used for calculations
-    void init();
+    void init(bool resetLocalBuffer);
 
     // Deletes all array fields used for calculations
-    void clean(int channelCount);
+    void clean(int channelCount, bool resetLocalBuffer);
 
     // Resets all local variables used for the heartbeat processing
     void resetBpm();
@@ -88,9 +88,9 @@ private:
     // Used to check whether channel has changed since the last incoming sample batch
     int lastSelectedChannel = 0;
     // Threshold value that triggers the averaging
-    int *triggerValue;
+    float *triggerValue;
     // Used to check whether threshold trigger value has changed since the last incoming sample batch
-    int *lastTriggeredValue;
+    float *lastTriggeredValue;
     // Number of samples that needs to be summed to get the averaged sample
     int averagedSampleCount = DEFAULT_AVERAGED_SAMPLE_COUNT;
     // Used to check whether number of averages samples has changed since the last incoming sample batch

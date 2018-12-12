@@ -12,6 +12,8 @@ public class JniUtils {
 
     public static native void testPassByRef(short[] test);
 
+    public static native int interleaveSignal(short[] out, SamplesWithEvents in);
+
     public static native void setSampleRate(int sampleRate);
 
     public static native void setChannelCount(int channelCount);
@@ -34,7 +36,7 @@ public class JniUtils {
 
     public static native void setSelectedChannel(int selectedChannel);
 
-    public static native void setThreshold(int threshold);
+    public static native void setThreshold(float threshold);
 
     public static native void resetThreshold();
 
@@ -48,13 +50,13 @@ public class JniUtils {
 
     public static native void setBpmProcessing(boolean processBpm);
 
-    public static native void processThreshold(SamplesWithEvents samplesWithEvents);
+    public static native void processThreshold(SamplesWithEvents out, SamplesWithEvents in, boolean averageSamples);
 
-    public static native void prepareForDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
-        int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
+    public static native void prepareForDrawing(SamplesWithEvents out, short[][] samples, int frameCount,
+        int[] eventIndices, int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
 
-    public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[] samples, int[] eventIndices,
-        int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
+    public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[][] samples, int sampleCount,
+        int[] eventIndices, int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
 
     public static native int[] findSpikes(String filePath, short[] valuesPos, int[] indicesPos, float[] timesPos,
         short[] valuesNeg, int[] indicesNeg, float[] timesNeg, int maxSpikes);

@@ -45,16 +45,12 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(BUFFER_SIZE);
+        super(SampleStreamUtils.SAMPLE_RATE, 1, BUFFER_SIZE);
 
         this.device = device;
 
-        // check if can determine board type right away (through VID and PID)
+        // check if we can determine board type right away (through VID and PID)
         setHardwareType(getHardwareType(device));
-
-        // set initial max sample rate and number of channels
-        setSampleRate(SampleStreamUtils.SAMPLE_RATE);
-        setChannelCount(1);
     }
 
     /**
@@ -125,8 +121,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * {@inheritDoc}
      */
-    @Override public final void processIncomingData(byte[] inData, int inDataLength,
-        @NonNull SamplesWithEvents outData) {
+    @Override public final void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
         //benchmark.start();
         JniUtils.processSampleStream(outData, inData, inDataLength, this);
         //benchmark.end();

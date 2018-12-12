@@ -11,11 +11,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
-import com.backyardbrains.events.ChannelCountChangeEvent;
-import com.backyardbrains.events.SampleRateChangeEvent;
 import com.backyardbrains.view.WaveformLayout;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -42,25 +38,18 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     protected class ViewableTimeSpanUpdateRunnable implements Runnable {
 
         private int sampleRate;
-        private int drawSurfaceWidth;
-        private int drawSurfaceHeight;
+        private float drawSurfaceWidth;
 
         @Override public void run() {
-            if (getAudioService() != null) setMilliseconds(drawSurfaceWidth / (float) sampleRate * 1000 / 2);
-
-            //setMillivolts((float) drawSurfaceHeight / 4.0f / 24.5f / 1000 * BYBConstants.millivoltScale);
+            if (getAudioService() != null) setMilliseconds(drawSurfaceWidth / sampleRate * 1000f * .5f);
         }
 
         void setSampleRate(int sampleRate) {
             this.sampleRate = sampleRate;
         }
 
-        void setDrawSurfaceWidth(int drawSurfaceWidth) {
+        void setDrawSurfaceWidth(float drawSurfaceWidth) {
             this.drawSurfaceWidth = drawSurfaceWidth;
-        }
-
-        void setDrawSurfaceHeight(int drawSurfaceHeight) {
-            this.drawSurfaceHeight = drawSurfaceHeight;
         }
     }
 
@@ -142,22 +131,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     }
 
     //==============================================
-    //  EVENT BUS
-    //==============================================
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public final void onSampleRateChangeEvent(SampleRateChangeEvent event) {
-        LOGD(TAG, "onSampleRateChangeEvent(" + event.getSampleRate() + ")");
-        if (getRenderer() != null) getRenderer().setSampleRate(event.getSampleRate());
-    }
-
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
-    public final void onChannelCountChangeEvent(ChannelCountChangeEvent event) {
-        LOGD(TAG, "onChannelCountChangeEvent(" + event.getChannelCount() + ")");
-        //if (getRenderer() != null) getRenderer().setChannelCount(event.getChannelCount());
-    }
-
-    //==============================================
     //  PRIVATE METHODS
     //==============================================
 
@@ -167,10 +140,8 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         waveform.setRenderer(renderer);
 
         if (isBackable()) {
-            ibtnBack.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    if (getActivity() != null) getActivity().onBackPressed();
-                }
+            ibtnBack.setOnClickListener(v -> {
+                if (getActivity() != null) getActivity().onBackPressed();
             });
         } else {
             ibtnBack.setVisibility(View.GONE);

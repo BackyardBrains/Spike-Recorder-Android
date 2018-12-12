@@ -2,10 +2,10 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.GlUtils;
 import java.text.DecimalFormat;
@@ -72,7 +72,7 @@ public class ISIRenderer extends BaseAnalysisRenderer {
                     y = portraitOrientation ? MARGIN : (float) surfaceHeight - (MARGIN * (i + 1) + thumbSize * (i + 1));
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
-                    thumbTouchHelper.registerGraphThumb(new Rect(x, y, thumbSize, thumbSize));
+                    glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
                     glBarGraphThumb.draw(gl, x, y, w, h, isiAnalysis[i], GlUtils.SPIKE_TRAIN_COLORS[i],
                         SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
@@ -81,7 +81,7 @@ public class ISIRenderer extends BaseAnalysisRenderer {
                 w = portraitOrientation ? surfaceWidth - 2 * MARGIN : surfaceWidth - 3 * MARGIN - thumbSize;
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
-                int selected = thumbTouchHelper.getSelectedGraphThumb();
+                int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
                 glBarGraph.draw(gl, x, y, w, h, isiAnalysis[selected], H_GRAPH_AXIS_VALUES,
                     GlUtils.SPIKE_TRAIN_COLORS[selected]);
             }
