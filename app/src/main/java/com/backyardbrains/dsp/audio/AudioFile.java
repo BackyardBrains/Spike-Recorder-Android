@@ -15,7 +15,7 @@ public interface AudioFile {
     /**
      * Number of channels.
      */
-    int numChannels();
+    int channelCount();
 
     /**
      * Audio sample rate.

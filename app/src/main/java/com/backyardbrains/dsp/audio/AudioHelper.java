@@ -137,7 +137,7 @@ public class AudioHelper {
         activeDevice = routedDevice;
 
         int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
-        int channelMask = AudioUtils.DEFAULT_CHANNEL_MASK;
+        int channelMask = AudioUtils.DEFAULT_CHANNEL_IN_MASK;
         int encoding = AudioUtils.DEFAULT_ENCODING;
         int len = routedDevice.getSampleRates().length;
         int[] values = routedDevice.getSampleRates();

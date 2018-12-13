@@ -30,7 +30,7 @@ public class AudioUtils {
     /**
      * Default channel configuration that will be used for input audio source.
      */
-    public static final int DEFAULT_CHANNEL_MASK = AudioFormat.CHANNEL_IN_MONO;
+    public static final int DEFAULT_CHANNEL_IN_MASK = AudioFormat.CHANNEL_IN_MONO;
     /**
      * Default audio format that will be used for input audio source.
      */
@@ -44,17 +44,20 @@ public class AudioUtils {
 
     static {
         // in buffer size
-        int intBufferSize = AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_MASK, DEFAULT_ENCODING);
+        int inBufferSize = AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING);
         DEFAULT_IN_BUFFER_SIZE =
-            intBufferSize == AudioRecord.ERROR || intBufferSize == AudioRecord.ERROR_BAD_VALUE ? DEFAULT_SAMPLE_RATE * 2
-                : intBufferSize * BUFFER_SIZE_FACTOR;
+            inBufferSize == AudioRecord.ERROR || inBufferSize == AudioRecord.ERROR_BAD_VALUE ? DEFAULT_SAMPLE_RATE * 2
+                : inBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**
      * Creates and returns configured {@link AudioTrack} for playing recorded audio files.
      */
-    public static AudioTrack createAudioTrack(int sampleRate) {
+    public static AudioTrack createAudioTrack(int sampleRate, int channelCount) {
         LOGD(TAG, "Create new AudioTrack");
+
+        int outBufferSize = getOutBufferSize(sampleRate, channelCount);
+        int channelMask = getChannelMask(channelCount);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
@@ -62,29 +65,31 @@ public class AudioUtils {
                     .build())
                 .setAudioFormat(new AudioFormat.Builder().setEncoding(DEFAULT_ENCODING)
                     .setSampleRate(sampleRate)
-                    .setChannelMask(DEFAULT_CHANNEL_MASK)
+                    .setChannelMask(channelMask)
                     .build())
-                .setBufferSizeInBytes(getOutBufferSize(sampleRate))
+                .setBufferSizeInBytes(outBufferSize)
                 .build();
         } else {
             //noinspection deprecation
-            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, DEFAULT_CHANNEL_MASK, DEFAULT_ENCODING,
-                getOutBufferSize(sampleRate), AudioTrack.MODE_STREAM);
+            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, DEFAULT_ENCODING, outBufferSize,
+                AudioTrack.MODE_STREAM);
         }
     }
 
     /**
      * Returns estimated minimum buffer size required for an {@link AudioTrack} object to be created.
      */
-    public static int getOutBufferSize(int sampleRate) {
+    public static int getOutBufferSize(int sampleRate, int channelCount) {
         // out buffer size
-        final int outBufferSize = AudioTrack.getMinBufferSize(sampleRate, DEFAULT_CHANNEL_MASK, DEFAULT_CHANNEL_MASK);
+        final int outBufferSize =
+            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount), DEFAULT_ENCODING);
         return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
             : outBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     public static AudioRecord createAudioRecord() {
-        return createAudioRecord(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_MASK, DEFAULT_ENCODING, DEFAULT_IN_BUFFER_SIZE);
+        return createAudioRecord(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING,
+            DEFAULT_IN_BUFFER_SIZE);
     }
 
     /**
@@ -137,5 +142,29 @@ public class AudioUtils {
      */
     public static int getByteCount(int sampleCount) {
         return sampleCount * 2;
+    }
+
+    // Returns channel configuration depending on the specified channelCount
+    private static int getChannelMask(int channelCount) {
+        switch (channelCount) {
+            default:
+            case 1:
+                return AudioFormat.CHANNEL_OUT_MONO;
+            case 2:
+                return AudioFormat.CHANNEL_OUT_STEREO;
+            case 3:
+                return AudioFormat.CHANNEL_OUT_STEREO | AudioFormat.CHANNEL_OUT_FRONT_CENTER;
+            case 4:
+                return AudioFormat.CHANNEL_OUT_QUAD;
+            case 5:
+                return AudioFormat.CHANNEL_OUT_QUAD | AudioFormat.CHANNEL_OUT_FRONT_CENTER;
+            case 6:
+                return AudioFormat.CHANNEL_OUT_5POINT1;
+            case 7:
+                return AudioFormat.CHANNEL_OUT_5POINT1 | AudioFormat.CHANNEL_OUT_BACK_CENTER;
+            case 8:
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
+                    : AudioFormat.CHANNEL_OUT_7POINT1;
+        }
     }
 }

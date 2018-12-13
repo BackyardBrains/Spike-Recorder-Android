@@ -100,7 +100,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         @Override public void run() {
             seek(progress);
-            if (updateProgressSeekBar) sbAudioProgress.setProgress(progress);
+            if (updateProgressSeekBar) sbAudioProgress.setProgress(toFrames(progress));
             // avoid division by zero
             if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate, channelCount);
         }
@@ -389,9 +389,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
             @Override public void onScroll(float dx) {
                 if (getActivity() != null) {
-                    int progress = (int) (sbAudioProgress.getProgress() - dx);
+                    int max = toSamples(sbAudioProgress.getMax());
+                    int progress = (int) (toSamples(sbAudioProgress.getProgress()) - dx);
+                    progress -= progress % channelCount;
                     if (progress < 0) progress = 0;
-                    if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
+                    if (progress > max) progress = max;
                     playbackSeekRunnable.setProgress(progress);
                     playbackSeekRunnable.setUpdateProgressSeekBar(true);
                     playbackSeekRunnable.setUpdateProgressTimeLabel(true);
@@ -490,10 +492,10 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     /**
-     * Returns length of the played audio file in samples.
+     * Returns length of the played audio file in frames.
      */
     protected int getLength() {
-        if (getAudioService() != null) return (int) getAudioService().getPlaybackLength();
+        if (getAudioService() != null) return toFrames((int) getAudioService().getPlaybackLength());
 
         return 0;
     }
@@ -575,7 +577,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         sampleRate = event.getSampleRate();
         channelCount = event.getChannelCount();
         if (event.getLength() > 0) { // we are starting playback, not resuming
-            sbAudioProgress.setMax((int) event.getLength());
+            sbAudioProgress.setMax(toFrames((int) event.getLength()));
             EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
 
             // threshold should be reset every time playback is started from begining
@@ -590,7 +592,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         // can be 0 if AudioPlaybackStartedEvent event was sent before onStart()
         if (sbAudioProgress.getMax() == 0) sbAudioProgress.setMax(getLength());
 
-        sbAudioProgress.setProgress((int) event.getProgress());
+        sbAudioProgress.setProgress((int) event.getProgress() / event.getChannelCount());
         updateProgressTime((int) event.getProgress(), event.getSampleRate(), event.getChannelCount());
     }
 
@@ -636,7 +638,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
             @Override public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
                 if (fromUser) {
-                    playbackSeekRunnable.setProgress(progress);
+                    playbackSeekRunnable.setProgress(toSamples(progress));
                     playbackSeekRunnable.setUpdateProgressSeekBar(false);
                     playbackSeekRunnable.setUpdateProgressTimeLabel(true);
                     seekBar.post(playbackSeekRunnable);
@@ -644,6 +646,16 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             }
         });
         sbAudioProgress.setProgress(0);
+    }
+
+    // Converts number of specified samples to number of frames
+    int toFrames(int samples) {
+        return samples / channelCount;
+    }
+
+    // Converts number of specified frames to number of samples
+    int toSamples(int frames) {
+        return frames * channelCount;
     }
 
     //==============================================

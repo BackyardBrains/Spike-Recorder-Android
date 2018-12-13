@@ -323,6 +323,7 @@ Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jclass type, jflo
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject) {
+    jint channelCount = env->GetIntField(out, channelCountFid);
     jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
     jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
     jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
@@ -346,7 +347,6 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
     // pass sample source object to event listener so proper method can be triggered on it when necessary
     eventListener->setSampleSourceObj(sampleSourceObject);
 
-    jint channelCount = sampleStreamProcessor->getChannelCount();
     jshort **outSamplesPtr = new jshort *[channelCount];
     jint *outSampleCounts = new jint[channelCount];
     jint *outEventIndicesPtr = new jint[eventCount];
@@ -406,6 +406,7 @@ Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jcl
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jclass type, jobject out,
                                                                jbyteArray inBytes, jint length) {
+    jint channelCount = env->GetIntField(out, channelCountFid);
     jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
     jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
     jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
@@ -420,7 +421,6 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jcla
     }
 
     jint sampleCount = length / 2;
-    jint channelCount = amModulationProcessor->getChannelCount();
     jint frameCount = sampleCount / channelCount;
     jshort **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++)
@@ -464,7 +464,10 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
                                                              jint length, jintArray inEventIndices,
                                                              jobjectArray inEventNames, jint inEventCount, jlong start,
                                                              jlong end, jint prependSamples) {
+    jint channelCount = env->GetIntField(out, channelCountFid);
     jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
+    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
+    jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
     jintArray eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, eventIndicesFid));
     jobjectArray eventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(out, eventNamesFid));
 
@@ -482,7 +485,10 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
     }
 
     jint sampleCount = length / 2;
-    jshort *outSamplesPtr = reinterpret_cast<short *>(inBytesPtr);
+    jint frameCount = sampleCount / channelCount;
+//    jshort *outSamplesPtr = reinterpret_cast<short *>(inBytesPtr);
+    jshort **outSamplesPtr = SignalUtils::deinterleaveSignal(reinterpret_cast<short *>(inBytesPtr), sampleCount,
+                                                             channelCount);
     jint *outEventIndicesPtr = new jint[inEventCount];
 
     jint eventCounter = 0;
@@ -502,17 +508,31 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
     // exception check
     if (exception_check(env)) {
         delete[] inBytesPtr;
+        for (int i = 0; i < channelCount; i++)
+            delete[] outSamplesPtr[i];
+        delete[] outSamplesPtr;
         delete[] inEventIndicesPtr;
         delete[] outEventIndicesPtr;
         return;
     }
 
-    env->SetShortArrayRegion(samples, 0, sampleCount, outSamplesPtr);
-    env->SetIntField(out, sampleCountFid, sampleCount);
+    env->SetShortArrayRegion(samples, 0, frameCount, outSamplesPtr[0]);
+    env->SetIntField(out, sampleCountFid, frameCount);
+    jint *deinterleavedSampleCounts = new jint[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        jshortArray deinterleavedSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
+        env->SetShortArrayRegion(deinterleavedSamples, 0, frameCount, outSamplesPtr[i]);
+        deinterleavedSampleCounts[i] = frameCount;
+    }
+    env->SetIntArrayRegion(sampleCountsM, 0, channelCount, deinterleavedSampleCounts);
     env->SetIntArrayRegion(eventIndices, 0, eventCounter, outEventIndicesPtr);
     env->SetIntField(out, eventCountFid, eventCounter);
     env->SetLongField(out, lastSampleIndexFid, prepend + end);
     delete[] inBytesPtr;
+    for (int i = 0; i < channelCount; i++)
+        delete[] outSamplesPtr[i];
+    delete[] outSamplesPtr;
+    delete[] deinterleavedSampleCounts;
     delete[] inEventIndicesPtr;
     delete[] outEventIndicesPtr;
 }

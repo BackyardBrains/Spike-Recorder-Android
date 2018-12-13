@@ -586,9 +586,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                         EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount));
                     }
 
-                    @Override public void onProgress(long progress, int sampleRate) {
+                    @Override public void onProgress(long progress, int sampleRate, int channelCount) {
                         progressEvent.setProgress(AudioUtils.getSampleCount(progress));
                         progressEvent.setSampleRate(sampleRate);
+                        progressEvent.setChannelCount(channelCount);
                         EventBus.getDefault().post(progressEvent);
                     }
 

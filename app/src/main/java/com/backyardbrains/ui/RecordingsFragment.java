@@ -200,7 +200,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         String details = "File name: " + f.getName() + "\n";
         details += "Full path: \n" + f.getAbsolutePath() + "\n";
         details +=
-            "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate(), waf.numChannels())
+            "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate(), waf.channelCount())
                 : "UNKNOWN");
         BYBUtils.showAlert(getActivity(), "File details", details);
     }
@@ -545,7 +545,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                 } catch (IOException ignored) {
                 }
                 tvFileSize.setText(
-                    waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate(), waf.numChannels())
+                    waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate(), waf.channelCount())
                         : "UNKNOWN");
                 date.setTime(file.lastModified());
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));

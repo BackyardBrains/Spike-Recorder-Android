@@ -65,7 +65,7 @@ public class WavAudioFile implements AudioFile {
         return absolutePath;
     }
 
-    @Override public int numChannels() {
+    @Override public int channelCount() {
         return header.getNumChannels();
     }
 

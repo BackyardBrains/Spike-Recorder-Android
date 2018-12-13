@@ -46,7 +46,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
     // Waveform channel colors
-    private static final float[][] DEFAULT_WAVEFORM_COLOR = new float[][] { Colors.GREEN, Colors.RED };
+    private static final float[][] DEFAULT_WAVEFORM_COLOR =
+        new float[][] { Colors.CHANNEL_1, Colors.CHANNEL_2, Colors.CHANNEL_3, Colors.CHANNEL_4, Colors.CHANNEL_5 };
 
     private final GlHandleDragHelper thresholdHandleDragHelper;
 
@@ -126,6 +127,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * green is returned.
      */
     protected @Size(4) float[] getWaveformColor(int channel) {
+        channel = channel % 5;
         return DEFAULT_WAVEFORM_COLOR[DEFAULT_WAVEFORM_COLOR.length > channel ? channel : 0];
     }
 
@@ -179,15 +181,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         thresholdHandleDragHelper.resetDraggableAreas();
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    //@Override void setWaveformScaleFactor(float scaleFactor) {
-    //    super.setWaveformScaleFactor(scaleFactor);
-    //
-    //    //updateThresholdHandle();
-    //}
 
     /**
      * {@inheritDoc}

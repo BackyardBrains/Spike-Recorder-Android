@@ -83,27 +83,30 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
                 setSampleRate(raf.sampleRate());
                 LOGD(TAG, "Audio file sample rate is: " + raf.sampleRate());
+                setChannelCount(raf.channelCount());
+                LOGD(TAG, "Audio file channel count is: " + raf.channelCount());
 
                 // setup audio track
-                final AudioTrack track = AudioUtils.createAudioTrack(raf.sampleRate());
+                final AudioTrack track = AudioUtils.createAudioTrack(raf.sampleRate(), raf.channelCount());
                 track.play();
                 LOGD(TAG, "AudioTrack created");
 
                 if (autoPlay) playing.set(true);
 
                 // number of bytes that should be read during playback
-                int bytesToReadWhilePlaying = AudioUtils.getOutBufferSize(raf.sampleRate());
+                int bytesToReadWhilePlaying = AudioUtils.getOutBufferSize(raf.sampleRate(), raf.channelCount());
                 // number of bytes actually read during single read
                 int read;
 
                 // set size of the buffer for seeking
                 // we need full buffer of 6 seconds (in bytes)
-                bufferSize = raf.sampleRate() * SEEK_BUFFER_SIZE_IN_SEC * 2;
+                bufferSize =
+                    (raf.bitsPerSample() * raf.sampleRate() * raf.channelCount() * SEEK_BUFFER_SIZE_IN_SEC) / 8;
                 buffer = new byte[bufferSize];
 
                 int sampleCount = (int) (bufferSize * .5);
-                int frameSize = (int) Math.floor((float) sampleCount / raf.numChannels());
-                samplesWithEvents = new SamplesWithEvents(raf.numChannels(), frameSize);
+                int frameCount = (int) Math.floor((float) sampleCount / raf.channelCount());
+                samplesWithEvents = new SamplesWithEvents(raf.channelCount(), frameCount);
 
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
 
@@ -111,7 +114,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
                 // inform any interested parties that playback has started
                 if (playbackListener != null && position == 0) {
-                    playbackListener.onStart(duration.get(), raf.sampleRate(), raf.numChannels());
+                    playbackListener.onStart(duration.get(), raf.sampleRate(), raf.channelCount());
                 }
 
                 while (working.get() && raf != null) {
@@ -149,7 +152,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                         writeToBuffer(buffer, read);
 
                         // trigger progress listener
-                        if (playbackListener != null) playbackListener.onProgress(progress.get(), raf.sampleRate());
+                        if (playbackListener != null) {
+                            playbackListener.onProgress(progress.get(), raf.sampleRate(), raf.channelCount());
+                        }
 
                         // play audio data if we're not seeking
                         track.write(buffer, 0, read);
@@ -177,7 +182,10 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
             final long zerosPrependCount = progress.get() - bufferSize;
             final long seekPosition = Math.max(0, zerosPrependCount);
+            // fix seek position so that it's positioned at the begining of the frame
             raf.seek(seekPosition);
+
+            LOGD(TAG, "SEEK POSITION: " + seekPosition);
 
             // index of the sample from which we check the events
             fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
@@ -188,6 +196,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
                 // number of samples to prepend
                 samplesToPrepend.set((int) (zerosPrependCount * .5));
+                LOGD(TAG, "PREPEND: " + samplesToPrepend.get());
 
                 // index of the sample up to which we check the events
                 long toByte = raf.getFilePointer();
@@ -197,6 +206,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 // write data to buffer
                 writeToBuffer(buffer, bufferSize);
             }
+
+            LOGD(TAG, "FROM: " + fromSample.get() + ", TO: " + toSample.get());
         }
 
         // Rewinds audio file.
@@ -259,6 +270,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          *
          * @param length Length of the playback in bytes.
          * @param sampleRate Sample rate of the played file.
+         * @param channelCount Number of channels of the played file.
          */
         void onStart(long length, int sampleRate, int channelCount);
 
@@ -266,6 +278,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          * Triggered when playback resumes after pause.
          *
          * @param sampleRate Sample rate of the played file.
+         * @param channelCount Number of channels of the played file.
          */
         void onResume(int sampleRate, int channelCount);
 
@@ -274,8 +287,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          *
          * @param progress Current byte being played
          * @param sampleRate Sample rate of the played file.
+         * @param channelCount Number of channels of the played file.
          */
-        void onProgress(long progress, int sampleRate);
+        void onProgress(long progress, int sampleRate, int channelCount);
 
         /**
          * Triggered when playback pauses.
@@ -462,17 +476,15 @@ public class PlaybackSignalSource extends AbstractSignalSource {
         .sessions(10)
         .measuresPerSession(200)
         .logBySession(false)
-        .listener(new Benchmark.OnBenchmarkListener() {
-            @Override public void onEnd() {
-                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            }
+        .listener(() -> {
+            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
         });
 
     @Override public void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
-        //benchmark.start();
+        benchmark.start();
         JniUtils.processPlaybackStream(outData, inData, inDataLength, eventIndices, eventNames, eventIndices.length,
             fromSample.get(), toSample.get(), samplesToPrepend.get());
-        //benchmark.end();
+        benchmark.end();
     }
 
     @Override public int getType() {
