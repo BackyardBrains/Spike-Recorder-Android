@@ -486,7 +486,6 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
 
     jint sampleCount = length / 2;
     jint frameCount = sampleCount / channelCount;
-//    jshort *outSamplesPtr = reinterpret_cast<short *>(inBytesPtr);
     jshort **outSamplesPtr = SignalUtils::deinterleaveSignal(reinterpret_cast<short *>(inBytesPtr), sampleCount,
                                                              channelCount);
     jint *outEventIndicesPtr = new jint[inEventCount];

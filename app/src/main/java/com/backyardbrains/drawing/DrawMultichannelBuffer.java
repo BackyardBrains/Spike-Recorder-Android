@@ -74,7 +74,7 @@ public class DrawMultichannelBuffer {
      * Adds new {@code incoming} samples to the buffer's {@code channel} channel.
      */
     public void add(int channel, short[] incoming, int length) {
-        if (buffer[channel] == null) return;
+        if (buffer.length <= channel || buffer[channel] == null) return;
 
         short[] tmpBuffer = buffer[channel];
         try {

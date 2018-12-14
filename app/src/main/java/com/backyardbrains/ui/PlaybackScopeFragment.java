@@ -56,13 +56,13 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     // Runnable used for updating selected samples measurements (RMS, spike count and spike frequency)
     final protected MeasurementsUpdateRunnable measurementsUpdateRunnable = new MeasurementsUpdateRunnable();
     // Runnable used for updating threshold handle position
-    final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
-        new SetThresholdHandlePositionRunnable();
+    //final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
+    //    new SetThresholdHandlePositionRunnable();
     // Runnable used for updating threshold processor threshold value
-    final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
-        new UpdateDataProcessorThresholdRunnable();
+    //final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
+    //    new UpdateDataProcessorThresholdRunnable();
 
-    protected ThresholdHandle thresholdHandle;
+    //protected ThresholdHandle thresholdHandle;
     protected ImageButton ibtnThreshold;
     protected ImageButton ibtnAvgTriggerType;
     protected SeekBar sbAvgSamplesCount;
@@ -198,34 +198,34 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     /**
      * Runnable that is executed on the UI thread every time threshold position is changed.
      */
-    private class SetThresholdHandlePositionRunnable implements Runnable {
-
-        private int position;
-
-        @Override public void run() {
-            setThresholdHandlePosition(position);
-        }
-
-        public void setPosition(int position) {
-            this.position = position;
-        }
-    }
+    //private class SetThresholdHandlePositionRunnable implements Runnable {
+    //
+    //    private int position;
+    //
+    //    @Override public void run() {
+    //        setThresholdHandlePosition(position);
+    //    }
+    //
+    //    public void setPosition(int position) {
+    //        this.position = position;
+    //    }
+    //}
 
     /**
      * Runnable that is executed on the UI thread every time threshold value is changed.
      */
-    private class UpdateDataProcessorThresholdRunnable implements Runnable {
-
-        private float value;
-
-        @Override public void run() {
-            updateDataProcessorThreshold(value);
-        }
-
-        public void setValue(float value) {
-            this.value = value;
-        }
-    }
+    //private class UpdateDataProcessorThresholdRunnable implements Runnable {
+    //
+    //    private float value;
+    //
+    //    @Override public void run() {
+    //        updateDataProcessorThreshold(value);
+    //    }
+    //
+    //    public void setValue(float value) {
+    //        this.value = value;
+    //    }
+    //}
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -342,7 +342,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     @Override protected final View createView(LayoutInflater inflater, @NonNull ViewGroup container,
         @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_playback_scope, container, false);
-        thresholdHandle = view.findViewById(R.id.threshold_handle);
+        //thresholdHandle = view.findViewById(R.id.threshold_handle);
         ibtnThreshold = view.findViewById(R.id.ibtn_threshold);
         ibtnAvgTriggerType = view.findViewById(R.id.ibtn_avg_trigger_type);
         sbAvgSamplesCount = view.findViewById(R.id.sb_averaged_sample_count);
@@ -441,19 +441,19 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
 
             @Override public void onThresholdPositionChange(final int position) {
-                if (getActivity() != null) {
-                    setThresholdHandlePositionRunnable.setPosition(position);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
-                }
+                //if (getActivity() != null) {
+                //    setThresholdHandlePositionRunnable.setPosition(position);
+                //    // we need to call it on UI thread because renderer is drawing on background thread
+                //    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
+                //}
             }
 
             @Override public void onThresholdValueChange(final float value) {
-                if (getActivity() != null) {
-                    updateDataProcessorThresholdRunnable.setValue(value);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                }
+                //if (getActivity() != null) {
+                //    updateDataProcessorThresholdRunnable.setValue(value);
+                //    // we need to call it on UI thread because renderer is drawing on background thread
+                //    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
+                //}
             }
         });
         renderer.setSignalAveraging(thresholdOn);
@@ -614,10 +614,10 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             ibtnThreshold.setVisibility(View.VISIBLE);
             // threshold view
             setupThresholdView();
-            ViewUtils.playAfterNextLayout(ibtnThreshold, source -> {
-                thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-                return null;
-            });
+            //ViewUtils.playAfterNextLayout(ibtnThreshold, source -> {
+            //    thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
+            //    return null;
+            //});
         } else {
             ibtnThreshold.setVisibility(View.INVISIBLE);
             ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
@@ -691,9 +691,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     void setupThresholdHandleAndAveragingTriggerTypeButtons() {
         if (thresholdOn) {
             // setup threshold handle
-            thresholdHandle.setVisibility(
-                triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
+            //thresholdHandle.setVisibility(
+            //    triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
+            //thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.VISIBLE);
             switch (triggerType) {
@@ -734,8 +734,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             ibtnAvgTriggerType.setOnClickListener(changeAveragingTriggerTypeOnClickListener);
         } else {
             // setup threshold handle
-            thresholdHandle.setVisibility(View.INVISIBLE);
-            thresholdHandle.setOnHandlePositionChangeListener(null);
+            //thresholdHandle.setVisibility(View.INVISIBLE);
+            //thresholdHandle.setOnHandlePositionChangeListener(null);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
             ibtnAvgTriggerType.setOnClickListener(null);
@@ -766,17 +766,17 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     // Sets the specified value for the threshold.
-    void setThresholdHandlePosition(int value) {
-        // can be null if callback is called after activity has finished
-        if (thresholdHandle != null) thresholdHandle.setPosition(value);
-    }
+    //void setThresholdHandlePosition(int value) {
+    //    // can be null if callback is called after activity has finished
+    //    if (thresholdHandle != null) thresholdHandle.setPosition(value);
+    //}
 
     // Updates data processor with the newly set threshold.
-    void updateDataProcessorThreshold(float value) {
-        //JniUtils.setThreshold((int) value);
-        // in case we are pausing just reset the renderer buffers
-        getRenderer().resetAveragedSignal();
-    }
+    //void updateDataProcessorThreshold(float value) {
+    //    //JniUtils.setThreshold((int) value);
+    //    // in case we are pausing just reset the renderer buffers
+    //    getRenderer().resetAveragedSignal();
+    //}
 
     // Opens a dialog for averaging trigger type selection
     void openAveragingTriggerTypeDialog() {
