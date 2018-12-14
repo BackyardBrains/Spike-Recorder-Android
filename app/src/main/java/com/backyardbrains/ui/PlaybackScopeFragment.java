@@ -16,7 +16,6 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.SeekableWaveformRenderer;
-import com.backyardbrains.drawing.WaveformRenderer;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
 import com.backyardbrains.events.AudioPlaybackStoppedEvent;
@@ -29,7 +28,6 @@ import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
-import com.backyardbrains.view.ThresholdHandle;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -282,8 +280,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
         v -> openAveragingTriggerTypeDialog();
 
-    private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
-        (view, y) -> getRenderer().adjustThreshold(y);
+    //private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
+    //    (view, y) -> getRenderer().adjustThreshold(y);
 
     //=================================================
     //  LIFECYCLE IMPLEMENTATIONS
@@ -438,24 +436,24 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
                 tvSpikeCount2.setVisibility(View.INVISIBLE);
             }
         });
-        renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
-
-            @Override public void onThresholdPositionChange(final int position) {
-                //if (getActivity() != null) {
-                //    setThresholdHandlePositionRunnable.setPosition(position);
-                //    // we need to call it on UI thread because renderer is drawing on background thread
-                //    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
-                //}
-            }
-
-            @Override public void onThresholdValueChange(final float value) {
-                //if (getActivity() != null) {
-                //    updateDataProcessorThresholdRunnable.setValue(value);
-                //    // we need to call it on UI thread because renderer is drawing on background thread
-                //    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                //}
-            }
-        });
+        //renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
+        //
+        //    @Override public void onThresholdPositionChange(final int position) {
+        //        if (getActivity() != null) {
+        //            setThresholdHandlePositionRunnable.setPosition(position);
+        //            // we need to call it on UI thread because renderer is drawing on background thread
+        //            getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
+        //        }
+        //    }
+        //
+        //    @Override public void onThresholdValueChange(final float value) {
+        //        if (getActivity() != null) {
+        //            updateDataProcessorThresholdRunnable.setValue(value);
+        //            // we need to call it on UI thread because renderer is drawing on background thread
+        //            getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
+        //        }
+        //    }
+        //});
         renderer.setSignalAveraging(thresholdOn);
         // if app is opened for the first time averaging trigger type will be THRESHOLD,
         // otherwise it will be the last set value (we retrieve it from C++ code

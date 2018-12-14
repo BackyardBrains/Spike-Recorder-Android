@@ -46,7 +46,6 @@ import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SlidingView;
-import com.backyardbrains.view.ThresholdHandle;
 import com.crashlytics.android.Crashlytics;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -74,7 +73,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
 
-    //@BindView(R.id.threshold_handle) ThresholdHandle thresholdHandle;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     @BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
@@ -98,43 +96,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private boolean thresholdOn;
     // Holds the type of triggering that is used when averaging
     private @SignalAveragingTriggerType int triggerType = SignalAveragingTriggerType.THRESHOLD;
-
-    //final SetThresholdHandlePositionRunnable setThresholdHandlePositionRunnable =
-    //    new SetThresholdHandlePositionRunnable();
-    //final UpdateDataProcessorThresholdRunnable updateDataProcessorThresholdRunnable =
-    //    new UpdateDataProcessorThresholdRunnable();
-
-    /**
-     * Runnable that is executed on the UI thread every time threshold position is changed.
-     */
-    //private class SetThresholdHandlePositionRunnable implements Runnable {
-    //
-    //    private int position;
-    //
-    //    @Override public void run() {
-    //        setThresholdHandlePosition(position);
-    //    }
-    //
-    //    public void setPosition(int position) {
-    //        this.position = position;
-    //    }
-    //}
-
-    /**
-     * Runnable that is executed on the UI thread every time threshold value is changed.
-     */
-    //private class UpdateDataProcessorThresholdRunnable implements Runnable {
-    //
-    //    private float value;
-    //
-    //    @Override public void run() {
-    //        updateDataProcessorThreshold(value);
-    //    }
-    //
-    //    public void setValue(float value) {
-    //        this.value = value;
-    //    }
-    //}
 
     //==============================================
     // EVENT LISTENERS
@@ -184,19 +145,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
         v -> openAveragingTriggerTypeDialog();
-
-    private final ThresholdHandle.OnThresholdChangeListener thresholdChangeListener =
-        (view, y) -> getRenderer().adjustThreshold(y);
-
-    //private final SlidingView.AnimationEndListener recordAnimationListener = new SlidingView.AnimationEndListener() {
-    //    @Override public void onShowAnimationEnd() {
-    //        thresholdHandle.setTopOffset(ibtnThreshold.getHeight() + tvStopRecording.getHeight());
-    //    }
-    //
-    //    @Override public void onHideAnimationEnd() {
-    //        thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-    //    }
-    //};
 
     //==============================================
     // LIFECYCLE IMPLEMENTATIONS
@@ -285,24 +233,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
                 // we need to call it on UI thread because renderer is drawing on background thread
                 getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-            }
-        });
-        renderer.setOnThresholdChangeListener(new WaveformRenderer.OnThresholdChangeListener() {
-
-            @Override public void onThresholdPositionChange(final int position) {
-                //if (getActivity() != null) {
-                //    setThresholdHandlePositionRunnable.setPosition(position);
-                //    // we need to call it on UI thread because renderer is drawing on background thread
-                //    getActivity().runOnUiThread(setThresholdHandlePositionRunnable);
-                //}
-            }
-
-            @Override public void onThresholdValueChange(final float value) {
-                //if (getActivity() != null) {
-                //    updateDataProcessorThresholdRunnable.setValue(value);
-                //    // we need to call it on UI thread because renderer is drawing on background thread
-                //    getActivity().runOnUiThread(updateDataProcessorThresholdRunnable);
-                //}
             }
         });
         renderer.setSignalAveraging(thresholdOn);
@@ -474,10 +404,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Initializes user interface
     private void setupUI() {
         // threshold button
-        //ViewUtils.playAfterNextLayout(ibtnThreshold, source -> {
-        //    thresholdHandle.setTopOffset(ibtnThreshold.getHeight());
-        //    return null;
-        //});
         setupThresholdView();
         // filters button
         setupFiltersButton();
@@ -533,10 +459,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Sets up threshold handle and averaging trigger type button
     void setupThresholdHandleAndAveragingTriggerTypeButtons() {
         if (thresholdOn) {
-            // setup threshold handle
-            //thresholdHandle.setVisibility(
-            //    triggerType == SignalAveragingTriggerType.THRESHOLD ? View.VISIBLE : View.INVISIBLE);
-            //thresholdHandle.setOnHandlePositionChangeListener(thresholdChangeListener);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.VISIBLE);
             switch (triggerType) {
@@ -576,9 +498,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
             ibtnAvgTriggerType.setOnClickListener(changeAveragingTriggerTypeOnClickListener);
         } else {
-            // setup threshold handle
-            //thresholdHandle.setVisibility(View.INVISIBLE);
-            //thresholdHandle.setOnHandlePositionChangeListener(null);
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
             ibtnAvgTriggerType.setOnClickListener(null);
@@ -607,17 +526,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // threshold should be reset every time it's enabled so let's reset every time on closing
         JniUtils.resetThreshold();
     }
-
-    // Sets the specified value for the threshold handle.
-    //void setThresholdHandlePosition(int value) {
-    //    // can be null if callback is called after activity has finished
-    //    if (thresholdHandle != null) thresholdHandle.setPosition(value);
-    //}
-
-    // Updates data processor with the newly set threshold.
-    //void updateDataProcessorThreshold(float value) {
-    //    //JniUtils.setThreshold((int) value);
-    //}
 
     // Opens a dialog for averaging trigger type selection
     void openAveragingTriggerTypeDialog() {

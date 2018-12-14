@@ -56,26 +56,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private GlEventMarker glEventMarker;
 
-    private OnThresholdChangeListener listener;
-
     @SuppressWarnings("WeakerAccess") float threshold;
-
-    /**
-     * Interface definition for a callback to be invoked when threshold position or value are changed.
-     */
-    public interface OnThresholdChangeListener {
-        /**
-         * Listener that is invoked when threshold position is changed.
-         *
-         * @param position New threshold position.
-         */
-        void onThresholdPositionChange(int position);
-
-        /**
-         * Listener that is invoked when threshold value is changed.
-         */
-        void onThresholdValueChange(float value);
-    }
 
     public WaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
@@ -92,9 +73,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
             @Override public void onDrag(int index, float dy) {
                 adjustThresholdValue(threshold - surfaceHeightToGlHeight(dy) / getWaveformScaleFactor());
-
-                // pass new threshold to the c++ code
-                JniUtils.setThreshold(threshold);
             }
 
             @Override public void onDragStop(int index) {
@@ -105,22 +83,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     //=================================================
     //  PUBLIC AND PROTECTED METHODS
     //=================================================
-
-    /**
-     * Registers a callback to be invoked when threshold position or value are changed.
-     *
-     * @param listener The callback that will be run. This value may be {@code null}.
-     */
-    public void setOnThresholdChangeListener(OnThresholdChangeListener listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * Sets threshold to specified {@code y} value.
-     */
-    public void adjustThreshold(float y) {
-        adjustThresholdValue(surfaceYToGlY(y));
-    }
 
     /**
      * Returns the color of the waveform for the specified {@code channel} in rgba format. If color is not defined
@@ -189,9 +151,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         super.onLoadSettings(context);
 
         adjustThresholdValue(PrefUtils.getThreshold(context, getClass()));
-
-        // pass new threshold to the c++ code
-        JniUtils.setThreshold(threshold);
     }
 
     /**
@@ -281,17 +240,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     // PRIVATE METHODS
     //=================================================
 
-    //private void updateThresholdHandle() {
-    //    if (listener != null) listener.onThresholdPositionChange(glYToSurfaceY(threshold));
-    //}
-
     @SuppressWarnings("WeakerAccess") void adjustThresholdValue(float dy) {
         if (dy == 0) return;
 
         threshold = dy;
 
-        // TODO: 29-Nov-18 WHEN IN PLAYBACK WE SHOULD ALSO RESET AVERAGED SIGNAL
+        // pass new threshold to the c++ code
+        JniUtils.setThreshold(threshold);
 
-        //if (listener != null) listener.onThresholdValueChange(threshold);
+        // TODO: 29-Nov-18 WHEN IN PLAYBACK WE SHOULD ALSO RESET AVERAGED SIGNAL
     }
 }
