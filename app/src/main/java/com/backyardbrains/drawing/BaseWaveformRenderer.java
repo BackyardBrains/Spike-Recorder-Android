@@ -5,10 +5,7 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
-import com.backyardbrains.drawing.gl.GlHandleDragHelper;
-import com.backyardbrains.drawing.gl.GlHandleDragHelper.OnDragListener;
 import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.dsp.SignalProcessor;
@@ -30,7 +27,7 @@ import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BaseWaveformRenderer extends BaseRenderer
-    implements ProcessingBuffer.OnSignalPropertyChangeListener, TouchEnabledRenderer, OnDragListener {
+    implements ProcessingBuffer.OnSignalPropertyChangeListener, TouchEnabledRenderer {
 
     private static final String TAG = makeLogTag(BaseWaveformRenderer.class);
 
@@ -68,14 +65,14 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private boolean glWindowWidthDirty;
     private float waveformScaleFactor = GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR;
     private float[] waveformScaleFactors;
+    private float[] tempWaveformScaleFactors;
     private float[] waveformPositions;
+    private float[] tempWaveformPositions;
     private float scaleX;
     private float scaleY;
 
     private boolean scrollEnabled;
     private boolean measureEnabled;
-
-    protected final GlHandleDragHelper glHandleDragHelper;
 
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int averagingTriggerType;
@@ -168,8 +165,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         processingBuffer.setOnSignalPropertyChangeListener(this);
         eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
 
-        glHandleDragHelper = new GlHandleDragHelper(this);
-
         resetWaveformScaleFactorsAndPositions(channelCount);
     }
 
@@ -238,9 +233,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             setSelectedChannel(0);
         }
 
-        // we should reset draggable areas
-        glHandleDragHelper.resetDraggableAreas();
-
         this.channelCount = channelCount;
     }
 
@@ -249,30 +241,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     protected int getChannelCount() {
         return channelCount;
-    }
-
-    //=================================================
-    // TouchEnabledRenderer INTERFACE IMPLEMENTATIONS
-    //=================================================
-
-    @Override public boolean onTouchEvent(MotionEvent event) {
-        return glHandleDragHelper.onTouch(event);
-    }
-
-    //=================================================
-    // OnDragListener INTERFACE IMPLEMENTATIONS
-    //=================================================
-
-    @Override public void onDragStart(int index) {
-        setSelectedChannel(index);
-    }
-
-    @Override public void onDrag(int index, float dy) {
-        moveGlWindowForSelectedChannel(dy);
-    }
-
-    @Override public void onDragStop(int index) {
-        // ignore for now
     }
 
     //==============================================
@@ -287,6 +255,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     public void setOnDrawListener(@Nullable OnDrawListener listener) {
         this.onDrawListener = listener;
     }
+
+    //==============================================
+    //  SIGNAL AVERAGING
+    //==============================================
 
     /**
      * Returns whether incoming signal is being averaged or not.
@@ -320,6 +292,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         this.averagingTriggerType = averagingTriggerType;
     }
 
+    //==============================================
+    //  CHANNELS
+    //==============================================
+
     /**
      * Returns currently selected channel.
      */
@@ -330,7 +306,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     /**
      * Sets currently selected channel.
      */
-    void setSelectedChannel(int selectedChannel) {
+    public void setSelectedChannel(int selectedChannel) {
         if (getChannelCount() <= selectedChannel) return;
 
         // pass selected channel to native code
@@ -381,7 +357,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         return waveformScaleFactors[selectedChannel];
     }
 
-    private void moveGlWindowForSelectedChannel(float dy) {
+    void moveGlWindowForSelectedChannel(float dy) {
         // save new waveform position for currently selected channel that will be used when setting up projection on the next draw cycle
         waveformPositions[selectedChannel] -= surfaceHeightToGlHeight(dy);
     }
@@ -464,9 +440,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         LOGD(TAG, "onSurfaceCreated()");
 
-        glHandleDragHelper.resetDraggableAreas();
-        glHandleDragHelper.setSurfaceHeight(height);
-
         // save new surface width and height
         surfaceWidth = width;
         surfaceHeight = height;
@@ -512,10 +485,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final int surfaceHeight = this.surfaceHeight;
             final boolean glWindowWidthDirty = this.glWindowWidthDirty;
             final float glWindowWidth = this.glWindowWidth;
-            final float[] waveformScaleFactors = new float[this.waveformScaleFactors.length];
-            System.arraycopy(this.waveformScaleFactors, 0, waveformScaleFactors, 0, this.waveformScaleFactors.length);
-            final float[] waveformPositions = new float[this.waveformPositions.length];
-            System.arraycopy(this.waveformPositions, 0, waveformPositions, 0, this.waveformPositions.length);
+            System.arraycopy(waveformScaleFactors, 0, tempWaveformScaleFactors, 0, waveformScaleFactors.length);
+            System.arraycopy(waveformPositions, 0, tempWaveformPositions, 0, waveformPositions.length);
             final boolean signalAveraging = this.signalAveraging;
             final int averagingTriggerType = this.averagingTriggerType;
 
@@ -535,7 +506,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth);
             getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
 
-            final float drawnSamplesCount = samplesWithEvents.sampleCount * .5f;
+            final float drawnSamplesCount = samplesWithEvents.sampleCountM[0] * .5f;
             // calculate scale x and scale y
             if (surfaceSizeDirty || glWindowWidthDirty) {
                 scaleX = drawnSamplesCount > 0 ? glWindowWidth / drawnSamplesCount : 1f;
@@ -554,15 +525,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // draw on surface
             draw(gl, tmpSampleBuffer.getBuffer(), samplesWithEvents.samplesM, samplesWithEvents.sampleCountM,
-                eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions,
-                drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+                eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth, tempWaveformScaleFactors,
+                tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
             // draw average triggering line
             if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
                 final float drawScale = drawnSamplesCount / surfaceWidth;
                 glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                    samplesWithEvents.sampleCount * .25f, -MAX_GL_VERTICAL_THIRD_SIZE, MAX_GL_VERTICAL_THIRD_SIZE,
-                    drawScale, scaleY);
+                    drawnSamplesCount * .5f, -MAX_GL_VERTICAL_THIRD_SIZE, MAX_GL_VERTICAL_THIRD_SIZE, drawScale,
+                    scaleY);
             }
 
             // invoke callback that the surface has been drawn
@@ -600,7 +571,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     abstract protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
         int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
         float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex);
+        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex);
 
     private void reshape(GL10 gl, float drawnSamplesCount) {
         gl.glMatrixMode(GL10.GL_PROJECTION);
@@ -616,12 +587,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     private void resetLocalBuffers(int channelCount) {
-        int frameCount = Math.max(surfaceWidth, surfaceHeight) * 5;
+        int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
         if (samplesWithEvents == null || samplesWithEvents.channelCount != channelCount
-            || samplesWithEvents.frameCount < frameCount) {
+            || samplesWithEvents.maxSamplesPerChannel < maxSamplesPerChannel) {
             LOGD(TAG, "CHANNEL COUNT: " + channelCount);
-            LOGD(TAG, "NUM OF FRAMES: " + frameCount);
-            samplesWithEvents = new SamplesWithEvents(channelCount, frameCount);
+            LOGD(TAG, "MAX SAMPLES PER CHANNEL: " + maxSamplesPerChannel);
+            samplesWithEvents = new SamplesWithEvents(channelCount, maxSamplesPerChannel);
         }
     }
 
@@ -637,6 +608,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             waveformPositions[i] = prev + step;
             prev += step;
         }
+        tempWaveformScaleFactors = new float[channelCount];
+        tempWaveformPositions = new float[channelCount];
     }
 
     //==============================================

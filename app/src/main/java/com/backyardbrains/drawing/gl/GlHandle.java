@@ -24,7 +24,7 @@ public class GlHandle {
 
     private final Rect borders;
 
-    GlHandle() {
+    public GlHandle() {
         outerCircle = new GlCircle();
         triangle = new GlTriangle();
         innerCircle = new GlCircle();
@@ -54,7 +54,7 @@ public class GlHandle {
         }
     }
 
-    void getBorders(@NonNull Rect rect) {
+    public void getBorders(@NonNull Rect rect) {
         rect.set(borders.x, borders.y, borders.width, borders.height);
     }
 }

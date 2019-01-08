@@ -69,8 +69,13 @@ bool AmModulationProcessor::isReceivingAmSignal() {
 }
 
 void
-AmModulationProcessor::process(const short *inSamples, short **outSamples, const int length, const int frameCount) {
-    short **deinterleavedSignal = SignalUtils::deinterleaveSignal(inSamples, length, getChannelCount());
+AmModulationProcessor::process(const short *inSamples, short **outSamples, const int sampleCount,
+                               const int frameCount) {
+    short **deinterleavedSignal = new short *[getChannelCount()];
+    for (int i = 0; i < getChannelCount(); i++) {
+        deinterleavedSignal[i] = new short[frameCount];
+    }
+    SignalUtils::deinterleaveSignal(deinterleavedSignal, inSamples, sampleCount, getChannelCount());
 
     short *amBuffer = new short[frameCount];
     // always use only first channel for detection

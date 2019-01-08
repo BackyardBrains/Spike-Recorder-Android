@@ -20,7 +20,7 @@ import com.backyardbrains.db.entity.Train;
  */
 @Database(entities = {
     SpikeAnalysis.class, Spike.class, Train.class
-}, version = 5) public abstract class SpikeRecorderDatabase extends RoomDatabase {
+}, version = 6) public abstract class SpikeRecorderDatabase extends RoomDatabase {
 
     private static SpikeRecorderDatabase INSTANCE;
 
@@ -30,7 +30,7 @@ import com.backyardbrains.db.entity.Train;
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), SpikeRecorderDatabase.class,
                         "byb-spike-recorder")
-                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                         .fallbackToDestructiveMigration()
                         .build();
                 }
@@ -81,6 +81,25 @@ import com.backyardbrains.db.entity.Train;
 
             // change the new table name to the correct one
             database.execSQL("ALTER TABLE spikes_new RENAME TO spikes");
+        }
+    };
+
+    @VisibleForTesting private static final Migration MIGRATION_5_6 = new Migration(5, 6) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase database) {
+            // add column to trains and spikes tables that holds information about the channel the train/spike belongs to
+            database.execSQL("ALTER TABLE trains ADD COLUMN channel INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE spikes ADD COLUMN channel INTEGER NOT NULL DEFAULT 0");
+            // drop old indexes we need to create a new one
+            database.execSQL("DROP INDEX IF EXISTS `index_trains_analysis_id_order`");
+            database.execSQL("DROP INDEX IF EXISTS `index_spikes_train_id_index_value_time`");
+            database.execSQL("DROP INDEX IF EXISTS `index_spikes_analysis_id_index_value_time`");
+            // create indexes that include new column
+            database.execSQL(
+                "CREATE  INDEX `index_trains_analysis_id_channel_order` ON `trains` (`analysis_id`, `channel`, `order`)");
+            database.execSQL(
+                "CREATE  INDEX `index_spikes_train_id_channel_index_value_time` ON `spikes` (`train_id`, `channel`, `index`, `value`, `time`)");
+            database.execSQL(
+                "CREATE  INDEX `index_spikes_analysis_id_channel_index_value_time` ON `spikes` (`analysis_id`, `channel`, `index`, `value`, `time`)");
         }
     };
 

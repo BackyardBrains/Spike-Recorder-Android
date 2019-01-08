@@ -32,12 +32,11 @@ public interface AnalysisDataSource {
 
     long getSpikeAnalysisId(@NonNull String filePath);
 
-    SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int startIndex, int endIndex);
+    SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex, int endIndex);
 
     SpikeIndexValue[] getSpikeAnalysisByTrainForIndexRange(long trainId, int startIndex, int endIndex);
 
-    void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
-        @Nullable final GetAnalysisCallback<float[][]> callback);
+    void getSpikeAnalysisTimesByTrains(@NonNull final String filePath, @Nullable final GetAnalysisCallback<float[][]> callback);
 
     void getSpikeAnalysisIndicesByTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<int[][]> callback);
 
@@ -46,19 +45,20 @@ public interface AnalysisDataSource {
     //=================================================
 
     interface AddSpikeAnalysisTrainCallback {
-        void onSpikeAnalysisTrainAdded(@NonNull Train train);
+        void onSpikeAnalysisTrainAdded(@NonNull int order);
     }
 
     interface RemoveSpikeAnalysisTrainCallback {
         void onSpikeAnalysisTrainRemoved(int newTrainCount);
     }
 
-    void getSpikeAnalysisTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<Train[]> callback);
+    void getSpikeAnalysisTrains(@NonNull String filePath, int channel, @Nullable GetAnalysisCallback<Train[]> callback);
 
-    void addSpikeAnalysisTrain(@NonNull String filePath, @Nullable AddSpikeAnalysisTrainCallback callback);
+    void addSpikeAnalysisTrain(@NonNull String filePath, int channelCount, @Nullable AddSpikeAnalysisTrainCallback callback);
 
-    void saveSpikeAnalysisTrain(@NonNull String filePath, @ThresholdOrientation int orientation, int value, int order);
+    void saveSpikeAnalysisTrain(@NonNull String filePath, int channel, int order, @ThresholdOrientation int orientation,
+        int value);
 
-    void removeSpikeAnalysisTrain(@NonNull String filePath, int trainOrder,
+    void removeSpikeAnalysisTrain(@NonNull String filePath, int order,
         @Nullable RemoveSpikeAnalysisTrainCallback callback);
 }

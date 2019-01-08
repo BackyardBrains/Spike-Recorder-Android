@@ -7,7 +7,6 @@ import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -73,7 +72,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i], GlUtils.SPIKE_TRAIN_COLORS[i],
+                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i], Colors.SPIKE_TRAIN_COLORS[i],
                         SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
                 }
                 x = MARGIN;
@@ -83,7 +82,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
 
                 int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
                 glBarGraph.draw(gl, x, y, w, h, autocorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
-                    GlUtils.SPIKE_TRAIN_COLORS[selected]);
+                    Colors.SPIKE_TRAIN_COLORS[selected]);
             }
         }
     }

@@ -21,12 +21,12 @@ public abstract class AbstractSignalSource implements SignalSource {
     protected SamplesWithEvents samplesWithEvents;
 
     // Size of the buffer for this sample source
-    private int frameSize;
+    private int frameCount;
     private int sampleRate;
     private int channelCount;
 
-    public AbstractSignalSource(int sampleRate, int channelCount, int frameSize) {
-        this.frameSize = frameSize;
+    public AbstractSignalSource(int sampleRate, int channelCount, int frameCount) {
+        this.frameCount = frameCount;
         setSampleRate(sampleRate);
         setChannelCount(channelCount);
     }
@@ -66,7 +66,7 @@ public abstract class AbstractSignalSource implements SignalSource {
         if (this.channelCount != channelCount) {
             LOGD(TAG, "setChannelCount(" + channelCount + ")");
 
-            samplesWithEvents = new SamplesWithEvents(channelCount, frameSize);
+            samplesWithEvents = new SamplesWithEvents(channelCount, frameCount);
 
             // inform interested parties what is the channel count of this sample source
             if (processor != null) processor.onChannelCountChanged(channelCount);

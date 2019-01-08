@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
@@ -24,7 +25,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbSignalSource.class);
 
-    private static final int BUFFER_SIZE = 5000;
+    private static final int MAX_SAMPLES_PER_CHANNEL = 5000; // .5 secs of signal at 10000 Hz
 
     private final UsbDevice device;
 
@@ -45,7 +46,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(SampleStreamUtils.SAMPLE_RATE, 1, BUFFER_SIZE);
+        super(SampleStreamUtils.SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, MAX_SAMPLES_PER_CHANNEL);
 
         this.device = device;
 
@@ -121,7 +122,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * {@inheritDoc}
      */
-    @Override public final void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
+    @Override public final void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData,
+        int inDataLength) {
         //benchmark.start();
         JniUtils.processSampleStream(outData, inData, inDataLength, this);
         //benchmark.end();

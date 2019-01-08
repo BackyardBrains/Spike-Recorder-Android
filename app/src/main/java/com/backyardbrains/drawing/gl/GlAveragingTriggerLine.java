@@ -39,7 +39,7 @@ public class GlAveragingTriggerLine {
         vLine.draw(gl, y1, y2, LINE_WIDTH, Colors.BLACK);
 
         // draw dashed gray line
-        dashedVLine.draw(gl, y1, y2, DASH_HEIGHT * scaleY, LINE_WIDTH, Colors.GRAY);
+        dashedVLine.draw(gl, y1, y2, DASH_HEIGHT * scaleY, LINE_WIDTH, Colors.GRAY_DARK);
 
         if (eventName != null) {
             int len = eventName.length();

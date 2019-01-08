@@ -602,7 +602,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                         // post event that audio playback has started
                         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                     }
-                }); turnOnPlayback(); // this will stop the microphone and in progress recording if any
+                });
+                turnOnPlayback(); // this will stop the microphone and in progress recording if any
             }
         }
     }

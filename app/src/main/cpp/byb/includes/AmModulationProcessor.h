@@ -31,7 +31,7 @@ public:
 
     bool isReceivingAmSignal();
 
-    void process(const short *inSamples, short **outSamples, const int length, const int frameCount);
+    void process(const short *inSamples, short **outSamples, const int sampleCount, const int frameCount);
 
 private:
     static const char *TAG;

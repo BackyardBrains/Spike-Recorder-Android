@@ -23,10 +23,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(MicrophoneSignalSource.class);
 
-    // Number of seconds buffers should hold by default
-    private static final int BUFFER_SIZE_IN_SEC = 1;
-    // Number of samples buffers should hold by default
-    private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
+    // Max number of samples each channel should hold by default
+    private static final int MAX_SAMPLES_PER_CHANNEL = AudioUtils.DEFAULT_SAMPLE_RATE; // 1 sec of samples
 
     /**
      * Thread used for reading audio from microphone.
@@ -77,7 +75,7 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     private static final Object lock = new Object();
 
     MicrophoneSignalSource(@NonNull AudioRecord recorder) {
-        super(recorder.getSampleRate(), recorder.getChannelCount(), BUFFER_SIZE_IN_SAMPLES);
+        super(recorder.getSampleRate(), recorder.getChannelCount(), MAX_SAMPLES_PER_CHANNEL);
 
         this.recorder = recorder;
     }

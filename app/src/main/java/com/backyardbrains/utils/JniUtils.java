@@ -58,8 +58,8 @@ public class JniUtils {
     public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[][] samples, int sampleCount,
         int[] eventIndices, int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
 
-    public static native int[] findSpikes(String filePath, short[] valuesPos, int[] indicesPos, float[] timesPos,
-        short[] valuesNeg, int[] indicesNeg, float[] timesNeg, int maxSpikes);
+    public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos, float[][] timesPos,
+        short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount, int maxSpikes);
 
     public static native void autocorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
         int[][] analysis, int analysisBinCount);

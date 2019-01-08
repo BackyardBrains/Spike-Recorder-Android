@@ -203,7 +203,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             }
         }
         if (renderer != null) {
-            int action = event.getActionMasked();
             if (scaleDetector != null && scaleDetector.onTouchEvent(event) && scaleDetector.isInProgress()) {
                 scrolling = false;
                 if (renderer.isScrollEnabled()) renderer.endScroll();
@@ -296,8 +295,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
             if (isScalingHorizontally(zoomMode)) {
                 renderer.setGlWindowWidth(renderer.getGlWindowWidth() * scaling);
             } else {
-                //renderer.setGlWindowHeight(renderer.getGlWindowHeight() * scaling);
-                renderer.setWaveformScaleFactor(scaling); //???
+                renderer.setWaveformScaleFactor(scaling);
             }
         }
     }

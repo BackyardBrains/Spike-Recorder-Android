@@ -9,8 +9,6 @@ import com.backyardbrains.drawing.gl.GlMeasurementArea;
 import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.Benchmark;
-import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
@@ -50,16 +48,17 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         glSpikes = new GlSpikes();
 
         if (getAnalysisManager() != null) {
-            getAnalysisManager().getSpikeTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
-                @Override public void onAnalysisLoaded(@NonNull Train[] result) {
-                    spikeTrains = result;
-                    valuesAndIndexes = new SpikeIndexValue[spikeTrains.length][];
-                }
+            getAnalysisManager().getSpikeTrains(filePath, getSelectedChanel(),
+                new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
+                    @Override public void onAnalysisLoaded(@NonNull Train[] result) {
+                        spikeTrains = result;
+                        valuesAndIndexes = new SpikeIndexValue[spikeTrains.length][];
+                    }
 
-                @Override public void onDataNotAvailable() {
-                    spikeTrains = null;
-                }
-            });
+                    @Override public void onDataNotAvailable() {
+                        spikeTrains = null;
+                    }
+                });
         }
     }
 
@@ -85,8 +84,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         measurementEndX = width * measurementEndX / w;
     }
 
-    private final Benchmark benchmark =
-        new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
+    //private final Benchmark benchmark =
+    //    new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
     /**
      * {@inheritDoc}
@@ -94,9 +93,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
         int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
         float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
-        int toSample = (int) lastSampleIndex;
+        int toSample = (int) lastFrameIndex;
         int fromSample = (int) Math.max(0, toSample - glWindowWidth);
         if (drawSpikes()) {
             if (getAnalysisManager() != null && spikeTrains != null) {
@@ -109,12 +108,12 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        long drawSampleCount = (long) (waveformVerticesCount[0] * .5);
+        final float samplesToDraw = waveformVerticesCount[0] * .5f;
 
         // draw measurement area
         if (measuring) {
             // calculate start and end measurement area draw coordinates
-            float drawScale = (float) drawSampleCount / surfaceWidth;
+            final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
             final float measurementAreaDrawStart = measurementStartX * drawScale;
             final float measurementAreaDrawEnd = measurementEndX * drawScale;
             final int measureStartIndex =
@@ -154,7 +153,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
             glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
-            lastSampleIndex);
+            lastFrameIndex);
 
         if (drawSpikes()) {
             if (spikeTrains != null && valuesAndIndexes.length > 0) {
@@ -162,7 +161,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     //benchmark.start();
                     int verticesCount =
                         fillSpikesAndColorsBuffers(valuesAndIndexes[i], spikesVertices, spikesColors, glWindowWidth,
-                            fromSample, toSample, drawSampleCount, GlUtils.SPIKE_TRAIN_COLORS[i]);
+                            fromSample, toSample, (long) samplesToDraw, Colors.SPIKE_TRAIN_COLORS[i]);
                     //benchmark.end();
                     glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
                 }

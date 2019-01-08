@@ -50,7 +50,9 @@ public:
     void setBpmProcessing(bool processBpm);
 
     void process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
-                     const int *inEventIndices, const int *inEvents, const int inEventCount, const bool averageSamples);
+                     const int *inEventIndices, const int *inEvents, const int inEventCount);
+
+    void appendIncomingSamples(short **inSamples, int *inSampleCounts);
 
 private:
     static const char *TAG;

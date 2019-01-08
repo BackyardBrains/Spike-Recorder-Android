@@ -28,8 +28,6 @@ public class GlDraggableWaveform {
     public void draw(@NonNull GL10 gl, short[] waveformVertices, int waveformVerticesCount, float waveformScaleFactor,
         float waveformPosition, float scaleX, float scaleY, @NonNull @Size(4) float[] color, boolean selected,
         boolean showWaveformHandle) {
-        gl.glPushMatrix();
-        gl.glTranslatef(0f, waveformPosition, 0f);
 
         gl.glPushMatrix();
         gl.glScalef(1f, waveformScaleFactor, 1f);
@@ -46,7 +44,5 @@ public class GlDraggableWaveform {
             dragArea.scale(scaleX, scaleY);
             dragArea.y += waveformPosition;
         }
-
-        gl.glPopMatrix();
     }
 }

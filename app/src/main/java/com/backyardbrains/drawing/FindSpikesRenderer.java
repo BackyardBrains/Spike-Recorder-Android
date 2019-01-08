@@ -1,14 +1,19 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.Size;
 import android.util.SparseArray;
+import android.view.MotionEvent;
+import com.backyardbrains.drawing.gl.GlHLine;
+import com.backyardbrains.drawing.gl.GlHandle;
+import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlSpikes;
+import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.utils.Benchmark;
+import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
+import com.backyardbrains.vo.Threshold;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -19,9 +24,15 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
-    private static final float[] WAVEFORM_COLOR = new float[] { .4f, .4f, .4f, .0f };
+    private static final int LINE_WIDTH = 1;
 
-    private GlSpikes glSpikes;
+    private final GlHandleDragHelper thresholdHandleDragHelper;
+    private final GlHandleDragHelper.Rect rect = new GlHandleDragHelper.Rect();
+
+    private final GlWaveform glWaveform;
+    private final GlSpikes glSpikes;
+    private final GlHLine glThresholdLine;
+    private final GlHandle glThresholdHandle;
     private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
     private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
 
@@ -31,64 +42,43 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
 
     private String filePath;
-
     private long spikeAnalysisId = -1;
-
-    private OnThresholdUpdateListener listener;
-
-    /**
-     * Interface definition for a callback to be invoked when threshold is updated.
-     */
-    public interface OnThresholdUpdateListener {
-        /**
-         * Listener that is invoked when threshold is updated.
-         *
-         * @param threshold Which threshold is updated. One of {@link ThresholdOrientation} values.
-         * @param value New threshold value.
-         */
-        void onThresholdUpdate(@ThresholdOrientation int threshold, int value);
-    }
+    private int selectedSpikeTrain;
+    private int prevChannel, prevFromSample, prevToSample;
+    private SpikeIndexValue[] valuesAndIndices;
 
     public FindSpikesRenderer(@NonNull BaseFragment fragment, @NonNull String filePath) {
         super(filePath, fragment);
 
-        setMeasureEnabled(false);
-
         this.filePath = filePath;
 
+        setMeasureEnabled(false);
+
+        thresholdHandleDragHelper = new GlHandleDragHelper(new GlHandleDragHelper.OnDragListener() {
+            @Override public void onDragStart(int index) {
+                // ignore
+            }
+
+            @Override public void onDrag(int index, float dy) {
+                updateSpikeTrainThreshold(dy, index);
+            }
+
+            @Override public void onDragStop(int index) {
+                saveSpikeTrainThreshold(index);
+            }
+        });
+
+        glWaveform = new GlWaveform();
         glSpikes = new GlSpikes();
+        glThresholdLine = new GlHLine();
+        glThresholdHandle = new GlHandle();
 
-        updateThresholdHandles();
+        loadSpikeTrains();
     }
 
     //=================================================
-    //  PUBLIC AND PROTECTED METHODS
+    //  Renderer INTERFACE IMPLEMENTATIONS
     //=================================================
-
-    /**
-     * Registers a callback to be invoked when threshold is updated.
-     *
-     * @param listener The callback that will be run. This value may be {@code null}.
-     */
-    public void setOnThresholdUpdateListener(@Nullable OnThresholdUpdateListener listener) {
-        this.listener = listener;
-    }
-
-    public int getThresholdScreenValue(@ThresholdOrientation int threshold) {
-        if (threshold >= 0 && threshold < 2) return glYToSurfaceY(thresholds[threshold]);
-
-        return 0;
-    }
-
-    public void setThreshold(int t, @ThresholdOrientation int orientation) {
-        setThreshold(t, orientation, false);
-    }
-
-    public void setCurrentColor(float[] color) {
-        if (currentColor.length == color.length && currentColor.length == 4) {
-            System.arraycopy(color, 0, currentColor, 0, currentColor.length);
-        }
-    }
 
     /**
      * {@inheritDoc}
@@ -96,25 +86,45 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
 
-        updateThresholdHandles();
+        thresholdHandleDragHelper.resetDraggableAreas();
+        thresholdHandleDragHelper.setSurfaceHeight(height);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    //@Override public void setGlWindowHeight(float height) {
-    //    super.setGlWindowHeight(Math.abs(height));
-    //
-    //    updateThresholdHandles();
-    //}
+    //=================================================
+    //  TouchEnabledRenderer INTERFACE IMPLEMENTATIONS
+    //=================================================
 
     /**
      * {@inheritDoc}
      */
-    @Override void setWaveformScaleFactor(float scaleFactor) {
-        super.setWaveformScaleFactor(scaleFactor);
+    @Override public boolean onTouchEvent(MotionEvent event) {
+        return thresholdHandleDragHelper.onTouch(event);
+    }
 
-        updateThresholdHandles();
+    //=================================================
+    //  PUBLIC AND PROTECTED METHODS
+    //=================================================
+
+    /**
+     * Sets currently selected spike train
+     */
+    public void setSelectedSpikeTrain(int selectedSpikeTrain) {
+        this.selectedSpikeTrain = selectedSpikeTrain;
+
+        loadSpikeTrains();
+    }
+
+    //=================================================
+    //  OVERRIDES
+    //=================================================
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void setSelectedChannel(int selectedChannel) {
+        super.setSelectedChannel(selectedChannel);
+
+        loadSpikeTrains();
     }
 
     /**
@@ -124,8 +134,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         return false;
     }
 
-    private final Benchmark benchmark =
-        new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
+    //private final Benchmark benchmark =
+    //    new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
     /**
      * {@inheritDoc}
@@ -133,72 +143,152 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
         int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
         float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastSampleIndex) {
+        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+        final float samplesToDraw = waveformVerticesCount[0] * .5f;
+        final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
+        float scaleX1 = samplesToDraw / glWindowWidth;
+        int selectedChannel = getSelectedChanel();
 
-        super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
-            glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
-            lastSampleIndex);
+        gl.glPushMatrix();
+        gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+        // draw waveform
+        glWaveform.draw(gl, waveformVertices[selectedChannel], waveformVerticesCount[selectedChannel], Colors.GRAY);
+        gl.glPopMatrix();
 
         if (getAnalysisManager() != null) {
             // retry getting spike analysis id until we have it
             if (spikeAnalysisId <= 0) {
                 spikeAnalysisId = getAnalysisManager().getSpikeAnalysisId(filePath);
-                if (spikeAnalysisId <= 0) return;
+                if (spikeAnalysisId <= 0) {
+                    return;
+                }
             }
 
             // let's save start and end sample positions that are being drawn before triggering the actual draw
-            int toSample = (int) lastSampleIndex;
+            int toSample = (int) lastFrameIndex;
             int fromSample = (int) Math.max(0, toSample - glWindowWidth);
             if (spikeAnalysisId > 0) {
                 //benchmark.start();
-                final SpikeIndexValue[] valuesAndIndices =
-                    getAnalysisManager().getSpikesForRange(spikeAnalysisId, fromSample, toSample);
+                if (prevChannel != selectedChannel || prevFromSample != fromSample || prevToSample != toSample) {
+                    valuesAndIndices =
+                        getAnalysisManager().getSpikesForRange(spikeAnalysisId, selectedChannel, fromSample, toSample);
+                }
                 //benchmark.end();
                 int verticesCount =
                     fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth,
-                        fromSample, toSample, (long) (waveformVerticesCount[0] * .5));
-                glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                        fromSample, toSample);
+                // draw spikes
+                if (verticesCount > 0) {
+                    gl.glPushMatrix();
+                    gl.glScalef(scaleX1, waveformScaleFactors[selectedChannel], 1f);
+                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                    gl.glPopMatrix();
+                }
+
+                prevChannel = selectedChannel;
+                prevFromSample = fromSample;
+                prevToSample = toSample;
             }
         }
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override @Size(4) protected float[] getWaveformColor(int channel) {
-        return WAVEFORM_COLOR;
+        // draw left threshold
+        float scaledThreshold = thresholds[ThresholdOrientation.LEFT] * waveformScaleFactors[selectedChannel];
+        gl.glPushMatrix();
+        gl.glTranslatef(0f, scaledThreshold, 0f);
+        // draw threshold line
+        gl.glPushMatrix();
+        gl.glScalef(scaleX, 1f, 1f);
+        glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
+        gl.glPopMatrix();
+        // draw threshold handle
+        gl.glPushMatrix();
+        gl.glScalef(drawScale, scaleY, 1f);
+        glThresholdHandle.draw(gl, currentColor, true);
+        gl.glPopMatrix();
+        gl.glPopMatrix();
+
+        // register left threshold handle as draggable area with drag helper
+        glThresholdHandle.getBorders(rect);
+        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.LEFT,
+            BYBUtils.map(rect.x * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+            BYBUtils.map(rect.y * scaleY + scaledThreshold, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f,
+                surfaceHeight), BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+            glHeightToSurfaceHeight(rect.height * scaleY));
+
+        // draw right threshold
+        scaledThreshold = thresholds[ThresholdOrientation.RIGHT] * waveformScaleFactors[selectedChannel];
+        gl.glPushMatrix();
+        gl.glTranslatef(0f, scaledThreshold, 0f);
+        // draw threshold line
+        gl.glPushMatrix();
+        gl.glScalef(scaleX, 1f, 1f);
+        glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
+        gl.glPopMatrix();
+        // draw threshold handle
+        gl.glPushMatrix();
+        gl.glTranslatef(samplesToDraw - 1, 0f, 0f);
+        gl.glScalef(-drawScale, scaleY, 1f);
+        glThresholdHandle.draw(gl, currentColor, true);
+        gl.glPopMatrix();
+        gl.glPopMatrix();
+
+        // register right threshold handle as draggable area with drag helper
+        glThresholdHandle.getBorders(rect);
+        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.RIGHT,
+            BYBUtils.map(rect.x * drawScale + samplesToDraw - 1 - rect.width, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+            BYBUtils.map(rect.y * scaleY + scaledThreshold, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f,
+                surfaceHeight), BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
+            glHeightToSurfaceHeight(rect.height * scaleY));
     }
 
     //=================================================
-    //  PRIVATE METHODS
+    //  PRIVATE AND PACKAGE-PRIVATE METHODS
     //=================================================
 
-    private void updateThresholdHandles() {
-        updateThresholdHandle(ThresholdOrientation.LEFT);
-        updateThresholdHandle(ThresholdOrientation.RIGHT);
-    }
+    private void loadSpikeTrains() {
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().getAllSpikeTrainThresholds(filePath, getSelectedChanel(), thresholds -> {
+                final int thresholdCount = thresholds.size();
+                if (thresholdCount > 0 && selectedSpikeTrain < thresholdCount) {
+                    final Threshold threshold = thresholds.get(selectedSpikeTrain);
+                    setSpikeTrainThreshold(threshold.getThreshold(ThresholdOrientation.LEFT),
+                        ThresholdOrientation.LEFT);
+                    setSpikeTrainThreshold(threshold.getThreshold(ThresholdOrientation.RIGHT),
+                        ThresholdOrientation.RIGHT);
 
-    private void updateThresholdHandle(@ThresholdOrientation int threshold) {
-        if (threshold >= 0 && threshold < thresholds.length) {
-            if (listener != null) listener.onThresholdUpdate(threshold, glYToSurfaceY(thresholds[threshold]));
+                    setCurrentColor(Colors.SPIKE_TRAIN_COLORS[selectedSpikeTrain]);
+                }
+            });
         }
     }
 
-    private void setThreshold(int t, @ThresholdOrientation int orientation, boolean broadcast) {
-        if (orientation == ThresholdOrientation.LEFT || orientation == ThresholdOrientation.RIGHT) {
-            thresholds[orientation] = t;
-            if (broadcast) updateThresholdHandle(orientation);
+    @SuppressWarnings("WeakerAccess") void updateSpikeTrainThreshold(float dy, @ThresholdOrientation int orientation) {
+        setSpikeTrainThreshold((int) (thresholds[orientation] - surfaceHeightToGlHeight(dy) / getWaveformScaleFactor()),
+            orientation);
+    }
+
+    @SuppressWarnings("WeakerAccess") void saveSpikeTrainThreshold(@ThresholdOrientation int orientation) {
+        if (getAnalysisManager() != null) {
+            getAnalysisManager().setThreshold(filePath, getSelectedChanel(), selectedSpikeTrain, orientation,
+                thresholds[orientation]);
         }
+    }
+
+    private void setSpikeTrainThreshold(int t, @ThresholdOrientation int orientation) {
+        thresholds[orientation] = t;
+    }
+
+    private void setCurrentColor(@Size(4) float[] color) {
+        System.arraycopy(color, 0, currentColor, 0, currentColor.length);
     }
 
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
     private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, @NonNull float[] spikesVertices,
-        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample, long drawSampleCount) {
+        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample) {
         int verticesCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
                 int colorsCounter = 0;
-                float scaleX = (float) drawSampleCount / glWindowWidth;
                 long index;
 
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
@@ -211,7 +301,6 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                         } else { // buffer only contains sample data (no 0 samples in front)
                             index = valueAndIndex.getIndex() - fromSample;
                         }
-                        index = (long) (index * scaleX);
                         spikesVertices[verticesCounter++] = index;
                         float spikeValue = valueAndIndex.getValue();
                         spikesVertices[verticesCounter++] = spikeValue;

@@ -7,21 +7,20 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.afollestad.materialdialogs.GravityEnum;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
-import com.backyardbrains.drawing.BYBColors;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
+import com.backyardbrains.drawing.Colors;
 import com.backyardbrains.drawing.FindSpikesRenderer;
 import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
-import com.backyardbrains.utils.GlUtils;
-import com.backyardbrains.utils.ThresholdOrientation;
-import com.backyardbrains.utils.ViewUtils;
-import com.backyardbrains.view.ThresholdHandle;
-import com.backyardbrains.vo.Threshold;
+import java.util.ArrayList;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -35,46 +34,25 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
     private static final String ARG_FILE_PATH = "bb_file_path";
 
+    private static int[] HANDLE_COLORS = { Colors.RED_HEX, Colors.YELLOW_HEX, Colors.GREEN_HEX };
+
     // Max number of thresholds
     private static final int MAX_THRESHOLDS = 3;
-
-    // Runnable used for updating playback seek bar
-    final protected SetThresholdRunnable setThresholdRunnable = new SetThresholdRunnable();
+    // Holds names of all the available channels
+    private static final List<String> CHANNEL_NAMES = new ArrayList<>();
 
     @BindView(R.id.ll_finding_spikes_progress) ViewGroup llFindingSpikesProgress;
-    @BindView(R.id.threshold_handle_left) ThresholdHandle thresholdHandleLeft;
-    @BindView(R.id.threshold_handle_right) ThresholdHandle thresholdHandleRight;
+    @BindView(R.id.tv_select_channel) TextView tvSelectChannel;
     @BindView(R.id.ibtn_remove_threshold) ImageButton ibtnRemoveThreshold;
     @BindViews({ R.id.threshold0, R.id.threshold1, R.id.threshold2 }) List<ImageButton> thresholdButtons;
     @BindView(R.id.ibtn_add_threshold) ImageButton ibtnAddThreshold;
 
     private Unbinder unbinder;
 
-    private int[] handleColorsHex = { 0xffff0000, 0xffffff00, 0xff00ff00 };
-
+    // Index of the currently selected channel
+    int selectedChannel;
     // Index of the currently selected threshold
     int selectedThreshold;
-
-    /**
-     * Runnable that is executed on the UI thread every time one of the thresholds is updated.
-     */
-    protected class SetThresholdRunnable implements Runnable {
-
-        private @ThresholdOrientation int orientation;
-        private int value;
-
-        @Override public void run() {
-            setThreshold(orientation, value);
-        }
-
-        public void setOrientation(@ThresholdOrientation int orientation) {
-            this.orientation = orientation;
-        }
-
-        public void setValue(int value) {
-            this.value = value;
-        }
-    }
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -128,9 +106,11 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
             @Override public void onScroll(float dx) {
                 if (getActivity() != null) {
-                    int progress = (int) (sbAudioProgress.getProgress() - dx);
+                    int max = toSamples(sbAudioProgress.getMax());
+                    int progress = (int) (toSamples(sbAudioProgress.getProgress()) - dx);
+                    progress -= progress % channelCount;
                     if (progress < 0) progress = 0;
-                    if (progress > sbAudioProgress.getMax()) progress = sbAudioProgress.getMax();
+                    if (progress > max) progress = max;
                     playbackSeekRunnable.setProgress(progress);
                     playbackSeekRunnable.setUpdateProgressSeekBar(true);
                     playbackSeekRunnable.setUpdateProgressTimeLabel(true);
@@ -141,14 +121,6 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
             @Override public void onScrollEnd() {
                 stopSeek();
-            }
-        });
-        renderer.setOnThresholdUpdateListener((threshold, value) -> {
-            // we need to call it on UI thread because renderer is drawing on background thread
-            if (getActivity() != null) {
-                setThresholdRunnable.setOrientation(threshold);
-                setThresholdRunnable.setValue(value);
-                getActivity().runOnUiThread(setThresholdRunnable);
             }
         });
         return renderer;
@@ -196,10 +168,18 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         super.onAudioPlaybackStartedEvent(event);
 
+        // button for selecting channels should only be visible with multichannel recordings
+        tvSelectChannel.setVisibility(channelCount > 1 ? View.VISIBLE : View.GONE);
+        // populate channel names collection
+        CHANNEL_NAMES.clear();
+        for (int i = 0; i < channelCount; i++) {
+            CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+        }
+
         // let's set the playhead so that the begining of the waveform is at the middle of the screen
-        int playhead = (int) (getRenderer().getGlWindowWidth() * .5f);
+        int playhead = (int) (getRenderer().getGlWindowWidth() * channelCount * .5f);
         seek(playhead);
-        sbAudioProgress.setProgress(playhead);
+        sbAudioProgress.setProgress(toFrames(playhead));
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -219,11 +199,6 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
     // Initializes user interface
     private void setupUI() {
-        ViewUtils.playAfterNextLayout(ibtnBack, source -> {
-            thresholdHandleLeft.setTopOffset(ibtnBack.getHeight());
-            thresholdHandleRight.setTopOffset(ibtnBack.getHeight());
-            return null;
-        });
         if (getAnalysisManager() != null) {
             getAnalysisManager().spikesAnalysisExists(filePath, (exists, trainCount) -> {
                 // if Find Spike analysis doesn't exist show loader until analysis is finished
@@ -231,33 +206,37 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
             });
         }
 
+        tvSelectChannel.setOnClickListener(v -> openChannelsDialog());
+        // set initial selected channel
+        getRenderer().setSelectedChannel(selectedChannel);
+
         setupThresholdActions();
 
         ibtnPlayPause.setVisibility(View.GONE);
         tvProgressTime.setVisibility(View.GONE);
     }
 
+    // Opens a dialog for channel selection
+    void openChannelsDialog() {
+        if (getContext() != null) {
+            MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
+                .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
+                    selectedChannel = which;
+                    getRenderer().setSelectedChannel(selectedChannel);
+                    return true;
+                })
+                .alwaysCallSingleChoiceCallback()
+                .itemsGravity(GravityEnum.CENTER)
+                .build();
+            channelsDialog.show();
+        }
+    }
+
     // Initializes threshold actions
     private void setupThresholdActions() {
-        // left threshold
-        thresholdHandleLeft.setOnHandlePositionChangeListener((view, y) -> {
-            if (getAnalysisManager() != null) {
-                int t = (int) getRenderer().surfaceYToGlY(y);
-                getRenderer().setThreshold(t, ThresholdOrientation.LEFT);
-                getAnalysisManager().setThreshold(selectedThreshold, ThresholdOrientation.LEFT, t, filePath);
-            }
-        });
-        // right threshold
-        thresholdHandleRight.setOnHandlePositionChangeListener((view, y) -> {
-            if (getAnalysisManager() != null) {
-                int t = (int) getRenderer().surfaceYToGlY(y);
-                getRenderer().setThreshold(t, ThresholdOrientation.RIGHT);
-                getAnalysisManager().setThreshold(selectedThreshold, ThresholdOrientation.RIGHT, t, filePath);
-            }
-        });
         // threshold selection buttons
         for (int i = 0; i < thresholdButtons.size(); i++) {
-            thresholdButtons.get(i).setColorFilter(handleColorsHex[i]);
+            thresholdButtons.get(i).setColorFilter(HANDLE_COLORS[i]);
             final int index = i;
             thresholdButtons.get(i).setOnClickListener(v -> selectThreshold(index));
         }
@@ -265,25 +244,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
         ibtnAddThreshold.setOnClickListener(v -> addThreshold());
         // remove threshold
         ibtnRemoveThreshold.setOnClickListener(v -> removeSelectedThreshold());
-    }
-
-    // Sets the specified value for the specified threshold
-    void setThreshold(@ThresholdOrientation int threshold, int value) {
-        ThresholdHandle handle = null;
-        switch (threshold) {
-            case ThresholdOrientation.LEFT:
-                handle = thresholdHandleLeft;
-                break;
-            case ThresholdOrientation.RIGHT:
-                handle = thresholdHandleRight;
-                break;
-        }
-        if (handle != null) {
-            //if (handle.getVisibility() != View.VISIBLE) handle.setVisibility(View.VISIBLE);
-            handle.setPosition(value);
-        }
-
-        updateThresholdActions();
+        // select channel
     }
 
     // Selects the threshold at specified index and updates UI.
@@ -298,8 +259,8 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Adds a new threshold to analysis manager and updates UI.
     void addThreshold() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().addThreshold(filePath, train -> {
-                selectedThreshold = train.getOrder();
+            getAnalysisManager().addSpikeTrain(filePath, channelCount, order -> {
+                selectedThreshold = order;
                 updateThresholdActions();
             });
         }
@@ -308,7 +269,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Removes currently selected threshold and updates UI.
     void removeSelectedThreshold() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().removeThreshold(selectedThreshold, filePath, newTrainCount -> {
+            getAnalysisManager().removeSpikeTrain(selectedThreshold, filePath, newTrainCount -> {
                 selectedThreshold = newTrainCount - 1;
                 updateThresholdActions();
             });
@@ -318,26 +279,13 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Updates threshold actions
     void updateThresholdActions() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().getThresholds(filePath, thresholds -> {
+            getAnalysisManager().getAllSpikeTrainThresholds(filePath, selectedChannel, thresholds -> {
                 final int thresholdsSize = thresholds.size();
                 if (getRenderer() != null && thresholdsSize > 0 && selectedThreshold >= 0
                     && selectedThreshold < MAX_THRESHOLDS) {
                     llFindingSpikesProgress.setVisibility(View.GONE);
 
-                    Threshold t = thresholds.get(selectedThreshold);
-                    getRenderer().setThreshold(t.getThreshold(ThresholdOrientation.LEFT), ThresholdOrientation.LEFT);
-                    getRenderer().setThreshold(t.getThreshold(ThresholdOrientation.RIGHT), ThresholdOrientation.RIGHT);
-
-                    thresholdHandleLeft.setPosition(getRenderer().getThresholdScreenValue(ThresholdOrientation.LEFT));
-                    thresholdHandleRight.setPosition(getRenderer().getThresholdScreenValue(ThresholdOrientation.RIGHT));
-
-                    float[] currentColor = GlUtils.SPIKE_TRAIN_COLORS[selectedThreshold];
-                    getRenderer().setCurrentColor(currentColor);
-                    thresholdHandleLeft.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-                    thresholdHandleRight.setColor(BYBColors.asARGB(BYBColors.getGlColorAsHex(currentColor)));
-
-                    thresholdHandleLeft.setVisibility(View.VISIBLE);
-                    thresholdHandleRight.setVisibility(View.VISIBLE);
+                    getRenderer().setSelectedSpikeTrain(selectedThreshold);
 
                     for (int i = 0; i < MAX_THRESHOLDS; i++) {
                         if (i < thresholdsSize) {

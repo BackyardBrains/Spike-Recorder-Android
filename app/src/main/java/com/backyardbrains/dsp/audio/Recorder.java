@@ -114,7 +114,7 @@ public class Recorder {
         void writeData(@NonNull SamplesWithEvents samplesWithEvents) {
             if (working.get()) {
                 // we need to save current recording length before writing the actual samples
-                int writtenSamples = (int) AudioUtils.getSampleCount(audioFile.length());
+                int frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount);
 
                 // save samples to buffer as bytes
                 int sampleCount = JniUtils.interleaveSignal(samples, samplesWithEvents);
@@ -125,7 +125,7 @@ public class Recorder {
                 String event;
                 for (int i = 0; i < samplesWithEvents.eventCount; i++) {
                     event = samplesWithEvents.eventNames[i];
-                    if (event != null) events.put(writtenSamples + samplesWithEvents.eventIndices[i], event);
+                    if (event != null) events.put(frameCount + samplesWithEvents.eventIndices[i], event);
                 }
             }
         }

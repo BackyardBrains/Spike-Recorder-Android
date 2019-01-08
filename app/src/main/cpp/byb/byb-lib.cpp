@@ -83,10 +83,11 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
                                                                   jobjectArray inSamples, jint sampleCount,
                                                                   jintArray inEventIndices, jint eventCount,
                                                                   jint start, jint end, jint drawSurfaceWidth);
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jshortArray valuesPos,
-                                                  jintArray indicesPos, jfloatArray timesPos, jshortArray valuesNeg,
-                                                  jintArray indicesNeg, jfloatArray timesNeg, jint maxSpikes);
+JNIEXPORT jobjectArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
+                                                  jobjectArray indicesPos, jobjectArray timesPos,
+                                                  jobjectArray valuesNeg, jobjectArray indicesNeg,
+                                                  jobjectArray timesNeg, jint channelCount, jint maxSpikes);
 
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jclass type, jobjectArray spikeTrains,
@@ -122,7 +123,6 @@ JniHelper jniHelper;
 
 JavaVM *vm = NULL;
 jfieldID channelCountFid;
-jfieldID frameCountFid;
 jfieldID samplesFid;
 jfieldID sampleCountFid;
 jfieldID samplesMFid;
@@ -203,7 +203,6 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     // let's cache fields of the SampleWithEvents java object
     jclass cls = env->FindClass("com/backyardbrains/dsp/SamplesWithEvents");
     channelCountFid = env->GetFieldID(cls, "channelCount", "I");
-    frameCountFid = env->GetFieldID(cls, "frameCount", "I");
     samplesFid = env->GetFieldID(cls, "samples", "[S");
     sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
     samplesMFid = env->GetFieldID(cls, "samplesM", "[[S");
@@ -486,8 +485,12 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
 
     jint sampleCount = length / 2;
     jint frameCount = sampleCount / channelCount;
-    jshort **outSamplesPtr = SignalUtils::deinterleaveSignal(reinterpret_cast<short *>(inBytesPtr), sampleCount,
-                                                             channelCount);
+    jshort **outSamplesPtr = new jshort *[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        outSamplesPtr[i] = new jshort[frameCount]{0};
+    }
+    SignalUtils::deinterleaveSignal(outSamplesPtr, reinterpret_cast<short *>(inBytesPtr),
+                                    sampleCount, channelCount);
     jint *outEventIndicesPtr = new jint[inEventCount];
 
     jint eventCounter = 0;
@@ -589,15 +592,8 @@ Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jclass type
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples) {
-    jshortArray outSamples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray outSamplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray outSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
-
     jobjectArray inSamplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(in, samplesMFid));
     jintArray inSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(in, sampleCountsMFid));
-    jintArray inEventIndices = reinterpret_cast<jintArray>(env->GetObjectField(in, eventIndicesFid));
-    jobjectArray inEventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(in, eventNamesFid));
-    jint inEventCount = env->GetIntField(in, eventCountFid);
 
     jint channelCount = env->GetArrayLength(inSamplesM);
     jint *inSampleCountsPtr = new jint[channelCount];
@@ -614,6 +610,36 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
         env->GetShortArrayRegion(reinterpret_cast<jshortArray>(env->GetObjectArrayElement(inSamplesM, i)), 0,
                                  inSampleCountsPtr[i], inSamplesPtr[i]);
     }
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSampleCountsPtr;
+        for (int i = 0; i < channelCount; i++) {
+            delete[] inSamplesPtr[i];
+        }
+        delete[] inSamplesPtr;
+        return;
+    }
+
+    if (!averageSamples) {
+        thresholdProcessor->appendIncomingSamples(inSamplesPtr, inSampleCountsPtr);
+
+        delete[] inSampleCountsPtr;
+        for (int i = 0; i < channelCount; i++) {
+            delete[] inSamplesPtr[i];
+        }
+        delete[] inSamplesPtr;
+
+        return;
+    }
+
+    jshortArray outSamples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
+    jobjectArray outSamplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
+    jintArray outSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
+    jintArray inEventIndices = reinterpret_cast<jintArray>(env->GetObjectField(in, eventIndicesFid));
+    jobjectArray inEventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(in, eventNamesFid));
+    jint inEventCount = env->GetIntField(in, eventCountFid);
+
     jint *inEventIndicesPtr = new jint[inEventCount];
     env->GetIntArrayRegion(inEventIndices, 0, inEventCount, inEventIndicesPtr);
     jint *inEventsPtr = new jint[inEventCount];
@@ -640,7 +666,7 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     for (int i = 0; i < channelCount; i++) outSamplesPtr[i] = new jshort[ThresholdProcessor::DEFAULT_SAMPLE_COUNT]{0};
     jint *averagedSampleCount = new jint[channelCount]{0};
     thresholdProcessor->process(outSamplesPtr, averagedSampleCount, inSamplesPtr, inSampleCountsPtr, inEventIndicesPtr,
-                                inEventsPtr, inEventCount, averageSamples);
+                                inEventsPtr, inEventCount);
 
     // exception check
     if (exception_check(env)) {
@@ -659,17 +685,17 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     }
 
     jint *channelSampleCounts = new jint[channelCount];
-    if (averageSamples) {
-        env->SetShortArrayRegion(outSamples, 0, averagedSampleCount[0], outSamplesPtr[0]);
-        env->SetIntField(out, sampleCountFid, averagedSampleCount[0]);
-        for (int i = 0; i < channelCount; i++) {
-            jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(outSamplesM, i));
-            env->SetShortArrayRegion(channelSamples, 0, averagedSampleCount[i], outSamplesPtr[i]);
-            env->SetObjectArrayElement(outSamplesM, i, channelSamples);
-            channelSampleCounts[i] = averagedSampleCount[i];
-        }
-        env->SetIntArrayRegion(outSampleCountsM, 0, channelCount, channelSampleCounts);
+    env->SetShortArrayRegion(outSamples, 0, averagedSampleCount[0], outSamplesPtr[0]);
+    env->SetIntField(out, sampleCountFid, averagedSampleCount[0]);
+    for (int i = 0; i < channelCount; i++) {
+        jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(outSamplesM, i));
+        env->SetShortArrayRegion(channelSamples, 0, averagedSampleCount[i], outSamplesPtr[i]);
+        env->SetObjectArrayElement(outSamplesM, i, channelSamples);
+        env->DeleteLocalRef(channelSamples);
+
+        channelSampleCounts[i] = averagedSampleCount[i];
     }
+    env->SetIntArrayRegion(outSampleCountsM, 0, channelCount, channelSampleCounts);
 
     delete[] inSampleCountsPtr;
     for (int i = 0; i < channelCount; i++) {
@@ -736,6 +762,8 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass typ
         jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
         env->SetShortArrayRegion(channelSamples, 0, outSampleCounts[i], outSamplesPtr[i]);
         env->SetObjectArrayElement(samplesM, i, channelSamples);
+        env->DeleteLocalRef(channelSamples);
+
         channelSampleCounts[i] = outSampleCounts[i];
     }
     env->SetIntArrayRegion(sampleCountsM, 0, channelCount, channelSampleCounts);
@@ -769,74 +797,109 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
                                                              eventCount, from, to, drawSurfaceWidth);
 }
 
-JNIEXPORT jintArray JNICALL
-Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jshortArray valuesPos,
-                                                  jintArray indicesPos, jfloatArray timesPos, jshortArray valuesNeg,
-                                                  jintArray indicesNeg, jfloatArray timesNeg, jint maxSpikes) {
+JNIEXPORT jobjectArray JNICALL
+Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
+                                                  jobjectArray indicesPos, jobjectArray timesPos,
+                                                  jobjectArray valuesNeg, jobjectArray indicesNeg,
+                                                  jobjectArray timesNeg, jint channelCount, jint maxSpikes) {
     // get pointer to file path string
     const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
     // get pointer to positive values array
-    jshort *valuesPosPtr = new jshort[maxSpikes];
-    env->GetShortArrayRegion(valuesPos, 0, maxSpikes, valuesPosPtr);
-    // get pointer to positive indices array
-    jint *indicesPosPtr = new jint[maxSpikes];
-    env->GetIntArrayRegion(indicesPos, 0, maxSpikes, indicesPosPtr);
-    // get pointer to positive times array
-    jfloat *timesPosPtr = new jfloat[maxSpikes];
-    env->GetFloatArrayRegion(timesPos, 0, maxSpikes, timesPosPtr);
-    // get pointer to negative values array
-    jshort *valuesNegPtr = new jshort[maxSpikes];
-    env->GetShortArrayRegion(valuesNeg, 0, maxSpikes, valuesNegPtr);
-    // get pointer to negative indices array
-    jint *indicesNegPtr = new jint[maxSpikes];
-    env->GetIntArrayRegion(indicesNeg, 0, maxSpikes, indicesNegPtr);
-    // get pointer to negative times array
-    jfloat *timesNegPtr = new jfloat[maxSpikes];
-    env->GetFloatArrayRegion(timesNeg, 0, maxSpikes, timesNegPtr);
+    jshort **valuesPosPtr = new jshort *[channelCount];
+    jint **indicesPosPtr = new jint *[channelCount];
+    jfloat **timesPosPtr = new jfloat *[channelCount];
+    jshort **valuesNegPtr = new jshort *[channelCount];
+    jint **indicesNegPtr = new jint *[channelCount];
+    jfloat **timesNegPtr = new jfloat *[channelCount];
+    for (int i = 0; i < channelCount; ++i) {
+        valuesPosPtr[i] = new jshort[maxSpikes];
+        indicesPosPtr[i] = new jint[maxSpikes];
+        timesPosPtr[i] = new jfloat[maxSpikes];
+        valuesNegPtr[i] = new jshort[maxSpikes];
+        indicesNegPtr[i] = new jint[maxSpikes];
+        timesNegPtr[i] = new jfloat[maxSpikes];
+    }
+
+    jclass intArrayClass = env->FindClass("[I");
+    jobjectArray result = env->NewObjectArray(channelCount, intArrayClass, NULL);
+    for (int i = 0; i < channelCount; i++) {
+        jintArray tmpResult = env->NewIntArray(2);
+        env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{0});
+        env->SetObjectArrayElement(result, i, tmpResult);
+    }
 
     // exception check
     if (exception_check(env)) {
         env->ReleaseStringUTFChars(filePath, filePathPtr);
-        delete[] indicesPosPtr;
-        delete[] timesPosPtr;
-        delete[] valuesNegPtr;
-        delete[] indicesNegPtr;
-        delete[] timesNegPtr;
-        return env->NewIntArray(2);
-    }
-
-    jint *resultPtr = spikeAnalysis->findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr,
-                                                indicesNegPtr, timesNegPtr);
-
-    jintArray result = env->NewIntArray(2);
-    env->SetIntArrayRegion(result, 0, 2, resultPtr);
-
-    if (exception_check(env)) {
-        env->ReleaseStringUTFChars(filePath, filePathPtr);
+        for (int i = 0; i < channelCount; ++i) {
+            delete[] valuesPosPtr[i];
+            delete[] indicesPosPtr[i];
+            delete[] timesPosPtr[i];
+            delete[] valuesNegPtr[i];
+            delete[] indicesNegPtr[i];
+            delete[] timesNegPtr[i];
+        }
         delete[] valuesPosPtr;
         delete[] indicesPosPtr;
         delete[] timesPosPtr;
         delete[] valuesNegPtr;
         delete[] indicesNegPtr;
         delete[] timesNegPtr;
-        delete[] resultPtr;
-        return env->NewIntArray(2);
+        return result;
     }
 
-    env->SetShortArrayRegion(valuesPos, 0, resultPtr[0], valuesPosPtr);
-    env->SetIntArrayRegion(indicesPos, 0, resultPtr[0], indicesPosPtr);
-    env->SetFloatArrayRegion(timesPos, 0, resultPtr[0], timesPosPtr);
-    env->SetShortArrayRegion(valuesNeg, 0, resultPtr[1], valuesNegPtr);
-    env->SetIntArrayRegion(indicesNeg, 0, resultPtr[1], indicesNegPtr);
-    env->SetFloatArrayRegion(timesNeg, 0, resultPtr[1], timesNegPtr);
+    jint *outPosCount = new jint[channelCount];
+    jint *outNegCount = new jint[channelCount];
+    spikeAnalysis->findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr, indicesNegPtr,
+                              timesNegPtr, channelCount, outPosCount, outNegCount);
+
+    for (int i = 0; i < channelCount; i++) {
+        jintArray tmpResult = static_cast<jintArray>(env->GetObjectArrayElement(result, i));
+        env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{outPosCount[i], outNegCount[i]});
+        env->SetObjectArrayElement(result, i, tmpResult);
+
+        jshortArray tempValuesPos = static_cast<jshortArray>(env->GetObjectArrayElement(valuesPos, i));
+        env->SetShortArrayRegion(tempValuesPos, 0, outPosCount[i], valuesPosPtr[i]);
+        env->SetObjectArrayElement(valuesPos, i, tempValuesPos);
+
+        jintArray tempIndicesPos = static_cast<jintArray>(env->GetObjectArrayElement(indicesPos, i));
+        env->SetIntArrayRegion(tempIndicesPos, 0, outPosCount[i], indicesPosPtr[i]);
+        env->SetObjectArrayElement(indicesPos, i, tempIndicesPos);
+
+        jfloatArray tempTimesPos = static_cast<jfloatArray>(env->GetObjectArrayElement(timesPos, i));
+        env->SetFloatArrayRegion(tempTimesPos, 0, outPosCount[i], timesPosPtr[i]);
+        env->SetObjectArrayElement(timesPos, i, tempTimesPos);
+
+        jshortArray tempValuesNeg = static_cast<jshortArray>(env->GetObjectArrayElement(valuesNeg, i));
+        env->SetShortArrayRegion(tempValuesNeg, 0, outNegCount[i], valuesNegPtr[i]);
+        env->SetObjectArrayElement(valuesNeg, i, tempValuesNeg);
+
+        jintArray tempIndicesNeg = static_cast<jintArray>(env->GetObjectArrayElement(indicesNeg, i));
+        env->SetIntArrayRegion(tempIndicesNeg, 0, outNegCount[i], indicesNegPtr[i]);
+        env->SetObjectArrayElement(indicesNeg, i, tempIndicesNeg);
+
+        jfloatArray tempTimesNeg = static_cast<jfloatArray>(env->GetObjectArrayElement(timesNeg, i));
+        env->SetFloatArrayRegion(tempTimesNeg, 0, outNegCount[i], timesNegPtr[i]);
+        env->SetObjectArrayElement(timesNeg, i, tempTimesNeg);
+    }
+
     env->ReleaseStringUTFChars(filePath, filePathPtr);
+    for (int i = 0; i < channelCount; ++i) {
+        delete[] valuesPosPtr[i];
+        delete[] indicesPosPtr[i];
+        delete[] timesPosPtr[i];
+        delete[] valuesNegPtr[i];
+        delete[] indicesNegPtr[i];
+        delete[] timesNegPtr[i];
+    }
     delete[] valuesPosPtr;
     delete[] indicesPosPtr;
     delete[] timesPosPtr;
     delete[] valuesNegPtr;
     delete[] indicesNegPtr;
     delete[] timesNegPtr;
-    delete[] resultPtr;
+    delete[] outPosCount;
+    delete[] outNegCount;
 
     return result;
 }

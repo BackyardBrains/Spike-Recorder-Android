@@ -3,8 +3,6 @@ package com.backyardbrains.utils;
 import android.support.annotation.NonNull;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utils.AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
-
 public class GlUtils {
 
     public static final float DEFAULT_GL_WINDOW_HORIZONTAL_SIZE = 4000f;
@@ -17,14 +15,6 @@ public class GlUtils {
 
     public static final int V_AXIS_VALUES_COUNT = 0;
     public static final int V_AXIS_VALUES_STEP = 1;
-
-    public static final float[][] SPIKE_TRAIN_COLORS = new float[MAX_SPIKE_TRAIN_COUNT][];
-
-    static {
-        SPIKE_TRAIN_COLORS[0] = new float[] { 1f, 0f, 0f, 1f };
-        SPIKE_TRAIN_COLORS[1] = new float[] { 1f, 1f, 0f, 1f };
-        SPIKE_TRAIN_COLORS[2] = new float[] { 0f, 1f, 0f, 1f };
-    }
 
     public static void glClear(GL10 gl) {
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);

@@ -81,10 +81,72 @@ void ThresholdProcessor::setBpmProcessing(bool processBpm) {
     ThresholdProcessor::processBpm = processBpm;
 }
 
+void ThresholdProcessor::appendIncomingSamples(short **inSamples, int *inSampleCounts) {
+    bool shouldReset = false;
+    bool shouldResetLocalBuffer = false;
+    // reset buffers if selected channel has changed
+    if (lastSelectedChannel != selectedChannel) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel has changed");
+        lastSelectedChannel = selectedChannel;
+        shouldReset = true;
+    }
+    // reset buffers if threshold changed
+    if (lastTriggeredValue[selectedChannel] != triggerValue[selectedChannel]) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because trigger value has changed");
+        lastTriggeredValue[selectedChannel] = triggerValue[selectedChannel];
+        shouldReset = true;
+    }
+    // reset buffers if averages sample count changed
+    if (lastAveragedSampleCount != averagedSampleCount) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because last averaged sample count has changed");
+        lastAveragedSampleCount = averagedSampleCount;
+        shouldReset = true;
+    }
+    // reset buffers if sample rate changed
+    if (lastSampleRate != getSampleRate()) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because sample rate has changed");
+        lastSampleRate = getSampleRate();
+        shouldReset = true;
+        shouldResetLocalBuffer = true;
+    }
+    // let's save last channel count so we can use it to delete all the arrays
+    int channelCount = getChannelCount();
+    int tmpLastChannelCount = lastChannelCount;
+    if (lastChannelCount != channelCount) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel count has changed");
+        lastChannelCount = channelCount;
+        shouldReset = true;
+        shouldResetLocalBuffer = true;
+    }
+    if (shouldReset || resetOnNextBatch) {
+        // reset rest of the data
+        clean(tmpLastChannelCount, shouldResetLocalBuffer);
+        init(shouldResetLocalBuffer);
+        resetOnNextBatch = false;
+    }
+
+    int tmpInSampleCount;
+    short *tmpInSamples;
+    int copyFromIncoming, copyFromBuffer;
+    int i;
+
+    // in case we don't need to average let's just add incoming samples to local buffer
+    for (i = 0; i < channelCount; i++) {
+        tmpInSampleCount = inSampleCounts[i];
+        tmpInSamples = inSamples[i];
+
+        // add samples to local buffer
+        copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
+        copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
+        if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
+        std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
+    }
+    return;
+}
+
 void
 ThresholdProcessor::process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
-                            const int *inEventIndices, const int *inEvents, const int inEventCount,
-                            const bool averageSamples) {
+                            const int *inEventIndices, const int *inEvents, const int inEventCount) {
     if (paused) return;
 
     bool shouldReset = false;
@@ -132,6 +194,8 @@ ThresholdProcessor::process(short **outSamples, int *outSamplesCounts, short **i
 
     int tmpInSampleCount;
     short *tmpInSamples;
+    int copyFromIncoming, copyFromBuffer;
+    int i;
     short **tmpSamples;
     int *tmpSamplesCounts;
     short *tmpSamplesRow;
@@ -139,24 +203,8 @@ ThresholdProcessor::process(short **outSamples, int *outSamplesCounts, short **i
     int *tmpSummedSamples;
     short *tmpAveragedSamples;
     int samplesToCopy;
-    int copyFromIncoming, copyFromBuffer;
-    int i, j, k;
+    int j, k;
     int kStart, kEnd;
-
-    // in case we don't need to average let's just add incoming samples to local buffer
-    if (!averageSamples) {
-        for (i = 0; i < channelCount; i++) {
-            tmpInSampleCount = inSampleCounts[i];
-            tmpInSamples = inSamples[i];
-
-            // add samples to local buffer
-            copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
-            copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
-            if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
-            std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
-        }
-        return;
-    }
 
     for (i = 0; i < channelCount; i++) {
         tmpInSampleCount = inSampleCounts[i];

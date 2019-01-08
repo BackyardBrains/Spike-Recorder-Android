@@ -1,14 +1,12 @@
 package com.backyardbrains.filters;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +16,6 @@ import android.widget.TextView;
 import butterknife.BindColor;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.utils.ObjectUtils;
@@ -83,16 +80,10 @@ public abstract class FilterSettingsDialog {
             customView(R.layout.view_dialog_custom_filter, true).
             positiveText(R.string.action_set).
             negativeText(R.string.action_cancel).
-            onPositive(new MaterialDialog.SingleButtonCallback() {
-                @Override public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                    if (listener != null) listener.onFilterSelected(constructCustomFilter());
-                }
+            onPositive((dialog, which) -> {
+                if (listener != null) listener.onFilterSelected(constructCustomFilter());
             }).
-            cancelListener(new DialogInterface.OnCancelListener() {
-                @Override public void onCancel(DialogInterface dialogInterface) {
-                    filterSettingsDialog.show();
-                }
-            }).
+            cancelListener(dialogInterface -> filterSettingsDialog.show()).
             build();
 
         setupCustomFilterUI(customFilterDialog.getCustomView());
@@ -150,26 +141,22 @@ public abstract class FilterSettingsDialog {
         ButterKnife.bind(this, customFilterView);
 
         // low cut-off
-        etLowCutOff.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    updateLowCutOff();
-                    ViewUtils.hideSoftKeyboard(textView);
-                    return true;
-                }
-                return false;
+        etLowCutOff.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                updateLowCutOff();
+                ViewUtils.hideSoftKeyboard(textView);
+                return true;
             }
+            return false;
         });
         // high cut-off
-        etHighCutOff.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    updateHighCutOff();
-                    ViewUtils.hideSoftKeyboard(textView);
-                    return true;
-                }
-                return false;
+        etHighCutOff.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                updateHighCutOff();
+                ViewUtils.hideSoftKeyboard(textView);
+                return true;
             }
+            return false;
         });
         // range bar
         srbCutOffs.setRanges((long) getMinCutOff(), (long) getMaxCutOff());
@@ -285,21 +272,19 @@ public abstract class FilterSettingsDialog {
                 super(view);
                 ButterKnife.bind(this, view);
 
-                view.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View view) {
-                        // set selected filter
-                        selectedFilter = filter;
-                        // if custom filter is clicked open custom filter dialog
-                        if (ObjectUtils.equals(customFilter, filter)) {
-                            showCustomFilterDialog();
-                        } else {
-                            // if non-custom filter is selected we need to reset custom filter
-                            customFilter = new Filter(getMinCutOff(), getMaxCutOff());
-                            if (listener != null) listener.onFilterSelected(filter);
-                        }
-
-                        filterSettingsDialog.dismiss();
+                view.setOnClickListener(view1 -> {
+                    // set selected filter
+                    selectedFilter = filter;
+                    // if custom filter is clicked open custom filter dialog
+                    if (ObjectUtils.equals(customFilter, filter)) {
+                        showCustomFilterDialog();
+                    } else {
+                        // if non-custom filter is selected we need to reset custom filter
+                        customFilter = new Filter(getMinCutOff(), getMaxCutOff());
+                        if (listener != null) listener.onFilterSelected(filter);
                     }
+
+                    filterSettingsDialog.dismiss();
                 });
             }
 

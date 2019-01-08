@@ -9,10 +9,15 @@ public class Colors {
     public static final @Size(4) float[] BLACK = { 0f, 0f, 0f, 1f };
     public static final @Size(4) float[] WHITE = { 1f, 1f, 1f, 1f };
     public static final @Size(4) float[] RED = { 1f, 0f, 0f, 1f };
+    public static final int RED_HEX = 0xffff0000;
     public static final @Size(4) float[] GREEN = { 0f, 1f, 0f, 1f };
+    public static final int GREEN_HEX = 0xff00ff00;
+    public static final @Size(4) float[] YELLOW = { 1f, 1f, 0f, 1f };
+    public static final int YELLOW_HEX = 0xffffff00;
     public static final @Size(4) float[] CYAN = { 0f, 1f, 1f, 1f };
     public static final @Size(4) float[] MAGENTA = { 1f, 0f, 1f, 1f };
-    public static final @Size(4) float[] GRAY = new float[] { .58824f, .58824f, .58824f, 1f };
+    public static final @Size(4) float[] GRAY = new float[] { .4f, .4f, .4f, .0f };
+    public static final @Size(4) float[] GRAY_DARK = new float[] { .58824f, .58824f, .58824f, 1f };
     // channel colors
     public static final @Size(4) float[] CHANNEL_1 = GREEN;
     public static final @Size(4) float[] CHANNEL_2 = { 1f, 0.011764705882352941f, 0.011764705882352941f, 1f };
@@ -33,7 +38,11 @@ public class Colors {
     private static final @Size(4) float[] MARKER_8 = new float[] { .682f, 1f, .682f, 1f };
     private static final @Size(4) float[] MARKER_9 = new float[] { 1f, .925f, 1f, 1f };
     public static final float[][] MARKER_COLORS = new float[][] {
-        Colors.MARKER_0, Colors.MARKER_1, Colors.MARKER_2, Colors.MARKER_3, Colors.MARKER_4, Colors.MARKER_5,
-        Colors.MARKER_6, Colors.MARKER_7, Colors.MARKER_8, Colors.MARKER_9
+        MARKER_0, MARKER_1, MARKER_2, MARKER_3, MARKER_4, MARKER_5, MARKER_6, MARKER_7, MARKER_8, MARKER_9
     };
+    // train colors
+    private static final @Size(4) float[] SPIKE_TRAIN_1 = RED;
+    private static final @Size(4) float[] SPIKE_TRAIN_2 = YELLOW;
+    private static final @Size(4) float[] SPIKE_TRAIN_3 = GREEN;
+    public static final float[][] SPIKE_TRAIN_COLORS = new float[][] { SPIKE_TRAIN_1, SPIKE_TRAIN_2, SPIKE_TRAIN_3 };
 }

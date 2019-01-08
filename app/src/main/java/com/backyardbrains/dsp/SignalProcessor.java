@@ -24,8 +24,7 @@ public class SignalProcessor implements SignalSource.Processor {
     private static final float MAX_THRESHOLD_PROCESSING_TIME = 2.4f; // 2.4 seconds
 
     // Default samples buffer size
-    public static final int DEFAULT_SAMPLE_BUFFER_SIZE =
-        (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
+    static final int DEFAULT_SAMPLE_BUFFER_SIZE = (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
     // Default averaged samples buffer size
     public static final int DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE =
         (int) (MAX_THRESHOLD_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
@@ -242,18 +241,11 @@ public class SignalProcessor implements SignalSource.Processor {
         processingBuffer = null;
     }
 
-    //private final Benchmark benchmark = new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200)
-    //    .sessions(10)
-    //    .measuresPerSession(200)
-    //    .logBySession(false)
-    //    .listener(() -> {
-    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-    //    });
+    //private final Benchmark benchmark =
+    //    new Benchmark("AUDIO_DATA_PROCESSING").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
     //private final Benchmark benchmarkT =
-    //    new Benchmark("THRESHOLD").warmUp(10).sessions(10).measuresPerSession(10).logBySession(false).listener(() -> {
-    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-    //    });
+    //    new Benchmark("THRESHOLD").warmUp(10).sessions(10).measuresPerSession(10).logBySession(false);
 
     @SuppressWarnings("WeakerAccess") void processData(@NonNull byte[] buffer, int length) {
         synchronized (lock) {

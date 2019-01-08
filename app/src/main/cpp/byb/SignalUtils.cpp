@@ -4,17 +4,15 @@
 
 #include "SignalUtils.h"
 
-short **SignalUtils::deinterleaveSignal(const short *samples, int sampleCount, int channelCount) {
+short **SignalUtils::deinterleaveSignal(short **outSamples, const short *inSamples, int sampleCount, int channelCount) {
     int frameCount = sampleCount / channelCount;
-    short **result = new short *[channelCount];
     for (int ch = 0; ch < channelCount; ch++) {
-        result[ch] = new short[frameCount];
         for (int i = 0; i < frameCount; i++) {
-            result[ch][i] = samples[channelCount * i + ch];
+            outSamples[ch][i] = inSamples[channelCount * i + ch];
         }
     }
 
-    return result;
+    return outSamples;
 }
 
 short *SignalUtils::interleaveSignal(short **samples, int frameCount, int channelCount) {

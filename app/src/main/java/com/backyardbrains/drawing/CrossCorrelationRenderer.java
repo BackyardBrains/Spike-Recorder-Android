@@ -10,7 +10,6 @@ import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -137,7 +136,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                                 y = surfaceHeight - (textOffset + (h + margin) * (i + 1));
                                 glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, w, h));
                                 glBarGraphThumb.draw(gl, x, y, w, h, crossCorrelationAnalysis[i * trainCount + j],
-                                    GlUtils.SPIKE_TRAIN_COLORS[i], "");
+                                    Colors.SPIKE_TRAIN_COLORS[i], "");
 
                                 // draw spike train names
                                 gl.glEnable(GL10.GL_TEXTURE_2D);
@@ -160,7 +159,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                         int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
                         glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
                             crossCorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
-                            GlUtils.SPIKE_TRAIN_COLORS[selected / trainCount]);
+                            Colors.SPIKE_TRAIN_COLORS[selected / trainCount]);
                     }
                 }
             }

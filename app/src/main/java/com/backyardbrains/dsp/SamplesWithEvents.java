@@ -12,7 +12,7 @@ public class SamplesWithEvents {
     private static final int EVENT_BUFFER_SIZE = EventUtils.MAX_EVENT_COUNT;
 
     public int channelCount;
-    public int frameCount;
+    public int maxSamplesPerChannel;
 
     public short[] samples;
     public int sampleCount;
@@ -23,15 +23,15 @@ public class SamplesWithEvents {
     public int eventCount;
     public long lastSampleIndex = -1;
 
-    public SamplesWithEvents(int channelCount, int frameCount) {
+    public SamplesWithEvents(int channelCount, int maxSamplesPerChannel) {
         this.channelCount = channelCount;
-        this.frameCount = frameCount;
+        this.maxSamplesPerChannel = maxSamplesPerChannel;
 
-        this.samples = new short[channelCount * frameCount];
+        this.samples = new short[channelCount * maxSamplesPerChannel];
         this.sampleCount = 0;
         this.samplesM = new short[channelCount][];
         for (int i = 0; i < channelCount; i++) {
-            this.samplesM[i] = new short[frameCount];
+            this.samplesM[i] = new short[maxSamplesPerChannel];
         }
         this.sampleCountM = new int[channelCount];
         this.eventIndices = new int[EVENT_BUFFER_SIZE];

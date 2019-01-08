@@ -2,13 +2,13 @@ package com.backyardbrains.db;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.db.entity.Spike;
 import com.backyardbrains.db.entity.SpikeAnalysis;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.db.source.AnalysisLocalDataSource;
 import com.backyardbrains.utils.AppExecutors;
 import com.backyardbrains.utils.ThresholdOrientation;
+import com.backyardbrains.vo.SpikeIndexValue;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -87,13 +87,14 @@ public class AnalysisRepository {
      * to {@link SpikeAnalysis} with specified {@code analysisId} and are positioned between {@code startIndex} and
      * {@code endIndex}.
      *
-     * @param analysisId Id of the spike analysis returned spike values and indexes belong to.
-     * @param startIndex Start index from which values and indexes of spikes should be returned.
-     * @param endIndex End index till which values and indexes of spikes should be returned.
+     * @param analysisId Id of the spike analysis returned spike values and indices belong to.
+     * @param channel Channel for which values and indices of spikes should be returned.
+     * @param startIndex Start index from which values and indices of spikes should be returned.
+     * @param endIndex End index till which values and indices of spikes should be returned.
      */
-    @NonNull public SpikeIndexValue[] getSpikeAnalysisValuesAndIndicesForRange(long analysisId, int startIndex,
-        int endIndex) {
-        return analysisDataSource.getSpikeAnalysisForIndexRange(analysisId, startIndex, endIndex);
+    @NonNull public SpikeIndexValue[] getSpikeAnalysisValuesAndIndicesForRange(long analysisId, int channel,
+        int startIndex, int endIndex) {
+        return analysisDataSource.getSpikeAnalysisForIndexRange(analysisId, channel, startIndex, endIndex);
     }
 
     /**
@@ -142,22 +143,24 @@ public class AnalysisRepository {
      * spikes for one of existing analysis by invoking specified {@code callback} and passing in the results.
      *
      * @param filePath Absolute path of the audio file for which trains should be retrieved.
+     * @param channel Channel for which trains should be retrieved.
      * @param callback Callback that's invoked when trains are retrieved from database.
      */
-    public void getSpikeAnalysisTrains(@NonNull String filePath,
+    public void getSpikeAnalysisTrains(@NonNull String filePath, int channel,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
-        analysisDataSource.getSpikeAnalysisTrains(filePath, callback);
+        analysisDataSource.getSpikeAnalysisTrains(filePath, channel, callback);
     }
 
     /**
      * Adds new spike train for the spike analysis of file at specified {@code filePath}.
      *
      * @param filePath Absolute path of the audio file for which we want to add new spike train.
+     * @param channelCount Number of channels we need to create the new spike train for.
      * @param callback Callback that's invoked when spike trains is added to database.
      */
-    public void addSpikeAnalysisTrain(@NonNull String filePath,
+    public void addSpikeAnalysisTrain(@NonNull String filePath, int channelCount,
         @Nullable AnalysisDataSource.AddSpikeAnalysisTrainCallback callback) {
-        analysisDataSource.addSpikeAnalysisTrain(filePath, callback);
+        analysisDataSource.addSpikeAnalysisTrain(filePath, channelCount, callback);
     }
 
     /**
@@ -165,13 +168,14 @@ public class AnalysisRepository {
      * filePath} with specified {@code value}.
      *
      * @param filePath Absolute path of the audio file for which we want to update spike train.
+     * @param channel Channel for which spikes belonging to the saved train should be saved.
+     * @param order Order of the spike train that needs to be updated.
      * @param orientation {@link ThresholdOrientation} of the threshold that was updated.
      * @param value New threshold value.
-     * @param order Order of the spike train that needs to be updated.
      */
-    public void saveSpikeAnalysisTrain(@NonNull String filePath, @ThresholdOrientation int orientation, int value,
-        int order) {
-        analysisDataSource.saveSpikeAnalysisTrain(filePath, orientation, value, order);
+    public void saveSpikeAnalysisTrain(@NonNull String filePath, int channel, int order,
+        @ThresholdOrientation int orientation, int value) {
+        analysisDataSource.saveSpikeAnalysisTrain(filePath, channel, order, orientation, value);
     }
 
     /**

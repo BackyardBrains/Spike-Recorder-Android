@@ -28,12 +28,12 @@ public class DrawMultichannelBuffer {
 
     private static final String TAG = makeLogTag(DrawMultichannelBuffer.class);
 
-    private final int frameSize;
+    private final int frameCount;
     private final int channelCount;
     private final short[][] buffer;
 
     DrawMultichannelBuffer(int channelCount, int frameCount) {
-        this.frameSize = frameCount;
+        this.frameCount = frameCount;
         this.channelCount = channelCount;
 
         buffer = new short[channelCount][];
@@ -46,7 +46,7 @@ public class DrawMultichannelBuffer {
      * Returns number of frames for buffer.
      */
     public int getFrameCount() {
-        return frameSize;
+        return frameCount;
     }
 
     /**

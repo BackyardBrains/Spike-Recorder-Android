@@ -117,6 +117,7 @@ public class GlHandleDragHelper {
                     // find the index of the active pointer and fetch its position
                     pointerIndex = event.findPointerIndex(activePointerId);
 
+                    // FIXME: 27-Dec-18 SOMETIMES THIS LINE TRIGGERS "java.lang.IllegalArgumentException: pointerIndex out of range" EXCEPTION
                     y = event.getY(pointerIndex);
 
                     // calculate the distance moved
@@ -137,10 +138,10 @@ public class GlHandleDragHelper {
                 activePointerId = MotionEvent.INVALID_POINTER_ID;
 
                 if (selectedDraggableArea != NONE) {
-                    selectedDraggableArea = NONE;
-
                     // trigger OnDragListener.onDragStop() callback if listener has been set
                     if (listener != null) listener.onDragStop(selectedDraggableArea);
+
+                    selectedDraggableArea = NONE;
 
                     return true;
                 }

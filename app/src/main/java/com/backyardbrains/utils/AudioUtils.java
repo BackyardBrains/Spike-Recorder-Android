@@ -134,7 +134,14 @@ public class AudioUtils {
      * Returns number of samples that this number of bytes represents using current audio format.
      */
     public static long getSampleCount(long byteCount) {
-        return byteCount / 2;
+        return (long) (byteCount * .5f);
+    }
+
+    /**
+     * Returns number of frames that this number of bytes represents using current audio format and channel count.
+     */
+    public static long getFrameCount(long byteCount, int channelCount) {
+        return (long) (byteCount * .5f / channelCount);
     }
 
     /**

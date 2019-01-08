@@ -11,8 +11,8 @@ import android.arch.persistence.room.PrimaryKey;
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Entity(tableName = "spikes", indices = {
-    @Index(value = { "train_id", "index", "value", "time" }), @Index(value = {
-    "analysis_id", "index", "value", "time"
+    @Index(value = { "train_id", "channel", "index", "value", "time" }), @Index(value = {
+    "analysis_id", "channel", "index", "value", "time"
 })
 }, foreignKeys = @ForeignKey(entity = SpikeAnalysis.class, parentColumns = "id", childColumns = "analysis_id", onDelete = ForeignKey.CASCADE))
 public class Spike {
@@ -20,6 +20,7 @@ public class Spike {
     @PrimaryKey(autoGenerate = true) private long id;
     @ColumnInfo(name = "analysis_id") private long analysisId;
     @ColumnInfo(name = "train_id") private long trainId;
+    private int channel;
     private int index;
     private float value;
     private float time;
@@ -27,16 +28,18 @@ public class Spike {
     public Spike() {
     }
 
-    @Ignore public Spike(float value, int index, float time) {
+    @Ignore public Spike(int channel, float value, int index, float time) {
         this.trainId = 0;
+        this.channel = channel;
         this.value = value;
         this.index = index;
         this.time = time;
     }
 
-    @Ignore public Spike(long analysisId, long trainId, float value, int index, float time) {
+    @Ignore public Spike(long analysisId, long trainId, int channel, float value, int index, float time) {
         this.analysisId = analysisId;
         this.trainId = trainId;
+        this.channel = channel;
         this.value = value;
         this.index = index;
         this.time = time;
@@ -64,6 +67,14 @@ public class Spike {
 
     public void setTrainId(long trainId) {
         this.trainId = trainId;
+    }
+
+    public int getChannel() {
+        return channel;
+    }
+
+    public void setChannel(int channel) {
+        this.channel = channel;
     }
 
     public int getIndex() {

@@ -7,7 +7,6 @@ import android.util.SparseArray;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.JniUtils;
@@ -30,6 +29,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSignalSource.class);
 
+    // Max number of samples each channel should hold by default
+    private static final int MAX_SAMPLES_PER_CHANNEL = AudioUtils.DEFAULT_SAMPLE_RATE; // 1 sec of samples at 44100 Hz
     // Number of seconds buffer should hold while seeking
     private static final int SEEK_BUFFER_SIZE_IN_SEC = 6;
 
@@ -105,8 +106,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 buffer = new byte[bufferSize];
 
                 int sampleCount = (int) (bufferSize * .5);
-                int frameCount = (int) Math.floor((float) sampleCount / raf.channelCount());
-                samplesWithEvents = new SamplesWithEvents(raf.channelCount(), frameCount);
+                int maxSamplesPerChannel = (int) Math.floor((float) sampleCount / raf.channelCount());
+                samplesWithEvents = new SamplesWithEvents(raf.channelCount(), maxSamplesPerChannel);
 
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
 
@@ -125,7 +126,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                         }
 
                         // index of the sample from which we check the events
-                        fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
+                        fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
 
                         // number of samples to prepend
                         samplesToPrepend.set(0);
@@ -146,7 +147,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                         progress.set(raf.getFilePointer());
 
                         // index of the sample up to which we check the events
-                        toSample.set(AudioUtils.getSampleCount(progress.get()));
+                        toSample.set(AudioUtils.getFrameCount(progress.get(), raf.channelCount()));
 
                         // write data to buffer
                         writeToBuffer(buffer, read);
@@ -185,29 +186,24 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             // fix seek position so that it's positioned at the begining of the frame
             raf.seek(seekPosition);
 
-            LOGD(TAG, "SEEK POSITION: " + seekPosition);
-
             // index of the sample from which we check the events
-            fromSample.set(AudioUtils.getSampleCount(raf.getFilePointer()));
+            fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
 
             // number of bytes actually read during single read
             if (raf.read(buffer) > 0) {
                 if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
 
                 // number of samples to prepend
-                samplesToPrepend.set((int) (zerosPrependCount * .5));
-                LOGD(TAG, "PREPEND: " + samplesToPrepend.get());
+                samplesToPrepend.set((int) AudioUtils.getFrameCount(zerosPrependCount, raf.channelCount()));
 
                 // index of the sample up to which we check the events
                 long toByte = raf.getFilePointer();
                 if (bufferSize > toByte) toByte = bufferSize;
-                toSample.set(AudioUtils.getSampleCount(toByte));
+                toSample.set(AudioUtils.getFrameCount(toByte, raf.channelCount()));
 
                 // write data to buffer
                 writeToBuffer(buffer, bufferSize);
             }
-
-            LOGD(TAG, "FROM: " + fromSample.get() + ", TO: " + toSample.get());
         }
 
         // Rewinds audio file.
@@ -338,7 +334,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     @SuppressWarnings("WeakerAccess") String[] eventNames;
 
     public PlaybackSignalSource(@NonNull String filePath, boolean autoPlay, int position) {
-        super(0, 0, 0);
+        super(AudioUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, MAX_SAMPLES_PER_CHANNEL);
 
         this.filePath = filePath;
         this.autoPlay = autoPlay;
@@ -472,19 +468,19 @@ public class PlaybackSignalSource extends AbstractSignalSource {
         }
     }
 
-    private final Benchmark benchmark = new Benchmark("PLAYBACK_TEST").warmUp(200)
-        .sessions(10)
-        .measuresPerSession(200)
-        .logBySession(false)
-        .listener(() -> {
-            //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-        });
+    //private final Benchmark benchmark = new Benchmark("PLAYBACK_TEST").warmUp(200)
+    //    .sessions(10)
+    //    .measuresPerSession(200)
+    //    .logBySession(false)
+    //    .listener(() -> {
+    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //    });
 
     @Override public void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
-        benchmark.start();
+        //benchmark.start();
         JniUtils.processPlaybackStream(outData, inData, inDataLength, eventIndices, eventNames, eventIndices.length,
             fromSample.get(), toSample.get(), samplesToPrepend.get());
-        benchmark.end();
+        //benchmark.end();
     }
 
     @Override public int getType() {

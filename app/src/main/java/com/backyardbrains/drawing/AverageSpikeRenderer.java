@@ -3,10 +3,9 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.android.texample.GLText;
+import com.backyardbrains.drawing.gl.GlAverageSpikeGraph;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.vo.AverageSpike;
-import com.backyardbrains.drawing.gl.GlAverageSpikeGraph;
-import com.backyardbrains.utils.GlUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -85,7 +84,7 @@ public class AverageSpikeRenderer extends BaseAnalysisRenderer {
                     for (int i = 0; i < len; i++) {
                         float y = surfaceHeight - (MARGIN + graphH) * (i + 1);
                         glAverageSpikeGraph.draw(gl, MARGIN, y, graphW, graphH, averageSpikeAnalysis[i],
-                            GlUtils.SPIKE_TRAIN_COLORS[i]);
+                            Colors.SPIKE_TRAIN_COLORS[i]);
                     }
 
                     int hAxisLen = H_AXIS_VALUES.length;
