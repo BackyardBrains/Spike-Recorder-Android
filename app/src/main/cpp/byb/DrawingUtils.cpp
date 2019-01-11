@@ -91,5 +91,7 @@ void DrawingUtils::envelope(short **outSamples, int *outSampleCount, int *outEve
         sampleIndex = 0;
         eventIndex = 0;
         envelopeCounter = 0;
+        min = SHRT_MAX;
+        max = SHRT_MIN;
     }
 }

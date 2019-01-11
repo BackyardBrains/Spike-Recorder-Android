@@ -724,10 +724,8 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass typ
     jshort **inSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; ++i) {
         jshortArray tmpSamples = (jshortArray) env->GetObjectArrayElement(inSamples, i);
-
         inSamplesPtr[i] = new jshort[frameCount];
         env->GetShortArrayRegion(tmpSamples, 0, frameCount, inSamplesPtr[i]);
-
         env->DeleteLocalRef(tmpSamples);
     }
 
@@ -826,6 +824,7 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
         jintArray tmpResult = env->NewIntArray(2);
         env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{0});
         env->SetObjectArrayElement(result, i, tmpResult);
+        env->DeleteLocalRef(tmpResult);
     }
 
     // exception check
@@ -857,30 +856,37 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
         jintArray tmpResult = static_cast<jintArray>(env->GetObjectArrayElement(result, i));
         env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{outPosCount[i], outNegCount[i]});
         env->SetObjectArrayElement(result, i, tmpResult);
+        env->DeleteLocalRef(tmpResult);
 
         jshortArray tempValuesPos = static_cast<jshortArray>(env->GetObjectArrayElement(valuesPos, i));
         env->SetShortArrayRegion(tempValuesPos, 0, outPosCount[i], valuesPosPtr[i]);
         env->SetObjectArrayElement(valuesPos, i, tempValuesPos);
+        env->DeleteLocalRef(tempValuesPos);
 
         jintArray tempIndicesPos = static_cast<jintArray>(env->GetObjectArrayElement(indicesPos, i));
         env->SetIntArrayRegion(tempIndicesPos, 0, outPosCount[i], indicesPosPtr[i]);
         env->SetObjectArrayElement(indicesPos, i, tempIndicesPos);
+        env->DeleteLocalRef(tempIndicesPos);
 
         jfloatArray tempTimesPos = static_cast<jfloatArray>(env->GetObjectArrayElement(timesPos, i));
         env->SetFloatArrayRegion(tempTimesPos, 0, outPosCount[i], timesPosPtr[i]);
         env->SetObjectArrayElement(timesPos, i, tempTimesPos);
+        env->DeleteLocalRef(tempTimesPos);
 
         jshortArray tempValuesNeg = static_cast<jshortArray>(env->GetObjectArrayElement(valuesNeg, i));
         env->SetShortArrayRegion(tempValuesNeg, 0, outNegCount[i], valuesNegPtr[i]);
         env->SetObjectArrayElement(valuesNeg, i, tempValuesNeg);
+        env->DeleteLocalRef(tempValuesNeg);
 
         jintArray tempIndicesNeg = static_cast<jintArray>(env->GetObjectArrayElement(indicesNeg, i));
         env->SetIntArrayRegion(tempIndicesNeg, 0, outNegCount[i], indicesNegPtr[i]);
         env->SetObjectArrayElement(indicesNeg, i, tempIndicesNeg);
+        env->DeleteLocalRef(tempIndicesNeg);
 
         jfloatArray tempTimesNeg = static_cast<jfloatArray>(env->GetObjectArrayElement(timesNeg, i));
         env->SetFloatArrayRegion(tempTimesNeg, 0, outNegCount[i], timesNegPtr[i]);
         env->SetObjectArrayElement(timesNeg, i, tempTimesNeg);
+        env->DeleteLocalRef(tempTimesNeg);
     }
 
     env->ReleaseStringUTFChars(filePath, filePathPtr);
