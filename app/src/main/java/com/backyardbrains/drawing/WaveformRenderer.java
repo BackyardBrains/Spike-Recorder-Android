@@ -45,9 +45,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
-    // Waveform channel colors
-    private static final float[][] DEFAULT_WAVEFORM_COLOR =
-        new float[][] { Colors.CHANNEL_1, Colors.CHANNEL_2, Colors.CHANNEL_3, Colors.CHANNEL_4, Colors.CHANNEL_5 };
     private static final float DASH_SIZE = 30f;
     private static final int LINE_WIDTH = 1;
 
@@ -210,10 +207,11 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
-        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
+        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex) {
         final float samplesToDraw = waveformVerticesCount[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
         boolean showWaveformHandle = getChannelCount() > 1;
@@ -293,8 +291,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     // Returns the color of the waveform for the specified channel in rgba format. If color is not defined green is returned.
     private @Size(4) float[] getWaveformColor(int channel) {
-        channel = channel % 5;
-        return DEFAULT_WAVEFORM_COLOR[DEFAULT_WAVEFORM_COLOR.length > channel ? channel : 0];
+        channel = channel % Colors.CHANNEL_COLORS.length;
+        return Colors.CHANNEL_COLORS[channel];
     }
 
     private void setThreshold(float threshold) {

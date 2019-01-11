@@ -139,14 +139,14 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
-        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
+        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex) {
         final float samplesToDraw = waveformVerticesCount[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
-        float scaleX1 = samplesToDraw / glWindowWidth;
-        int selectedChannel = getSelectedChanel();
+        final float scaleX1 = samplesToDraw / glWindowWidth;
 
         gl.glPushMatrix();
         gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
@@ -158,36 +158,34 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             // retry getting spike analysis id until we have it
             if (spikeAnalysisId <= 0) {
                 spikeAnalysisId = getAnalysisManager().getSpikeAnalysisId(filePath);
-                if (spikeAnalysisId <= 0) {
-                    return;
-                }
+                if (spikeAnalysisId <= 0) return;
             }
 
             // let's save start and end sample positions that are being drawn before triggering the actual draw
-            int toSample = (int) lastFrameIndex;
-            int fromSample = (int) Math.max(0, toSample - glWindowWidth);
-            if (spikeAnalysisId > 0) {
-                //benchmark.start();
-                if (prevChannel != selectedChannel || prevFromSample != fromSample || prevToSample != toSample) {
-                    valuesAndIndices =
-                        getAnalysisManager().getSpikesForRange(spikeAnalysisId, selectedChannel, fromSample, toSample);
-                }
-                //benchmark.end();
-                int verticesCount =
-                    fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth,
-                        fromSample, toSample);
-                // draw spikes
-                if (verticesCount > 0) {
-                    gl.glPushMatrix();
-                    gl.glScalef(scaleX1, waveformScaleFactors[selectedChannel], 1f);
-                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
-                    gl.glPopMatrix();
-                }
-
-                prevChannel = selectedChannel;
-                prevFromSample = fromSample;
-                prevToSample = toSample;
+            final int toSample = (int) lastFrameIndex;
+            final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
+            boolean shouldQuerySamples =
+                prevChannel != selectedChannel || prevFromSample != fromSample || prevToSample != toSample;
+            //benchmark.start();
+            if (valuesAndIndices == null || valuesAndIndices.length == 0 || shouldQuerySamples) {
+                valuesAndIndices =
+                    getAnalysisManager().getSpikesForRange(spikeAnalysisId, selectedChannel, fromSample, toSample);
             }
+            //benchmark.end();
+            int verticesCount =
+                fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth, fromSample,
+                    toSample);
+            // draw spikes
+            if (verticesCount > 0) {
+                gl.glPushMatrix();
+                gl.glScalef(scaleX1, waveformScaleFactors[selectedChannel], 1f);
+                glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                gl.glPopMatrix();
+            }
+
+            prevChannel = selectedChannel;
+            prevFromSample = fromSample;
+            prevToSample = toSample;
         }
 
         // draw left threshold

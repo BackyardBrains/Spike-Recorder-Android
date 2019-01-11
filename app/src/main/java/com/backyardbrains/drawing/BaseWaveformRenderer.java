@@ -308,6 +308,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Sets currently selected channel.
      */
     public void setSelectedChannel(int selectedChannel) {
+        LOGD(TAG, "setSelectedChannel(" + selectedChannel + ")");
         if (getChannelCount() <= selectedChannel) return;
 
         // pass selected channel to native code
@@ -468,6 +469,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         synchronized (lock) {
             //benchmark.start();
 
+            final int selectedChannel = this.selectedChannel;
+
             // copy samples, averaged samples and events to local buffers
             final int copiedEventsCount =
                 processingBuffer.copy(samplesBuffer, averagedSamplesBuffer, eventIndices, eventNames);
@@ -525,9 +528,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             gl.glLoadIdentity();
 
             // draw on surface
-            draw(gl, tmpSampleBuffer.getBuffer(), samplesWithEvents.samplesM, samplesWithEvents.sampleCountM,
-                eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth, tempWaveformScaleFactors,
-                tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
+            draw(gl, tmpSampleBuffer.getBuffer(), selectedChannel, samplesWithEvents.samplesM,
+                samplesWithEvents.sampleCountM, eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth,
+                tempWaveformScaleFactors, tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
+                lastSampleIndex);
 
             // draw average triggering line
             if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
@@ -571,10 +575,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         }
     }
 
-    abstract protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
-        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex);
+    abstract protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
+        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex);
 
     private void reshape(GL10 gl, float drawnSamplesCount) {
         gl.glMatrixMode(GL10.GL_PROJECTION);

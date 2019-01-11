@@ -28,6 +28,8 @@ public class Colors {
     public static final @Size(4) float[] CHANNEL_4 =
         { 0.9686274509803922f, 0.4980392156862745f, 0.011764705882352941f, 1f };
     public static final @Size(4) float[] CHANNEL_5 = MAGENTA;
+    public static final float[][] CHANNEL_COLORS =
+        new float[][] { Colors.CHANNEL_1, Colors.CHANNEL_2, Colors.CHANNEL_3, Colors.CHANNEL_4, Colors.CHANNEL_5 };
     // marker colors
     private static final @Size(4) float[] MARKER_0 = new float[] { .847f, .706f, .906f, 1f };
     private static final @Size(4) float[] MARKER_1 = new float[] { 1f, .314f, 0f, 1f };

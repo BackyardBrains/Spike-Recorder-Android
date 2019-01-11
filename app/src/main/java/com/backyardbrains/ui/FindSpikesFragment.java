@@ -178,6 +178,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
         // let's set the playhead so that the begining of the waveform is at the middle of the screen
         int playhead = (int) (getRenderer().getGlWindowWidth() * channelCount * .5f);
+        playhead -= playhead % channelCount;
         seek(playhead);
         sbAudioProgress.setProgress(toFrames(playhead));
     }

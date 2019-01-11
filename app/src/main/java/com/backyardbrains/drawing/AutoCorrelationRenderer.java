@@ -6,7 +6,6 @@ import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
 import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.utils.AnalysisUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -26,14 +25,6 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
         H_GRAPH_AXIS_VALUES[3] = .06f;
         H_GRAPH_AXIS_VALUES[4] = .08f;
         H_GRAPH_AXIS_VALUES[5] = .1f;
-    }
-
-    private static final String[] SPIKE_TRAIN_THUMB_GRAPH_NAMES = new String[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT];
-
-    static {
-        SPIKE_TRAIN_THUMB_GRAPH_NAMES[0] = "ST1";
-        SPIKE_TRAIN_THUMB_GRAPH_NAMES[1] = "ST2";
-        SPIKE_TRAIN_THUMB_GRAPH_NAMES[2] = "ST3";
     }
 
     private GlBarGraph glBarGraph;
@@ -62,7 +53,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
         if (getAutocorrelationAnalysis()) {
             int len = autocorrelationAnalysis.length;
             if (len > 0) {
-                final float thumbSize = getDefaultGraphThumbSize(surfaceWidth, surfaceHeight);
+                final float thumbSize = getDefaultGraphThumbSize(surfaceWidth, surfaceHeight, len);
                 boolean portraitOrientation = surfaceWidth < surfaceHeight;
                 float x, y, w, h;
                 for (int i = 0; i < len; i++) {
@@ -72,8 +63,9 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i], Colors.SPIKE_TRAIN_COLORS[i],
-                        SPIKE_TRAIN_THUMB_GRAPH_NAMES[i]);
+                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i],
+                        Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length],
+                        SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX + (i + 1));
                 }
                 x = MARGIN;
                 y = portraitOrientation ? 2 * MARGIN + thumbSize : MARGIN;
@@ -82,7 +74,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
 
                 int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
                 glBarGraph.draw(gl, x, y, w, h, autocorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
-                    Colors.SPIKE_TRAIN_COLORS[selected]);
+                    Colors.CHANNEL_COLORS[selected % Colors.CHANNEL_COLORS.length]);
             }
         }
     }

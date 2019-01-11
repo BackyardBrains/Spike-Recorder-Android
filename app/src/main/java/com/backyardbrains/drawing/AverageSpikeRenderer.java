@@ -84,7 +84,7 @@ public class AverageSpikeRenderer extends BaseAnalysisRenderer {
                     for (int i = 0; i < len; i++) {
                         float y = surfaceHeight - (MARGIN + graphH) * (i + 1);
                         glAverageSpikeGraph.draw(gl, MARGIN, y, graphW, graphH, averageSpikeAnalysis[i],
-                            Colors.SPIKE_TRAIN_COLORS[i]);
+                            Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length]);
                     }
 
                     int hAxisLen = H_AXIS_VALUES.length;

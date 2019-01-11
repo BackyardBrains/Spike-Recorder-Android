@@ -95,10 +95,11 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull short[][] waveformVertices,
-        int[] waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex,
-        int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
+        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         final int toSample = (int) lastFrameIndex;
         final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
@@ -106,7 +107,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         final float samplesToDraw = waveformVerticesCount[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
-        final int selectedChannel = getSelectedChanel();
 
         if (spikeTrains != null && valuesAndIndexes != null) {
             if (drawSpikes()) {
@@ -208,9 +208,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        super.draw(gl, samples, waveformVertices, waveformVerticesCount, events, surfaceWidth, surfaceHeight,
-            glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
-            lastFrameIndex);
+        super.draw(gl, samples, selectedChannel, waveformVertices, waveformVerticesCount, events, surfaceWidth,
+            surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX,
+            scaleY, lastFrameIndex);
 
         if (valuesAndIndexes != null) {
             if (drawSpikes()) {

@@ -19,6 +19,7 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
 
     private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
     static final float MARGIN = 30f;
+    static final String SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX = "ST";
 
     final GlGraphThumbTouchHelper glGraphThumbTouchHelper = new GlGraphThumbTouchHelper();
 
@@ -106,9 +107,9 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
     /**
      * Returns default size for the graph thumb.
      */
-    float getDefaultGraphThumbSize(int surfaceWidth, int surfaceHeight) {
-        float result = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (AnalysisUtils.MAX_SPIKE_TRAIN_COUNT + 1))
-            / AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+    float getDefaultGraphThumbSize(int surfaceWidth, int surfaceHeight, int thumbCount) {
+        if (thumbCount < AnalysisUtils.MAX_SPIKE_TRAIN_COUNT) thumbCount = AnalysisUtils.MAX_SPIKE_TRAIN_COUNT;
+        float result = (Math.min(surfaceWidth, surfaceHeight) - MARGIN * (thumbCount + 1)) / thumbCount;
         if (result > maxGraphThumbSize) result = maxGraphThumbSize;
 
         return result;
