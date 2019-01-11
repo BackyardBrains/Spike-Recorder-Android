@@ -13,6 +13,9 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlHandle {
 
+    private static final int HORIZONTAL = 0;
+    private static final int VERTICAL = 1;
+
     private static final float OUTER_CIRCLE_RADIUS = 30f;
     private static final float INNER_CIRCLE_RADIUS = OUTER_CIRCLE_RADIUS * .8f;
     private static final float OFFSET_X = .35f * OUTER_CIRCLE_RADIUS;
@@ -20,14 +23,14 @@ public class GlHandle {
 
     private final GlCircle outerCircle;
     private final GlTriangle triangle;
-    private final GlCircle innerCircle;
+    //private final GlCircle innerCircle;
 
     private final Rect borders;
 
     public GlHandle() {
         outerCircle = new GlCircle();
         triangle = new GlTriangle();
-        innerCircle = new GlCircle();
+        //innerCircle = new GlCircle();
 
         borders = new Rect();
     }
@@ -49,7 +52,7 @@ public class GlHandle {
         if (!selected) {
             gl.glPushMatrix();
             gl.glTranslatef(OUTER_CIRCLE_RADIUS, 0f, 0f);
-            innerCircle.draw(gl, INNER_CIRCLE_RADIUS, Colors.BLACK);
+            outerCircle.draw(gl, INNER_CIRCLE_RADIUS, Colors.BLACK);
             gl.glPopMatrix();
         }
     }

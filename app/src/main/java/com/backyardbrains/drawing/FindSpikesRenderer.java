@@ -190,18 +190,19 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // draw left threshold
         float scaledThreshold = thresholds[ThresholdOrientation.LEFT] * waveformScaleFactors[selectedChannel];
-        gl.glPushMatrix();
-        gl.glTranslatef(0f, scaledThreshold, 0f);
+        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
+        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         // draw threshold line
         gl.glPushMatrix();
-        gl.glScalef(scaleX, 1f, 1f);
+        gl.glScalef(scaleX, waveformScaleFactors[selectedChannel], 1f);
+        gl.glTranslatef(0f, thresholds[ThresholdOrientation.LEFT], 0f);
         glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
         gl.glPopMatrix();
         // draw threshold handle
         gl.glPushMatrix();
+        gl.glTranslatef(0f, scaledThreshold, 0f);
         gl.glScalef(drawScale, scaleY, 1f);
         glThresholdHandle.draw(gl, currentColor, true);
-        gl.glPopMatrix();
         gl.glPopMatrix();
 
         // register left threshold handle as draggable area with drag helper
@@ -211,19 +212,19 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // draw right threshold
         scaledThreshold = thresholds[ThresholdOrientation.RIGHT] * waveformScaleFactors[selectedChannel];
-        gl.glPushMatrix();
-        gl.glTranslatef(0f, scaledThreshold, 0f);
+        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
+        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         // draw threshold line
         gl.glPushMatrix();
-        gl.glScalef(scaleX, 1f, 1f);
+        gl.glScalef(scaleX, waveformScaleFactors[selectedChannel], 1f);
+        gl.glTranslatef(0f, thresholds[ThresholdOrientation.RIGHT], 0f);
         glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
         gl.glPopMatrix();
         // draw threshold handle
         gl.glPushMatrix();
-        gl.glTranslatef(samplesToDraw - 1, 0f, 0f);
+        gl.glTranslatef(samplesToDraw - 1, scaledThreshold, 0f);
         gl.glScalef(-drawScale, scaleY, 1f);
         glThresholdHandle.draw(gl, currentColor, true);
-        gl.glPopMatrix();
         gl.glPopMatrix();
 
         // register right threshold handle as draggable area with drag helper

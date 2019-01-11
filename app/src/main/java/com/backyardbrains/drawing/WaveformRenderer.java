@@ -38,6 +38,7 @@ import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -246,19 +247,24 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
             if (showThresholdHandle) {
                 float scaledThreshold = threshold * waveformScaleFactors[i];
-                gl.glPushMatrix();
-                gl.glTranslatef(0f, scaledThreshold, 0f);
+                LOGD(TAG, "SCALED THRESHOLD : " + scaledThreshold);
+                if (scaledThreshold + waveformPositions[i] < -MAX_GL_VERTICAL_HALF_SIZE) {
+                    scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
+                }
+                if (scaledThreshold + waveformPositions[i] > MAX_GL_VERTICAL_HALF_SIZE) {
+                    scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
+                }
                 // draw threshold line
                 gl.glPushMatrix();
-                gl.glScalef(drawScale, 1f, 1f);
+                gl.glScalef(drawScale, waveformScaleFactors[i], 1f);
+                gl.glTranslatef(0f, threshold, 0f);
                 glThresholdLine.draw(gl, 0f, samplesToDraw - 1, DASH_SIZE, LINE_WIDTH, Colors.RED);
                 gl.glPopMatrix();
                 // draw threshold handle
                 gl.glPushMatrix();
-                gl.glTranslatef(samplesToDraw - 1, 1f, 0f);
+                gl.glTranslatef(samplesToDraw - 1, scaledThreshold, 0f);
                 gl.glScalef(-drawScale, scaleY, 1f);
                 glHandle.draw(gl, Colors.RED, true);
-                gl.glPopMatrix();
                 gl.glPopMatrix();
 
                 // register threshold handle as draggable area with drag helper
