@@ -16,7 +16,9 @@ public class Colors {
     public static final int YELLOW_HEX = 0xffffff00;
     public static final @Size(4) float[] CYAN = { 0f, 1f, 1f, 1f };
     public static final @Size(4) float[] MAGENTA = { 1f, 0f, 1f, 1f };
+    public static final @Size(4) float[] GRAY_LIGHT = new float[] { 0.8f, 0.8f, 0.8f, 1f };
     public static final @Size(4) float[] GRAY = new float[] { .4f, .4f, .4f, .0f };
+    public static final @Size(4) float[] GRAY_50 = new float[] { 0.4f, 0.4f, 0.4f, 0.5f };
     public static final @Size(4) float[] GRAY_DARK = new float[] { .58824f, .58824f, .58824f, 1f };
     // channel colors
     public static final @Size(4) float[] CHANNEL_1 = GREEN;

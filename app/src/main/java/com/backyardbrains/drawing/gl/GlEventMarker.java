@@ -27,11 +27,8 @@ public class GlEventMarker {
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, String eventName, float x, float y0, float y1, float scaleX, float scaleY) {
+    public void draw(@NonNull GL10 gl, String eventName, float height, float scaleX, float scaleY) {
         if (eventName == null) return;
-
-        gl.glPushMatrix();
-        gl.glTranslatef(x, 0f, 0f);
 
         int len = eventName.length();
         int ascii;
@@ -49,7 +46,7 @@ public class GlEventMarker {
         gl.glLineWidth(LINE_WIDTH);
 
         // draw line
-        vLine.draw(gl, y0, y1, LINE_WIDTH, glColor);
+        vLine.draw(gl, 0f, height, LINE_WIDTH, glColor);
 
         // draw label background
         text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
@@ -58,7 +55,7 @@ public class GlEventMarker {
         float labelW = textW * 1.3f;
         float labelH = textH * 1.3f;
         float labelX = -labelW * .5f;
-        float labelY = y1 - LABEL_TOP * scaleY;
+        float labelY = height - LABEL_TOP * scaleY;
         gl.glPushMatrix();
         gl.glTranslatef(labelX, labelY, 0f);
         rect.draw(gl, labelW, labelH, glColor);
@@ -73,7 +70,5 @@ public class GlEventMarker {
         text.end();
         gl.glDisable(GL10.GL_BLEND);
         gl.glDisable(GL10.GL_TEXTURE_2D);
-
-        gl.glPopMatrix();
     }
 }

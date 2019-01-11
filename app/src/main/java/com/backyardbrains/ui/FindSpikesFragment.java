@@ -279,7 +279,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Updates threshold actions
     void updateThresholdActions() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().getAllSpikeTrainThresholds(filePath, selectedChannel, thresholds -> {
+            getAnalysisManager().getSpikeTrainThresholdsByChannel(filePath, selectedChannel, thresholds -> {
                 final int thresholdsSize = thresholds.size();
                 if (getRenderer() != null && thresholdsSize > 0 && selectedThreshold >= 0
                     && selectedThreshold < MAX_THRESHOLDS) {

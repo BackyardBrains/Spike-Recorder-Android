@@ -103,10 +103,11 @@ public class AnalysisManager {
     }
 
     /**
-     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for the specified range.
+     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for specified {@code
+     * channel} for the specified range.
      */
-    public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
-        return analysisRepository.getSpikesByTrainForRange(trainId, startIndex, endIndex);
+    public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int channel, int startIndex, int endIndex) {
+        return analysisRepository.getSpikesByTrainForRange(trainId, channel, startIndex, endIndex);
     }
 
     /**
@@ -199,9 +200,9 @@ public class AnalysisManager {
      * Returns thresholds for all the existing spike trains for the specified {@code channel} of the audio file with the
      * specified {@code filePath}.
      */
-    public void getAllSpikeTrainThresholds(@NonNull String filePath, int channel,
+    public void getSpikeTrainThresholdsByChannel(@NonNull String filePath, int channel,
         @Nullable final GetThresholdsCallback callback) {
-        analysisRepository.getSpikeAnalysisTrains(filePath, channel,
+        analysisRepository.getSpikeAnalysisTrainsByChannel(filePath, channel,
             new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
                 @Override public void onAnalysisLoaded(@NonNull Train[] result) {
                     final List<Threshold> thresholds = new ArrayList<>();
@@ -223,9 +224,9 @@ public class AnalysisManager {
     /**
      * Returns existing spike trains for the specified {@code channel} of the audio file with specified {@code filePath}.
      */
-    public void getSpikeTrains(@NonNull String filePath, int channel,
+    public void getSpikeTrains(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
-        analysisRepository.getSpikeAnalysisTrains(filePath, channel, callback);
+        analysisRepository.getSpikeAnalysisTrains(filePath, callback);
     }
 
     /**

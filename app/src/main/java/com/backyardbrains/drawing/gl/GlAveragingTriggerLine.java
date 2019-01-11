@@ -30,16 +30,12 @@ public class GlAveragingTriggerLine {
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, @Nullable String eventName, float x, float y1, float y2, float scaleX,
-        float scaleY) {
-        gl.glPushMatrix();
-        gl.glTranslatef(x, 0f, 0f);
-
+    public void draw(@NonNull GL10 gl, @Nullable String eventName, float height, float scaleX, float scaleY) {
         // draw black line
-        vLine.draw(gl, y1, y2, LINE_WIDTH, Colors.BLACK);
+        vLine.draw(gl, 0f, height, LINE_WIDTH, Colors.BLACK);
 
         // draw dashed gray line
-        dashedVLine.draw(gl, y1, y2, DASH_HEIGHT * scaleY, LINE_WIDTH, Colors.GRAY_DARK);
+        dashedVLine.draw(gl, 0f, height, DASH_HEIGHT * scaleY, LINE_WIDTH, Colors.GRAY_DARK);
 
         if (eventName != null) {
             int len = eventName.length();
@@ -64,7 +60,7 @@ public class GlAveragingTriggerLine {
             float labelW = textW * 1.3f;
             float labelH = textH * 1.3f;
             float labelX = labelW * .5f;
-            float labelY = y2 - textH;
+            float labelY = height - textH;
             gl.glPushMatrix();
             gl.glTranslatef(labelX, labelY, 0f);
             rect.draw(gl, labelW, labelH, glColor);
@@ -80,7 +76,5 @@ public class GlAveragingTriggerLine {
             gl.glDisable(GL10.GL_BLEND);
             gl.glDisable(GL10.GL_TEXTURE_2D);
         }
-
-        gl.glPopMatrix();
     }
 }

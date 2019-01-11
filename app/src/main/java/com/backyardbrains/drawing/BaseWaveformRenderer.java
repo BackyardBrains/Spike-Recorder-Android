@@ -31,10 +31,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     private static final String TAG = makeLogTag(BaseWaveformRenderer.class);
 
-    private static final float MAX_GL_VERTICAL_SIZE = Short.MAX_VALUE * 40f;
+    static final float MAX_GL_VERTICAL_SIZE = Short.MAX_VALUE * 40f;
     static final float MAX_GL_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_SIZE * .5f;
 
-    private static final float MAX_GL_VERTICAL_THIRD_SIZE = MAX_GL_VERTICAL_SIZE * .3f;
+    private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
     private static final float MIN_WAVEFORM_SCALE_FACTOR = 1f;
     private static final float MAX_WAVEFORM_SCALE_FACTOR = 5000f;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
@@ -137,14 +137,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         /**
          * Listener that is invoked while drawn signal is being measured.
          *
-         * @param rms RMS value of the selected part of drawn signal.
-         * @param firstTrainSpikeCount Number of spikes belonging to first train within selected part of drawn signal.
-         * @param secondTrainSpikeCount Number of spikes belonging to second train within selected part of drawn signal.
-         * @param thirdTrainSpikeCount Number of spikes belonging to third train within selected part of drawn signal.
+         * @param rms RMS value by channels of the selected part of drawn signal.
+         * @param firstTrainSpikeCount Number of spikes belonging to first train by channels within selected part of drawn signal.
+         * @param secondTrainSpikeCount Number of spikes belonging to second train by channels within selected part of drawn signal.
+         * @param thirdTrainSpikeCount Number of spikes belonging to third train by channels within selected part of drawn signal.
+         * @param selectedChannel Index of the currently selected channel.
          * @param sampleCount Number of spikes within selected part of drawn signal.
          */
-        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-            int sampleCount);
+        void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount, int[] thirdTrainSpikeCount,
+            int selectedChannel, int sampleCount);
 
         /**
          * Listener that is invoked when signal measurement ends.
@@ -362,7 +363,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         waveformPositions[selectedChannel] -= surfaceHeightToGlHeight(dy);
     }
 
-    public float surfaceYToGlY(float surfaceY) {
+    float surfaceYToGlY(float surfaceY) {
         return BYBUtils.map(surfaceY, surfaceHeight, 0, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE);
     }
 
@@ -371,7 +372,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     int glYToSurfaceY(float glY) {
-        return (int) BYBUtils.map(glY, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, surfaceHeight, 0f);
+        return (int) BYBUtils.map(glY, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight);
     }
 
     int glHeightToSurfaceHeight(float glHeight) {
@@ -530,10 +531,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // draw average triggering line
             if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
-                final float drawScale = drawnSamplesCount / surfaceWidth;
+                final float drawScale = surfaceWidth > 0 ? drawnSamplesCount / surfaceWidth : 1f;
+                gl.glPushMatrix();
+                gl.glTranslatef(drawnSamplesCount * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
                 glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                    drawnSamplesCount * .5f, -MAX_GL_VERTICAL_THIRD_SIZE, MAX_GL_VERTICAL_THIRD_SIZE, drawScale,
-                    scaleY);
+                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, drawScale, scaleY);
+                gl.glPopMatrix();
             }
 
             // invoke callback that the surface has been drawn
@@ -717,13 +720,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
-     * Triggers {@link OnMeasureListener#onMeasure(float, int, int, int, int)} call.
+     * Triggers {@link OnMeasureListener#onMeasure(float[], int[], int[], int[], int, int)} call.
      */
-    final void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-        int sampleCount) {
+    final void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount,
+        int[] thirdTrainSpikeCount, int selectedChannel, int sampleCount) {
         if (onMeasureListener != null) {
             onMeasureListener.onMeasure(rms, firstTrainSpikeCount, secondTrainSpikeCount, thirdTrainSpikeCount,
-                sampleCount);
+                selectedChannel, sampleCount);
         }
     }
 

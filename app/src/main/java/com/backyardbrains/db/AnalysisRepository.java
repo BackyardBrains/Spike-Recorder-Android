@@ -103,11 +103,13 @@ public class AnalysisRepository {
      * {@code endIndex}.
      *
      * @param trainId Id of the train returned spike values and indexes belong to.
+     * @param channel Channel that the {@link Train} with specified {@code trainId} belongs to.
      * @param startIndex Start index from which values and indexes of spikes should be returned.
      * @param endIndex End index till which values and indexes of spikes should be returned.
      */
-    @NonNull public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
-        return analysisDataSource.getSpikeAnalysisByTrainForIndexRange(trainId, startIndex, endIndex);
+    @NonNull public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int channel, int startIndex,
+        int endIndex) {
+        return analysisDataSource.getSpikeAnalysisByTrainForIndexRange(trainId, channel, startIndex, endIndex);
     }
 
     /**
@@ -143,12 +145,24 @@ public class AnalysisRepository {
      * spikes for one of existing analysis by invoking specified {@code callback} and passing in the results.
      *
      * @param filePath Absolute path of the audio file for which trains should be retrieved.
+     * @param callback Callback that's invoked when trains are retrieved from database.
+     */
+    public void getSpikeAnalysisTrains(@NonNull String filePath,
+        @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
+        analysisDataSource.getSpikeAnalysisTrains(filePath, callback);
+    }
+
+    /**
+     * Returns collection of threshold ranges for audio file with specified {@code filePath} that filter collection of
+     * spikes for one of existing analysis by invoking specified {@code callback} and passing in the results.
+     *
+     * @param filePath Absolute path of the audio file for which trains should be retrieved.
      * @param channel Channel for which trains should be retrieved.
      * @param callback Callback that's invoked when trains are retrieved from database.
      */
-    public void getSpikeAnalysisTrains(@NonNull String filePath, int channel,
+    public void getSpikeAnalysisTrainsByChannel(@NonNull String filePath, int channel,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
-        analysisDataSource.getSpikeAnalysisTrains(filePath, channel, callback);
+        analysisDataSource.getSpikeAnalysisTrainsByChannel(filePath, channel, callback);
     }
 
     /**

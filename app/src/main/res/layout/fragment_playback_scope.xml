@@ -135,7 +135,7 @@
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
         android:textColor="@color/green"
-        android:drawableStart="@drawable/circle_cyan"
+        android:drawableStart="@drawable/circle_green"
         app:layout_constraintLeft_toLeftOf="@+id/tv_rms"
         app:layout_constraintBottom_toTopOf="@+id/tv_spike_count1"
         app:layout_constraintRight_toRightOf="@+id/tv_rms"

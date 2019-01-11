@@ -133,13 +133,14 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      * {@inheritDoc}
      *
      * @param trainId Id of the {@link Train} for which spike values and indices should be queried.
+     * @param channel Channel that the {@link Train} with specified {@code trainId} belongs to.
      * @param startIndex Index of the first sample in the range for which spikes should be retrieved.
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
      * @return Array of spike values and indices located between specified {@code startIndex} and {@code endIndex}.
      */
-    @Override public SpikeIndexValue[] getSpikeAnalysisByTrainForIndexRange(long trainId, int startIndex,
+    @Override public SpikeIndexValue[] getSpikeAnalysisByTrainForIndexRange(long trainId, int channel, int startIndex,
         int endIndex) {
-        return spikeDao.loadSpikesByTrainForIndexRange(trainId, startIndex, endIndex);
+        return spikeDao.loadSpikesByTrainForIndexRange(trainId, channel, startIndex, endIndex);
     }
 
     /**
@@ -240,11 +241,42 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      * {@inheritDoc}
      *
      * @param filePath Absolute path of the audio file for which trains should be retrieved.
+     * @param callback Callback that's invoked when trains are retrieved from database.
+     */
+    @Override public void getSpikeAnalysisTrains(@NonNull final String filePath,
+        @Nullable final GetAnalysisCallback<Train[]> callback) {
+        final Runnable runnable = () -> {
+            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
+            if (analysisId != 0) {
+                final Train[] trains = trainDao.loadTrains(analysisId);
+                if (trains.length > 0) {
+                    appExecutors.mainThread().execute(() -> {
+                        if (callback != null) callback.onAnalysisLoaded(trains);
+                    });
+                } else {
+                    appExecutors.mainThread().execute(() -> {
+                        if (callback != null) callback.onDataNotAvailable();
+                    });
+                }
+            } else {
+                appExecutors.mainThread().execute(() -> {
+                    if (callback != null) callback.onDataNotAvailable();
+                });
+            }
+        };
+
+        appExecutors.diskIO().execute(runnable);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param filePath Absolute path of the audio file for which trains should be retrieved.
      * @param channel Channel for which trains should be retrieved.
      * @param callback Callback that's invoked when trains are retrieved from database.
      */
-    @Override public void getSpikeAnalysisTrains(@NonNull final String filePath, int channel,
-        final GetAnalysisCallback<Train[]> callback) {
+    @Override public void getSpikeAnalysisTrainsByChannel(@NonNull final String filePath, int channel,
+        @Nullable final GetAnalysisCallback<Train[]> callback) {
         final Runnable runnable = () -> {
             final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
             if (analysisId != 0) {

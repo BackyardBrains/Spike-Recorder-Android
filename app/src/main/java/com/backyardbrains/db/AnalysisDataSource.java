@@ -2,10 +2,10 @@ package com.backyardbrains.db;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.db.entity.Spike;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.utils.ThresholdOrientation;
+import com.backyardbrains.vo.SpikeIndexValue;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -34,9 +34,10 @@ public interface AnalysisDataSource {
 
     SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex, int endIndex);
 
-    SpikeIndexValue[] getSpikeAnalysisByTrainForIndexRange(long trainId, int startIndex, int endIndex);
+    SpikeIndexValue[] getSpikeAnalysisByTrainForIndexRange(long trainId, int channel, int startIndex, int endIndex);
 
-    void getSpikeAnalysisTimesByTrains(@NonNull final String filePath, @Nullable final GetAnalysisCallback<float[][]> callback);
+    void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
+        @Nullable final GetAnalysisCallback<float[][]> callback);
 
     void getSpikeAnalysisIndicesByTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<int[][]> callback);
 
@@ -45,16 +46,20 @@ public interface AnalysisDataSource {
     //=================================================
 
     interface AddSpikeAnalysisTrainCallback {
-        void onSpikeAnalysisTrainAdded(@NonNull int order);
+        void onSpikeAnalysisTrainAdded(int order);
     }
 
     interface RemoveSpikeAnalysisTrainCallback {
         void onSpikeAnalysisTrainRemoved(int newTrainCount);
     }
 
-    void getSpikeAnalysisTrains(@NonNull String filePath, int channel, @Nullable GetAnalysisCallback<Train[]> callback);
+    void getSpikeAnalysisTrains(@NonNull String filePath, @Nullable GetAnalysisCallback<Train[]> callback);
 
-    void addSpikeAnalysisTrain(@NonNull String filePath, int channelCount, @Nullable AddSpikeAnalysisTrainCallback callback);
+    void getSpikeAnalysisTrainsByChannel(@NonNull String filePath, int channel,
+        @Nullable GetAnalysisCallback<Train[]> callback);
+
+    void addSpikeAnalysisTrain(@NonNull String filePath, int channelCount,
+        @Nullable AddSpikeAnalysisTrainCallback callback);
 
     void saveSpikeAnalysisTrain(@NonNull String filePath, int channel, int order, @ThresholdOrientation int orientation,
         int value);

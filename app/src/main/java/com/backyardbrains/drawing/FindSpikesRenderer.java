@@ -10,7 +10,6 @@ import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
@@ -209,11 +208,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // register left threshold handle as draggable area with drag helper
         glThresholdHandle.getBorders(rect);
-        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.LEFT,
-            BYBUtils.map(rect.x * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-            BYBUtils.map(rect.y * scaleY + scaledThreshold, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f,
-                surfaceHeight), BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-            glHeightToSurfaceHeight(rect.height * scaleY));
+        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.LEFT, rect.x,
+            rect.y + glYToSurfaceY(scaledThreshold), rect.width, rect.height);
 
         // draw right threshold
         scaledThreshold = thresholds[ThresholdOrientation.RIGHT] * waveformScaleFactors[selectedChannel];
@@ -234,11 +230,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // register right threshold handle as draggable area with drag helper
         glThresholdHandle.getBorders(rect);
-        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.RIGHT,
-            BYBUtils.map(rect.x * drawScale + samplesToDraw - 1 - rect.width, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-            BYBUtils.map(rect.y * scaleY + scaledThreshold, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f,
-                surfaceHeight), BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-            glHeightToSurfaceHeight(rect.height * scaleY));
+        thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.RIGHT, surfaceWidth - rect.width,
+            rect.y + glYToSurfaceY(scaledThreshold), rect.width, rect.height);
     }
 
     //=================================================
@@ -247,7 +240,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     private void loadSpikeTrains() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().getAllSpikeTrainThresholds(filePath, getSelectedChanel(), thresholds -> {
+            getAnalysisManager().getSpikeTrainThresholdsByChannel(filePath, getSelectedChanel(), thresholds -> {
                 final int thresholdCount = thresholds.size();
                 if (thresholdCount > 0 && selectedSpikeTrain < thresholdCount) {
                     final Threshold threshold = thresholds.get(selectedSpikeTrain);

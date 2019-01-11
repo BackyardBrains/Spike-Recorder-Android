@@ -32,7 +32,6 @@ import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
 import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
@@ -243,12 +242,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
                 // register waveform handle as draggable area with drag helper
                 glHandle.getBorders(rect);
-                waveformHandleDragHelper.registerDraggableArea(i,
-                    BYBUtils.map(rect.x * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-                    BYBUtils.map(rect.y * scaleY + waveformPositions[i], -MAX_GL_VERTICAL_HALF_SIZE,
-                        MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight),
-                    BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-                    glHeightToSurfaceHeight(rect.height * scaleY));
+                waveformHandleDragHelper.registerDraggableArea(i, rect.x, rect.y + glYToSurfaceY(waveformPositions[i]),
+                    rect.width, rect.height);
             }
 
             if (showThresholdHandle) {
@@ -270,13 +265,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
                 // register threshold handle as draggable area with drag helper
                 glHandle.getBorders(rect);
-                thresholdHandleDragHelper.registerDraggableArea(i,
-                    BYBUtils.map(rect.x * drawScale + samplesToDraw - 1 - rect.width, 0f, samplesToDraw - 1, 0f,
-                        surfaceWidth),
-                    BYBUtils.map(rect.y * scaleY + waveformPositions[i] + scaledThreshold, -MAX_GL_VERTICAL_HALF_SIZE,
-                        MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight),
-                    BYBUtils.map(rect.width * drawScale, 0f, samplesToDraw - 1, 0f, surfaceWidth),
-                    glHeightToSurfaceHeight(rect.height * scaleY));
+                thresholdHandleDragHelper.registerDraggableArea(i, surfaceWidth - rect.width,
+                    rect.y + glYToSurfaceY(waveformPositions[i] + scaledThreshold), rect.width, rect.height);
             }
 
             gl.glPopMatrix();
@@ -285,8 +275,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         // draw markers
         if (!isSignalAveraging) {
             for (int i = 0; i < events.size(); i++) {
-                glEventMarker.draw(gl, events.valueAt(i), events.keyAt(i), -MAX_GL_VERTICAL_HALF_SIZE,
-                    MAX_GL_VERTICAL_HALF_SIZE, drawScale, scaleY);
+                gl.glPushMatrix();
+                gl.glTranslatef(events.keyAt(i), -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                glEventMarker.draw(gl, events.valueAt(i), MAX_GL_VERTICAL_SIZE, drawScale, scaleY);
+                gl.glPopMatrix();
             }
         }
     }
