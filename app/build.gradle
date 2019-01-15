@@ -18,6 +18,8 @@ android {
 
                 cppFlags "-frtti" // Enables RTTI support.
                 cppFlags "-fexceptions" // Enables exception-handling support.
+
+                version "3.10.2"
             }
         }
 
