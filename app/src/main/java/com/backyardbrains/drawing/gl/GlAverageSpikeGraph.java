@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import com.android.texample.GLText;
-import com.backyardbrains.data.AverageSpike;
+import com.backyardbrains.vo.AverageSpike;
 import com.backyardbrains.utils.GlUtils;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

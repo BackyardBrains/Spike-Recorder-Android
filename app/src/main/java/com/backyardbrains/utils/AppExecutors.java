@@ -14,13 +14,13 @@ public class AppExecutors {
 
     private final Executor mainThread;
 
+    public AppExecutors() {
+        this(new DiskIOThreadExecutor(), new MainThreadExecutor());
+    }
+
     private AppExecutors(Executor diskIO, Executor mainThread) {
         this.diskIO = diskIO;
         this.mainThread = mainThread;
-    }
-
-    public AppExecutors() {
-        this(new DiskIOThreadExecutor(), new MainThreadExecutor());
     }
 
     public Executor diskIO() {

@@ -23,7 +23,7 @@
         android:theme="@style/BYBAppStyle">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name"
             android:launchMode="singleTask"
@@ -64,7 +64,7 @@
                 android:resource="@xml/provider_paths"/>
         </provider>
 
-        <service android:name=".audio.AudioService"/>
+        <service android:name=".dsp.ProcessingService"/>
 
         <meta-data
             android:name="io.fabric.ApiKey"

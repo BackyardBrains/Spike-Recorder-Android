@@ -11,6 +11,7 @@
 
 #include "dr_wav.h"
 #include "AnalysisUtils.h"
+#include "SignalUtils.h"
 
 namespace analysis {
     class SpikeAnalysis;
@@ -22,8 +23,9 @@ public:
 
     ~SpikeAnalysis();
 
-    int *findSpikes(const char *filePath, short *outValuesPos, int *outIndicesPos, float *outTimesPos,
-                    short *outValuesNeg, int *outIndicesNeg, float *outTimesNeg);
+    void findSpikes(const char *filePath, short **outValuesPos, int **outIndicesPos, float **outTimesPos,
+                    short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int channelCount,
+                    int *outPosCounts, int *outNegCounts);
 
 private:
     static const char *TAG;

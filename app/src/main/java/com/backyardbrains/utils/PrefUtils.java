@@ -39,41 +39,73 @@ public class PrefUtils {
     }
 
     /**
-     * Integer indicating horizontal size of the GL surface view.
+     * Float indicating horizontal size of the GL window.
      */
-    private static final String PREF_INT_GL_WINDOW_HORIZONTAL_SIZE = "_gl_window_horizontal_size";
+    private static final String PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE = "_gl_window_horizontal_size";
 
-    public static int getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz) {
-        return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_HORIZONTAL_SIZE),
-            GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+    public static float getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz) {
+        try {
+            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE),
+                GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+        } catch (Exception ex) {
+            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE),
+                (int) GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+        }
     }
 
     public static void setGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
-        int glWindowHorizontalSize) {
+        float glWindowHorizontalSize) {
         getSharedPreferences(context).edit()
-            .putInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_HORIZONTAL_SIZE), glWindowHorizontalSize)
+            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE), glWindowHorizontalSize)
             .apply();
     }
 
     /**
-     * Integer indicating vertical size of the GL surface view.
+     * Float indicating vertical size of the GL window.
      */
-    private static final String PREF_INT_GL_WINDOW_VERTICAL_SIZE = "_gl_window_vertical_size";
+    private static final String PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE = "_gl_window_vertical_size";
 
-    public static int getGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz) {
-        return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_VERTICAL_SIZE),
-            GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
+    public static float getGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz) {
+        try {
+            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE),
+                GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
+        } catch (Exception ex) {
+            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE),
+                (int) GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
+        }
     }
 
     public static void setGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz,
-        int glWindowVerticalSize) {
+        float glWindowVerticalSize) {
         getSharedPreferences(context).edit()
-            .putInt(constructPrefKey(clazz, PREF_INT_GL_WINDOW_VERTICAL_SIZE), glWindowVerticalSize)
+            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE), glWindowVerticalSize)
             .apply();
     }
 
     /**
-     * Integer indicating widht of the GL surface viewport.
+     * Float indicating scale factor of the waveform.
+     */
+    private static final String PREF_FLOAT_WAVEFORM_SCALE_FACTOR = "_gl_waveform_scale_factor";
+
+    public static float getWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz) {
+        try {
+            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR),
+                GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
+        } catch (Exception ex) {
+            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR),
+                (int) GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
+        }
+    }
+
+    public static void setWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz,
+        float glWindowVerticalSize) {
+        getSharedPreferences(context).edit()
+            .putFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR), glWindowVerticalSize)
+            .apply();
+    }
+
+    /**
+     * Integer indicating width of the GL surface viewport.
      */
     private static final String PREF_INT_VIEWPORT_WIDTH = "_viewport_width";
 
@@ -99,21 +131,6 @@ public class PrefUtils {
     public static void setViewportHeight(@NonNull Context context, @NonNull Class clazz, int viewportHeight) {
         getSharedPreferences(context).edit()
             .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_HEIGHT), viewportHeight)
-            .apply();
-    }
-
-    /**
-     * Boolean indicating whether auto scale is on or off.
-     */
-    private static final String PREF_BOOL_AUTO_SCALE = "_auto_scale";
-
-    public static boolean getAutoScale(@NonNull Context context, @NonNull Class clazz) {
-        return getSharedPreferences(context).getBoolean(constructPrefKey(clazz, PREF_BOOL_AUTO_SCALE), false);
-    }
-
-    public static void setAutoScale(@NonNull Context context, @NonNull Class clazz, boolean autoScale) {
-        getSharedPreferences(context).edit()
-            .putBoolean(constructPrefKey(clazz, PREF_BOOL_AUTO_SCALE), autoScale)
             .apply();
     }
 

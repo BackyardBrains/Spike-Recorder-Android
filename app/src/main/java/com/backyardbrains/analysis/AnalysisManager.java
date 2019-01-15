@@ -4,19 +4,19 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.AudioFile;
-import com.backyardbrains.audio.WavAudioFile;
-import com.backyardbrains.data.AverageSpike;
-import com.backyardbrains.data.SpikeIndexValue;
-import com.backyardbrains.data.Threshold;
-import com.backyardbrains.data.persistance.AnalysisDataSource;
-import com.backyardbrains.data.persistance.AnalysisRepository;
-import com.backyardbrains.data.persistance.SpikeRecorderDatabase;
-import com.backyardbrains.data.persistance.entity.Spike;
-import com.backyardbrains.data.persistance.entity.Train;
+import com.backyardbrains.db.AnalysisDataSource;
+import com.backyardbrains.db.AnalysisRepository;
+import com.backyardbrains.db.SpikeRecorderDatabase;
+import com.backyardbrains.db.entity.Spike;
+import com.backyardbrains.db.entity.Train;
+import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.dsp.audio.WavAudioFile;
 import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
+import com.backyardbrains.vo.AverageSpike;
+import com.backyardbrains.vo.SpikeIndexValue;
+import com.backyardbrains.vo.Threshold;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
@@ -51,13 +51,10 @@ public class AnalysisManager {
     //=================================================
 
     // Callback to be invoked when spikes are retrieved from the analysis repository
-    private AnalysisDataSource.SpikeAnalysisCheckCallback spikeAnalysisCheckCallback =
-        new AnalysisDataSource.SpikeAnalysisCheckCallback() {
-            @Override public void onSpikeAnalysisExistsResult(boolean exists, int trainCount) {
-                // post event that audio file analysis was successfully finished
-                EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
-            }
-        };
+    private AnalysisDataSource.SpikeAnalysisCheckCallback spikeAnalysisCheckCallback = (exists, trainCount) -> {
+        // post event that audio file analysis was successfully finished
+        EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
+    };
 
     /**
      * Loads file with specified {@code filePath} if not already loaded and starts the process of finding spikes if they
@@ -69,7 +66,7 @@ public class AnalysisManager {
                 if (load(filePath)) {
                     findSpikes();
                 } else {
-                    // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCASTED
+                    // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCAST
                     // post event that audio file analysis failed
                     EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
 
@@ -82,7 +79,7 @@ public class AnalysisManager {
             if (load(filePath)) {
                 findSpikes();
             } else {
-                // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCASTED
+                // FIXME: 10-Oct-18 FOR NOW JUST BROADCAST THAT ANALYSIS FAILED BUT IN THE FUTURE MORE SPECIFIC ERROR SHOULD BE BROADCAST
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
 
@@ -101,15 +98,16 @@ public class AnalysisManager {
     /**
      * Returns array of spike values and indexes belonging to spike analysis with specified {@code analysisId} for the specified range.
      */
-    public SpikeIndexValue[] getSpikesForRange(long analysisId, int startIndex, int endIndex) {
-        return analysisRepository.getSpikeAnalysisValuesAndIndicesForRange(analysisId, startIndex, endIndex);
+    public SpikeIndexValue[] getSpikesForRange(long analysisId, int channel, int startIndex, int endIndex) {
+        return analysisRepository.getSpikeAnalysisValuesAndIndicesForRange(analysisId, channel, startIndex, endIndex);
     }
 
     /**
-     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for the specified range.
+     * Returns array of spike values and indexes belonging to train with specified {@code trainId} for specified {@code
+     * channel} for the specified range.
      */
-    public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int startIndex, int endIndex) {
-        return analysisRepository.getSpikesByTrainForRange(trainId, startIndex, endIndex);
+    public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int channel, int startIndex, int endIndex) {
+        return analysisRepository.getSpikesByTrainForRange(trainId, channel, startIndex, endIndex);
     }
 
     /**
@@ -189,13 +187,76 @@ public class AnalysisManager {
     //=================================================
 
     /**
-     *
-     * @param filePath
-     * @param callback
+     * Listens for DB query response when retrieving existing spike trains.
+     */
+    public interface GetThresholdsCallback {
+        /**
+         * Triggered when spike trains are retrieved from database.
+         */
+        void onThresholdsLoaded(@NonNull List<Threshold> thresholds);
+    }
+
+    /**
+     * Returns thresholds for all the existing spike trains for the specified {@code channel} of the audio file with the
+     * specified {@code filePath}.
+     */
+    public void getSpikeTrainThresholdsByChannel(@NonNull String filePath, int channel,
+        @Nullable final GetThresholdsCallback callback) {
+        analysisRepository.getSpikeAnalysisTrainsByChannel(filePath, channel,
+            new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
+                @Override public void onAnalysisLoaded(@NonNull Train[] result) {
+                    final List<Threshold> thresholds = new ArrayList<>();
+                    for (Train train : result) {
+                        int leftThreshold = train.isLowerLeft() ? train.getLowerThreshold() : train.getUpperThreshold();
+                        int rightThreshold =
+                            train.isLowerLeft() ? train.getUpperThreshold() : train.getLowerThreshold();
+                        thresholds.add(new Threshold(leftThreshold, rightThreshold));
+                    }
+                    if (callback != null) callback.onThresholdsLoaded(thresholds);
+                }
+
+                @Override public void onDataNotAvailable() {
+                    if (callback != null) callback.onThresholdsLoaded(new ArrayList<>());
+                }
+            });
+    }
+
+    /**
+     * Returns existing spike trains for the specified {@code channel} of the audio file with specified {@code filePath}.
      */
     public void getSpikeTrains(@NonNull String filePath,
         @Nullable AnalysisDataSource.GetAnalysisCallback<Train[]> callback) {
         analysisRepository.getSpikeAnalysisTrains(filePath, callback);
+    }
+
+    /**
+     * Adds new spike train for the audio file with specified {@code filePath}. Threshold values are initally set to
+     * {@code 0}.
+     */
+    public void addSpikeTrain(@NonNull String filePath, int channelCount,
+        @Nullable final AnalysisDataSource.AddSpikeAnalysisTrainCallback callback) {
+        analysisRepository.addSpikeAnalysisTrain(filePath, channelCount, order -> {
+            if (callback != null) callback.onSpikeAnalysisTrainAdded(order);
+        });
+    }
+
+    /**
+     * Removes spike train at the specified {@code index} for the audio file with specified {@code filePath}.
+     */
+    public void removeSpikeTrain(int index, @NonNull String filePath,
+        @Nullable final AnalysisDataSource.RemoveSpikeAnalysisTrainCallback callback) {
+        analysisRepository.removeSpikeAnalysisTrain(filePath, index, newTrainCount -> {
+            if (callback != null) callback.onSpikeAnalysisTrainRemoved(newTrainCount);
+        });
+    }
+
+    /**
+     * Sets specified {@code value} as threshold  with specified {@code orientation} for the spike train at specified
+     * {@code index} for the specified {@code channel} of audio file with specified {@code filePath}.
+     */
+    public void setThreshold(@NonNull String filePath, int channel, int index, @ThresholdOrientation int orientation,
+        int value) {
+        analysisRepository.saveSpikeAnalysisTrain(filePath, channel, index, orientation, value);
     }
 
     // Callback to be invoked when spike analysis (by trains) is retrieved from the analysis repository
@@ -223,7 +284,19 @@ public class AnalysisManager {
             }
         }
 
-        @Override public void onDataNotAvailable() {
+        @SuppressLint("SwitchIntDef") @Override public void onDataNotAvailable() {
+            switch (analysisType) {
+                case AnalysisType.AUTOCORRELATION:
+                    autocorrelation = null;
+                    break;
+                case AnalysisType.ISI:
+                    isi = null;
+                    break;
+                case AnalysisType.CROSS_CORRELATION:
+                    crossCorrelation = null;
+                    break;
+            }
+
             // post event that audio file analysis failed
             EventBus.getDefault().post(new AnalysisDoneEvent(true, analysisType));
         }
@@ -239,6 +312,7 @@ public class AnalysisManager {
                     }
 
                     @Override public void onDataNotAvailable() {
+                        averageSpikes = null;
                         // post event that audio file analysis failed
                         EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
                     }
@@ -411,73 +485,5 @@ public class AnalysisManager {
                     }
                 }).startAnalysis();
         }
-    }
-
-    //=================================================
-    //  THRESHOLDS
-    //=================================================
-
-    /**
-     * Listens for DB query response when retrieving existing spike trains.
-     */
-    public interface GetThresholdsCallback {
-        /**
-         * Triggered when spike trains are retrieved from database.
-         */
-        void onThresholdsLoaded(@NonNull List<Threshold> thresholds);
-    }
-
-    /**
-     * Returns existing thresholds for the audio file with specified {@code filePath}.
-     */
-    public void getThresholds(@NonNull String filePath, @Nullable final GetThresholdsCallback callback) {
-        analysisRepository.getSpikeAnalysisTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
-            @Override public void onAnalysisLoaded(@NonNull Train[] result) {
-                final List<Threshold> thresholds = new ArrayList<>();
-                for (Train train : result) {
-                    int leftThreshold = train.isLowerLeft() ? train.getLowerThreshold() : train.getUpperThreshold();
-                    int rightThreshold = train.isLowerLeft() ? train.getUpperThreshold() : train.getLowerThreshold();
-                    thresholds.add(new Threshold(leftThreshold, rightThreshold));
-                }
-                if (callback != null) callback.onThresholdsLoaded(thresholds);
-            }
-
-            @Override public void onDataNotAvailable() {
-                if (callback != null) callback.onThresholdsLoaded(new ArrayList<Threshold>());
-            }
-        });
-    }
-
-    /**
-     * Adds new pair of thresholds for the audio file with specified {@code filePath}.
-     */
-    public void addThreshold(@NonNull String filePath,
-        @Nullable final AnalysisDataSource.AddSpikeAnalysisTrainCallback callback) {
-        analysisRepository.addSpikeAnalysisTrain(filePath, new AnalysisDataSource.AddSpikeAnalysisTrainCallback() {
-            @Override public void onSpikeAnalysisTrainAdded(@NonNull Train train) {
-                if (callback != null) callback.onSpikeAnalysisTrainAdded(train);
-            }
-        });
-    }
-
-    /**
-     * Removes thresholds at the specified {@code index} for the audio file with specified {@code filePath}.
-     */
-    public void removeThreshold(int index, @NonNull String filePath,
-        @Nullable final AnalysisDataSource.RemoveSpikeAnalysisTrainCallback callback) {
-        analysisRepository.removeSpikeAnalysisTrain(filePath, index,
-            new AnalysisDataSource.RemoveSpikeAnalysisTrainCallback() {
-                @Override public void onSpikeAnalysisTrainRemoved(int newTrainCount) {
-                    if (callback != null) callback.onSpikeAnalysisTrainRemoved(newTrainCount);
-                }
-            });
-    }
-
-    /**
-     * Sets specified {@code value} for the current threshold at the specified {@code index} with specified {@code
-     * orientation}.
-     */
-    public void setThreshold(int index, @ThresholdOrientation int orientation, int value, @NonNull String filePath) {
-        analysisRepository.saveSpikeAnalysisTrain(filePath, orientation, value, index);
     }
 }

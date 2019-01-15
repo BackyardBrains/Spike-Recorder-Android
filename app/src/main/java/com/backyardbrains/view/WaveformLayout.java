@@ -11,7 +11,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.backyardbrains.MainActivity;
+import com.backyardbrains.ui.MainActivity;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;

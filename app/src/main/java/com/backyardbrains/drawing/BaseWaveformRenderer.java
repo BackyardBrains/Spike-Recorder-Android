@@ -5,19 +5,20 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
-import com.backyardbrains.BaseFragment;
-import com.backyardbrains.data.processing.ProcessingBuffer;
-import com.backyardbrains.data.processing.SamplesWithEvents;
 import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
+import com.backyardbrains.dsp.ProcessingBuffer;
+import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.SignalProcessor;
+import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.crashlytics.android.Crashlytics;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -25,46 +26,61 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public abstract class BaseWaveformRenderer extends BaseRenderer {
+public abstract class BaseWaveformRenderer extends BaseRenderer
+    implements ProcessingBuffer.OnSignalPropertyChangeListener, TouchEnabledRenderer {
 
     private static final String TAG = makeLogTag(BaseWaveformRenderer.class);
 
-    private static final int PCM_MAXIMUM_VALUE = Short.MAX_VALUE * 40;
-    private static final int MIN_GL_VERTICAL_SIZE = 400;
+    static final float MAX_GL_VERTICAL_SIZE = Short.MAX_VALUE * 40f;
+    static final float MAX_GL_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_SIZE * .5f;
+
+    private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
+    private static final float MIN_WAVEFORM_SCALE_FACTOR = 1f;
+    private static final float MAX_WAVEFORM_SCALE_FACTOR = 5000f;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
-    private static final float AUTO_SCALE_FACTOR = 1.5f;
+    private static final float AUTO_SCALE_PERCENT = .8f;
+
+    // Lock used when reading/writing samples and events
+    private static final Object lock = new Object();
 
     private final ProcessingBuffer processingBuffer;
     private final SparseArray<String> eventsBuffer;
 
-    private DrawBuffer sampleBuffer;
-    private short[] samples;
-    private DrawBuffer averagedSamplesBuffer;
-    private short[] averagedSamples;
+    private final AtomicBoolean autoScale = new AtomicBoolean();
+
+    @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
+
+    private DrawMultichannelBuffer samplesBuffer =
+        new DrawMultichannelBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
+    private DrawMultichannelBuffer averagedSamplesBuffer =
+        new DrawMultichannelBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
+            SignalProcessor.DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
     private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
-    @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
 
     private int surfaceWidth;
     private int surfaceHeight;
     private boolean surfaceSizeDirty;
-    private int glWindowWidth = GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
-    private int glWindowHeight = GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE;
+    private float glWindowWidth = GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE;
     private boolean glWindowWidthDirty;
-    private boolean glWindowHeightDirty;
+    private float waveformScaleFactor = GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR;
+    private float[] waveformScaleFactors;
+    private float[] tempWaveformScaleFactors;
+    private float[] waveformPositions;
+    private float[] tempWaveformPositions;
     private float scaleX;
     private float scaleY;
 
     private boolean scrollEnabled;
     private boolean measureEnabled;
 
-    private boolean autoScale;
-
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int averagingTriggerType;
 
-    private int sampleRate = AudioUtils.SAMPLE_RATE;
-    private float minDetectedPCMValue = GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE;
+    private int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
+    private int channelCount = SignalProcessor.DEFAULT_CHANNEL_COUNT;
+
+    private int selectedChannel = 0;
 
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
@@ -81,9 +97,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
          * Listener that is invoked when surface is redrawn.
          *
          * @param drawSurfaceWidth Draw surface width.
-         * @param drawSurfaceHeight Draw surface height.
          */
-        void onDraw(int drawSurfaceWidth, int drawSurfaceHeight);
+        void onDraw(float drawSurfaceWidth);
     }
 
     /**
@@ -122,13 +137,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         /**
          * Listener that is invoked while drawn signal is being measured.
          *
-         * @param rms RMS value of the selected part of drawn signal.
-         * @param firstTrainSpikeCount Number of spikes belonging to first train within selected part of drawn signal.
-         * @param secondTrainSpikeCount Number of spikes belonging to second train within selected part of drawn signal.
-         * @param thirdTrainSpikeCount Number of spikes belonging to third train within selected part of drawn signal.
+         * @param rms RMS value by channels of the selected part of drawn signal.
+         * @param firstTrainSpikeCount Number of spikes belonging to first train by channels within selected part of drawn signal.
+         * @param secondTrainSpikeCount Number of spikes belonging to second train by channels within selected part of drawn signal.
+         * @param thirdTrainSpikeCount Number of spikes belonging to third train by channels within selected part of drawn signal.
+         * @param selectedChannel Index of the currently selected channel.
          * @param sampleCount Number of spikes within selected part of drawn signal.
          */
-        void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
+        void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
+            @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
             int sampleCount);
 
         /**
@@ -147,17 +164,89 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         context = fragment.getContext();
 
         processingBuffer = ProcessingBuffer.get();
+        processingBuffer.setOnSignalPropertyChangeListener(this);
         eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
+
+        resetWaveformScaleFactorsAndPositions(channelCount);
     }
 
     /**
      * Cleans any occupied resources.
      */
     public void close() {
+        processingBuffer.setOnSignalPropertyChangeListener(null);
+    }
+
+    //===========================================================
+    //  OnSignalPropertyChangeListener INTERFACE IMPLEMENTATIONS
+    //===========================================================
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param sampleRate The new sample rate.
+     */
+    @Override public void onSampleRateChange(int sampleRate) {
+        if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
+
+        //setGlWindowWidth(glWindowWidth);
+
+        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
+        final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
+        final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
+
+        // recalculate width of the GL window
+        float newSize = glWindowWidth;
+        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
+        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
+        // save new GL window
+        glWindowWidth = newSize;
+        // set GL window size dirty so we can recalculate projection
+        glWindowWidthDirty = true;
+
+        this.sampleRate = sampleRate;
+    }
+
+    /**
+     * Returns sample rate.
+     */
+    protected int getSampleRate() {
+        return sampleRate;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param channelCount The new number of channels.
+     */
+    @Override public void onChannelCountChange(int channelCount) {
+        if (this.channelCount < 1 || this.channelCount == channelCount) return;
+
+        synchronized (lock) {
+            resetLocalBuffers(channelCount);
+            resetWaveformScaleFactorsAndPositions(channelCount);
+
+            int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount());
+            samplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
+            frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
+            averagedSamplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
+
+            // let's reset selected channel to 0
+            setSelectedChannel(0);
+        }
+
+        this.channelCount = channelCount;
+    }
+
+    /**
+     * Returns number of channels.
+     */
+    protected int getChannelCount() {
+        return channelCount;
     }
 
     //==============================================
-    //  PUBLIC AND PROTECTED METHODS
+    // PUBLIC AND PROTECTED METHODS
     //==============================================
 
     /**
@@ -169,27 +258,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.onDrawListener = listener;
     }
 
-    /**
-     * Sets current sample rate that should be used when calculating rendering parameters.
-     */
-    public void setSampleRate(int sampleRate) {
-        if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
-
-        LOGD(TAG, "setSampleRate(" + sampleRate + ")");
-        final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getSize();
-
-        // recalculate width of the GL window
-        int newSize = glWindowWidth;
-        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
-        // save new GL window
-        glWindowWidth = newSize;
-        // set GL window size dirty so we can recalculate projection
-        glWindowWidthDirty = true;
-
-        this.sampleRate = sampleRate;
-    }
+    //==============================================
+    //  SIGNAL AVERAGING
+    //==============================================
 
     /**
      * Returns whether incoming signal is being averaged or not.
@@ -212,17 +283,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * Resets buffers for averaged samples
      */
     public void resetAveragedSignal() {
-        if (processingBuffer != null) {
-            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
-            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
-        }
+        int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
+        averagedSamplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
     }
 
     /**
-     * Returns current type of signal averaging.
+     * Whether currently selected signal averaging type is of type {@link SignalAveragingTriggerType#THRESHOLD}.
      */
-    public @SignalAveragingTriggerType int getAveragingTriggerType() {
-        return averagingTriggerType;
+    boolean isThresholdAveragingTriggerType() {
+        return averagingTriggerType == SignalAveragingTriggerType.THRESHOLD;
     }
 
     /**
@@ -232,55 +301,91 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         this.averagingTriggerType = averagingTriggerType;
     }
 
-    public void setGlWindowWidth(int newSize) {
-        if (newSize < 0) return;
+    //==============================================
+    //  CHANNELS
+    //==============================================
+
+    /**
+     * Returns currently selected channel.
+     */
+    int getSelectedChanel() {
+        return selectedChannel;
+    }
+
+    /**
+     * Sets currently selected channel.
+     */
+    public void setSelectedChannel(int selectedChannel) {
+        LOGD(TAG, "setSelectedChannel(" + selectedChannel + ")");
+        if (getChannelCount() <= selectedChannel) return;
+
+        // pass selected channel to native code
+        JniUtils.setSelectedChannel(selectedChannel);
+
+        this.selectedChannel = selectedChannel;
+    }
+
+    int getSurfaceWidth() {
+        return surfaceWidth;
+    }
+
+    void setGlWindowWidth(float width) {
+        if (width < 0) return;
 
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = processingBuffer.getSize();
+        final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
 
-        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
+        if (width < minGlWindowWidth) width = minGlWindowWidth;
+        if (width > maxGlWindowWidth) width = maxGlWindowWidth;
         // save new GL windows width
-        glWindowWidth = newSize;
+        glWindowWidth = width;
         // set GL window size dirty so we can recalculate projection
         glWindowWidthDirty = true;
     }
 
-    public int getGlWindowWidth() {
+    public float getGlWindowWidth() {
         return glWindowWidth;
     }
 
-    public void setGlWindowHeight(int newSize) {
-        if (newSize < 0 || newSize == glWindowHeight) return;
-        if (newSize < MIN_GL_VERTICAL_SIZE) newSize = MIN_GL_VERTICAL_SIZE;
-        if (newSize > PCM_MAXIMUM_VALUE) newSize = PCM_MAXIMUM_VALUE;
-
-        // save new GL windows height
-        glWindowHeight = newSize;
-        // set GL window size dirty so we can recalculate projection
-        glWindowHeightDirty = true;
+    private void initWaveformScaleFactor(float scaleFactor) {
+        if (scaleFactor < 0 || scaleFactor == waveformScaleFactors[selectedChannel]) return;
+        waveformScaleFactors[selectedChannel] = scaleFactor;
+        if (selectedChannel == 0) waveformScaleFactor = waveformScaleFactors[selectedChannel];
     }
 
-    public int getGlWindowHeight() {
-        return glWindowHeight;
+    void setWaveformScaleFactor(float scaleFactor) {
+        if (scaleFactor < 0 || scaleFactor == waveformScaleFactors[selectedChannel]) return;
+        scaleFactor *= waveformScaleFactors[selectedChannel];
+        if (scaleFactor < MIN_WAVEFORM_SCALE_FACTOR) scaleFactor = MIN_WAVEFORM_SCALE_FACTOR;
+        if (scaleFactor > MAX_WAVEFORM_SCALE_FACTOR) scaleFactor = MAX_WAVEFORM_SCALE_FACTOR;
+
+        waveformScaleFactors[selectedChannel] = scaleFactor;
+        if (selectedChannel == 0) waveformScaleFactor = waveformScaleFactors[selectedChannel];
     }
 
-    @SuppressWarnings("WeakerAccess") public int getSurfaceWidth() {
-        return surfaceWidth;
+    float getWaveformScaleFactor() {
+        return waveformScaleFactors[selectedChannel];
     }
 
-    public int getSurfaceHeight() {
-        return surfaceHeight;
+    void moveGlWindowForSelectedChannel(float dy) {
+        // save new waveform position for currently selected channel that will be used when setting up projection on the next draw cycle
+        waveformPositions[selectedChannel] -= surfaceHeightToGlHeight(dy);
     }
 
-    public float pixelHeightToGlHeight(float pxHeight) {
-        return BYBUtils.map(pxHeight, surfaceHeight, 0, -glWindowHeight / 2, glWindowHeight / 2);
+    float surfaceYToGlY(float surfaceY) {
+        return BYBUtils.map(surfaceY, surfaceHeight, 0, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE);
     }
 
-    int glHeightToPixelHeight(float glHeight) {
-        if (surfaceHeight <= 0) LOGD(TAG, "Checked height and size was less than or equal to zero");
+    float surfaceHeightToGlHeight(float surfaceHeight) {
+        return BYBUtils.map(surfaceHeight, 0f, this.surfaceHeight, 0f, MAX_GL_VERTICAL_SIZE);
+    }
 
-        return BYBUtils.map(glHeight, -glWindowHeight / 2, glWindowHeight / 2, surfaceHeight, 0);
+    int glYToSurfaceY(float glY) {
+        return (int) BYBUtils.map(glY, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, 0f, surfaceHeight);
+    }
+
+    int glHeightToSurfaceHeight(float glHeight) {
+        return (int) BYBUtils.map(glHeight, 0f, MAX_GL_VERTICAL_SIZE, 0f, surfaceHeight);
     }
 
     //==============================================
@@ -299,8 +404,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         surfaceHeight = PrefUtils.getViewportHeight(context, getClass());
         surfaceSizeDirty = true;
         setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        setGlWindowHeight(PrefUtils.getGlWindowVerticalSize(context, getClass()));
-        minDetectedPCMValue = PrefUtils.getMinimumDetectedPcmValue(context, getClass());
+        initWaveformScaleFactor(PrefUtils.getWaveformScaleFactor(context, getClass()));
     }
 
     /**
@@ -314,8 +418,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
         PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
-        PrefUtils.setGlWindowVerticalSize(context, getClass(), glWindowHeight);
-        PrefUtils.setMinimumDetectedPcmValue(context, getClass(), minDetectedPCMValue);
+        PrefUtils.setWaveformScaleFactor(context, getClass(), waveformScaleFactors[0]);
     }
 
     //==============================================
@@ -337,6 +440,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
 
+        // we draw signal averaging trigger line with this object when triggering by events
         glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
@@ -352,132 +456,115 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         // set surface size dirty so we can recalculate scale
         surfaceSizeDirty = true;
 
-        int max = Math.max(width, height);
-        if (samplesWithEvents == null || samplesWithEvents.samples.length < max) {
-            samplesWithEvents = new SamplesWithEvents(max * 5);
-        }
+        resetLocalBuffers(channelCount);
 
         gl.glViewport(0, 0, width, height);
-        initDrawSurface(gl, surfaceWidth, glWindowHeight, true);
+        reshape(gl, surfaceWidth);
     }
 
-    private final Benchmark benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(500)
-        .sessions(10)
-        .measuresPerSession(500)
-        .logBySession(false)
-        .listener(new Benchmark.OnBenchmarkListener() {
-            @Override public void onEnd() {
-                //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-            }
-        });
+    //private final Benchmark benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(500)
+    //    .sessions(10)
+    //    .measuresPerSession(500)
+    //    .logBySession(false)
+    //    .listener(() -> {
+    //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
+    //    });
 
     /**
      * {@inheritDoc}
      */
     @Override public void onDrawFrame(GL10 gl) {
-        //benchmark.start();
+        synchronized (lock) {
+            //benchmark.start();
 
-        // get event indices and event names from processing buffer
-        final int copiedEventsCount = processingBuffer.copyEvents(eventIndices, eventNames);
+            final int selectedChannel = this.selectedChannel;
 
-        // get samples from processing buffer and check if it's valid
-        // FIXME: 24-Sep-18 CURRENTLY THE ONLY WAY TO SAVE DATA WHEN SWITCHING BETWEEN PLAYBACK AND THRESHOLD MODE WHILE PAUSING IS TO HAVE TWO DIFFERENT BUFFERS BUT THIS SHOULD BE IMPLEMENTED BETTER
-        if (sampleBuffer == null || sampleBuffer.getSize() != processingBuffer.getBufferSize()) {
-            sampleBuffer = new DrawBuffer(processingBuffer.getBufferSize());
-            samples = new short[processingBuffer.getBufferSize()];
-        }
-        if (averagedSamplesBuffer == null
-            || averagedSamplesBuffer.getSize() != processingBuffer.getThresholdBufferSize()) {
-            averagedSamplesBuffer = new DrawBuffer(processingBuffer.getThresholdBufferSize());
-            averagedSamples = new short[processingBuffer.getThresholdBufferSize()];
-        }
-        int count = processingBuffer.get(samples);
-        if (count > 0) sampleBuffer.add(samples, count);
-        count = processingBuffer.getAveraged(averagedSamples);
-        if (count > 0) averagedSamplesBuffer.add(averagedSamples, count);
-        // select buffer for drawing
-        DrawBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : sampleBuffer;
+            // copy samples, averaged samples and events to local buffers
+            final int copiedEventsCount =
+                processingBuffer.copy(samplesBuffer, averagedSamplesBuffer, eventIndices, eventNames);
+            // select buffer for drawing
+            DrawMultichannelBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : samplesBuffer;
 
-        // auto-scale before drawing if necessary
-        if (autoScale) {
-            autoScale(tmpSampleBuffer.getArray());
-            autoScale = false;
-        }
+            // it's possible that channel counts of incoming samples and draw buffer are out of sync because this is
+            // executed in background thread so if that's the case, let's just skip this draw cycle
+            if (tmpSampleBuffer.getChannelCount() != samplesWithEvents.channelCount) return;
 
-        final boolean surfaceSizeDirty = this.surfaceSizeDirty;
-        final int surfaceWidth = this.surfaceWidth;
-        final int surfaceHeight = this.surfaceHeight;
-        final boolean glWindowWidthDirty = this.glWindowWidthDirty;
-        final boolean glWindowHeightDirty = this.glWindowHeightDirty;
-        final int glWindowWidth = this.glWindowWidth;
-        final int glWindowHeight = this.glWindowHeight;
+            // auto-scale before drawing if necessary
+            if (autoScale.compareAndSet(true, false)) autoScale(tmpSampleBuffer.getChannel(selectedChannel));
 
-        // let's reset dirty flags right away
-        this.glWindowWidthDirty = false;
-        this.glWindowHeightDirty = false;
+            final boolean surfaceSizeDirty = this.surfaceSizeDirty;
+            final int surfaceWidth = this.surfaceWidth;
+            final int surfaceHeight = this.surfaceHeight;
+            final boolean glWindowWidthDirty = this.glWindowWidthDirty;
+            final float glWindowWidth = this.glWindowWidth;
+            System.arraycopy(waveformScaleFactors, 0, tempWaveformScaleFactors, 0, waveformScaleFactors.length);
+            System.arraycopy(waveformPositions, 0, tempWaveformPositions, 0, waveformPositions.length);
+            final boolean signalAveraging = this.signalAveraging;
+            final int averagingTriggerType = this.averagingTriggerType;
 
-        final int sampleCount = tmpSampleBuffer.getArray().length;
-        final long lastSampleIndex = processingBuffer.getLastSampleIndex();
+            // let's reset dirty flags right away
+            this.glWindowWidthDirty = false;
 
-        // calculate necessary drawing parameters
-        int drawStartIndex = Math.max(sampleCount - glWindowWidth, -glWindowWidth);
-        if (drawStartIndex + glWindowWidth > sampleCount) drawStartIndex = sampleCount - glWindowWidth;
-        final int drawEndIndex = Math.min(drawStartIndex + glWindowWidth, sampleCount);
+            final int frameCount = tmpSampleBuffer.getFrameCount();
+            final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
-        // construct waveform vertices and populate eventIndices buffer
-        getWaveformVertices(samplesWithEvents, tmpSampleBuffer.getArray(), eventIndices, eventNames, copiedEventsCount,
-            eventsBuffer, drawStartIndex, drawEndIndex, surfaceWidth);
-        eventsBuffer.clear();
-        getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
-        final int samplesDrawCount = (int) (samplesWithEvents.sampleCount * .5);
+            // calculate necessary drawing parameters
+            int drawStartIndex = (int) Math.max(frameCount - glWindowWidth, -glWindowWidth);
+            if (drawStartIndex + glWindowWidth > frameCount) drawStartIndex = (int) (frameCount - glWindowWidth);
+            final int drawEndIndex = (int) Math.min(drawStartIndex + glWindowWidth, frameCount);
 
-        // calculate scale x and scale y
-        if (surfaceSizeDirty || glWindowWidthDirty) {
-            scaleX = samplesDrawCount > 0 ? (float) glWindowWidth / samplesDrawCount : 1f;
-        }
-        if (surfaceSizeDirty || glWindowHeightDirty) {
-            scaleY = surfaceHeight > 0 ? (float) glWindowHeight / surfaceHeight : 1f;
-        }
+            // construct waveform vertices and populate eventIndices buffer
+            getWaveformVertices(samplesWithEvents, tmpSampleBuffer.getBuffer(), frameCount, eventIndices,
+                copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth);
+            getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
 
-        // init surface before drawing
-        initDrawSurface(gl, samplesDrawCount, glWindowHeight, surfaceSizeDirty || glWindowWidthDirty);
+            final float drawnSamplesCount = samplesWithEvents.sampleCountM[0] * .5f;
+            // calculate scale x and scale y
+            if (surfaceSizeDirty || glWindowWidthDirty) {
+                scaleX = drawnSamplesCount > 0 ? glWindowWidth / drawnSamplesCount : 1f;
+            }
+            if (surfaceSizeDirty) {
+                scaleY = surfaceHeight > 0 ? MAX_GL_VERTICAL_SIZE / surfaceHeight : 1f;
+            }
 
-        // draw on surface
-        draw(gl, tmpSampleBuffer.getArray(), samplesWithEvents.samples, samplesWithEvents.sampleCount, eventsBuffer,
-            surfaceWidth, surfaceHeight, glWindowWidth, glWindowHeight, drawStartIndex, drawEndIndex, scaleX, scaleY,
-            lastSampleIndex);
+            // init surface before drawing
+            if (surfaceSizeDirty || glWindowWidthDirty) reshape(gl, drawnSamplesCount);
 
-        // draw average triggering line
-        if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
-            final float drawScale = (float) (samplesWithEvents.sampleCount * .5) / surfaceWidth;
-            final float verticalHalfSize = glWindowHeight * .30f;
-            glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                samplesWithEvents.sampleCount * .25f, -verticalHalfSize, verticalHalfSize, drawScale, scaleY);
-        }
-
-        // invoke callback that the surface has been drawn
-        if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth, glWindowHeight);
-
-        //benchmark.end();
-    }
-
-    private void initDrawSurface(GL10 gl, int samplesDrawCount, int glWindowHeight, boolean updateProjection) {
-        GlUtils.glClear(gl);
-        if (updateProjection) {
-            float heightHalf = glWindowHeight * .5f;
-            gl.glMatrixMode(GL10.GL_PROJECTION);
+            // setup drawing surface and switch to Model-View matrix
+            gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+            gl.glMatrixMode(GL10.GL_MODELVIEW);
             gl.glLoadIdentity();
-            gl.glOrthof(0f, samplesDrawCount - 1, -heightHalf, heightHalf, -1f, 1f);
+
+            // draw on surface
+            draw(gl, tmpSampleBuffer.getBuffer(), selectedChannel, samplesWithEvents.samplesM,
+                samplesWithEvents.sampleCountM, eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth,
+                tempWaveformScaleFactors, tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
+                lastSampleIndex);
+
+            // draw average triggering line
+            if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
+                final float drawScale = surfaceWidth > 0 ? drawnSamplesCount / surfaceWidth : 1f;
+                gl.glPushMatrix();
+                gl.glTranslatef(drawnSamplesCount * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
+                glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
+                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, drawScale, scaleY);
+                gl.glPopMatrix();
+            }
+
+            // invoke callback that the surface has been drawn
+            if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth);
+
+            //benchmark.end();
         }
     }
 
-    protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[] samples,
-        @NonNull int[] eventIndices, @NonNull String[] eventNames, int eventCount,
-        @NonNull SparseArray<String> eventsBuffer, int fromSample, int toSample, int drawSurfaceWidth) {
+    protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[][] samples,
+        int frameCount, @NonNull int[] eventIndices, int eventCount, int fromSample, int toSample,
+        int drawSurfaceWidth) {
         //benchmark.start();
         try {
-            JniUtils.prepareForDrawing(samplesWithEvents, samples, eventIndices, eventCount, fromSample, toSample,
-                drawSurfaceWidth);
+            JniUtils.prepareForDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
+                toSample, drawSurfaceWidth);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -487,12 +574,25 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
 
     protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames, int eventCount,
         @NonNull SparseArray<String> eventsBuffer) {
+        eventsBuffer.clear();
         int indexBase = eventCount - samplesWithEvents.eventCount;
         if (indexBase >= 0) {
             for (int i = 0; i < samplesWithEvents.eventCount; i++) {
                 eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
             }
         }
+    }
+
+    abstract protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
+        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex);
+
+    private void reshape(GL10 gl, float drawnSamplesCount) {
+        gl.glMatrixMode(GL10.GL_PROJECTION);
+        gl.glLoadIdentity();
+        gl.glOrthof(0f, drawnSamplesCount - 1, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
     }
 
     @Nullable private String getAveragingTriggerEventName(String[] eventNames, int eventsCount) {
@@ -502,10 +602,31 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
         return null;
     }
 
-    abstract protected void draw(GL10 gl, @NonNull short[] samples, @NonNull short[] waveformVertices,
-        int waveformVerticesCount, @NonNull SparseArray<String> events, int surfaceWidth, int surfaceHeight,
-        int glWindowWidth, int glWindowHeight, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastSampleIndex);
+    private void resetLocalBuffers(int channelCount) {
+        int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
+        if (samplesWithEvents == null || samplesWithEvents.channelCount != channelCount
+            || samplesWithEvents.maxSamplesPerChannel < maxSamplesPerChannel) {
+            LOGD(TAG, "CHANNEL COUNT: " + channelCount);
+            LOGD(TAG, "MAX SAMPLES PER CHANNEL: " + maxSamplesPerChannel);
+            samplesWithEvents = new SamplesWithEvents(channelCount, maxSamplesPerChannel);
+        }
+    }
+
+    private void resetWaveformScaleFactorsAndPositions(int channelCount) {
+        waveformScaleFactors = new float[channelCount];
+        for (int i = 0; i < channelCount; i++) {
+            waveformScaleFactors[i] = waveformScaleFactor;
+        }
+        waveformPositions = new float[channelCount];
+        float step = MAX_GL_VERTICAL_SIZE / (channelCount + 1);
+        float prev = -MAX_GL_VERTICAL_HALF_SIZE;
+        for (int i = 0; i < channelCount; i++) {
+            waveformPositions[i] = prev + step;
+            prev += step;
+        }
+        tempWaveformScaleFactors = new float[channelCount];
+        tempWaveformPositions = new float[channelCount];
+    }
 
     //==============================================
     //  SCROLLING
@@ -612,13 +733,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
     }
 
     /**
-     * Triggers {@link OnMeasureListener#onMeasure(float, int, int, int, int)} call.
+     * Triggers {@link OnMeasureListener#onMeasure(float[], int[], int[], int[], int, int)} call.
      */
-    final void onMeasure(float rms, int firstTrainSpikeCount, int secondTrainSpikeCount, int thirdTrainSpikeCount,
-        int sampleCount) {
+    final void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount,
+        int[] thirdTrainSpikeCount, int selectedChannel, int sampleCount) {
         if (onMeasureListener != null) {
             onMeasureListener.onMeasure(rms, firstTrainSpikeCount, secondTrainSpikeCount, thirdTrainSpikeCount,
-                sampleCount);
+                selectedChannel, sampleCount);
         }
     }
 
@@ -651,7 +772,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
      * Called when drawing surface is double-tapped. This method is called only if {@link #isAutoScaleEnabled()} returns {@code true}.
      */
     void autoScale() {
-        autoScale = true;
+        autoScale.set(true);
     }
 
     /**
@@ -676,7 +797,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer {
             } else {
                 maxY = Math.abs(min) * 2;
             }
-            if (-maxY > minDetectedPCMValue) setGlWindowHeight((int) (maxY * AUTO_SCALE_FACTOR));
+            if (-maxY > GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE) {
+                initWaveformScaleFactor(MAX_GL_VERTICAL_SIZE / maxY * AUTO_SCALE_PERCENT);
+            }
         }
     }
 }
