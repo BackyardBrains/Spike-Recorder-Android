@@ -288,6 +288,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
+     * Whether currently selected signal averaging type is of type {@link SignalAveragingTriggerType#THRESHOLD}.
+     */
+    boolean isThresholdAveragingTriggerType() {
+        return averagingTriggerType == SignalAveragingTriggerType.THRESHOLD;
+    }
+
+    /**
      * Sets type for signal averaging. Can be one of {@link SignalAveragingTriggerType}.
      */
     public void setAveragingTriggerType(@SignalAveragingTriggerType int averagingTriggerType) {

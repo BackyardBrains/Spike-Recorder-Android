@@ -215,13 +215,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         long lastFrameIndex) {
         final float samplesToDraw = waveformVerticesCount[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
-        boolean showWaveformHandle = getChannelCount() > 1;
-        boolean isSignalAveraging = isSignalAveraging();
+        final boolean showWaveformHandle = getChannelCount() > 1;
+        final boolean isSignalAveraging = isSignalAveraging();
+        final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
         boolean selected, showThresholdHandle;
 
         for (int i = 0; i < waveformVertices.length; i++) {
             selected = getSelectedChanel() == i;
-            showThresholdHandle = selected && isSignalAveraging;
+            showThresholdHandle = selected && isSignalAveraging && isThresholdSignalAveraging;
 
             gl.glPushMatrix();
             gl.glTranslatef(0f, waveformPositions[i], 0f);
