@@ -156,18 +156,27 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
             if (analysisId != 0) {
                 final Train[] trains = trainDao.loadTrains(analysisId);
                 if (trains.length > 0) {
-                    final float[][] spikeAnalysisTrains = new float[trains.length][];
-                    boolean analysisExists = false;
-                    for (int i = 0; i < trains.length; i++) {
-                        spikeAnalysisTrains[i] = spikeDao.loadSpikeTimes(trains[i].getId());
-                        if (spikeAnalysisTrains[i].length > 0) analysisExists = true;
+                    final List<float[]> spikesByTrains = new ArrayList<>();
+                    float[] spikesByTrain;
+                    for (Train train : trains) {
+                        spikesByTrain = spikeDao.loadSpikeTimes(train.getId());
+                        if (spikesByTrain.length > 0) spikesByTrains.add(spikesByTrain);
                     }
 
-                    final boolean finalAnalysisExists = analysisExists;
+                    final int trainCount = spikesByTrains.size();
+                    final boolean analysisExists = trainCount > 0;
+                    float[][] spikeAnalysisTrains = new float[trainCount][];
+                    if (analysisExists) {
+                        spikeAnalysisTrains = new float[trainCount][];
+                        for (int i = 0; i < trainCount; i++) {
+                            spikeAnalysisTrains[i] = spikesByTrains.get(i);
+                        }
+                    }
+                    final float[][] finalSpikeAnalysisTrains = spikeAnalysisTrains;
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) {
-                            if (finalAnalysisExists) {
-                                callback.onAnalysisLoaded(spikeAnalysisTrains);
+                            if (analysisExists) {
+                                callback.onAnalysisLoaded(finalSpikeAnalysisTrains);
                             } else {
                                 callback.onDataNotAvailable();
                             }
@@ -201,18 +210,27 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
             if (analysisId != 0) {
                 final Train[] trains = trainDao.loadTrains(analysisId);
                 if (trains.length > 0) {
-                    final int[][] spikeAnalysisTrains = new int[trains.length][];
-                    boolean analysisExists = false;
-                    for (int i = 0; i < trains.length; i++) {
-                        spikeAnalysisTrains[i] = spikeDao.loadSpikeIndices(trains[i].getId());
-                        if (spikeAnalysisTrains[i].length > 0) analysisExists = true;
+                    final List<int[]> spikesByTrains = new ArrayList<>();
+                    int[] spikesByTrain;
+                    for (Train train : trains) {
+                        spikesByTrain = spikeDao.loadSpikeIndices(train.getId());
+                        if (spikesByTrain.length > 0) spikesByTrains.add(spikesByTrain);
                     }
 
-                    final boolean finalAnalysisExists = analysisExists;
+                    final int trainCount = spikesByTrains.size();
+                    final boolean analysisExists = trainCount > 0;
+                    int[][] spikeAnalysisTrains = new int[trainCount][];
+                    if (analysisExists) {
+                        spikeAnalysisTrains = new int[trainCount][];
+                        for (int i = 0; i < trainCount; i++) {
+                            spikeAnalysisTrains[i] = spikesByTrains.get(i);
+                        }
+                    }
+                    final int[][] finalSpikeAnalysisTrains = spikeAnalysisTrains;
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) {
-                            if (finalAnalysisExists) {
-                                callback.onAnalysisLoaded(spikeAnalysisTrains);
+                            if (analysisExists) {
+                                callback.onAnalysisLoaded(finalSpikeAnalysisTrains);
                             } else {
                                 callback.onDataNotAvailable();
                             }
