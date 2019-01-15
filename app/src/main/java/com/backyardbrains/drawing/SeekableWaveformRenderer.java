@@ -114,7 +114,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     for (int i = 0; i < spikeTrains.length; i++) {
                         for (int j = 0; j < spikeTrains[i].length; j++) {
                             //benchmark.start();
-                            if (shouldQuerySamples) {
+                            if (spikeTrains[i][j] != null && shouldQuerySamples) {
                                 valuesAndIndexes[i][j] =
                                     getAnalysisManager().getSpikesByTrainForRange(spikeTrains[i][j].getId(),
                                         spikeTrains[i][j].getChannel(), fromSample, toSample);
@@ -124,6 +124,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     }
                 }
             }
+
+            final int valuesAndIndexesCount = valuesAndIndexes.length;
 
             // draw measurement area
             if (measuring) {
@@ -150,8 +152,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     // fill array of samples used for RMS calculation
                     if (rmsSamples == null || measureSampleCount != this.measureSampleCount) {
                         this.measureSampleCount = measureSampleCount;
-                        rmsSamples =
-                            new short[valuesAndIndexes != null ? valuesAndIndexes.length : 1][measureSampleCount];
+                        rmsSamples = new short[valuesAndIndexesCount][measureSampleCount];
                     }
 
                     // calculate index for the first sample we take for measurement
@@ -161,9 +162,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     if (diff > 0) startIndex -= diff;
                     startIndex += fromSample;
 
-                    final float[] rms = new float[valuesAndIndexes.length];
-                    final int[][] spikeCounts = new int[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT][valuesAndIndexes.length];
-                    for (int channelIndex = 0; channelIndex < valuesAndIndexes.length; channelIndex++) {
+                    final float[] rms = new float[valuesAndIndexesCount];
+                    final int[][] spikeCounts = new int[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT][];
+                    for (int channelIndex = 0; channelIndex < valuesAndIndexesCount; channelIndex++) {
                         // we need to check number of samples we're copying cause converting indices might have not been that precise
                         if (measureFirstSampleIndex + measureSampleCount > samples[channelIndex].length) {
                             measureSampleCount = samples[channelIndex].length - measureFirstSampleIndex;
@@ -177,16 +178,18 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                         for (int trainIndex = 0; trainIndex < valuesAndIndexes[channelIndex].length; trainIndex++) {
                             // init spike counts for first train
                             if (spikeCounts[trainIndex] == null) {
-                                spikeCounts[trainIndex] = new int[valuesAndIndexes.length];
+                                spikeCounts[trainIndex] = new int[valuesAndIndexesCount];
                                 Arrays.fill(spikeCounts[trainIndex], -1);
                             }
-                            spikeCounts[trainIndex][channelIndex] = 0;
-                            for (int spikeIndex = 0; spikeIndex < valuesAndIndexes[channelIndex][trainIndex].length;
-                                spikeIndex++) {
-                                if (startIndex <= valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
-                                    && valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
-                                    <= startIndex + measureSampleCount) {
-                                    spikeCounts[trainIndex][channelIndex]++;
+                            if (valuesAndIndexes[channelIndex][trainIndex] != null) {
+                                spikeCounts[trainIndex][channelIndex] = 0;
+                                for (int spikeIndex = 0; spikeIndex < valuesAndIndexes[channelIndex][trainIndex].length;
+                                    spikeIndex++) {
+                                    if (startIndex <= valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
+                                        && valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
+                                        <= startIndex + measureSampleCount) {
+                                        spikeCounts[trainIndex][channelIndex]++;
+                                    }
                                 }
                             }
                         }
@@ -217,18 +220,20 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     if (valuesAndIndexes[i] != null) {
                         for (int j = 0; j < valuesAndIndexes[i].length; j++) {
-                            //benchmark.start();
-                            int verticesCount =
-                                fillSpikesAndColorsBuffers(valuesAndIndexes[i][j], spikesVertices, spikesColors,
-                                    glWindowWidth, fromSample, toSample, (long) samplesToDraw,
-                                    Colors.SPIKE_TRAIN_COLORS[j]);
-                            //benchmark.end();
-                            if (verticesCount > 0) {
-                                gl.glPushMatrix();
-                                gl.glTranslatef(0f, waveformPositions[i], 0f);
-                                gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                                glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
-                                gl.glPopMatrix();
+                            if (valuesAndIndexes[i][j] != null) {
+                                //benchmark.start();
+                                int verticesCount =
+                                    fillSpikesAndColorsBuffers(valuesAndIndexes[i][j], spikesVertices, spikesColors,
+                                        glWindowWidth, fromSample, toSample, (long) samplesToDraw,
+                                        Colors.SPIKE_TRAIN_COLORS[j]);
+                                //benchmark.end();
+                                if (verticesCount > 0) {
+                                    gl.glPushMatrix();
+                                    gl.glTranslatef(0f, waveformPositions[i], 0f);
+                                    gl.glScalef(1f, waveformScaleFactors[i], 1f);
+                                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                                    gl.glPopMatrix();
+                                }
                             }
                         }
                     }

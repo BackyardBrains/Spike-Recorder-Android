@@ -23,8 +23,8 @@ import com.backyardbrains.db.entity.Train;
     @Query("SELECT * FROM trains WHERE analysis_id = :analysisId AND `order` = :order ORDER BY `order`")
     Train[] loadTrains(long analysisId, int order);
 
-    @Query("SELECT DISTINCT * FROM trains WHERE analysis_id = :analysisId ORDER BY `order`") Train[] loadTrains(
-        long analysisId);
+    @Query("SELECT DISTINCT * FROM trains WHERE analysis_id = :analysisId AND spike_count != 0 ORDER BY `order`")
+    Train[] loadTrains(long analysisId);
 
     @Query("SELECT * FROM trains WHERE analysis_id = :analysisId AND channel = :channel ORDER BY `order`")
     Train[] loadTrainsByChannel(long analysisId, int channel);
@@ -33,4 +33,7 @@ import com.backyardbrains.db.entity.Train;
 
     @Query("UPDATE trains SET `order` = `order` - 1 WHERE analysis_id = :analysisId AND `order` > :order")
     void updateTrainsAfterOrder(long analysisId, int order);
+
+    @Query("UPDATE trains SET spike_count = :spikeCount WHERE id = :id") void updateTrainSpikeCount(long id,
+        int spikeCount);
 }

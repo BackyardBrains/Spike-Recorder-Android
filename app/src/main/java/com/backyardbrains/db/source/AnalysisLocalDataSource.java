@@ -155,31 +155,15 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
             final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
             if (analysisId != 0) {
                 final Train[] trains = trainDao.loadTrains(analysisId);
-                if (trains.length > 0) {
-                    final List<float[]> spikesByTrains = new ArrayList<>();
-                    float[] spikesByTrain;
-                    for (Train train : trains) {
-                        spikesByTrain = spikeDao.loadSpikeTimes(train.getId());
-                        if (spikesByTrain.length > 0) spikesByTrains.add(spikesByTrain);
+                final int trainCount = trains.length;
+                if (trainCount > 0) {
+                    final float[][] spikeAnalysisTrains = new float[trainCount][];
+                    for (int i = 0; i < trainCount; i++) {
+                        spikeAnalysisTrains[i] = spikeDao.loadSpikeTimes(trains[i].getId());
                     }
-
-                    final int trainCount = spikesByTrains.size();
-                    final boolean analysisExists = trainCount > 0;
-                    float[][] spikeAnalysisTrains = new float[trainCount][];
-                    if (analysisExists) {
-                        spikeAnalysisTrains = new float[trainCount][];
-                        for (int i = 0; i < trainCount; i++) {
-                            spikeAnalysisTrains[i] = spikesByTrains.get(i);
-                        }
-                    }
-                    final float[][] finalSpikeAnalysisTrains = spikeAnalysisTrains;
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) {
-                            if (analysisExists) {
-                                callback.onAnalysisLoaded(finalSpikeAnalysisTrains);
-                            } else {
-                                callback.onDataNotAvailable();
-                            }
+                            callback.onAnalysisLoaded(spikeAnalysisTrains);
                         }
                     });
                 } else {
@@ -209,31 +193,15 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
             final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
             if (analysisId != 0) {
                 final Train[] trains = trainDao.loadTrains(analysisId);
-                if (trains.length > 0) {
-                    final List<int[]> spikesByTrains = new ArrayList<>();
-                    int[] spikesByTrain;
-                    for (Train train : trains) {
-                        spikesByTrain = spikeDao.loadSpikeIndices(train.getId());
-                        if (spikesByTrain.length > 0) spikesByTrains.add(spikesByTrain);
+                final int trainCount = trains.length;
+                if (trainCount > 0) {
+                    final int[][] spikeAnalysisTrains = new int[trainCount][];
+                    for (int i = 0; i < trainCount; i++) {
+                        spikeAnalysisTrains[i] = spikeDao.loadSpikeIndices(trains[i].getId());
                     }
-
-                    final int trainCount = spikesByTrains.size();
-                    final boolean analysisExists = trainCount > 0;
-                    int[][] spikeAnalysisTrains = new int[trainCount][];
-                    if (analysisExists) {
-                        spikeAnalysisTrains = new int[trainCount][];
-                        for (int i = 0; i < trainCount; i++) {
-                            spikeAnalysisTrains[i] = spikesByTrains.get(i);
-                        }
-                    }
-                    final int[][] finalSpikeAnalysisTrains = spikeAnalysisTrains;
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) {
-                            if (analysisExists) {
-                                callback.onAnalysisLoaded(finalSpikeAnalysisTrains);
-                            } else {
-                                callback.onDataNotAvailable();
-                            }
+                            callback.onAnalysisLoaded(spikeAnalysisTrains);
                         }
                     });
                 } else {
@@ -334,7 +302,7 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
                 if (trainCount > 0) trainCount /= channelCount;
                 final Train[] trains = new Train[channelCount];
                 for (int i = 0; i < channelCount; i++) {
-                    trains[i] = new Train(analysisId, i, 0, 0, trainCount, true);
+                    trains[i] = new Train(analysisId, i, trainCount);
                 }
                 trainDao.insertTrains(trains);
                 int finalTrainCount = trainCount;
@@ -379,19 +347,23 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
                     spikeDao.deleteSpikes(trainId);
 
                     // save newly configured train
-                    trainDao.insertTrain(new Train(analysisId, channel, lower, upper, order, left < right));
+                    trainDao.insertTrain(new Train(analysisId, channel, order, 0, lower, upper, left < right));
 
                     // save new entries to spike_trains table linked to this train
                     final SpikeIndexValueTime[] spikes =
                         spikeDao.loadSpikesForValueRange(analysisId, channel, lower, upper);
                     final Train savedTrain = trainDao.loadTrain(analysisId, channel, order);
-                    final List<Spike> newSpike = new ArrayList<>();
+                    final List<Spike> newSpikes = new ArrayList<>();
                     for (SpikeIndexValueTime spike : spikes) {
-                        newSpike.add(
+                        newSpikes.add(
                             new Spike(savedTrain.getAnalysisId(), savedTrain.getId(), channel, spike.getValue(),
                                 spike.getIndex(), spike.getTime()));
                     }
-                    if (newSpike.size() > 0) spikeDao.insertSpikes(newSpike);
+                    final int len = newSpikes.size();
+                    if (len > 0) {
+                        spikeDao.insertSpikes(newSpikes);
+                        trainDao.updateTrainSpikeCount(savedTrain.getId(), len);
+                    }
                 }
             }
         };

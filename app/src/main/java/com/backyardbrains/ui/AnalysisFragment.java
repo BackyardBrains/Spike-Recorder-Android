@@ -234,11 +234,7 @@ public class AnalysisFragment extends BaseFragment {
     private void setupUI() {
         //reassignSurfaceView(analysisType);
 
-        ibtnBack.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                onBackPressed();
-            }
-        });
+        ibtnBack.setOnClickListener(v -> onBackPressed());
     }
 
     // Returns analysis title depending on the analysis type

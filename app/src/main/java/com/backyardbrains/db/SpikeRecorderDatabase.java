@@ -88,6 +88,7 @@ import com.backyardbrains.db.entity.Train;
         @Override public void migrate(@NonNull SupportSQLiteDatabase database) {
             // add column to trains and spikes tables that holds information about the channel the train/spike belongs to
             database.execSQL("ALTER TABLE trains ADD COLUMN channel INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE trains ADD COLUMN spike_count INTEGER NOT NULL DEFAULT 0");
             database.execSQL("ALTER TABLE spikes ADD COLUMN channel INTEGER NOT NULL DEFAULT 0");
             // drop old indexes we need to create a new one
             database.execSQL("DROP INDEX IF EXISTS `index_trains_analysis_id_order`");

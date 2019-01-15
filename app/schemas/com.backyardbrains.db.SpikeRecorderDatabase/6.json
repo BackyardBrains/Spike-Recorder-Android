@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "2d01a0215f8718a7556aa8efb96be0a2",
+    "identityHash": "980545f9e4bcdd4498fb781b79215156",
     "entities": [
       {
         "tableName": "spike_analysis",
@@ -134,11 +134,17 @@
       },
       {
         "tableName": "trains",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `channel` INTEGER NOT NULL, `analysis_id` INTEGER NOT NULL, `lower_threshold` INTEGER NOT NULL, `upper_threshold` INTEGER NOT NULL, `order` INTEGER NOT NULL, `lower_left` INTEGER NOT NULL, FOREIGN KEY(`analysis_id`) REFERENCES `spike_analysis`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `analysis_id` INTEGER NOT NULL, `channel` INTEGER NOT NULL, `order` INTEGER NOT NULL, `spike_count` INTEGER NOT NULL, `lower_threshold` INTEGER NOT NULL, `upper_threshold` INTEGER NOT NULL, `lower_left` INTEGER NOT NULL, FOREIGN KEY(`analysis_id`) REFERENCES `spike_analysis`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysisId",
+            "columnName": "analysis_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -149,8 +155,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "analysisId",
-            "columnName": "analysis_id",
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "spikeCount",
+            "columnName": "spike_count",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -163,12 +175,6 @@
           {
             "fieldPath": "upperThreshold",
             "columnName": "upper_threshold",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "order",
-            "columnName": "order",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -214,7 +220,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"2d01a0215f8718a7556aa8efb96be0a2\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"980545f9e4bcdd4498fb781b79215156\")"
     ]
   }
 }

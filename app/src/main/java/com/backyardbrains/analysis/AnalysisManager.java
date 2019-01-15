@@ -284,7 +284,19 @@ public class AnalysisManager {
             }
         }
 
-        @Override public void onDataNotAvailable() {
+        @SuppressLint("SwitchIntDef") @Override public void onDataNotAvailable() {
+            switch (analysisType) {
+                case AnalysisType.AUTOCORRELATION:
+                    autocorrelation = null;
+                    break;
+                case AnalysisType.ISI:
+                    isi = null;
+                    break;
+                case AnalysisType.CROSS_CORRELATION:
+                    crossCorrelation = null;
+                    break;
+            }
+
             // post event that audio file analysis failed
             EventBus.getDefault().post(new AnalysisDoneEvent(true, analysisType));
         }
@@ -300,6 +312,7 @@ public class AnalysisManager {
                     }
 
                     @Override public void onDataNotAvailable() {
+                        averageSpikes = null;
                         // post event that audio file analysis failed
                         EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
                     }

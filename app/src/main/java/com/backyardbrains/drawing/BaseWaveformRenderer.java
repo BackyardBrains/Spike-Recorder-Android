@@ -144,8 +144,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
          * @param selectedChannel Index of the currently selected channel.
          * @param sampleCount Number of spikes within selected part of drawn signal.
          */
-        void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount, int[] thirdTrainSpikeCount,
-            int selectedChannel, int sampleCount);
+        void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
+            @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
+            int sampleCount);
 
         /**
          * Listener that is invoked when signal measurement ends.

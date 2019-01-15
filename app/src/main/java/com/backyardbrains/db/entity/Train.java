@@ -3,6 +3,7 @@ package com.backyardbrains.db.entity;
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
@@ -15,19 +16,26 @@ import android.arch.persistence.room.PrimaryKey;
 public class Train {
 
     @PrimaryKey(autoGenerate = true) private long id;
-    private int channel;
     @ColumnInfo(name = "analysis_id") private long analysisId;
+    private int channel;
+    private int order;
+    @ColumnInfo(name = "spike_count") private int spikeCount;
     @ColumnInfo(name = "lower_threshold") private int lowerThreshold;
     @ColumnInfo(name = "upper_threshold") private int upperThreshold;
-    private int order;
     @ColumnInfo(name = "lower_left") private boolean lowerLeft;
 
-    public Train(long analysisId, int channel, int lowerThreshold, int upperThreshold, int order, boolean lowerLeft) {
+    @Ignore public Train(long analysisId, int channel, int order) {
+        this(analysisId, channel, order, 0, 0, 0, true);
+    }
+
+    public Train(long analysisId, int channel, int order, int spikeCount, int lowerThreshold, int upperThreshold,
+        boolean lowerLeft) {
         this.analysisId = analysisId;
         this.channel = channel;
+        this.order = order;
+        this.spikeCount = spikeCount;
         this.lowerThreshold = lowerThreshold;
         this.upperThreshold = upperThreshold;
-        this.order = order;
         this.lowerLeft = lowerLeft;
     }
 
@@ -55,6 +63,22 @@ public class Train {
         this.channel = channel;
     }
 
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
+
+    public int getSpikeCount() {
+        return spikeCount;
+    }
+
+    public void setSpikeCount(int spikeCount) {
+        this.spikeCount = spikeCount;
+    }
+
     public int getLowerThreshold() {
         return lowerThreshold;
     }
@@ -69,14 +93,6 @@ public class Train {
 
     public void setUpperThreshold(int upperThreshold) {
         this.upperThreshold = upperThreshold;
-    }
-
-    public int getOrder() {
-        return order;
-    }
-
-    public void setOrder(int order) {
-        this.order = order;
     }
 
     public boolean isLowerLeft() {

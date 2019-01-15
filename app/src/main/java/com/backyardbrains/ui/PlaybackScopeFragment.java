@@ -116,11 +116,11 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         private boolean measuring;
         private float[] rms;
-        private int[] firstTrainSpikeCount;
+        private int[] firstTrainSpikeCounts;
         private float[] firstTrainSpikesPerSecond;
-        private int[] secondTrainSpikeCount;
+        private int[] secondTrainSpikeCounts;
         private float[] secondTrainSpikesPerSecond;
-        private int[] thirdTrainSpikeCount;
+        private int[] thirdTrainSpikeCounts;
         private float[] thirdTrainSpikesPerSecond;
         private int sampleCount;
         private int selectedChannel;
@@ -130,19 +130,30 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
                 tvRms.setText(String.format(getString(R.string.template_rms), rms[selectedChannel]));
                 // avoid division by zero
                 tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
-                tvSpikeCount0.setVisibility(firstTrainSpikeCount[selectedChannel] >= 0 ? View.VISIBLE : View.INVISIBLE);
-                tvSpikeCount0.setText(
-                    String.format(getString(R.string.template_spike_count), firstTrainSpikeCount[selectedChannel],
-                        firstTrainSpikesPerSecond[selectedChannel]));
-                tvSpikeCount1.setVisibility(
-                    secondTrainSpikeCount[selectedChannel] >= 0 ? View.VISIBLE : View.INVISIBLE);
-                tvSpikeCount1.setText(
-                    String.format(getString(R.string.template_spike_count), secondTrainSpikeCount[selectedChannel],
-                        secondTrainSpikesPerSecond[selectedChannel]));
-                tvSpikeCount2.setVisibility(thirdTrainSpikeCount[selectedChannel] >= 0 ? View.VISIBLE : View.INVISIBLE);
-                tvSpikeCount2.setText(
-                    String.format(getString(R.string.template_spike_count), thirdTrainSpikeCount[selectedChannel],
-                        thirdTrainSpikesPerSecond[selectedChannel]));
+                if (firstTrainSpikeCounts != null && firstTrainSpikeCounts[selectedChannel] >= 0) {
+                    tvSpikeCount0.setVisibility(View.VISIBLE);
+                    tvSpikeCount0.setText(
+                        String.format(getString(R.string.template_spike_count), firstTrainSpikeCounts[selectedChannel],
+                            firstTrainSpikesPerSecond[selectedChannel]));
+                } else {
+                    tvSpikeCount0.setVisibility(View.INVISIBLE);
+                }
+                if (secondTrainSpikeCounts != null && secondTrainSpikeCounts[selectedChannel] >= 0) {
+                    tvSpikeCount1.setVisibility(View.VISIBLE);
+                    tvSpikeCount1.setText(
+                        String.format(getString(R.string.template_spike_count), secondTrainSpikeCounts[selectedChannel],
+                            secondTrainSpikesPerSecond[selectedChannel]));
+                } else {
+                    tvSpikeCount1.setVisibility(View.INVISIBLE);
+                }
+                if (thirdTrainSpikeCounts != null && thirdTrainSpikeCounts[selectedChannel] >= 0) {
+                    tvSpikeCount2.setVisibility(View.VISIBLE);
+                    tvSpikeCount2.setText(
+                        String.format(getString(R.string.template_spike_count), thirdTrainSpikeCounts[selectedChannel],
+                            thirdTrainSpikesPerSecond[selectedChannel]));
+                } else {
+                    tvSpikeCount2.setVisibility(View.INVISIBLE);
+                }
             }
         }
 
@@ -150,7 +161,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             this.measuring = measuring;
         }
 
-        void setRms(float[] rms) {
+        void setRms(@NonNull float[] rms) {
             this.rms = rms;
             for (int i = 0; i < rms.length; i++) {
                 if (Float.isInfinite(rms[i]) || Float.isNaN(rms[i])) {
@@ -167,44 +178,53 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             this.sampleCount = sampleCount;
         }
 
-        void setFirstTrainSpikeCount(int[] firstTrainSpikeCount) {
-            this.firstTrainSpikeCount = firstTrainSpikeCount;
-            if (this.firstTrainSpikesPerSecond == null) {
-                this.firstTrainSpikesPerSecond = new float[firstTrainSpikeCount.length];
-            }
+        void setFirstTrainSpikeCounts(@Nullable int[] firstTrainSpikeCountss) {
+            this.firstTrainSpikeCounts = firstTrainSpikeCountss;
 
-            for (int i = 0; i < firstTrainSpikeCount.length; i++) {
-                firstTrainSpikesPerSecond[i] = (firstTrainSpikeCount[i] * sampleRate) / (float) sampleCount;
-                if (Float.isInfinite(firstTrainSpikesPerSecond[i]) || Float.isNaN(firstTrainSpikesPerSecond[i])) {
-                    firstTrainSpikesPerSecond[i] = 0f;
+            if (firstTrainSpikeCountss != null) {
+                if (this.firstTrainSpikesPerSecond == null) {
+                    this.firstTrainSpikesPerSecond = new float[firstTrainSpikeCountss.length];
+                }
+
+                for (int i = 0; i < firstTrainSpikeCountss.length; i++) {
+                    firstTrainSpikesPerSecond[i] = (firstTrainSpikeCountss[i] * sampleRate) / (float) sampleCount;
+                    if (Float.isInfinite(firstTrainSpikesPerSecond[i]) || Float.isNaN(firstTrainSpikesPerSecond[i])) {
+                        firstTrainSpikesPerSecond[i] = 0f;
+                    }
                 }
             }
         }
 
-        void setSecondTrainSpikeCount(int[] secondTrainSpikeCount) {
-            this.secondTrainSpikeCount = secondTrainSpikeCount;
-            if (this.secondTrainSpikesPerSecond == null) {
-                this.secondTrainSpikesPerSecond = new float[secondTrainSpikeCount.length];
-            }
+        void setSecondTrainSpikeCounts(@Nullable int[] secondTrainSpikeCounts) {
+            this.secondTrainSpikeCounts = secondTrainSpikeCounts;
 
-            for (int i = 0; i < secondTrainSpikeCount.length; i++) {
-                secondTrainSpikesPerSecond[i] = (secondTrainSpikeCount[i] * sampleRate) / (float) sampleCount;
-                if (Float.isInfinite(secondTrainSpikesPerSecond[i]) || Float.isNaN(secondTrainSpikesPerSecond[i])) {
-                    secondTrainSpikesPerSecond[i] = 0f;
+            if (secondTrainSpikeCounts != null) {
+                if (this.secondTrainSpikesPerSecond == null) {
+                    this.secondTrainSpikesPerSecond = new float[secondTrainSpikeCounts.length];
+                }
+
+                for (int i = 0; i < secondTrainSpikeCounts.length; i++) {
+                    secondTrainSpikesPerSecond[i] = (secondTrainSpikeCounts[i] * sampleRate) / (float) sampleCount;
+                    if (Float.isInfinite(secondTrainSpikesPerSecond[i]) || Float.isNaN(secondTrainSpikesPerSecond[i])) {
+                        secondTrainSpikesPerSecond[i] = 0f;
+                    }
                 }
             }
         }
 
-        void setThirdTrainSpikeCount(int[] thirdTrainSpikeCount) {
-            this.thirdTrainSpikeCount = thirdTrainSpikeCount;
-            if (this.thirdTrainSpikesPerSecond == null) {
-                this.thirdTrainSpikesPerSecond = new float[thirdTrainSpikeCount.length];
-            }
+        void setThirdTrainSpikeCounts(@Nullable int[] thirdTrainSpikeCounts) {
+            this.thirdTrainSpikeCounts = thirdTrainSpikeCounts;
 
-            for (int i = 0; i < thirdTrainSpikeCount.length; i++) {
-                thirdTrainSpikesPerSecond[i] = (thirdTrainSpikeCount[i] * sampleRate) / (float) sampleCount;
-                if (Float.isInfinite(thirdTrainSpikesPerSecond[i]) || Float.isNaN(thirdTrainSpikesPerSecond[i])) {
-                    thirdTrainSpikesPerSecond[i] = 0f;
+            if (thirdTrainSpikeCounts != null) {
+                if (this.thirdTrainSpikesPerSecond == null) {
+                    this.thirdTrainSpikesPerSecond = new float[thirdTrainSpikeCounts.length];
+                }
+
+                for (int i = 0; i < thirdTrainSpikeCounts.length; i++) {
+                    thirdTrainSpikesPerSecond[i] = (thirdTrainSpikeCounts[i] * sampleRate) / (float) sampleCount;
+                    if (Float.isInfinite(thirdTrainSpikesPerSecond[i]) || Float.isNaN(thirdTrainSpikesPerSecond[i])) {
+                        thirdTrainSpikesPerSecond[i] = 0f;
+                    }
                 }
             }
         }
@@ -394,15 +414,16 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
                 measurementsUpdateRunnable.setMeasuring(true);
             }
 
-            @Override public void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount,
-                int[] thirdTrainSpikeCount, int selectedChannel, int sampleCount) {
+            @Override public void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
+                @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
+                int sampleCount) {
                 if (getActivity() != null) {
                     measurementsUpdateRunnable.setRms(rms);
                     measurementsUpdateRunnable.setSelectedChannel(selectedChannel);
                     measurementsUpdateRunnable.setSampleCount(sampleCount);
-                    measurementsUpdateRunnable.setFirstTrainSpikeCount(firstTrainSpikeCount);
-                    measurementsUpdateRunnable.setSecondTrainSpikeCount(secondTrainSpikeCount);
-                    measurementsUpdateRunnable.setThirdTrainSpikeCount(thirdTrainSpikeCount);
+                    measurementsUpdateRunnable.setFirstTrainSpikeCounts(firstTrainSpikeCount);
+                    measurementsUpdateRunnable.setSecondTrainSpikeCounts(secondTrainSpikeCount);
+                    measurementsUpdateRunnable.setThirdTrainSpikeCounts(thirdTrainSpikeCount);
                     // we need to call it on UI thread because renderer is drawing on background thread
                     getActivity().runOnUiThread(measurementsUpdateRunnable);
                 }
