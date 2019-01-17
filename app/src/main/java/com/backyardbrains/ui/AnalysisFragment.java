@@ -24,7 +24,7 @@ import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.events.AnalysisDoneEvent;
-import com.backyardbrains.events.OpenRecordingsEvent;
+import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.ViewUtils;
@@ -160,7 +160,7 @@ public class AnalysisFragment extends BaseFragment {
         }
 
         // we need to open recordings screen
-        EventBus.getDefault().post(new OpenRecordingsEvent());
+        EventBus.getDefault().post(new OpenRecordingOptionsEvent(filePath));
     }
 
     //=================================================

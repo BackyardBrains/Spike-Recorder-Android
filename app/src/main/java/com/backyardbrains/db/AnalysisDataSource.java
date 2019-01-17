@@ -26,11 +26,14 @@ public interface AnalysisDataSource {
         void onSpikeAnalysisExistsResult(boolean exists, int trainCount);
     }
 
-    void spikeAnalysisExists(@NonNull String filePath, @Nullable SpikeAnalysisCheckCallback callback);
+    void spikeAnalysisExists(@NonNull String filePath, boolean countNonEmptyTrains,
+        @Nullable SpikeAnalysisCheckCallback callback);
+
+    long getSpikeAnalysisId(@NonNull String filePath);
 
     void saveSpikeAnalysis(@NonNull String filePath, @NonNull Spike[] spikesAnalysis);
 
-    long getSpikeAnalysisId(@NonNull String filePath);
+    void deleteSpikeAnalysis(String filePath);
 
     SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex, int endIndex);
 

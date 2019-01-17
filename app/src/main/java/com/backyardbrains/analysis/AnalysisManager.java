@@ -73,7 +73,7 @@ public class AnalysisManager {
                     Crashlytics.logException(new Throwable("Error while loading file during Find Spikes analysis"));
                 }
             } else {
-                spikesAnalysisExists(filePath, spikeAnalysisCheckCallback);
+                spikesAnalysisExists(filePath, false, spikeAnalysisCheckCallback);
             }
         } else {
             if (load(filePath)) {
@@ -89,10 +89,27 @@ public class AnalysisManager {
     }
 
     /**
+     * Whether process of analysing spikes is finished or not.
+     */
+    public void spikesAnalysisExists(@NonNull String filePath, boolean countNonEmptyTrains,
+        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
+        analysisRepository.spikeAnalysisExists(filePath, countNonEmptyTrains, callback);
+    }
+
+    /**
      * Returns spike analysis id for audio file located at specified {@code filePath}.
      */
     public long getSpikeAnalysisId(@NonNull String filePath) {
         return analysisRepository.getSpikeAnalysisId(filePath);
+    }
+
+    /**
+     * Deletes spike analysis, all trains for that spike analysis and all the spikes related to that spike analysis for
+     * audio file located at specified {@code filePath}.
+     * otherwise.
+     */
+    public void deleteSpikeAnalysis(@NonNull String filePath) {
+        analysisRepository.deleteSpikeAnalysis(filePath);
     }
 
     /**
@@ -108,14 +125,6 @@ public class AnalysisManager {
      */
     public SpikeIndexValue[] getSpikesByTrainForRange(long trainId, int channel, int startIndex, int endIndex) {
         return analysisRepository.getSpikesByTrainForRange(trainId, channel, startIndex, endIndex);
-    }
-
-    /**
-     * Whether process of analysing spikes is finished or not.
-     */
-    public void spikesAnalysisExists(@NonNull String filePath,
-        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
-        analysisRepository.spikeAnalysisExists(filePath, callback);
     }
 
     // Loads file with specified file path into WavAudioFile for further processing

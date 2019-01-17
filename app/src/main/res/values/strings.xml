@@ -9,6 +9,7 @@
     <string name="menu_item_recordings">Recordings</string>
 
     <string name="action_setting">Settings</string>
+    <string name="action_yes">Yes</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_play">Play</string>
     <string name="action_pause">Pause</string>
@@ -20,6 +21,10 @@
     <string name="analysis_cross_correlation">Cross Correlation</string>
     <string name="analysis_average_spike">Average Spike</string>
     <string name="analysis_please_wait">Please wait…</string>
+
+    <string name="title_share">Share file</string>
+    <string name="title_delete">Delete file</string>
+    <string name="title_error">Error</string>
 
     <string name="content_desc_back">Back to previous screen</string>
     <string name="content_desc_threshold_remove">Remove current</string>
@@ -37,6 +42,7 @@
     <string name="template_rms">RMS: %.3f mV</string>
     <string name="template_spike_count">%1$d(%2$.1fHz)</string>
     <string name="template_channel_name">Channel %d</string>
+    <string name="template_delete_file">"Delete %s "?"</string>
 
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
@@ -111,36 +117,36 @@
         <item>Event 9</item>
         <item>Events</item>
     </string-array>
-    <string-array name="options_recording_no_spikes">
+    <string-array name="options_recording_base">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
     <string-array name="options_recording_no_cross_correlation">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Autocorrelation</item>
         <item>ISI</item>
         <item>Average Spike</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
     <string-array name="options_recording">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Autocorrelation</item>
         <item>ISI</item>
         <item>Cross Correlation</item>
         <item>Average Spike</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
 
     <!-- Toasts -->

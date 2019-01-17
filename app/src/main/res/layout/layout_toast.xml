@@ -15,6 +15,6 @@
         android:gravity="center"
         android:fontFamily="@font/comic_book"
         android:textColor="@color/white"
-        android:textSize="@dimen/font_size_large"
+        android:textSize="@dimen/font_size_22"
         tools:text="New toast"/>
 </LinearLayout>

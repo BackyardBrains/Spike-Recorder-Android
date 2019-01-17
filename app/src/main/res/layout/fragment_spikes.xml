@@ -95,7 +95,7 @@
             android:visibility="gone"
             android:text="Ch"
             android:textColor="@color/white"
-            android:textSize="@dimen/font_size_large"
+            android:textSize="@dimen/font_size_22"
             android:textStyle="bold"/>
     </LinearLayout>
 </FrameLayout>

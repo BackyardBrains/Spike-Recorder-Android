@@ -2,15 +2,13 @@ package com.backyardbrains.ui;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,14 +21,10 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
-import com.backyardbrains.BuildConfig;
 import com.backyardbrains.R;
-import com.backyardbrains.analysis.AnalysisType;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.dsp.audio.WavAudioFile;
-import com.backyardbrains.events.AnalyzeAudioFileEvent;
-import com.backyardbrains.events.FindSpikesEvent;
-import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.DateUtils;
@@ -42,6 +36,7 @@ import com.backyardbrains.view.EmptyView;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -59,7 +54,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  */
 public class RecordingsFragment extends BaseFragment implements EasyPermissions.PermissionCallbacks {
 
-    public static final String TAG = makeLogTag(MainActivity.class);
+    public static final String TAG = makeLogTag(RecordingsFragment.class);
 
     private static final int BYB_SETTINGS_SCREEN = 126;
     private static final int BYB_READ_EXTERNAL_STORAGE_PERM = 127;
@@ -70,7 +65,36 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
     private Unbinder unbinder;
 
-    private FilesAdapter adapter;
+    private static FilesAdapter adapter;
+
+    static class RescanFilesTask extends AsyncTask<Void, Void, File[]> {
+
+        WeakReference<RecordingsFragment> fragmentRef;
+
+        RescanFilesTask(RecordingsFragment fragment) {
+            fragmentRef = new WeakReference<>(fragment);
+        }
+
+        @Override protected File[] doInBackground(Void... voids) {
+            final File[] files =
+                RecordingUtils.getRecordingsDirectory().listFiles(file -> !RecordingUtils.isEventsFile(file));
+            if (files != null) {
+                if (files.length > 0) {
+                    Arrays.sort(files, (file1, file2) -> {
+                        //noinspection UseCompareMethod
+                        return Long.valueOf(file2.lastModified()).compareTo(file1.lastModified());
+                    });
+                }
+            }
+
+            return files;
+        }
+
+        @Override protected void onPostExecute(File[] files) {
+            final RecordingsFragment fragment;
+            if ((fragment = fragmentRef.get()) != null) fragment.updateFiles(files);
+        }
+    }
 
     /**
      * Factory for creating a new instance of the fragment.
@@ -84,12 +108,6 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
-
-    @Override public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        registerReceivers();
-    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -106,18 +124,11 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
         // scan files to populate recordings list
         scanFiles();
-        // update empty view to show loaded files or "empty" tagline
-        updateEmptyView(false);
     }
 
     @Override public void onDestroyView() {
         super.onDestroyView();
         unbinder.unbind();
-    }
-
-    @Override public void onDestroy() {
-        unregisterReceivers();
-        super.onDestroy();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -158,26 +169,23 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                           List recordings
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  LIST RECORDINGS
+    //==============================================
 
     // Rescans BYB directory and updates the files list.
     void rescanFiles() {
         LOGD(TAG, "RESCAN FILES!!!!!");
 
-        final File[] files =
-            RecordingUtils.getRecordingsDirectory().listFiles(file -> !RecordingUtils.isEventsFile(file));
-        if (files != null) {
-            if (files.length > 0) {
-                Arrays.sort(files, (file1, file2) -> {
-                    //noinspection UseCompareMethod
-                    return Long.valueOf(file2.lastModified()).compareTo(file1.lastModified());
-                });
-            }
+        updateEmptyView(true);
+        new RescanFilesTask(this).execute();
+    }
 
-            adapter.setFiles(files);
-        }
+    void updateFiles(File[] files) {
+        LOGD(TAG, "UPDATE FILES (" + files.length + ")!!!!!");
+
+        adapter.setFiles(files);
+        updateEmptyView(false);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -187,82 +195,12 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     // Specified callback is invoked after check that spike analysis for the recording at specified filePath exists or not
     private void spikesAnalysisExists(@NonNull String filePath,
         @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
-        if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, callback);
+        if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, false, callback);
     }
 
-    // Opens dialog with recording details
-    void fileDetails(@NonNull File f) {
-        WavAudioFile waf = null;
-        try {
-            waf = new WavAudioFile(f);
-        } catch (IOException ignored) {
-        }
-        String details = "File name: " + f.getName() + "\n";
-        details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        details +=
-            "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate(), waf.channelCount())
-                : "UNKNOWN");
-        BYBUtils.showAlert(getActivity(), "File details", details);
-    }
-
-    // Starts playing specified audio file
-    void playAudioFile(@NonNull File f) {
-        EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
-    }
-
-    // Start process of finding spikes for the specified audio file
-    void findSpikes(@NonNull File f) {
-        if (f.exists()) EventBus.getDefault().post(new FindSpikesEvent(f.getAbsolutePath()));
-    }
-
-    // Start process of autocorrelation analysis for specified audio file
-    void autocorrelation(@NonNull File f) {
-        startAnalysis(f, AnalysisType.AUTOCORRELATION);
-    }
-
-    // Start process of inter spike interval analysis for specified audio file
-    void ISI(@NonNull File f) {
-        startAnalysis(f, AnalysisType.ISI);
-    }
-
-    // Start process of cross-correlation analysis for specified audio file
-    void crossCorrelation(@NonNull File f) {
-        startAnalysis(f, AnalysisType.CROSS_CORRELATION);
-    }
-
-    // Start process of average spike analysis for specified audio file
-    void averageSpike(@NonNull File f) {
-        startAnalysis(f, AnalysisType.AVERAGE_SPIKE);
-    }
-
-    // Starts analysis process for specified type and specified audio file
-    private void startAnalysis(@NonNull final File file, @AnalysisType final int type) {
-        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> {
-            if (exists) {
-                if (file.exists()) {
-                    EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
-                }
-            } else {
-                BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
-                    getString(R.string.find_spikes_not_done_message));
-            }
-        });
-    }
-
-    // Initiates sending of the selected recording via email
-    void emailFile(@NonNull File f) {
-        // first check if accompanying events file exists because it needs to be shared as well
-        final ArrayList<Uri> uris = new ArrayList<>();
-        uris.add(FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", f));
-        final File eventsFile = RecordingUtils.getEventFile(f);
-        if (eventsFile != null) {
-            uris.add(FileProvider.getUriForFile(getContext(), BuildConfig.APPLICATION_ID + ".provider", eventsFile));
-        }
-        Intent sendIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-        sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
-        sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-        sendIntent.setType("message/rfc822");
-        startActivity(Intent.createChooser(sendIntent, "Share file"));
+    // Opens Recording options screen
+    void openRecordingOptions(@NonNull File f) {
+        EventBus.getDefault().post(new OpenRecordingOptionsEvent(f.getAbsolutePath()));
     }
 
     // Triggers renaming of the selected file
@@ -328,56 +266,12 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
             .show();
     }
 
-    // Triggers deletion of the selected file
-    void deleteFile(@NonNull final File f) {
-        new AlertDialog.Builder(this.getActivity()).setTitle("Delete File")
-            .setMessage("Are you sure you want to delete " + f.getName() + "?")
-            .setPositiveButton(android.R.string.yes, (dialog, which) -> {
-                // validate if the specified file already exists
-                if (f.exists()) {
-                    // get events file before renaming
-                    final File ef = RecordingUtils.getEventFile(f);
-                    // delete the file
-                    if (f.delete()) {
-                        // we need to delete events file as well, if it exists
-                        if (ef != null && ef.exists()) {
-                            // let's delete events file
-                            if (!ef.delete()) {
-                                BYBUtils.showAlert(getActivity(), "Error",
-                                    getString(R.string.error_message_files_events_delete));
-                                Crashlytics.logException(new Throwable(
-                                    "Deleting events file for the given recording " + f.getPath() + " failed"));
-                            } else {
-                                // TODO: 10-Oct-18 DELETE DB DATA FOR THE DELETED FILE
-                            }
-                        }
-                    } else {
-                        if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
-                        }
-                        Crashlytics.logException(new Throwable("Deleting file " + f.getPath() + " failed"));
-                    }
-                } else {
-                    if (getContext() != null) {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
-                    }
-                    Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
-                }
-                rescanFiles();
-            })
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-            .show();
-    }
-
     // Initializes user interface
     private void setupUI() {
         // update empty view to show loader
         updateEmptyView(true);
 
-        ((MainActivity) getActivity()).showButtons(true);
-
-        adapter = new FilesAdapter(getContext(), null, file -> showRecordingOptions(file));
+        adapter = new FilesAdapter(getContext(), null, this::showRecordingOptions);
         rvFiles.setAdapter(adapter);
         rvFiles.setEmptyView(emptyView);
         rvFiles.setHasFixedSize(true);
@@ -386,7 +280,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
         btnPrivacyPolicy.setOnClickListener(v -> {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://backyardbrains.com/about/privacy"));
-            getActivity().startActivity(browserIntent);
+            startActivity(browserIntent);
         });
     }
 
@@ -403,79 +297,9 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     // Opens available options for a selected recording. Options are different depending on whether spikes have already
     // been found or not.
     void showRecordingOptions(@NonNull final File file) {
-        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> showDialog(file, exists, trainCount > 1));
-    }
-
-    // Creates and opens recording options dialog
-    void showDialog(@NonNull final File file, final boolean canAnalyze, final boolean showCrossCorrelation) {
-        new AlertDialog.Builder(this.getActivity()).setTitle("Choose an action")
-            .setCancelable(true)
-            .setItems(canAnalyze ? (showCrossCorrelation ? R.array.options_recording
-                    : R.array.options_recording_no_cross_correlation) : R.array.options_recording_no_spikes,
-                (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            fileDetails(file);
-                            break;
-                        case 1:
-                            playAudioFile(file);
-                            break;
-                        case 2:
-                            findSpikes(file);
-                            break;
-                        case 3:
-                            if (canAnalyze) {
-                                autocorrelation(file);
-                            } else {
-                                emailFile(file);
-                            }
-                            break;
-                        case 4:
-                            if (canAnalyze) {
-                                ISI(file);
-                            } else {
-                                renameFile(file);
-                            }
-                            break;
-                        case 5:
-                            if (canAnalyze) {
-                                if (showCrossCorrelation) {
-                                    crossCorrelation(file);
-                                } else {
-                                    averageSpike(file);
-                                }
-                            } else {
-                                deleteFile(file);
-                            }
-                            break;
-                        case 6:
-                            if (showCrossCorrelation) {
-                                averageSpike(file);
-                            } else {
-                                emailFile(file);
-                            }
-                            break;
-                        case 7:
-                            if (showCrossCorrelation) {
-                                emailFile(file);
-                            } else {
-                                renameFile(file);
-                            }
-                            break;
-                        case 8:
-                            if (showCrossCorrelation) {
-                                renameFile(file);
-                            } else {
-                                deleteFile(file);
-                            }
-                            break;
-                        case 9:
-                            deleteFile(file);
-                            break;
-                    }
-                })
-            .create()
-            .show();
+        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> {
+            openRecordingOptions(file.getAbsoluteFile());
+        });
     }
 
     /**
@@ -501,8 +325,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
             if (files != null) this.files = Arrays.asList(files);
         }
 
-        void setFiles(@NonNull File[] files) {
-            this.files = Arrays.asList(files);
+        void setFiles(@Nullable File[] files) {
+            this.files = files != null ? Arrays.asList(files) : new ArrayList<>();
             notifyDataSetChanged();
         }
 
@@ -551,111 +375,5 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));
             }
         }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS INSTANCES
-    // ---------------------------------------------------------------------------------------------
-    private ToggleRecordingListener toggleRecorder;
-    private FileReadReceiver readReceiver;
-    private SuccessfulSaveListener successfulSaveListener;
-    private RescanFilesListener rescanFilesListener;
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    // ---------------------------------------------------------------------------------------------
-    private class ToggleRecordingListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            rescanFiles();
-        }
-    }
-
-    private class FileReadReceiver extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-        }
-    }
-
-    private class SuccessfulSaveListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            rescanFiles();
-        }
-    }
-
-    private class RescanFilesListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            rescanFiles();
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-    // ---------------------------------------------------------------------------------------------
-    private void registerSuccessfulSaveReceiver(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBRecordingSaverSuccessfulSave");
-                successfulSaveListener = new SuccessfulSaveListener();
-                getContext().registerReceiver(successfulSaveListener, intentFilter);
-            } else {
-                getContext().unregisterReceiver(successfulSaveListener);
-            }
-        }
-    }
-
-    private void registerRecordingToggleReceiver(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intentFilter = new IntentFilter("BYBToggleRecording");
-                toggleRecorder = new ToggleRecordingListener();
-                getContext().registerReceiver(toggleRecorder, intentFilter);
-            } else {
-                getContext().unregisterReceiver(toggleRecorder);
-            }
-        }
-    }
-
-    private void registerFileReadReceiver(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter fileReadIntent = new IntentFilter("BYBFileReadIntent");
-                readReceiver = new FileReadReceiver();
-                getContext().registerReceiver(readReceiver, fileReadIntent);
-            } else {
-                getContext().unregisterReceiver(readReceiver);
-            }
-        }
-    }
-
-    private void registerRescanFilesReceiver(boolean reg) {
-        if (getContext() != null) {
-            if (reg) {
-                IntentFilter intent = new IntentFilter("BYBRescanFiles");
-                rescanFilesListener = new RescanFilesListener();
-                getContext().registerReceiver(rescanFilesListener, intent);
-            } else {
-                getContext().unregisterReceiver(rescanFilesListener);
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------------------
-    // ----------------------------------------- REGISTER RECEIVERS
-    // ---------------------------------------------------------------------------------------------
-    public void registerReceivers() {
-        LOGD(TAG, "registerReceivers");
-
-        registerRecordingToggleReceiver(true);
-        registerFileReadReceiver(true);
-        registerSuccessfulSaveReceiver(true);
-        registerRescanFilesReceiver(true);
-    }
-
-    public void unregisterReceivers() {
-        LOGD(TAG, "unregisterReceivers");
-
-        registerRecordingToggleReceiver(false);
-        registerFileReadReceiver(false);
-        registerSuccessfulSaveReceiver(false);
-        registerRescanFilesReceiver(false);
     }
 }

@@ -60,14 +60,20 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      * {@inheritDoc}
      *
      * @param filePath Path to the file for which existence of the analysis is checked.
+     * @param countNonEmptyTrains Whether non empty spike trains should counted in.
      * @param callback Callback that's invoked when check is preformed.
      */
-    @Override public void spikeAnalysisExists(@NonNull final String filePath,
+    @Override public void spikeAnalysisExists(@NonNull final String filePath, boolean countNonEmptyTrains,
         @Nullable final SpikeAnalysisCheckCallback callback) {
         final Runnable runnable = () -> {
             final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
             if (analysisId != 0) {
-                final int trainCount = trainDao.loadTrainCount(analysisId);
+                final int trainCount;
+                if (countNonEmptyTrains) {
+                    trainCount = trainDao.loadTrainCount(analysisId);
+                } else {
+                    trainCount = trainDao.loadNonEmptyTrainCount(analysisId);
+                }
                 appExecutors.mainThread().execute(() -> {
                     if (callback != null) callback.onSpikeAnalysisExistsResult(true, trainCount);
                 });
@@ -102,6 +108,20 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
                     spikeDao.insertSpikes(spikesAnalysis);
                 }
             }
+        };
+
+        appExecutors.diskIO().execute(runnable);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param filePath Path to the file for which analysis, all trains and spikes should be deleted.
+     */
+    @Override public void deleteSpikeAnalysis(String filePath) {
+        final Runnable runnable = () -> {
+            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
+            if (analysisId != 0) spikeAnalysisDao.deleteSpikeAnalysis(filePath);
         };
 
         appExecutors.diskIO().execute(runnable);
