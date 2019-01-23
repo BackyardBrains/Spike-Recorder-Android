@@ -26,6 +26,7 @@ import com.backyardbrains.analysis.AnalysisType;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.FindSpikesEvent;
+import com.backyardbrains.events.OpenRecordingDetailsEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.utils.BYBUtils;
@@ -45,10 +46,10 @@ public class RecordingOptionsFragment extends BaseFragment {
 
     public static final String TAG = makeLogTag(RecordingOptionsFragment.class);
 
-    private static final String ARG_FILE_PATH = "bb_file_path";
+    private static final String ARG_FILE_PATH = "bb_analysis_id";
 
     @BindView(R.id.ibtn_back) ImageButton ibtnBack;
-    @BindView(R.id.tv_file_name) TextView tvTextName;
+    @BindView(R.id.tv_filename) TextView tvTextName;
     @BindView(R.id.rv_file_options) RecyclerView rvFileOptions;
 
     private Unbinder unbinder;
@@ -96,9 +97,18 @@ public class RecordingOptionsFragment extends BaseFragment {
     @Override public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        if (savedInstanceState != null) filePath = savedInstanceState.getString(ARG_FILE_PATH);
+
         if (filePath != null) {
-            spikesAnalysisExists(filePath, (exists, trainCount) -> createOptions(exists, trainCount > 1));
+            spikesAnalysisExists(filePath,
+                (analysis, trainCount) -> constructOptions(analysis != null, trainCount > 0));
         }
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putString(ARG_FILE_PATH, filePath);
     }
 
     @Override public void onDestroyView() {
@@ -114,9 +124,9 @@ public class RecordingOptionsFragment extends BaseFragment {
     private void setupUI(@NonNull Context context) {
         final File file = new File(filePath);
 
+        tvTextName.setText(RecordingUtils.getFileNameWithoutExtension(file));
         ibtnBack.setOnClickListener(v -> openRecordingsList());
-        tvTextName.setText(file.getName());
-        adapter = new OptionsAdapter(context, null, (id, name) -> exeOption(id, file));
+        adapter = new OptionsAdapter(context, (id, name) -> exeOption(id, file));
         rvFileOptions.setAdapter(adapter);
         rvFileOptions.setHasFixedSize(true);
         rvFileOptions.setLayoutManager(new LinearLayoutManager(context));
@@ -130,7 +140,7 @@ public class RecordingOptionsFragment extends BaseFragment {
         EventBus.getDefault().post(new OpenRecordingsEvent());
     }
 
-    // Specified callback is invoked after check that spike analysis for the recording at specified filePath exists or not
+    // Specified callback is invoked after check that spike analysis for file located at specified filePath exists or not
     private void spikesAnalysisExists(@NonNull String filePath,
         @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
         if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, false, callback);
@@ -140,7 +150,7 @@ public class RecordingOptionsFragment extends BaseFragment {
     void exeOption(int id, @NonNull File file) {
         switch (id) {
             case OptionsAdapter.OptionItem.ID_DETAILS:
-                fileDetails(file);
+                fileDetails();
                 break;
             case OptionsAdapter.OptionItem.ID_PLAY:
                 play(file);
@@ -170,19 +180,8 @@ public class RecordingOptionsFragment extends BaseFragment {
     }
 
     // Opens dialog with recording details
-    void fileDetails(@NonNull File f) {
-        // TODO: 17-Jan-19 OPEN NEW FRAGMENT WITH FILE DETAILS
-        //WavAudioFile waf = null;
-        //try {
-        //    waf = new WavAudioFile(f);
-        //} catch (IOException ignored) {
-        //}
-        //String details = "File name: " + f.getName() + "\n";
-        //details += "Full path: \n" + f.getAbsolutePath() + "\n";
-        //details +=
-        //    "Duration: " + (waf != null ? WavUtils.formatWavLength(f.length(), waf.sampleRate(), waf.channelCount())
-        //        : "UNKNOWN");
-        //BYBUtils.showAlert(getActivity(), "File details", details);
+    void fileDetails() {
+        EventBus.getDefault().post(new OpenRecordingDetailsEvent(filePath));
     }
 
     // Starts playing specified audio file
@@ -217,8 +216,8 @@ public class RecordingOptionsFragment extends BaseFragment {
 
     // Starts analysis process for specified type and specified audio file
     private void startAnalysis(@NonNull final File file, @AnalysisType final int type) {
-        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> {
-            if (exists) {
+        spikesAnalysisExists(file.getAbsolutePath(), (analysis, trainCount) -> {
+            if (analysis != null) {
                 if (file.exists()) {
                     EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
                 }
@@ -327,7 +326,7 @@ public class RecordingOptionsFragment extends BaseFragment {
     }
 
     // Creates and opens recording options dialog
-    void createOptions(final boolean canAnalyze, final boolean showCrossCorrelation) {
+    void constructOptions(final boolean canAnalyze, final boolean showCrossCorrelation) {
         final SparseArray<String> options =
             canAnalyze ? (showCrossCorrelation ? optionsAll : optionsNoCrossCorrelation) : optionsBase;
         adapter.setOptions(options);
@@ -347,13 +346,11 @@ public class RecordingOptionsFragment extends BaseFragment {
             void onClick(int id, @NonNull String name);
         }
 
-        OptionsAdapter(@NonNull Context context, @Nullable SparseArray<String> options, @Nullable Callback callback) {
+        OptionsAdapter(@NonNull Context context, @Nullable Callback callback) {
             super();
 
             this.inflater = LayoutInflater.from(context);
             this.callback = callback;
-
-            if (options != null) this.options = options;
         }
 
         void setOptions(@NonNull SparseArray<String> options) {

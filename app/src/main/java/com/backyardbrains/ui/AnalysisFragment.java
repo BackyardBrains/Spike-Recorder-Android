@@ -24,11 +24,9 @@ import com.backyardbrains.drawing.CrossCorrelationRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.events.AnalysisDoneEvent;
-import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.ViewUtils;
-import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -145,10 +143,10 @@ public class AnalysisFragment extends BaseFragment {
     }
 
     //=================================================
-    //  PUBLIC METHODS
+    // OVERRIDES
     //=================================================
 
-    public void onBackPressed() {
+    @Override public boolean onBackPressed() {
         // if we are currently rendering cross correlation analysis specific train
         // just redraw to show thumbs view
         if (currentRenderer instanceof CrossCorrelationRenderer
@@ -156,11 +154,10 @@ public class AnalysisFragment extends BaseFragment {
             ((CrossCorrelationRenderer) currentRenderer).setThumbsView();
             redraw();
 
-            return;
+            return true;
         }
 
-        // we need to open recordings screen
-        EventBus.getDefault().post(new OpenRecordingOptionsEvent(filePath));
+        return false;
     }
 
     //=================================================
@@ -232,9 +229,9 @@ public class AnalysisFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
-        //reassignSurfaceView(analysisType);
-
-        ibtnBack.setOnClickListener(v -> onBackPressed());
+        ibtnBack.setOnClickListener(v -> {
+            if (getActivity() != null) getActivity().onBackPressed();
+        });
     }
 
     // Returns analysis title depending on the analysis type

@@ -187,7 +187,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     public void onAnalysisDoneEvent(AnalysisDoneEvent event) {
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
         if (event.isSuccess() && getAnalysisManager() != null) {
-            getAnalysisManager().spikesAnalysisExists(filePath, true, (exists, trainCount) -> {
+            getAnalysisManager().spikesAnalysisExists(filePath, true, (analysis, trainCount) -> {
                 if (trainCount <= 0) addThreshold();
                 updateThresholdActions();
             });
@@ -201,9 +201,9 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Initializes user interface
     private void setupUI() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().spikesAnalysisExists(filePath, false, (exists, trainCount) -> {
+            getAnalysisManager().spikesAnalysisExists(filePath, false, (analysis, trainCount) -> {
                 // if Find Spike analysis doesn't exist show loader until analysis is finished
-                if (!exists) llFindingSpikesProgress.setVisibility(View.VISIBLE);
+                if (analysis == null) llFindingSpikesProgress.setVisibility(View.VISIBLE);
             });
         }
 

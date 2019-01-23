@@ -84,6 +84,17 @@ public class AnalysisRepository {
     }
 
     /**
+     * Updates spike analysis file path for the audio file located at specified {@code oldFilePath} with specified
+     * {@code newFilePath}.
+     *
+     * @param oldFilePath Absolute path of the audio file for which we want to update the file path.
+     * @param newFilePath Absolute path of the new audio file.
+     */
+    public void updateSpikeAnalysisFilePath(@NonNull String oldFilePath, @NonNull String newFilePath) {
+        analysisDataSource.updateSpikeAnalysisFilePath(oldFilePath, newFilePath);
+    }
+
+    /**
      * Deletes spike analysis, all spike trains and spikes related to audio file located at specified {@code filePath}.
      */
     public void deleteSpikeAnalysis(@NonNull String filePath) {

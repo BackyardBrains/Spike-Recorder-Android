@@ -1,7 +1,6 @@
 package com.backyardbrains.ui;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -16,24 +15,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.R;
-import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.dsp.audio.WavAudioFile;
 import com.backyardbrains.events.OpenRecordingOptionsEvent;
-import com.backyardbrains.utils.ApacheCommonsLang3Utils;
-import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.DateUtils;
 import com.backyardbrains.utils.RecordingUtils;
-import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.EmptyRecyclerView;
 import com.backyardbrains.view.EmptyView;
-import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -92,7 +85,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
         @Override protected void onPostExecute(File[] files) {
             final RecordingsFragment fragment;
-            if ((fragment = fragmentRef.get()) != null) fragment.updateFiles(files);
+            if ((fragment = fragmentRef.get()) != null && fragment.isAdded()) fragment.updateFiles(files);
         }
     }
 
@@ -114,7 +107,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         final View view = inflater.inflate(R.layout.fragment_recordings, container, false);
         unbinder = ButterKnife.bind(this, view);
 
-        setupUI();
+        setupUI(view.getContext());
 
         return view;
     }
@@ -192,91 +185,17 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
     //                         Utility methods
     //////////////////////////////////////////////////////////////////////////////
 
-    // Specified callback is invoked after check that spike analysis for the recording at specified filePath exists or not
-    private void spikesAnalysisExists(@NonNull String filePath,
-        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
-        if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, false, callback);
-    }
-
-    // Opens Recording options screen
-    void openRecordingOptions(@NonNull File f) {
-        EventBus.getDefault().post(new OpenRecordingOptionsEvent(f.getAbsolutePath()));
-    }
-
-    // Triggers renaming of the selected file
-    void renameFile(@NonNull final File f) {
-        final EditText e = new EditText(this.getActivity());
-        e.setText(f.getName().replace(".wav", "")); // remove file extension when renaming
-        e.setSelection(e.getText().length());
-        new AlertDialog.Builder(this.getActivity()).setTitle("Rename File")
-            .setMessage("Please enter the new name for your file.")
-            .setView(e)
-            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                if (f.exists()) {
-                    final String filename = e.getText().toString().trim();
-                    // validate the new file name
-                    if (ApacheCommonsLang3Utils.isBlank(filename)) {
-                        if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
-                        }
-                        return;
-                    }
-                    final File newFile = new File(f.getParent(), filename + ".wav");
-                    // validate if file with specified name already exists
-                    if (!newFile.exists()) {
-                        // get events file before renaming
-                        final File ef = RecordingUtils.getEventFile(f);
-                        // rename the file
-                        if (f.renameTo(newFile)) {
-                            // we need to rename events file as well, if it exists
-                            if (ef != null) {
-                                final File newEventsFile = RecordingUtils.createEventsFile(newFile);
-                                if (!newEventsFile.exists()) {
-                                    // let's rename events file
-                                    if (!ef.renameTo(newEventsFile)) {
-                                        BYBUtils.showAlert(getActivity(), "Error",
-                                            getString(R.string.error_message_files_events_rename));
-                                        Crashlytics.logException(new Throwable(
-                                            "Renaming events file for the given recording " + f.getPath() + " failed"));
-                                    }
-                                }
-                            }
-                        } else {
-                            if (getContext() != null) {
-                                ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
-                            }
-                            Crashlytics.logException(new Throwable("Renaming file " + f.getPath() + " failed"));
-                        }
-                    } else {
-                        if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_exists));
-                        }
-                    }
-                } else {
-                    if (getContext() != null) {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
-                    }
-                    Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
-                }
-                // rescan the files
-                rescanFiles();
-            })
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-            .show();
-    }
-
     // Initializes user interface
-    private void setupUI() {
+    private void setupUI(@NonNull Context context) {
         // update empty view to show loader
         updateEmptyView(true);
 
-        adapter = new FilesAdapter(getContext(), null, this::showRecordingOptions);
+        adapter = new FilesAdapter(context, null, this::openRecordingOptions);
         rvFiles.setAdapter(adapter);
         rvFiles.setEmptyView(emptyView);
         rvFiles.setHasFixedSize(true);
-        rvFiles.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvFiles.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
+        rvFiles.setLayoutManager(new LinearLayoutManager(context));
+        rvFiles.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
 
         btnPrivacyPolicy.setOnClickListener(v -> {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://backyardbrains.com/about/privacy"));
@@ -296,10 +215,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
 
     // Opens available options for a selected recording. Options are different depending on whether spikes have already
     // been found or not.
-    void showRecordingOptions(@NonNull final File file) {
-        spikesAnalysisExists(file.getAbsolutePath(), (exists, trainCount) -> {
-            openRecordingOptions(file.getAbsoluteFile());
-        });
+    void openRecordingOptions(@NonNull final File file) {
+        EventBus.getDefault().post(new OpenRecordingOptionsEvent(file.getAbsolutePath()));
     }
 
     /**
@@ -343,7 +260,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         }
 
         static class FileViewHolder extends RecyclerView.ViewHolder {
-            @BindView(R.id.tv_file_name) TextView tvFileName;
+            @BindView(R.id.tv_filename) TextView tvFileName;
             @BindView(R.id.tv_file_size) TextView tvFileSize;
             @BindView(R.id.tv_file_last_modified) TextView tvFileLasModified;
 

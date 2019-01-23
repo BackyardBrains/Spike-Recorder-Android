@@ -15,7 +15,6 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.TextView;
@@ -53,8 +52,8 @@ public class ViewUtils {
      */
     @SuppressWarnings("UnusedReturnValue") public static Toast customToast(@NonNull FragmentActivity context,
         @NonNull String message) {
-        final View layout = LayoutInflater.from(context)
-            .inflate(R.layout.layout_toast, (ViewGroup) (context).findViewById(R.id.toast_container));
+        final View layout =
+            LayoutInflater.from(context).inflate(R.layout.layout_toast, (context).findViewById(R.id.toast_container));
 
         // set a message
         final TextView text = layout.findViewById(R.id.text);
@@ -82,9 +81,8 @@ public class ViewUtils {
         final ViewTreeObserver vto = v.getViewTreeObserver();
         if (vto == null) throw new RuntimeException("VTO not assigned! called too early :/");
         vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-
             @Override public boolean onPreDraw() {
-                //new to re-get observer since old one is stle
+                // new to re-get observer since old one is stle
                 v.getViewTreeObserver().removeOnPreDrawListener(this);
                 return cb.apply(v) != null;
             }
@@ -126,11 +124,9 @@ public class ViewUtils {
     public static void hideSoftKeyboard(final View v, int delay) {
         if (v != null) {
             if (delay <= 0) delay = SOFT_KEYBOARD_DEFAULT_DELAY;
-            v.postDelayed(new Runnable() {
-                @Override public void run() {
-                    v.clearFocus();
-                    ViewUtils.hideSoftKeyboard(v);
-                }
+            v.postDelayed(() -> {
+                v.clearFocus();
+                ViewUtils.hideSoftKeyboard(v);
             }, delay);
         }
     }
@@ -151,11 +147,9 @@ public class ViewUtils {
     public static void openSoftKeyboard(final View v, int delay) {
         if (v != null) {
             if (delay <= 0) delay = SOFT_KEYBOARD_DEFAULT_DELAY;
-            v.postDelayed(new Runnable() {
-                @Override public void run() {
-                    v.requestFocus();
-                    ViewUtils.openSoftKeyboard(v);
-                }
+            v.postDelayed(() -> {
+                v.requestFocus();
+                ViewUtils.openSoftKeyboard(v);
             }, delay);
         }
     }
@@ -177,11 +171,9 @@ public class ViewUtils {
     public static void forceOpenSoftKeyboard(final View v, int delay) {
         if (v != null) {
             if (delay <= 0) delay = SOFT_KEYBOARD_DEFAULT_DELAY;
-            v.postDelayed(new Runnable() {
-                @Override public void run() {
-                    v.requestFocus();
-                    ViewUtils.forceOpenSoftKeyboard(v);
-                }
+            v.postDelayed(() -> {
+                v.requestFocus();
+                ViewUtils.forceOpenSoftKeyboard(v);
             }, delay);
         }
     }
@@ -220,12 +212,7 @@ public class ViewUtils {
     public static void animateColorTransition(@NonNull final View view, @ColorInt int colorFrom,
         @ColorInt int colorTo) {
         final ValueAnimator colorAnimation = ValueAnimator.ofObject(new ArgbEvaluator(), colorFrom, colorTo);
-        colorAnimation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-
-            @Override public void onAnimationUpdate(ValueAnimator animator) {
-                view.setBackgroundColor((int) animator.getAnimatedValue());
-            }
-        });
+        colorAnimation.addUpdateListener(animator -> view.setBackgroundColor((int) animator.getAnimatedValue()));
         colorAnimation.start();
     }
 }

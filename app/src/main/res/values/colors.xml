@@ -6,9 +6,11 @@
 
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
+    <color name="white_12">#1FFFFFFF</color>
     <color name="blue">#FF007AFF</color>
     <color name="blue_dark">#FF00366F</color>
     <color name="gray_white">#FFF0F0F0</color>
+    <color name="gray_lighter">#FFB3B3B3</color>
     <color name="gray_light">#FF8c8c8c</color>
     <color name="gray_light_50">#808c8c8c</color>
     <color name="gray_dark">#FF656666</color>

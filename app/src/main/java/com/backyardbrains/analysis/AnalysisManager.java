@@ -51,7 +51,7 @@ public class AnalysisManager {
     //=================================================
 
     // Callback to be invoked when spikes are retrieved from the analysis repository
-    private AnalysisDataSource.SpikeAnalysisCheckCallback spikeAnalysisCheckCallback = (exists, trainCount) -> {
+    private AnalysisDataSource.SpikeAnalysisCheckCallback spikeAnalysisCheckCallback = (analysis, trainCount) -> {
         // post event that audio file analysis was successfully finished
         EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.FIND_SPIKES));
     };
@@ -89,7 +89,7 @@ public class AnalysisManager {
     }
 
     /**
-     * Whether process of analysing spikes is finished or not.
+     * Whether process of analysing spikes is finished or not for the audio file located at specified {@code filePath}.
      */
     public void spikesAnalysisExists(@NonNull String filePath, boolean countNonEmptyTrains,
         @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
@@ -101,6 +101,14 @@ public class AnalysisManager {
      */
     public long getSpikeAnalysisId(@NonNull String filePath) {
         return analysisRepository.getSpikeAnalysisId(filePath);
+    }
+
+    /**
+     * Updates spike analysis file path with specified {@code newFilePath} for audio file located at specified {@code
+     * oldFilePath}.
+     */
+    public void updateSpikeAnalysisFilePath(@NonNull String oldFilePath, @NonNull String newFilePath) {
+        analysisRepository.updateSpikeAnalysisFilePath(oldFilePath, newFilePath);
     }
 
     /**

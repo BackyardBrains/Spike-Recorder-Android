@@ -66,20 +66,20 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void spikeAnalysisExists(@NonNull final String filePath, boolean countNonEmptyTrains,
         @Nullable final SpikeAnalysisCheckCallback callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
                 final int trainCount;
                 if (countNonEmptyTrains) {
-                    trainCount = trainDao.loadTrainCount(analysisId);
+                    trainCount = trainDao.loadTrainCount(analysis.getId());
                 } else {
-                    trainCount = trainDao.loadNonEmptyTrainCount(analysisId);
+                    trainCount = trainDao.loadNonEmptyTrainCount(analysis.getId());
                 }
                 appExecutors.mainThread().execute(() -> {
-                    if (callback != null) callback.onSpikeAnalysisExistsResult(true, trainCount);
+                    if (callback != null) callback.onSpikeAnalysisExistsResult(analysis, trainCount);
                 });
             } else {
                 appExecutors.mainThread().execute(() -> {
-                    if (callback != null) callback.onSpikeAnalysisExistsResult(false, 0);
+                    if (callback != null) callback.onSpikeAnalysisExistsResult(null, 0);
                 });
             }
         };
@@ -116,13 +116,25 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     /**
      * {@inheritDoc}
      *
+     * @param oldFilePath Path to the file for which we want to change the file path.
+     * @param newFilePath New path that we want to save.
+     */
+    @Override public void updateSpikeAnalysisFilePath(@NonNull String oldFilePath, @NonNull String newFilePath) {
+        final Runnable runnable = () -> {
+            // get old spike analysis
+            spikeAnalysisDao.updateSpikeAnalysisFilePath(oldFilePath, newFilePath);
+        };
+
+        appExecutors.diskIO().execute(runnable);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @param filePath Path to the file for which analysis, all trains and spikes should be deleted.
      */
     @Override public void deleteSpikeAnalysis(String filePath) {
-        final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) spikeAnalysisDao.deleteSpikeAnalysis(filePath);
-        };
+        final Runnable runnable = () -> spikeAnalysisDao.deleteSpikeAnalysis(filePath);
 
         appExecutors.diskIO().execute(runnable);
     }
@@ -132,8 +144,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      *
      * @param filePath Absolute path of the audio file for which we want to retrieve the spike analysis id.
      */
-    public long getSpikeAnalysisId(@NonNull String filePath) {
-        return spikeAnalysisDao.loadSpikeAnalysisId(filePath);
+    @Override public long getSpikeAnalysisId(@NonNull String filePath) {
+        final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+        return analysis != null ? analysis.getId() : 0;
     }
 
     /**
@@ -145,7 +158,8 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      * @param endIndex Index of the last sample in the range for which spikes should be retrieved.
      * @return Array of spike values and indices located between specified {@code startIndex} and {@code endIndex}.
      */
-    public SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex, int endIndex) {
+    @Override public SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex,
+        int endIndex) {
         return spikeDao.loadSpikesForIndexRange(analysisId, channel, startIndex, endIndex);
     }
 
@@ -172,9 +186,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void getSpikeAnalysisTimesByTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<float[][]> callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
-                final Train[] trains = trainDao.loadTrains(analysisId);
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final Train[] trains = trainDao.loadTrains(analysis.getId());
                 final int trainCount = trains.length;
                 if (trainCount > 0) {
                     final float[][] spikeAnalysisTrains = new float[trainCount][];
@@ -210,9 +224,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void getSpikeAnalysisIndicesByTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<int[][]> callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
-                final Train[] trains = trainDao.loadTrains(analysisId);
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final Train[] trains = trainDao.loadTrains(analysis.getId());
                 final int trainCount = trains.length;
                 if (trainCount > 0) {
                     final int[][] spikeAnalysisTrains = new int[trainCount][];
@@ -252,9 +266,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void getSpikeAnalysisTrains(@NonNull final String filePath,
         @Nullable final GetAnalysisCallback<Train[]> callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
-                final Train[] trains = trainDao.loadTrains(analysisId);
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final Train[] trains = trainDao.loadTrains(analysis.getId());
                 if (trains.length > 0) {
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) callback.onAnalysisLoaded(trains);
@@ -284,9 +298,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void getSpikeAnalysisTrainsByChannel(@NonNull final String filePath, int channel,
         @Nullable final GetAnalysisCallback<Train[]> callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
-                final Train[] trains = trainDao.loadTrainsByChannel(analysisId, channel);
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final Train[] trains = trainDao.loadTrainsByChannel(analysis.getId(), channel);
                 if (trains.length > 0) {
                     appExecutors.mainThread().execute(() -> {
                         if (callback != null) callback.onAnalysisLoaded(trains);
@@ -313,16 +327,16 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
      * @param channelCount Number of channels we need to create the new spike train for.
      * @param callback Callback that's invoked when spike trains is added to database.
      */
-    public void addSpikeAnalysisTrain(@NonNull final String filePath, int channelCount,
+    @Override public void addSpikeAnalysisTrain(@NonNull final String filePath, int channelCount,
         @Nullable final AddSpikeAnalysisTrainCallback callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
-                int trainCount = trainDao.loadTrainCount(analysisId);
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                int trainCount = trainDao.loadTrainCount(analysis.getId());
                 if (trainCount > 0) trainCount /= channelCount;
                 final Train[] trains = new Train[channelCount];
                 for (int i = 0; i < channelCount; i++) {
-                    trains[i] = new Train(analysisId, i, trainCount);
+                    trains[i] = new Train(analysis.getId(), i, trainCount);
                 }
                 trainDao.insertTrains(trains);
                 int finalTrainCount = trainCount;
@@ -347,8 +361,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void saveSpikeAnalysisTrain(@NonNull final String filePath, int channel, final int order,
         @ThresholdOrientation final int orientation, final int value) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final long analysisId = analysis.getId();
                 final Train train = trainDao.loadTrain(analysisId, channel, order);
                 if (train != null) {
                     // find new lower/upper thresholds
@@ -401,8 +416,9 @@ public class AnalysisLocalDataSource implements AnalysisDataSource {
     @Override public void removeSpikeAnalysisTrain(@NonNull final String filePath, final int order,
         @Nullable final RemoveSpikeAnalysisTrainCallback callback) {
         final Runnable runnable = () -> {
-            final long analysisId = spikeAnalysisDao.loadSpikeAnalysisId(filePath);
-            if (analysisId != 0) {
+            final SpikeAnalysis analysis = spikeAnalysisDao.loadSpikeAnalysis(filePath);
+            if (analysis != null) {
+                final long analysisId = analysis.getId();
                 final Train[] trains = trainDao.loadTrains(analysisId, order);
                 /*final Train train = trainDao.loadTrain(analysisId, , order); */
                 if (trains != null && trains.length > 0) {

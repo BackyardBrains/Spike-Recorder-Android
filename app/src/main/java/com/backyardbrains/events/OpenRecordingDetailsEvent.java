@@ -3,11 +3,11 @@ package com.backyardbrains.events;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class OpenRecordingOptionsEvent {
+public class OpenRecordingDetailsEvent {
 
     private final String filePath;
 
-    public OpenRecordingOptionsEvent(String filePath) {
+    public OpenRecordingDetailsEvent(String filePath) {
         this.filePath = filePath;
     }
 
