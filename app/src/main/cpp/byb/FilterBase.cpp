@@ -4,18 +4,17 @@
 
 #include <FilterBase.h>
 
-#include <math.h>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 
-FilterBase::FilterBase() {
-}
+FilterBase::FilterBase() = default;
 
 void FilterBase::initWithSamplingRate(float sr) {
     samplingRate = sr;
 
-    for (int i = 0; i < 5; i++) {
-        coefficients[i] = 0.0f;
+    for (float &coefficient : coefficients) {
+        coefficient = 0.0f;
     }
 
     gInputKeepBuffer[0] = 0.0f;
@@ -23,7 +22,6 @@ void FilterBase::initWithSamplingRate(float sr) {
     gOutputKeepBuffer[0] = 0.0f;
     gOutputKeepBuffer[1] = 0.0f;
 
-    zero = 0.0f;
     one = 1.0f;
 }
 
@@ -39,13 +37,12 @@ void FilterBase::setCoefficients() {
 // Filter integer data buffer
 //
 void FilterBase::filter(int16_t *data, int32_t numFrames, bool flush) {
-    float *tempFloatBuffer = (float *) std::malloc(numFrames * sizeof(float));
+    auto *tempFloatBuffer = (float *) std::malloc(numFrames * sizeof(float));
     for (int32_t i = numFrames - 1; i >= 0; i--) {
         tempFloatBuffer[i] = (float) data[i];
     }
-    filterContiguousData(tempFloatBuffer, numFrames, flush);
+    filterContiguousData(tempFloatBuffer, numFrames);
     if (flush) {
-
         for (int32_t i = numFrames - 1; i >= 0; i--) {
             data[i] = 0;
         }
@@ -60,10 +57,10 @@ void FilterBase::filter(int16_t *data, int32_t numFrames, bool flush) {
 //
 // Filter single channel data
 //
-void FilterBase::filterContiguousData(float *data, uint32_t numFrames, bool flush) {
+void FilterBase::filterContiguousData(float *data, int32_t numFrames) {
     // Provide buffer for processing
-    float *tInputBuffer = (float *) std::malloc((numFrames + 2) * sizeof(float));
-    float *tOutputBuffer = (float *) std::malloc((numFrames + 2) * sizeof(float));
+    auto *tInputBuffer = (float *) std::malloc((numFrames + 2) * sizeof(float));
+    auto *tOutputBuffer = (float *) std::malloc((numFrames + 2) * sizeof(float));
 
     // Copy the data
     memcpy(tInputBuffer, gInputKeepBuffer, 2 * sizeof(float));
@@ -90,7 +87,7 @@ void FilterBase::filterContiguousData(float *data, uint32_t numFrames, bool flus
 }
 
 void FilterBase::intermediateVariables(float Fc, float Q) {
-    omega = 2 * M_PI * Fc / samplingRate;
+    omega = static_cast<float>(2 * M_PI * Fc / samplingRate);
     omegaS = sin(omega);
     omegaC = cos(omega);
     alpha = omegaS / (2 * Q);

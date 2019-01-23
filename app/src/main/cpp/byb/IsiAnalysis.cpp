@@ -7,13 +7,9 @@
 
 const char *IsiAnalysis::TAG = "IsiAnalysis";
 
-IsiAnalysis::IsiAnalysis() {
+IsiAnalysis::IsiAnalysis() = default;
 
-}
-
-IsiAnalysis::~IsiAnalysis() {
-
-}
+IsiAnalysis::~IsiAnalysis() = default;
 
 void IsiAnalysis::process(float **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts, int **outAnalysis,
                           const int analysisBinCount) {

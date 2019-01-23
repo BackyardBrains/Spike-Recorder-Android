@@ -7,7 +7,7 @@
 void DrawingUtils::prepareForDrawing(short **outSamples, int *outSampleCount, int *outEventIndices, int &outEventCount,
                                      short **inSamples, int channelCount, const int *inEventIndices,
                                      int inEventCount, int fromSample, int toSample, int drawSurfaceWidth) {
-    short **envelopedSamples = new short *[channelCount];
+    auto **envelopedSamples = new short *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         envelopedSamples[i] = new short[drawSurfaceWidth * 5];
     }

@@ -7,10 +7,6 @@
 
 #include <algorithm>
 
-namespace analysis {
-    class CrossCorrelationAnalysis;
-}
-
 class CrossCorrelationAnalysis {
 public:
     CrossCorrelationAnalysis();

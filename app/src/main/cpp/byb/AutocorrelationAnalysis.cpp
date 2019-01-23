@@ -6,13 +6,9 @@
 
 const char *AutocorrelationAnalysis::TAG = "AutocorrelationAnalysis";
 
-AutocorrelationAnalysis::AutocorrelationAnalysis() {
+AutocorrelationAnalysis::AutocorrelationAnalysis() = default;
 
-}
-
-AutocorrelationAnalysis::~AutocorrelationAnalysis() {
-
-}
+AutocorrelationAnalysis::~AutocorrelationAnalysis() = default;
 
 void AutocorrelationAnalysis::process(float **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
                                       int **outAnalysis, const int analysisBinCount) {

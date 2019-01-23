@@ -13,8 +13,7 @@ Processor::Processor(float sampleRate, int channelCount) {
     initialized = true;
 }
 
-Processor::~Processor() {
-}
+Processor::~Processor() = default;
 
 float Processor::getSampleRate() {
     return sampleRate;

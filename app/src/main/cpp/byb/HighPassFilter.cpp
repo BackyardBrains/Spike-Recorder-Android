@@ -4,9 +4,7 @@
 
 #include "HighPassFilter.h"
 
-HighPassFilter::HighPassFilter() {
-
-}
+HighPassFilter::HighPassFilter() = default;
 
 void HighPassFilter::calculateCoefficients() {
     if ((cornerFrequency != 0.0f) && (Q != 0.0f)) {

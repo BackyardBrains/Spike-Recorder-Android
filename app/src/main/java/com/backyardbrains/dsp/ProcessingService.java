@@ -37,6 +37,7 @@ import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
+import com.backyardbrains.events.ExpansionBoardTypeDetectionEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
@@ -365,6 +366,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 usbHelper.getUsbDevice().setOnSpikerBoxHardwareTypeDetectionListener(hardwareType -> {
                     LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
                     EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
+                });
+                usbHelper.getUsbDevice().setOnExpansionBoardTypeDetectionListener(expansionBoardType -> {
+                    LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoardType);
+                    EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
                 });
             }
             sampleSource = usbHelper.getUsbDevice();

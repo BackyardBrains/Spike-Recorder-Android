@@ -7,10 +7,6 @@
 
 #include <climits>
 
-namespace util {
-    class DrawingUtils;
-}
-
 class DrawingUtils {
 public:
     static void

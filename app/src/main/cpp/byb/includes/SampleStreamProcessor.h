@@ -13,23 +13,15 @@
 #include <string>
 #include <android/log.h>
 
-namespace processing {
-    class SampleStreamProcessor;
-}
-
 class SampleStreamProcessor : public Processor {
 public:
-    SampleStreamProcessor(OnEventListenerListener *listener);
+    explicit SampleStreamProcessor(OnEventListenerListener *listener);
 
-    ~SampleStreamProcessor();
+    ~SampleStreamProcessor() override;
 
-    /**
-     * Set number of channels in the sample stream.
-     */
-    void setChannelCount(int channelCount);
-
-    void process(const unsigned char *inData, const int length, short **outSamples, int *outSampleCounts,
-                 int *outEventIndices, std::string *outEventLabels, int &outEventCount);
+    void
+    process(const unsigned char *inData, int length, short **outSamples, int *outSampleCounts, int *outEventIndices,
+            std::string *outEventLabels, int &outEventCount, int channelCount);
 
 private:
     static const char *TAG;
@@ -37,8 +29,8 @@ private:
     static constexpr float SAMPLE_RATE = 10000.0f;
     static constexpr int DEFAULT_CHANNEL_COUNT = 2;
 
-    static constexpr int CLEANER = 0xFF;
-    static constexpr int REMOVER = 0x7F;
+    static constexpr uint CLEANER = 0xFF;
+    static constexpr uint REMOVER = 0x7F;
 
     // Max number of channels is 10
     static constexpr int MAX_CHANNELS = 10;
@@ -75,7 +67,7 @@ private:
     // Whether new sample is started being processed
     bool sampleStarted = false;
     // Whether channel count has changed during processing of the latest chunk of incoming data
-    bool channelCountChanged = true;
+    int prevChannelCount;
     // Holds currently processed channel
     int currentChannel;
     // Holds samples from all channels processed in a single batch

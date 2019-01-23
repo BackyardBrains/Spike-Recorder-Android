@@ -10,10 +10,6 @@
 #include "LowPassFilter.h"
 #include "HighPassFilter.h"
 
-namespace processing {
-    class Processor;
-}
-
 class Processor {
 public:
     Processor(float sampleRate, int channelCount);

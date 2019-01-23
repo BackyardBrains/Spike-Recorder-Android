@@ -4,9 +4,7 @@
 
 #include "NotchFilter.h"
 
-NotchFilter::NotchFilter() {
-
-}
+NotchFilter::NotchFilter() = default;
 
 void NotchFilter::calculateCoefficients() {
     if ((centerFrequency != 0.0f) && (Q != 0.0f)) {

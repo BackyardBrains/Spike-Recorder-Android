@@ -7,18 +7,14 @@
 
 #include <algorithm>
 
-namespace analysis {
-    class IsiAnalysis;
-}
-
 class IsiAnalysis {
 public:
     IsiAnalysis();
 
     ~IsiAnalysis();
 
-    void process(float **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
-                 int **outAnalysis, const int analysisBinCount);
+    void process(float **inSpikeTrains, int spikeTrainCount, const int *spikeCounts,
+                 int **outAnalysis, int analysisBinCount);
 
 private:
     static const char *TAG;

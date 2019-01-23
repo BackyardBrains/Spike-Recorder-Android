@@ -5,11 +5,7 @@
 #ifndef SPIKE_RECORDER_ANDROID_ANALYSISUTILS_H
 #define SPIKE_RECORDER_ANDROID_ANALYSISUTILS_H
 
-#include <math.h>
-
-namespace util {
-    class AnalysisUtils;
-}
+#include <cmath>
 
 class AnalysisUtils {
 public:

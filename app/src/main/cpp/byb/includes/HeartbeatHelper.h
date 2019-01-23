@@ -8,12 +8,6 @@
 #include <android/log.h>
 #include <algorithm>
 
-namespace util {
-    class OnHeartbeatListener;
-
-    class HeartbeatHelper;
-}
-
 class OnHeartbeatListener {
 public:
     virtual void onHeartbeat(int bmp) = 0;

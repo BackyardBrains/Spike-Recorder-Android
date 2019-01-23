@@ -11,10 +11,6 @@
 
 #include "AnalysisUtils.h"
 
-namespace analysis {
-    class AverageSpikeAnalysis;
-}
-
 struct AverageSpikeData {
     float *averageSpike;
     float *normAverageSpike;
@@ -38,16 +34,16 @@ public:
 
     ~AverageSpikeAnalysis();
 
-    void process(const char *filePath, int **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
+    void process(const char *filePath, int **inSpikeTrains, int spikeTrainCount, const int *spikeCounts,
                  float **outAverageSpike, float **outNormAverageSpike, float **outNormTopSTDLine,
                  float **outNormBottomSTDLine, int batchSpikeCount);
 
 private:
     static const char *TAG;
 
-    void allocateAverageSpikeData(AverageSpikeData *averageSpikeData, const int length, drwav_uint64 batchSpikeCount);
+    void allocateAverageSpikeData(AverageSpikeData *averageSpikeData, int length, drwav_uint64 batchSpikeCount);
 
-    void deallocateAverageSpikeData(AverageSpikeData *averageSpikeData, const int length);
+    void deallocateAverageSpikeData(AverageSpikeData *averageSpikeData, int length);
 };
 
 
