@@ -13,5 +13,10 @@ import com.backyardbrains.db.entity.SpikeAnalysis;
 
     @Insert(onConflict = OnConflictStrategy.IGNORE) long insertSpikeAnalysis(SpikeAnalysis analysis);
 
-    @Query("SELECT id FROM spike_analysis WHERE file_path = :filePath") long loadSpikeAnalysisId(String filePath);
+    @Query("SELECT * FROM spike_analysis WHERE file_path = :filePath") SpikeAnalysis loadSpikeAnalysis(String filePath);
+
+    @Query("UPDATE spike_analysis SET file_path = :newFilePath WHERE file_path = :oldFilePath")
+    void updateSpikeAnalysisFilePath(String oldFilePath, String newFilePath);
+
+    @Query("DELETE FROM spike_analysis WHERE file_path = :filePath") void deleteSpikeAnalysis(String filePath);
 }

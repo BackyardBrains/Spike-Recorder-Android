@@ -62,6 +62,10 @@ public class BaseFragment extends Fragment {
         return provider;
     }
 
+    protected boolean onBackPressed() {
+        return false;
+    }
+
     @Nullable protected ProcessingService getAudioService() {
         return provider != null ? provider.processingService() : null;
     }

@@ -11,6 +11,9 @@ import java.util.Date;
  */
 public class RecordingUtils {
 
+    // BYB audio file extension
+    public static final String BYB_RECORDING_EXT = ".wav";
+
     // Holds BYB recordings directory.
     private static final File BYB_DIRECTORY;
     // Name of the BYB recording folder
@@ -23,8 +26,6 @@ public class RecordingUtils {
     private static final String BYB_SHARED_RECORDING_NAME_PREFIX = "Shared ";
     // Prefix for all imported recordings which name wasn't retrievable
     private static final String BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX = "Shared Recording ";
-    // BYB audio file extension
-    private static final String BYB_RECORDING_EXT = ".wav";
     // BYB events file suffix
     private static final String BYB_EVENTS_NAME_SUFFIX = "-events";
     // BYB events file extension
@@ -99,5 +100,13 @@ public class RecordingUtils {
     @Nullable public static File getEventFile(@NonNull File file) {
         File f = createEventsFile(file);
         return f.exists() ? f : null;
+    }
+
+    /**
+     * Returns name of the specified {@code file} without the file extension.
+     */
+    public static String getFileNameWithoutExtension(@NonNull File file) {
+        final int extIndex = file.getName().lastIndexOf('.');
+        return extIndex < 0 ? file.getName() : file.getName().substring(0, extIndex);
     }
 }

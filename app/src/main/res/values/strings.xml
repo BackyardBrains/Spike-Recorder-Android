@@ -9,6 +9,7 @@
     <string name="menu_item_recordings">Recordings</string>
 
     <string name="action_setting">Settings</string>
+    <string name="action_yes">Yes</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_play">Play</string>
     <string name="action_pause">Pause</string>
@@ -21,6 +22,11 @@
     <string name="analysis_average_spike">Average Spike</string>
     <string name="analysis_please_wait">Please wait…</string>
 
+    <string name="title_share">Share file</string>
+    <string name="title_delete">Delete file</string>
+    <string name="title_error">Error</string>
+    <string name="title_file_details">File Details</string>
+
     <string name="content_desc_back">Back to previous screen</string>
     <string name="content_desc_threshold_remove">Remove current</string>
     <string name="content_desc_threshold_select_one">Select threshold 1</string>
@@ -32,16 +38,23 @@
     <string name="content_desc_sound_un_mute">Un-mute the sound</string>
     <string name="content_desc_sound_mute">Mute the sound</string>
     <string name="content_desc_am_modulation_filters">Apply filter</string>
+    <string name="content_desc_clear_file_name">Clear file name</string>
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
     <string name="template_spike_count">%1$d(%2$.1fHz)</string>
     <string name="template_channel_name">Channel %d</string>
+    <string name="template_delete_file">"Delete %s "?"</string>
 
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
     <string name="label_finding_spikes">Finding spikes…</string>
+    <string name="label_filename">Filename</string>
+    <string name="label_recorded_on">Recorded on</string>
+    <string name="label_sampling_rate">Sampling rate</string>
+    <string name="label_num_of_channels">Number of channels</string>
+    <string name="label_file_length">File length (s)</string>
 
     <string name="template_connected_to_board">Connected to\n%s</string>
     <string name="board_type_plant">Plant SpikerBox</string>
@@ -111,49 +124,49 @@
         <item>Event 9</item>
         <item>Events</item>
     </string-array>
-    <string-array name="options_recording_no_spikes">
+    <string-array name="options_recording_base">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
     <string-array name="options_recording_no_cross_correlation">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Autocorrelation</item>
         <item>ISI</item>
         <item>Average Spike</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
     <string-array name="options_recording">
         <item>File Details</item>
-        <item>Play this file</item>
+        <item>Play</item>
         <item>Find Spikes</item>
         <item>Autocorrelation</item>
         <item>ISI</item>
         <item>Cross Correlation</item>
         <item>Average Spike</item>
         <item>Share</item>
-        <item>Rename this file</item>
-        <item>Delete this file</item>
+        <!--<item>Rename this file</item>-->
+        <item>Delete</item>
     </string-array>
 
     <!-- Toasts -->
     <string name="toast_import_successful">File successfully imported</string>
 
     <!-- Error messages -->
-    <string name="error_message_files_no_file">The requested file could not be found. Please try again later.</string>
+    <string name="error_message_files_no_file">The requested file could not be found. Please try again.</string>
     <string name="error_message_files_exists">File with the specified name already exists. Please use a different name.</string>
-    <string name="error_message_files_delete">The requested file could not be deleted. Please try again later.</string>
+    <string name="error_message_files_delete">The requested file could not be deleted. Please try again.</string>
     <string name="error_message_files_events_delete">The associated file that holds saved events could not be deleted. Please use any file manager app to delete the associated file manually.</string>
-    <string name="error_message_files_rename">The requested file could not be renamed. Please try again later.</string>
+    <string name="error_message_files_rename">The requested file could not be renamed. Please try again.</string>
     <string name="error_message_files_events_rename">The associated file that holds saved events could not be renamed. Please use any file manager app to rename the associated file manually. The name should be the same as the recording (.wav) file but with "-events" suffix.</string>
-    <string name="error_message_validation_file_name">Please enter the file name.</string>
+    <string name="error_message_validation_file_name">File name cannot be empty. Please enter the file name.</string>
     <string name="error_message_import_error">An error occurred while trying to import a file. Please try again.</string>
     <string name="error_message_import_open">An error occurred while tyring to import a file. File could not be opened. Please try again later.</string>
     <string name="error_message_import_save">An error occurred while trying to import a file. File could not be saved. Please try again.</string>

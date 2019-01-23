@@ -6,22 +6,22 @@ import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.IdRes;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -32,6 +32,8 @@ import com.backyardbrains.dsp.ProcessingService;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.FindSpikesEvent;
+import com.backyardbrains.events.OpenRecordingDetailsEvent;
+import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.events.ShowToastEvent;
@@ -42,6 +44,8 @@ import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -66,12 +70,16 @@ public class MainActivity extends AppCompatActivity
     public static final int ANALYSIS_VIEW = 3;
     public static final int FIND_SPIKES_VIEW = 4;
     public static final int PLAY_AUDIO_VIEW = 5;
+    public static final int RECORDING_OPTIONS_VIEW = 6;
+    public static final int RECORDING_DETAILS_VIEW = 7;
 
-    public static final String BYB_RECORDINGS_FRAGMENT = "RecordingsFragment";
-    public static final String BYB_SPIKES_FRAGMENT = "FindSpikesFragment";
-    public static final String BYB_ANALYSIS_FRAGMENT = "AnalysisFragment";
-    public static final String BYB_OSCILLOSCOPE_FRAGMENT = "OscilloscopeFragment";
-    public static final String BYB_PLAY_AUDIO_FRAGMENT = "BackyardBrainsPlayAudioFragment";
+    public static final String RECORDINGS_FRAGMENT = "RecordingsFragment";
+    public static final String SPIKES_FRAGMENT = "FindSpikesFragment";
+    public static final String ANALYSIS_FRAGMENT = "AnalysisFragment";
+    public static final String OSCILLOSCOPE_FRAGMENT = "OscilloscopeFragment";
+    public static final String PLAY_AUDIO_FRAGMENT = "PlaybackScopeFragment";
+    public static final String RECORDING_OPTIONS_FRAGMENT = "RecordingOptionsFragment";
+    public static final String RECORDING_DETAILS_FRAGMENT = "RecordingDetailsFragment";
 
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_SETTINGS_SCREEN = 125;
@@ -86,24 +94,33 @@ public class MainActivity extends AppCompatActivity
     ProcessingService processingService;
     private AnalysisManager analysisManager;
 
-    //protected SlidingView sliding_drawer;
     private int currentFrag = -1;
 
     boolean showScalingInstructions = true;
     boolean showingScalingInstructions = false;
 
-    private enum FragTransaction {
-        ADD, REPLACE, REMOVE
+    @Retention(RetentionPolicy.SOURCE) @IntDef({
+        TransactionType.ADD, TransactionType.REPLACE, TransactionType.REMOVE
+    }) public @interface TransactionType {
+        /**
+         * Fragment is being added.
+         */
+        int ADD = 0;
+        /**
+         * Fragment is being replaced.
+         */
+        int REPLACE = 1;
+        /**
+         * Fragment is being removed.
+         */
+        int REMOVE = 2;
     }
 
     // Bottom menu navigation listener
-    private BottomNavigationView.OnNavigationItemSelectedListener bottomMenuListener =
-        new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                loadFragment(item.getItemId());
-                return true;
-            }
-        };
+    private BottomNavigationView.OnNavigationItemSelectedListener bottomMenuListener = item -> {
+        loadFragment(item.getItemId());
+        return true;
+    };
 
     //////////////////////////////////////////////////////////////////////////////
     //                       Lifecycle overrides
@@ -128,6 +145,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override protected void onStart() {
         LOGD(TAG, "onStart()");
+
+        getSupportFragmentManager().addOnBackStackChangedListener(this::printBackStack);
 
         // check if we should process file import
         if (getIntent() != null && ImportUtils.checkImport(getIntent())) {
@@ -178,15 +197,10 @@ public class MainActivity extends AppCompatActivity
     //////////////////////////////////////////////////////////////////////////////
 
     @Override public void onBackPressed() {
-        boolean bShouldPop = true;
-        if (currentFrag == ANALYSIS_VIEW) {
-            Fragment frag = getSupportFragmentManager().findFragmentByTag(BYB_ANALYSIS_FRAGMENT);
-            if (frag instanceof AnalysisFragment) {
-                bShouldPop = false;
-                ((AnalysisFragment) frag).onBackPressed();
-            }
-        }
-        if (bShouldPop && !popFragment()) finish();
+        final int fragmentCount = getSupportFragmentManager().getBackStackEntryCount();
+        final FragmentManager.BackStackEntry entry = getSupportFragmentManager().getBackStackEntryAt(fragmentCount - 1);
+        final BaseFragment frag = (BaseFragment) getSupportFragmentManager().findFragmentByTag(entry.getName());
+        if (frag != null && !frag.onBackPressed() && !popFragment()) finish();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -202,32 +216,41 @@ public class MainActivity extends AppCompatActivity
         LOGD(TAG, "loadFragment()  fragType: " + fragType + "  currentFrag: " + currentFrag);
         if (fragType != currentFrag) {
             currentFrag = fragType;
-            Fragment frag;
-            String fragName;
+            final BaseFragment frag;
+            final String fragName;
             switch (fragType) {
                 case RECORDINGS_VIEW:
                     frag = RecordingsFragment.newInstance();
-                    fragName = BYB_RECORDINGS_FRAGMENT;
+                    fragName = RECORDINGS_FRAGMENT;
                     break;
                 case FIND_SPIKES_VIEW:
                     frag = FindSpikesFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
-                    fragName = BYB_SPIKES_FRAGMENT;
+                    fragName = SPIKES_FRAGMENT;
                     break;
                 case ANALYSIS_VIEW:
                     frag = AnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null,
                         args.length > 0 ? (int) args[1] : AnalysisType.NONE);
-                    fragName = BYB_ANALYSIS_FRAGMENT;
+                    fragName = ANALYSIS_FRAGMENT;
                     break;
                 //------------------------------
                 case OSCILLOSCOPE_VIEW:
                 default:
                     frag = OscilloscopeFragment.newInstance();
-                    fragName = BYB_OSCILLOSCOPE_FRAGMENT;
+                    fragName = OSCILLOSCOPE_FRAGMENT;
                     break;
                 //------------------------------
                 case PLAY_AUDIO_VIEW:
                     frag = PlaybackScopeFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
-                    fragName = BYB_PLAY_AUDIO_FRAGMENT;
+                    fragName = PLAY_AUDIO_FRAGMENT;
+                    break;
+                //------------------------------
+                case RECORDING_OPTIONS_VIEW:
+                    frag = RecordingOptionsFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
+                    fragName = RECORDING_OPTIONS_FRAGMENT;
+                    break;
+                case RECORDING_DETAILS_VIEW:
+                    frag = RecordingDetailsFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
+                    fragName = RECORDING_DETAILS_FRAGMENT;
                     break;
             }
             // Log with Fabric Answers what view did the user opened
@@ -235,17 +258,27 @@ public class MainActivity extends AppCompatActivity
                 .logContentView(new ContentViewEvent().putContentName(fragName).putContentType("Screen View"));
 
             setSelectedButton(fragType);
-            showFragment(frag, fragName, R.id.fragment_container, FragTransaction.REPLACE, false, R.anim.slide_in_right,
-                R.anim.slide_out_left);
+            showFragment(frag, fragName, R.id.fragment_container, false, R.anim.slide_in_right, R.anim.slide_out_left,
+                R.anim.slide_in_left, R.anim.slide_out_right);
         }
     }
 
+    public void showFragment(Fragment frag, String fragName, int fragContainer, boolean animate, int animEnter,
+        int animExit, int animPopEnter, int animPopExit) {
+        final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        if (animate) transaction.setCustomAnimations(animEnter, animExit, animPopEnter, animPopExit);
+        if (popFragment(fragName)) getSupportFragmentManager().popBackStack();
+        transaction.replace(fragContainer, frag, fragName);
+        transaction.addToBackStack(fragName);
+        transaction.commit();
+    }
+
     public boolean popFragment(String fragName) {
-        boolean bPopped = false;
+        boolean popped = false;
         if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
-            bPopped = getSupportFragmentManager().popBackStackImmediate(fragName, 0);
+            popped = getSupportFragmentManager().popBackStackImmediate(fragName, 0);
             LOGD(TAG, "popFragment name: " + fragName);
-            int fragType = getFragmentTypeFromName(fragName);
+            final int fragType = getFragmentTypeFromName(fragName);
             if (fragType != INVALID_VIEW) {
                 LOGD(TAG, "popFragment type: " + fragType);
                 setSelectedButton(fragType);
@@ -254,13 +287,13 @@ public class MainActivity extends AppCompatActivity
         } else {
             LOGI(TAG, "popFragment noStack");
         }
-        return bPopped;
+        return popped;
     }
 
     public boolean popFragment() {
         if (getSupportFragmentManager().getBackStackEntryCount() > 1) {
-            int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() - 2;
-            String lastFragName = getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
+            final int lastFragIndex = getSupportFragmentManager().getBackStackEntryCount() - 2;
+            final String lastFragName = getSupportFragmentManager().getBackStackEntryAt(lastFragIndex).getName();
             return popFragment(lastFragName);
         } else {
             LOGI(TAG, "popFragment noStack");
@@ -278,36 +311,6 @@ public class MainActivity extends AppCompatActivity
         } else {
             LOGI(TAG, "printBackStack noStack");
         }
-    }
-
-    public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
-        boolean bAnimate, int animIn, int animOut, boolean bAddToBackStack) {
-        android.support.v4.app.FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        if (!popFragment(fragName)) {
-            if (bAnimate) {
-                transaction.setCustomAnimations(animIn, animOut);
-            }
-            if (fragTransaction == FragTransaction.REPLACE) {
-                transaction.replace(fragContainer, frag, fragName);
-                if (bAddToBackStack) {
-                    transaction.addToBackStack(fragName);
-                }
-            } else if (fragTransaction == FragTransaction.REMOVE) {
-                transaction.remove(frag);
-            } else if (fragTransaction == FragTransaction.ADD) {
-                transaction.add(fragContainer, frag, fragName);
-                if (bAddToBackStack) {
-                    transaction.addToBackStack(fragName);
-                }
-            }
-            transaction.commit();
-        }
-        printBackStack();
-    }
-
-    public void showFragment(Fragment frag, String fragName, int fragContainer, FragTransaction fragTransaction,
-        boolean bAnimate, int animIn, int animOut) {
-        showFragment(frag, fragName, fragContainer, fragTransaction, bAnimate, animIn, animOut, true);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -340,6 +343,16 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
         loadFragment(RECORDINGS_VIEW);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingOptionsEvent(OpenRecordingOptionsEvent event) {
+        loadFragment(RECORDING_OPTIONS_VIEW, event.getFilePath());
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingDetailsEvent(OpenRecordingDetailsEvent event) {
+        loadFragment(RECORDING_DETAILS_VIEW, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -388,48 +401,43 @@ public class MainActivity extends AppCompatActivity
 
     private int getFragmentTypeFromName(String fragName) {
         switch (fragName) {
-            case BYB_RECORDINGS_FRAGMENT:
+            case RECORDINGS_FRAGMENT:
                 return RECORDINGS_VIEW;
-            case BYB_SPIKES_FRAGMENT:
+            case SPIKES_FRAGMENT:
                 return FIND_SPIKES_VIEW;
-            case BYB_ANALYSIS_FRAGMENT:
+            case ANALYSIS_FRAGMENT:
                 return ANALYSIS_VIEW;
-            case BYB_OSCILLOSCOPE_FRAGMENT:
+            case OSCILLOSCOPE_FRAGMENT:
                 return OSCILLOSCOPE_VIEW;
-            case BYB_PLAY_AUDIO_FRAGMENT:
+            case PLAY_AUDIO_FRAGMENT:
                 return PLAY_AUDIO_VIEW;
+            case RECORDING_OPTIONS_FRAGMENT:
+                return RECORDING_OPTIONS_VIEW;
+            case RECORDING_DETAILS_FRAGMENT:
+                return RECORDING_DETAILS_VIEW;
             default:
                 return INVALID_VIEW;
         }
     }
 
     private void setSelectedButton(int select) {
-        Intent i = null;
         @IdRes int selectedButton = -1;
         LOGD(TAG, "setSelectedButton");
         switch (select) {
             case OSCILLOSCOPE_VIEW:
                 selectedButton = R.id.action_scope;
-                i = new Intent();
-                i.putExtra("tab", OSCILLOSCOPE_VIEW);
                 break;
             case RECORDINGS_VIEW:
                 selectedButton = R.id.action_recordings;
-                i = new Intent();
-                i.putExtra("tab", RECORDINGS_VIEW);
                 break;
             default:
                 break;
         }
-        if (i != null) {
+        if (selectedButton != -1) {
             bottomMenu.setOnNavigationItemSelectedListener(null);
             bottomMenu.setSelectedItemId(selectedButton);
             bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
         }
-    }
-
-    protected void showButtons(boolean bShow) {
-        if (bottomMenu != null) bottomMenu.setVisibility(bShow ? View.VISIBLE : View.GONE);
     }
 
     void showScalingInstructions() {
@@ -438,19 +446,15 @@ public class MainActivity extends AppCompatActivity
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
             alertDialog.setTitle("Instructions");
             alertDialog.setMessage(getString(R.string.scaling_instructions));
-            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "NO", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    showScalingInstructions = false;
-                    showingScalingInstructions = false;
-                    saveSettings();
-                    dialog.dismiss();
-                }
+            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "NO", (dialog, which) -> {
+                showScalingInstructions = false;
+                showingScalingInstructions = false;
+                saveSettings();
+                dialog.dismiss();
             });
-            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "YES", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    showingScalingInstructions = false;
-                    dialog.dismiss();
-                }
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "YES", (dialog, which) -> {
+                showingScalingInstructions = false;
+                dialog.dismiss();
             });
             alertDialog.show();
         }

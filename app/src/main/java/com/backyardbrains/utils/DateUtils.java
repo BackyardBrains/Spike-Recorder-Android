@@ -34,4 +34,16 @@ public final class DateUtils {
         formatter.applyPattern(PATTERN_YYYY_MM_DD_HH_MM_SS);
         return formatter.format(date);
     }
+
+    // Pattern for "1/16/2019, 1:09 PM" date format
+    private static final String PATTERN_M_D_YYYY_H_MM_A = "M/d/yyyy, H:mm a";
+
+    /**
+     * Returns string representation of the specified {@code date} formatted like following example
+     * "1/16/2019, 1:09 PM".
+     */
+    public static String format_M_d_yyyy_H_mm_a(@NonNull Date date) {
+        formatter.applyPattern(PATTERN_M_D_YYYY_H_MM_A);
+        return formatter.format(date);
+    }
 }

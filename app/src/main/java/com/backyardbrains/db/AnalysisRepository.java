@@ -52,15 +52,16 @@ public class AnalysisRepository {
     //=================================================
 
     /**
-     * Checks whether spike analysis for the file with specified {@code filePath} exists. The result is passed to
-     * specified {@code callback}.
+     * Checks whether spike analysis for the file with specified {@code filePath} exists and whether it has spike
+     * trains. The result and the train count is passed to specified {@code callback}.
      *
      * @param filePath Path to the file for which existence of the analysis is checked.
+     * @param countNonEmptyTrains Whether non empty spike trains should counted in.
      * @param callback Callback that's invoked when check is preformed.
      */
-    public void spikeAnalysisExists(@NonNull String filePath,
+    public void spikeAnalysisExists(@NonNull String filePath, boolean countNonEmptyTrains,
         @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
-        analysisDataSource.spikeAnalysisExists(filePath, callback);
+        analysisDataSource.spikeAnalysisExists(filePath, countNonEmptyTrains, callback);
     }
 
     /**
@@ -80,6 +81,24 @@ public class AnalysisRepository {
      */
     public long getSpikeAnalysisId(@NonNull String filePath) {
         return analysisDataSource.getSpikeAnalysisId(filePath);
+    }
+
+    /**
+     * Updates spike analysis file path for the audio file located at specified {@code oldFilePath} with specified
+     * {@code newFilePath}.
+     *
+     * @param oldFilePath Absolute path of the audio file for which we want to update the file path.
+     * @param newFilePath Absolute path of the new audio file.
+     */
+    public void updateSpikeAnalysisFilePath(@NonNull String oldFilePath, @NonNull String newFilePath) {
+        analysisDataSource.updateSpikeAnalysisFilePath(oldFilePath, newFilePath);
+    }
+
+    /**
+     * Deletes spike analysis, all spike trains and spikes related to audio file located at specified {@code filePath}.
+     */
+    public void deleteSpikeAnalysis(@NonNull String filePath) {
+        analysisDataSource.deleteSpikeAnalysis(filePath);
     }
 
     /**

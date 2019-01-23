@@ -25,7 +25,8 @@ public class WavUtils {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(toSeconds(byteCount, sampleRate, channelCount)));
+        return Formats.formatTime_mm_ss(
+            TimeUnit.SECONDS.toMillis((long) toSeconds(byteCount, sampleRate, channelCount)));
     }
 
     /**
@@ -34,7 +35,7 @@ public class WavUtils {
     public static CharSequence formatWavLength(long byteCount, int sampleRate, int channelCount) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s(toSeconds(byteCount, sampleRate, channelCount));
+        return Formats.formatTime_m_s((long) toSeconds(byteCount, sampleRate, channelCount));
     }
 
     public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelCount, int audioFormat) {
@@ -105,8 +106,8 @@ public class WavUtils {
     //fileSize = (bitsPerSample * samplesPerSecond * channels * duration) / 8;
 
     // Converts specified byteCount to seconds
-    private static long toSeconds(long byteCount, int sampleRate, int channelCount) {
-        return byteCount / (2 * sampleRate * channelCount);
+    public static float toSeconds(long byteCount, int sampleRate, int channelCount) {
+        return (float) byteCount / (2 * sampleRate * channelCount);
     }
 
     // Writes and returns WAV header following specified parameters

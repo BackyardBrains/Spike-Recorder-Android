@@ -136,7 +136,7 @@
         android:background="@color/red_orange"
         android:gravity="center"
         android:textColor="@color/white"
-        android:textSize="@dimen/font_size_normal"
+        android:textSize="@dimen/font_size_14"
         android:textStyle="bold"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
