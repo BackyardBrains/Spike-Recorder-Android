@@ -158,30 +158,10 @@ public:
     void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) override {
         JniHelper::invokeVoid(vm, sampleSourceObj, "setSampleRate", "(I)V", maxSampleRate);
         JniHelper::invokeVoid(vm, sampleSourceObj, "setChannelCount", "(I)V", channelCount);
-
-        sampleStreamProcessor->setSampleRate(maxSampleRate);
-        sampleStreamProcessor->setChannelCount(channelCount);
     };
 
     void onExpansionBoardTypeDetection(int expansionBoardType) override {
         JniHelper::invokeVoid(vm, sampleSourceObj, "setExpansionBoardType", "(I)V", expansionBoardType);
-
-        switch (expansionBoardType) {
-            default:
-            case SampleStreamUtils::NONE_BOARD_DETACHED:
-                sampleStreamProcessor->setSampleRate(10000.0);
-                sampleStreamProcessor->setChannelCount(2);
-                break;
-            case SampleStreamUtils::ADDITIONAL_INPUTS_EXPANSION_BOARD:
-                sampleStreamProcessor->setSampleRate(5000.0);
-                sampleStreamProcessor->setChannelCount(4);
-                break;
-            case SampleStreamUtils::HAMMER_EXPANSION_BOARD:
-            case SampleStreamUtils::JOYSTICK_EXPANSION_BOARD:
-                sampleStreamProcessor->setSampleRate(5000.0);
-                sampleStreamProcessor->setChannelCount(3);
-                break;
-        }
     }
 
 private:

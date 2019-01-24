@@ -9,7 +9,7 @@ const char *SampleStreamProcessor::TAG = "SampleStreamProcessor";
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
 
-SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) : Processor(SAMPLE_RATE,
+SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) : Processor(DEFAULT_SAMPLE_RATE,
                                                                                             DEFAULT_CHANNEL_COUNT) {
     SampleStreamProcessor::listener = listener;
 }
@@ -122,7 +122,6 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
                         if (msb > 127) {
                             __android_log_print(ANDROID_LOG_DEBUG, TAG,
                                                 "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
-
                             frameStarted = false;
                             sampleStarted = false;
                             currentChannel = 0;
@@ -155,9 +154,12 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
         }
     }
 
+
+    bool avoidFilteringOfChannels = stopFilteringAfterChannelIndex >= 0;
     for (int i = 0; i < channelCount; i++) {
         // apply additional filtering if necessary
-        applyFilters(i, channels[i], sampleCounters[i]);
+        if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex)
+            applyFilters(i, channels[i], sampleCounters[i]);
         outSamples[i] = new short[sampleCounters[i]];
         std::copy(channels[i], channels[i] + sampleCounters[i], outSamples[i]);
         outSampleCounts[i] = sampleCounters[i];
@@ -176,13 +178,36 @@ void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageB
     if (SampleStreamUtils::isHardwareTypeMsg(message)) {
         listener->onSpikerBoxHardwareTypeDetected(SampleStreamUtils::getHardwareType(message));
     } else if (SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
-        listener->onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils::getMaxSampleRate(message),
-                                                       SampleStreamUtils::getChannelCount(message));
+        const int sampleRate = SampleStreamUtils::getMaxSampleRate(message);
+        const int channelCount = SampleStreamUtils::getChannelCount(message);
+        listener->onMaxSampleRateAndNumOfChannelsReply(sampleRate, channelCount);
+        setSampleRateAndChannelCount(sampleRate, channelCount);
     } else if (SampleStreamUtils::isEventMsg(message)) {
         eventIndices[eventCounter] = sampleIndex;
         eventLabels[eventCounter++] = SampleStreamUtils::getEventNumber(message);
     } else if (SampleStreamUtils::isExpansionBoardTypeMsg(message)) {
-        listener->onExpansionBoardTypeDetection(SampleStreamUtils::getExpansionBoardType(message));
+        const int expansionBoardType = SampleStreamUtils::getExpansionBoardType(message);
+        listener->onExpansionBoardTypeDetection(expansionBoardType);
+        updateProcessingParameters(expansionBoardType);
+    }
+}
+
+void SampleStreamProcessor::updateProcessingParameters(int expansionBoardType) {
+    switch (expansionBoardType) {
+        default:
+        case SampleStreamUtils::NONE_BOARD_DETACHED:
+            setSampleRateAndChannelCount(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = -1;
+            break;
+        case SampleStreamUtils::ADDITIONAL_INPUTS_EXPANSION_BOARD:
+            setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, ADDITIONAL_INPUTS_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = 1;
+            break;
+        case SampleStreamUtils::HAMMER_EXPANSION_BOARD:
+        case SampleStreamUtils::JOYSTICK_EXPANSION_BOARD:
+            setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, HAMMER_JOYSTICK_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = 1;
+            break;
     }
 }
 

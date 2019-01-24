@@ -149,6 +149,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     @Override public final void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData,
         int inDataLength) {
         //benchmark.start();
+
         JniUtils.processSampleStream(outData, inData, inDataLength, this);
         //benchmark.end();
     }

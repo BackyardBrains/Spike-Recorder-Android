@@ -29,7 +29,9 @@ public:
     void setFilters(float lowCutOff, float highCutOff);
 
 protected:
-    void applyFilters(int channel, short *data, int numFrames);
+    void setSampleRateAndChannelCount(float sampleRate, int channelCount);
+
+    void applyFilters(int channel, short *data, int sampleCount);
 
 private:
     // Minimum cut-off frequency
@@ -41,9 +43,12 @@ private:
     // Default channel count
     static constexpr int DEFAULT_CHANNEL_COUNT = 1;
 
-    void createFilters();
+    void createFilters(int channelCount);
 
-    void deleteFilters();
+    void deleteFilters(int channelCount);
+
+    typedef LowPassFilter *LowPassFilterPtr;
+    typedef HighPassFilter *HighPassFilterPtr;
 
     // Flag that is set to true after initialization
     bool initialized = false;
@@ -56,13 +61,13 @@ private:
     // Whether low pass filters should be applied
     bool lowPassFilteringEnabled = false;
     // Low pass filters for all channels
-    LowPassFilter *lowPassFilter;
+    LowPassFilterPtr *lowPassFilter;
     // Current high pass filter low cutoff frequency
     float lowCutOff = MIN_FILTER_CUT_OFF;
     // Whether high pass filters should be applied
     bool highPassFilteringEnabled = false;
     // High pass filters for all channels
-    HighPassFilter *highPassFilter;
+    HighPassFilterPtr *highPassFilter;
 };
 
 
