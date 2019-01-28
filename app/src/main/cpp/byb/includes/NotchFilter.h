@@ -7,10 +7,6 @@
 
 #include "FilterBase.h"
 
-namespace filters {
-    class NotchFilter;
-}
-
 class NotchFilter : public FilterBase {
 public:
     NotchFilter();

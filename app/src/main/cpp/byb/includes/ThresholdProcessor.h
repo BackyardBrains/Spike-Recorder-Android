@@ -11,17 +11,13 @@
 #include "Processor.h"
 #include "HeartbeatHelper.h"
 
-namespace processing {
-    class ThresholdProcessor;
-}
-
 class ThresholdProcessor : public Processor {
 public:
     static constexpr int DEFAULT_SAMPLE_COUNT = static_cast<const int>(2.4f * 44100.0f);
 
-    ThresholdProcessor(OnHeartbeatListener *listener);
+    explicit ThresholdProcessor(OnHeartbeatListener *listener);
 
-    ~ThresholdProcessor();
+    ~ThresholdProcessor() override;
 
     // Returns the number of sample sequences that should be summed to get the average spike value.
     int getAveragedSampleCount();
@@ -50,7 +46,7 @@ public:
     void setBpmProcessing(bool processBpm);
 
     void process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
-                     const int *inEventIndices, const int *inEvents, const int inEventCount);
+                 const int *inEventIndices, const int *inEvents, int inEventCount);
 
     void appendIncomingSamples(short **inSamples, int *inSampleCounts);
 

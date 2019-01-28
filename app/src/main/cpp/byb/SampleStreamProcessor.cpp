@@ -9,33 +9,26 @@ const char *SampleStreamProcessor::TAG = "SampleStreamProcessor";
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
 const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
 
-SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) : Processor(SAMPLE_RATE,
+SampleStreamProcessor::SampleStreamProcessor(OnEventListenerListener *listener) : Processor(DEFAULT_SAMPLE_RATE,
                                                                                             DEFAULT_CHANNEL_COUNT) {
     SampleStreamProcessor::listener = listener;
 }
 
-SampleStreamProcessor::~SampleStreamProcessor() {
-}
+SampleStreamProcessor::~SampleStreamProcessor() = default;
 
-void SampleStreamProcessor::setChannelCount(int channelCount) {
-    Processor::setChannelCount(channelCount);
-
-    channelCountChanged = true;
-}
 
 void
 SampleStreamProcessor::process(const unsigned char *inData, const int length, short **outSamples, int *outSampleCounts,
-                               int *outEventIndices, std::string *outEventLabels, int &outEventCount) {
-    if (channelCountChanged) { // number of channels changed during processing of previous batch
+                               int *outEventIndices, std::string *outEventLabels, int &outEventCount,
+                               const int channelCount) {
+    if (prevChannelCount != channelCount) { // number of channels changed during processing of previous batch
         frameStarted = false;
         sampleStarted = false;
         currentChannel = 0;
-
-        channelCountChanged = false;
     }
 
     // init samples (by channels)
-    for (int i = 0; i < getChannelCount(); i++) {
+    for (int i = 0; i < channelCount; i++) {
         sampleCounters[i] = 0;
     }
     // init events
@@ -56,7 +49,7 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
         if (insideEscapeSequence) { // we are inside escape sequence
             sampleIndex = sampleCounters[currentChannel] == 0 ? 0 : sampleCounters[currentChannel] - 1;
             if (eventMessageIndex >= EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
-                unsigned char *copy = new unsigned char[eventMessageIndex + 1];
+                auto *copy = new unsigned char[eventMessageIndex + 1];
                 std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                 copy[eventMessageIndex] = 0;
                 // let's process incoming message
@@ -67,7 +60,7 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
             } else if (ESCAPE_SEQUENCE_END[tmpIndex] == uc) {
                 tmpIndex++;
                 if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
-                    unsigned char *copy = new unsigned char[eventMessageIndex + 1];
+                    auto *copy = new unsigned char[eventMessageIndex + 1];
                     std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                     copy[eventMessageIndex] = 0;
                     // let's process incoming message
@@ -89,7 +82,7 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
                 continue;
             }
 
-            unsigned char *sequence = new unsigned char[escapeSequenceIndex];
+            auto *sequence = new unsigned char[escapeSequenceIndex];
             std::copy(escapeSequence, escapeSequence + escapeSequenceIndex, sequence);
             for (int j = 0; j < escapeSequenceIndex; j++) {
                 b = sequence[j];
@@ -110,7 +103,7 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
 
                         // get sample value from most and least significant bytes
                         msb = msb & REMOVER;
-                        msb = msb << 7;
+                        msb = msb << 7u;
                         lsb = lsb & REMOVER;
                         sample = (short) (((msb | lsb) - 512) * 30);
 
@@ -122,14 +115,13 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
                         channels[currentChannel][sampleCounters[currentChannel]++] = sample;
 
                         sampleStarted = false;
-                        if (currentChannel >= getChannelCount() - 1) frameStarted = false;
+                        if (currentChannel >= channelCount - 1) frameStarted = false;
                     } else {
                         msb = b & CLEANER;
                         // we already started the frame so if msb is greater then 127 drop whole frame
                         if (msb > 127) {
                             __android_log_print(ANDROID_LOG_DEBUG, TAG,
                                                 "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
-
                             frameStarted = false;
                             sampleStarted = false;
                             currentChannel = 0;
@@ -162,9 +154,12 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
         }
     }
 
-    for (int i = 0; i < getChannelCount(); i++) {
+
+    bool avoidFilteringOfChannels = stopFilteringAfterChannelIndex >= 0;
+    for (int i = 0; i < channelCount; i++) {
         // apply additional filtering if necessary
-        applyFilters(i, channels[i], sampleCounters[i]);
+        if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex)
+            applyFilters(i, channels[i], sampleCounters[i]);
         outSamples[i] = new short[sampleCounters[i]];
         std::copy(channels[i], channels[i] + sampleCounters[i], outSamples[i]);
         outSampleCounts[i] = sampleCounters[i];
@@ -172,20 +167,47 @@ SampleStreamProcessor::process(const unsigned char *inData, const int length, sh
     std::copy(eventIndices, eventIndices + eventCounter, outEventIndices);
     std::copy(eventLabels, eventLabels + eventCounter, outEventLabels);
     outEventCount = eventCounter;
+
+    prevChannelCount = channelCount;
 }
 
 void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) {
     // check if it's board type message
     std::string message = reinterpret_cast<char *>(messageBytes);
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "EVENT MESSAGE %s AT %d", message.c_str(), sampleIndex);
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d", message.c_str(), sampleIndex);
     if (SampleStreamUtils::isHardwareTypeMsg(message)) {
-        listener->onSpikerBoxHardwareTypeDetected(SampleStreamUtils::getBoardType(message));
+        listener->onSpikerBoxHardwareTypeDetected(SampleStreamUtils::getHardwareType(message));
     } else if (SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
-        listener->onMaxSampleRateAndNumOfChannelsReply(SampleStreamUtils::getMaxSampleRate(message),
-                                                       SampleStreamUtils::getChannelCount(message));
+        const int sampleRate = SampleStreamUtils::getMaxSampleRate(message);
+        const int channelCount = SampleStreamUtils::getChannelCount(message);
+        listener->onMaxSampleRateAndNumOfChannelsReply(sampleRate, channelCount);
+        setSampleRateAndChannelCount(sampleRate, channelCount);
     } else if (SampleStreamUtils::isEventMsg(message)) {
         eventIndices[eventCounter] = sampleIndex;
         eventLabels[eventCounter++] = SampleStreamUtils::getEventNumber(message);
+    } else if (SampleStreamUtils::isExpansionBoardTypeMsg(message)) {
+        const int expansionBoardType = SampleStreamUtils::getExpansionBoardType(message);
+        listener->onExpansionBoardTypeDetection(expansionBoardType);
+        updateProcessingParameters(expansionBoardType);
+    }
+}
+
+void SampleStreamProcessor::updateProcessingParameters(int expansionBoardType) {
+    switch (expansionBoardType) {
+        default:
+        case SampleStreamUtils::NONE_BOARD_DETACHED:
+            setSampleRateAndChannelCount(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = -1;
+            break;
+        case SampleStreamUtils::ADDITIONAL_INPUTS_EXPANSION_BOARD:
+            setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, ADDITIONAL_INPUTS_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = 1;
+            break;
+        case SampleStreamUtils::HAMMER_EXPANSION_BOARD:
+        case SampleStreamUtils::JOYSTICK_EXPANSION_BOARD:
+            setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, HAMMER_JOYSTICK_CHANNEL_COUNT);
+            stopFilteringAfterChannelIndex = 1;
+            break;
     }
 }
 

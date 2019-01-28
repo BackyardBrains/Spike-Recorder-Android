@@ -37,7 +37,7 @@ float *AnalysisUtils::generateLogSpace(int min, int max, int size) {
     double delta = (logMax - logMin) / size;
 
     double accDelta = 0;
-    float *logSpace = new float[size + 1];
+    auto *logSpace = new float[size + 1];
     for (int i = 0; i <= size; ++i) {
         logSpace[i] = static_cast<float>(pow(logarithmicBase, logMin + accDelta));
         accDelta += delta;

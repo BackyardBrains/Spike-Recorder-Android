@@ -21,7 +21,7 @@ public:
     /**
      * Invokes public method with the specified methodName and specified methodSignature on a specified object.
      */
-    static void invokeVoid(JavaVM *vm, const jobject object, const char *methodName, const char *methodSignature, ...);
+    static void invokeVoid(JavaVM *vm, jobject object, const char *methodName, const char *methodSignature, ...);
 };
 
 

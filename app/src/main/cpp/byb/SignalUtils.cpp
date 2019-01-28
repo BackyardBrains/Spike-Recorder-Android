@@ -17,7 +17,7 @@ short **SignalUtils::deinterleaveSignal(short **outSamples, const short *inSampl
 
 short *SignalUtils::interleaveSignal(short **samples, int frameCount, int channelCount) {
     int sampleCount = frameCount * channelCount;
-    short *result = new short[sampleCount];
+    auto *result = new short[sampleCount];
     for (int i = 0; i < frameCount; i++) {
         for (int ch = 0; ch < channelCount; ch++) {
             result[channelCount * i + ch] = samples[ch][i];

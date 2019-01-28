@@ -6,15 +6,13 @@
 
 const char *SpikeAnalysis::TAG = "SpikeAnalysis";
 
-SpikeAnalysis::SpikeAnalysis() {
-}
+SpikeAnalysis::SpikeAnalysis() = default;
 
-SpikeAnalysis::~SpikeAnalysis() {
-}
+SpikeAnalysis::~SpikeAnalysis() = default;
 
 long long SpikeAnalysis::currentTimeInMilliseconds() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
+    struct timeval tv{};
+    gettimeofday(&tv, nullptr);
     return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 }
 
@@ -25,7 +23,7 @@ void SpikeAnalysis::findSpikes(const char *filePath, short **outValuesPos, int *
 
     // open audio file we need to analyze
     drwav *wavPtr = drwav_open_file(filePath);
-    if (wavPtr == NULL) {
+    if (wavPtr == nullptr) {
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Unable to open file: %s", filePath);
         return;
     }
@@ -39,16 +37,16 @@ void SpikeAnalysis::findSpikes(const char *filePath, short **outValuesPos, int *
     }
 
     // determine buffer size
-    drwav_uint64 bufferSize = static_cast<drwav_uint64>(ceil(totalSamples / BIN_COUNT));
-    drwav_uint64 maxBufferSize = static_cast<drwav_uint64>(ceil(
+    auto bufferSize = static_cast<drwav_uint64>(ceil(totalSamples / BIN_COUNT));
+    auto maxBufferSize = static_cast<drwav_uint64>(ceil(
             (wavPtr->sampleRate * BUFFER_SIZE_IN_SECS) / channelCount));
     if (bufferSize > maxBufferSize) bufferSize = maxBufferSize;
 
     // create buffers
     int deviationsCount = static_cast<int>(ceil(static_cast<float>(totalSamples) / bufferSize));
-    drwav_int16 *samples = new drwav_int16[bufferSize];
-    drwav_int16 **deinterleavedSamples = new drwav_int16 *[channelCount];
-    float **standardDeviations = new float *[channelCount];
+    auto *samples = new drwav_int16[bufferSize];
+    auto **deinterleavedSamples = new drwav_int16 *[channelCount];
+    auto **standardDeviations = new float *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         deinterleavedSamples[i] = new drwav_int16[bufferSize]{0};
         standardDeviations[i] = new float[deviationsCount];
@@ -75,15 +73,15 @@ void SpikeAnalysis::findSpikes(const char *filePath, short **outValuesPos, int *
 
     // 2. SORT DEVIATIONS ASCENDING
     for (int i = 0; i < channelCount; i++) {
-        std::sort(standardDeviations[i], standardDeviations[i] + deviationCounters[i], std::greater<float>());
+        std::sort(standardDeviations[i], standardDeviations[i] + deviationCounters[i], std::greater<>());
     }
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "%ld - AFTER SORTING AND REVERSING DEVIATIONS",
                         static_cast<long>(currentTimeInMilliseconds() - start));
 
 
     // 3. DETERMINE ACCEPTABLE SPIKE VALUES WHICH ARE VALUES GRATER THEN 40% OF SDTs MULTIPLIED BY 2 and
-    short *sig = new short[channelCount]{0};
-    short *negSig = new short[channelCount]{0};
+    auto *sig = new short[channelCount]{0};
+    auto *negSig = new short[channelCount]{0};
     for (int i = 0; i < channelCount; i++) {
         float tmpSig = 2 * standardDeviations[i][(int) ceil(deviationCounters[i] * 0.4f)];
         sig[i] = static_cast<short>(tmpSig > SHRT_MAX ? SHRT_MAX : tmpSig);
@@ -107,13 +105,13 @@ void SpikeAnalysis::findSpikes(const char *filePath, short **outValuesPos, int *
 
     int *schmittPosState = new int[channelCount];
     int *schmittNegState = new int[channelCount];
-    short *maxPeakValue = new short[channelCount];
-    short *minPeakValue = new short[channelCount];
+    auto *maxPeakValue = new short[channelCount];
+    auto *minPeakValue = new short[channelCount];
     int *maxPeakIndex = new int[channelCount]{0};
     int *minPeakIndex = new int[channelCount]{0};
-    float *maxPeakTime = new float[channelCount]{0.0f};
-    float *minPeakTime = new float[channelCount]{0.0f};
-    float *currentTime = new float[channelCount]{0.0f};
+    auto *maxPeakTime = new float[channelCount]{0.0f};
+    auto *minPeakTime = new float[channelCount]{0.0f};
+    auto *currentTime = new float[channelCount]{0.0f};
     int *currentIndex = new int[channelCount]{0};
     int *spikeCounter = new int[channelCount]{0};
     int *spikeNegCounter = new int[channelCount]{0};

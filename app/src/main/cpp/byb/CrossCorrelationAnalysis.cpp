@@ -6,13 +6,9 @@
 
 const char *CrossCorrelationAnalysis::TAG = "CrossCorrelationAnalysis";
 
-CrossCorrelationAnalysis::CrossCorrelationAnalysis() {
+CrossCorrelationAnalysis::CrossCorrelationAnalysis() = default;
 
-}
-
-CrossCorrelationAnalysis::~CrossCorrelationAnalysis() {
-
-}
+CrossCorrelationAnalysis::~CrossCorrelationAnalysis() = default;
 
 void
 CrossCorrelationAnalysis::process(float **inSpikeTrains, int spikeTrainCount, const int *spikeCounts, int **outAnalysis,

@@ -9,6 +9,7 @@ import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.Benchmark;
+import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
@@ -41,9 +42,23 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         void onHardwareTypeDetected(@SpikerBoxHardwareType int hardwareType);
     }
 
+    /**
+     * Interface definition for a callback to be invoked when expansion board type is detected after it's connection.
+     */
+    public interface OnExpansionBoardTypeDetectionListener {
+        /**
+         * Called when expansion board hardware type is detected.
+         *
+         * @param expansionBoardType Type of the connected expansion board. One of {@link ExpansionBoardType}.
+         */
+        void onExpansionBoardTypeDetected(@ExpansionBoardType int expansionBoardType);
+    }
+
     private OnSpikerBoxHardwareTypeDetectionListener onSpikerBoxHardwareTypeDetectionListener;
+    private OnExpansionBoardTypeDetectionListener onOnExpansionBoardTypeDetectionListener;
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
+    private @ExpansionBoardType int expansionBoardType = ExpansionBoardType.NONE;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
         super(SampleStreamUtils.SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, MAX_SAMPLES_PER_CHANNEL);
@@ -111,6 +126,15 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         onSpikerBoxHardwareTypeDetectionListener = listener;
     }
 
+    /**
+     * Registers a callback to be invoked when connected expansion board type is detected.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnExpansionBoardTypeDetectionListener(@Nullable OnExpansionBoardTypeDetectionListener listener) {
+        onOnExpansionBoardTypeDetectionListener = listener;
+    }
+
     private final Benchmark benchmark = new Benchmark("PROCESS_SAMPLE_STREAM_TEST").warmUp(1000)
         .sessions(10)
         .measuresPerSession(2000)
@@ -125,6 +149,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     @Override public final void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData,
         int inDataLength) {
         //benchmark.start();
+
         JniUtils.processSampleStream(outData, inData, inDataLength, this);
         //benchmark.end();
     }
@@ -156,12 +181,49 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     @SuppressWarnings("WeakerAccess") void setHardwareType(int hardwareType) {
         if (this.hardwareType == hardwareType) return;
 
-        LOGD(TAG, "BOARD TYPE: " + SampleStreamUtils.getSpikerBoxName(hardwareType));
+        LOGD(TAG, "HARDWARE TYPE: " + SampleStreamUtils.getSpikerBoxHardwareName(hardwareType));
 
         this.hardwareType = hardwareType;
 
         if (onSpikerBoxHardwareTypeDetectionListener != null) {
             onSpikerBoxHardwareTypeDetectionListener.onHardwareTypeDetected(hardwareType);
+        }
+    }
+
+    /**
+     * Sets connected SpikerBox expansion board type for the input source.
+     */
+    @SuppressWarnings({ "WeakerAccess", "unused" }) void setExpansionBoardType(int expansionBoardType) {
+        if (this.expansionBoardType == expansionBoardType) return;
+
+        LOGD(TAG, "EXPANSION BOARD TYPE: " + SampleStreamUtils.getExpansionBoardName(expansionBoardType));
+
+        this.expansionBoardType = expansionBoardType;
+
+        // expansion board detected,
+        // let's update sample rate and channel count depending on the board type
+        prepareForExpansionBoard(expansionBoardType);
+
+        if (onOnExpansionBoardTypeDetectionListener != null) {
+            onOnExpansionBoardTypeDetectionListener.onExpansionBoardTypeDetected(expansionBoardType);
+        }
+    }
+
+    private void prepareForExpansionBoard(@ExpansionBoardType int expansionBoardType) {
+        switch (expansionBoardType) {
+            case ExpansionBoardType.NONE:
+                setSampleRate(SampleStreamUtils.SAMPLE_RATE);
+                setChannelCount(SampleStreamUtils.SPIKER_BOX_PRO_CHANNEL_COUNT);
+                break;
+            case ExpansionBoardType.ADDITIONAL_INPUTS:
+                setSampleRate(5000);
+                setChannelCount(4);
+                break;
+            case ExpansionBoardType.HAMMER:
+            case ExpansionBoardType.JOYSTICK:
+                setSampleRate(5000);
+                setChannelCount(3);
+                break;
         }
     }
 }

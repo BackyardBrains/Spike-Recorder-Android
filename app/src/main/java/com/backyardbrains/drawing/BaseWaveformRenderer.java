@@ -189,8 +189,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     @Override public void onSampleRateChange(int sampleRate) {
         if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
 
-        //setGlWindowWidth(glWindowWidth);
-
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
         final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
@@ -221,6 +219,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     @Override public void onChannelCountChange(int channelCount) {
         if (this.channelCount < 1 || this.channelCount == channelCount) return;
+
+        LOGD(TAG, "setChannelCount(" + channelCount + ")");
 
         synchronized (lock) {
             resetLocalBuffers(channelCount);

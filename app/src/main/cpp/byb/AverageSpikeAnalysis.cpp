@@ -6,33 +6,31 @@
 
 const char *AverageSpikeAnalysis::TAG = "AverageSpikeAnalysis";
 
-AverageSpikeAnalysis::AverageSpikeAnalysis() {
-}
+AverageSpikeAnalysis::AverageSpikeAnalysis() = default;
 
-AverageSpikeAnalysis::~AverageSpikeAnalysis() {
-}
+AverageSpikeAnalysis::~AverageSpikeAnalysis() = default;
 
 void AverageSpikeAnalysis::process(const char *filePath, int **inSpikeTrains, const int spikeTrainCount,
                                    const int *spikeCounts, float **outAverageSpike, float **outNormAverageSpike,
                                    float **outNormTopSTDLine, float **outNormBottomSTDLine, int batchSpikeCount) {
     // open audio file we need to analyze
     drwav *wavPtr = drwav_open_file(filePath);
-    if (wavPtr == NULL) {
+    if (wavPtr == nullptr) {
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Unable to open file: %s", filePath);
         return;
     }
 
     // check whether file is long enough for processing
     drwav_uint64 totalSamples = wavPtr->totalSampleCount;
-    drwav_uint64 batchSpikeHalfCount = static_cast<drwav_uint64>(batchSpikeCount / 2);
-    drwav_uint64 bsc = static_cast<drwav_uint64>(batchSpikeCount);
+    auto batchSpikeHalfCount = static_cast<drwav_uint64>(batchSpikeCount / 2);
+    auto bsc = static_cast<drwav_uint64>(batchSpikeCount);
 
-    AverageSpikeData *tmpAvr = new AverageSpikeData[spikeTrainCount];
+    auto *tmpAvr = new AverageSpikeData[spikeTrainCount];
     allocateAverageSpikeData(tmpAvr, spikeTrainCount, bsc);
 
     int sampleIndex;
     drwav_uint64 read, spikeIndexBatchHead;
-    drwav_int16 *samples = new drwav_int16[batchSpikeCount];
+    auto *samples = new drwav_int16[batchSpikeCount];
     for (int i = 0; i < spikeTrainCount; i++) {
         for (int j = 0; j < spikeCounts[i]; j++) {
             sampleIndex = inSpikeTrains[i][j];
@@ -60,7 +58,7 @@ void AverageSpikeAnalysis::process(const char *filePath, int **inSpikeTrains, co
     drwav_close(wavPtr);
 
     float min, max, divider;
-    float *tmp = new float[batchSpikeCount];
+    auto *tmp = new float[batchSpikeCount];
     // divide sum of spikes with number of spikes and find max and min
     for (int i = 0; i < spikeTrainCount; i++) {
         if (tmpAvr[i].countOfSpikes > 1) {

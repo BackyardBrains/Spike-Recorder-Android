@@ -20,13 +20,11 @@ public class Filters {
     // Low cut-off frequency for EMG
     private static final double FREQ_LOW_CUTOFF_MUSCLE = 70d;
     // High cut-off frequency for EMG
-    private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2500d;
+    private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2499d;
     // Low cut-off frequency for Neuron PRO
     private static final double FREQ_LOW_CUTOFF_NEURON_PRO = 160d;
     // High cut-off frequency for Neuron PRO
     private static final double FREQ_HIGH_CUTOFF_NEURON_PRO = 3700d;
-    // Order used the all filters
-    private static final int FILTER_ORDER = 2;
 
     /**
      * Predefined filter configured for EKG.

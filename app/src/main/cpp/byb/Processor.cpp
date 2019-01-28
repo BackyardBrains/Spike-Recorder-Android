@@ -8,13 +8,12 @@ Processor::Processor(float sampleRate, int channelCount) {
     Processor::sampleRate = sampleRate;
     Processor::channelCount = channelCount;
 
-    createFilters();
+    createFilters(channelCount);
 
     initialized = true;
 }
 
-Processor::~Processor() {
-}
+Processor::~Processor() = default;
 
 float Processor::getSampleRate() {
     return sampleRate;
@@ -23,10 +22,10 @@ float Processor::getSampleRate() {
 void Processor::setSampleRate(float sampleRate) {
     __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "SAMPLE RATE: %1f", sampleRate);
 
-    if (initialized) deleteFilters();
+    if (initialized) deleteFilters(channelCount);
     Processor::sampleRate = sampleRate;
 
-    createFilters();
+    createFilters(channelCount);
 }
 
 int Processor::getChannelCount() {
@@ -36,15 +35,26 @@ int Processor::getChannelCount() {
 void Processor::setChannelCount(int channelCount) {
     __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "CHANNEL COUNT: %1d", channelCount);
 
-    if (initialized) deleteFilters();
+    if (initialized) deleteFilters(Processor::channelCount);
     Processor::channelCount = channelCount;
 
-    createFilters();
+    createFilters(channelCount);
 }
 
-void Processor::applyFilters(int channel, short *data, int numFrames) {
-    if (lowPassFilteringEnabled) lowPassFilter[channel].filter(data, numFrames);
-    if (highPassFilteringEnabled) highPassFilter[channel].filter(data, numFrames);
+void Processor::setSampleRateAndChannelCount(float sampleRate, int channelCount) {
+    __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "SAMPLE RATE: %1f, CHANNEL COUNT: %1d", sampleRate,
+                        channelCount);
+
+    if (initialized) deleteFilters(Processor::channelCount);
+    Processor::channelCount = channelCount;
+
+    createFilters(channelCount);
+}
+
+void Processor::applyFilters(int channel, short *data, int sampleCount) {
+    if (lowPassFilteringEnabled) lowPassFilter[channel]->filter(data, sampleCount);
+    if (highPassFilteringEnabled) highPassFilter[channel]->filter(data, sampleCount);
+
 }
 
 void Processor::setFilters(float lowCutOff, float highCutOff) {
@@ -55,28 +65,34 @@ void Processor::setFilters(float lowCutOff, float highCutOff) {
     Processor::lowCutOff = lowCutOff;
     Processor::highCutOff = highCutOff;
 
-    if (initialized) deleteFilters();
-    createFilters();
+    if (initialized) deleteFilters(channelCount);
+    createFilters(channelCount);
 }
 
-void Processor::createFilters() {
-    lowPassFilter = new LowPassFilter[getChannelCount()];
-    highPassFilter = new HighPassFilter[getChannelCount()];
-    for (int i = 0; i < getChannelCount(); i++) {
+void Processor::createFilters(int channelCount) {
+    lowPassFilter = new LowPassFilterPtr[channelCount];
+    highPassFilter = new HighPassFilterPtr[channelCount];
+    for (int i = 0; i < channelCount; i++) {
         // low pass filters
-        lowPassFilter[i].initWithSamplingRate(sampleRate);
+        lowPassFilter[i] = new LowPassFilter();
+        lowPassFilter[i]->initWithSamplingRate(sampleRate);
         if (highCutOff > sampleRate / 2.0f) highCutOff = sampleRate / 2.0f;
-        lowPassFilter[i].setCornerFrequency(highCutOff);
-        lowPassFilter[i].setQ(0.5f);
+        lowPassFilter[i]->setCornerFrequency(highCutOff);
+        lowPassFilter[i]->setQ(0.5f);
         // high pass filters
-        highPassFilter[i].initWithSamplingRate(sampleRate);
-        if (lowCutOff > sampleRate / 2.0f) lowCutOff = sampleRate / 2.0f;
-        highPassFilter[i].setCornerFrequency(lowCutOff);
-        highPassFilter[i].setQ(0.5f);
+        highPassFilter[i] = new HighPassFilter();
+        highPassFilter[i]->initWithSamplingRate(sampleRate);
+        if (lowCutOff < 0) lowCutOff = 0;
+        highPassFilter[i]->setCornerFrequency(lowCutOff);
+        highPassFilter[i]->setQ(0.5f);
     }
 }
 
-void Processor::deleteFilters() {
+void Processor::deleteFilters(int channelCount) {
+    for (int i = 0; i < channelCount; i++) {
+        delete lowPassFilter[i];
+        delete highPassFilter[i];
+    }
     delete[] lowPassFilter;
     delete[] highPassFilter;
 }

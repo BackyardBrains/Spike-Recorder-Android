@@ -9,34 +9,28 @@
 #include "NotchFilter.h"
 #include "LowPassFilter.h"
 #include "HighPassFilter.h"
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <string>
 #include <android/log.h>
-
-namespace processing {
-    class AmModulationProcessor;
-}
-
 
 class AmModulationProcessor : public Processor {
 public:
     AmModulationProcessor();
 
-    ~AmModulationProcessor();
+    ~AmModulationProcessor() override;
 
-    void setSampleRate(float sampleRate);
+    void setSampleRate(float sampleRate) override;
 
-    void setChannelCount(int channelCount);
+    void setChannelCount(int channelCount) override;
 
     bool isReceivingAmSignal();
 
-    void process(const short *inSamples, short **outSamples, const int sampleCount, const int frameCount);
+    void process(const short *inSamples, short **outSamples, int sampleCount, int frameCount);
 
 private:
     static const char *TAG;
 
-    static constexpr float SAMPLE_RATE = 44100.0f;
     static constexpr int DEFAULT_CHANNEL_COUNT = 1;
     static constexpr float AM_CARRIER_FREQUENCY = 5000.0f;
     static constexpr float AM_DETECTION_CUTOFF = 6000.0f;

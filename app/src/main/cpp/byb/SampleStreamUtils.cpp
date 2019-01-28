@@ -16,19 +16,20 @@ const std::string SampleStreamUtils::HARDWARE_TYPE_MUSCLE_PRO = SampleStreamUtil
 const std::string SampleStreamUtils::SAMPLE_RATE_PREFIX = "MSF:";
 const std::string SampleStreamUtils::NUM_OF_CHANNELS_PREFIX = "MNC:";
 const std::string SampleStreamUtils::EVENT_PREFIX = "EVNT:";
+const std::string SampleStreamUtils::EXPANSION_BOARD_TYPE_PREFIX = "BRD:";
 
 bool SampleStreamUtils::isHardwareTypeMsg(std::string message) {
     return message.compare(0, HARDWARE_TYPE_PREFIX.length(), HARDWARE_TYPE_PREFIX) == 0;
 }
 
-int SampleStreamUtils::getBoardType(std::string message) {
-    if (std::strcmp(HARDWARE_TYPE_PLANT.c_str(), message.c_str()) == 0) return PLANT;
-    if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str()) == 0) return MUSCLE;
-    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART;
-    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART;
-    if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO;
-    if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO;
-    return UNKNOWN;
+int SampleStreamUtils::getHardwareType(std::string message) {
+    if (std::strcmp(HARDWARE_TYPE_PLANT.c_str(), message.c_str()) == 0) return PLANT_HARDWARE;
+    if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str()) == 0) return MUSCLE_HARDWARE;
+    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
+    if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
+    if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO_HARDWARE;
+    if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO_HARDWARE;
+    return UNKNOWN_HARDWARE;
 }
 
 bool SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(std::string message) {
@@ -58,7 +59,19 @@ bool SampleStreamUtils::isEventMsg(std::string message) {
 
 std::string SampleStreamUtils::getEventNumber(std::string message) {
     message = message.replace(0, EVENT_PREFIX.length(), "");
-    size_t found = message.find(";");
+    size_t found = message.find(';');
     if (found == std::string::npos) return message;
     return message.replace(found, message.length() - found, "");
+}
+
+bool SampleStreamUtils::isExpansionBoardTypeMsg(std::string message) {
+    return message.compare(0, EXPANSION_BOARD_TYPE_PREFIX.length(), EXPANSION_BOARD_TYPE_PREFIX) == 0;
+}
+
+int SampleStreamUtils::getExpansionBoardType(std::string message) {
+    message = message.replace(0, EXPANSION_BOARD_TYPE_PREFIX.length(), "");
+    size_t found = message.find(';');
+    if (found == std::string::npos) return std::stoi(message);
+    message = message.replace(found, message.length() - found, "");
+    return std::stoi(message);
 }

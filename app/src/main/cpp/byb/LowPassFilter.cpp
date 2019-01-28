@@ -6,9 +6,7 @@
 
 #include "LowPassFilter.h"
 
-LowPassFilter::LowPassFilter() {
-
-}
+LowPassFilter::LowPassFilter() = default;
 
 void LowPassFilter::calculateCoefficients() {
     if ((cornerFrequency != 0.0f) && (Q != 0.0f)) {

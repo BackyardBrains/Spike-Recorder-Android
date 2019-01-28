@@ -13,37 +13,32 @@
 #include <string>
 #include <android/log.h>
 
-namespace processing {
-    class SampleStreamProcessor;
-}
-
 class SampleStreamProcessor : public Processor {
 public:
-    SampleStreamProcessor(OnEventListenerListener *listener);
+    explicit SampleStreamProcessor(OnEventListenerListener *listener);
 
-    ~SampleStreamProcessor();
+    ~SampleStreamProcessor() override;
 
-    /**
-     * Set number of channels in the sample stream.
-     */
-    void setChannelCount(int channelCount);
-
-    void process(const unsigned char *inData, const int length, short **outSamples, int *outSampleCounts,
-                 int *outEventIndices, std::string *outEventLabels, int &outEventCount);
+    void
+    process(const unsigned char *inData, int length, short **outSamples, int *outSampleCounts, int *outEventIndices,
+            std::string *outEventLabels, int &outEventCount, int channelCount);
 
 private:
     static const char *TAG;
 
-    static constexpr float SAMPLE_RATE = 10000.0f;
+    static constexpr float DEFAULT_SAMPLE_RATE = 10000.0f;
+    static constexpr float EXPANSION_BOARDS_SAMPLE_RATE = 5000.0f;
     static constexpr int DEFAULT_CHANNEL_COUNT = 2;
+    static constexpr int HAMMER_JOYSTICK_CHANNEL_COUNT = 3;
+    static constexpr int ADDITIONAL_INPUTS_CHANNEL_COUNT = 4;
 
-    static constexpr int CLEANER = 0xFF;
-    static constexpr int REMOVER = 0x7F;
+    static constexpr uint CLEANER = 0xFF;
+    static constexpr uint REMOVER = 0x7F;
 
     // Max number of channels is 10
     static constexpr int MAX_CHANNELS = 10;
     // Max number of bytes we can process in one batch
-    static constexpr int MAX_BYTES = 5000;
+    static constexpr int MAX_SAMPLES = 5000;
     // We can maximally handle 6 seconds of sample data and spike can appear max every 200 ms
     static constexpr int MAX_EVENTS = 100;
 
@@ -67,6 +62,9 @@ private:
     // Processes escape sequence message and triggers appropriate listener
     void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex);
 
+    // Updates channel count and sample rate depending on the specified board type
+    void updateProcessingParameters(int expansionBoardType);
+
     // Resets all variables used for processing escape sequences
     void reset();
 
@@ -75,11 +73,13 @@ private:
     // Whether new sample is started being processed
     bool sampleStarted = false;
     // Whether channel count has changed during processing of the latest chunk of incoming data
-    bool channelCountChanged = true;
+    int prevChannelCount;
     // Holds currently processed channel
     int currentChannel;
+    // Beyond this channel index channels should not be filtered
+    int stopFilteringAfterChannelIndex = -1;
     // Holds samples from all channels processed in a single batch
-    short channels[MAX_CHANNELS][MAX_BYTES];
+    short channels[MAX_CHANNELS][MAX_SAMPLES];
     // Array of sample counters, one for every channel
     int sampleCounters[MAX_CHANNELS];
     // Whether we are inside an escape sequence or not

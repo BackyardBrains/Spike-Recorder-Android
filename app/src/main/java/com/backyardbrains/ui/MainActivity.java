@@ -2,17 +2,13 @@ package com.backyardbrains.ui;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.IdRes;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
@@ -40,12 +36,9 @@ import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ImportUtils;
 import com.backyardbrains.utils.ImportUtils.ImportResult;
-import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -96,35 +89,15 @@ public class MainActivity extends AppCompatActivity
 
     private int currentFrag = -1;
 
-    boolean showScalingInstructions = true;
-    boolean showingScalingInstructions = false;
-
-    @Retention(RetentionPolicy.SOURCE) @IntDef({
-        TransactionType.ADD, TransactionType.REPLACE, TransactionType.REMOVE
-    }) public @interface TransactionType {
-        /**
-         * Fragment is being added.
-         */
-        int ADD = 0;
-        /**
-         * Fragment is being replaced.
-         */
-        int REPLACE = 1;
-        /**
-         * Fragment is being removed.
-         */
-        int REMOVE = 2;
-    }
-
     // Bottom menu navigation listener
     private BottomNavigationView.OnNavigationItemSelectedListener bottomMenuListener = item -> {
-        loadFragment(item.getItemId());
+        loadFragment(item.getItemId(), false);
         return true;
     };
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                       Lifecycle overrides
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  LIFECYCLE IMPLEMENTATIONS
+    //==============================================
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -157,7 +130,7 @@ public class MainActivity extends AppCompatActivity
             } else {
                 ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
                     Toast.LENGTH_LONG);
-                loadFragment(RECORDINGS_VIEW);
+                loadFragment(RECORDINGS_VIEW, false);
             }
 
             setIntent(null);
@@ -165,10 +138,6 @@ public class MainActivity extends AppCompatActivity
 
         // start the audio service for reads mic data, recording and playing recorded files
         start();
-        // load settings saved from last session
-        loadSettings();
-        // registers all broadcast receivers
-        registerReceivers();
 
         super.onStart();
 
@@ -184,17 +153,13 @@ public class MainActivity extends AppCompatActivity
 
         super.onStop();
 
-        // unregisters all broadcast receivers
-        unregisterReceivers();
-        // saves settings set in this session
-        saveSettings();
         // stop audio service
         stop();
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                       OnKey methods
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  OVERRIDES
+    //==============================================
 
     @Override public void onBackPressed() {
         final int fragmentCount = getSupportFragmentManager().getBackStackEntryCount();
@@ -203,11 +168,11 @@ public class MainActivity extends AppCompatActivity
         if (frag != null && !frag.onBackPressed() && !popFragment()) finish();
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Fragment management
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    // FRAGMENT MANAGEMENT
+    //==============================================
 
-    public void loadFragment(int fragType, Object... args) {
+    public void loadFragment(int fragType, boolean popExisting, Object... args) {
         if (fragType == R.id.action_scope) {
             fragType = OSCILLOSCOPE_VIEW;
         } else if (fragType == R.id.action_recordings) {
@@ -258,19 +223,22 @@ public class MainActivity extends AppCompatActivity
                 .logContentView(new ContentViewEvent().putContentName(fragName).putContentType("Screen View"));
 
             setSelectedButton(fragType);
-            showFragment(frag, fragName, R.id.fragment_container, false, R.anim.slide_in_right, R.anim.slide_out_left,
-                R.anim.slide_in_left, R.anim.slide_out_right);
+            showFragment(frag, fragName, R.id.fragment_container, popExisting, false, R.anim.slide_in_right,
+                R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right);
         }
     }
 
-    public void showFragment(Fragment frag, String fragName, int fragContainer, boolean animate, int animEnter,
-        int animExit, int animPopEnter, int animPopExit) {
+    public void showFragment(Fragment frag, String fragName, int fragContainer, boolean popExisting, boolean animate,
+        int animEnter, int animExit, int animPopEnter, int animPopExit) {
         final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         if (animate) transaction.setCustomAnimations(animEnter, animExit, animPopEnter, animPopExit);
-        if (popFragment(fragName)) getSupportFragmentManager().popBackStack();
-        transaction.replace(fragContainer, frag, fragName);
-        transaction.addToBackStack(fragName);
-        transaction.commit();
+        final boolean popped = popFragment(fragName);
+        if (popped && popExisting) getSupportFragmentManager().popBackStack();
+        if (!popped || popExisting) {
+            transaction.replace(fragContainer, frag, fragName);
+            transaction.addToBackStack(fragName);
+            transaction.commit();
+        }
     }
 
     public boolean popFragment(String fragName) {
@@ -313,9 +281,9 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    //                      Public Methods
-    //////////////////////////////////////////////////////////////////////////////
+    //==============================================
+    //  PUBLIC METHODS
+    //==============================================
 
     public boolean isTouchSupported() {
         return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
@@ -327,32 +295,32 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
-        loadFragment(PLAY_AUDIO_VIEW, event.getFilePath());
+        loadFragment(PLAY_AUDIO_VIEW, false, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onFindSpikesEvent(FindSpikesEvent event) {
-        loadFragment(FIND_SPIKES_VIEW, event.getFilePath());
+        loadFragment(FIND_SPIKES_VIEW, false, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
-        loadFragment(ANALYSIS_VIEW, event.getFilePath(), event.getType());
+        loadFragment(ANALYSIS_VIEW, false, event.getFilePath(), event.getType());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
-        loadFragment(RECORDINGS_VIEW);
+        loadFragment(RECORDINGS_VIEW, false);
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingOptionsEvent(OpenRecordingOptionsEvent event) {
-        loadFragment(RECORDING_OPTIONS_VIEW, event.getFilePath());
+        loadFragment(RECORDING_OPTIONS_VIEW, true, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingDetailsEvent(OpenRecordingDetailsEvent event) {
-        loadFragment(RECORDING_DETAILS_VIEW, event.getFilePath());
+        loadFragment(RECORDING_DETAILS_VIEW, false, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -372,7 +340,7 @@ public class MainActivity extends AppCompatActivity
     // Initializes user interface
     private void setupUI(Bundle savedInstanceState) {
         // load initial fragment
-        if (null == savedInstanceState) loadFragment(OSCILLOSCOPE_VIEW);
+        if (null == savedInstanceState) loadFragment(OSCILLOSCOPE_VIEW, false);
 
         // init bottom menu clicks
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
@@ -437,26 +405,6 @@ public class MainActivity extends AppCompatActivity
             bottomMenu.setOnNavigationItemSelectedListener(null);
             bottomMenu.setSelectedItemId(selectedButton);
             bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
-        }
-    }
-
-    void showScalingInstructions() {
-        if (showScalingInstructions && !showingScalingInstructions) {
-            showingScalingInstructions = true;
-            AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-            alertDialog.setTitle("Instructions");
-            alertDialog.setMessage(getString(R.string.scaling_instructions));
-            alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "NO", (dialog, which) -> {
-                showScalingInstructions = false;
-                showingScalingInstructions = false;
-                saveSettings();
-                dialog.dismiss();
-            });
-            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "YES", (dialog, which) -> {
-                showingScalingInstructions = false;
-                dialog.dismiss();
-            });
-            alertDialog.show();
         }
     }
 
@@ -612,85 +560,5 @@ public class MainActivity extends AppCompatActivity
 
             analysisManager = null;
         }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS CLASS
-    // ---------------------------------------------------------------------------------------------
-    private ChangePageListener changePageListener;
-
-    private ShowScalingInstructionsListener showScalingInstructionsListener;
-
-    private class ChangePageListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            if (intent.hasExtra("page")) {
-                if (intent.hasExtra("page")) {
-                    loadFragment(intent.getIntExtra("page", 0));
-                }
-            }
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private class ShowScalingInstructionsListener extends BroadcastReceiver {
-        @Override public void onReceive(Context context, Intent intent) {
-            showScalingInstructions();
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- BROADCAST RECEIVERS TOGGLES
-    // -------------------------------------------------------------------------------------------------
-    // ----------------------------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------------------------
-    private void registerChangePageReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("BYBChangePage");
-            changePageListener = new ChangePageListener();
-            getApplicationContext().registerReceiver(changePageListener, intentFilter);
-        } else {
-            getApplicationContext().unregisterReceiver(changePageListener);
-        }
-    }
-
-    // ----------------------------------------------------------------------------------------
-    private void registerShowScalingInstructionsReceiver(boolean reg) {
-        if (reg) {
-            IntentFilter intentFilter = new IntentFilter("showScalingInstructions");
-            showScalingInstructionsListener = new ShowScalingInstructionsListener();
-            getApplicationContext().registerReceiver(showScalingInstructionsListener, intentFilter);
-        } else {
-            getApplicationContext().unregisterReceiver(showScalingInstructionsListener);
-        }
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- REGISTER RECEIVERS
-    // ---------------------------------------------------------------------------------------------
-    public void registerReceivers() {
-        registerChangePageReceiver(true);
-        registerShowScalingInstructionsReceiver(true);
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // ----------------------------------------- UNREGISTER RECEIVERS
-    // ---------------------------------------------------------------------------------------------
-    public void unregisterReceivers() {
-        registerChangePageReceiver(false);
-        registerShowScalingInstructionsReceiver(false);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////
-    //                                 Settings
-    //////////////////////////////////////////////////////////////////////////////
-
-    public void loadSettings() {
-        showScalingInstructions = PrefUtils.isShowScalingInstructions(this, MainActivity.class);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    public void saveSettings() {
-        PrefUtils.setShowScalingInstructions(this, MainActivity.class, showScalingInstructions);
     }
 }

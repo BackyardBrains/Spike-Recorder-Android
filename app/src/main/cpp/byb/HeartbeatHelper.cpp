@@ -12,8 +12,7 @@ HeartbeatHelper::HeartbeatHelper(float sampleRate, OnHeartbeatListener *listener
     setSampleRate(sampleRate);
 }
 
-HeartbeatHelper::~HeartbeatHelper() {
-}
+HeartbeatHelper::~HeartbeatHelper() = default;
 
 
 void HeartbeatHelper::beat(int sampleIndex) {

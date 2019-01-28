@@ -13,10 +13,6 @@
 #include "AnalysisUtils.h"
 #include "SignalUtils.h"
 
-namespace analysis {
-    class SpikeAnalysis;
-}
-
 class SpikeAnalysis {
 public:
     SpikeAnalysis();

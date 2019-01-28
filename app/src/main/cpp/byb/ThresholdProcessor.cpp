@@ -19,8 +19,7 @@ ThresholdProcessor::ThresholdProcessor(OnHeartbeatListener *listener) {
     init(true);
 }
 
-ThresholdProcessor::~ThresholdProcessor() {
-}
+ThresholdProcessor::~ThresholdProcessor() = default;
 
 int ThresholdProcessor::getAveragedSampleCount() {
     return averagedSampleCount;
@@ -141,7 +140,6 @@ void ThresholdProcessor::appendIncomingSamples(short **inSamples, int *inSampleC
         if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
         std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
     }
-    return;
 }
 
 void
@@ -340,7 +338,7 @@ void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, i
     short *tmpSamplesRowZero;
 
     // create new sample row
-    short *newSampleRow = new short[sampleCount]{0};
+    auto *newSampleRow = new short[sampleCount]{0};
     int copyFromIncoming, copyFromBuffer;
     copyFromBuffer = std::max(bufferSampleCount - sampleIndex, 0);
     copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);

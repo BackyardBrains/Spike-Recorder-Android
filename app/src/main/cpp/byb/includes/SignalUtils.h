@@ -5,10 +5,6 @@
 #ifndef SPIKE_RECORDER_ANDROID_SIGNALUTILS_H
 #define SPIKE_RECORDER_ANDROID_SIGNALUTILS_H
 
-namespace util {
-    class SignalUtils;
-}
-
 class SignalUtils {
 public:
     static short **deinterleaveSignal(short **outSamples, const short *inSamples, int sampleCount, int channelCount);

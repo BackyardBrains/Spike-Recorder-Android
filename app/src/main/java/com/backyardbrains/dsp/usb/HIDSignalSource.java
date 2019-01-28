@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGI;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -28,6 +29,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
+    private static final String MSG_BOARD_INQUIRY = "board:;";
     private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
 
     private ReadThread readThread;
@@ -199,6 +201,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public void write(byte[] buffer) {
+        LOGD(TAG, "HID WRITE: " + new String(buffer));
         usbBuffer.putWriteBuffer(buffer);
     }
 
@@ -216,7 +219,10 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public void checkHardwareType() {
+        // check what hardware are connected to
         write(MSG_HARDWARE_INQUIRY.getBytes());
+        // and check whether there is an expansion board connected to that hardware
+        write(MSG_BOARD_INQUIRY.getBytes());
     }
 
     // Pass UsbRequest to read thread and UsbEndpoint (in) to write thread.
