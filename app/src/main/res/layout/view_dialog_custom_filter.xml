@@ -34,9 +34,10 @@
         android:gravity="center"
         android:digits="0123456789"
         android:imeOptions="actionDone"
+        android:inputType="numberSigned"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_low_cut_off"
-        android:inputType="number"/>
+        tools:ignore="Autofill"/>
 
     <TextView
         android:id="@+id/tv_high_cut_off"
@@ -56,9 +57,10 @@
         android:digits="0123456789"
         android:gravity="center"
         android:imeOptions="actionDone"
+        android:inputType="numberSigned"
         app:layout_constraintTop_toBottomOf="@+id/tv_high_cut_off"
         app:layout_constraintRight_toRightOf="parent"
-        android:inputType="number"/>
+        tools:ignore="Autofill"/>
 
     <com.example.roman.thesimplerangebar.SimpleRangeBar
         android:id="@+id/rb_cut_offs"
