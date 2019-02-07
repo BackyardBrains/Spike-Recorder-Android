@@ -8,21 +8,18 @@ const char *ThresholdProcessor::TAG = "ThresholdProcessor";
 
 ThresholdProcessor::ThresholdProcessor(OnHeartbeatListener *listener) {
     heartbeatHelper = new HeartbeatHelper(getSampleRate(), listener);
+
+    // we need to initialize initial trigger values and local buffer because they depend on channel count
+    triggerValue = new float[getChannelCount()];
+    for (int i = 0; i < getChannelCount(); i++) {
+        triggerValue[i] = INT_MAX;
+    }
+    lastTriggeredValue = new float[getChannelCount()]{0};
+
+    init(true);
 }
 
 ThresholdProcessor::~ThresholdProcessor() {
-}
-
-void ThresholdProcessor::setSampleRate(float sampleRate) {
-    Processor::setSampleRate(sampleRate);
-
-    sampleCount = (int) (sampleRate * MAX_PROCESSED_SECONDS);
-    deadPeriodCount = (int) (sampleRate * DEAD_PERIOD_SECONDS);
-    minBpmResetPeriodCount = (int) (sampleRate * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
-}
-
-int ThresholdProcessor::getSampleCount() {
-    return sampleCount;
 }
 
 int ThresholdProcessor::getAveragedSampleCount() {
@@ -37,10 +34,16 @@ void ThresholdProcessor::setAveragedSampleCount(int averagedSampleCount) {
     ThresholdProcessor::averagedSampleCount = averagedSampleCount;
 }
 
-void ThresholdProcessor::setThreshold(int threshold) {
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setThreshold(%d)", threshold);
+void ThresholdProcessor::setSelectedChannel(int selectedChannel) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setSelectedChannel(%d)", selectedChannel);
 
-    ThresholdProcessor::triggerValue = threshold;
+    ThresholdProcessor::selectedChannel = selectedChannel;
+}
+
+void ThresholdProcessor::setThreshold(float threshold) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "setThreshold(%f)", threshold);
+
+    ThresholdProcessor::triggerValue[selectedChannel] = threshold;
 }
 
 void ThresholdProcessor::resetThreshold() {
@@ -78,16 +81,19 @@ void ThresholdProcessor::setBpmProcessing(bool processBpm) {
     ThresholdProcessor::processBpm = processBpm;
 }
 
-void
-ThresholdProcessor::process(short *outSamples, const short *inSamples, const int inSampleCount,
-                            const int *inEventIndices, const int *inEvents, const int inEventCount) {
-    if (paused) return;
-
-    // reset buffers if threshold changed
+void ThresholdProcessor::appendIncomingSamples(short **inSamples, int *inSampleCounts) {
     bool shouldReset = false;
-    if (lastTriggeredValue != triggerValue) {
+    bool shouldResetLocalBuffer = false;
+    // reset buffers if selected channel has changed
+    if (lastSelectedChannel != selectedChannel) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel has changed");
+        lastSelectedChannel = selectedChannel;
+        shouldReset = true;
+    }
+    // reset buffers if threshold changed
+    if (lastTriggeredValue[selectedChannel] != triggerValue[selectedChannel]) {
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because trigger value has changed");
-        lastTriggeredValue = triggerValue;
+        lastTriggeredValue[selectedChannel] = triggerValue[selectedChannel];
         shouldReset = true;
     }
     // reset buffers if averages sample count changed
@@ -101,28 +107,139 @@ ThresholdProcessor::process(short *outSamples, const short *inSamples, const int
         __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because sample rate has changed");
         lastSampleRate = getSampleRate();
         shouldReset = true;
+        shouldResetLocalBuffer = true;
+    }
+    // let's save last channel count so we can use it to delete all the arrays
+    int channelCount = getChannelCount();
+    int tmpLastChannelCount = lastChannelCount;
+    if (lastChannelCount != channelCount) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel count has changed");
+        lastChannelCount = channelCount;
+        shouldReset = true;
+        shouldResetLocalBuffer = true;
     }
     if (shouldReset || resetOnNextBatch) {
-        reset();
+        // reset rest of the data
+        clean(tmpLastChannelCount, shouldResetLocalBuffer);
+        init(shouldResetLocalBuffer);
         resetOnNextBatch = false;
     }
 
-    // append unfinished sample buffers with incoming samples
-    int samplesToCopy;
-    for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
-        samplesToCopy = std::min(sampleCount - unfinishedSamplesForCalculationCounts[i], inSampleCount);
-        std::copy(inSamples, inSamples + samplesToCopy,
-                  unfinishedSamplesForCalculation[i] + unfinishedSamplesForCalculationCounts[i]);
-        unfinishedSamplesForCalculationCounts[i] += samplesToCopy;
+    int tmpInSampleCount;
+    short *tmpInSamples;
+    int copyFromIncoming, copyFromBuffer;
+    int i;
+
+    // in case we don't need to average let's just add incoming samples to local buffer
+    for (i = 0; i < channelCount; i++) {
+        tmpInSampleCount = inSampleCounts[i];
+        tmpInSamples = inSamples[i];
+
+        // add samples to local buffer
+        copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
+        copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
+        if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
+        std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
     }
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER APPENDING SAMPLE BUFFERS WITH INCOMING SAMPLES");
+    return;
+}
+
+void
+ThresholdProcessor::process(short **outSamples, int *outSamplesCounts, short **inSamples, const int *inSampleCounts,
+                            const int *inEventIndices, const int *inEvents, const int inEventCount) {
+    if (paused) return;
+
+    bool shouldReset = false;
+    bool shouldResetLocalBuffer = false;
+    // reset buffers if selected channel has changed
+    if (lastSelectedChannel != selectedChannel) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel has changed");
+        lastSelectedChannel = selectedChannel;
+        shouldReset = true;
+    }
+    // reset buffers if threshold changed
+    if (lastTriggeredValue[selectedChannel] != triggerValue[selectedChannel]) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because trigger value has changed");
+        lastTriggeredValue[selectedChannel] = triggerValue[selectedChannel];
+        shouldReset = true;
+    }
+    // reset buffers if averages sample count changed
+    if (lastAveragedSampleCount != averagedSampleCount) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because last averaged sample count has changed");
+        lastAveragedSampleCount = averagedSampleCount;
+        shouldReset = true;
+    }
+    // reset buffers if sample rate changed
+    if (lastSampleRate != getSampleRate()) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because sample rate has changed");
+        lastSampleRate = getSampleRate();
+        shouldReset = true;
+        shouldResetLocalBuffer = true;
+    }
+    // let's save last channel count so we can use it to delete all the arrays
+    int channelCount = getChannelCount();
+    int tmpLastChannelCount = lastChannelCount;
+    if (lastChannelCount != channelCount) {
+        __android_log_print(ANDROID_LOG_DEBUG, TAG, "Resetting because channel count has changed");
+        lastChannelCount = channelCount;
+        shouldReset = true;
+        shouldResetLocalBuffer = true;
+    }
+    if (shouldReset || resetOnNextBatch) {
+        // reset rest of the data
+        clean(tmpLastChannelCount, shouldResetLocalBuffer);
+        init(shouldResetLocalBuffer);
+        resetOnNextBatch = false;
+    }
+
+    int tmpInSampleCount;
+    short *tmpInSamples;
+    int copyFromIncoming, copyFromBuffer;
+    int i;
+    short **tmpSamples;
+    int *tmpSamplesCounts;
+    short *tmpSamplesRow;
+    int *tmpSummedSampleCounts;
+    int *tmpSummedSamples;
+    short *tmpAveragedSamples;
+    int samplesToCopy;
+    int j, k;
+    int kStart, kEnd;
+
+    for (i = 0; i < channelCount; i++) {
+        tmpInSampleCount = inSampleCounts[i];
+        tmpInSamples = inSamples[i];
+        tmpSamples = samplesForCalculation[i];
+        tmpSamplesCounts = samplesForCalculationCounts[i];
+        tmpSummedSampleCounts = summedSamplesCounts[i];
+        tmpSummedSamples = summedSamples[i];
+
+        // append unfinished sample buffers with incoming samples
+        for (j = 0; j < samplesForCalculationCount[i]; j++) {
+            tmpSamplesRow = tmpSamples[j];
+            kStart = tmpSamplesCounts[j];
+
+            // we just need to append enough to fill the unfinished rows till end (sampleCount)
+            samplesToCopy = std::min(sampleCount - kStart, tmpInSampleCount);
+            std::copy(tmpInSamples, tmpInSamples + samplesToCopy, tmpSamplesRow + kStart);
+
+            kEnd = kStart + samplesToCopy;
+            for (k = kStart; k < kEnd; k++) {
+                // add new value and increase summed samples count for current position
+                tmpSummedSamples[k] += tmpSamplesRow[k];
+                tmpSummedSampleCounts[k]++;
+            }
+            tmpSamplesCounts[j] = kEnd;
+        }
+    }
+
 
     short currentSample;
     // loop through incoming samples and listen for the threshold hit
-    for (int i = 0; i < inSampleCount; i++) {
-        currentSample = inSamples[i];
+    for (i = 0; i < inSampleCounts[selectedChannel]; i++) {
+        currentSample = inSamples[selectedChannel][i];
 
-        // heartbeat processing
+        // heartbeat processing Can't add incoming to buffer, it's larger then buffer
         if (processBpm && triggerType == TRIGGER_ON_THRESHOLD) {
             sampleCounter++;
             lastTriggerSampleCounter++;
@@ -135,13 +252,17 @@ ThresholdProcessor::process(short *outSamples, const short *inSamples, const int
         if (triggerType == TRIGGER_ON_THRESHOLD) { // triggering by a threshold value
             if (!inDeadPeriod) {
                 // check if we hit the threshold
-                if ((triggerValue >= 0 && currentSample > triggerValue && prevSample <= triggerValue) || (
-                        triggerValue < 0 && currentSample < triggerValue && prevSample >= triggerValue)) {
+                if ((triggerValue[selectedChannel] >= 0 && currentSample > triggerValue[selectedChannel] &&
+                     prevSample <= triggerValue[selectedChannel]) ||
+                    (triggerValue[selectedChannel] < 0 && currentSample < triggerValue[selectedChannel] &&
+                     prevSample >= triggerValue[selectedChannel])) {
                     // we hit the threshold, turn on dead period of 5ms
                     inDeadPeriod = true;
 
                     // create new samples for current threshold
-                    prepareNewSamples(inSamples, inSampleCount, i);
+                    for (j = 0; j < channelCount; j++) {
+                        prepareNewSamples(inSamples[j], inSampleCounts[j], j, i);
+                    }
 
                     // heartbeat processingA
                     if (processBpm) {
@@ -160,16 +281,20 @@ ThresholdProcessor::process(short *outSamples, const short *inSamples, const int
                 }
             }
         } else if (inEventCount > 0) { // triggering on events
-            for (int j = 0; j < inEventCount; j++) {
+            for (j = 0; j < inEventCount; j++) {
                 if (triggerType == TRIGGER_ON_EVENTS) {
                     if (i == inEventIndices[j]) {
                         // create new samples for current threshold
-                        prepareNewSamples(inSamples, inSampleCount, i);
+                        for (k = 0; k < channelCount; k++) {
+                            prepareNewSamples(inSamples[k], inSampleCounts[k], k, i);
+                        }
                     }
                 } else {
                     if (i == inEventIndices[j] && triggerType == inEvents[j]) {
                         // create new samples for current threshold
-                        prepareNewSamples(inSamples, inSampleCount, i);
+                        for (k = 0; k < channelCount; k++) {
+                            prepareNewSamples(inSamples[k], inSampleCounts[k], k, i);
+                        }
                     }
                 }
             }
@@ -177,150 +302,145 @@ ThresholdProcessor::process(short *outSamples, const short *inSamples, const int
 
         prevSample = currentSample;
     }
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER THRESHOLD DETECTION AND CREATING NEW SAMPLE BUFFERS");
 
+    for (i = 0; i < channelCount; i++) {
+        tmpInSampleCount = inSampleCounts[i];
+        tmpInSamples = inSamples[i];
 
-    // add samples to local buffer
-    int copyFromIncoming, copyFromBuffer;
-    copyFromBuffer = std::max(bufferSampleCount - inSampleCount, 0);
-    copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, inSampleCount);
-    if (copyFromBuffer > 0)std::copy(buffer + inSampleCount, buffer + bufferSampleCount, buffer);
-    std::copy(inSamples, inSamples + copyFromIncoming, buffer + bufferSampleCount - copyFromIncoming);
-
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "FINISHED WITH SAVING FIRST HALF OF NEXT SAMPLE BUFFER");
-
-    // add incoming samples to calculation of averages
-    for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
-        for (int j = unfinishedSamplesForCalculationAveragedCounts[i];
-             j < unfinishedSamplesForCalculationCounts[i]; j++) {
-            // if we are calculating averagedSampleCount + 1. sample we should subtract the oldest one in the sum
-            if (summedSamplesCounts[j] >= averagedSampleCount) {
-                // subtract the value and decrease summed samples count for current position
-                if (averagedSampleCount <= i) { // we look for the oldest one in the unfinished samples
-                    summedSamples[j] -=
-                            unfinishedSamplesForCalculation[i - averagedSampleCount][j];
-                } else { // we look for the oldest one in the already collected and calculated samples
-                    summedSamples[j] -=
-                            samplesForCalculation[samplesForCalculationCount - averagedSampleCount + i][j];
-                }
-                summedSamplesCounts[j]--;
-            }
-            // add new value and increase summed samples count for current position
-            summedSamples[j] += unfinishedSamplesForCalculation[i][j];
-            summedSamplesCounts[j]++;
-            // calculate the average
-            averagedSamples[j] = (short) (summedSamples[j] / summedSamplesCounts[j]);
-        }
-        unfinishedSamplesForCalculationAveragedCounts[i] = unfinishedSamplesForCalculationCounts[i];
+        // add samples to local buffer
+        copyFromBuffer = std::max(bufferSampleCount - tmpInSampleCount, 0);
+        copyFromIncoming = std::min(bufferSampleCount - copyFromBuffer, tmpInSampleCount);
+        if (copyFromBuffer > 0) std::copy(buffer[i] + tmpInSampleCount, buffer[i] + bufferSampleCount, buffer[i]);
+        std::copy(tmpInSamples, tmpInSamples + copyFromIncoming, buffer[i] + bufferSampleCount - copyFromIncoming);
     }
 
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER ADDING INCOMING SAMPLES TO CALCULATION OF AVERAGES");
+    int *counts = new int[averagedSampleCount]{0};
+    for (i = 0; i < channelCount; i++) {
+        tmpSummedSampleCounts = summedSamplesCounts[i];
+        tmpSummedSamples = summedSamples[i];
+        tmpAveragedSamples = averagedSamples[i];
 
-    // move filled sample buffers from unfinished samples collection to finished samples collection
-    for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
-        if (unfinishedSamplesForCalculationCounts[i] == sampleCount) {
-            if (samplesForCalculationCount >= averagedSampleCount) {
-                delete[] samplesForCalculation[0];
-                if (samplesForCalculationCount > 1) {
-                    std::move(samplesForCalculation + 1, samplesForCalculation + samplesForCalculationCount,
-                              samplesForCalculation);
-                }
-                samplesForCalculationCount--;
-            }
-            samplesForCalculation[samplesForCalculationCount++] = unfinishedSamplesForCalculation[i];
-            if (unfinishedSamplesForCalculationCount > i + 1) {
-                std::move(unfinishedSamplesForCalculation + i + 1,
-                          unfinishedSamplesForCalculation + unfinishedSamplesForCalculationCount,
-                          unfinishedSamplesForCalculation + i);
-                std::move(unfinishedSamplesForCalculationCounts + i + 1,
-                          unfinishedSamplesForCalculationCounts + unfinishedSamplesForCalculationCount,
-                          unfinishedSamplesForCalculationCounts + i);
-                std::move(unfinishedSamplesForCalculationAveragedCounts + i + 1,
-                          unfinishedSamplesForCalculationAveragedCounts + unfinishedSamplesForCalculationCount,
-                          unfinishedSamplesForCalculationAveragedCounts + i);
-            }
-            unfinishedSamplesForCalculationCount--;
-            i--;
-        }
+        // calculate the averages for all channels
+        for (j = 0; j < sampleCount; j++)
+            if (tmpSummedSampleCounts[j] != 0)
+                tmpAveragedSamples[j] = (short) (tmpSummedSamples[j] / tmpSummedSampleCounts[j]);
+            else
+                tmpAveragedSamples[j] = 0;
+        std::copy(tmpAveragedSamples, tmpAveragedSamples + sampleCount, outSamples[i]);
+        outSamplesCounts[i] = sampleCount;
     }
-
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER MOVING FILLED SAMPLE BUFFERS FROM UNFINISHED TO FINISHED");
-
-    std::copy(averagedSamples, averagedSamples + sampleCount, outSamples);
-
-//    __android_log_print(ANDROID_LOG_DEBUG, TAG, "AFTER POPULATING OUTPUT");
+    delete[] counts;
 }
 
-void ThresholdProcessor::reset() {
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "reset()");
+void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, int channelIndex, int sampleIndex) {
+    short **tmpSamples = samplesForCalculation[channelIndex];
+    int *tmpSamplesCounts = samplesForCalculationCounts[channelIndex];
+    int *tmpSummedSamples = summedSamples[channelIndex];
+    int *tmpSummedSamplesCounts = summedSamplesCounts[channelIndex];
+    short *tmpSamplesRowZero;
 
-    sampleCount = static_cast<int>(getSampleRate() * MAX_PROCESSED_SECONDS);
+    // create new sample row
+    short *newSampleRow = new short[sampleCount]{0};
+    int copyFromIncoming, copyFromBuffer;
+    copyFromBuffer = std::max(bufferSampleCount - sampleIndex, 0);
+    copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);
+    if (copyFromBuffer > 0) {
+        std::copy(buffer[channelIndex] + sampleIndex, buffer[channelIndex] + bufferSampleCount, newSampleRow);
+    }
+    std::copy(inSamples, inSamples + copyFromIncoming, newSampleRow + copyFromBuffer);
+
+
+    tmpSamplesRowZero = tmpSamples[0];
+    int copySamples = copyFromBuffer + copyFromIncoming;
+    bool shouldDeleteOldestRow = samplesForCalculationCount[channelIndex] >= averagedSampleCount;
+    int len = shouldDeleteOldestRow ? tmpSamplesCounts[0] : copySamples;
+    int i;
+    for (i = 0; i < len; i++) {
+        // subtract the value and decrease summed samples count for current position
+        if (shouldDeleteOldestRow) {
+            tmpSummedSamples[i] -= tmpSamplesRowZero[i];
+            tmpSummedSamplesCounts[i]--;
+        }
+        if (i < copySamples) {
+            // add new value and increase summed samples count for current position
+            tmpSummedSamples[i] += newSampleRow[i];
+            tmpSummedSamplesCounts[i]++;
+        }
+    }
+
+    // remove oldest sample row if we're full
+    if (shouldDeleteOldestRow) {
+        // delete the oldest sample row
+        delete[] tmpSamples[0];
+        // shift rest of the filled sample rows to left
+        std::move(tmpSamples + 1, tmpSamples + samplesForCalculationCount[channelIndex], tmpSamples);
+        std::move(tmpSamplesCounts + 1, tmpSamplesCounts + samplesForCalculationCount[channelIndex], tmpSamplesCounts);
+        samplesForCalculationCount[channelIndex]--;
+    }
+    // add new sample row
+    tmpSamples[samplesForCalculationCount[channelIndex]] = newSampleRow;
+    tmpSamplesCounts[samplesForCalculationCount[channelIndex]++] = copySamples;
+}
+
+void ThresholdProcessor::init(bool resetLocalBuffer) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
+    float sampleRate = getSampleRate();
+    int channelCount = getChannelCount();
+
+    sampleCount = static_cast<int>(sampleRate * MAX_PROCESSED_SECONDS);
     bufferSampleCount = sampleCount / 2;
 
-    delete[] buffer;
-    buffer = new short[bufferSampleCount];
-    // free memory before creating new arrays
-    if (samplesForCalculationCount > 0) {
-        for (int i = 0; i < samplesForCalculationCount; i++) {
-            delete[] samplesForCalculation[i];
-        }
+    if (resetLocalBuffer)buffer = new short *[channelCount];
+    samplesForCalculationCount = new int[channelCount]{0};
+    samplesForCalculationCounts = new int *[channelCount];
+    samplesForCalculation = new short **[channelCount];
+    summedSamplesCounts = new int *[channelCount];
+    summedSamples = new int *[channelCount];
+    averagedSamples = new short *[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        if (resetLocalBuffer) buffer[i] = new short[bufferSampleCount];
+        samplesForCalculationCounts[i] = new int[averagedSampleCount]{0};
+        samplesForCalculation[i] = new short *[averagedSampleCount];
+        summedSamplesCounts[i] = new int[sampleCount]{0};
+        summedSamples[i] = new int[sampleCount]{0};
+        averagedSamples[i] = new short[sampleCount]{0};
     }
-    delete[] samplesForCalculation;
-    samplesForCalculation = new short *[averagedSampleCount];
-    samplesForCalculationCount = 0;
-    // free memory before creating new8 arrays
-    delete[] summedSamples;
-    summedSamples = new int[sampleCount]{0};
-    // free memory before creating new arrays
-    delete[] summedSamplesCounts;
-    summedSamplesCounts = new int[sampleCount]{0};
-    // free memory before creating new arrays
-    delete[] averagedSamples;
-    averagedSamples = new short[sampleCount]{0};
-    // free memory before creating new arrays
-    if (unfinishedSamplesForCalculationCount > 0) {
-        for (int i = 0; i < unfinishedSamplesForCalculationCount; i++) {
-            delete[] unfinishedSamplesForCalculation[i];
-        }
-    }
-    delete[] unfinishedSamplesForCalculation;
-    unfinishedSamplesForCalculation = new short *[UNFINISHED_SAMPLES_COUNT];
-    unfinishedSamplesForCalculationCount = 0;
-    // free memory before creating new arrays
-    delete[] unfinishedSamplesForCalculationCounts;
-    unfinishedSamplesForCalculationCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
-    // free memory before creating new arrays
-    delete[] unfinishedSamplesForCalculationAveragedCounts;
-    unfinishedSamplesForCalculationAveragedCounts = new int[UNFINISHED_SAMPLES_COUNT]{0};
 
-    deadPeriodCount = static_cast<int>(getSampleRate() * DEAD_PERIOD_SECONDS);
+    deadPeriodCount = static_cast<int>(sampleRate * DEAD_PERIOD_SECONDS);
     deadPeriodSampleCounter = 0;
     inDeadPeriod = false;
 
     prevSample = 0;
 
     heartbeatHelper->reset();
-    heartbeatHelper->setSampleRate(getSampleRate());
-    minBpmResetPeriodCount = (int) (getSampleRate() * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
+    heartbeatHelper->setSampleRate(sampleRate);
+    minBpmResetPeriodCount = (int) (sampleRate * DEFAULT_MIN_BPM_RESET_PERIOD_SECONDS);
     lastTriggerSampleCounter = 0;
     sampleCounter = 0;
 }
 
-void ThresholdProcessor::prepareNewSamples(const short *inSamples, int length, int index) {
-    int copyFromIncoming, copyFromBuffer;
-    unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] = new short[sampleCount]{0};
-    copyFromBuffer = std::max(bufferSampleCount - index, 0);
-    copyFromIncoming = std::min(sampleCount - copyFromBuffer, length);
-    if (copyFromBuffer > 0) {
-        std::copy(buffer + index, buffer + bufferSampleCount,
-                  unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount]);
+void ThresholdProcessor::clean(int channelCount, bool resetLocalBuffer) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "clean()");
+    for (int i = 0; i < channelCount; i++) {
+        if (resetLocalBuffer) delete[] buffer[i];
+        delete[] samplesForCalculationCounts[i];
+        if (samplesForCalculationCount[i] > 0) {
+            for (int j = 0; j < samplesForCalculationCount[i]; j++) {
+                delete[] samplesForCalculation[i][j];
+            }
+        }
+        delete[] samplesForCalculation[i];
+        delete[] summedSamplesCounts[i];
+        delete[] summedSamples[i];
+        delete[] averagedSamples[i];
     }
-    std::copy(inSamples, inSamples + copyFromIncoming,
-              unfinishedSamplesForCalculation[unfinishedSamplesForCalculationCount] + copyFromBuffer);
-
-    unfinishedSamplesForCalculationCounts[unfinishedSamplesForCalculationCount] =
-            copyFromBuffer + copyFromIncoming;
-    unfinishedSamplesForCalculationAveragedCounts[unfinishedSamplesForCalculationCount++] = 0;
+    if (resetLocalBuffer) delete[] buffer;
+    delete[] samplesForCalculationCount;
+    delete[] samplesForCalculationCounts;
+    delete[] samplesForCalculation;
+    delete[] summedSamplesCounts;
+    delete[] averagedSamples;
+    delete[] summedSamples;
 }
 
 void ThresholdProcessor::resetBpm() {

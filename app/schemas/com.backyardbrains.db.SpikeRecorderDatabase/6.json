@@ -1,0 +1,226 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "980545f9e4bcdd4498fb781b79215156",
+    "entities": [
+      {
+        "tableName": "spike_analysis",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `file_path` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filePath",
+            "columnName": "file_path",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_spike_analysis_file_path",
+            "unique": true,
+            "columnNames": [
+              "file_path"
+            ],
+            "createSql": "CREATE UNIQUE INDEX `index_spike_analysis_file_path` ON `${TABLE_NAME}` (`file_path`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "spikes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `analysis_id` INTEGER NOT NULL, `train_id` INTEGER NOT NULL, `channel` INTEGER NOT NULL, `index` INTEGER NOT NULL, `value` REAL NOT NULL, `time` REAL NOT NULL, FOREIGN KEY(`analysis_id`) REFERENCES `spike_analysis`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysisId",
+            "columnName": "analysis_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trainId",
+            "columnName": "train_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channel",
+            "columnName": "channel",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "index",
+            "columnName": "index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "time",
+            "columnName": "time",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_spikes_train_id_channel_index_value_time",
+            "unique": false,
+            "columnNames": [
+              "train_id",
+              "channel",
+              "index",
+              "value",
+              "time"
+            ],
+            "createSql": "CREATE  INDEX `index_spikes_train_id_channel_index_value_time` ON `${TABLE_NAME}` (`train_id`, `channel`, `index`, `value`, `time`)"
+          },
+          {
+            "name": "index_spikes_analysis_id_channel_index_value_time",
+            "unique": false,
+            "columnNames": [
+              "analysis_id",
+              "channel",
+              "index",
+              "value",
+              "time"
+            ],
+            "createSql": "CREATE  INDEX `index_spikes_analysis_id_channel_index_value_time` ON `${TABLE_NAME}` (`analysis_id`, `channel`, `index`, `value`, `time`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "spike_analysis",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "analysis_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "trains",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `analysis_id` INTEGER NOT NULL, `channel` INTEGER NOT NULL, `order` INTEGER NOT NULL, `spike_count` INTEGER NOT NULL, `lower_threshold` INTEGER NOT NULL, `upper_threshold` INTEGER NOT NULL, `lower_left` INTEGER NOT NULL, FOREIGN KEY(`analysis_id`) REFERENCES `spike_analysis`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "analysisId",
+            "columnName": "analysis_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "channel",
+            "columnName": "channel",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "spikeCount",
+            "columnName": "spike_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lowerThreshold",
+            "columnName": "lower_threshold",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "upperThreshold",
+            "columnName": "upper_threshold",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lowerLeft",
+            "columnName": "lower_left",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_trains_analysis_id_channel_order",
+            "unique": false,
+            "columnNames": [
+              "analysis_id",
+              "channel",
+              "order"
+            ],
+            "createSql": "CREATE  INDEX `index_trains_analysis_id_channel_order` ON `${TABLE_NAME}` (`analysis_id`, `channel`, `order`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "spike_analysis",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "analysis_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"980545f9e4bcdd4498fb781b79215156\")"
+    ]
+  }
+}

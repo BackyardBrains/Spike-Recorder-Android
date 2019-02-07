@@ -8,5 +8,5 @@ import android.view.MotionEvent;
  */
 public interface TouchEnabledRenderer extends GLSurfaceView.Renderer {
 
-    void onTouchEvent(MotionEvent event);
+    boolean onTouchEvent(MotionEvent event);
 }

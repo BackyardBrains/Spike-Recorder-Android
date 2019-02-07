@@ -78,6 +78,11 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
             return false;
         }
+
+        @Override public boolean onSingleTapUp(MotionEvent e) {
+            // TODO: 06-Dec-18 IMPLEMENT SHOWING OF HANDLES FOR WAVEFORM MOVING
+            return super.onSingleTapUp(e);
+        }
     };
 
     private boolean bZoomButtonsEnabled = false;
@@ -99,6 +104,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     boolean waitingForLongPress = false;
     // Whether we are currently scrolling
     boolean scrolling = true;
+    // Temporarily holds previous x value so we can distinguish long press from scroll
+    float prevX;
 
     private final Handler handler = new Handler();
     private final LongPressRunnable longPress = new LongPressRunnable() {
@@ -204,11 +211,19 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                     handler.removeCallbacks(longPress);
                 }
                 return true;
+            } else if (renderer.onTouchEvent(event)) {
+                scrolling = false;
+                if (renderer.isScrollEnabled()) renderer.endScroll();
+                if (renderer.isMeasureEnabled()) {
+                    waitingForLongPress = false;
+                    handler.removeCallbacks(longPress);
+                }
+                return true;
             } else if (scrollDetector != null && pointerCount == 1 && !scrollDetector.onTouchEvent(event)) {
                 // pass latest pointer x to long press runnable
                 if (renderer.isMeasureEnabled()) longPress.setEventX((int) event.getX());
                 // and manually handle the event.
-                switch (event.getAction()) {
+                switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         // start scrolling
                         scrolling = true;
@@ -235,6 +250,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                         }
                         break;
                     case MotionEvent.ACTION_CANCEL:
+                    case MotionEvent.ACTION_OUTSIDE:
                     case MotionEvent.ACTION_UP:
                         // reset all flags
                         scrolling = false;
@@ -250,8 +266,6 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
 
         return true;
     }
-
-    float prevX;
 
     //==============================================
     //  PRIVATE METHODS
@@ -279,9 +293,9 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                 scaling = scalingFactorOut;
             }
             if (isScalingHorizontally(zoomMode)) {
-                renderer.setGlWindowWidth((int) (renderer.getGlWindowWidth() * scaling));
+                renderer.setGlWindowWidth(renderer.getGlWindowWidth() * scaling);
             } else {
-                renderer.setGlWindowHeight((int) (renderer.getGlWindowHeight() * scaling));
+                renderer.setWaveformScaleFactor(scaling);
             }
         }
     }

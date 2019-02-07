@@ -2,10 +2,12 @@ package com.backyardbrains.analysis;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.audio.AudioFile;
-import com.backyardbrains.data.persistance.entity.Spike;
+import com.backyardbrains.db.entity.Spike;
+import com.backyardbrains.dsp.audio.AudioFile;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -23,29 +25,31 @@ class FindSpikesAnalysis extends BaseAnalysis<Spike> {
 
     @Nullable @Override public Spike[] process() throws Exception {
         final long totalSamples = AudioUtils.getSampleCount(audioFile.length());
+        final int channelCount = audioFile.channelCount();
         int maxSpikes = (int) (totalSamples / 10);
-        short[] valuesPos = new short[maxSpikes];
-        int[] indicesPos = new int[maxSpikes];
-        float[] timesPos = new float[maxSpikes];
-        short[] valuesNeg = new short[maxSpikes];
-        int[] indicesNeg = new int[maxSpikes];
-        float[] timesNeg = new float[maxSpikes];
 
-        int[] counts =
+        short[][] valuesPos = new short[channelCount][maxSpikes];
+        int[][] indicesPos = new int[channelCount][maxSpikes];
+        float[][] timesPos = new float[channelCount][maxSpikes];
+        short[][] valuesNeg = new short[channelCount][maxSpikes];
+        int[][] indicesNeg = new int[channelCount][maxSpikes];
+        float[][] timesNeg = new float[channelCount][maxSpikes];
+
+        int[][] counts =
             JniUtils.findSpikes(audioFile.getAbsolutePath(), valuesPos, indicesPos, timesPos, valuesNeg, indicesNeg,
-                timesNeg, maxSpikes);
-        int posSize = counts[0];
-        int negSize = counts[1];
+                timesNeg, channelCount, maxSpikes);
 
-        final Spike[] allSpikes = new Spike[posSize + negSize];
-        int counter = 0;
-        for (int i = 0; i < posSize; i++) {
-            allSpikes[counter++] = new Spike(valuesPos[i], indicesPos[i], timesPos[i]);
-        }
-        for (int i = 0; i < negSize; i++) {
-            allSpikes[counter++] = new Spike(valuesNeg[i], indicesNeg[i], timesNeg[i]);
+        List<Spike> spikeList = new ArrayList<>();
+        for (int channel = 0; channel < channelCount; channel++) {
+            for (int i = 0; i < counts[channel][0]; i++) {
+                spikeList.add(new Spike(channel, valuesPos[channel][i], indicesPos[channel][i], timesPos[channel][i]));
+            }
+            for (int i = 0; i < counts[channel][1]; i++) {
+                spikeList.add(new Spike(channel, valuesNeg[channel][i], indicesNeg[channel][i], timesNeg[channel][i]));
+            }
         }
 
-        return allSpikes;
+        Spike[] allSpikes = new Spike[spikeList.size()];
+        return spikeList.toArray(allSpikes);
     }
 }

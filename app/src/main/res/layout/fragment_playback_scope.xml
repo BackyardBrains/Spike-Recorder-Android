@@ -5,17 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.backyardbrains.view.ThresholdHandle
-        android:id="@+id/threshold_handle"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="invisible"
-        app:byb_color="@color/red"
-        app:byb_orientation="right"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+    <!--<com.backyardbrains.view.ThresholdHandle-->
+        <!--android:id="@+id/threshold_handle"-->
+        <!--android:layout_width="0dp"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:visibility="invisible"-->
+        <!--app:byb_color="@color/red"-->
+        <!--app:byb_orientation="right"-->
+        <!--app:layout_constraintLeft_toLeftOf="parent"-->
+        <!--app:layout_constraintTop_toTopOf="parent"-->
+        <!--app:layout_constraintRight_toRightOf="parent"-->
+        <!--app:layout_constraintBottom_toBottomOf="parent"/>-->
 
     <ImageButton
         android:id="@+id/ibtn_threshold"
@@ -36,7 +36,7 @@
         android:layout_height="41dp"
         android:layout_marginTop="@dimen/activity_vertical_margin_half"
         android:background="@drawable/circle_gray_white"
-        android:src="@drawable/ic_trigger_threshold_black_24dp"
+        app:srcCompat="@drawable/ic_trigger_threshold_black_24dp"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_threshold"
         app:layout_constraintTop_toBottomOf="@+id/ibtn_threshold"
         tools:ignore="ContentDescription"/>
@@ -135,7 +135,7 @@
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
         android:textColor="@color/green"
-        android:drawableStart="@drawable/circle_cyan"
+        android:drawableStart="@drawable/circle_green"
         app:layout_constraintLeft_toLeftOf="@+id/tv_rms"
         app:layout_constraintBottom_toTopOf="@+id/tv_spike_count1"
         app:layout_constraintRight_toRightOf="@+id/tv_rms"

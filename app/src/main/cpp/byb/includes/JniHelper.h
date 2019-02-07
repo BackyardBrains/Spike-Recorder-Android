@@ -9,7 +9,7 @@
 #include <jni.h>
 
 #define JNI_HELPER_CLASS_NAME "com/backyardbrains/utils/JniHelper"
-#define ABSTRACT_USB_SAMPLE_SOURCE_CLASS_NAME "com/backyardbrains/usb/AbstractUsbSampleSource"
+#define ABSTRACT_USB_SAMPLE_SOURCE_CLASS_NAME "com/backyardbrains/dsp/usb/AbstractUsbSignalSource"
 
 class JniHelper {
 public:

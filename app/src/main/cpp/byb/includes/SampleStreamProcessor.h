@@ -28,21 +28,18 @@ public:
      */
     void setChannelCount(int channelCount);
 
-    void process(const unsigned char *inData, const int size, short *outSamples, int *outEventIndices,
-                 std::string *outEventLabels, int *outCounts);
+    void process(const unsigned char *inData, const int length, short **outSamples, int *outSampleCounts,
+                 int *outEventIndices, std::string *outEventLabels, int &outEventCount);
 
 private:
     static const char *TAG;
 
     static constexpr float SAMPLE_RATE = 10000.0f;
+    static constexpr int DEFAULT_CHANNEL_COUNT = 2;
 
     static constexpr int CLEANER = 0xFF;
     static constexpr int REMOVER = 0x7F;
 
-    // For now we only process first channel
-    static constexpr int CHANNEL_INDEX = 0;
-    // By default we have 2 channels
-    static constexpr int DEFAULT_CHANNEL_COUNT = 2;
     // Max number of channels is 10
     static constexpr int MAX_CHANNELS = 10;
     // Max number of bytes we can process in one batch
@@ -77,8 +74,6 @@ private:
     bool frameStarted = false;
     // Whether new sample is started being processed
     bool sampleStarted = false;
-    // Number of channels
-    int channelCount = DEFAULT_CHANNEL_COUNT;
     // Whether channel count has changed during processing of the latest chunk of incoming data
     bool channelCountChanged = true;
     // Holds currently processed channel

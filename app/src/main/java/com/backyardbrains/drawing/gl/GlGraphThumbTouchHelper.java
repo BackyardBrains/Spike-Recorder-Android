@@ -12,11 +12,11 @@ public class GlGraphThumbTouchHelper {
 
     private static final int NONE = -1;
 
-    private final List<Rect> graphThumbs = new ArrayList<>();
+    private final List<Rect> touchableAreas = new ArrayList<>();
 
     private int height;
     private int selectedGraphThumb;
-    private int tmpSelectedGraphThumb = NONE;
+    private int tmpSelectedTouchableArea = NONE;
 
     /**
      * Sets the height of the drawable surface which is necessary for helper to calculate position correctly.
@@ -26,47 +26,47 @@ public class GlGraphThumbTouchHelper {
     }
 
     /**
-     * Registers a single touchable graph thumb.
+     * Registers a single touchable area.
      */
-    public void registerGraphThumb(@NonNull Rect rect) {
-        graphThumbs.add(rect);
+    public void registerTouchableArea(@NonNull Rect rect) {
+        touchableAreas.add(rect);
     }
 
     /**
      * Returns index of the currently selected graph thumb.
      */
-    public int getSelectedGraphThumb() {
+    public int getSelectedTouchableArea() {
         return selectedGraphThumb;
     }
 
     /**
-     * Resets registered thumbs.
+     * Resets registered touchable areas.
      */
-    public void resetGraphThumbs() {
-        graphThumbs.clear();
+    public void resetTouchableAreas() {
+        touchableAreas.clear();
     }
 
     /**
-     * Handles specified {@code event} by checking whether any of the registered graph thumbs has been clicked and
-     * returns {@code true} if it was, {@code false} otherwise.
+     * Handles specified {@code event} by checking whether any of the registered touchable areas has been clicked and
+     * returns {@code true} if it was. It returns {@code false} otherwise.
      */
     public boolean onTouch(MotionEvent event) {
         if (event.getActionIndex() == 0) {
-            int selected = getSelectedGraphThumb(event.getX(), event.getY());
+            int selected = getSelectedTouchableArea(event.getX(), event.getY());
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
-                    tmpSelectedGraphThumb = selected;
+                    tmpSelectedTouchableArea = selected;
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (selected == NONE || selected != tmpSelectedGraphThumb) tmpSelectedGraphThumb = NONE;
+                    if (selected == NONE || selected != tmpSelectedTouchableArea) tmpSelectedTouchableArea = NONE;
                     break;
                 case MotionEvent.ACTION_CANCEL:
                 case MotionEvent.ACTION_OUTSIDE:
-                    tmpSelectedGraphThumb = NONE;
+                    tmpSelectedTouchableArea = NONE;
                     break;
                 case MotionEvent.ACTION_UP:
                     // valid click!!!
-                    if (tmpSelectedGraphThumb != NONE && selected == tmpSelectedGraphThumb) {
+                    if (tmpSelectedTouchableArea != NONE && selected == tmpSelectedTouchableArea) {
                         selectedGraphThumb = selected;
                         return true;
                     }
@@ -77,18 +77,19 @@ public class GlGraphThumbTouchHelper {
         return false;
     }
 
-    // If one of the graph thumbs is touched thumb index is returned, -1 is returned otherwise.
-    private int getSelectedGraphThumb(float x, float y) {
-        for (int i = 0; i < graphThumbs.size(); i++) {
-            if (graphThumbs.get(i) != null && graphThumbs.get(i).inside(x, height - y)) return i;
+    // If one of the touchable areas is touched, area index is returned, -1 is returned otherwise.
+    private int getSelectedTouchableArea(float x, float y) {
+        for (int i = 0; i < touchableAreas.size(); i++) {
+            if (touchableAreas.get(i) != null && touchableAreas.get(i).inside(x, height - y)) return i;
         }
 
         return NONE;
     }
 
     /**
-     * Represents position and size of a graph thumb within the surface view drawable. Renderers should register all
-     * touchable thumbs through {@link #registerGraphThumb(Rect)} passing instance of this class a thumb representation.
+     * Represents position and size of a touchable area within the surface view drawable. Renderers should register all
+     * touchable areas through {@link #registerTouchableArea(Rect)} passing instance of this class as area
+     * representation.
      */
     public static class Rect {
         public float x;
