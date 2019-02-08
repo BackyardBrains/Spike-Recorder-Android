@@ -32,10 +32,10 @@ public class Colors {
         new float[][] { Colors.CHANNEL_1, Colors.CHANNEL_2, Colors.CHANNEL_3, Colors.CHANNEL_4, Colors.CHANNEL_5 };
     // marker colors
     private static final @Size(4) float[] MARKER_0 = new float[] { .847f, .706f, .906f, 1f };
-    private static final @Size(4) float[] MARKER_1 = new float[] { 1f, .314f, 0f, 1f };
-    private static final @Size(4) float[] MARKER_2 = new float[] { 1f, .925f, .58f, 1f };
-    private static final @Size(4) float[] MARKER_3 = new float[] { 1f, .682f, .682f, 1f };
-    private static final @Size(4) float[] MARKER_4 = new float[] { .69f, .898f, .486f, 1f };
+    private static final @Size(4) float[] MARKER_1 = new float[] { .69f, .898f, .486f, 1f };
+    private static final @Size(4) float[] MARKER_2 = new float[] { 1f, .314f, 0f, 1f };
+    private static final @Size(4) float[] MARKER_3 = new float[] { 1f, .925f, .58f, 1f };
+    private static final @Size(4) float[] MARKER_4 = new float[] { 1f, .682f, .682f, 1f };
     private static final @Size(4) float[] MARKER_5 = new float[] { .706f, .847f, .906f, 1f };
     private static final @Size(4) float[] MARKER_6 = new float[] { .757f, .855f, .839f, 1f };
     private static final @Size(4) float[] MARKER_7 = new float[] { .675f, .82f, .914f, 1f };
