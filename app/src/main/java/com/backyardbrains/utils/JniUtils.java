@@ -1,5 +1,7 @@
 package com.backyardbrains.utils;
 
+import com.backyardbrains.drawing.FftDrawData;
+import com.backyardbrains.dsp.FftData;
 import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 
@@ -52,14 +54,20 @@ public class JniUtils {
 
     public static native void processThreshold(SamplesWithEvents out, SamplesWithEvents in, boolean averageSamples);
 
-    public static native void prepareForDrawing(SamplesWithEvents out, short[][] samples, int frameCount,
+    public static native void processFft(FftData out, SamplesWithEvents in);
+
+    public static native void prepareForSignalDrawing(SamplesWithEvents out, short[][] samples, int frameCount,
         int[] eventIndices, int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
 
     public static native void prepareForThresholdDrawing(SamplesWithEvents out, short[][] samples, int sampleCount,
         int[] eventIndices, int eventCount, int fromSample, int toSample, int drawSurfaceWidth);
 
-    public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos, float[][] timesPos,
-        short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount, int maxSpikes);
+    public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawSurfaceWidth,
+        int drawSurfaceHeight);
+
+    public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos,
+        float[][] timesPos, short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount,
+        int maxSpikes);
 
     public static native void autocorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
         int[][] analysis, int analysisBinCount);

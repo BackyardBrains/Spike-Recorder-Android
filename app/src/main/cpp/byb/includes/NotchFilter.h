@@ -7,21 +7,26 @@
 
 #include "FilterBase.h"
 
-class NotchFilter : public FilterBase {
-public:
-    NotchFilter();
+namespace backyardbrains {
 
-    void calculateCoefficients();
+    namespace filters {
 
-    void setCenterFrequency(float newCenterFrequency);
+        class NotchFilter : public FilterBase {
+        public:
+            NotchFilter();
 
-    void setQ(float newQ);
+            void calculateCoefficients();
 
-protected:
-    float centerFrequency;
-    float Q;
-private:
-};
+            void setCenterFrequency(float newCenterFrequency);
 
+            void setQ(float newQ);
+
+        protected:
+            float centerFrequency;
+            float Q;
+        private:
+        };
+    }
+}
 
 #endif //SPIKE_RECORDER_ANDROID_NOTCHFILTER_H

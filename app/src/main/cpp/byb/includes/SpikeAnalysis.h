@@ -13,29 +13,34 @@
 #include "AnalysisUtils.h"
 #include "SignalUtils.h"
 
-class SpikeAnalysis {
-public:
-    SpikeAnalysis();
+namespace backyardbrains {
 
-    ~SpikeAnalysis();
+    namespace analysis {
 
-    void findSpikes(const char *filePath, short **outValuesPos, int **outIndicesPos, float **outTimesPos,
-                    short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int channelCount,
-                    int *outPosCounts, int *outNegCounts);
+        class SpikeAnalysis {
+        public:
+            SpikeAnalysis();
 
-private:
-    static const char *TAG;
+            ~SpikeAnalysis();
 
-    static constexpr float BUFFER_SIZE_IN_SECS = 12.0f;
-    static constexpr float MIN_VALID_FILE_LENGTH_IN_SECS = 0.2f;
-    static constexpr float BIN_COUNT = 200.0f;
+            void findSpikes(const char *filePath, short **outValuesPos, int **outIndicesPos, float **outTimesPos,
+                            short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int channelCount,
+                            int *outPosCounts, int *outNegCounts);
 
-    static constexpr int SCHMITT_ON = 1;
-    static constexpr int SCHMITT_OFF = 2;
-    static constexpr float KILL_INTERVAL = 0.005f; // 5ms
+        private:
+            static const char *TAG;
 
-    long long currentTimeInMilliseconds();
-};
+            static constexpr float BUFFER_SIZE_IN_SECS = 12.0f;
+            static constexpr float MIN_VALID_FILE_LENGTH_IN_SECS = 0.2f;
+            static constexpr float BIN_COUNT = 200.0f;
 
+            static constexpr int SCHMITT_ON = 1;
+            static constexpr int SCHMITT_OFF = 2;
+            static constexpr float KILL_INTERVAL = 0.005f; // 5ms
+
+            long long currentTimeInMilliseconds();
+        };
+    }
+}
 
 #endif //SPIKE_RECORDER_ANDROID_SPIKEANALYSIS_H

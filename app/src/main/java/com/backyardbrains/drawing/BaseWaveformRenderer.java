@@ -44,19 +44,22 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private static final Object lock = new Object();
 
     private final ProcessingBuffer processingBuffer;
-    private final SparseArray<String> eventsBuffer;
 
     private final AtomicBoolean autoScale = new AtomicBoolean();
 
     @SuppressWarnings("WeakerAccess") SamplesWithEvents samplesWithEvents;
+    private FftDrawData fftDrawData;
 
-    private DrawMultichannelBuffer samplesBuffer =
-        new DrawMultichannelBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
-    private DrawMultichannelBuffer averagedSamplesBuffer =
-        new DrawMultichannelBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
+    private MultichannelSignalDrawBuffer samplesDrawBuffer =
+        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
+    private MultichannelSignalDrawBuffer averagedSamplesDrawBuffer =
+        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
             SignalProcessor.DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
-    private int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
-    private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
+    // Holds all the events which should be drawn to surface.
+    // Maps index to which the event should be drawn to the event name.
+    private final SparseArray<String> eventDrawBuffer;
+    private FftDrawBuffer fftDrawBuffer =
+        new FftDrawBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT, SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
 
     private int surfaceWidth;
     private int surfaceHeight;
@@ -68,6 +71,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private float[] tempWaveformScaleFactors;
     private float[] waveformPositions;
     private float[] tempWaveformPositions;
+    // Used for temporary storing event indices while copying data from processing buffer and it's preparation for drawing
+    private final int[] eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
+    // Used for temporary storing event names while copying data from processing buffer and it's preparation for drawing
+    private final String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private float scaleX;
     private float scaleY;
 
@@ -165,7 +172,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
         processingBuffer = ProcessingBuffer.get();
         processingBuffer.setOnSignalPropertyChangeListener(this);
-        eventsBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
+        eventDrawBuffer = new SparseArray<>(EventUtils.MAX_EVENT_COUNT);
+        fftDrawData = new FftDrawData();
 
         resetWaveformScaleFactorsAndPositions(channelCount);
     }
@@ -190,6 +198,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         if (this.sampleRate < 0 || this.sampleRate == sampleRate) return;
 
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
+        synchronized (lock) {
+            fftDrawBuffer = new FftDrawBuffer(SignalProcessor.getProcessedFftWindowCount(),
+                SignalProcessor.getProcessedFftWindowSize());
+        }
+
         final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
         final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
 
@@ -223,13 +236,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         LOGD(TAG, "setChannelCount(" + channelCount + ")");
 
         synchronized (lock) {
-            resetLocalBuffers(channelCount);
+            resetLocalSignalBuffers(channelCount);
             resetWaveformScaleFactorsAndPositions(channelCount);
 
             int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount());
-            samplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
+            samplesDrawBuffer = new MultichannelSignalDrawBuffer(channelCount, frameSize);
             frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
-            averagedSamplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
+            averagedSamplesDrawBuffer = new MultichannelSignalDrawBuffer(channelCount, frameSize);
 
             // let's reset selected channel to 0
             setSelectedChannel(0);
@@ -284,7 +297,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     public void resetAveragedSignal() {
         int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
-        averagedSamplesBuffer = new DrawMultichannelBuffer(channelCount, frameSize);
+        averagedSamplesDrawBuffer = new MultichannelSignalDrawBuffer(channelCount, frameSize);
     }
 
     /**
@@ -456,7 +469,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         // set surface size dirty so we can recalculate scale
         surfaceSizeDirty = true;
 
-        resetLocalBuffers(channelCount);
+        resetLocalSignalBuffers(channelCount);
 
         gl.glViewport(0, 0, width, height);
         reshape(gl, surfaceWidth);
@@ -481,16 +494,19 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // copy samples, averaged samples and events to local buffers
             final int copiedEventsCount =
-                processingBuffer.copy(samplesBuffer, averagedSamplesBuffer, eventIndices, eventNames);
+                processingBuffer.copy(samplesDrawBuffer, averagedSamplesDrawBuffer, eventIndices, eventNames,
+                    fftDrawBuffer);
+
             // select buffer for drawing
-            DrawMultichannelBuffer tmpSampleBuffer = signalAveraging ? averagedSamplesBuffer : samplesBuffer;
+            MultichannelSignalDrawBuffer tmpSampleDrawBuffer =
+                signalAveraging ? averagedSamplesDrawBuffer : samplesDrawBuffer;
 
             // it's possible that channel counts of incoming samples and draw buffer are out of sync because this is
             // executed in background thread so if that's the case, let's just skip this draw cycle
-            if (tmpSampleBuffer.getChannelCount() != samplesWithEvents.channelCount) return;
+            if (tmpSampleDrawBuffer.getChannelCount() != samplesWithEvents.channelCount) return;
 
             // auto-scale before drawing if necessary
-            if (autoScale.compareAndSet(true, false)) autoScale(tmpSampleBuffer.getChannel(selectedChannel));
+            if (autoScale.compareAndSet(true, false)) autoScale(tmpSampleDrawBuffer.getChannel(selectedChannel));
 
             final boolean surfaceSizeDirty = this.surfaceSizeDirty;
             final int surfaceWidth = this.surfaceWidth;
@@ -505,20 +521,24 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             // let's reset dirty flags right away
             this.glWindowWidthDirty = false;
 
-            final int frameCount = tmpSampleBuffer.getFrameCount();
+            final int frameCount = tmpSampleDrawBuffer.getFrameCount();
             final long lastSampleIndex = processingBuffer.getLastSampleIndex();
 
             // calculate necessary drawing parameters
             int drawStartIndex = (int) Math.max(frameCount - glWindowWidth, -glWindowWidth);
             if (drawStartIndex + glWindowWidth > frameCount) drawStartIndex = (int) (frameCount - glWindowWidth);
             final int drawEndIndex = (int) Math.min(drawStartIndex + glWindowWidth, frameCount);
-
-            // construct waveform vertices and populate eventIndices buffer
-            getWaveformVertices(samplesWithEvents, tmpSampleBuffer.getBuffer(), frameCount, eventIndices,
-                copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth);
-            getEvents(samplesWithEvents, eventNames, copiedEventsCount, eventsBuffer);
-
             final float drawnSamplesCount = samplesWithEvents.sampleCountM[0] * .5f;
+
+            // prepare signal data for drawing
+            prepareSignalForDrawing(samplesWithEvents, tmpSampleDrawBuffer.getBuffer(), frameCount, eventIndices,
+                copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth);
+            // prepare events for drawing
+            addEventsToEventDrawBuffer(samplesWithEvents, eventNames, copiedEventsCount, eventDrawBuffer);
+            // prepare FFT data for drawing
+            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
+            //prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), (int) drawnSamplesCount);
+
             // calculate scale x and scale y
             if (surfaceSizeDirty || glWindowWidthDirty) {
                 scaleX = drawnSamplesCount > 0 ? glWindowWidth / drawnSamplesCount : 1f;
@@ -536,10 +556,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             gl.glLoadIdentity();
 
             // draw on surface
-            draw(gl, tmpSampleBuffer.getBuffer(), selectedChannel, samplesWithEvents.samplesM,
-                samplesWithEvents.sampleCountM, eventsBuffer, surfaceWidth, surfaceHeight, glWindowWidth,
-                tempWaveformScaleFactors, tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX, scaleY,
-                lastSampleIndex);
+            draw(gl, tmpSampleDrawBuffer.getBuffer(), selectedChannel, samplesWithEvents.samplesM,
+                samplesWithEvents.sampleCountM, eventDrawBuffer, fftDrawData, surfaceWidth, surfaceHeight,
+                glWindowWidth, tempWaveformScaleFactors, tempWaveformPositions, drawStartIndex, drawEndIndex, scaleX,
+                scaleY, lastSampleIndex);
 
             // draw average triggering line
             if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
@@ -558,13 +578,25 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         }
     }
 
-    protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[][] samples,
+    /**
+     * Forwards preparing of incoming signal data for drawing to C++ code.
+     *
+     * @param samplesWithEvents Signal data with events prepared for drawing.
+     * @param samples Incoming signal data.
+     * @param frameCount Number of incoming signal frames.
+     * @param eventIndices Indices of events mapped to incoming signal.
+     * @param eventCount Number of events.
+     * @param fromSample Index of the first signal sample to take into account.
+     * @param toSample Index of the last signal sample to take into account.
+     * @param drawSurfaceWidth Width of the surface signal is being drawn to.
+     */
+    protected void prepareSignalForDrawing(@NonNull SamplesWithEvents samplesWithEvents, @NonNull short[][] samples,
         int frameCount, @NonNull int[] eventIndices, int eventCount, int fromSample, int toSample,
         int drawSurfaceWidth) {
         //benchmark.start();
         try {
-            JniUtils.prepareForDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
-                toSample, drawSurfaceWidth);
+            JniUtils.prepareForSignalDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount,
+                fromSample, toSample, drawSurfaceWidth);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -572,22 +604,48 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         //benchmark.end();
     }
 
-    protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames, int eventCount,
-        @NonNull SparseArray<String> eventsBuffer) {
-        eventsBuffer.clear();
+    /**
+     * Adds events to event draw buffer and calculates their offset in regard to already drawn events.
+     *
+     * @param samplesWithEvents Holds events and their indices mapped to incoming signal sample batch.
+     * @param eventNames Names of the events processed with the incoming signal sample batch.
+     * @param eventCount Number of the processed events.
+     * @param eventDrawBuffer Event draw buffer to which processed event should be appended.
+     */
+    protected void addEventsToEventDrawBuffer(@NonNull SamplesWithEvents samplesWithEvents,
+        @NonNull String[] eventNames, int eventCount, @NonNull SparseArray<String> eventDrawBuffer) {
+        eventDrawBuffer.clear();
         int indexBase = eventCount - samplesWithEvents.eventCount;
         if (indexBase >= 0) {
             for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                eventsBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
+                eventDrawBuffer.put(samplesWithEvents.eventIndices[i], eventNames[indexBase + i]);
             }
         }
     }
 
+    /**
+     * Forwards preparing of incoming signal FFT data for FFT drawing to C++ code.
+     *
+     * @param fftDrawData FFT data prepared for drawing.
+     * @param fft Incoming FFT data.
+     * @param drawSurfaceWidth Width of the surface FFT data is being drawn to.
+     */
+    private void prepareFftForDrawing(@NonNull FftDrawData fftDrawData, @NonNull float[][] fft, int drawSurfaceWidth) {
+        //benchmark.start();
+        try {
+            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawSurfaceWidth, (int) MAX_GL_VERTICAL_SIZE);
+        } catch (Exception e) {
+            LOGE(TAG, e.getMessage());
+            Crashlytics.logException(e);
+        }
+        //benchmark.end();
+    }
+
     abstract protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
         @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex);
+        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth,
+        float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX,
+        float scaleY, long lastFrameIndex);
 
     private void reshape(GL10 gl, float drawnSamplesCount) {
         gl.glMatrixMode(GL10.GL_PROJECTION);
@@ -602,12 +660,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         return null;
     }
 
-    private void resetLocalBuffers(int channelCount) {
+    private void resetLocalSignalBuffers(int channelCount) {
         int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
         if (samplesWithEvents == null || samplesWithEvents.channelCount != channelCount
             || samplesWithEvents.maxSamplesPerChannel < maxSamplesPerChannel) {
-            LOGD(TAG, "CHANNEL COUNT: " + channelCount);
-            LOGD(TAG, "MAX SAMPLES PER CHANNEL: " + maxSamplesPerChannel);
             samplesWithEvents = new SamplesWithEvents(channelCount, maxSamplesPerChannel);
         }
     }

@@ -42,7 +42,7 @@ public class CircularShortBuffer {
     /**
      * Gets a single short return or -1 if no data is available.
      */
-    public synchronized int get() {
+    public synchronized short get() {
         if (available == 0) {
             return -1;
         }
@@ -150,7 +150,7 @@ public class CircularShortBuffer {
     /**
      * Return the first short a <b>get</b> would return or -1 if no data is available.
      */
-    public synchronized int peek() {
+    public synchronized short peek() {
         return available > 0 ? buffer[idxGet] : -1;
     }
 

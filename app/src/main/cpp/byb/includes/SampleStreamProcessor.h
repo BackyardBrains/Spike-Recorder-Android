@@ -13,98 +13,104 @@
 #include <string>
 #include <android/log.h>
 
-class SampleStreamProcessor : public Processor {
-public:
-    explicit SampleStreamProcessor(OnEventListenerListener *listener);
+namespace backyardbrains {
 
-    ~SampleStreamProcessor() override;
+    namespace processing {
 
-    void
-    process(const unsigned char *inData, int length, short **outSamples, int *outSampleCounts, int *outEventIndices,
-            std::string *outEventLabels, int &outEventCount, int channelCount);
+        class SampleStreamProcessor : public Processor {
+        public:
+            explicit SampleStreamProcessor(backyardbrains::utils::OnEventListenerListener *listener);
 
-private:
-    static const char *TAG;
+            ~SampleStreamProcessor() override;
 
-    static constexpr float DEFAULT_SAMPLE_RATE = 10000.0f;
-    static constexpr float EXPANSION_BOARDS_SAMPLE_RATE = 5000.0f;
-    static constexpr int DEFAULT_CHANNEL_COUNT = 2;
-    static constexpr int HAMMER_JOYSTICK_CHANNEL_COUNT = 3;
-    static constexpr int ADDITIONAL_INPUTS_CHANNEL_COUNT = 4;
+            void
+            process(const unsigned char *inData, int length, short **outSamples, int *outSampleCounts,
+                    int *outEventIndices,
+                    std::string *outEventLabels, int &outEventCount, int channelCount);
 
-    static constexpr uint CLEANER = 0xFF;
-    static constexpr uint REMOVER = 0x7F;
+        private:
+            static const char *TAG;
 
-    // Max number of channels is 10
-    static constexpr int MAX_CHANNELS = 10;
-    // Max number of bytes we can process in one batch
-    static constexpr int MAX_SAMPLES = 5000;
-    // We can maximally handle 6 seconds of sample data and spike can appear max every 200 ms
-    static constexpr int MAX_EVENTS = 100;
+            static constexpr float DEFAULT_SAMPLE_RATE = 10000.0f;
+            static constexpr float EXPANSION_BOARDS_SAMPLE_RATE = 5000.0f;
+            static constexpr int DEFAULT_CHANNEL_COUNT = 2;
+            static constexpr int HAMMER_JOYSTICK_CHANNEL_COUNT = 3;
+            static constexpr int ADDITIONAL_INPUTS_CHANNEL_COUNT = 4;
 
-    // Length of escape sequence start and sequence end
-    static constexpr int ESCAPE_SEQUENCE_START_END_LENGTH = 6;
-    // Message cannot be longer than 64 bytes
-    static constexpr int EVENT_MESSAGE_LENGTH = 64;
-    // Escape sequence cannot be longer than sequence start + 64 + sequence end
-    static constexpr int MAX_SEQUENCE_LENGTH =
-            ESCAPE_SEQUENCE_START_END_LENGTH + EVENT_MESSAGE_LENGTH + ESCAPE_SEQUENCE_START_END_LENGTH;
-    // Array of bytes which represent start of an escape sequence
-    static const unsigned char ESCAPE_SEQUENCE_START[];
-    // Array of bytes which represent end of an escape sequence
-    static const unsigned char ESCAPE_SEQUENCE_END[];
+            static constexpr uint CLEANER = 0xFF;
+            static constexpr uint REMOVER = 0x7F;
 
-    // Listener that's being invoked during sample stream processing on different event messages
-    OnEventListenerListener *listener;
+            // Max number of channels is 10
+            static constexpr int MAX_CHANNELS = 10;
+            // Max number of bytes we can process in one batch
+            static constexpr int MAX_SAMPLES = 5000;
+            // We can maximally handle 6 seconds of sample data and spike can appear max every 200 ms
+            static constexpr int MAX_EVENTS = 100;
 
-    typedef unsigned int byte;
+            // Length of escape sequence start and sequence end
+            static constexpr int ESCAPE_SEQUENCE_START_END_LENGTH = 6;
+            // Message cannot be longer than 64 bytes
+            static constexpr int EVENT_MESSAGE_LENGTH = 64;
+            // Escape sequence cannot be longer than sequence start + 64 + sequence end
+            static constexpr int MAX_SEQUENCE_LENGTH =
+                    ESCAPE_SEQUENCE_START_END_LENGTH + EVENT_MESSAGE_LENGTH + ESCAPE_SEQUENCE_START_END_LENGTH;
+            // Array of bytes which represent start of an escape sequence
+            static const unsigned char ESCAPE_SEQUENCE_START[];
+            // Array of bytes which represent end of an escape sequence
+            static const unsigned char ESCAPE_SEQUENCE_END[];
 
-    // Processes escape sequence message and triggers appropriate listener
-    void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex);
+            // Listener that's being invoked during sample stream processing on different event messages
+            backyardbrains::utils::OnEventListenerListener *listener;
 
-    // Updates channel count and sample rate depending on the specified board type
-    void updateProcessingParameters(int expansionBoardType);
+            typedef unsigned int byte;
 
-    // Resets all variables used for processing escape sequences
-    void reset();
+            // Processes escape sequence message and triggers appropriate listener
+            void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex);
 
-    // Whether new frame is started being processed
-    bool frameStarted = false;
-    // Whether new sample is started being processed
-    bool sampleStarted = false;
-    // Whether channel count has changed during processing of the latest chunk of incoming data
-    int prevChannelCount;
-    // Holds currently processed channel
-    int currentChannel;
-    // Beyond this channel index channels should not be filtered
-    int stopFilteringAfterChannelIndex = -1;
-    // Holds samples from all channels processed in a single batch
-    short channels[MAX_CHANNELS][MAX_SAMPLES];
-    // Array of sample counters, one for every channel
-    int sampleCounters[MAX_CHANNELS];
-    // Whether we are inside an escape sequence or not
-    bool insideEscapeSequence;
-    // Index of the byte within start or end of the escape sequence
-    int tmpIndex;
-    // Holds currently processed escape sequence
-    unsigned char escapeSequence[MAX_SEQUENCE_LENGTH];
-    // Index of the byte within currently processed escape sequence
-    int escapeSequenceIndex;
-    // Holds currently processed event message
-    unsigned char eventMessage[EVENT_MESSAGE_LENGTH];
-    // Index of the byte within currently processed event message
-    int eventMessageIndex;
-    // Holds count of processed events in the current sample batch
-    int eventCounter;
-    // Holds event indices processed in a single batch
-    int eventIndices[MAX_EVENTS];
-    // Holds event labels processed in a single batch
-    std::string eventLabels[MAX_EVENTS];
-    // Most significant and least significant bytes
-    byte msb;
-    // Average signal which we use to avoid signal offset
-    double average;
-};
+            // Updates channel count and sample rate depending on the specified board type
+            void updateProcessingParameters(int expansionBoardType);
 
+            // Resets all variables used for processing escape sequences
+            void reset();
+
+            // Whether new frame is started being processed
+            bool frameStarted = false;
+            // Whether new sample is started being processed
+            bool sampleStarted = false;
+            // Whether channel count has changed during processing of the latest chunk of incoming data
+            int prevChannelCount;
+            // Holds currently processed channel
+            int currentChannel;
+            // Beyond this channel index channels should not be filtered
+            int stopFilteringAfterChannelIndex = -1;
+            // Holds samples from all channels processed in a single batch
+            short channels[MAX_CHANNELS][MAX_SAMPLES];
+            // Array of sample counters, one for every channel
+            int sampleCounters[MAX_CHANNELS];
+            // Whether we are inside an escape sequence or not
+            bool insideEscapeSequence;
+            // Index of the byte within start or end of the escape sequence
+            int tmpIndex;
+            // Holds currently processed escape sequence
+            unsigned char escapeSequence[MAX_SEQUENCE_LENGTH];
+            // Index of the byte within currently processed escape sequence
+            int escapeSequenceIndex;
+            // Holds currently processed event message
+            unsigned char eventMessage[EVENT_MESSAGE_LENGTH];
+            // Index of the byte within currently processed event message
+            int eventMessageIndex;
+            // Holds count of processed events in the current sample batch
+            int eventCounter;
+            // Holds event indices processed in a single batch
+            int eventIndices[MAX_EVENTS];
+            // Holds event labels processed in a single batch
+            std::string eventLabels[MAX_EVENTS];
+            // Most significant and least significant bytes
+            byte msb;
+            // Average signal which we use to avoid signal offset
+            double average;
+        };
+    }
+}
 
 #endif //SPIKE_RECORDER_ANDROID_SAMPLESTREAMPROCESSOR_H

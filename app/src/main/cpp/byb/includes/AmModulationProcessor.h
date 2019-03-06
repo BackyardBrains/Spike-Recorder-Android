@@ -5,59 +5,68 @@
 #ifndef SPIKE_RECORDER_ANDROID_AMMODULATIONPROCESSOR_H
 #define SPIKE_RECORDER_ANDROID_AMMODULATIONPROCESSOR_H
 
-#include "Processor.h"
-#include "NotchFilter.h"
-#include "LowPassFilter.h"
-#include "HighPassFilter.h"
 #include <cmath>
 #include <algorithm>
 #include <string>
 #include <android/log.h>
 
-class AmModulationProcessor : public Processor {
-public:
-    AmModulationProcessor();
+#include "Processor.h"
+#include "NotchFilter.h"
+#include "LowPassFilter.h"
+#include "HighPassFilter.h"
+#include "SignalUtils.h"
 
-    ~AmModulationProcessor() override;
+namespace backyardbrains {
 
-    void setSampleRate(float sampleRate) override;
+    namespace processing {
 
-    void setChannelCount(int channelCount) override;
+        class AmModulationProcessor : public Processor {
+        public:
+            AmModulationProcessor();
 
-    bool isReceivingAmSignal();
+            ~AmModulationProcessor() override;
 
-    void process(const short *inSamples, short **outSamples, int sampleCount, int frameCount);
+            void setSampleRate(float sampleRate) override;
 
-private:
-    static const char *TAG;
+            void setChannelCount(int channelCount) override;
 
-    static constexpr int DEFAULT_CHANNEL_COUNT = 1;
-    static constexpr float AM_CARRIER_FREQUENCY = 5000.0f;
-    static constexpr float AM_DETECTION_CUTOFF = 6000.0f;
-    static constexpr int AM_DEMODULATION_LOW_PASS_FILTER_COUNT = 3;
-    static constexpr float AM_DEMODULATION_CUTOFF = 500.0f;
+            bool isReceivingAmSignal();
 
-    void createDemodulationFilters();
+            void process(const short *inSamples, short **outSamples, int sampleCount, int frameCount);
 
-    void deleteDemodulationFilters();
+        private:
+            static const char *TAG;
 
-    // Used for detection of the AM modulation
-    LowPassFilter amDetectionLowPassFilter;
-    // Used for detection of the AM modulation
-    NotchFilter amDetectionNotchFilter;
-    // Used for signal demodulation
-    LowPassFilter **amDemodulationLowPassFilter;
+            static constexpr int DEFAULT_CHANNEL_COUNT = 1;
+            static constexpr float AM_CARRIER_FREQUENCY = 5000.0f;
+            static constexpr float AM_DETECTION_CUTOFF = 6000.0f;
+            static constexpr int AM_DEMODULATION_LOW_PASS_FILTER_COUNT = 3;
+            static constexpr float AM_DEMODULATION_CUTOFF = 500.0f;
 
-    // Flag that is set to true after initialization
-    bool initialized = false;
-    // Used to detect whether signal is modulated or not
-    float rmsOfOriginalSignal = 0;
-    float rmsOfNotchedAMSignal = 0;
-    // Average signal which we use to avoid signal offset
-    float average;
-    // Whether we are currently receiving modulated signal
-    bool receivingAmSignal = false;
-};
+            void createDemodulationFilters();
+
+            void deleteDemodulationFilters();
+
+            // Used for detection of the AM modulation
+            LowPassFilter amDetectionLowPassFilter;
+            // Used for detection of the AM modulation
+            NotchFilter amDetectionNotchFilter;
+            // Used for signal demodulation
+            LowPassFilter **amDemodulationLowPassFilter;
+
+            // Flag that is set to true after initialization
+            bool initialized = false;
+            // Used to detect whether signal is modulated or not
+            float rmsOfOriginalSignal = 0;
+            float rmsOfNotchedAMSignal = 0;
+            // Average signal which we use to avoid signal offset
+            float average;
+            // Whether we are currently receiving modulated signal
+            bool receivingAmSignal = false;
+        };
+
+    }
+}
 
 
 #endif //SPIKE_RECORDER_ANDROID_AMMODULATIONPROCESSOR_H

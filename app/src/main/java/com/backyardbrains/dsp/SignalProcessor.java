@@ -22,6 +22,15 @@ public class SignalProcessor implements SignalSource.Processor {
     private static final float MAX_SAMPLE_STREAM_PROCESSING_TIME = 12f; // 12 seconds
     // Maximum time that should be processed when averaging signal
     private static final float MAX_THRESHOLD_PROCESSING_TIME = 2.4f; // 2.4 seconds
+    // We only look at approx. 30% of the fft data cause we only want to analyze low frequency
+    private static final int FFT_30HZ_LENGTH = 32; // ~30%
+    // Percent of overlap between to consecutive FFT windows
+    private static final int WINDOW_OVERLAP_PERCENT = 99;
+
+    // Computes base 2 logarithm of x
+    private static double LOG2(float x) {
+        return Math.log(x) / Math.log(2);
+    }
 
     // Default samples buffer size
     static final int DEFAULT_SAMPLE_BUFFER_SIZE = (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
@@ -33,11 +42,27 @@ public class SignalProcessor implements SignalSource.Processor {
     // Default frame size (samples per channel)
     public static final int DEFAULT_FRAME_SIZE =
         (int) Math.floor((float) DEFAULT_SAMPLE_BUFFER_SIZE / DEFAULT_CHANNEL_COUNT);
+    // Default size of a single FFT window
+    private static final int DEFAULT_FFT_FULL_WINDOW_SIZE = (int) Math.pow(2, LOG2(AudioUtils.DEFAULT_SAMPLE_RATE) + 2);
 
-    private static int processedSamplesCount = (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
-    private static int processedAveragedSamplesCount =
-        (int) (MAX_THRESHOLD_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
+    // Default number of windows used for FFT analysis
+    public static final int DEFAULT_FFT_WINDOW_COUNT;
+    // Default number of FFF frequencies we want to take into account
+    public static final int DEFAULT_FFT_30HZ_WINDOW_SIZE;
+
+    static {
+        DEFAULT_FFT_WINDOW_COUNT =
+            (int) (DEFAULT_SAMPLE_BUFFER_SIZE / (DEFAULT_FFT_FULL_WINDOW_SIZE * (1.0f - (WINDOW_OVERLAP_PERCENT
+                / 100.0f))));
+        DEFAULT_FFT_30HZ_WINDOW_SIZE =
+            (DEFAULT_FFT_FULL_WINDOW_SIZE * FFT_30HZ_LENGTH) / AudioUtils.DEFAULT_SAMPLE_RATE;
+    }
+
+    private static int processedSamplesCount = DEFAULT_SAMPLE_BUFFER_SIZE;
+    private static int processedAveragedSamplesCount = DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE;
     private static int maxProcessedSamplesCount = processedSamplesCount;
+    private static int processedFftWindowCount = DEFAULT_FFT_WINDOW_COUNT;
+    private static int processedFftWindowSize = DEFAULT_FFT_30HZ_WINDOW_SIZE;
     // Lock used when reading/writing samples and events
     private static final Object lock = new Object();
 
@@ -80,6 +105,7 @@ public class SignalProcessor implements SignalSource.Processor {
     private SamplesWithEvents samplesWithEvents = new SamplesWithEvents(DEFAULT_CHANNEL_COUNT, DEFAULT_FRAME_SIZE);
     private SamplesWithEvents averagedSamplesWithEvents =
         new SamplesWithEvents(DEFAULT_CHANNEL_COUNT, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
+    private FftData fft = new FftData(DEFAULT_FFT_WINDOW_COUNT, DEFAULT_FFT_30HZ_WINDOW_SIZE);
 
     // Reference to the data manager that stores and processes the data
     private ProcessingBuffer processingBuffer;
@@ -120,6 +146,11 @@ public class SignalProcessor implements SignalSource.Processor {
 
         // pass sample rate to processing buffer
         if (processingBuffer != null) processingBuffer.setSampleRate(sampleRate);
+
+        synchronized (lock) {
+            // reset temp buffer for fft data
+            fft = new FftData(DEFAULT_FFT_WINDOW_COUNT, processedFftWindowSize);
+        }
 
         // pass sample rate to native code
         JniUtils.setSampleRate(sampleRate);
@@ -168,6 +199,20 @@ public class SignalProcessor implements SignalSource.Processor {
      */
     public static int getMaxProcessedSamplesCount() {
         return maxProcessedSamplesCount;
+    }
+
+    /**
+     * Max number of FFT windows that can be processed by the current signal source.
+     */
+    public static int getProcessedFftWindowCount() {
+        return processedFftWindowCount;
+    }
+
+    /**
+     * Size of a single FFT window that can be processed by the current signal source.
+     */
+    public static int getProcessedFftWindowSize() {
+        return processedFftWindowSize;
     }
 
     /**
@@ -247,6 +292,9 @@ public class SignalProcessor implements SignalSource.Processor {
     //private final Benchmark benchmarkT =
     //    new Benchmark("THRESHOLD").warmUp(10).sessions(10).measuresPerSession(10).logBySession(false);
 
+    //private final Benchmark benchmarkF =
+    //    new Benchmark("FFT").warmUp(10).sessions(10).measuresPerSession(10).logBySession(false);
+
     @SuppressWarnings("WeakerAccess") void processData(@NonNull byte[] buffer, int length) {
         synchronized (lock) {
             //benchmark.start();
@@ -255,16 +303,20 @@ public class SignalProcessor implements SignalSource.Processor {
             //benchmarkT.start();
             JniUtils.processThreshold(averagedSamplesWithEvents, samplesWithEvents, signalAveraging);
             //benchmarkT.end();
+            //benchmarkF.start();
+            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
+            //if (!signalAveraging) JniUtils.processFft(fft, samplesWithEvents);
+            //benchmarkF.end();
 
             // forward received samples to Processing Service
             if (listener != null) listener.onDataProcessed(samplesWithEvents);
 
             // add to buffer
-            if (processingBuffer != null) processingBuffer.add(samplesWithEvents, averagedSamplesWithEvents);
+            if (processingBuffer != null) processingBuffer.add(samplesWithEvents, averagedSamplesWithEvents, fft);
         }
     }
 
-    // Set max number of samples that can be processed usually and in threshold
+    // Set max number of samples that can be processed in normal processing, in threshold and in fft
     private void calculateMaxNumberOfProcessedSamples(int sampleRate) {
         processedSamplesCount =
             signalSource != null && signalSource.isUsb() ? (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate)
@@ -272,5 +324,11 @@ public class SignalProcessor implements SignalSource.Processor {
         processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
         // this is queried by renderer to know how big drawing surface should be
         maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
+        // fft
+        int processedFftFullWindowSize = (int) Math.pow(2, LOG2(sampleRate) + 2);
+        processedFftWindowSize = (processedFftFullWindowSize * FFT_30HZ_LENGTH) / sampleRate;
+        processedFftWindowCount =
+            (int) ((MAX_AUDIO_PROCESSING_TIME * sampleRate) / (processedFftFullWindowSize * (1.0f - (
+                WINDOW_OVERLAP_PERCENT / 100.0f))));
     }
 }

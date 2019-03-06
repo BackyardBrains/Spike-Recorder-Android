@@ -7,21 +7,26 @@
 
 #include "FilterBase.h"
 
-class LowPassFilter : public FilterBase {
-public:
-    LowPassFilter();
+namespace backyardbrains {
 
-    void calculateCoefficients();
+    namespace filters {
 
-    void setCornerFrequency(float newCornerFrequency);
+        class LowPassFilter : public FilterBase {
+        public:
+            LowPassFilter();
 
-    void setQ(float newQ);
+            void calculateCoefficients();
 
-protected:
-    float cornerFrequency;
-    float Q;
-private:
-};
+            void setCornerFrequency(float newCornerFrequency);
 
+            void setQ(float newQ);
+
+        protected:
+            float cornerFrequency;
+            float Q;
+        private:
+        };
+    }
+}
 
 #endif //SPIKE_RECORDER_ANDROID_LOWPASSFILTER_H

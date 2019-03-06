@@ -83,7 +83,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
             return files;
         }
 
-        @Override protected void onPostExecute(File[] files) {
+        @Override protected void onPostExecute(@Nullable File[] files) {
             final RecordingsFragment fragment;
             if ((fragment = fragmentRef.get()) != null && fragment.isAdded()) fragment.updateFiles(files);
         }
@@ -174,8 +174,8 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
         new RescanFilesTask(this).execute();
     }
 
-    void updateFiles(File[] files) {
-        LOGD(TAG, "UPDATE FILES (" + files.length + ")!!!!!");
+    void updateFiles(@Nullable File[] files) {
+        LOGD(TAG, "UPDATE FILES (" + (files != null ? files.length : 0) + ")!!!!!");
 
         adapter.setFiles(files);
         updateEmptyView(false);

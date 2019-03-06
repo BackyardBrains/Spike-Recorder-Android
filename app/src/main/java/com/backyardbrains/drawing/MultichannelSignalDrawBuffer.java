@@ -24,15 +24,15 @@ import com.crashlytics.android.Crashlytics;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-public class DrawMultichannelBuffer {
+public class MultichannelSignalDrawBuffer {
 
-    private static final String TAG = makeLogTag(DrawMultichannelBuffer.class);
+    private static final String TAG = makeLogTag(MultichannelSignalDrawBuffer.class);
 
     private final int frameCount;
     private final int channelCount;
     private final short[][] buffer;
 
-    DrawMultichannelBuffer(int channelCount, int frameCount) {
+    MultichannelSignalDrawBuffer(int channelCount, int frameCount) {
         this.frameCount = frameCount;
         this.channelCount = channelCount;
 

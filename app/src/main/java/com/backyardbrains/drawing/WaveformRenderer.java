@@ -179,7 +179,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void getWaveformVertices(@NonNull SamplesWithEvents samplesWithEvents,
+    @Override protected void prepareSignalForDrawing(@NonNull SamplesWithEvents samplesWithEvents,
         @NonNull short[][] samples, int frameCount, @NonNull int[] eventIndices, int eventCount, int fromSample,
         int toSample, int drawSurfaceWidth) {
         if (isSignalAveraging()) {
@@ -191,7 +191,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 Crashlytics.logException(e);
             }
         } else {
-            super.getWaveformVertices(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
+            super.prepareSignalForDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
                 toSample, drawSurfaceWidth);
         }
     }
@@ -199,10 +199,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void getEvents(@NonNull SamplesWithEvents samplesWithEvents, @NonNull String[] eventNames,
-        int eventCount, @NonNull SparseArray<String> eventsBuffer) {
+    @Override protected void addEventsToEventDrawBuffer(@NonNull SamplesWithEvents samplesWithEvents,
+        @NonNull String[] eventNames, int eventCount, @NonNull SparseArray<String> eventDrawBuffer) {
         // only process events if threshold is off
-        if (!isSignalAveraging()) super.getEvents(samplesWithEvents, eventNames, eventCount, eventsBuffer);
+        if (!isSignalAveraging()) {
+            super.addEventsToEventDrawBuffer(samplesWithEvents, eventNames, eventCount, eventDrawBuffer);
+        }
     }
 
     /**
@@ -210,7 +212,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
         @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
         float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
         long lastFrameIndex) {
         final float samplesToDraw = waveformVerticesCount[0] * .5f;

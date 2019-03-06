@@ -2,8 +2,10 @@ package com.backyardbrains.dsp;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.drawing.DrawMultichannelBuffer;
+import com.backyardbrains.drawing.FftDrawBuffer;
+import com.backyardbrains.drawing.MultichannelSignalDrawBuffer;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.CircularFloatArrayBuffer;
 import com.backyardbrains.utils.CircularShortBuffer;
 import com.backyardbrains.utils.EventUtils;
 
@@ -42,6 +44,12 @@ public class ProcessingBuffer {
     private int eventCount;
     // Index of the sample that was processed last (used only during playback)
     private long lastSampleIndex;
+    // Buffer for the FFT data
+    private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT,
+        SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
+    // Temp buffer used to copy buffered fft data to draw buffer
+    private float[][] fft =
+        new float[SignalProcessor.DEFAULT_FFT_WINDOW_COUNT][SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE];
 
     /**
      * Interface definition for a callback to be invoked when signal sample rate or number of channels changes.
@@ -133,8 +141,9 @@ public class ProcessingBuffer {
      *
      * @return Number of copied events.
      */
-    public int copy(@NonNull DrawMultichannelBuffer sampleDrawBuffer,
-        @NonNull DrawMultichannelBuffer averagedDrawSamplesBuffer, @NonNull int[] indices, @NonNull String[] events) {
+    public int copy(@NonNull MultichannelSignalDrawBuffer sampleDrawBuffer,
+        @NonNull MultichannelSignalDrawBuffer averagedDrawSamplesBuffer, @NonNull int[] indices,
+        @NonNull String[] events, @NonNull FftDrawBuffer fftDrawBuffer) {
         synchronized (lock) {
             // copy samples
             if (sampleBuffers != null) {
@@ -157,6 +166,12 @@ public class ProcessingBuffer {
             // copy events
             System.arraycopy(eventIndices, 0, indices, 0, eventCount);
             System.arraycopy(eventNames, 0, events, 0, eventCount);
+            // copy fft data
+            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
+            //if (fftBuffer != null) {
+            //    int count = fftBuffer.get(fft);
+            //    if (count > 0) fftDrawBuffer.add(fft, count);
+            //}
 
             return eventCount;
         }
@@ -165,7 +180,8 @@ public class ProcessingBuffer {
     /**
      * Adds specified {@code samplesWithEvents} and {@code averagedSamples} to the buffer.
      */
-    void add(@NonNull SamplesWithEvents samplesWithEvents, @NonNull SamplesWithEvents averagedSamples) {
+    void add(@NonNull SamplesWithEvents samplesWithEvents, @NonNull SamplesWithEvents averagedSamples,
+        @NonNull FftData fftData) {
         synchronized (lock) {
             // add samples to signal ring buffer
             if (sampleBuffers != null && sampleBuffers.length == samplesWithEvents.samplesM.length) {
@@ -207,6 +223,10 @@ public class ProcessingBuffer {
 
             // save last sample index (playhead)
             lastSampleIndex = samplesWithEvents.lastSampleIndex;
+
+            // add fft data to buffer
+            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
+            //if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
         }
     }
 
@@ -235,6 +255,7 @@ public class ProcessingBuffer {
             }
             eventCount = 0;
             lastSampleIndex = 0;
+            fftBuffer.clear();
         }
     }
 
@@ -249,6 +270,8 @@ public class ProcessingBuffer {
                 // Size of the average samples buffer
                 averagedSamplesBuffers[i] = new CircularShortBuffer(SignalProcessor.getProcessedAveragedSamplesCount());
             }
+            fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.getProcessedFftWindowCount(),
+                SignalProcessor.getProcessedFftWindowSize());
         }
     }
 }

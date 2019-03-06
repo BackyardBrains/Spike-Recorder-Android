@@ -97,9 +97,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
         @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex) {
+        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         final int toSample = (int) lastFrameIndex;
         final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
@@ -211,7 +210,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        super.draw(gl, samples, selectedChannel, waveformVertices, waveformVerticesCount, events, surfaceWidth,
+        super.draw(gl, samples, selectedChannel, waveformVertices, waveformVerticesCount, events, fftDrawData,
+            surfaceWidth,
             surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX,
             scaleY, lastFrameIndex);
 
