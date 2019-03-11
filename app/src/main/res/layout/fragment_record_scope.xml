@@ -7,23 +7,37 @@
 
     <ImageButton
         android:id="@+id/ibtn_threshold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="5dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_threshold"
-        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginStart="@dimen/activity_vertical_margin_quarter"
+        android:layout_marginTop="@dimen/activity_horizontal_margin_quarter"
+        android:background="@drawable/circle_gray_white"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_bias="0"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_filters"
         app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
+        app:layout_constraintRight_toLeftOf="@+id/ibtn_usb"
+        app:srcCompat="@drawable/ic_pulse_black_24dp"
+        tools:ignore="ContentDescription"/>
+
+    <ImageButton
+        android:id="@+id/ibtn_usb"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
+        android:background="@drawable/circle_gray_white"
+        android:src="@drawable/ic_usb_black_24dp"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"
+        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
+        app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"
         tools:ignore="ContentDescription"/>
 
     <ImageButton
         android:id="@+id/ibtn_avg_trigger_type"
-        android:layout_width="41dp"
-        android:layout_height="41dp"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
         android:background="@drawable/circle_gray_white"
         app:layout_constraintLeft_toLeftOf="@+id/ibtn_threshold"
         app:layout_constraintRight_toRightOf="@+id/ibtn_threshold"
@@ -31,32 +45,31 @@
         app:srcCompat="@drawable/ic_trigger_threshold_black_24dp"
         tools:ignore="ContentDescription"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_filters"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="5dp"
-        android:background="@android:color/transparent"
-        android:visibility="gone"
-        android:src="@drawable/ic_am_modulation"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"
-        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
-        app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"
-        tools:ignore="ContentDescription"/>
+    <!--<ImageButton-->
+    <!--android:id="@+id/ibtn_filters"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginStart="5dp"-->
+    <!--android:layout_marginTop="5dp"-->
+    <!--android:background="@android:color/transparent"-->
+    <!--android:src="@drawable/ic_am_modulation"-->
+    <!--app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"-->
+    <!--app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"-->
+    <!--app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"-->
+    <!--tools:ignore="ContentDescription"/>-->
 
     <SeekBar
         android:id="@+id/sb_averaged_sample_count"
-        android:layout_width="0dp"
+        android:layout_width="130dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
-        android:layout_marginEnd="5dp"
+        android:layout_marginStart="@dimen/activity_horizontal_margin_quarter"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
         android:minHeight="10dp"
         android:visibility="invisible"
         android:indeterminate="false"
         android:max="100"
         android:progress="1"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_filters"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_usb"
         app:layout_constraintTop_toTopOf="@+id/ibtn_threshold"
         app:layout_constraintRight_toLeftOf="@+id/tv_averaged_sample_count"
         app:layout_constraintBottom_toBottomOf="@+id/ibtn_threshold"/>
@@ -65,40 +78,34 @@
         android:id="@+id/tv_averaged_sample_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="10dp"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
         android:gravity="center"
         android:visibility="invisible"
         android:text="@string/default_threshold_amount"
         android:textColor="@color/green"
         app:layout_constraintLeft_toRightOf="@+id/sb_averaged_sample_count"
         app:layout_constraintTop_toTopOf="@+id/sb_averaged_sample_count"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_usb"
+        app:layout_constraintRight_toLeftOf="@+id/guideline"
         app:layout_constraintBottom_toBottomOf="@+id/sb_averaged_sample_count"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_usb"
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:background="@android:color/transparent"
-        android:visibility="gone"
-        android:src="@drawable/ic_usb"
-        app:layout_constraintLeft_toRightOf="@+id/tv_averaged_sample_count"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_record"
-        tools:ignore="ContentDescription"/>
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="104dp"/>
 
     <ImageButton
         android:id="@+id/ibtn_record"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="5dp"
-        android:background="@android:color/transparent"
-        android:src="@drawable/ic_record"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_usb"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginStart="@dimen/activity_vertical_margin_quarter"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
+        android:layout_marginEnd="@dimen/activity_vertical_margin_quarter"
+        android:background="@drawable/circle_gray_white_red"
+        app:layout_constraintLeft_toLeftOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/ibtn_settings"
         tools:ignore="ContentDescription"/>
 
     <TextView
@@ -113,7 +120,8 @@
         android:textColor="@color/white"
         android:textAppearance="@android:style/TextAppearance.Small"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
+        app:layout_constraintRight_toRightOf="parent"
+        tools:ignore="MissingConstraints"/>
 
     <com.backyardbrains.view.HeartbeatView
         android:id="@+id/hv_heartbeat"
@@ -156,4 +164,27 @@
         app:layout_constraintTop_toTopOf="@+id/tv_beats_per_minute"
         app:layout_constraintLeft_toRightOf="@+id/tv_beats_per_minute"
         app:layout_constraintBottom_toBottomOf="@+id/tv_beats_per_minute"/>
+
+    <com.backyardbrains.view.SettingsView
+        android:id="@+id/v_settings"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="@dimen/activity_horizontal_margin_quarter"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <ImageButton
+        android:id="@+id/ibtn_settings"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_horizontal_margin_quarter"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
+        android:background="@drawable/circle_gray_white"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_record"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:srcCompat="@drawable/ic_settings_black_24dp"
+        android:contentDescription="@string/content_desc_settings_show"/>
 </android.support.constraint.ConstraintLayout>

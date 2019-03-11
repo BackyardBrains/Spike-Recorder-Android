@@ -41,6 +41,10 @@ public class Filter {
         return highCutOffFrequency;
     }
 
+    public boolean isEqual(double lowCutOffFrequency, double highCutOffFrequency) {
+        return lowCutOffFrequency == this.lowCutOffFrequency && highCutOffFrequency == this.highCutOffFrequency;
+    }
+
     @Override public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -47,6 +47,13 @@ public class Filters {
      */
     public static final Filter FILTER_NEURON_PRO = new Filter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
 
+    // Cut-off frequency minimum
+    public static final double FREQ_MIN_CUT_OFF = 0d;
+    // Cut-off frequency maximum for low freq. boards (PLAN, BRAIN, HEART)
+    public static final double FREQ_LOW_MAX_CUT_OFF = 500d;
+    // Cut-off frequency maximum for high freq. boards (MUSCLE, NEURO)
+    public static final double FREQ_HIGH_MAX_CUT_OFF = 5000d;
+
     // Current filter
     private Filter filter;
 

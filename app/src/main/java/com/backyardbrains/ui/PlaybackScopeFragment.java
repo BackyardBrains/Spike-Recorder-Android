@@ -645,7 +645,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     void setupThresholdView() {
         if (thresholdOn) {
             // setup threshold button
-            ibtnThreshold.setImageResource(R.drawable.ic_threshold_off);
+            ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white_active);
             ibtnThreshold.setOnClickListener(stopThresholdOnClickListener);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.VISIBLE);
@@ -655,7 +655,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             tvAvgSamplesCount.setVisibility(View.VISIBLE);
         } else {
             // setup threshold button
-            ibtnThreshold.setImageResource(R.drawable.ic_threshold);
+            ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white);
             ibtnThreshold.setOnClickListener(startThresholdOnClickListener);
             // setup averaged sample count progress bar
             sbAvgSamplesCount.setVisibility(View.INVISIBLE);
