@@ -20,7 +20,9 @@ public class JniUtils {
 
     public static native void setChannelCount(int channelCount);
 
-    public static native void setFilters(float lowCutOff, float highCutOff);
+    public static native void setBandFilter(float lowCutOffFreq, float highCutOffFreq);
+
+    public static native void setNotchFilter(float centerFreq);
 
     public static native void processSampleStream(SamplesWithEvents out, byte[] data, int length,
         AbstractUsbSignalSource sampleSource);

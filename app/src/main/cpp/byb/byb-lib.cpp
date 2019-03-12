@@ -43,7 +43,10 @@ Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jclass type,
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jclass type, jfloat lowCutOff, jfloat highCutOff);
+Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, jfloat lowCutOffFreq,
+                                                     jfloat highCutOffFreq);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, jfloat centerFreq);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject);
@@ -371,11 +374,20 @@ Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass ty
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jclass type, jfloat lowCutOff, jfloat highCutOff) {
-    amModulationProcessor->setFilters(lowCutOff, highCutOff);
-    sampleStreamProcessor->setFilters(lowCutOff, highCutOff);
-    thresholdProcessor->setFilters(lowCutOff, highCutOff);
-    fftProcessor->setFilters(lowCutOff, highCutOff);
+Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, jfloat lowCutOffFreq,
+                                                     jfloat highCutOffFreq) {
+    amModulationProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    sampleStreamProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    thresholdProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    fftProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, jfloat centerFreq) {
+    amModulationProcessor->setNotchFilter(centerFreq);
+    sampleStreamProcessor->setNotchFilter(centerFreq);
+    thresholdProcessor->setNotchFilter(centerFreq);
+    fftProcessor->setNotchFilter(centerFreq);
 }
 
 extern "C" JNIEXPORT void JNICALL

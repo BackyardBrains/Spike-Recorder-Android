@@ -31,8 +31,9 @@ import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
-import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.FilterSettingsDialog;
+import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -103,7 +104,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // EVENT LISTENERS
     //==============================================
 
-    //private final FilterSettingsDialog.FilterSelectionListener filterSelectionListener = this::setFilter;
+    //private final FilterSettingsDialog.FilterSelectionListener filterSelectionListener = this::setBandFilter;
 
     private final SettingsView.OnSettingChangeListener settingChangeListener =
         new SettingsView.OnSettingChangeListener() {
@@ -111,8 +112,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
             }
 
-            @Override public void onFilterChange(@NonNull Filter filter) {
-                setFilter(filter);
+            @Override public void onBandFilterChange(@Nullable BandFilter filter) {
+                setBandFilter(filter);
+            }
+
+            @Override public void onNotchFilterChange(@Nullable NotchFilter filter) {
+                setNotchFilter(filter);
             }
         };
 
@@ -357,27 +362,27 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
         final String spikerBoxBoard;
-        Filter filter = null;
+        BandFilter filter = null;
         switch (event.getHardwareType()) {
             case SpikerBoxHardwareType.HEART:
                 spikerBoxBoard = getString(R.string.board_type_heart);
-                filter = Filters.FILTER_HEART;
+                filter = Filters.FILTER_BAND_HEART;
                 break;
             case SpikerBoxHardwareType.MUSCLE:
                 spikerBoxBoard = getString(R.string.board_type_muscle);
-                filter = Filters.FILTER_MUSCLE;
+                filter = Filters.FILTER_BAND_MUSCLE;
                 break;
             case SpikerBoxHardwareType.PLANT:
                 spikerBoxBoard = getString(R.string.board_type_plant);
-                filter = Filters.FILTER_PLANT;
+                filter = Filters.FILTER_BAND_PLANT;
                 break;
             case SpikerBoxHardwareType.MUSCLE_PRO:
                 spikerBoxBoard = getString(R.string.board_type_muscle_pro);
-                filter = Filters.FILTER_MUSCLE;
+                filter = Filters.FILTER_BAND_MUSCLE;
                 break;
             case SpikerBoxHardwareType.NEURON_PRO:
                 spikerBoxBoard = getString(R.string.board_type_neuron_pro);
-                filter = Filters.FILTER_NEURON_PRO;
+                filter = Filters.FILTER_BAND_NEURON_PRO;
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:
@@ -386,7 +391,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         }
 
         // preset filter for the connected board
-        if (getAudioService() != null && filter != null) getAudioService().setFilter(filter);
+        if (getAudioService() != null && filter != null) getAudioService().setBandFilter(filter);
         // show what boar is connected in toast
         if (getActivity() != null) {
             ViewUtils.customToast(getActivity(),
@@ -461,9 +466,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             // setup settings overlay
             if (getAudioService() != null) {
                 vSettings.setupFilters(
-                    getAudioService().getFilter() != null ? getAudioService().getFilter() : new Filter(),
+                    getAudioService().getBandFilter() != null ? getAudioService().getBandFilter() : new BandFilter(),
                     getAudioService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
-                        : Filters.FREQ_HIGH_MAX_CUT_OFF);
+                        : Filters.FREQ_HIGH_MAX_CUT_OFF,
+                    getAudioService().getNotchFilter() != null ? getAudioService().getNotchFilter() : new NotchFilter());
             }
             vSettings.setVisibility(View.VISIBLE);
             vSettings.setOnSettingChangeListener(settingChangeListener);
@@ -472,17 +478,22 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             ibtnSettings.setBackgroundResource(R.drawable.circle_gray_white);
             // setup settings overlay
             vSettings.setVisibility(View.GONE);
-            vSettings.setOnSettingChangeListener(null); 
+            vSettings.setOnSettingChangeListener(null);
         }
         ibtnSettings.setOnClickListener(settingsClickListener);
     }
 
-    // Sets a filter that should be applied while processing incoming data
-    void setFilter(@NonNull Filter filter) {
-        if (getAudioService() != null) getAudioService().setFilter(filter);
+    // Sets a band filter that should be applied while processing incoming data
+    void setBandFilter(@Nullable BandFilter filter) {
+        if (getAudioService() != null) getAudioService().setBandFilter(filter);
 
         // update BPM UI
         updateBpmUI();
+    }
+
+    // Sets a notch filter that should be applied while processing incoming data
+    void setNotchFilter(@Nullable NotchFilter filter) {
+        if (getAudioService() != null) getAudioService().setNotchFilter(filter);
     }
 
     void toggleSettings() {
@@ -517,7 +528,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //                        ? new UsbNeuronProFilterSettingsDialog(getContext(), filterSelectionListener)
     //                        : new UsbSerialFilterSettingsDialog(getContext(), filterSelectionListener);
     //        filterSettingsDialog.show(
-    //            getAudioService().getFilter() != null ? getAudioService().getFilter() : new Filter());
+    //            getAudioService().getBandFilter() != null ? getAudioService().getBandFilter() : new Filter());
     //    }
     //}
 
@@ -666,8 +677,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // BPM should be shown if either usb is active input source or we are in AM modulation,
         // and if current filter is default EKG filter
         return getAudioService() != null && thresholdOn && (getAudioService().isUsbActiveInput()
-            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getFilter(),
-            Filters.FILTER_HEART);
+            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getBandFilter(),
+            Filters.FILTER_BAND_HEART);
     }
 
     //==============================================

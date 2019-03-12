@@ -22,12 +22,12 @@ public class AmModulationFilterSettingsDialog extends FilterSettingsDialog {
     }
 
     // Array of predefined filters (Raw, EKG, EEG, Plant, Custom filter)
-    private static final Filter[] FILTERS = new Filter[FILTER_COUNT];
+    private static final BandFilter[] FILTERS = new BandFilter[FILTER_COUNT];
 
     static {
-        FILTERS[0] = Filters.FILTER_HEART;
-        FILTERS[1] = Filters.FILTER_BRAIN;
-        FILTERS[2] = Filters.FILTER_PLANT;
+        FILTERS[0] = Filters.FILTER_BAND_HEART;
+        FILTERS[1] = Filters.FILTER_BAND_BRAIN;
+        FILTERS[2] = Filters.FILTER_BAND_PLANT;
     }
 
     private static final double FREQ_MIN_CUT_OFF = 0d;
@@ -45,7 +45,7 @@ public class AmModulationFilterSettingsDialog extends FilterSettingsDialog {
         return FREQ_MAX_CUT_OFF;
     }
 
-    @Override protected Filter[] getFilters() {
+    @Override protected BandFilter[] getFilters() {
         return FILTERS;
     }
 

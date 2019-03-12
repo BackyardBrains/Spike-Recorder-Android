@@ -8,13 +8,15 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
 import com.backyardbrains.dsp.Filters;
-import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.BandFilter;
+import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ViewUtils;
@@ -27,10 +29,10 @@ import java.util.List;
  */
 public class FilterSettingsView extends ConstraintLayout {
 
-    private static final Filter NO_FILTER = new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
-    private static final Filter[] FILTERS = new Filter[] {
-        Filters.FILTER_HEART, Filters.FILTER_BRAIN, Filters.FILTER_MUSCLE, Filters.FILTER_PLANT,
-        Filters.FILTER_NEURON_PRO
+    private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
+    private static final BandFilter[] FILTERS = new BandFilter[] {
+        Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE, Filters.FILTER_BAND_PLANT,
+        Filters.FILTER_BAND_NEURON_PRO
     };
 
     @BindViews({
@@ -40,6 +42,8 @@ public class FilterSettingsView extends ConstraintLayout {
     @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
     @BindView(R.id.et_high_cut_off) EditText etHighCutOff;
     @BindView(R.id.rb_cut_offs) SimpleRangeBar srbCutOffs;
+    @BindView(R.id.cb_notch_filter_50hz) CheckBox cb50HzNotchFilter;
+    @BindView(R.id.cb_notch_filter_60hz) CheckBox cb60HzNotchFilter;
 
     /**
      * Interface definition for a callback to be invoked when one of filters is set.
@@ -50,14 +54,14 @@ public class FilterSettingsView extends ConstraintLayout {
          *
          * @param filter The set filter.
          */
-        void onFilterSet(@NonNull Filter filter);
+        void onBandFilterSet(@Nullable BandFilter filter);
 
         /**
          * Listener that is invoked when one of notch filters is set (50Hz or 60Hz).
          *
          * @param filter The set notch filter.
          */
-        void onNotchFilterSet(@Nullable Filter filter);
+        void onNotchFilterSet(@Nullable NotchFilter filter);
     }
 
     private OnFilterSetListener listener;
@@ -68,7 +72,7 @@ public class FilterSettingsView extends ConstraintLayout {
     private double maxCutOffLog = Math.log(maxCutOff);
 
     private final OnClickListener presetOnClickListener = v -> {
-        setFilter((Filter) v.getTag());
+        setBandFilter((BandFilter) v.getTag());
 
         updatePresetButtonsAndTriggerListener();
     };
@@ -113,14 +117,22 @@ public class FilterSettingsView extends ConstraintLayout {
     }
 
     /**
-     * Sets up the UI depending on the specified {@code filter} and {@code maxCutOff} frequency.
+     * Sets up the band filter UI depending on the specified {@code filter} and {@code maxCutOff} frequency.
      */
-    public void setFilter(@NonNull Filter filter, double maxCutOff) {
-        if (ObjectUtils.equals(filter, NO_FILTER)) filter = new Filter(minCutOff, maxCutOff);
+    public void setBandFilter(@NonNull BandFilter filter, double maxCutOff) {
+        if (ObjectUtils.equals(filter, NO_FILTER)) filter = new BandFilter(minCutOff, maxCutOff);
         updateMaxCutOff(maxCutOff);
-        setFilter(filter);
+        setBandFilter(filter);
 
         updatePresetButtons(filter.getLowCutOffFrequency(), filter.getHighCutOffFrequency());
+    }
+
+    /**
+     * Sets up the notch filter UI depending on the specified {@code filter}.
+     */
+    public void setNotchFilter(NotchFilter filter) {
+        cb50HzNotchFilter.setChecked(ObjectUtils.equals(filter, Filters.FILTER_NOTCH_50HZ));
+        cb60HzNotchFilter.setChecked(ObjectUtils.equals(filter, Filters.FILTER_NOTCH_60HZ));
     }
 
     private void init() {
@@ -161,6 +173,15 @@ public class FilterSettingsView extends ConstraintLayout {
         // range bar
         srbCutOffs.setRanges((long) minCutOff, (long) maxCutOff);
         srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
+        // notch filters
+        cb50HzNotchFilter.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && cb60HzNotchFilter.isChecked()) cb60HzNotchFilter.setChecked(false);
+            if (listener != null) listener.onNotchFilterSet(isChecked ? Filters.FILTER_NOTCH_50HZ : null);
+        });
+        cb60HzNotchFilter.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && cb50HzNotchFilter.isChecked()) cb50HzNotchFilter.setChecked(false);
+            if (listener != null) listener.onNotchFilterSet(isChecked ? Filters.FILTER_NOTCH_60HZ : null);
+        });
     }
 
     // Update preset filter buttons
@@ -182,8 +203,8 @@ public class FilterSettingsView extends ConstraintLayout {
         srbCutOffs.setRanges((long) minCutOff, (long) maxCutOff);
     }
 
-    // Sets specified filter as current filter.
-    void setFilter(@NonNull Filter filter) {
+    // Sets specified filter as current band filter.
+    void setBandFilter(@NonNull BandFilter filter) {
         // Currently selected filter
         etLowCutOff.setText(String.valueOf(filter.getLowCutOffFrequency()));
         etHighCutOff.setText(String.valueOf(filter.getHighCutOffFrequency()));
@@ -278,12 +299,12 @@ public class FilterSettingsView extends ConstraintLayout {
         double highCutOff = ApacheCommonsLang3Utils.isNotBlank(highCutOffStr) ? Double.valueOf(highCutOffStr) : 0d;
         // if low and high cut off frequencies are at min and max set them to -1 so filtering is skipped
         if (lowCutOff == minCutOff && highCutOff == maxCutOff) {
-            lowCutOff = Filter.FREQ_NO_CUT_OFF;
-            highCutOff = Filter.FREQ_NO_CUT_OFF;
+            lowCutOff = Filters.FREQ_NO_CUT_OFF;
+            highCutOff = Filters.FREQ_NO_CUT_OFF;
         }
         // update preset buttons
         updatePresetButtons(lowCutOff, highCutOff);
 
-        if (listener != null) listener.onFilterSet(new Filter(lowCutOff, highCutOff));
+        if (listener != null) listener.onBandFilterSet(new BandFilter(lowCutOff, highCutOff));
     }
 }

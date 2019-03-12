@@ -13,7 +13,8 @@ import android.widget.LinearLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
-import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.BandFilter;
+import com.backyardbrains.filters.NotchFilter;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -37,23 +38,30 @@ public class SettingsView extends FrameLayout {
         void onSpeakersMuteChange(boolean mute);
 
         /**
-         * Listener that is invoked when filter is changed.
+         * Listener that is invoked when band filter is changed.
          *
          * @param filter Set filter.
          */
-        void onFilterChange(@NonNull Filter filter);
+        void onBandFilterChange(@Nullable BandFilter filter);
+
+        /**
+         * Listener that is invoked when notch filter is set/unset.
+         *
+         * @param filter Set filter.
+         */
+        void onNotchFilterChange(@Nullable NotchFilter filter);
     }
 
     private OnSettingChangeListener listener;
 
     private final FilterSettingsView.OnFilterSetListener onFilterSetListener =
         new FilterSettingsView.OnFilterSetListener() {
-            @Override public void onFilterSet(@NonNull Filter filter) {
+            @Override public void onBandFilterSet(@Nullable BandFilter filter) {
                 triggerOnFilterChange(filter);
             }
 
-            @Override public void onNotchFilterSet(@Nullable Filter filter) {
-
+            @Override public void onNotchFilterSet(@Nullable NotchFilter filter) {
+                triggerOnNotchFilterChange(filter);
             }
         };
 
@@ -90,13 +98,19 @@ public class SettingsView extends FrameLayout {
     /**
      * Sets up filter settings.
      */
-    public void setupFilters(@NonNull Filter filter, double maxCutOffFreq) {
-        vFilterSettings.setFilter(filter, maxCutOffFreq);
+    public void setupFilters(@NonNull BandFilter bandFilter, double maxCutOffFreq, NotchFilter notchFilter) {
+        vFilterSettings.setBandFilter(bandFilter, maxCutOffFreq);
+        vFilterSettings.setNotchFilter(notchFilter);
     }
 
-    // Triggers OnSettingChangeListener.onFilterChange() method
-    void triggerOnFilterChange(@Nullable Filter filter) {
-        if (listener != null) listener.onFilterChange(filter);
+    // Triggers OnSettingChangeListener.onBandFilterChange() method
+    void triggerOnFilterChange(@Nullable BandFilter filter) {
+        if (listener != null) listener.onBandFilterChange(filter);
+    }
+
+    // Triggers OnSettingChangeListener.onNotchFilterChange() method
+    void triggerOnNotchFilterChange(@Nullable NotchFilter filter) {
+        if (listener != null) listener.onNotchFilterChange(filter);
     }
 
     // Inflates view layout

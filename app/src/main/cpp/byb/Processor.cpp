@@ -69,16 +69,28 @@ namespace backyardbrains {
         void Processor::applyFilters(int channel, short *data, int sampleCount) {
             if (lowPassFilteringEnabled) lowPassFilter[channel]->filter(data, sampleCount);
             if (highPassFilteringEnabled) highPassFilter[channel]->filter(data, sampleCount);
+            if (notchFilteringEnabled) notchFilter[channel]->filter(data, sampleCount);
 
         }
 
-        void Processor::setFilters(float lowCutOff, float highCutOff) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "LOW: %1f, HIGH: %1f", lowCutOff, highCutOff);
-            lowPassFilteringEnabled = highCutOff != -1 && highCutOff != MAX_FILTER_CUT_OFF;
-            highPassFilteringEnabled = lowCutOff != -1 && lowCutOff != MIN_FILTER_CUT_OFF;
+        void Processor::setBandFilter(float lowCutOffFreq, float highCutOffFreq) {
+            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "LOW: %1f, HIGH: %1f", lowCutOffFreq,
+                                highCutOffFreq);
+            lowPassFilteringEnabled = highCutOffFreq != -1 && highCutOffFreq != MAX_FILTER_CUT_OFF;
+            highPassFilteringEnabled = lowCutOffFreq != -1 && lowCutOffFreq != MIN_FILTER_CUT_OFF;
 
-            Processor::lowCutOff = lowCutOff;
-            Processor::highCutOff = highCutOff;
+            Processor::lowCutOff = lowCutOffFreq;
+            Processor::highCutOff = highCutOffFreq;
+
+            if (initialized) deleteFilters(channelCount);
+            createFilters(channelCount);
+        }
+
+        void Processor::setNotchFilter(float centerFreq) {
+            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "CENTER: %1f", centerFreq);
+            notchFilteringEnabled = centerFreq != -1 && centerFreq != MIN_FILTER_CUT_OFF;
+
+            Processor::centerFrequency = centerFreq;
 
             if (initialized) deleteFilters(channelCount);
             createFilters(channelCount);
@@ -87,6 +99,7 @@ namespace backyardbrains {
         void Processor::createFilters(int channelCount) {
             lowPassFilter = new LowPassFilterPtr[channelCount];
             highPassFilter = new HighPassFilterPtr[channelCount];
+            notchFilter = new NotchFilterPtr[channelCount];
             for (int i = 0; i < channelCount; i++) {
                 // low pass filters
                 lowPassFilter[i] = new LowPassFilter();
@@ -100,6 +113,11 @@ namespace backyardbrains {
                 if (lowCutOff < 0) lowCutOff = 0;
                 highPassFilter[i]->setCornerFrequency(lowCutOff);
                 highPassFilter[i]->setQ(0.5f);
+                // notch filter
+                notchFilter[i] = new NotchFilter();
+                notchFilter[i]->initWithSamplingRate(sampleRate);
+                notchFilter[i]->setCenterFrequency(centerFrequency);
+                notchFilter[i]->setQ(1.0);
             }
         }
 
@@ -107,9 +125,11 @@ namespace backyardbrains {
             for (int i = 0; i < channelCount; i++) {
                 delete lowPassFilter[i];
                 delete highPassFilter[i];
+                delete notchFilter[i];
             }
             delete[] lowPassFilter;
             delete[] highPassFilter;
+            delete[] notchFilter;
         }
     }
 }

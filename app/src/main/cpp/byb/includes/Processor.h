@@ -7,8 +7,10 @@
 
 #include <typeinfo>
 #include <android/log.h>
+
 #include "LowPassFilter.h"
 #include "HighPassFilter.h"
+#include "NotchFilter.h"
 
 using namespace backyardbrains::filters;
 
@@ -30,7 +32,9 @@ namespace backyardbrains {
 
             void setSelectedChannel(int selectedChannel);
 
-            void setFilters(float lowCutOff, float highCutOff);
+            void setBandFilter(float lowCutOffFreq, float highCutOffFreq);
+
+            void setNotchFilter(float centerFreq);
 
         protected:
             float getSampleRate();
@@ -59,6 +63,7 @@ namespace backyardbrains {
 
             typedef LowPassFilter *LowPassFilterPtr;
             typedef HighPassFilter *HighPassFilterPtr;
+            typedef NotchFilter *NotchFilterPtr;
 
             // Flag that is set to true after initialization
             bool initialized = false;
@@ -80,6 +85,12 @@ namespace backyardbrains {
             bool highPassFilteringEnabled = false;
             // High pass filters for all channels
             HighPassFilterPtr *highPassFilter;
+            // Current notch filter center freq
+            float centerFrequency = MIN_FILTER_CUT_OFF;
+            // Whether notch filters should be applied
+            bool notchFilteringEnabled = false;
+            // Notch filters for all channels
+            NotchFilterPtr *notchFilter;
         };
     }
 }

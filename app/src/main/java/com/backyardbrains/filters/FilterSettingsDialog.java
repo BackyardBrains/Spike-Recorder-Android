@@ -18,6 +18,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
+import com.backyardbrains.dsp.Filters;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ViewUtils;
@@ -29,8 +30,8 @@ import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
  */
 public abstract class FilterSettingsDialog {
 
-    @SuppressWarnings("WeakerAccess") static final Filter NO_FILTER =
-        new Filter(Filter.FREQ_NO_CUT_OFF, Filter.FREQ_NO_CUT_OFF);
+    @SuppressWarnings("WeakerAccess") static final BandFilter NO_FILTER =
+        new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
 
     @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
     @BindView(R.id.et_high_cut_off) EditText etHighCutOff;
@@ -57,21 +58,21 @@ public abstract class FilterSettingsDialog {
      * Listens for selection of one of predefined filters or setting of a custom filter.
      */
     public interface FilterSelectionListener {
-        void onFilterSelected(@NonNull Filter filter);
+        void onFilterSelected(@NonNull BandFilter filter);
     }
 
     @SuppressWarnings("WeakerAccess") final FilterSelectionListener listener;
     private final double minCutOffLog;
     private final double maxCutOffLog;
 
-    @SuppressWarnings("WeakerAccess") Filter customFilter;
-    @SuppressWarnings("WeakerAccess") Filter selectedFilter;
+    @SuppressWarnings("WeakerAccess") BandFilter customFilter;
+    @SuppressWarnings("WeakerAccess") BandFilter selectedFilter;
 
     FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
         this.listener = listener;
         this.minCutOffLog = Math.log(1);
         this.maxCutOffLog = Math.log(getMaxCutOff());
-        this.customFilter = new Filter(getMinCutOff(), getMaxCutOff());
+        this.customFilter = new BandFilter(getMinCutOff(), getMaxCutOff());
 
         filterSettingsDialog =
             new MaterialDialog.Builder(context).adapter(new FiltersAdapter(context), new LinearLayoutManager(context))
@@ -94,18 +95,18 @@ public abstract class FilterSettingsDialog {
 
     protected abstract double getMaxCutOff();
 
-    protected abstract Filter[] getFilters();
+    protected abstract BandFilter[] getFilters();
 
     protected abstract String[] getFilterNames();
 
     /**
      * Shows the filter settings dialog with all predefined filters. Specified {@code filter} is preselected.
      */
-    public void show(@NonNull Filter filter) {
+    public void show(@NonNull BandFilter filter) {
         selectedFilter = filter;
 
         boolean isCustom = !ObjectUtils.equals(filter, NO_FILTER);
-        for (Filter f : getFilters()) {
+        for (BandFilter f : getFilters()) {
             if (ObjectUtils.equals(filter, f)) {
                 isCustom = false;
                 break;
@@ -242,12 +243,12 @@ public abstract class FilterSettingsDialog {
     }
 
     // Returns a new Filter with cut-off values currently set inside input fields
-    @SuppressWarnings("WeakerAccess") Filter constructCustomFilter() {
+    @SuppressWarnings("WeakerAccess") BandFilter constructCustomFilter() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
         double highCutOff = ApacheCommonsLang3Utils.isNotBlank(highCutOffStr) ? Double.valueOf(highCutOffStr) : 0d;
-        return new Filter(lowCutOff, highCutOff);
+        return new BandFilter(lowCutOff, highCutOff);
     }
 
     /**
@@ -278,7 +279,7 @@ public abstract class FilterSettingsDialog {
             @BindView(R.id.tv_filter_name) TextView tvFilterName;
             @BindColor(R.color.orange) @ColorInt int selectedColor;
 
-            Filter filter;
+            BandFilter filter;
 
             FilterViewHolder(View view) {
                 super(view);
@@ -292,7 +293,7 @@ public abstract class FilterSettingsDialog {
                         showCustomFilterDialog();
                     } else {
                         // if non-custom filter is selected we need to reset custom filter
-                        customFilter = new Filter(getMinCutOff(), getMaxCutOff());
+                        customFilter = new BandFilter(getMinCutOff(), getMaxCutOff());
                         if (listener != null) listener.onFilterSelected(filter);
                     }
 
@@ -300,7 +301,7 @@ public abstract class FilterSettingsDialog {
                 });
             }
 
-            void setFilter(@NonNull Filter filter) {
+            void setFilter(@NonNull BandFilter filter) {
                 this.filter = filter;
 
                 tvFilterName.setText(getFilterName(getAdapterPosition()));
@@ -309,7 +310,7 @@ public abstract class FilterSettingsDialog {
             }
         }
 
-        private Filter getFilter(int position) {
+        private BandFilter getFilter(int position) {
             if (position == 0) {
                 return NO_FILTER;
             } else if (position == getFilters().length + 1) {

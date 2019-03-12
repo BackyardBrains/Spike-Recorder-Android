@@ -42,7 +42,8 @@ import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
-import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.BandFilter;
+import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
@@ -164,20 +165,38 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * Returns filter that is additionally applied when processing incoming data.
      */
-    public Filter getFilter() {
-        return FILTERS.getFilter();
+    public BandFilter getBandFilter() {
+        return FILTERS.getBandFilter();
     }
 
     /**
-     * Sets predefined filters to be applied when processing incoming data.
+     * Sets predefined band filters to be applied when processing incoming data.
      */
-    public void setFilter(@Nullable Filter filter) {
+    public void setBandFilter(@Nullable BandFilter filter) {
         // pass filters to native code
         float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
         float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
-        JniUtils.setFilters(low, high);
+        JniUtils.setBandFilter(low, high);
 
-        FILTERS.setFilter(filter);
+        FILTERS.setBandFilter(filter);
+    }
+
+    /**
+     * Returns filter that is additionally applied when processing incoming data.
+     */
+    public NotchFilter getNotchFilter() {
+        return FILTERS.getNotchFilter();
+    }
+
+    /**
+     * Sets predefined band filters to be applied when processing incoming data.
+     */
+    public void setNotchFilter(@Nullable NotchFilter filter) {
+        // pass filters to native code
+        float centerFreq = (float) (filter != null ? filter.getCenterFrequency() : -1f);
+        JniUtils.setNotchFilter(centerFreq);
+
+        FILTERS.setNotchFilter(filter);
     }
 
     /**

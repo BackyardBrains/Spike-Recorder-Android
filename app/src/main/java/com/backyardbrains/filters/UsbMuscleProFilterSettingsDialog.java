@@ -21,10 +21,10 @@ public class UsbMuscleProFilterSettingsDialog extends FilterSettingsDialog {
 
     ;
     // Array of predefined filters (EMG, EKG, EEG, Plant)
-    private static final Filter[] FILTERS = new Filter[FILTER_COUNT];
+    private static final BandFilter[] FILTERS = new BandFilter[FILTER_COUNT];
 
     static {
-        FILTERS[0] = Filters.FILTER_MUSCLE;
+        FILTERS[0] = Filters.FILTER_BAND_MUSCLE;
     }
 
     private static final double FREQ_MIN_CUT_OFF = 0d;
@@ -42,7 +42,7 @@ public class UsbMuscleProFilterSettingsDialog extends FilterSettingsDialog {
         return FREQ_MAX_CUT_OFF;
     }
 
-    @Override protected Filter[] getFilters() {
+    @Override protected BandFilter[] getFilters() {
         return FILTERS;
     }
 
