@@ -111,6 +111,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         startAudioDetection();
         // we listen for USB attach/detach
         startUsbDetection();
+        // start the recorder
+        turnOnRecorder();
 
         created = true;
     }
@@ -127,6 +129,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         stopUsbDetection();
         turnOffMicrophone();
         turnOffPlayback();
+        turnOffRecorder();
 
         signalProcessor.stop();
 
@@ -216,7 +219,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * @see SignalProcessor.OnProcessingListener#onDataProcessed(SamplesWithEvents)
      */
     @Override public void onDataProcessed(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (recorder != null) record(samplesWithEvents);
+        record(samplesWithEvents);
     }
 
     //========================================================
@@ -463,7 +466,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     //========================================================
-    //  PLAYBACK
+    //  RECORDING PLAYBACK
     //========================================================
 
     /**
@@ -633,7 +636,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     //========================================================
-    //  RECORDING
+    //  RECORDING AND LIVE PLAYBACK
     //========================================================
 
     /**
@@ -642,8 +645,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     public void startRecording() {
         LOGD(TAG, "startRecording()");
         try {
-            if (recorder == null) {
-                recorder = new Recorder(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
+            if (recorder != null && !recorder.isRecording()) {
+                recorder.startRecording(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
             }
 
             // post that recording of audio has started
@@ -665,20 +668,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void stopRecording() {
         LOGD(TAG, "stopRecording()");
-        try {
-            // set current sample rate to be used when saving WAV file
-            if (recorder != null) {
-                recorder.requestStop();
-                recorder = null;
+        if (recorder != null && recorder.isRecording()) recorder.stopRecording();
 
-                // post that recording of audio has started
-                EventBus.getDefault().post(new AudioRecordingStoppedEvent());
-            }
-        } catch (IllegalStateException e) {
-            Crashlytics.logException(e);
-            ViewUtils.toast(getApplicationContext(),
-                "Error occurred while trying to stop recording. Please check if your file recorded correctly.");
-        }
+        // post that recording of audio has stopped
+        EventBus.getDefault().post(new AudioRecordingStoppedEvent());
     }
 
     /**
@@ -687,16 +680,47 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * @return boolean {@code True} if active input is being recorded, {@code false} otherwise.
      */
     public boolean isRecording() {
-        return (recorder != null);
+        return recorder != null && recorder.isRecording();
+    }
+
+    /**
+     * Starts/stops playing back active input source on speakers.
+     */
+    public void setMuteSpeakers(boolean mute) {
+        LOGD(TAG, "setMuteSpeakers(" + mute + ")");
+        if (recorder != null) {
+            if (mute) {
+                if (recorder.isPlaying()) recorder.stopPlaying();
+            } else {
+                if (!recorder.isPlaying()) {
+                    recorder.startPlaying(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
+                }
+            }
+        }
+    }
+
+    public boolean isMuteSpeakers() {
+        return recorder != null && !recorder.isPlaying();
+    }
+
+    private void turnOnRecorder() {
+        if (recorder == null) recorder = new Recorder();
+    }
+
+    private void turnOffRecorder() {
+        if (recorder != null) {
+            recorder.requestStop();
+            recorder = null;
+        }
     }
 
     // Pass audio and events to the active Recorder instance
     private void record(@NonNull SamplesWithEvents samplesWithEvents) {
         try {
-            if (recorder != null) recorder.writeAudioWithEvents(samplesWithEvents);
-
-            // recorder can be set to null if stopRecording() is called between this and previous line
             if (recorder != null) {
+                recorder.write(samplesWithEvents);
+
+                // recorder can be set to null if stopRecording() is called between this and previous line
                 // post current recording progress
                 EventBus.getDefault()
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),

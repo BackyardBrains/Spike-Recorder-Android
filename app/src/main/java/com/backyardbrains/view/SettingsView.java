@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import butterknife.BindView;
@@ -54,6 +55,9 @@ public class SettingsView extends FrameLayout {
 
     private OnSettingChangeListener listener;
 
+    private final CompoundButton.OnCheckedChangeListener onMuteSpeakersChangeListener =
+        (buttonView, isChecked) -> triggerOnSpeakersMuteChange(isChecked);
+
     private final FilterSettingsView.OnFilterSetListener onFilterSetListener =
         new FilterSettingsView.OnFilterSetListener() {
             @Override public void onBandFilterSet(@Nullable BandFilter filter) {
@@ -79,7 +83,7 @@ public class SettingsView extends FrameLayout {
         init();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @SuppressWarnings("unused") @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public SettingsView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
@@ -103,6 +107,20 @@ public class SettingsView extends FrameLayout {
         vFilterSettings.setNotchFilter(notchFilter);
     }
 
+    /**
+     * Sets up mute speakers setting.
+     */
+    public void setupMuteSpeakers(boolean mute) {
+        cbMuteSpeakers.setOnCheckedChangeListener(null);
+        cbMuteSpeakers.setChecked(mute);
+        cbMuteSpeakers.setOnCheckedChangeListener(onMuteSpeakersChangeListener);
+    }
+
+    // Triggers OnSettingChangeListener.onSpeakersMuteChange() method
+    void triggerOnSpeakersMuteChange(boolean isChecked) {
+        if (listener != null) listener.onSpeakersMuteChange(isChecked);
+    }
+
     // Triggers OnSettingChangeListener.onBandFilterChange() method
     void triggerOnFilterChange(@Nullable BandFilter filter) {
         if (listener != null) listener.onBandFilterChange(filter);
@@ -123,6 +141,7 @@ public class SettingsView extends FrameLayout {
 
     // Initial UI setup
     private void setupUI() {
+        cbMuteSpeakers.setOnCheckedChangeListener(onMuteSpeakersChangeListener);
         vFilterSettings.setOnFilterChangeListener(onFilterSetListener);
     }
 }

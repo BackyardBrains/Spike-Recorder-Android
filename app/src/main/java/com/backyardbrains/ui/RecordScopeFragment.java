@@ -109,7 +109,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private final SettingsView.OnSettingChangeListener settingChangeListener =
         new SettingsView.OnSettingChangeListener() {
             @Override public void onSpeakersMuteChange(boolean mute) {
-
+                setMuteSpeakers(mute);
             }
 
             @Override public void onBandFilterChange(@Nullable BandFilter filter) {
@@ -465,11 +465,13 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             ibtnSettings.setBackgroundResource(R.drawable.circle_gray_white_active);
             // setup settings overlay
             if (getAudioService() != null) {
+                vSettings.setupMuteSpeakers(getAudioService().isMuteSpeakers());
                 vSettings.setupFilters(
                     getAudioService().getBandFilter() != null ? getAudioService().getBandFilter() : new BandFilter(),
                     getAudioService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
                         : Filters.FREQ_HIGH_MAX_CUT_OFF,
-                    getAudioService().getNotchFilter() != null ? getAudioService().getNotchFilter() : new NotchFilter());
+                    getAudioService().getNotchFilter() != null ? getAudioService().getNotchFilter()
+                        : new NotchFilter());
             }
             vSettings.setVisibility(View.VISIBLE);
             vSettings.setOnSettingChangeListener(settingChangeListener);
@@ -481,6 +483,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             vSettings.setOnSettingChangeListener(null);
         }
         ibtnSettings.setOnClickListener(settingsClickListener);
+    }
+
+    void toggleSettings() {
+        settingsOn = !settingsOn;
     }
 
     // Sets a band filter that should be applied while processing incoming data
@@ -496,8 +502,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getAudioService() != null) getAudioService().setNotchFilter(filter);
     }
 
-    void toggleSettings() {
-        settingsOn = !settingsOn;
+    void setMuteSpeakers(boolean mute) {
+        if (getAudioService() != null) getAudioService().setMuteSpeakers(mute);
     }
 
     //==============================================
