@@ -2,101 +2,114 @@
 <merge
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <TextView
         android:id="@+id/tv_channel_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Channel name"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Channel name"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_0"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:background="@drawable/circle_channel_0"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintHorizontal_chainStyle="packed"
+    <HorizontalScrollView
+        android:id="@+id/hsvChannelColors"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
+        android:scrollbars="none"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_1"
-        app:srcCompat="@drawable/ic_check_gray_dark_24dp"
-        tools:ignore="ContentDescription"/>
+        app:layout_constraintRight_toRightOf="parent">
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_1"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_1"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_0"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_2"
-        tools:ignore="ContentDescription"/>
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_2"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_2"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_1"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_3"
-        tools:ignore="ContentDescription"/>
+            <ImageButton
+                android:id="@+id/ibtn_channel_0"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:background="@drawable/circle_channel_0"
+                app:layout_constraintHorizontal_bias="0"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_1"
+                tools:ignore="ContentDescription"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_3"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_3"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_2"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_4"
-        tools:ignore="ContentDescription"/>
+            <ImageButton
+                android:id="@+id/ibtn_channel_1"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_1"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_0"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_2"
+                tools:ignore="ContentDescription"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_4"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_4"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_3"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_5"
-        tools:ignore="ContentDescription"/>
+            <ImageButton
+                android:id="@+id/ibtn_channel_2"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_2"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_1"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_3"
+                tools:ignore="ContentDescription"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_5"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_5"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_4"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_6"
-        tools:ignore="ContentDescription"/>
+            <ImageButton
+                android:id="@+id/ibtn_channel_3"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_3"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_2"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_4"
+                tools:ignore="ContentDescription"/>
 
-    <ImageButton
-        android:id="@+id/ibtn_channel_6"
-        android:layout_width="@dimen/tiny_button_tappable_h"
-        android:layout_height="@dimen/tiny_button_tappable_h"
-        android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin_half"
-        android:background="@drawable/circle_channel_6"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_5"
-        app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
-        app:layout_constraintRight_toRightOf="parent"
-        tools:ignore="ContentDescription"/>
+            <ImageButton
+                android:id="@+id/ibtn_channel_4"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_4"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_3"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_5"
+                tools:ignore="ContentDescription"/>
+
+            <ImageButton
+                android:id="@+id/ibtn_channel_5"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_5"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_4"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toLeftOf="@+id/ibtn_channel_6"
+                tools:ignore="ContentDescription"/>
+
+            <ImageButton
+                android:id="@+id/ibtn_channel_6"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginTop="@dimen/activity_vertical_margin_half"
+                android:layout_marginStart="@dimen/activity_horizontal_margin_half"
+                android:background="@drawable/circle_channel_6"
+                app:layout_constraintLeft_toRightOf="@+id/ibtn_channel_5"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                tools:ignore="ContentDescription"/>
+        </android.support.constraint.ConstraintLayout>
+    </HorizontalScrollView>
 </merge>

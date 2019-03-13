@@ -166,6 +166,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Returns current channel count.
+     */
+    public int getChannelCount() {
+        return signalProcessor.getChannelCount();
+    }
+
+    /**
      * Returns filter that is additionally applied when processing incoming data.
      */
     public BandFilter getBandFilter() {

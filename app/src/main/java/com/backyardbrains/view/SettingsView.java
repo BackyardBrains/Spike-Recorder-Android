@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.Size;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.CheckBox;
@@ -14,8 +15,10 @@ import android.widget.LinearLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
+import com.backyardbrains.drawing.Colors;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.NotchFilter;
+import java.util.Arrays;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -36,21 +39,36 @@ public class SettingsView extends FrameLayout {
          *
          * @param mute Whether speakers should be muted or not.
          */
-        void onSpeakersMuteChange(boolean mute);
+        void onSpeakersMuteChanged(boolean mute);
 
         /**
          * Listener that is invoked when band filter is changed.
          *
          * @param filter Set filter.
          */
-        void onBandFilterChange(@Nullable BandFilter filter);
+        void onBandFilterChanged(@Nullable BandFilter filter);
 
         /**
          * Listener that is invoked when notch filter is set/unset.
          *
          * @param filter Set filter.
          */
-        void onNotchFilterChange(@Nullable NotchFilter filter);
+        void onNotchFilterChanged(@Nullable NotchFilter filter);
+
+        /**
+         * Listener that is invoked when channel at specified {@code channelIndex} changes color to specified {@code color}.
+         *
+         * @param color New channel color.
+         * @param channelIndex Index of the channel which color has changed.
+         */
+        void onChannelColorChanged(@Size(4) float[] color, int channelIndex);
+
+        /**
+         * Listener that is invoked when channel at specified {@code channelIndex} is hidden.
+         *
+         * @param channelIndex Index of the hidden channel.
+         */
+        void onChannelHidden(int channelIndex);
     }
 
     private OnSettingChangeListener listener;
@@ -68,6 +86,8 @@ public class SettingsView extends FrameLayout {
                 triggerOnNotchFilterChange(filter);
             }
         };
+
+    private final ChannelSettingsView.OnColorChangeListener onColorChangeListener = this::triggerOnColorChange;
 
     public SettingsView(Context context) {
         this(context, null);
@@ -100,14 +120,6 @@ public class SettingsView extends FrameLayout {
     }
 
     /**
-     * Sets up filter settings.
-     */
-    public void setupFilters(@NonNull BandFilter bandFilter, double maxCutOffFreq, NotchFilter notchFilter) {
-        vFilterSettings.setBandFilter(bandFilter, maxCutOffFreq);
-        vFilterSettings.setNotchFilter(notchFilter);
-    }
-
-    /**
      * Sets up mute speakers setting.
      */
     public void setupMuteSpeakers(boolean mute) {
@@ -116,19 +128,52 @@ public class SettingsView extends FrameLayout {
         cbMuteSpeakers.setOnCheckedChangeListener(onMuteSpeakersChangeListener);
     }
 
-    // Triggers OnSettingChangeListener.onSpeakersMuteChange() method
+    /**
+     * Sets up filter settings.
+     */
+    public void setupFilters(@NonNull BandFilter bandFilter, double maxCutOffFreq, NotchFilter notchFilter) {
+        vFilterSettings.setBandFilter(bandFilter, maxCutOffFreq);
+        vFilterSettings.setNotchFilter(notchFilter);
+    }
+
+    /**
+     * Sets up channel settings.
+     */
+    public void setupChannels(int channelCount, float[][] channelColors) {
+        llChannelsContainer.removeAllViews();
+
+        ChannelSettingsView channelSettingsView;
+        for (int i = 0; i < channelCount; i++) {
+            channelSettingsView = new ChannelSettingsView(getContext());
+            channelSettingsView.setOnColorChangeListener(onColorChangeListener);
+            channelSettingsView.setChannelIndex(i);
+            channelSettingsView.setChannelColor(channelColors[i]);
+            llChannelsContainer.addView(channelSettingsView);
+        }
+    }
+
+    // Triggers OnSettingChangeListener.onSpeakersMuteChanged() method
     void triggerOnSpeakersMuteChange(boolean isChecked) {
-        if (listener != null) listener.onSpeakersMuteChange(isChecked);
+        if (listener != null) listener.onSpeakersMuteChanged(isChecked);
     }
 
-    // Triggers OnSettingChangeListener.onBandFilterChange() method
+    // Triggers OnSettingChangeListener.onBandFilterChanged() method
     void triggerOnFilterChange(@Nullable BandFilter filter) {
-        if (listener != null) listener.onBandFilterChange(filter);
+        if (listener != null) listener.onBandFilterChanged(filter);
     }
 
-    // Triggers OnSettingChangeListener.onNotchFilterChange() method
+    // Triggers OnSettingChangeListener.onNotchFilterChanged() method
     void triggerOnNotchFilterChange(@Nullable NotchFilter filter) {
-        if (listener != null) listener.onNotchFilterChange(filter);
+        if (listener != null) listener.onNotchFilterChanged(filter);
+    }
+
+    // Triggers OnSettingChangeListener.onChannelColorChanged() or OnSettingChangeListener.onChannelHidden() methods
+    void triggerOnColorChange(@Size(4) float[] color, int channelIndex) {
+        if (Arrays.equals(Colors.BLACK, color)) {
+            if (listener != null) listener.onChannelHidden(channelIndex);
+        } else {
+            if (listener != null) listener.onChannelColorChanged(color, channelIndex);
+        }
     }
 
     // Inflates view layout

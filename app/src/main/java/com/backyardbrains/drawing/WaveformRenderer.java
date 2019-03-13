@@ -46,6 +46,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
+    private static final float[][] CHANNEL_COLORS = copyColors(Colors.CHANNEL_COLORS);
+
     private static final float DASH_SIZE = 30f;
     private static final int LINE_WIDTH = 1;
 
@@ -95,6 +97,39 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         glWaveform = new GlWaveform();
         glHandle = new GlHandle();
         glThresholdLine = new GlDashedHLine();
+    }
+
+    //=================================================
+    //  STATIC METHODS
+    //=================================================
+
+    /**
+     * Returns color of all the channels.
+     */
+    public float[][] getChannelColors() {
+        return copyColors(CHANNEL_COLORS);
+    }
+
+    // Creates and returns a copy of the specified color array
+    private static float[][] copyColors(float[][] colorsToCopy) {
+        final float[][] result = new float[colorsToCopy.length][];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = new float[colorsToCopy[i].length];
+            System.arraycopy(colorsToCopy[i], 0, result[i], 0, result[i].length);
+        }
+
+        return result;
+    }
+
+    //=================================================
+    //  PUBLIC METHODS
+    //=================================================
+
+    /**
+     * Sets specified {@code color} for the channel at specified {@code channelIndex}.
+     */
+    public void setChannelColor(int channelIndex, @Size(4) float[] color) {
+        System.arraycopy(color, 0, CHANNEL_COLORS[channelIndex], 0, color.length);
     }
 
     //=================================================
@@ -212,9 +247,9 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
         @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex) {
+        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth,
+        float[] waveformScaleFactors, float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX,
+        float scaleY, long lastFrameIndex) {
         final float samplesToDraw = waveformVerticesCount[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
         final boolean showWaveformHandle = getChannelCount() > 1;
@@ -300,8 +335,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     // Returns the color of the waveform for the specified channel in rgba format. If color is not defined green is returned.
     private @Size(4) float[] getWaveformColor(int channel) {
-        channel = channel % Colors.CHANNEL_COLORS.length;
-        return Colors.CHANNEL_COLORS[channel];
+        channel = channel % CHANNEL_COLORS.length;
+        return CHANNEL_COLORS[channel];
     }
 
     private void setThreshold(float threshold) {

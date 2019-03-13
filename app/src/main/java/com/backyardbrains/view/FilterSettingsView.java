@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -29,10 +30,23 @@ import java.util.List;
  */
 public class FilterSettingsView extends ConstraintLayout {
 
-    private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
-    private static final BandFilter[] FILTERS = new BandFilter[] {
+    static final BandFilter[] FILTERS = new BandFilter[] {
         Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE, Filters.FILTER_BAND_PLANT,
         Filters.FILTER_BAND_NEURON_PRO
+    };
+    private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
+
+    private static final ButterKnife.Setter<View, OnClickListener> INIT_PRESETS = (view, value, index) -> {
+        view.setTag(FILTERS[index]);
+        view.setOnClickListener(value);
+    };
+
+    private static final ButterKnife.Setter<View, BandFilter> SELECT_PRESET = (view, value, index) -> {
+        if (FILTERS[index].isEqual(value.getLowCutOffFrequency(), value.getHighCutOffFrequency())) {
+            view.setBackgroundResource(R.drawable.circle_gray_white_active);
+        } else {
+            view.setBackgroundResource(R.drawable.circle_gray_white);
+        }
     };
 
     @BindViews({
@@ -124,7 +138,8 @@ public class FilterSettingsView extends ConstraintLayout {
         updateMaxCutOff(maxCutOff);
         setBandFilter(filter);
 
-        updatePresetButtons(filter.getLowCutOffFrequency(), filter.getHighCutOffFrequency());
+        // select filter preset if necessary
+        ButterKnife.apply(btnPresets, SELECT_PRESET, filter);
     }
 
     /**
@@ -135,6 +150,7 @@ public class FilterSettingsView extends ConstraintLayout {
         cb60HzNotchFilter.setChecked(ObjectUtils.equals(filter, Filters.FILTER_NOTCH_60HZ));
     }
 
+    // Inflates view layout
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_filter_settings, this);
         ButterKnife.bind(this);
@@ -142,12 +158,10 @@ public class FilterSettingsView extends ConstraintLayout {
         setupUI();
     }
 
+    // Initial UI setup
     private void setupUI() {
         // presets
-        for (int i = 0; i < btnPresets.size(); i++) {
-            btnPresets.get(i).setTag(FILTERS[i]);
-            btnPresets.get(i).setOnClickListener(presetOnClickListener);
-        }
+        ButterKnife.apply(btnPresets, INIT_PRESETS, presetOnClickListener);
         // low cut-off
         etLowCutOff.setOnEditorActionListener((textView, actionId, keyEvent) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -182,18 +196,6 @@ public class FilterSettingsView extends ConstraintLayout {
             if (isChecked && cb50HzNotchFilter.isChecked()) cb50HzNotchFilter.setChecked(false);
             if (listener != null) listener.onNotchFilterSet(isChecked ? Filters.FILTER_NOTCH_60HZ : null);
         });
-    }
-
-    // Update preset filter buttons
-    private void updatePresetButtons(double lowCutOffFreq, double highCutOffFreq) {
-        // select filter preset if necessary
-        for (int i = 0; i < FILTERS.length; i++) {
-            if (FILTERS[i].isEqual(lowCutOffFreq, highCutOffFreq)) {
-                btnPresets.get(i).setBackgroundResource(R.drawable.circle_gray_white_active);
-            } else {
-                btnPresets.get(i).setBackgroundResource(R.drawable.circle_gray_white);
-            }
-        }
     }
 
     // Updates all local variables and controls depending on the max cut-off value
@@ -291,7 +293,7 @@ public class FilterSettingsView extends ConstraintLayout {
                 + minCutOff);
     }
 
-    // Returns a new Filter with cut-off values currently set inside input fields
+    // Updates preset buttons and triggers OnFilterSetListener.onBandFilterSet() callback
     void updatePresetButtonsAndTriggerListener() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
@@ -302,9 +304,11 @@ public class FilterSettingsView extends ConstraintLayout {
             lowCutOff = Filters.FREQ_NO_CUT_OFF;
             highCutOff = Filters.FREQ_NO_CUT_OFF;
         }
-        // update preset buttons
-        updatePresetButtons(lowCutOff, highCutOff);
+        final BandFilter filter = new BandFilter(lowCutOff, highCutOff);
 
-        if (listener != null) listener.onBandFilterSet(new BandFilter(lowCutOff, highCutOff));
+        // select filter preset if necessary
+        ButterKnife.apply(btnPresets, SELECT_PRESET, filter);
+
+        if (listener != null) listener.onBandFilterSet(filter);
     }
 }

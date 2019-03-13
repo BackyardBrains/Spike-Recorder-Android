@@ -5,6 +5,7 @@ import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -108,16 +109,23 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private final SettingsView.OnSettingChangeListener settingChangeListener =
         new SettingsView.OnSettingChangeListener() {
-            @Override public void onSpeakersMuteChange(boolean mute) {
+            @Override public void onSpeakersMuteChanged(boolean mute) {
                 setMuteSpeakers(mute);
             }
 
-            @Override public void onBandFilterChange(@Nullable BandFilter filter) {
+            @Override public void onBandFilterChanged(@Nullable BandFilter filter) {
                 setBandFilter(filter);
             }
 
-            @Override public void onNotchFilterChange(@Nullable NotchFilter filter) {
+            @Override public void onNotchFilterChanged(@Nullable NotchFilter filter) {
                 setNotchFilter(filter);
+            }
+
+            @Override public void onChannelColorChanged(@Size(4) float[] color, int channelIndex) {
+                setChannelColor(color, channelIndex);
+            }
+
+            @Override public void onChannelHidden(int channelIndex) {
             }
         };
 
@@ -261,7 +269,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         });
         renderer.setSignalAveraging(thresholdOn);
         // if app is opened for the first time averaging trigger type will be THRESHOLD,
-        // otherwise it will be the last set value (we retrieve it from C++ code
+        // otherwise it will be the last set value (we retrieve it from C++ code)
         renderer.setAveragingTriggerType(triggerType = JniUtils.getAveragingTriggerType());
         return renderer;
     }
@@ -353,6 +361,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // update filters button
         //setupFiltersButton();
+        // setup settings view
+        setupSettingsView();
         // setup USB button
         setupUsbButton();
         // update BPM label
@@ -472,6 +482,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                         : Filters.FREQ_HIGH_MAX_CUT_OFF,
                     getAudioService().getNotchFilter() != null ? getAudioService().getNotchFilter()
                         : new NotchFilter());
+                vSettings.setupChannels(getAudioService().getChannelCount(), getRenderer().getChannelColors());
             }
             vSettings.setVisibility(View.VISIBLE);
             vSettings.setOnSettingChangeListener(settingChangeListener);
@@ -489,6 +500,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         settingsOn = !settingsOn;
     }
 
+    void setMuteSpeakers(boolean mute) {
+        if (getAudioService() != null) getAudioService().setMuteSpeakers(mute);
+    }
+
     // Sets a band filter that should be applied while processing incoming data
     void setBandFilter(@Nullable BandFilter filter) {
         if (getAudioService() != null) getAudioService().setBandFilter(filter);
@@ -502,8 +517,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getAudioService() != null) getAudioService().setNotchFilter(filter);
     }
 
-    void setMuteSpeakers(boolean mute) {
-        if (getAudioService() != null) getAudioService().setMuteSpeakers(mute);
+    // Sets a new color to the channel with specified channelIndex
+    private void setChannelColor(@Size(4) float[] color, int channelIndex) {
+        getRenderer().setChannelColor(channelIndex, color);
     }
 
     //==============================================
