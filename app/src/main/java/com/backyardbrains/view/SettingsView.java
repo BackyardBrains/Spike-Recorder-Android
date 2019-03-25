@@ -58,10 +58,18 @@ public class SettingsView extends FrameLayout {
         /**
          * Listener that is invoked when channel at specified {@code channelIndex} changes color to specified {@code color}.
          *
-         * @param color New channel color.
          * @param channelIndex Index of the channel which color has changed.
+         * @param color New channel color.
          */
-        void onChannelColorChanged(@Size(4) float[] color, int channelIndex);
+        void onChannelColorChanged(int channelIndex, @Size(4) float[] color);
+
+        /**
+         * Listener that is invoked when channel at specified {@code channelIndex} is shown.
+         *
+         * @param channelIndex Index of the shown channel.
+         * @param color New channel color.
+         */
+        void onChannelShown(int channelIndex, float[] color);
 
         /**
          * Listener that is invoked when channel at specified {@code channelIndex} is hidden.
@@ -168,11 +176,13 @@ public class SettingsView extends FrameLayout {
     }
 
     // Triggers OnSettingChangeListener.onChannelColorChanged() or OnSettingChangeListener.onChannelHidden() methods
-    void triggerOnColorChange(@Size(4) float[] color, int channelIndex) {
-        if (Arrays.equals(Colors.BLACK, color)) {
+    void triggerOnColorChange(@Size(4) float[] prevColor, @Size(4) float[] newColor, int channelIndex) {
+        if (Arrays.equals(Colors.BLACK, newColor)) {
             if (listener != null) listener.onChannelHidden(channelIndex);
+        } else if (Arrays.equals(Colors.BLACK, prevColor)) {
+            if (listener != null) listener.onChannelShown(channelIndex, newColor);
         } else {
-            if (listener != null) listener.onChannelColorChanged(color, channelIndex);
+            if (listener != null) listener.onChannelColorChanged(channelIndex, newColor);
         }
     }
 

@@ -24,8 +24,6 @@ namespace backyardbrains {
         }
 
         void Processor::setSampleRate(float sampleRate) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "SAMPLE RATE: %1f", sampleRate);
-
             if (initialized) deleteFilters(channelCount);
             Processor::sampleRate = sampleRate;
 
@@ -37,8 +35,6 @@ namespace backyardbrains {
         }
 
         void Processor::setChannelCount(int channelCount) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "CHANNEL COUNT: %1d", channelCount);
-
             if (initialized) deleteFilters(Processor::channelCount);
             Processor::channelCount = channelCount;
 
@@ -50,15 +46,12 @@ namespace backyardbrains {
         }
 
         void Processor::setSelectedChannel(int selectedChannel) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "setSelectedChannel(%d)", selectedChannel);
-
             Processor::selectedChannel = selectedChannel;
         }
 
         void Processor::setSampleRateAndChannelCount(float sampleRate, int channelCount) {
             __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "SAMPLE RATE: %1f, CHANNEL COUNT: %1d",
-                                sampleRate,
-                                channelCount);
+                                sampleRate, channelCount);
 
             if (initialized) deleteFilters(Processor::channelCount);
             Processor::channelCount = channelCount;
@@ -74,8 +67,6 @@ namespace backyardbrains {
         }
 
         void Processor::setBandFilter(float lowCutOffFreq, float highCutOffFreq) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "LOW: %1f, HIGH: %1f", lowCutOffFreq,
-                                highCutOffFreq);
             lowPassFilteringEnabled = highCutOffFreq != -1 && highCutOffFreq != MAX_FILTER_CUT_OFF;
             highPassFilteringEnabled = lowCutOffFreq != -1 && lowCutOffFreq != MIN_FILTER_CUT_OFF;
 
@@ -87,7 +78,6 @@ namespace backyardbrains {
         }
 
         void Processor::setNotchFilter(float centerFreq) {
-            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(), "CENTER: %1f", centerFreq);
             notchFilteringEnabled = centerFreq != -1 && centerFreq != MIN_FILTER_CUT_OFF;
 
             Processor::centerFrequency = centerFreq;

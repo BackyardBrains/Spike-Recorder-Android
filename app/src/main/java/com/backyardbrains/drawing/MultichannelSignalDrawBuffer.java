@@ -19,6 +19,8 @@
 
 package com.backyardbrains.drawing;
 
+import android.support.annotation.NonNull;
+import com.backyardbrains.dsp.SignalConfiguration;
 import com.crashlytics.android.Crashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -89,6 +91,19 @@ public class MultichannelSignalDrawBuffer {
                 + tmpBuffer.length + " srcPos=" + length + " dst.length=" + tmpBuffer.length + " dstPos=" + 0
                 + " length=" + (tmpBuffer.length - length));
             Crashlytics.logException(e);
+        }
+    }
+
+    void copyReconfigured(@NonNull MultichannelSignalDrawBuffer visibleSignalDrawBuffer,
+        @NonNull SignalConfiguration signalConfiguration) {
+        // we cannot copy if channel counts are not same
+        if (signalConfiguration.getChannelCount() != channelCount) return;
+
+        int counter = 0;
+        for (int i = 0; i < channelCount; i++) {
+            if (signalConfiguration.isChannelVisible(i)) {
+                visibleSignalDrawBuffer.buffer[counter++] = buffer[i];
+            }
         }
     }
 }

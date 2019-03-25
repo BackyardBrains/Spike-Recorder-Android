@@ -128,27 +128,32 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         @Override public void run() {
             if (manager != null) {
                 final UsbDeviceConnection connection = manager.openDevice(device);
-                usbDevice = AbstractUsbSignalSource.createUsbDevice(device, connection);
-                if (usbDevice != null) {
-                    if (usbDevice.open()) {
-                        if (listener != null) listener.onDataTransferStart();
+                if (connection != null) {
+                    usbDevice = AbstractUsbSignalSource.createUsbDevice(device, connection);
+                    if (usbDevice != null) {
+                        if (usbDevice.open()) {
+                            if (listener != null) listener.onDataTransferStart();
 
-                        if (usbDevice != null) usbDevice.start();
+                            if (usbDevice != null) usbDevice.start();
 
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (usbDevice != null) usbDevice.checkHardwareType();
+                        } else {
+                            LOGD(TAG, "PORT NOT OPEN");
+                            Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
                         }
-
-                        if (usbDevice != null) usbDevice.checkHardwareType();
                     } else {
-                        LOGD(TAG, "PORT NOT OPEN");
-                        Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
+                        LOGD(TAG, "PORT IS NULL");
+                        Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
                     }
                 } else {
-                    LOGD(TAG, "PORT IS NULL");
-                    Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
+                    LOGD(TAG, "USB DEVICE OPEN FAILED");
+                    Crashlytics.logException(new RuntimeException("USB device open connection failed!"));
                 }
             } else {
                 LOGD(TAG, "USB MANAGER NOT AVAILABLE");

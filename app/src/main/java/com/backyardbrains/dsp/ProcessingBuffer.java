@@ -1,7 +1,6 @@
 package com.backyardbrains.dsp;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.backyardbrains.drawing.FftDrawBuffer;
 import com.backyardbrains.drawing.MultichannelSignalDrawBuffer;
 import com.backyardbrains.utils.AudioUtils;
@@ -23,11 +22,6 @@ public class ProcessingBuffer {
 
     private static ProcessingBuffer INSTANCE;
 
-    // Signal sample rate
-    private int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
-    // Number of processed channels
-    private int channelCount = SignalProcessor.DEFAULT_CHANNEL_COUNT;
-
     // Circular buffer array that holds incoming samples by channel
     private CircularShortBuffer[] sampleBuffers;
     // Circular buffers that holds averaged incoming samples by channel
@@ -44,6 +38,7 @@ public class ProcessingBuffer {
     private int eventCount;
     // Index of the sample that was processed last (used only during playback)
     private long lastSampleIndex;
+
     // Buffer for the FFT data
     private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT,
         SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
@@ -51,30 +46,10 @@ public class ProcessingBuffer {
     private float[][] fft =
         new float[SignalProcessor.DEFAULT_FFT_WINDOW_COUNT][SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE];
 
-    /**
-     * Interface definition for a callback to be invoked when signal sample rate or number of channels changes.
-     */
-    public interface OnSignalPropertyChangeListener {
-        /**
-         * Called when signal sample rate changes.
-         *
-         * @param sampleRate The new sample rate.
-         */
-        void onSampleRateChange(int sampleRate);
-
-        /**
-         * Called when number of channels changes.
-         *
-         * @param channelCount The new number of channels.
-         */
-        void onChannelCountChange(int channelCount);
-    }
-
-    private OnSignalPropertyChangeListener listener;
-
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
-        createSampleBuffers(channelCount);
+        createSampleBuffers(AudioUtils.DEFAULT_CHANNEL_COUNT);
+        createAveragedSamplesBuffer(AudioUtils.DEFAULT_CHANNEL_COUNT);
         eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
         eventNames = new String[EventUtils.MAX_EVENT_COUNT];
         eventCount = 0;
@@ -98,74 +73,37 @@ public class ProcessingBuffer {
     //======================================================================
 
     /**
-     * Registers a callback to be invoked when signal sample rate or number of channel changes.
-     *
-     * @param listener The callback that will be run. This value may be {@code null}.
-     */
-    public void setOnSignalPropertyChangeListener(@Nullable OnSignalPropertyChangeListener listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * Sets sample rate of the processed signal.
-     */
-    void setSampleRate(int sampleRate) {
-        if (this.sampleRate == sampleRate) return;
-
-        clearBuffers();
-        createSampleBuffers(channelCount);
-
-        this.sampleRate = sampleRate;
-
-        if (listener != null) listener.onSampleRateChange(sampleRate);
-    }
-
-    /**
-     * Sets number of processed channels.
-     */
-    void setChannelCount(int channelCount) {
-        if (this.channelCount == channelCount) return;
-
-        clearBuffers();
-        createSampleBuffers(channelCount);
-
-        this.channelCount = channelCount;
-
-        if (listener != null) listener.onChannelCountChange(channelCount);
-    }
-
-    /**
      * Copies as many samples, averaged samples, event indices and event names accompanying the sample data currently
      * in the buffer as available to the specified {@code samleBuffer}, {@code averagedSamplesBuffer}, {@code indices}
      * and {@code events}.
      *
      * @return Number of copied events.
      */
-    public int copy(@NonNull MultichannelSignalDrawBuffer sampleDrawBuffer,
-        @NonNull MultichannelSignalDrawBuffer averagedDrawSamplesBuffer, @NonNull int[] indices,
-        @NonNull String[] events, @NonNull FftDrawBuffer fftDrawBuffer) {
+    public int copy(@NonNull MultichannelSignalDrawBuffer signalDrawBuffer,
+        @NonNull MultichannelSignalDrawBuffer averagedSignalDrawBuffer, @NonNull int[] eventIndices,
+        @NonNull String[] eventNames, @NonNull FftDrawBuffer fftDrawBuffer) {
         synchronized (lock) {
             // copy samples
             if (sampleBuffers != null) {
-                for (int i = 0; i < channelCount; i++) {
+                for (int i = 0; i < sampleBuffers.length; i++) {
                     if (sampleBuffers[i] != null) {
                         int count = sampleBuffers[i].get(samples);
-                        if (count > 0) sampleDrawBuffer.add(i, samples, count);
+                        if (count > 0) signalDrawBuffer.add(i, samples, count);
                     }
                 }
             }
             // copy averaged samples
             if (averagedSamplesBuffers != null) {
-                for (int i = 0; i < channelCount; i++) {
+                for (int i = 0; i < averagedSamplesBuffers.length; i++) {
                     if (averagedSamplesBuffers[i] != null) {
                         int count = averagedSamplesBuffers[i].get(samples);
-                        if (count > 0) averagedDrawSamplesBuffer.add(i, samples, count);
+                        if (count > 0) averagedSignalDrawBuffer.add(i, samples, count);
                     }
                 }
             }
             // copy events
-            System.arraycopy(eventIndices, 0, indices, 0, eventCount);
-            System.arraycopy(eventNames, 0, events, 0, eventCount);
+            System.arraycopy(this.eventIndices, 0, eventIndices, 0, eventCount);
+            System.arraycopy(this.eventNames, 0, eventNames, 0, eventCount);
             // copy fft data
             // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
             //if (fftBuffer != null) {
@@ -178,24 +116,23 @@ public class ProcessingBuffer {
     }
 
     /**
-     * Adds specified {@code samplesWithEvents} and {@code averagedSamples} to the buffer.
+     * Adds specified {@code signalData} and {@code averagedSamples} to the buffer.
      */
-    void add(@NonNull SamplesWithEvents samplesWithEvents, @NonNull SamplesWithEvents averagedSamples,
-        @NonNull FftData fftData) {
+    void add(@NonNull SignalData signalData, @NonNull SignalData averagedSamples, @NonNull FftData fftData) {
         synchronized (lock) {
             // add samples to signal ring buffer
-            if (sampleBuffers != null && sampleBuffers.length == samplesWithEvents.samplesM.length) {
-                for (int i = 0; i < samplesWithEvents.samplesM.length; i++) {
+            if (sampleBuffers != null && sampleBuffers.length == signalData.samples.length) {
+                for (int i = 0; i < signalData.samples.length; i++) {
                     if (sampleBuffers[i] != null) {
-                        sampleBuffers[i].put(samplesWithEvents.samplesM[i], 0, samplesWithEvents.sampleCountM[i]);
+                        sampleBuffers[i].put(signalData.samples[i], 0, signalData.sampleCounts[i]);
                     }
                 }
             }
             // add samples to averaged signal ring buffer
-            if (averagedSamplesBuffers != null && averagedSamplesBuffers.length == averagedSamples.samplesM.length) {
-                for (int i = 0; i < averagedSamples.samplesM.length; i++) {
+            if (averagedSamplesBuffers != null && averagedSamplesBuffers.length == averagedSamples.samples.length) {
+                for (int i = 0; i < averagedSamples.samples.length; i++) {
                     if (averagedSamplesBuffers[i] != null) {
-                        averagedSamplesBuffers[i].put(averagedSamples.samplesM[i], 0, averagedSamples.sampleCountM[i]);
+                        averagedSamplesBuffers[i].put(averagedSamples.samples[i], 0, averagedSamples.sampleCounts[i]);
                     }
                 }
             }
@@ -203,31 +140,59 @@ public class ProcessingBuffer {
             // skip events that are no longer visible (they will be overwritten when adding new ones)
             int removeIndices;
             for (removeIndices = 0; removeIndices < eventCount; removeIndices++) {
-                if (eventIndices[removeIndices] - samplesWithEvents.sampleCount < 0) continue;
+                if (eventIndices[removeIndices] - signalData.sampleCounts[0] < 0) continue;
 
                 break;
             }
             // update indices of existing events
             int eventCounter = 0;
             for (int i = removeIndices; i < eventCount; i++) {
-                eventIndices[eventCounter] = eventIndices[i] - samplesWithEvents.sampleCount;
+                eventIndices[eventCounter] = eventIndices[i] - signalData.sampleCounts[0];
                 eventNames[eventCounter++] = eventNames[i];
             }
             // add new events
-            int baseIndex = sampleBufferSize - samplesWithEvents.sampleCount;
-            for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                eventIndices[eventCounter] = baseIndex + samplesWithEvents.eventIndices[i];
-                eventNames[eventCounter++] = samplesWithEvents.eventNames[i];
+            int baseIndex = sampleBufferSize - signalData.sampleCounts[0];
+            for (int i = 0; i < signalData.eventCount; i++) {
+                eventIndices[eventCounter] = baseIndex + signalData.eventIndices[i];
+                eventNames[eventCounter++] = signalData.eventNames[i];
             }
-            eventCount = eventCount - removeIndices + samplesWithEvents.eventCount;
+            eventCount = eventCount - removeIndices + signalData.eventCount;
 
             // save last sample index (playhead)
-            lastSampleIndex = samplesWithEvents.lastSampleIndex;
+            lastSampleIndex = signalData.lastSampleIndex;
 
             // add fft data to buffer
             // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
             //if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
         }
+    }
+
+    /**
+     * Resets sample buffers.
+     */
+    void resetAllSampleBuffers(int channelCount, int visibleChannelCount) {
+        // reset sample buffer
+        clearBuffers();
+        createSampleBuffers(channelCount);
+        // reset averaged samples buffer
+        clearAveragedSamplesBuffer();
+        createAveragedSamplesBuffer(visibleChannelCount);
+    }
+
+    /**
+     * Resets averaged samples buffer.
+     */
+    void resetAveragedSamplesBuffer(int visibleChannelCount) {
+        clearAveragedSamplesBuffer();
+        createAveragedSamplesBuffer(visibleChannelCount);
+    }
+
+    /**
+     * Clears sample buffer, averaged samples buffers, events collections and resets last read byte position.
+     */
+    void clearAllBuffers() {
+        clearBuffers();
+        clearAveragedSamplesBuffer();
     }
 
     /**
@@ -238,18 +203,24 @@ public class ProcessingBuffer {
         return lastSampleIndex;
     }
 
-    /**
-     * Clears the sample data ring buffers, events collections and resets last read byte position.
-     */
-    void clearBuffers() {
+    // Creates sample data buffers
+    private void createSampleBuffers(int channelCount) {
+        synchronized (lock) {
+            sampleBuffers = new CircularShortBuffer[channelCount];
+            sampleBufferSize = SignalProcessor.getProcessedSamplesCount();
+            for (int i = 0; i < channelCount; i++) {
+                sampleBuffers[i] = new CircularShortBuffer(sampleBufferSize);
+            }
+            fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.getProcessedFftWindowCount(),
+                SignalProcessor.getProcessedFftWindowSize());
+        }
+    }
+
+    // Clears the sample data ring buffer, events collections and resets last read byte position.
+    private void clearBuffers() {
         synchronized (lock) {
             if (sampleBuffers != null) {
                 for (CircularShortBuffer sb : sampleBuffers) {
-                    if (sb != null) sb.clear();
-                }
-            }
-            if (averagedSamplesBuffers != null) {
-                for (CircularShortBuffer sb : averagedSamplesBuffers) {
                     if (sb != null) sb.clear();
                 }
             }
@@ -259,19 +230,24 @@ public class ProcessingBuffer {
         }
     }
 
-    // Creates all sample data buffers
-    private void createSampleBuffers(int channelCount) {
+    // Creates averaged samples data buffers
+    private void createAveragedSamplesBuffer(int channelCount) {
         synchronized (lock) {
-            sampleBuffers = new CircularShortBuffer[channelCount];
             averagedSamplesBuffers = new CircularShortBuffer[channelCount];
-            sampleBufferSize = SignalProcessor.getProcessedSamplesCount();
             for (int i = 0; i < channelCount; i++) {
-                sampleBuffers[i] = new CircularShortBuffer(sampleBufferSize);
-                // Size of the average samples buffer
                 averagedSamplesBuffers[i] = new CircularShortBuffer(SignalProcessor.getProcessedAveragedSamplesCount());
             }
-            fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.getProcessedFftWindowCount(),
-                SignalProcessor.getProcessedFftWindowSize());
+        }
+    }
+
+    // Clears the averaged samples data ring buffers.
+    private void clearAveragedSamplesBuffer() {
+        synchronized (lock) {
+            if (averagedSamplesBuffers != null) {
+                for (CircularShortBuffer sb : averagedSamplesBuffers) {
+                    if (sb != null) sb.clear();
+                }
+            }
         }
     }
 }

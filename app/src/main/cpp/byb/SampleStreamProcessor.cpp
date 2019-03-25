@@ -23,9 +23,8 @@ namespace backyardbrains {
 
         void
         SampleStreamProcessor::process(const unsigned char *inData, const int length, short **outSamples,
-                                       int *outSampleCounts,
-                                       int *outEventIndices, std::string *outEventLabels, int &outEventCount,
-                                       const int channelCount) {
+                                       int *outSampleCounts, int *outEventIndices, std::string *outEventLabels,
+                                       int &outEventCount, const int channelCount) {
             if (prevChannelCount != channelCount) { // number of channels changed during processing of previous batch
                 frameStarted = false;
                 sampleStarted = false;

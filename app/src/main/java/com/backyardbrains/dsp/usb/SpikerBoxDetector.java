@@ -6,7 +6,7 @@ import android.hardware.usb.UsbManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
-import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.dsp.SignalSource;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
@@ -83,11 +83,10 @@ class SpikerBoxDetector {
             if (usbDevice != null) {
                 usbDevice.setProcessor(new SignalSource.Processor() {
 
-                    private SamplesWithEvents samplesWithEvents =
-                        new SamplesWithEvents(usbDevice.getChannelCount(), BUFFER_SIZE);
+                    private SignalData signalData = new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE);
 
                     @Override public void onDataReceived(@NonNull byte[] data, int length) {
-                        JniUtils.processSampleStream(samplesWithEvents, data, length, usbDevice);
+                        JniUtils.processSampleStream(signalData, data, length, usbDevice);
                     }
 
                     @Override public void onSampleRateChanged(int sampleRate) {

@@ -30,6 +30,8 @@ import com.backyardbrains.dsp.audio.AudioHelper;
 import com.backyardbrains.dsp.audio.PlaybackSignalSource;
 import com.backyardbrains.dsp.audio.Recorder;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
+import com.backyardbrains.dsp.usb.AbstractUsbSignalSource.OnExpansionBoardTypeDetectionListener;
+import com.backyardbrains.dsp.usb.AbstractUsbSignalSource.OnSpikerBoxHardwareTypeDetectionListener;
 import com.backyardbrains.dsp.usb.UsbHelper;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -47,6 +49,7 @@ import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
@@ -72,7 +75,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     private final IBinder binder = new ServiceBinder();
 
     // Reference to data processor
-    private SignalProcessor signalProcessor;
+    private final SignalProcessor signalProcessor;
 
     // Reference to the audio helper
     private AudioHelper audioHelper;
@@ -84,8 +87,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     // Whether service is created
     private boolean created;
 
-    // Reference to currently active sample source
-    private AbstractSignalSource sampleSource;
+    // Reference to currently active signal source
+    private AbstractSignalSource signalSource;
 
     /**
      * Provides a reference to {@link ProcessingService} to all bound clients.
@@ -96,15 +99,25 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         }
     }
 
+    /**
+     * Constructor
+     */
+    public ProcessingService() {
+        signalProcessor = new SignalProcessor(this);
+    }
+
     //========================================================
     //  LIFECYCLE OVERRIDES
     //========================================================
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onCreate() {
         super.onCreate();
         LOGD(TAG, "onCreate()");
 
-        signalProcessor = new SignalProcessor(this);
+        // start processing signal
         signalProcessor.start();
 
         // we listen for audio input source change
@@ -117,10 +130,16 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         created = true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         return super.onStartCommand(intent, flags, startId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onDestroy() {
         created = false;
 
@@ -173,6 +192,41 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Shows channel at {@code channelIndex}.
+     */
+    public void showChannel(int channelIndex) {
+        signalProcessor.showChannel(channelIndex);
+    }
+
+    /**
+     * Hides channel at {@code channelIndex}.
+     */
+    public void hideChannel(int channelIndex) {
+        signalProcessor.hideChannel(channelIndex);
+    }
+
+    /**
+     * Sets currently selected channel.
+     */
+    public void setSelectedChannel(int channelIndex) {
+        signalProcessor.setSelectedChannel(channelIndex);
+    }
+
+    /**
+     * Passes information about whether incoming signal should be averaged or not to data processor.
+     */
+    public void setSignalAveraging(boolean signalAveraging) {
+        signalProcessor.setSignalAveraging(signalAveraging);
+    }
+
+    /**
+     * Passes information about signal averaging trigger type to data processor.
+     */
+    public void setSignalAveragingTriggerType(@SignalAveragingTriggerType int triggerType) {
+        signalProcessor.setSignalAveragingTriggerType(triggerType);
+    }
+
+    /**
      * Returns filter that is additionally applied when processing incoming data.
      */
     public BandFilter getBandFilter() {
@@ -209,13 +263,6 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         FILTERS.setNotchFilter(filter);
     }
 
-    /**
-     * Passes information about whether incoming signal should be averaged or not to data processor.
-     */
-    public void setSignalAveraging(boolean signalAveraging) {
-        if (signalProcessor != null) signalProcessor.setSignalAveraging(signalAveraging);
-    }
-
     //========================================================
     //  IMPLEMENTATIONS OF OnProcessingListener INTERFACE
     //========================================================
@@ -223,10 +270,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * Passes processed data to the recording saver.
      *
-     * @see SignalProcessor.OnProcessingListener#onDataProcessed(SamplesWithEvents)
+     * @see SignalProcessor.OnProcessingListener#onDataProcessed(SignalData)
      */
-    @Override public void onDataProcessed(@NonNull SamplesWithEvents samplesWithEvents) {
-        record(samplesWithEvents);
+    @Override public void onDataProcessed(@NonNull SignalData signalData) {
+        record(signalData);
     }
 
     //========================================================
@@ -238,8 +285,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void startActiveInputSource() {
         if (created) {
-            if (sampleSource != null) {
-                switch (sampleSource.getType()) {
+            if (signalSource != null) {
+                switch (signalSource.getType()) {
                     case SignalSource.Type.MICROPHONE:
                         turnOnMicrophone();
                         break;
@@ -269,7 +316,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * Whether USB is active input source.
      */
     public boolean isUsbActiveInput() {
-        return sampleSource != null && sampleSource.isUsb();
+        return signalSource != null && signalSource.isUsb();
     }
 
     //========================================================
@@ -290,9 +337,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
         // set current audio input source
         if (audioHelper.getAudioDevice() != null) {
-            sampleSource = audioHelper.getAudioDevice();
-            if (signalProcessor != null) signalProcessor.setSignalSource(sampleSource);
-            sampleSource.start();
+            signalSource = audioHelper.getAudioDevice();
+            signalProcessor.setSignalSource(signalSource);
+            signalSource.start();
         }
 
         LOGD(TAG, "Microphone started");
@@ -302,9 +349,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         LOGD(TAG, "turnOffMicrophone()");
         stopRecording();
 
-        if (sampleSource != null && sampleSource.isMicrophone()) {
-            sampleSource.stop();
-            sampleSource = null;
+        if (signalSource != null && signalSource.isMicrophone()) {
+            signalSource.stop();
+            signalSource = null;
         }
         LOGD(TAG, "Microphone stopped");
     }
@@ -343,6 +390,16 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     //  USB
     //========================================================
 
+    final OnSpikerBoxHardwareTypeDetectionListener spikerBoxDetectionListener = hardwareType -> {
+        LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
+        EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
+    };
+
+    final OnExpansionBoardTypeDetectionListener expansionBoardDetectionListener = expansionBoardType -> {
+        LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoardType);
+        EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
+    };
+
     /**
      * Initiates communication with USB device with the specified {@code deviceName}.
      */
@@ -362,8 +419,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * hardwareType}, {@code false} otherwise.
      */
     public boolean isActiveUsbInputOfType(@SpikerBoxHardwareType int hardwareType) {
-        return created && sampleSource != null && sampleSource.isUsb()
-            && ((AbstractUsbSignalSource) sampleSource).getHardwareType() == hardwareType;
+        return created && signalSource != null && signalSource.isUsb()
+            && ((AbstractUsbSignalSource) signalSource).getHardwareType() == hardwareType;
     }
 
     /**
@@ -392,17 +449,11 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 EventBus.getDefault()
                     .post(new SpikerBoxHardwareTypeDetectionEvent(usbHelper.getUsbDevice().getHardwareType()));
             } else {
-                usbHelper.getUsbDevice().setOnSpikerBoxHardwareTypeDetectionListener(hardwareType -> {
-                    LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
-                    EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
-                });
-                usbHelper.getUsbDevice().setOnExpansionBoardTypeDetectionListener(expansionBoardType -> {
-                    LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoardType);
-                    EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
-                });
+                usbHelper.getUsbDevice().addOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
+                usbHelper.getUsbDevice().addOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
             }
-            sampleSource = usbHelper.getUsbDevice();
-            if (signalProcessor != null) signalProcessor.setSignalSource(sampleSource);
+            signalSource = usbHelper.getUsbDevice();
+            signalProcessor.setSignalSource(signalSource);
         }
 
         LOGD(TAG, "USB communication started");
@@ -413,9 +464,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         LOGD(TAG, "turnOffUsb()");
         stopRecording();
 
-        if (sampleSource != null && sampleSource.isUsb()) {
-            sampleSource.stop();
-            sampleSource = null;
+        if (signalSource != null && signalSource.isUsb()) {
+            ((AbstractUsbSignalSource) signalSource).removeOnSpikerBoxHardwareTypeDetectionListener(
+                spikerBoxDetectionListener);
+            ((AbstractUsbSignalSource) signalSource).removeOnExpansionBoardTypeDetectionListener(
+                expansionBoardDetectionListener);
+            signalSource.stop();
+            signalSource = null;
         }
         LOGD(TAG, "USB communication ended");
     }
@@ -492,9 +547,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     public void togglePlayback(boolean play) {
         if (created && isPlaybackMode()) {
             if (play) {
-                ((PlaybackSignalSource) sampleSource).resumePlayback();
+                ((PlaybackSignalSource) signalSource).resumePlayback();
             } else {
-                ((PlaybackSignalSource) sampleSource).pausePlayback();
+                ((PlaybackSignalSource) signalSource).pausePlayback();
             }
         }
     }
@@ -504,7 +559,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void stopPlayback() {
         if (created) {
-            if (isPlaybackMode()) ((PlaybackSignalSource) sampleSource).pausePlayback();
+            if (isPlaybackMode()) ((PlaybackSignalSource) signalSource).pausePlayback();
             turnOffPlayback();
         }
     }
@@ -515,7 +570,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void startPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) sampleSource).seek(true);
+        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(true);
     }
 
     /**
@@ -523,7 +578,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void seekPlayback(int position) {
         if (created && isPlaybackMode()) {
-            ((PlaybackSignalSource) sampleSource).seek(AudioUtils.getByteCount(position));
+            // let's pause the threshold while seeking
+            JniUtils.pauseThreshold();
+
+            ((PlaybackSignalSource) signalSource).seek(AudioUtils.getByteCount(position));
         }
     }
 
@@ -533,14 +591,14 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void stopPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) sampleSource).seek(false);
+        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(false);
     }
 
     /**
      * Returns number of playback samples.
      */
     public long getPlaybackLength() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(((PlaybackSignalSource) sampleSource).getLength());
+        if (isPlaybackMode()) return AudioUtils.getSampleCount(((PlaybackSignalSource) signalSource).getLength());
 
         return 0;
     }
@@ -549,45 +607,45 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * Whether we are currently in the playback mode.
      */
     public boolean isPlaybackMode() {
-        return sampleSource != null && sampleSource.isFile();
+        return signalSource != null && signalSource.isFile();
     }
 
     /**
      * Whether playback is currently playing.
      */
     public boolean isAudioPlaying() {
-        return isPlaybackMode() && ((PlaybackSignalSource) sampleSource).isPlaying();
+        return isPlaybackMode() && ((PlaybackSignalSource) signalSource).isPlaying();
     }
 
     /**
      * Whether playback is currently paused.
      */
     public boolean isAudioPaused() {
-        return isPlaybackMode() && !((PlaybackSignalSource) sampleSource).isPlaying();
+        return isPlaybackMode() && !((PlaybackSignalSource) signalSource).isPlaying();
     }
 
     /**
      * Whether playback is currenly in the seek mode.
      */
     public boolean isAudioSeeking() {
-        return isPlaybackMode() && ((PlaybackSignalSource) sampleSource).isSeeking();
+        return isPlaybackMode() && ((PlaybackSignalSource) signalSource).isSeeking();
     }
 
     private void turnOnPlayback() {
         LOGD(TAG, "turnOnPlayback()");
 
-        if (sampleSource != null) sampleSource.start();
+        if (signalSource != null) signalSource.start();
         LOGD(TAG, "Playback started");
     }
 
     private void turnOffPlayback() {
         LOGD(TAG,
-            "turnOffPlayback() - playbackSampleSource " + (sampleSource != null ? "not null (stopping)" : "null"));
+            "turnOffPlayback() - playbackSampleSource " + (signalSource != null ? "not null (stopping)" : "null"));
 
         // remove current USB input source
-        if (sampleSource != null && sampleSource.isFile()) {
-            sampleSource.stop();
-            sampleSource = null;
+        if (signalSource != null && signalSource.isFile()) {
+            signalSource.stop();
+            signalSource = null;
         }
 
         // post event that audio playback has stopped
@@ -600,10 +658,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             turnOffUsb();
 
             turnOffPlayback();
-            if (sampleSource == null) {
-                sampleSource = new PlaybackSignalSource(filePath, autoPlay, position);
-                if (signalProcessor != null) signalProcessor.setSignalSource(sampleSource);
-                ((PlaybackSignalSource) sampleSource).setPlaybackListener(new PlaybackSignalSource.PlaybackListener() {
+            if (signalSource == null) {
+                signalSource = new PlaybackSignalSource(filePath, autoPlay, position);
+                signalProcessor.setSignalSource(signalSource);
+                ((PlaybackSignalSource) signalSource).setPlaybackListener(new PlaybackSignalSource.PlaybackListener() {
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
 
@@ -722,10 +780,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     // Pass audio and events to the active Recorder instance
-    private void record(@NonNull SamplesWithEvents samplesWithEvents) {
+    private void record(@NonNull SignalData signalData) {
         try {
             if (recorder != null) {
-                recorder.write(samplesWithEvents);
+                recorder.write(signalData);
 
                 // recorder can be set to null if stopRecording() is called between this and previous line
                 // post current recording progress

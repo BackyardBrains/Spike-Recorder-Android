@@ -2,7 +2,6 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
-import android.util.SparseArray;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.drawing.gl.GlMeasurementArea;
@@ -96,15 +95,16 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
+        long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         final int toSample = (int) lastFrameIndex;
         final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
         final boolean shouldQuerySamples = prevFromSample != fromSample || prevToSample != toSample;
 
-        final float samplesToDraw = waveformVerticesCount[0] * .5f;
+        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
 
         if (spikeTrains != null && valuesAndIndexes != null) {
@@ -210,8 +210,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             }
         }
 
-        super.draw(gl, samples, selectedChannel, waveformVertices, waveformVerticesCount, events, fftDrawData,
-            surfaceWidth,
+        super.draw(gl, samples, selectedChannel, signalDrawData, eventsDrawData, fftDrawData, surfaceWidth,
             surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX,
             scaleY, lastFrameIndex);
 

@@ -22,7 +22,7 @@ package com.backyardbrains.dsp.audio;
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.util.SparseArray;
-import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;
@@ -148,7 +148,7 @@ public class Recorder {
         /**
          * Appends specified {@code sampleWithEvents} to previously saved ones.
          */
-        void writeData(@NonNull SamplesWithEvents samplesWithEvents) {
+        void writeData(@NonNull SignalData signalData) {
             if (working.get()) {
                 int frameCount = 0;
                 boolean isRecording = recording.get();
@@ -158,7 +158,7 @@ public class Recorder {
 
                 // save samples to buffer as bytes
                 if (isRecording || playing.get()) {
-                    int sampleCount = JniUtils.interleaveSignal(samples, samplesWithEvents);
+                    int sampleCount = JniUtils.interleaveSignal(samples, signalData);
                     bb.asShortBuffer().put(samples, 0, sampleCount);
                     buffer.put(bb.array(), 0, sampleCount * 2);
                 }
@@ -166,9 +166,9 @@ public class Recorder {
                 // save events
                 if (isRecording) {
                     String event;
-                    for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                        event = samplesWithEvents.eventNames[i];
-                        if (event != null) events.put(frameCount + samplesWithEvents.eventIndices[i], event);
+                    for (int i = 0; i < signalData.eventCount; i++) {
+                        event = signalData.eventNames[i];
+                        if (event != null) events.put(frameCount + signalData.eventIndices[i], event);
                     }
                 }
             }
@@ -290,8 +290,8 @@ public class Recorder {
     /**
      * Writes specified {@code sampleWithEvents} to the audio stream.
      */
-    public void write(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (writeThread != null) writeThread.writeData(samplesWithEvents);
+    public void write(@NonNull SignalData signalData) {
+        if (writeThread != null) writeThread.writeData(signalData);
     }
 
     /**

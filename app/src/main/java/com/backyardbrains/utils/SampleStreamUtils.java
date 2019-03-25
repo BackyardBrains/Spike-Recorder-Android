@@ -13,13 +13,21 @@ public class SampleStreamUtils {
      * Default channel count for SpikerBox Pro
      */
     public static final int SPIKER_BOX_PRO_CHANNEL_COUNT = 2;
+    /**
+     * Default channel config for SpikerBox Pro
+     */
+    public static final boolean[] DEFAULT_SPIKER_BOX_PRO_CHANNEL_CONFIG = new boolean[] { true, false };
+    /**
+     * Default channel config for Hammer
+     */
+    public static final boolean[] DEFAULT_HAMMER_CHANNEL_CONFIG = new boolean[] { true, false, true };
 
     /**
      * Returns name of SpikerBox based on the specified {@code hardwareType}.
      */
     public static String getSpikerBoxHardwareName(@SpikerBoxHardwareType int hardwareType) {
         switch (hardwareType) {
-            case SpikerBoxHardwareType.HEART:
+            case SpikerBoxHardwareType.HEART_AND_BRAIN:
                 return "Heart & Brain SpikerBox";
             case SpikerBoxHardwareType.MUSCLE_PRO:
                 return "Muscle PRO SpikerBox";

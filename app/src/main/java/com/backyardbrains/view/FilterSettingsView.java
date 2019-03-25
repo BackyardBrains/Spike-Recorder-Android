@@ -206,7 +206,7 @@ public class FilterSettingsView extends ConstraintLayout {
     }
 
     // Sets specified filter as current band filter.
-    void setBandFilter(@NonNull BandFilter filter) {
+    private void setBandFilter(@NonNull BandFilter filter) {
         // Currently selected filter
         etLowCutOff.setText(String.valueOf(filter.getLowCutOffFrequency()));
         etHighCutOff.setText(String.valueOf(filter.getHighCutOffFrequency()));
@@ -215,7 +215,7 @@ public class FilterSettingsView extends ConstraintLayout {
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
-    @SuppressWarnings("WeakerAccess") void updateLowCutOff() {
+    void updateLowCutOff() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
@@ -231,7 +231,7 @@ public class FilterSettingsView extends ConstraintLayout {
     }
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
-    @SuppressWarnings("WeakerAccess") void updateHighCutOff() {
+    void updateHighCutOff() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
@@ -275,13 +275,13 @@ public class FilterSettingsView extends ConstraintLayout {
 
     // Updates text property of the specified EditText with specified cutOffValue
     // and sets selection at the end of the EditText
-    @SuppressWarnings("WeakerAccess") void setCutOffValue(@NonNull EditText et, double cutOffValue) {
+    void setCutOffValue(@NonNull EditText et, double cutOffValue) {
         et.setText(String.valueOf((int) cutOffValue));
         if (et.hasFocus()) et.setSelection(et.getText().length());
     }
 
     // Converts range value to a corresponding value withing logarithmic scale
-    @SuppressWarnings("WeakerAccess") double thumbToCutOff(long thumbValue) {
+    double thumbToCutOff(long thumbValue) {
         return Math.exp(
             minCutOffLog + (thumbValue - minCutOff) * (maxCutOffLog - minCutOffLog) / (maxCutOff - minCutOff));
     }

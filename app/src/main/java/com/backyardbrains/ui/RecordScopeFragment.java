@@ -67,11 +67,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
     // Default number of sample sets that should be summed when averaging
-    private static final int AVERAGED_SAMPLE_COUNT = 30;
+    private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
 
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_SETTINGS_ON = "bb_settings_on";
-    private static final String INT_AVERAGING_TRIGGER_TYPE = "bb_averaging_trigger_type";
 
     @BindView(R.id.ibtn_settings) ImageButton ibtnSettings;
     @BindView(R.id.v_settings) SettingsView vSettings;
@@ -98,8 +97,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private boolean settingsOn;
     // Whether signal triggering is turned on or off
     private boolean thresholdOn;
-    // Holds the type of triggering that is used when averaging
-    private @SignalAveragingTriggerType int triggerType = SignalAveragingTriggerType.THRESHOLD;
 
     //==============================================
     // EVENT LISTENERS
@@ -121,11 +118,16 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 setNotchFilter(filter);
             }
 
-            @Override public void onChannelColorChanged(@Size(4) float[] color, int channelIndex) {
+            @Override public void onChannelColorChanged(int channelIndex, @Size(4) float[] color) {
                 setChannelColor(color, channelIndex);
             }
 
+            @Override public void onChannelShown(int channelIndex, float[] color) {
+                showChannel(channelIndex, color);
+            }
+
             @Override public void onChannelHidden(int channelIndex) {
+                hideChannel(channelIndex);
             }
         };
 
@@ -194,7 +196,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (savedInstanceState != null) {
             settingsOn = savedInstanceState.getBoolean(BOOL_SETTINGS_ON);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
-            triggerType = savedInstanceState.getInt(INT_AVERAGING_TRIGGER_TYPE, SignalAveragingTriggerType.THRESHOLD);
         }
     }
 
@@ -223,8 +224,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
+        outState.putBoolean(BOOL_SETTINGS_ON, settingsOn);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
-        outState.putInt(INT_AVERAGING_TRIGGER_TYPE, triggerType);
     }
 
     @Override public void onDestroyView() {
@@ -249,7 +250,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // we should set averaged sample count before UI setup
         int averagedSampleCount = PrefUtils.getAveragedSampleCount(view.getContext(), BaseWaveformFragment.class);
-        if (averagedSampleCount < 0) averagedSampleCount = AVERAGED_SAMPLE_COUNT;
+        if (averagedSampleCount < 0) averagedSampleCount = DEFAULT_AVERAGED_SAMPLE_COUNT;
         JniUtils.setAveragedSampleCount(averagedSampleCount);
 
         setupUI();
@@ -260,17 +261,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
         renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getActivity() != null && getAudioService() != null) {
-                viewableTimeSpanUpdateRunnable.setSampleRate(getAudioService().getSampleRate());
-                viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                // we need to call it on UI thread because renderer is drawing on background thread
-                getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-            }
+            if (getAudioService() != null) setMilliseconds(getAudioService().getSampleRate(), drawSurfaceWidth);
         });
-        renderer.setSignalAveraging(thresholdOn);
-        // if app is opened for the first time averaging trigger type will be THRESHOLD,
-        // otherwise it will be the last set value (we retrieve it from C++ code)
-        renderer.setAveragingTriggerType(triggerType = JniUtils.getAveragingTriggerType());
+        renderer.setOnWaveformSelectionListener(index -> {
+            if (getAudioService() != null) getAudioService().setSelectedChannel(index);
+        });
         return renderer;
     }
 
@@ -300,7 +295,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
-        // this will start microphone if we are coming from background
+        // this will setup signal source and averaging if we are coming from background
         if (getAudioService() != null) startActiveInput(getAudioService());
 
         // setup settings view
@@ -374,7 +369,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         final String spikerBoxBoard;
         BandFilter filter = null;
         switch (event.getHardwareType()) {
-            case SpikerBoxHardwareType.HEART:
+            case SpikerBoxHardwareType.HEART_AND_BRAIN:
                 spikerBoxBoard = getString(R.string.board_type_heart);
                 filter = Filters.FILTER_BAND_HEART;
                 break;
@@ -518,8 +513,17 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     // Sets a new color to the channel with specified channelIndex
-    private void setChannelColor(@Size(4) float[] color, int channelIndex) {
+    void setChannelColor(@Size(4) float[] color, int channelIndex) {
         getRenderer().setChannelColor(channelIndex, color);
+    }
+
+    void showChannel(int channelIndex, @Size(4) float[] color) {
+        if (getAudioService() != null) getAudioService().showChannel(channelIndex);
+        getRenderer().setChannelColor(channelIndex, color);
+    }
+
+    void hideChannel(int channelIndex) {
+        if (getAudioService() != null) getAudioService().hideChannel(channelIndex);
     }
 
     //==============================================
@@ -588,6 +592,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (thresholdOn) {
             // setup averaging trigger type button
             ibtnAvgTriggerType.setVisibility(View.VISIBLE);
+            final @SignalAveragingTriggerType int triggerType = JniUtils.getAveragingTriggerType();
             switch (triggerType) {
                 case SignalAveragingTriggerType.ALL_EVENTS:
                     ibtnAvgTriggerType.setImageResource(R.drawable.ic_trigger_event_all_black_24dp);
@@ -635,20 +640,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void startThresholdMode() {
         thresholdOn = true;
         if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
-
-        getRenderer().onSaveSettings(ibtnThreshold.getContext());
-        getRenderer().setSignalAveraging(thresholdOn);
-        getRenderer().onLoadSettings(ibtnThreshold.getContext());
     }
 
     // Stops the threshold mode
     void stopThresholdMode() {
         thresholdOn = false;
         if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
-
-        getRenderer().onSaveSettings(ibtnThreshold.getContext());
-        getRenderer().setSignalAveraging(thresholdOn);
-        getRenderer().onLoadSettings(ibtnThreshold.getContext());
 
         // threshold should be reset every time it's enabled so let's reset every time on closing
         JniUtils.resetThreshold();
@@ -669,12 +666,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
-        this.triggerType = triggerType;
+        if (getAudioService() != null) getAudioService().setSignalAveragingTriggerType(triggerType);
 
         setupThresholdHandleAndAveragingTriggerTypeButtons();
-
-        JniUtils.setAveragingTriggerType(triggerType);
-        getRenderer().setAveragingTriggerType(triggerType);
     }
 
     //==============================================
@@ -782,7 +776,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //==============================================
 
     private void startActiveInput(@NonNull ProcessingService processingService) {
+        // this will set signal averaging if we are coming from background
         processingService.setSignalAveraging(thresholdOn);
+        // this will set signal averaging trigger type if we are coming from background
+        processingService.setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
+        // this will start microphone if we are coming from background
         processingService.startActiveInputSource();
 
         // resume the threshold in case it was paused during playback

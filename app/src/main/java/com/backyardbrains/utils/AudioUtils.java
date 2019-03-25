@@ -28,6 +28,11 @@ public class AudioUtils {
      */
     public static final int DEFAULT_CHANNEL_COUNT = 1;
     /**
+     * Default channel config that will be used for input audio source.
+     */
+    public static final boolean[] DEFAULT_CHANNEL_CONFIG = new boolean[] { true };
+
+    /**
      * Default channel configuration that will be used for input audio source.
      */
     public static final int DEFAULT_CHANNEL_IN_MASK = AudioFormat.CHANNEL_IN_MONO;

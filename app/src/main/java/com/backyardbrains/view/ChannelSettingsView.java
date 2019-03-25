@@ -47,30 +47,37 @@ public class ChannelSettingsView extends ConstraintLayout {
         /**
          * Listener that is invoked when color is changed.
          *
-         * @param color Newly selected color.
+         * @param prevColor Previously selected color.
+         * @param newColor Newly selected color.
          * @param channelIndex Index of the channel.
          */
-        void onColorChanged(@NonNull @Size(4) float[] color, int channelIndex);
+        void onColorChanged(@NonNull @Size(4) float[] prevColor, @NonNull @Size(4) float[] newColor, int channelIndex);
     }
 
     private OnColorChangeListener listener;
 
     private int channelIndex;
+    private @Size(4) float[] prevColor;
 
     private final OnClickListener channelColorOnClickListener = v -> {
+        final @Size(4) float[] newColor = (float[]) v.getTag();
+        if (Arrays.equals(prevColor, newColor)) return;
+
         // remove check mark from all colors
         ButterKnife.apply(ibtnChannelColors, RESET_CHANNEL_COLORS_SELECTION);
         // select the clicked one
         ((ImageButton) v).setImageResource(R.drawable.ic_check_gray_dark_24dp);
 
-        triggerListener((float[]) v.getTag());
+        if (listener != null) listener.onColorChanged(prevColor, newColor, channelIndex);
+        prevColor = newColor;
     };
 
     private final ButterKnife.Setter<ImageButton, float[]> setChannelColorSelection = (view, value, index) -> {
-        if (index == 0) return; // don't process black
-        if (Arrays.equals(Colors.CHANNEL_COLORS[index - 1], value)) {
+        float[] compareColor = index == 0 ? Colors.BLACK : Colors.CHANNEL_COLORS[index - 1];
+        if (Arrays.equals(compareColor, value)) {
             view.setImageResource(R.drawable.ic_check_gray_dark_24dp);
-            hsvChannelColors.postDelayed((Runnable) () -> hsvChannelColors.fullScroll(
+            // scroll far right if selected color is in the second half of the row
+            hsvChannelColors.postDelayed(() -> hsvChannelColors.fullScroll(
                 index > Colors.CHANNEL_COLORS.length / 2 ? View.FOCUS_RIGHT : View.FOCUS_LEFT), 100);
         } else {
             view.setImageDrawable(null);
@@ -101,7 +108,7 @@ public class ChannelSettingsView extends ConstraintLayout {
     }
 
     /**
-     * Sets index of this channel
+     * Sets index of this channel.
      */
     public void setChannelIndex(int index) {
         channelIndex = index;
@@ -109,26 +116,21 @@ public class ChannelSettingsView extends ConstraintLayout {
         tvChannelName.setText(String.format(getContext().getString(R.string.template_channel_name), (index + 1)));
     }
 
+    /**
+     * Checks circle with specified {@code color} and un-checks all the other circles
+     */
     public void setChannelColor(@Size(4) float[] color) {
         ButterKnife.apply(ibtnChannelColors, setChannelColorSelection, color);
+
+        prevColor = color;
     }
 
-    // Inflates view layout
+    // Inflates view layout and setup UI
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_channel_settings, this);
         ButterKnife.bind(this);
 
-        setupUI();
-    }
-
-    // Initial UI setup
-    private void setupUI() {
         // init channel colors
         ButterKnife.apply(ibtnChannelColors, INIT_CHANNEL_COLORS, channelColorOnClickListener);
-    }
-
-    // Triggers OnFilterSetListener.onColorChanged() callback
-    private void triggerListener(@NonNull @Size(4) float[] color) {
-        if (listener != null) listener.onColorChanged(color, channelIndex);
     }
 }
