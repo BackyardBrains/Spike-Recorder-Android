@@ -711,7 +711,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         LOGD(TAG, "startRecording()");
         try {
             if (recorder != null && !recorder.isRecording()) {
-                recorder.startRecording(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
+                recorder.startRecording(signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount());
             }
 
             // post that recording of audio has started
@@ -789,7 +789,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 // post current recording progress
                 EventBus.getDefault()
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),
-                        signalProcessor.getSampleRate(), signalProcessor.getChannelCount()));
+                        signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount()));
             }
         } catch (IllegalStateException e) {
             Crashlytics.logException(e);

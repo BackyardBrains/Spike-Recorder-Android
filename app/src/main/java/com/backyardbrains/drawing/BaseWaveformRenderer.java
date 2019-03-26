@@ -266,13 +266,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
-     * Returns number of visible channels.
-     */
-    protected int getVisibleChannelCount() {
-        return signalConfiguration.getVisibleChannelCount();
-    }
-
-    /**
      * Returns whether channel at specified {@code channelIndex} is visible or not.
      */
     protected boolean isChannelVisible(int channelIndex) {
@@ -371,6 +364,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     private void initWaveformScaleFactor(float scaleFactor) {
+        if (signalConfiguration.getVisibleChannelCount() <= 0) return;
+
         int selectedChannel = signalConfiguration.getSelectedChannel();
         if (scaleFactor < 0 || scaleFactor == waveformScaleFactors[selectedChannel]) return;
         waveformScaleFactors[selectedChannel] = scaleFactor;
@@ -378,6 +373,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     void setWaveformScaleFactor(float scaleFactor) {
+        if (signalConfiguration.getVisibleChannelCount() <= 0) return;
+
         int selectedChannel = signalConfiguration.getSelectedChannel();
         if (scaleFactor < 0 || scaleFactor == waveformScaleFactors[selectedChannel]) return;
         scaleFactor *= waveformScaleFactors[selectedChannel];
@@ -393,6 +390,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     void moveGlWindowForSelectedChannel(float dy) {
+        if (signalConfiguration.getVisibleChannelCount() <= 0) return;
+
         // save new waveform position for currently selected channel that will be used when setting up projection on the next draw cycle
         waveformPositions[signalConfiguration.getSelectedChannel()] -= surfaceHeightToGlHeight(dy);
     }
@@ -443,7 +442,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
         PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
         PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
-        PrefUtils.setWaveformScaleFactor(context, getClass(), waveformScaleFactors[0]);
+        if (signalConfiguration.getVisibleChannelCount() > 0) {
+            PrefUtils.setWaveformScaleFactor(context, getClass(), waveformScaleFactors[0]);
+        }
     }
 
     //==============================================
@@ -502,8 +503,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         synchronized (lock) {
             //benchmark.start();
 
-            final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
-            if (visibleChannelCount <= 0) {
+            if (signalConfiguration.getVisibleChannelCount() <= 0) {
                 gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
                 return;
             }

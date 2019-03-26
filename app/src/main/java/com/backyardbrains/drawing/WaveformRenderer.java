@@ -45,8 +45,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
-    private static final float[][] CHANNEL_COLORS = ArrayUtils.copy(Colors.CHANNEL_COLORS);
-
     private static final float DASH_SIZE = 30f;
     private static final int LINE_WIDTH = 1;
 
@@ -60,6 +58,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private GlEventMarker glEventMarker;
 
     private float threshold;
+    private float[][] channelColors = new float[][] { Colors.CHANNEL_0.clone() };
 
     /**
      * Interface definition for a callback to be invoked when one of the drawn waveforms is selected by clicking he
@@ -114,7 +113,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     }
 
     //=================================================
-    //  PUBLIC METHODS
+    //  PUBLIC AND PROTECTED METHODS
     //=================================================
 
     /**
@@ -130,14 +129,26 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * Returns color of all the channels.
      */
     public float[][] getChannelColors() {
-        return ArrayUtils.copy(CHANNEL_COLORS);
+        return ArrayUtils.copy(channelColors);
     }
 
     /**
      * Sets specified {@code color} for the channel at specified {@code channelIndex}.
      */
     public void setChannelColor(int channelIndex, @Size(4) float[] color) {
-        System.arraycopy(color, 0, CHANNEL_COLORS[channelIndex], 0, color.length);
+        System.arraycopy(color, 0, channelColors[channelIndex], 0, color.length);
+    }
+
+    /**
+     * Sets
+     */
+    protected void setThreshold(float threshold) {
+        if (threshold == 0) return;
+
+        this.threshold = threshold;
+
+        // pass new threshold to the c++ code
+        JniUtils.setThreshold(threshold);
     }
 
     //=================================================
@@ -188,6 +199,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      */
     @Override public void onChannelCountChanged(int channelCount) {
         super.onChannelCountChanged(channelCount);
+
+        channelColors = new float[channelCount][];
+        for (int i = 0; i < channelCount; i++) {
+            channelColors[i] = new float[4];
+            setChannelColor(i, Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length]);
+        }
 
         // we should reset draggable areas for both waveforms and thresholds
         waveformHandleDragHelper.resetDraggableAreas();
@@ -279,10 +296,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         final boolean isSignalAveraging = isSignalAveraging();
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
         boolean selected, showThresholdHandle;
+        float[] waveformColor;
 
         for (int i = 0; i < signalDrawData.channelCount; i++) {
             selected = getSelectedChanel() == i;
             showThresholdHandle = selected && isSignalAveraging && isThresholdSignalAveraging;
+            waveformColor = getWaveformColor(i);
 
             gl.glPushMatrix();
             gl.glTranslatef(0f, waveformPositions[i], 0f);
@@ -290,14 +309,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             // draw waveform
             gl.glPushMatrix();
             gl.glScalef(1f, waveformScaleFactors[i], 1f);
-            glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], getWaveformColor(i));
+            glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformColor);
             gl.glPopMatrix();
 
             if (showWaveformHandle) {
                 // draw waveform handle
                 gl.glPushMatrix();
                 gl.glScalef(drawScale, scaleY, 1f);
-                glHandle.draw(gl, getWaveformColor(i), selected);
+                glHandle.draw(gl, waveformColor, selected);
                 gl.glPopMatrix();
 
                 // register waveform handle as draggable area with drag helper
@@ -362,28 +381,18 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     // Returns the color of the waveform for the specified channel in rgba format. If color is not defined green is returned.
     private @Size(4) float[] getWaveformColor(int channel) {
         int counter = 0;
-        for (int i = 0; i < getChannelCount(); i++) {
+        int channelCount = getChannelCount();
+        for (int i = 0; i < channelCount; i++) {
             if (isChannelVisible(i)) {
                 if (counter == channel) {
-                    channel = i % CHANNEL_COLORS.length;
-                    return CHANNEL_COLORS[channel];
+                    channel = i % channelCount;
+                    return channelColors[channel];
                 }
 
                 counter++;
             }
         }
 
-        return CHANNEL_COLORS[channel];
-    }
-
-    private void setThreshold(float threshold) {
-        if (threshold == 0) return;
-
-        this.threshold = threshold;
-
-        // pass new threshold to the c++ code
-        JniUtils.setThreshold(threshold);
-
-        // TODO: 29-Nov-18 WHEN IN PLAYBACK WE SHOULD ALSO RESET AVERAGED SIGNAL
+        return channelColors[channel];
     }
 }

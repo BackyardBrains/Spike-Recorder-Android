@@ -9,6 +9,7 @@ import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.crashlytics.android.Crashlytics;
 import java.util.Arrays;
@@ -73,6 +74,15 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES IF NECESSARY
     protected boolean drawSpikes() {
         return !isSignalAveraging();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected void setThreshold(float threshold) {
+        super.setThreshold(threshold);
+
+        JniUtils.resetThreshold();
     }
 
     /**

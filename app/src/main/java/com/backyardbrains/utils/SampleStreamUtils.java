@@ -10,6 +10,10 @@ public class SampleStreamUtils {
      */
     public static final int SAMPLE_RATE = 10000;
     /**
+     * Sample rate used throughout the app.
+     */
+    public static final int SAMPLE_RATE_5000 = 5000;
+    /**
      * Default channel count for SpikerBox Pro
      */
     public static final int SPIKER_BOX_PRO_CHANNEL_COUNT = 2;

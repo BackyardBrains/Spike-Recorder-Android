@@ -178,21 +178,19 @@ public class SignalProcessor implements SignalSource.Processor {
      * @param sampleRate New sample rate.
      */
     @Override public void onSampleRateChanged(int sampleRate) {
-        // calculate max number of processed samples
-        calculateMaxNumberOfProcessedSamples(sampleRate, signalConfiguration.isSignalAveraging());
-
-        // update signal configuration
-        signalConfiguration.setSampleRate(sampleRate);
-
-        // reset processing buffer
-        processingBuffer.resetAllSampleBuffers(signalConfiguration.getChannelCount(),
-            signalConfiguration.getVisibleChannelCount());
-
         synchronized (lock) {
-            // reset temp buffer for fft data
+            // calculate max number of processed samples
+            calculateMaxNumberOfProcessedSamples(sampleRate, signalConfiguration.isSignalAveraging());
+
+            // update signal configuration
+            signalConfiguration.setSampleRate(sampleRate);
+
+            // reset processing buffer
+            processingBuffer.resetAllSampleBuffers(signalConfiguration.getChannelCount(),
+                signalConfiguration.getVisibleChannelCount());
+
             fft = new FftData(DEFAULT_FFT_WINDOW_COUNT, processedFftWindowSize);
         }
-
         // pass sample rate to native code
         JniUtils.setSampleRate(sampleRate);
     }
@@ -203,13 +201,14 @@ public class SignalProcessor implements SignalSource.Processor {
      * @param channelCount New channel count.
      */
     @Override public void onChannelCountChanged(int channelCount) {
-        // update signal configuration
-        signalConfiguration.setChannelCount(channelCount);
-
-        // reset processing buffer
-        processingBuffer.resetAllSampleBuffers(channelCount, signalConfiguration.getVisibleChannelCount());
-
         synchronized (lock) {
+
+            // update signal configuration
+            signalConfiguration.setChannelCount(channelCount);
+
+            // reset processing buffer
+            processingBuffer.resetAllSampleBuffers(channelCount, signalConfiguration.getVisibleChannelCount());
+
             // reset buffers
             signalData = new SignalData(channelCount, DEFAULT_FRAME_SIZE);
             visibleSignalData = new SignalData(signalConfiguration.getVisibleChannelCount(), DEFAULT_FRAME_SIZE);
@@ -273,20 +272,27 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Returns number of visible channels of the current signal source.
+     */
+    int getVisibleChannelCount() {
+        return signalConfiguration.getVisibleChannelCount();
+    }
+
+    /**
      * Sets what incoming signal's channels are shown/hidden.
      */
     private void setChannelConfig(boolean[] channelConfig) {
         if (channelConfig.length != getChannelCount()) return;
 
-        // update signal configuration
-        signalConfiguration.setChannelConfig(channelConfig);
-
-        final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
-
-        // reset processing buffer
-        processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
-
         synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setChannelConfig(channelConfig);
+
+            final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+
+            // reset processing buffer
+            processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
+
             visibleSignalData = new SignalData(visibleChannelCount, DEFAULT_FRAME_SIZE);
             averagedSignalData = new SignalData(visibleChannelCount, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
         }
@@ -296,15 +302,15 @@ public class SignalProcessor implements SignalSource.Processor {
      * Shows incoming signal's channel at specified {@code channelIndex}.
      */
     void showChannel(int channelIndex) {
-        // update signal configuration
-        signalConfiguration.setChannelVisible(channelIndex, true);
-
-        final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
-
-        // reset processing buffer
-        processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
-
         synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setChannelVisible(channelIndex, true);
+
+            final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+
+            // reset processing buffer
+            processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
+
             // reset buffer
             visibleSignalData = new SignalData(visibleChannelCount, DEFAULT_FRAME_SIZE);
             averagedSignalData = new SignalData(visibleChannelCount, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
@@ -315,15 +321,15 @@ public class SignalProcessor implements SignalSource.Processor {
      * Hides incoming signal's channel at specified {@code channelIndex}.
      */
     void hideChannel(int channelIndex) {
-        // update signal configuration
-        signalConfiguration.setChannelVisible(channelIndex, false);
-
-        final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
-
-        // reset processing buffer
-        processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
-
         synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setChannelVisible(channelIndex, false);
+
+            final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+
+            // reset processing buffer
+            processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
+
             // reset buffers
             visibleSignalData = new SignalData(visibleChannelCount, DEFAULT_FRAME_SIZE);
             averagedSignalData = new SignalData(visibleChannelCount, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
@@ -334,8 +340,10 @@ public class SignalProcessor implements SignalSource.Processor {
      * Sets the selected channel of incoming signal.
      */
     public void setSelectedChannel(int channelIndex) {
-        // update signal configuration
-        signalConfiguration.setSelectedChannel(channelIndex);
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setSelectedChannel(channelIndex);
+        }
 
         // pass selected channel to native code
         JniUtils.setSelectedChannel(channelIndex);

@@ -276,6 +276,21 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
         v -> openAveragingTriggerTypeDialog();
 
+    private final SeekBar.OnSeekBarChangeListener playbackSeekChangeListener = new SeekBar.OnSeekBarChangeListener() {
+
+        @Override public void onStartTrackingTouch(SeekBar seekBar) {
+            startSeek();
+        }
+
+        @Override public void onStopTrackingTouch(SeekBar seekBar) {
+            stopSeek();
+        }
+
+        @Override public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
+            if (fromUser) seek(toSamples(progress));
+        }
+    };
+
     //=================================================
     //  LIFECYCLE IMPLEMENTATIONS
     //=================================================
@@ -595,19 +610,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         ibtnPlayPause.setOnClickListener(v -> toggle(!isPlaying()));
         // audio progress
         sbAudioProgress.setMax(getLength());
-        sbAudioProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {
-                startSeek();
-            }
-
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                stopSeek();
-            }
-
-            @Override public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
-                if (fromUser) seek(toSamples(progress));
-            }
-        });
+        sbAudioProgress.setOnSeekBarChangeListener(playbackSeekChangeListener);
         sbAudioProgress.setProgress(0);
     }
 
@@ -729,9 +732,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
-        setupThresholdHandleAndAveragingTriggerTypeButtons();
-
         if (getAudioService() != null) getAudioService().setSignalAveragingTriggerType(triggerType);
+
+        setupThresholdHandleAndAveragingTriggerTypeButtons();
     }
 
     //==============================================
