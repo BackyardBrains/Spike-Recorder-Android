@@ -25,10 +25,15 @@ import com.example.roman.thesimplerangebar.SimpleRangeBar;
 import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
 import java.util.List;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class FilterSettingsView extends ConstraintLayout {
+
+    private static final String TAG = makeLogTag(FilterSettingsView.class);
 
     static final BandFilter[] FILTERS = new BandFilter[] {
         Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE, Filters.FILTER_BAND_PLANT,
@@ -207,11 +212,25 @@ public class FilterSettingsView extends ConstraintLayout {
 
     // Sets specified filter as current band filter.
     private void setBandFilter(@NonNull BandFilter filter) {
+        LOGD(TAG, "setBandFilter(" + filter.getLowCutOffFrequency() + ", " + filter.getHighCutOffFrequency() + ")");
+
         // Currently selected filter
-        etLowCutOff.setText(String.valueOf(filter.getLowCutOffFrequency()));
-        etHighCutOff.setText(String.valueOf(filter.getHighCutOffFrequency()));
-        updateLowCutOff();
-        updateHighCutOff();
+        double lowCutOff = filter.getLowCutOffFrequency();
+        double highCutOff = filter.getHighCutOffFrequency();
+
+        // fix cut-off value if it's lower than minimum and higher than maximum
+        lowCutOff = validateCutOffMinMax(lowCutOff);
+        highCutOff = validateCutOffMinMax(highCutOff);
+        // if low cut-off is higher that high one increase the high one to that value
+        if (lowCutOff > highCutOff) highCutOff = lowCutOff;
+        // if high cut-off is lower that low one decrease the low one to that value
+        if (highCutOff < lowCutOff) lowCutOff = highCutOff;
+
+        etLowCutOff.setText(String.valueOf(lowCutOff));
+        etHighCutOff.setText(String.valueOf(highCutOff));
+
+        // set thumbs values
+        updateUI(lowCutOff, highCutOff);
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
@@ -260,17 +279,20 @@ public class FilterSettingsView extends ConstraintLayout {
     private void updateUI(double lowCutOff, double highCutOff) {
         // we need to remove range bar change listener so it doesn't trigger setting of input fields
         srbCutOffs.setOnSimpleRangeBarChangeListener(null);
-        // this is kind of a hack because thumb values can only be set both at once and right thumb is always set first
-        // within the library, so when try to set a value for both thumbs and the value is lower then the current left
-        // thumb value, right thumb value is set at the current left thumb value, and that's why we always set the left
-        // thumb value first
-        srbCutOffs.setThumbValues(cutOffToThumb(lowCutOff), srbCutOffs.getRightThumbValue());
-        srbCutOffs.setThumbValues(srbCutOffs.getLeftThumbValue(), cutOffToThumb(highCutOff));
         // also update input fields
         setCutOffValue(etLowCutOff, lowCutOff);
         setCutOffValue(etHighCutOff, highCutOff);
-        // add the listener again
-        srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
+        
+        srbCutOffs.post(() -> {
+            // this is kind of a hack because thumb values can only be set both at once and right thumb is always set first
+            // within the library, so when try to set a value for both thumbs and the value is lower then the current left
+            // thumb value, right thumb value is set at the current left thumb value, and that's why we always set the left
+            // thumb value first
+            srbCutOffs.setThumbValues(cutOffToThumb(lowCutOff), srbCutOffs.getRightThumbValue());
+            srbCutOffs.setThumbValues(srbCutOffs.getLeftThumbValue(), cutOffToThumb(highCutOff));
+            // add the listener again
+            srbCutOffs.setOnSimpleRangeBarChangeListener(rangeBarOnChangeListener);
+        });
     }
 
     // Updates text property of the specified EditText with specified cutOffValue

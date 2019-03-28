@@ -395,6 +395,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 break;
         }
 
+        LOGD(TAG, "BOARD DETECTED: " + spikerBoxBoard);
+
         // preset filter for the connected board
         if (getAudioService() != null && filter != null) getAudioService().setBandFilter(filter);
         // show what boar is connected in toast
@@ -789,6 +791,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private void startMicrophone(@NonNull ProcessingService processingService) {
         processingService.startMicrophone();
+        processingService.setBandFilter(new BandFilter());
     }
 
     // Triggers
