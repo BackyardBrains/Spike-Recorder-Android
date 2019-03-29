@@ -19,9 +19,10 @@
 
 package com.backyardbrains.dsp.audio;
 
+import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.util.SparseArray;
-import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;
@@ -52,42 +53,26 @@ public class Recorder {
         private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
         private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
-        // Sample rate of the recorded file
-        private final int sampleRate;
-        // Number of channels the recorded file should have
-        private final int channelCount;
-
-        private final File audioFile;
-        private final OutputStream outputStream;
-        private final File eventsFile;
         private final ByteBuffer bb;
 
+        // Sample rate of the recorded file
+        private int sampleRate;
+        // Number of channels the recorded file should have
+        private int channelCount;
+
+        private File audioFile;
+        private OutputStream outputStream;
+        private File eventsFile;
+        private AudioTrack audioTrack;
         private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
         private SparseArray<String> events = new SparseArray<>();
         private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
         private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
         private short[] samples = new short[BUFFER_SIZE_IN_SAMPLES];
 
-        WriteThread(int sampleRate, int channelCount) throws IOException {
-            this.sampleRate = sampleRate;
-            this.channelCount = channelCount;
-
-            // create recording file
-            audioFile = RecordingUtils.createRecordingFile();
-            // and stream to write sample to
-            try {
-                outputStream = new FileOutputStream(audioFile);
-            } catch (FileNotFoundException e) {
-                Crashlytics.logException(e);
-                throw new IOException("Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
-                    e);
-            }
-
+        WriteThread() {
             // crate byte buffer that will be used for converting shorts to bytes
             bb = ByteBuffer.allocate(BUFFER_SIZE_IN_BYTES).order(ByteOrder.nativeOrder());
-
-            // create events file
-            eventsFile = RecordingUtils.createEventsFile(audioFile);
         }
 
         @Override public void run() {
@@ -95,37 +80,96 @@ public class Recorder {
                 while (working.get()) {
                     try {
                         int size = buffer.get(byteBuffer);
-                        if (size > 0) outputStream.write(byteBuffer, 0, size);
+                        if (size > 0) {
+                            if (recording.get()) outputStream.write(byteBuffer, 0, size);
+                            if (playing.get()) audioTrack.write(byteBuffer, 0, size);
+                        }
                     } catch (IOException e) {
                         throw new IllegalStateException("Could not write sample to file", e);
                     }
                 }
             } catch (IllegalStateException e) {
                 Crashlytics.logException(e);
-            } finally {
-                // close the stream and save the recorded file
-                saveFiles();
+            }
+        }
+
+        void startRecording(int sampleRate, int channelCount) throws IOException {
+            this.sampleRate = sampleRate;
+            this.channelCount = channelCount;
+
+            // create recording file
+            audioFile = RecordingUtils.createRecordingFile();
+            // and stream to write samples to
+            try {
+                outputStream = new FileOutputStream(audioFile);
+            } catch (FileNotFoundException e) {
+                Crashlytics.logException(e);
+                throw new IOException("Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
+                    e);
+            }
+            // create events file
+            eventsFile = RecordingUtils.createEventsFile(audioFile);
+            events.clear();
+            eventsFileContent.delete(0, eventsFileContent.length());
+
+            // start
+            recording.set(true);
+        }
+
+        void stopRecording() {
+            // stop
+            recording.set(false);
+
+            // close the stream and save the recorded file
+            saveFiles();
+        }
+
+        void startPlayback(int sampleRate, int channelCount) {
+            if (audioTrack != null) stopPlayback();
+            // create and start audio track
+            audioTrack = AudioUtils.createAudioTrack(sampleRate, channelCount);
+            audioTrack.play();
+
+            // start
+            playing.set(true);
+        }
+
+        void stopPlayback() {
+            // stop
+            playing.set(false);
+
+            // stop the playback and release resources
+            if (audioTrack != null) {
+                audioTrack.release();
+                audioTrack = null;
             }
         }
 
         /**
          * Appends specified {@code sampleWithEvents} to previously saved ones.
          */
-        void writeData(@NonNull SamplesWithEvents samplesWithEvents) {
+        void writeData(@NonNull SignalData signalData) {
             if (working.get()) {
+                int frameCount = 0;
+                boolean isRecording = recording.get();
+
                 // we need to save current recording length before writing the actual samples
-                int frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount);
+                if (isRecording) frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount);
 
                 // save samples to buffer as bytes
-                int sampleCount = JniUtils.interleaveSignal(samples, samplesWithEvents);
-                bb.asShortBuffer().put(samples, 0, sampleCount);
-                buffer.put(bb.array(), 0, sampleCount * 2);
+                if (isRecording || playing.get()) {
+                    int sampleCount = JniUtils.interleaveSignal(samples, signalData);
+                    bb.asShortBuffer().put(samples, 0, sampleCount);
+                    buffer.put(bb.array(), 0, sampleCount * 2);
+                }
 
                 // save events
-                String event;
-                for (int i = 0; i < samplesWithEvents.eventCount; i++) {
-                    event = samplesWithEvents.eventNames[i];
-                    if (event != null) events.put(frameCount + samplesWithEvents.eventIndices[i], event);
+                if (isRecording) {
+                    String event;
+                    for (int i = 0; i < signalData.eventCount; i++) {
+                        event = signalData.eventNames[i];
+                        if (event != null) events.put(frameCount + signalData.eventIndices[i], event);
+                    }
                 }
             }
         }
@@ -136,19 +180,19 @@ public class Recorder {
          * @return Length of the recorded file in bytes.
          */
         long getCurrentLength() {
-            return audioFile.length();
+            return audioFile != null ? audioFile.length() : 0;
         }
 
         // Closes the audio stream and saves the audio file to storage
         private void saveFiles() {
             try {
-                outputStream.flush();
-                outputStream.close();
-                WavAudioFile.save(audioFile, sampleRate, channelCount);
+                if (outputStream != null) {
+                    outputStream.flush();
+                    outputStream.close();
+                }
+                if (audioFile != null) WavAudioFile.save(audioFile, sampleRate, channelCount);
 
                 if (events.size() > 0) saveEventFile();
-
-                writeThread = null;
             } catch (IOException e) {
                 Crashlytics.logException(e);
             }
@@ -188,18 +232,66 @@ public class Recorder {
     @SuppressWarnings("WeakerAccess") WriteThread writeThread;
     // Flag that indicates whether writing thread should be running
     @SuppressWarnings("WeakerAccess") final AtomicBoolean working = new AtomicBoolean(true);
+    // Flag that indicates whether signal should be recorder
+    @SuppressWarnings("WeakerAccess") final AtomicBoolean recording = new AtomicBoolean(false);
+    // Flag that indicates whether signal should be played back
+    @SuppressWarnings("WeakerAccess") final AtomicBoolean playing = new AtomicBoolean(false);
 
-    public Recorder(int sampleRate, int channelCount) throws IOException {
+    public Recorder() {
         // start sample writing thread
-        writeThread = new WriteThread(sampleRate, channelCount);
+        writeThread = new WriteThread();
         writeThread.start();
+    }
+
+    /**
+     * Returns whether signals is currently being recorded.
+     */
+    public boolean isRecording() {
+        return recording.get();
+    }
+
+    /**
+     * Starts recording incoming signal.
+     *
+     * @throws IOException
+     */
+    public void startRecording(int sampleRate, int channelCount) throws IOException {
+        writeThread.startRecording(sampleRate, channelCount);
+    }
+
+    /**
+     * Stops recording incoming signal.
+     */
+    public void stopRecording() {
+        writeThread.stopRecording();
+    }
+
+    /**
+     * Returns whether signal is currently being played back.
+     */
+    public boolean isPlaying() {
+        return playing.get();
+    }
+
+    /**
+     * Starts playing back incoming signal.
+     */
+    public void startPlaying(int sampleRate, int channelCount) {
+        writeThread.startPlayback(sampleRate, channelCount);
+    }
+
+    /**
+     * Stops playing back incoming signal.
+     */
+    public void stopPlaying() {
+        writeThread.stopPlayback();
     }
 
     /**
      * Writes specified {@code sampleWithEvents} to the audio stream.
      */
-    public void writeAudioWithEvents(@NonNull SamplesWithEvents samplesWithEvents) {
-        if (writeThread != null) writeThread.writeData(samplesWithEvents);
+    public void write(@NonNull SignalData signalData) {
+        if (writeThread != null) writeThread.writeData(signalData);
     }
 
     /**
@@ -213,6 +305,9 @@ public class Recorder {
      * Requests the recording to stop.
      */
     public void requestStop() {
+        writeThread.stopRecording();
+        writeThread.stopPlayback();
         working.set(false);
+        writeThread = null;
     }
 }

@@ -21,8 +21,8 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.Size;
-import android.util.SparseArray;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
@@ -30,15 +30,14 @@ import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
 import com.backyardbrains.drawing.gl.GlWaveform;
-import com.backyardbrains.dsp.SamplesWithEvents;
 import com.backyardbrains.ui.BaseFragment;
+import com.backyardbrains.utils.ArrayUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -59,6 +58,22 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private GlEventMarker glEventMarker;
 
     private float threshold;
+    private float[][] channelColors = new float[][] { Colors.CHANNEL_0.clone() };
+
+    /**
+     * Interface definition for a callback to be invoked when one of the drawn waveforms is selected by clicking he
+     * waveform handle.
+     */
+    public interface OnWaveformSelectionListener {
+        /**
+         * Listener that is invoked when waveform is selected.
+         *
+         * @param index Index of the selected waveform.
+         */
+        void onWaveformSelected(int index);
+    }
+
+    private OnWaveformSelectionListener listener;
 
     public WaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
@@ -67,7 +82,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         waveformHandleDragHelper = new GlHandleDragHelper(new GlHandleDragHelper.OnDragListener() {
             @Override public void onDragStart(int index) {
-                setSelectedChannel(index);
+                selectWaveform(index);
             }
 
             @Override public void onDrag(int index, float dy) {
@@ -95,6 +110,45 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         glWaveform = new GlWaveform();
         glHandle = new GlHandle();
         glThresholdLine = new GlDashedHLine();
+    }
+
+    //=================================================
+    //  PUBLIC AND PROTECTED METHODS
+    //=================================================
+
+    /**
+     * Registers a callback to be invoked when one of waveforms is selected.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnWaveformSelectionListener(@Nullable OnWaveformSelectionListener listener) {
+        this.listener = listener;
+    }
+
+    /**
+     * Returns color of all the channels.
+     */
+    public float[][] getChannelColors() {
+        return ArrayUtils.copy(channelColors);
+    }
+
+    /**
+     * Sets specified {@code color} for the channel at specified {@code channelIndex}.
+     */
+    public void setChannelColor(int channelIndex, @Size(4) float[] color) {
+        System.arraycopy(color, 0, channelColors[channelIndex], 0, color.length);
+    }
+
+    /**
+     * Sets
+     */
+    protected void setThreshold(float threshold) {
+        if (threshold == 0) return;
+
+        this.threshold = threshold;
+
+        // pass new threshold to the c++ code
+        JniUtils.setThreshold(threshold);
     }
 
     //=================================================
@@ -140,9 +194,17 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     /**
      * {@inheritDoc}
+     *
+     * @param channelCount The new number of channels.
      */
-    @Override public void onChannelCountChange(int channelCount) {
-        super.onChannelCountChange(channelCount);
+    @Override public void onChannelCountChanged(int channelCount) {
+        super.onChannelCountChanged(channelCount);
+
+        channelColors = new float[channelCount][];
+        for (int i = 0; i < channelCount; i++) {
+            channelColors[i] = new float[4];
+            setChannelColor(i, Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length]);
+        }
 
         // we should reset draggable areas for both waveforms and thresholds
         waveformHandleDragHelper.resetDraggableAreas();
@@ -151,10 +213,23 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     /**
      * {@inheritDoc}
+     *
+     * @param channelConfig Array of booleans indicating which channel is on and which is off.
      */
-    @Override public void setSelectedChannel(int selectedChannel) {
-        super.setSelectedChannel(selectedChannel);
+    @Override public void onChannelConfigChanged(boolean[] channelConfig) {
+        super.onChannelConfigChanged(channelConfig);
 
+        for (int i = 0; i < channelConfig.length; i++) {
+            if (!channelConfig[i]) setChannelColor(i, Colors.BLACK);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param channelIndex Index of the selected channel.
+     */
+    @Override public void onChannelSelectionChanged(int channelIndex) {
         thresholdHandleDragHelper.resetDraggableAreas();
     }
 
@@ -179,31 +254,31 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void prepareSignalForDrawing(@NonNull SamplesWithEvents samplesWithEvents,
-        @NonNull short[][] samples, int frameCount, @NonNull int[] eventIndices, int eventCount, int fromSample,
-        int toSample, int drawSurfaceWidth) {
+    @Override protected void prepareSignalForDrawing(@NonNull SignalDrawData outSignalDrawData,
+        EventsDrawData outEvents, @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices,
+        int inEventCount, int fromSample, int toSample, int drawSurfaceWidth) {
         if (isSignalAveraging()) {
             try {
-                JniUtils.prepareForThresholdDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount,
-                    fromSample, toSample, drawSurfaceWidth);
+                JniUtils.prepareForThresholdDrawing(outSignalDrawData, outEvents, inSamples, inFrameCount,
+                    inEventIndices, inEventCount, fromSample, toSample, drawSurfaceWidth);
             } catch (ArrayIndexOutOfBoundsException e) {
                 LOGE(TAG, e.getMessage());
                 Crashlytics.logException(e);
             }
         } else {
-            super.prepareSignalForDrawing(samplesWithEvents, samples, frameCount, eventIndices, eventCount, fromSample,
-                toSample, drawSurfaceWidth);
+            super.prepareSignalForDrawing(outSignalDrawData, outEvents, inSamples, inFrameCount, inEventIndices,
+                inEventCount, fromSample, toSample, drawSurfaceWidth);
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override protected void addEventsToEventDrawBuffer(@NonNull SamplesWithEvents samplesWithEvents,
-        @NonNull String[] eventNames, int eventCount, @NonNull SparseArray<String> eventDrawBuffer) {
+    @Override protected void addEventsToEventDrawData(@NonNull EventsDrawData eventsDrawData,
+        @NonNull String[] eventNames, int eventCount) {
         // only process events if threshold is off
         if (!isSignalAveraging()) {
-            super.addEventsToEventDrawBuffer(samplesWithEvents, eventNames, eventCount, eventDrawBuffer);
+            super.addEventsToEventDrawData(eventsDrawData, eventNames, eventCount);
         }
     }
 
@@ -211,20 +286,22 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
-        @NonNull FftDrawData fftDrawData, int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
+        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
+        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
         float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
         long lastFrameIndex) {
-        final float samplesToDraw = waveformVerticesCount[0] * .5f;
+        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
-        final boolean showWaveformHandle = getChannelCount() > 1;
+        final boolean showWaveformHandle = signalDrawData.channelCount > 1;
         final boolean isSignalAveraging = isSignalAveraging();
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
         boolean selected, showThresholdHandle;
+        float[] waveformColor;
 
-        for (int i = 0; i < waveformVertices.length; i++) {
+        for (int i = 0; i < signalDrawData.channelCount; i++) {
             selected = getSelectedChanel() == i;
             showThresholdHandle = selected && isSignalAveraging && isThresholdSignalAveraging;
+            waveformColor = getWaveformColor(i);
 
             gl.glPushMatrix();
             gl.glTranslatef(0f, waveformPositions[i], 0f);
@@ -232,14 +309,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             // draw waveform
             gl.glPushMatrix();
             gl.glScalef(1f, waveformScaleFactors[i], 1f);
-            glWaveform.draw(gl, waveformVertices[i], waveformVerticesCount[i], getWaveformColor(i));
+            glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformColor);
             gl.glPopMatrix();
 
             if (showWaveformHandle) {
                 // draw waveform handle
                 gl.glPushMatrix();
                 gl.glScalef(drawScale, scaleY, 1f);
-                glHandle.draw(gl, getWaveformColor(i), selected);
+                glHandle.draw(gl, waveformColor, selected);
                 gl.glPopMatrix();
 
                 // register waveform handle as draggable area with drag helper
@@ -250,7 +327,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
             if (showThresholdHandle) {
                 float scaledThreshold = threshold * waveformScaleFactors[i];
-                LOGD(TAG, "SCALED THRESHOLD : " + scaledThreshold);
                 if (scaledThreshold + waveformPositions[i] < -MAX_GL_VERTICAL_HALF_SIZE) {
                     scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
                 }
@@ -281,10 +357,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         // draw markers
         if (!isSignalAveraging) {
-            for (int i = 0; i < events.size(); i++) {
+            for (int i = 0; i < eventsDrawData.eventCount; i++) {
                 gl.glPushMatrix();
-                gl.glTranslatef(events.keyAt(i), -MAX_GL_VERTICAL_HALF_SIZE, 0f);
-                glEventMarker.draw(gl, events.valueAt(i), MAX_GL_VERTICAL_SIZE, drawScale, scaleY);
+                gl.glTranslatef(eventsDrawData.eventIndices[i], -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                glEventMarker.draw(gl, eventsDrawData.eventNames[i], MAX_GL_VERTICAL_SIZE, drawScale, scaleY);
                 gl.glPopMatrix();
             }
         }
@@ -294,24 +370,29 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     // PRIVATE AND PACKAGE-PRIVATE METHODS
     //=================================================
 
+    @SuppressWarnings("WeakerAccess") void selectWaveform(int index) {
+        if (listener != null) listener.onWaveformSelected(index);
+    }
+
     @SuppressWarnings("WeakerAccess") void updateThreshold(float dy) {
         setThreshold(threshold - surfaceHeightToGlHeight(dy) / getWaveformScaleFactor());
     }
 
     // Returns the color of the waveform for the specified channel in rgba format. If color is not defined green is returned.
     private @Size(4) float[] getWaveformColor(int channel) {
-        channel = channel % Colors.CHANNEL_COLORS.length;
-        return Colors.CHANNEL_COLORS[channel];
-    }
+        int counter = 0;
+        int channelCount = getChannelCount();
+        for (int i = 0; i < channelCount; i++) {
+            if (isChannelVisible(i)) {
+                if (counter == channel) {
+                    channel = i % channelCount;
+                    return channelColors[channel];
+                }
 
-    private void setThreshold(float threshold) {
-        if (threshold == 0) return;
+                counter++;
+            }
+        }
 
-        this.threshold = threshold;
-
-        // pass new threshold to the c++ code
-        JniUtils.setThreshold(threshold);
-
-        // TODO: 29-Nov-18 WHEN IN PLAYBACK WE SHOULD ALSO RESET AVERAGED SIGNAL
+        return channelColors[channel];
     }
 }

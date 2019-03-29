@@ -41,7 +41,7 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         private float drawSurfaceWidth;
 
         @Override public void run() {
-            if (getAudioService() != null) setMilliseconds(drawSurfaceWidth / sampleRate * 1000f * .5f);
+            waveform.setMilliseconds(drawSurfaceWidth / sampleRate * 1000f * .5f);
         }
 
         void setSampleRate(int sampleRate) {
@@ -119,8 +119,11 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     /**
      * Updates milliseconds UI.
      */
-    protected void setMilliseconds(float milliseconds) {
-        waveform.setMilliseconds(milliseconds);
+    protected void setMilliseconds(int sampleRate, float drawSurfaceWidth) {
+        viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
+        viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
+        // we need to call it on UI thread because renderer is drawing on background thread
+        if (getActivity() != null) getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
     }
 
     /**

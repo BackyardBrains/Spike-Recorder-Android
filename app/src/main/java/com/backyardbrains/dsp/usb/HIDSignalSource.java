@@ -237,6 +237,12 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         killWriteThread();
         connection.releaseInterface(usbInterface);
         connection.close();
+        //final UsbDeviceConnection finalConnection = connection;
+        //final UsbInterface finalUsbInterface = usbInterface;
+        //AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> {
+        //    finalConnection.releaseInterface(finalUsbInterface);
+        //    finalConnection.close();
+        //});
     }
 
     // Kill readThread. This must be called when closing a device.

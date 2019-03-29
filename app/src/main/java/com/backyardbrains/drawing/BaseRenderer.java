@@ -1,5 +1,6 @@
 package com.backyardbrains.drawing;
 
+import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -36,6 +37,13 @@ abstract class BaseRenderer implements GLSurfaceView.Renderer {
         if (fragment == null) return null;
 
         return fragment.getProvider() != null ? fragment.getProvider().analysisManager() : null;
+    }
+
+    @Nullable protected Context getContext() {
+        final BaseFragment fragment = getFragment("getAnalysisManager()");
+        if (fragment == null) return null;
+
+        return fragment.getContext();
     }
 
     // Returns the fragment reference and if reference is lost, logs the calling method.

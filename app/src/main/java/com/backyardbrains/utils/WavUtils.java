@@ -76,9 +76,9 @@ public class WavUtils {
         check(channels > 0, "Unsupported number of channels: " + channels);
         // sample rate
         int rate = buffer.getInt();
-        // 8000, 44100, etc. (for not we support only 10000 and 44100)
-        check(rate == AudioUtils.DEFAULT_SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE,
-            "Unsupported sample rate: " + rate);
+        // 8000, 44100, etc. (for now we support only 5000, 10000 and 44100)
+        check(rate == AudioUtils.DEFAULT_SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE
+            || rate == SampleStreamUtils.SAMPLE_RATE_5000, "Unsupported sample rate: " + rate);
 
         // fast-forward to bits per sample
         buffer.position(buffer.position() + 6);

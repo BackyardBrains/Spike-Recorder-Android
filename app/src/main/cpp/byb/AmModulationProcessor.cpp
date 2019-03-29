@@ -129,6 +129,9 @@ namespace backyardbrains {
             } else {
                 for (int i = 0; i < getChannelCount(); i++) {
                     std::copy(deinterleavedSignal[i], deinterleavedSignal[i] + frameCount, outSamples[i]);
+
+                    // apply additional filtering if necessary
+                    applyFilters(i, outSamples[i], frameCount);
                 }
 
                 // free memory

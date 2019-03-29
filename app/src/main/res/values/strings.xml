@@ -39,6 +39,8 @@
     <string name="content_desc_sound_mute">Mute the sound</string>
     <string name="content_desc_am_modulation_filters">Apply filter</string>
     <string name="content_desc_clear_file_name">Clear file name</string>
+    <string name="content_desc_settings_show">Show settings</string>
+    <string name="content_desc_settings_hide">Hide settings</string>
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
@@ -46,9 +48,18 @@
     <string name="template_channel_name">Channel %d</string>
     <string name="template_delete_file">"Delete %s "?"</string>
 
+    <string name="label_mute_speakers">Mute Speakers:</string>
+    <string name="label_letter_h">ECG</string>
+    <string name="label_letter_b">EEG</string>
+    <string name="label_letter_m">EMG</string>
+    <string name="label_letter_p">Plant</string>
+    <string name="label_letter_n">Neuron</string>
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>
+    <string name="label_50Hz">50 Hz</string>
+    <string name="label_60Hz">60 Hz</string>
+    <string name="label_attenuate_frequency">Attenuate freq. (notch filter):</string>
     <string name="label_finding_spikes">Finding spikes…</string>
     <string name="label_filename">Filename</string>
     <string name="label_recorded_on">Recorded on</string>

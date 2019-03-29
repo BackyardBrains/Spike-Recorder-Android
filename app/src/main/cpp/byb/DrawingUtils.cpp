@@ -17,8 +17,7 @@ namespace backyardbrains {
                 envelopedSamples[i] = new short[drawSurfaceWidth * 5];
             }
             envelope(envelopedSamples, outSampleCount, outEventIndices, outEventCount, inSamples, channelCount,
-                     inEventIndices,
-                     inEventCount, fromSample, toSample, drawSurfaceWidth);
+                     inEventIndices, inEventCount, fromSample, toSample, drawSurfaceWidth);
 
             int sampleIndex = 0;
             short x = 0;
@@ -91,8 +90,7 @@ namespace backyardbrains {
 
         void DrawingUtils::envelope(short **outSamples, int *outSampleCount, int *outEventIndices, int &outEventCount,
                                     short **inSamples, int channelCount, const int *inEventIndices,
-                                    int inEventIndicesCount,
-                                    int fromSample, int toSample, int drawSurfaceWidth) {
+                                    int inEventIndicesCount, int fromSample, int toSample, int drawSurfaceWidth) {
             int drawSamplesCount = toSample - fromSample;
             if (drawSamplesCount < drawSurfaceWidth) drawSurfaceWidth = drawSamplesCount;
 
