@@ -48,6 +48,7 @@ import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
@@ -392,12 +393,16 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
     final OnSpikerBoxHardwareTypeDetectionListener spikerBoxDetectionListener = hardwareType -> {
         LOGD(TAG, "HARDWARE TYPE DETECTED: " + hardwareType);
-        EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
+        if (hardwareType != SpikerBoxHardwareType.UNKNOWN) {
+            EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
+        }
     };
 
     final OnExpansionBoardTypeDetectionListener expansionBoardDetectionListener = expansionBoardType -> {
         LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoardType);
-        EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
+        if (expansionBoardType != ExpansionBoardType.NONE) {
+            EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
+        }
     };
 
     /**

@@ -794,7 +794,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         processingService.setBandFilter(new BandFilter());
     }
 
-    // Triggers
     private void startUsb(@NonNull ProcessingService processingService, @NonNull String deviceName) {
         processingService.startUsb(deviceName);
     }

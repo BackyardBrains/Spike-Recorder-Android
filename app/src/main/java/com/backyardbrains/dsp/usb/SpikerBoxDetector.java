@@ -176,17 +176,13 @@ class SpikerBoxDetector {
         void cancel() {
             canceled = true;
             working = false;
-            usbDevice.stop();
-            usbDevice = null;
         }
 
         @Override public void run() {
             if (usbDevice != null) usbDevice.start();
 
             while (working) {
-                if (canceled) return;
-
-                if (usbDevice != null) {
+                if (!canceled && usbDevice != null) {
                     usbDevice.checkHardwareType();
                     LOGD(TAG, counter + ". DETECTION ATTEMPT FOR DEVICE: " + usbDevice.getUsbDevice().getDeviceName());
                 }
@@ -210,8 +206,8 @@ class SpikerBoxDetector {
             }
 
             // we couldn't detect the SpikerBox hardware type so inform listener about the failure
-            if (!canceled && usbDevice != null) {
-                deviceDetectionFailure(usbDevice.getUsbDevice());
+            if (usbDevice != null) {
+                if (!canceled) deviceDetectionFailure(usbDevice.getUsbDevice());
                 usbDevice.stop();
                 usbDevice = null;
             }
