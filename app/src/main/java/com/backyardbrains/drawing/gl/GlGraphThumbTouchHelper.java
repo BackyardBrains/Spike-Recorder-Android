@@ -27,6 +27,10 @@ public class GlGraphThumbTouchHelper {
 
     /**
      * Registers a single touchable area.
+     * <p>
+     * Renderers should register all touchable areas through this method passing
+     * instance the of the {@link Rect} class the area representation.
+     * </p>
      */
     public void registerTouchableArea(@NonNull Rect rect) {
         touchableAreas.add(rect);
@@ -84,44 +88,5 @@ public class GlGraphThumbTouchHelper {
         }
 
         return NONE;
-    }
-
-    /**
-     * Represents position and size of a touchable area within the surface view drawable. Renderers should register all
-     * touchable areas through {@link #registerTouchableArea(Rect)} passing instance of this class as area
-     * representation.
-     */
-    public static class Rect {
-        public float x;
-        public float y;
-        public float width;
-        public float height;
-
-        public Rect(float x, float y, float w, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = w;
-            this.height = height;
-        }
-
-        boolean inside(float px, float py) {
-            return px > getMinX() && py > getMinY() && px < getMaxX() && py < getMaxY();
-        }
-
-        private float getMinX() {
-            return Math.min(x, x + width);
-        }
-
-        private float getMaxX() {
-            return Math.max(x, x + width);
-        }
-
-        private float getMinY() {
-            return Math.min(y, y + height);
-        }
-
-        private float getMaxY() {
-            return Math.max(y, y + height);
-        }
     }
 }

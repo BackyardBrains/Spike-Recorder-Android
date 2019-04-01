@@ -65,7 +65,13 @@ public class GlHandleDragHelper {
     }
 
     /**
+     */
+    /**
      * Registers a single draggable area under specified {@code index}.
+     * <p>
+     * Renderers should register all touchable thumbs through this method passing instance the of the {@link
+     * com.backyardbrains.drawing.gl.Rect} as the thumb representation.
+     * </p>
      */
     public void registerDraggableArea(int index, float x, float y, float width, float height) {
         Rect r = draggableAreas.get(index);
@@ -74,10 +80,6 @@ public class GlHandleDragHelper {
         } else {
             draggableAreas.put(index, new Rect(x, y, width * OFFSET_PERCENT, height * OFFSET_PERCENT));
         }
-    }
-
-    public SparseArray<Rect> getDraggableAreas() {
-        return draggableAreas;
     }
 
     /**
@@ -159,64 +161,5 @@ public class GlHandleDragHelper {
         }
 
         return NONE;
-    }
-
-    /**
-     * Represents position and size of a graph thumb within the surface view drawable. Renderers should register all
-     * touchable thumbs through {@link #registerDraggableArea(int, float, float, float, float)}  passing instance of this class a thumb representation.
-     */
-    public static class Rect {
-        public float x;
-        public float y;
-        public float width;
-        public float height;
-
-        public Rect() {
-            this.x = 0f;
-            this.y = 0;
-            this.width = 0f;
-            this.height = 0f;
-        }
-
-        public Rect(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-
-        public void set(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-
-        public void scale(float scaleX, float scaleY) {
-            this.x *= scaleX;
-            this.y *= scaleY;
-            this.width *= scaleX;
-            this.height *= scaleY;
-        }
-
-        boolean inside(float px, float py) {
-            return px > getMinX() && py > getMinY() && px < getMaxX() && py < getMaxY();
-        }
-
-        private float getMinX() {
-            return Math.min(x, x + width);
-        }
-
-        private float getMaxX() {
-            return Math.max(x, x + width);
-        }
-
-        private float getMinY() {
-            return Math.min(y, y + height);
-        }
-
-        private float getMaxY() {
-            return Math.max(y, y + height);
-        }
     }
 }

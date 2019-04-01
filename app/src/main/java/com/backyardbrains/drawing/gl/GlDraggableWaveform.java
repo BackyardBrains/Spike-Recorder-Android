@@ -2,7 +2,6 @@ package com.backyardbrains.drawing.gl;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
-import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
