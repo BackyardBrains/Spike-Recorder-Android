@@ -5,8 +5,6 @@ import android.support.annotation.Size;
 import com.backyardbrains.utils.ThresholdOrientation;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
-
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */

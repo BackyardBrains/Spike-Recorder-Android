@@ -14,20 +14,23 @@ import javax.microedition.khronos.opengles.GL10;
 public class GlEventMarker {
 
     private static final int LINE_WIDTH = 2;
-    private static final float LABEL_TOP = 230f;
 
     private final GlVLine vLine;
     private final GlRectangle rect;
     private final GLText text;
+
+    private final Rect borders;
 
     public GlEventMarker(@NonNull Context context, @NonNull GL10 gl) {
         vLine = new GlVLine();
         rect = new GlRectangle();
         text = new GLText(gl, context.getAssets());
         text.load("dos-437.ttf", 48, 2, 2);
+
+        borders = new Rect(0f, 0f, 0f, text.getHeight());
     }
 
-    public void draw(@NonNull GL10 gl, String eventName, float height, float scaleX, float scaleY) {
+    public void draw(@NonNull GL10 gl, String eventName, float labelOffset, float height, float scaleX, float scaleY) {
         if (eventName == null) return;
 
         int len = eventName.length();
@@ -55,7 +58,11 @@ public class GlEventMarker {
         float labelW = textW * 1.3f;
         float labelH = textH * 1.3f;
         float labelX = -labelW * .5f;
-        float labelY = height - LABEL_TOP * scaleY;
+        float labelY = height - labelOffset * scaleY;
+
+        borders.width = labelW / text.getScaleX();
+        borders.x = -borders.width * .5f;
+
         gl.glPushMatrix();
         gl.glTranslatef(labelX, labelY, 0f);
         rect.draw(gl, labelW, labelH, glColor);
@@ -70,5 +77,9 @@ public class GlEventMarker {
         text.end();
         gl.glDisable(GL10.GL_BLEND);
         gl.glDisable(GL10.GL_TEXTURE_2D);
+    }
+
+    public void getBorders(@NonNull Rect rect) {
+        rect.set(borders.x, borders.y, borders.width, borders.height);
     }
 }

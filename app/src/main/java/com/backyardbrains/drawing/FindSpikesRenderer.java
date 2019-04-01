@@ -8,6 +8,7 @@ import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.drawing.gl.GlWaveform;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
@@ -25,7 +26,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private static final int LINE_WIDTH = 1;
 
     private final GlHandleDragHelper thresholdHandleDragHelper;
-    private final GlHandleDragHelper.Rect rect = new GlHandleDragHelper.Rect();
+    private final Rect rect = new Rect();
 
     private final GlWaveform glWaveform;
     private final GlSpikes glSpikes;
