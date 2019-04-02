@@ -462,7 +462,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             ViewUtils.tintDrawable(pbUsbDisconnecting.getIndeterminateDrawable(),
-                ContextCompat.getColor(pbUsbDisconnecting.getContext(), R.color.yellow));
+                ContextCompat.getColor(pbUsbDisconnecting.getContext(), R.color.black));
         }
         // record button
         ibtnRecord.setOnClickListener(v -> startRecording());
