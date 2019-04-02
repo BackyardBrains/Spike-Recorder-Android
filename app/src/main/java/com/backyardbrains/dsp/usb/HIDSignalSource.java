@@ -166,16 +166,6 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void stop() {
-        // stop sample stream
-        write(MSG_STOP_STREAM.getBytes());
-        // and release the resources
-        close();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override public boolean open() {
         boolean ret = openHID();
 
@@ -218,6 +208,16 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
+    @Override public void stopReadingStream() {
+        // stop sample stream
+        write(MSG_STOP_STREAM.getBytes());
+        // and release the resources
+        close();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override public void checkHardwareType() {
         // check what hardware are connected to
         write(MSG_HARDWARE_INQUIRY.getBytes());
@@ -237,12 +237,6 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         killWriteThread();
         connection.releaseInterface(usbInterface);
         connection.close();
-        //final UsbDeviceConnection finalConnection = connection;
-        //final UsbInterface finalUsbInterface = usbInterface;
-        //AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> {
-        //    finalConnection.releaseInterface(finalUsbInterface);
-        //    finalConnection.close();
-        //});
     }
 
     // Kill readThread. This must be called when closing a device.

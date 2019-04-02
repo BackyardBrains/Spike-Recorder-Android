@@ -2,14 +2,17 @@ package com.backyardbrains.ui;
 
 import android.Manifest;
 import android.hardware.usb.UsbDevice;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -32,6 +35,7 @@ import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.events.UsbSignalSourceDisconnectEvent;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.NotchFilter;
@@ -77,9 +81,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     //@BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
-    @BindView(R.id.ibtn_usb) protected ImageButton ibtnUsb;
-    @BindView(R.id.ibtn_record) protected ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) protected TextView tvStopRecording;
+    @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
+    @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
+    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
+    @BindView(R.id.tv_stop_recording) TextView tvStopRecording;
     @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
     @BindView(R.id.tb_sound) ToggleButton tbSound;
@@ -286,7 +291,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     protected boolean usbDetected() {
-        return getAudioService() != null && getAudioService().getDeviceCount() > 0;
+        return getAudioService() != null && getAudioService().getUsbDeviceCount() > 0;
+    }
+
+    protected boolean usbDisconnecting() {
+        return getAudioService() != null && getAudioService().isUsbDeviceDisconnecting();
     }
 
     //==============================================
@@ -362,6 +371,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupUsbButton();
         // update BPM label
         updateBpmUI();
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onUsbSignalSourceDisconnectEvent(UsbSignalSourceDisconnectEvent event) {
+        // setup USB button
+        setupUsbButton();
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -444,6 +459,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         //setupFiltersButton();
         // usb button
         setupUsbButton();
+        // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            ViewUtils.tintDrawable(pbUsbDisconnecting.getIndeterminateDrawable(),
+                ContextCompat.getColor(pbUsbDisconnecting.getContext(), R.color.yellow));
+        }
         // record button
         ibtnRecord.setOnClickListener(v -> startRecording());
         // stop record button
@@ -705,10 +725,16 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets up the USB connection button depending on whether USB is connected and whether it's active input source.
     private void setupUsbButton() {
+        boolean disconnecting = usbDisconnecting();
         ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
-        if (getAudioService() != null && getAudioService().isUsbActiveInput()) {
+        ibtnUsb.setImageResource(disconnecting ? 0 : R.drawable.ic_usb_black_24dp);
+        setupUsbDisconnectingView(!disconnecting);
+        if (getAudioService() != null && getAudioService().isUsbActiveInput() || disconnecting) {
             ibtnUsb.setBackgroundResource(R.drawable.circle_gray_white_active);
-            ibtnUsb.setOnClickListener(v -> disconnectFromDevice());
+            ibtnUsb.setOnClickListener(v -> {
+                setupUsbDisconnectingView(false);
+                disconnectFromDevice();
+            });
         } else {
             ibtnUsb.setBackgroundResource(R.drawable.circle_gray_white);
             ibtnUsb.setOnClickListener(v -> connectWithDevice());
@@ -757,6 +783,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getContext() != null) {
             ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
         }
+    }
+
+    private void setupUsbDisconnectingView(boolean enable) {
+        ibtnUsb.setEnabled(enable);
+        ibtnUsb.setAlpha(enable ? 1f : .75f);
+        pbUsbDisconnecting.setVisibility(enable ? View.GONE : View.VISIBLE);
     }
 
     //==============================================
