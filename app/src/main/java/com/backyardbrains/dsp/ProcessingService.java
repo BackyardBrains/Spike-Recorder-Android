@@ -32,6 +32,7 @@ import com.backyardbrains.dsp.audio.Recorder;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource.OnExpansionBoardTypeDetectionListener;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource.OnSpikerBoxHardwareTypeDetectionListener;
+import com.backyardbrains.dsp.usb.AbstractUsbSignalSource.OnUsbSignalSourceDisconnectListener;
 import com.backyardbrains.dsp.usb.UsbHelper;
 import com.backyardbrains.events.AudioPlaybackProgressEvent;
 import com.backyardbrains.events.AudioPlaybackStartedEvent;
@@ -44,6 +45,7 @@ import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
+import com.backyardbrains.events.UsbSignalSourceDisconnectEvent;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
@@ -87,6 +89,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
     // Whether service is created
     private boolean created;
+    //
+    private boolean usbDisconnecting;
 
     // Reference to currently active signal source
     private AbstractSignalSource signalSource;
@@ -360,7 +364,6 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     private void startAudioDetection() {
         LOGD(TAG, "startAudioDetection()");
         if (audioHelper == null) {
-
             audioHelper = new AudioHelper();
             audioHelper.start(getApplicationContext());
             LOGD(TAG, "Audio helper started");
@@ -405,6 +408,12 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         }
     };
 
+    final OnUsbSignalSourceDisconnectListener usbSignalSourceDisconnectListener = () -> {
+        usbDisconnecting = false;
+
+        EventBus.getDefault().post(new UsbSignalSourceDisconnectEvent());
+    };
+
     /**
      * Initiates communication with USB device with the specified {@code deviceName}.
      */
@@ -416,22 +425,23 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * Closes the communication with the currently connected USB device.
      */
     public void stopUsb() {
-        if (created) usbHelper.close();
+        if (created) {
+            usbDisconnecting = true;
+            usbHelper.close();
+        }
     }
 
     /**
-     * Returns {@code true} if currently active input is USB input and it's type is equal to the specified {@code
-     * hardwareType}, {@code false} otherwise.
+     * Returns {@code true} if currently active input is USB input and is currently disconnecting.
      */
-    public boolean isActiveUsbInputOfType(@SpikerBoxHardwareType int hardwareType) {
-        return created && signalSource != null && signalSource.isUsb()
-            && ((AbstractUsbSignalSource) signalSource).getHardwareType() == hardwareType;
+    public boolean isUsbDeviceDisconnecting() {
+        return created && usbDisconnecting;
     }
 
     /**
      * Returns number of connected serial devices.
      */
-    public int getDeviceCount() {
+    public int getUsbDeviceCount() {
         return created ? usbHelper.getDevicesCount() : 0;
     }
 
@@ -457,6 +467,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 usbHelper.getUsbDevice().addOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
                 usbHelper.getUsbDevice().addOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
             }
+            usbHelper.getUsbDevice().setOnUsbSignalSourceDisconnectListener(usbSignalSourceDisconnectListener);
             signalSource = usbHelper.getUsbDevice();
             signalProcessor.setSignalSource(signalSource);
         }
@@ -470,11 +481,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         stopRecording();
 
         if (signalSource != null && signalSource.isUsb()) {
-            ((AbstractUsbSignalSource) signalSource).removeOnSpikerBoxHardwareTypeDetectionListener(
-                spikerBoxDetectionListener);
-            ((AbstractUsbSignalSource) signalSource).removeOnExpansionBoardTypeDetectionListener(
-                expansionBoardDetectionListener);
-            signalSource.stop();
+            AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+            usbSignalSource.removeOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
+            usbSignalSource.removeOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
+            if (!usbSignalSource.isDisconnecting()) signalSource.stop();
             signalSource = null;
         }
         LOGD(TAG, "USB communication ended");
@@ -715,7 +725,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     public void startRecording() {
         LOGD(TAG, "startRecording()");
         try {
-            if (recorder != null && !recorder.isRecording()) {
+            if (!isRecording()) {
                 recorder.startRecording(signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount());
             }
 
@@ -738,7 +748,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void stopRecording() {
         LOGD(TAG, "stopRecording()");
-        if (recorder != null && recorder.isRecording()) recorder.stopRecording();
+        if (isRecording()) recorder.stopRecording();
 
         // post that recording of audio has stopped
         EventBus.getDefault().post(new AudioRecordingStoppedEvent());
@@ -787,7 +797,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     // Pass audio and events to the active Recorder instance
     private void record(@NonNull SignalData signalData) {
         try {
-            if (recorder != null) {
+            if (isRecording()) {
                 recorder.write(signalData);
 
                 // recorder can be set to null if stopRecording() is called between this and previous line

@@ -139,34 +139,6 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void start() {
-        // prepare serial usb device for communication
-        if (serialDevice != null) {
-            serialDevice.setBaudRate(BAUD_RATE);
-            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-        }
-
-        super.start();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override public void stop() {
-        //if (serialDevice != null) serialDevice.close();
-        if (readThread != null) {
-            readThread.stopReadThread();
-            readThread = null;
-        }
-        if (serialDevice != null) serialDevice.syncClose();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override public boolean open() {
         //return serialDevice != null && serialDevice.open();
         boolean ret = serialDevice != null && serialDevice.syncOpen();
@@ -194,9 +166,30 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public void startReadingStream() {
+        // prepare serial usb device for communication
+        if (serialDevice != null) {
+            serialDevice.setBaudRate(BAUD_RATE);
+            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+        }
+
         // we don't actually start the stream, it's automatically stared after connection, but we should
         // configure sample rate and num of channels at startup
         write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void stopReadingStream() {
+        //if (serialDevice != null) serialDevice.close();
+        if (readThread != null) {
+            readThread.stopReadThread();
+            readThread = null;
+        }
+        if (serialDevice != null) serialDevice.syncClose();
     }
 
     /**

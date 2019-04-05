@@ -4,7 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
-import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import java.text.DecimalFormat;
 import javax.microedition.khronos.egl.EGLConfig;

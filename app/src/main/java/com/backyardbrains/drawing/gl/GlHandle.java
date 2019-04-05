@@ -3,7 +3,6 @@ package com.backyardbrains.drawing.gl;
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
 import com.backyardbrains.drawing.Colors;
-import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -23,14 +22,12 @@ public class GlHandle {
 
     private final GlCircle outerCircle;
     private final GlTriangle triangle;
-    //private final GlCircle innerCircle;
 
     private final Rect borders;
 
     public GlHandle() {
         outerCircle = new GlCircle();
         triangle = new GlTriangle();
-        //innerCircle = new GlCircle();
 
         borders = new Rect();
     }

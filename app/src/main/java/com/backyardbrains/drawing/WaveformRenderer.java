@@ -28,8 +28,8 @@ import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
-import com.backyardbrains.drawing.gl.GlHandleDragHelper.Rect;
 import com.backyardbrains.drawing.gl.GlWaveform;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.ArrayUtils;
 import com.backyardbrains.utils.JniUtils;
@@ -47,6 +47,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final float DASH_SIZE = 30f;
     private static final int LINE_WIDTH = 1;
+    private static final float MARKER_LABEL_TOP = 230f;
+    private static final float MARKER_LABEL_TOP_OFFSET = 20f;
 
     private final GlHandleDragHelper waveformHandleDragHelper;
     private final GlHandleDragHelper thresholdHandleDragHelper;
@@ -357,11 +359,24 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         // draw markers
         if (!isSignalAveraging) {
+            float prevX = 0f, prevLabelYOffset = MARKER_LABEL_TOP;
             for (int i = 0; i < eventsDrawData.eventCount; i++) {
+                float x = eventsDrawData.eventIndices[i];
+                float labelYOffset = MARKER_LABEL_TOP;
+                if (i != 0 && (x - prevX) < rect.width) {
+                    labelYOffset = prevLabelYOffset + rect.height + MARKER_LABEL_TOP_OFFSET;
+                }
+
                 gl.glPushMatrix();
-                gl.glTranslatef(eventsDrawData.eventIndices[i], -MAX_GL_VERTICAL_HALF_SIZE, 0f);
-                glEventMarker.draw(gl, eventsDrawData.eventNames[i], MAX_GL_VERTICAL_SIZE, drawScale, scaleY);
+                gl.glTranslatef(x, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                glEventMarker.draw(gl, eventsDrawData.eventNames[i], labelYOffset, MAX_GL_VERTICAL_SIZE, drawScale,
+                    scaleY);
                 gl.glPopMatrix();
+
+                if (i != 0) glEventMarker.getBorders(rect);
+
+                prevX = x;
+                prevLabelYOffset = labelYOffset;
             }
         }
     }

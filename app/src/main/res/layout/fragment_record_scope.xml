@@ -33,6 +33,17 @@
         app:srcCompat="@drawable/ic_usb_black_24dp"
         tools:ignore="ContentDescription"/>
 
+    <ProgressBar
+        android:id="@+id/pb_usb_disconnecting"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/black"
+        app:layout_constraintLeft_toLeftOf="@+id/ibtn_usb"
+        app:layout_constraintTop_toTopOf="@+id/ibtn_usb"
+        app:layout_constraintRight_toRightOf="@+id/ibtn_usb"
+        app:layout_constraintBottom_toBottomOf="@+id/ibtn_usb"/>
+
     <ImageButton
         android:id="@+id/ibtn_avg_trigger_type"
         android:layout_width="@dimen/min_button_tappable_h"
@@ -155,6 +166,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_margin="@dimen/activity_horizontal_margin_quarter"
+        android:visibility="gone"
         app:layout_constraintVertical_bias="0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"

@@ -191,6 +191,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
         synchronized (lock) {
+            resetLocalSignalDrawBuffers(signalConfiguration.getChannelCount(),
+                signalConfiguration.getVisibleChannelCount());
             fftDrawBuffer = new FftDrawBuffer(SignalProcessor.getProcessedFftWindowCount(),
                 SignalProcessor.getProcessedFftWindowSize());
         }

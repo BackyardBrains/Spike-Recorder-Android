@@ -2,8 +2,9 @@ package com.backyardbrains.dsp.usb;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
-import android.support.annotation.CallSuper;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.util.ArraySet;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
@@ -52,11 +53,24 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         void onExpansionBoardTypeDetected(@ExpansionBoardType int expansionBoardType);
     }
 
+    /**
+     * Interface definition for a callback to be invoked when usb signal source is disconnected.
+     */
+    public interface OnUsbSignalSourceDisconnectListener {
+        /**
+         * Called when usb signal source is disconnected.
+         */
+        void onDisconnected();
+    }
+
     private Set<OnSpikerBoxHardwareTypeDetectionListener> onSpikerBoxHardwareTypeDetectionListeners;
     private Set<OnExpansionBoardTypeDetectionListener> onOnExpansionBoardTypeDetectionListeners;
+    private OnUsbSignalSourceDisconnectListener onUsbSignalSourceDisconnectListener;
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
     private @ExpansionBoardType int expansionBoardType = ExpansionBoardType.NONE;
+
+    private boolean disconnecting;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
         super(SampleStreamUtils.SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
@@ -89,6 +103,13 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     }
 
     /**
+     * Checks whether HID signal source is currently disconnecting from host.
+     */
+    public boolean isDisconnecting() {
+        return disconnecting;
+    }
+
+    /**
      * Returns SpikerBox hardware type for the specified {@code device} by checking VID and PID. If it's not possible to
      * determine hardware type {@link SpikerBoxHardwareType#UNKNOWN} is returned.
      */
@@ -109,9 +130,30 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      */
     protected abstract void startReadingStream();
 
-    @CallSuper @Override public void start() {
+    /**
+     * Stops reading data from usb endpoint.
+     */
+    abstract protected void stopReadingStream();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public final void start() {
         LOGD(TAG, "start()");
         startReadingStream();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public final void stop() {
+        disconnecting = true;
+        AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> {
+            stopReadingStream();
+            disconnecting = false;
+
+            if (onUsbSignalSourceDisconnectListener != null) onUsbSignalSourceDisconnectListener.onDisconnected();
+        });
     }
 
     /**
@@ -164,6 +206,15 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         if (onOnExpansionBoardTypeDetectionListeners == null) return;
         onOnExpansionBoardTypeDetectionListeners.remove(listener);
         if (onOnExpansionBoardTypeDetectionListeners.size() == 0) onOnExpansionBoardTypeDetectionListeners = null;
+    }
+
+    /**
+     * Sets a listener to be invoked when usb signal source is disconnected.
+     *
+     * @param listener The callback that will be run. This value may be {@code null}.
+     */
+    public void setOnUsbSignalSourceDisconnectListener(@Nullable OnUsbSignalSourceDisconnectListener listener) {
+        onUsbSignalSourceDisconnectListener = listener;
     }
 
     //private final Benchmark benchmark = new Benchmark("PROCESS_SAMPLE_STREAM_TEST").warmUp(1000)

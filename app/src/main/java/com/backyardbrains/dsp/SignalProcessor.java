@@ -147,7 +147,7 @@ public class SignalProcessor implements SignalSource.Processor {
 
     private final AbstractUsbSignalSource.OnExpansionBoardTypeDetectionListener expansionBoardDetectionListener =
         expansionBoardType -> {
-            if (expansionBoardType == ExpansionBoardType.HAMMER) {
+            if (expansionBoardType == ExpansionBoardType.HAMMER || expansionBoardType == ExpansionBoardType.JOYSTICK) {
                 setChannelConfig(new boolean[] { true, false, true });
             } else if (expansionBoardType == ExpansionBoardType.NONE) {
                 setChannelConfig(new boolean[] { true, false });

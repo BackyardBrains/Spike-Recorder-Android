@@ -99,8 +99,7 @@ namespace backyardbrains {
             int samplesPerPixel = drawSamplesCount / drawSurfaceWidth;
             int samplesPerPixelRest = drawSamplesCount % drawSurfaceWidth;
             int samplesPerEnvelope = samplesPerPixel * 2; // multiply by 2 because we save min and max
-            int envelopeCounter = 0, sampleIndex = 0, eventIndex = 0;
-            bool eventExists = false;
+            int envelopeCounter = 0, sampleIndex = 0, eventCounter = 0, eventIndex = 0;
             bool eventsProcessed = false;
 
             int from = fromSample;
@@ -111,29 +110,38 @@ namespace backyardbrains {
                     if (!eventsProcessed) {
                         for (int k = 0; k < inEventIndicesCount; k++) {
                             if (j == inEventIndices[k]) {
-                                eventExists = true;
-                                break;
+                                eventCounter++;
+                            } else {
+                                if (j < inEventIndices[k]) break;
                             }
                         }
                     }
 
                     if (samplesPerPixel == 1 && samplesPerPixelRest == 0) {
-                        if (eventExists) outEventIndices[eventIndex++] = sampleIndex;
+                        if (eventCounter > 0) {
+                            for (int k = 0; k < eventCounter; k++) {
+                                outEventIndices[eventIndex++] = sampleIndex;
+                            }
+                        }
                         outSamples[i][sampleIndex++] = sample;
 
-                        eventExists = false;
+                        eventCounter = 0;
                     } else {
                         if (sample > max) max = sample;
                         if (sample < min) min = sample;
                         if (envelopeCounter == samplesPerEnvelope) {
-                            if (eventExists) outEventIndices[eventIndex++] = sampleIndex;
+                            if (eventCounter > 0) {
+                                for (int k = 0; k < eventCounter; k++) {
+                                    outEventIndices[eventIndex++] = sampleIndex;
+                                }
+                            }
                             outSamples[i][sampleIndex++] = max;
                             outSamples[i][sampleIndex++] = min;
 
                             envelopeCounter = 0;
                             min = SHRT_MAX;
                             max = SHRT_MIN;
-                            eventExists = false;
+                            eventCounter = 0;
                         }
 
                         envelopeCounter++;
