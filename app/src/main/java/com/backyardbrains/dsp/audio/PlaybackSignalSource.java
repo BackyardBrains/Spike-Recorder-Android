@@ -3,7 +3,7 @@ package com.backyardbrains.dsp.audio;
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
+import android.util.Pair;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
@@ -14,6 +14,7 @@ import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,9 +70,11 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 int len = allEvents.size();
                 eventIndices = new int[len];
                 eventNames = new String[len];
+                Pair<Integer, String> event;
                 for (int i = 0; i < len; i++) {
-                    eventIndices[i] = allEvents.keyAt(i);
-                    eventNames[i] = allEvents.valueAt(i);
+                    event = allEvents.get(i);
+                    eventIndices[i] = event.first;
+                    eventNames[i] = event.second;
                 }
 
                 duration.set(raf.length());
@@ -320,7 +323,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     // Number of samples that should be prepended while playing begining of the audio file
     @SuppressWarnings("WeakerAccess") AtomicInteger samplesToPrepend = new AtomicInteger();
     // Holds all events saved for the played file
-    @SuppressWarnings("WeakerAccess") SparseArray<String> allEvents;
+    @SuppressWarnings("WeakerAccess") List<Pair<Integer, String>> allEvents;
 
     // Used for passing event indices to samplesWithEvents
     @SuppressWarnings("WeakerAccess") int[] eventIndices;

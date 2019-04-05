@@ -21,7 +21,7 @@ package com.backyardbrains.dsp.audio;
 
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
-import android.util.SparseArray;
+import android.util.Pair;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
@@ -65,7 +67,7 @@ public class Recorder {
         private File eventsFile;
         private AudioTrack audioTrack;
         private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
-        private SparseArray<String> events = new SparseArray<>();
+        private List<Pair<Integer, String>> events = new ArrayList<>();
         private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
         private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
         private short[] samples = new short[BUFFER_SIZE_IN_SAMPLES];
@@ -93,9 +95,9 @@ public class Recorder {
             }
         }
 
-        void startRecording(int sampleRate, int channelCount) throws IOException {
+        void startRecording(int sampleRate, int visibleChannelCount) throws IOException {
             this.sampleRate = sampleRate;
-            this.channelCount = channelCount;
+            this.channelCount = visibleChannelCount;
 
             // create recording file
             audioFile = RecordingUtils.createRecordingFile();
@@ -168,7 +170,7 @@ public class Recorder {
                     String event;
                     for (int i = 0; i < signalData.eventCount; i++) {
                         event = signalData.eventNames[i];
-                        if (event != null) events.put(frameCount + signalData.eventIndices[i], event);
+                        if (event != null) events.add(new Pair<>(frameCount + signalData.eventIndices[i], event));
                     }
                 }
             }
@@ -202,11 +204,13 @@ public class Recorder {
         private void saveEventFile() throws IOException {
             // construct the events file content
             int len = events.size();
+            Pair<Integer, String> event;
             for (int i = 0; i < len; i++) {
+                event = events.get(i);
                 eventsFileContent.append("\n")
-                    .append(events.valueAt(i))
+                    .append(event.second)
                     .append(",\t")
-                    .append(events.keyAt(i) / (float) sampleRate);
+                    .append(event.first / (float) sampleRate);
             }
             // there needs to be a RETURN char at the end of the events file
             // for the desktop app to be able to parse it properly
@@ -255,8 +259,8 @@ public class Recorder {
      *
      * @throws IOException
      */
-    public void startRecording(int sampleRate, int channelCount) throws IOException {
-        writeThread.startRecording(sampleRate, channelCount);
+    public void startRecording(int sampleRate, int visibleChannelCount) throws IOException {
+        writeThread.startRecording(sampleRate, visibleChannelCount);
     }
 
     /**

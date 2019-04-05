@@ -187,8 +187,7 @@ public final class SignalConfiguration {
      * @throws IndexOutOfBoundsException Exception is thrown is specified {@code channelIndex} is out of bounds.
      */
     public boolean isChannelVisible(int channelIndex) throws IndexOutOfBoundsException {
-        if (channelIndex < 0 || channelIndex >= channelCount) throw new IndexOutOfBoundsException();
-        if (channelConfig == null) return false;
+        if (channelIndex < 0 || channelIndex >= channelCount || channelConfig == null) return false;
 
         return channelConfig[channelIndex];
     }
@@ -219,8 +218,10 @@ public final class SignalConfiguration {
      * @throws IndexOutOfBoundsException Exception is thrown is specified {@code channelIndex} is out of bounds.
      */
     void setChannelVisible(int channelIndex, boolean visible) throws IndexOutOfBoundsException {
-        if (channelIndex < 0 || channelIndex >= channelCount) throw new IndexOutOfBoundsException();
-        if (channelConfig == null || channelConfig[channelIndex] == visible) return;
+        if (channelIndex < 0 || channelIndex >= channelCount || channelConfig == null
+            || channelConfig[channelIndex] == visible) {
+            return;
+        }
 
         channelConfig[channelIndex] = visible;
 
@@ -247,7 +248,7 @@ public final class SignalConfiguration {
      * @throws IndexOutOfBoundsException Exception is thrown is specified {@code channelIndex} is out of bounds.
      */
     void setSelectedChannel(int channelIndex) throws IndexOutOfBoundsException {
-        if (channelIndex < 0 || channelIndex >= channelCount) throw new IndexOutOfBoundsException();
+        if (channelIndex < 0 || channelIndex >= channelCount) return;
 
         selectedChannel = channelIndex;
 

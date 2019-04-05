@@ -364,7 +364,6 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     private void startAudioDetection() {
         LOGD(TAG, "startAudioDetection()");
         if (audioHelper == null) {
-
             audioHelper = new AudioHelper();
             audioHelper.start(getApplicationContext());
             LOGD(TAG, "Audio helper started");
@@ -726,7 +725,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     public void startRecording() {
         LOGD(TAG, "startRecording()");
         try {
-            if (recorder != null && !recorder.isRecording()) {
+            if (!isRecording()) {
                 recorder.startRecording(signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount());
             }
 
@@ -749,7 +748,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void stopRecording() {
         LOGD(TAG, "stopRecording()");
-        if (recorder != null && recorder.isRecording()) recorder.stopRecording();
+        if (isRecording()) recorder.stopRecording();
 
         // post that recording of audio has stopped
         EventBus.getDefault().post(new AudioRecordingStoppedEvent());
@@ -798,7 +797,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     // Pass audio and events to the active Recorder instance
     private void record(@NonNull SignalData signalData) {
         try {
-            if (recorder != null) {
+            if (isRecording()) {
                 recorder.write(signalData);
 
                 // recorder can be set to null if stopRecording() is called between this and previous line
