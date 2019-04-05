@@ -1,7 +1,8 @@
 package com.backyardbrains.dsp;
 
 import android.support.annotation.Nullable;
-import com.backyardbrains.filters.Filter;
+import com.backyardbrains.filters.BandFilter;
+import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ObjectUtils;
 
 /**
@@ -20,62 +21,109 @@ public class Filters {
     // Low cut-off frequency for EMG
     private static final double FREQ_LOW_CUTOFF_MUSCLE = 70d;
     // High cut-off frequency for EMG
-    private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2500d;
+    private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2499d;
     // Low cut-off frequency for Neuron PRO
     private static final double FREQ_LOW_CUTOFF_NEURON_PRO = 160d;
     // High cut-off frequency for Neuron PRO
     private static final double FREQ_HIGH_CUTOFF_NEURON_PRO = 3700d;
-    // Order used the all filters
-    private static final int FILTER_ORDER = 2;
+    // 50Hz cut-off frequency
+    private static final double FREQ_CUTOFF_50HZ = 50d;
+    // 60Hz cut-off frequency
+    private static final double FREQ_CUTOFF_60HZ = 60d;
 
     /**
      * Predefined filter configured for EKG.
      */
-    public static final Filter FILTER_HEART = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
+    public static final BandFilter FILTER_BAND_HEART =
+        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
     /**
      * Predefined filter configured for EEG.
      */
-    public static final Filter FILTER_BRAIN = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
+    public static final BandFilter FILTER_BAND_BRAIN =
+        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
     /**
      * Predefined filter configured for Plant.
      */
-    public static final Filter FILTER_PLANT = new Filter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_PLANT);
+    public static final BandFilter FILTER_BAND_PLANT =
+        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_PLANT);
     /**
      * Predefined filter configured for EMG.
      */
-    public static final Filter FILTER_MUSCLE = new Filter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
+    public static final BandFilter FILTER_BAND_MUSCLE = new BandFilter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
     /**
      * Predefined filter configured for Neuron Pro.
      */
-    public static final Filter FILTER_NEURON_PRO = new Filter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
-
-    // Current filter
-    private Filter filter;
+    public static final BandFilter FILTER_BAND_NEURON_PRO =
+        new BandFilter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
+    /**
+     * Predefined notch filter that cuts-off 50Hz frequency
+     */
+    public static final NotchFilter FILTER_NOTCH_50HZ = new NotchFilter(FREQ_CUTOFF_50HZ);
+    /**
+     * Predefined notch filter that cuts-off 60Hz frequency
+     */
+    public static final NotchFilter FILTER_NOTCH_60HZ = new NotchFilter(FREQ_CUTOFF_60HZ);
 
     /**
-     * Returns currently applied filter.
+     * Constant value that should be used when cut-off frequency should not be applied.
      */
-    public Filter getFilter() {
-        return filter;
+    public static final double FREQ_NO_CUT_OFF = -1d;
+    /**
+     * Minimum value for the band filter cut-off frequency
+     */
+    public static final double FREQ_MIN_CUT_OFF = 0d;
+    /**
+     * Maximum value for the band filter cut-off frequency used with low frequency boards (PLAN, BRAIN, HEART)
+     */
+    public static final double FREQ_LOW_MAX_CUT_OFF = 500d;
+    /**
+     * Maximum value for the band filter cut-off frequency used with high frequency boards (MUSCLE, NEURO)
+     */
+    public static final double FREQ_HIGH_MAX_CUT_OFF = 5000d;
+
+    // Current band filter
+    private BandFilter bandFilter;
+    // Current notch filter
+    private NotchFilter notchFilter;
+
+    /**
+     * Returns currently applied band filter.
+     */
+    BandFilter getBandFilter() {
+        return bandFilter;
     }
 
     /**
-     * Sets filter that should be additionally applied during processing of incoming data.
+     * Sets band filter that should be additionally applied during processing of incoming data.
      */
-    public void setFilter(@Nullable Filter filter) {
-        if (!ObjectUtils.equals(this.filter, filter)) {
-            if (filter != null) {
+    void setBandFilter(@Nullable BandFilter bandFilter) {
+        if (!ObjectUtils.equals(this.bandFilter, bandFilter)) {
+            if (bandFilter != null) {
                 // if both cut-off frequencies are negative, or if low cut-off is minimum cut-off value
                 // and high cut-off is maximum cut-off value we should not use filter
-                if ((!filter.isLowCutOffFrequencySet() && !filter.isHighCutOffFrequencySet()) || (
-                    filter.getLowCutOffFrequency() == Filter.FREQ_MIN_CUT_OFF
-                        && filter.getHighCutOffFrequency() == Filter.FREQ_MAX_CUT_OFF)) {
-                    this.filter = null;
+                if ((!bandFilter.isLowCutOffFrequencySet() && !bandFilter.isHighCutOffFrequencySet()) || (
+                    bandFilter.getLowCutOffFrequency() == BandFilter.FREQ_MIN_CUT_OFF
+                        && bandFilter.getHighCutOffFrequency() == BandFilter.FREQ_MAX_CUT_OFF)) {
+                    this.bandFilter = null;
                     return;
                 }
             }
 
-            this.filter = filter;
+            this.bandFilter = bandFilter;
         }
+    }
+
+    /**
+     * Returns currently applied notch filter.
+     */
+    NotchFilter getNotchFilter() {
+        return notchFilter;
+    }
+
+    /**
+     * Sets notch filter that should be additionally applied during processing of incoming data.
+     */
+    void setNotchFilter(NotchFilter notchFilter) {
+        this.notchFilter = notchFilter;
     }
 }

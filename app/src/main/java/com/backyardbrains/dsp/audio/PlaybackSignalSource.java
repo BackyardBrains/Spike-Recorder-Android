@@ -3,9 +3,9 @@ package com.backyardbrains.dsp.audio;
 import android.media.AudioTrack;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
+import android.util.Pair;
 import com.backyardbrains.dsp.AbstractSignalSource;
-import com.backyardbrains.dsp.SamplesWithEvents;
+import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
@@ -14,6 +14,7 @@ import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,8 +30,6 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSignalSource.class);
 
-    // Max number of samples each channel should hold by default
-    private static final int MAX_SAMPLES_PER_CHANNEL = AudioUtils.DEFAULT_SAMPLE_RATE; // 1 sec of samples at 44100 Hz
     // Number of seconds buffer should hold while seeking
     private static final int SEEK_BUFFER_SIZE_IN_SEC = 6;
 
@@ -71,9 +70,11 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 int len = allEvents.size();
                 eventIndices = new int[len];
                 eventNames = new String[len];
+                Pair<Integer, String> event;
                 for (int i = 0; i < len; i++) {
-                    eventIndices[i] = allEvents.keyAt(i);
-                    eventNames[i] = allEvents.valueAt(i);
+                    event = allEvents.get(i);
+                    eventIndices[i] = event.first;
+                    eventNames[i] = event.second;
                 }
 
                 duration.set(raf.length());
@@ -104,10 +105,6 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 bufferSize =
                     (raf.bitsPerSample() * raf.sampleRate() * raf.channelCount() * SEEK_BUFFER_SIZE_IN_SEC) / 8;
                 buffer = new byte[bufferSize];
-
-                int sampleCount = (int) (bufferSize * .5);
-                int maxSamplesPerChannel = (int) Math.floor((float) sampleCount / raf.channelCount());
-                samplesWithEvents = new SamplesWithEvents(raf.channelCount(), maxSamplesPerChannel);
 
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
 
@@ -326,7 +323,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     // Number of samples that should be prepended while playing begining of the audio file
     @SuppressWarnings("WeakerAccess") AtomicInteger samplesToPrepend = new AtomicInteger();
     // Holds all events saved for the played file
-    @SuppressWarnings("WeakerAccess") SparseArray<String> allEvents;
+    @SuppressWarnings("WeakerAccess") List<Pair<Integer, String>> allEvents;
 
     // Used for passing event indices to samplesWithEvents
     @SuppressWarnings("WeakerAccess") int[] eventIndices;
@@ -334,7 +331,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     @SuppressWarnings("WeakerAccess") String[] eventNames;
 
     public PlaybackSignalSource(@NonNull String filePath, boolean autoPlay, int position) {
-        super(AudioUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, MAX_SAMPLES_PER_CHANNEL);
+        super(AudioUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
 
         this.filePath = filePath;
         this.autoPlay = autoPlay;
@@ -476,7 +473,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
     //    });
 
-    @Override public void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength) {
+    @Override public void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
         //benchmark.start();
         JniUtils.processPlaybackStream(outData, inData, inDataLength, eventIndices, eventNames, eventIndices.length,
             fromSample.get(), toSample.get(), samplesToPrepend.get());

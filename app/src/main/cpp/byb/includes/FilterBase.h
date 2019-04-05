@@ -5,40 +5,39 @@
 #ifndef SPIKE_RECORDER_ANDROID_FILTERBASE_H
 #define SPIKE_RECORDER_ANDROID_FILTERBASE_H
 
-#include <stdint.h>
-
-namespace filters {
-    class FilterBase;
-}
+#include <cstdint>
 
 //
 // Base class that is inherited by all filters
 //
-class FilterBase {
-public:
-    FilterBase();
+namespace backyardbrains {
 
-    void initWithSamplingRate(float sr);
+    namespace filters {
 
-    void setCoefficients();
+        class FilterBase {
+        public:
+            FilterBase();
 
-    void filter(int16_t *data, int32_t numFrames, bool flush = false);
+            void initWithSamplingRate(float sr);
 
-    void filterContiguousData(float *data, uint32_t numFrames, bool flush = false);
+            void setCoefficients();
 
-protected:
+            void filter(int16_t *data, int32_t numFrames, bool flush = false);
 
-    void intermediateVariables(float Fc, float Q);
+            void filterContiguousData(float *data, int32_t numFrames);
 
-    float zero, one;
-    float samplingRate;
-    float gInputKeepBuffer[2];
-    float gOutputKeepBuffer[2];
-    float omega, omegaS, omegaC, alpha;
-    float coefficients[5];
-    float a0, a1, a2, b0, b1, b2;
-    int flushFilterValues;
-private:
-};
+        protected:
 
+            void intermediateVariables(float Fc, float Q);
+
+            float one;
+            float samplingRate;
+            float gInputKeepBuffer[2];
+            float gOutputKeepBuffer[2];
+            float omega, omegaS, omegaC, alpha;
+            float coefficients[5];
+            float a0, a1, a2, b0, b1, b2;
+        private:
+        };
+    }}
 #endif //SPIKE_RECORDER_ANDROID_FILTERBASE_H

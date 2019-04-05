@@ -17,16 +17,10 @@ public abstract class AbstractSignalSource implements SignalSource {
     // Reference to the data processor that's listening to this sample source
     private Processor processor;
 
-    // Updated during processing and on every cycle
-    protected SamplesWithEvents samplesWithEvents;
-
-    // Size of the buffer for this sample source
-    private int frameCount;
     private int sampleRate;
     private int channelCount;
 
-    public AbstractSignalSource(int sampleRate, int channelCount, int frameCount) {
-        this.frameCount = frameCount;
+    public AbstractSignalSource(int sampleRate, int channelCount) {
         setSampleRate(sampleRate);
         setChannelCount(channelCount);
     }
@@ -65,8 +59,6 @@ public abstract class AbstractSignalSource implements SignalSource {
     @CallSuper protected void setChannelCount(int channelCount) {
         if (this.channelCount != channelCount) {
             LOGD(TAG, "setChannelCount(" + channelCount + ")");
-
-            samplesWithEvents = new SamplesWithEvents(channelCount, frameCount);
 
             // inform interested parties what is the channel count of this sample source
             if (processor != null) processor.onChannelCountChanged(channelCount);
@@ -127,12 +119,12 @@ public abstract class AbstractSignalSource implements SignalSource {
     /**
      * Called by {@link Processor} to convert incoming byte data to sample data. If available (i.e. during playback)
      * caller should also pass the index of the last passed byte (playhead). Processed samples should be passed back
-     * inside provided {@link SamplesWithEvents} object.
+     * inside provided {@link SignalData} object.
      * <p>
      * This method is called from background thread so implementation should not communicate with UI thread
      * directly.
      */
-    public abstract void processIncomingData(@NonNull SamplesWithEvents outData, byte[] inData, int inDataLength);
+    public abstract void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength);
 
     /**
      * Returns type of the sample source. One of {@link SignalSource.Type} constants.

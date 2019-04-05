@@ -31,6 +31,9 @@ import com.backyardbrains.db.entity.Train;
 
     @Query("SELECT COUNT(*) FROM trains WHERE analysis_id = :analysisId") int loadTrainCount(long analysisId);
 
+    @Query("SELECT COUNT(*) FROM trains WHERE analysis_id = :analysisId AND spike_count != 0")
+    int loadNonEmptyTrainCount(long analysisId);
+
     @Query("UPDATE trains SET `order` = `order` - 1 WHERE analysis_id = :analysisId AND `order` > :order")
     void updateTrainsAfterOrder(long analysisId, int order);
 

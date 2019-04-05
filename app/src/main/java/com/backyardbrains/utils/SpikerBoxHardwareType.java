@@ -8,37 +8,37 @@ import java.lang.annotation.RetentionPolicy;
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
-    SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT, SpikerBoxHardwareType.MUSCLE, SpikerBoxHardwareType.HEART,
-    SpikerBoxHardwareType.MUSCLE_PRO, SpikerBoxHardwareType.NEURON_PRO
+    SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT, SpikerBoxHardwareType.MUSCLE,
+    SpikerBoxHardwareType.HEART_AND_BRAIN, SpikerBoxHardwareType.MUSCLE_PRO, SpikerBoxHardwareType.NEURON_PRO
 }) public @interface SpikerBoxHardwareType {
 
     /**
-     * Unknown board type.
+     * Unknown hardware type.
      */
     int UNKNOWN = -1;
 
     /**
-     * SpikerBox Plant board type.
+     * SpikerBox Plant hardware type.
      */
     int PLANT = 0;
 
     /**
-     * SpikerBox Muscle board type.
+     * SpikerBox Muscle hardware type.
      */
     int MUSCLE = 1;
 
     /**
-     * SpikerBox Brain & Heart board type.
+     * SpikerBox Brain & Heart hardware type.
      */
-    int HEART = 2;
+    int HEART_AND_BRAIN = 2;
 
     /**
-     * SpikerBox Muscle PRO board type.
+     * SpikerBox Muscle PRO hardware type.
      */
     int MUSCLE_PRO = 3;
 
     /**
-     * SpikerBox Neuron PRO board type.
+     * SpikerBox Neuron PRO hardware type.
      */
     int NEURON_PRO = 4;
 }

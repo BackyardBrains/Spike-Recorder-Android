@@ -25,7 +25,8 @@ public class WavUtils {
         long byteCount = AudioUtils.getByteCount(sampleCount);
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_mm_ss(TimeUnit.SECONDS.toMillis(toSeconds(byteCount, sampleRate, channelCount)));
+        return Formats.formatTime_mm_ss(
+            TimeUnit.SECONDS.toMillis((long) toSeconds(byteCount, sampleRate, channelCount)));
     }
 
     /**
@@ -34,7 +35,7 @@ public class WavUtils {
     public static CharSequence formatWavLength(long byteCount, int sampleRate, int channelCount) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s(toSeconds(byteCount, sampleRate, channelCount));
+        return Formats.formatTime_m_s((long) toSeconds(byteCount, sampleRate, channelCount));
     }
 
     public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelCount, int audioFormat) {
@@ -75,9 +76,9 @@ public class WavUtils {
         check(channels > 0, "Unsupported number of channels: " + channels);
         // sample rate
         int rate = buffer.getInt();
-        // 8000, 44100, etc. (for not we support only 10000 and 44100)
-        check(rate == AudioUtils.DEFAULT_SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE,
-            "Unsupported sample rate: " + rate);
+        // 8000, 44100, etc. (for now we support only 5000, 10000 and 44100)
+        check(rate == AudioUtils.DEFAULT_SAMPLE_RATE || rate == SampleStreamUtils.SAMPLE_RATE
+            || rate == SampleStreamUtils.SAMPLE_RATE_5000, "Unsupported sample rate: " + rate);
 
         // fast-forward to bits per sample
         buffer.position(buffer.position() + 6);
@@ -105,8 +106,8 @@ public class WavUtils {
     //fileSize = (bitsPerSample * samplesPerSecond * channels * duration) / 8;
 
     // Converts specified byteCount to seconds
-    private static long toSeconds(long byteCount, int sampleRate, int channelCount) {
-        return byteCount / (2 * sampleRate * channelCount);
+    public static float toSeconds(long byteCount, int sampleRate, int channelCount) {
+        return (float) byteCount / (2 * sampleRate * channelCount);
     }
 
     // Writes and returns WAV header following specified parameters

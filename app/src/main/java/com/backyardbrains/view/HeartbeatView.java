@@ -93,10 +93,10 @@ public class HeartbeatView extends AppCompatImageView {
             isOn = true;
         }
 
-        animate(SCALE_FACTOR_PUMPED, R.color.red, R.color.red_orange_75, HEARTBEAT_ANIMATION_DURATION,
+        animate(SCALE_FACTOR_PUMPED, R.color.red, R.color.red_orange_50, HEARTBEAT_ANIMATION_DURATION,
             new AnimatorListenerAdapter() {
                 @Override public void onAnimationEnd(Animator animation) {
-                    animate(SCALE_FACTOR_NORMAL, R.color.red_orange_75, R.color.red, HEARTBEAT_ANIMATION_DURATION * 2,
+                    animate(SCALE_FACTOR_NORMAL, R.color.red_orange_50, R.color.red, HEARTBEAT_ANIMATION_DURATION * 2,
                         null);
                 }
             });

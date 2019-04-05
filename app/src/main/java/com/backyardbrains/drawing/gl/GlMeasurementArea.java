@@ -27,6 +27,6 @@ public class GlMeasurementArea {
         gl.glPopMatrix();
 
         // draw measurement area
-        area.draw(gl, 0f, 0f, width, height, areaColor);
+        area.draw(gl, width, height, areaColor);
     }
 }

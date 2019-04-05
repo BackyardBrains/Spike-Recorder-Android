@@ -3,6 +3,7 @@ package com.backyardbrains.db;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.backyardbrains.db.entity.Spike;
+import com.backyardbrains.db.entity.SpikeAnalysis;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
@@ -23,14 +24,19 @@ public interface AnalysisDataSource {
     //=================================================
 
     interface SpikeAnalysisCheckCallback {
-        void onSpikeAnalysisExistsResult(boolean exists, int trainCount);
+        void onSpikeAnalysisExistsResult(@Nullable SpikeAnalysis analysis, int trainCount);
     }
 
-    void spikeAnalysisExists(@NonNull String filePath, @Nullable SpikeAnalysisCheckCallback callback);
+    void spikeAnalysisExists(@NonNull String filePath, boolean countNonEmptyTrains,
+        @Nullable SpikeAnalysisCheckCallback callback);
+
+    long getSpikeAnalysisId(@NonNull String filePath);
 
     void saveSpikeAnalysis(@NonNull String filePath, @NonNull Spike[] spikesAnalysis);
 
-    long getSpikeAnalysisId(@NonNull String filePath);
+    void updateSpikeAnalysisFilePath(String oldFilePath, String newFilePath);
+
+    void deleteSpikeAnalysis(String filePath);
 
     SpikeIndexValue[] getSpikeAnalysisForIndexRange(long analysisId, int channel, int startIndex, int endIndex);
 

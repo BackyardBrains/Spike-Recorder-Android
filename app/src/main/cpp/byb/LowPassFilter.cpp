@@ -4,34 +4,36 @@
 
 #include "LowPassFilter.h"
 
-#include "LowPassFilter.h"
+namespace backyardbrains {
 
-LowPassFilter::LowPassFilter() {
+    namespace filters {
 
-}
+        LowPassFilter::LowPassFilter() = default;
 
-void LowPassFilter::calculateCoefficients() {
-    if ((cornerFrequency != 0.0f) && (Q != 0.0f)) {
-        intermediateVariables(cornerFrequency, Q);
+        void LowPassFilter::calculateCoefficients() {
+            if ((cornerFrequency != 0.0f) && (Q != 0.0f)) {
+                intermediateVariables(cornerFrequency, Q);
 
 
-        a0 = 1 + alpha;
-        b0 = ((1 - omegaC) / 2) / a0;
-        b1 = ((1 - omegaC)) / a0;
-        b2 = ((1 - omegaC) / 2) / a0;
-        a1 = (-2 * omegaC) / a0;
-        a2 = (1 - alpha) / a0;
+                a0 = 1 + alpha;
+                b0 = ((1 - omegaC) / 2) / a0;
+                b1 = ((1 - omegaC)) / a0;
+                b2 = ((1 - omegaC) / 2) / a0;
+                a1 = (-2 * omegaC) / a0;
+                a2 = (1 - alpha) / a0;
 
-        setCoefficients();
+                setCoefficients();
+            }
+        }
+
+        void LowPassFilter::setCornerFrequency(float newCornerFrequency) {
+            cornerFrequency = newCornerFrequency;
+            calculateCoefficients();
+        }
+
+        void LowPassFilter::setQ(float newQ) {
+            Q = newQ;
+            calculateCoefficients();
+        }
     }
-}
-
-void LowPassFilter::setCornerFrequency(float newCornerFrequency) {
-    cornerFrequency = newCornerFrequency;
-    calculateCoefficients();
-}
-
-void LowPassFilter::setQ(float newQ) {
-    Q = newQ;
-    calculateCoefficients();
 }

@@ -10,6 +10,7 @@
 #include "AmModulationProcessor.h"
 #include "SampleStreamProcessor.h"
 #include "ThresholdProcessor.h"
+#include "FftProcessor.h"
 #include "DrawingUtils.h"
 #include "SpikeAnalysis.h"
 #include "AutocorrelationAnalysis.h"
@@ -18,6 +19,9 @@
 #include "AverageSpikeAnalysis.h"
 #include "AnalysisUtils.h"
 #include "JniHelper.h"
+
+using namespace backyardbrains::processing;
+using namespace backyardbrains::analysis;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -37,7 +41,12 @@ Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jclass type, j
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jclass type, jint channelCount);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jclass type, jfloat lowCutOff, jfloat highCutOff);
+Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, jfloat lowCutOffFreq,
+                                                     jfloat highCutOffFreq);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, jfloat centerFreq);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject);
@@ -55,34 +64,40 @@ JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_getAveragedSampleCount(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setAveragedSampleCount(JNIEnv *env, jclass type, jint averagedSampleCount);
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel);
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jclass type, jfloat threshold);
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jclass type);
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jclass type);
 JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_getAveragingTriggerType(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setAveragingTriggerType(JNIEnv *env, jclass type, jint triggerType);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jclass type, jboolean processBpm);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jclass type, jfloat threshold);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jclass type);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_resumeThreshold(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jclass type, jboolean processBpm);
+Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray inSamples,
-                                                         int frameCount, jintArray inEventIndices, jint eventCount,
-                                                         jint start, jint end, jint drawSurfaceWidth);
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject inSamples);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jclass type, jobject out,
-                                                                  jobjectArray inSamples, jint sampleCount,
-                                                                  jintArray inEventIndices, jint eventCount,
-                                                                  jint start, jint end, jint drawSurfaceWidth);
+Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
+                                                               jobject outEvents, jobjectArray inSignal,
+                                                               int inFrameCount, jintArray inEventIndices,
+                                                               jint inEventCount, jint start, jint end,
+                                                               jint drawSurfaceWidth);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jclass type, jobject outSignal,
+                                                                  jobject outEvents, jobjectArray inSignal,
+                                                                  jint inFrameCount, jintArray inEventIndices,
+                                                                  jint inEventCount, jint start, jint end,
+                                                                  jint drawSurfaceWidth);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray in,
+                                                            jint drawSurfaceWidth, jint drawSurfaceHeight);
 JNIEXPORT jobjectArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
                                                   jobjectArray indicesPos, jobjectArray timesPos,
@@ -110,60 +125,87 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
                                                             jobjectArray normBottomStdLine, jint batchSpikeCount);
 }
 
+const char *TAG = "BybLib";
+
 AmModulationProcessor *amModulationProcessor;
 SampleStreamProcessor *sampleStreamProcessor;
 ThresholdProcessor *thresholdProcessor;
+FftProcessor *fftProcessor;
 SpikeAnalysis *spikeAnalysis;
 AutocorrelationAnalysis *autocorrelationAnalysis;
 IsiAnalysis *isiAnalysis;
 AverageSpikeAnalysis *averageSpikeAnalysis;
 CrossCorrelationAnalysis *crossCorrelationAnalysis;
 
-JniHelper jniHelper;
-
-JavaVM *vm = NULL;
-jfieldID channelCountFid;
-jfieldID samplesFid;
-jfieldID sampleCountFid;
-jfieldID samplesMFid;
-jfieldID sampleCountsMFid;
-jfieldID eventIndicesFid;
-jfieldID eventNamesFid;
-jfieldID eventCountFid;
+JavaVM *vm = nullptr;
+// SignalData field IDs
+jfieldID sweChannelCountFid;
+jfieldID sweSamplesFid;
+jfieldID sweSampleCountsFid;
+jfieldID sweEventIndicesFid;
+jfieldID sweEventNamesFid;
+jfieldID sweEventCountFid;
 jfieldID lastSampleIndexFid;
+// SignalDrawData
+jfieldID sddSamplesFid;
+jfieldID sddSampleCountsFid;
+// EventsDrawData
+jfieldID sddEventIndicesFid;
+jfieldID sddEventNamesFid;
+jfieldID sddEventCountFid;
+// FftData field IDs
+jfieldID maxWindowCountFid;
+jfieldID maxThirtyHzDataSizeFid;
+jfieldID fftFid;
+jfieldID windowCountFid;
+jfieldID thirtyHzDataSizeFid;
+// FftDrawData field IDs
+jfieldID verticesFid;
+jfieldID indicesFid;
+jfieldID colorsFid;
+jfieldID vertexCountFid;
+jfieldID indexCountFid;
+jfieldID colorCountFid;
 
-class HeartbeatListener : public OnHeartbeatListener {
+class HeartbeatListener : public backyardbrains::utils::OnHeartbeatListener {
 public:
-    HeartbeatListener() {}
+    HeartbeatListener() = default;
 
-    ~HeartbeatListener() {}
+    ~HeartbeatListener() = default;
 
-    void onHeartbeat(int bmp) { JniHelper::invokeStaticVoid(vm, "onHeartbeat", "(I)V", bmp); }
+    void onHeartbeat(int bmp) override {
+        backyardbrains::utils::JniHelper::invokeStaticVoid(vm, "onHeartbeat", "(I)V", bmp);
+    }
 };
 
-class EventListener : public OnEventListenerListener {
+class EventListener : public backyardbrains::utils::OnEventListenerListener {
 public:
-    EventListener() {}
-
-    ~EventListener() {}
-
-    void setSampleSourceObj(jobject object) {
-        EventListener::sampleSourceObj = object;
+    EventListener() {
+        sampleSourceObj = nullptr;
     }
 
-    void onSpikerBoxHardwareTypeDetected(int hardwareType) {
-        JniHelper::invokeVoid(vm, sampleSourceObj, "setHardwareType", "(I)V", hardwareType);
+    ~EventListener() = default;
+
+    void setSampleSourceObj(jobject object) {
+        sampleSourceObj = object;
+    }
+
+    void onSpikerBoxHardwareTypeDetected(int hardwareType) override {
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setHardwareType", "(I)V", hardwareType);
     };
 
-    void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) {
-        JniHelper::invokeVoid(vm, sampleSourceObj, "setSampleRate", "(I)V", maxSampleRate);
-        JniHelper::invokeVoid(vm, sampleSourceObj, "setChannelCount", "(I)V", channelCount);
-
-        sampleStreamProcessor->setChannelCount(channelCount);
+    void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) override {
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setSampleRate", "(I)V", maxSampleRate);
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setChannelCount", "(I)V", channelCount);
     };
+
+    void onExpansionBoardTypeDetection(int expansionBoardType) override {
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setExpansionBoardType", "(I)V",
+                                                     expansionBoardType);
+    }
 
 private:
-    jobject sampleSourceObj;
+    jobject sampleSourceObj{};
 };
 
 EventListener *eventListener;
@@ -190,10 +232,11 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
         return -1;
     }
 
-    amModulationProcessor = new AmModulationProcessor();
     eventListener = new EventListener();
+    amModulationProcessor = new AmModulationProcessor();
     sampleStreamProcessor = new SampleStreamProcessor(eventListener);
     thresholdProcessor = new ThresholdProcessor(new HeartbeatListener());
+    fftProcessor = new FftProcessor();
     spikeAnalysis = new SpikeAnalysis();
     autocorrelationAnalysis = new AutocorrelationAnalysis();
     isiAnalysis = new IsiAnalysis();
@@ -201,30 +244,55 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     crossCorrelationAnalysis = new CrossCorrelationAnalysis();
 
     // let's cache fields of the SampleWithEvents java object
-    jclass cls = env->FindClass("com/backyardbrains/dsp/SamplesWithEvents");
-    channelCountFid = env->GetFieldID(cls, "channelCount", "I");
-    samplesFid = env->GetFieldID(cls, "samples", "[S");
-    sampleCountFid = env->GetFieldID(cls, "sampleCount", "I");
-    samplesMFid = env->GetFieldID(cls, "samplesM", "[[S");
-    sampleCountsMFid = env->GetFieldID(cls, "sampleCountM", "[I");
-    eventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
-    eventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
-    eventCountFid = env->GetFieldID(cls, "eventCount", "I");
+    jclass cls = env->FindClass("com/backyardbrains/dsp/SignalData");
+    sweChannelCountFid = env->GetFieldID(cls, "channelCount", "I");
+    sweSamplesFid = env->GetFieldID(cls, "samples", "[[S");
+    sweSampleCountsFid = env->GetFieldID(cls, "sampleCounts", "[I");
+    sweEventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    sweEventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
+    sweEventCountFid = env->GetFieldID(cls, "eventCount", "I");
     lastSampleIndexFid = env->GetFieldID(cls, "lastSampleIndex", "J");
 
+    // let's cache fields of the SampleDrawData java object
+    cls = env->FindClass("com/backyardbrains/drawing/SignalDrawData");
+    sddSamplesFid = env->GetFieldID(cls, "samples", "[[S");
+    sddSampleCountsFid = env->GetFieldID(cls, "sampleCounts", "[I");
+
+    // let's cache fields of the SampleDrawData java object
+    cls = env->FindClass("com/backyardbrains/drawing/EventsDrawData");
+    sddEventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
+    sddEventNamesFid = env->GetFieldID(cls, "eventNames", "[Ljava/lang/String;");
+    sddEventCountFid = env->GetFieldID(cls, "eventCount", "I");
+
+    // let's cache fields of the FftData java object
+    cls = env->FindClass("com/backyardbrains/dsp/FftData");
+    maxWindowCountFid = env->GetFieldID(cls, "maxWindowCount", "I");
+    maxThirtyHzDataSizeFid = env->GetFieldID(cls, "maxThirtyHzDataSize", "I");
+    fftFid = env->GetFieldID(cls, "fft", "[[F");
+    windowCountFid = env->GetFieldID(cls, "windowCount", "I");;
+    thirtyHzDataSizeFid = env->GetFieldID(cls, "thirtyHzDataSize", "I");
+
+    // let's cache fields of the FftData java object
+    cls = env->FindClass("com/backyardbrains/drawing/FftDrawData");
+    verticesFid = env->GetFieldID(cls, "vertices", "[F");
+    indicesFid = env->GetFieldID(cls, "indices", "[S");
+    colorsFid = env->GetFieldID(cls, "colors", "[F");
+    vertexCountFid = env->GetFieldID(cls, "vertexCount", "I");
+    indexCountFid = env->GetFieldID(cls, "indexCount", "I");
+    colorCountFid = env->GetFieldID(cls, "colorCount", "I");
 
     return JNI_VERSION_1_6;
 }
 
-JNIEXPORT jstring JNICALL
+extern "C" JNIEXPORT jstring JNICALL
 Java_com_backyardbrains_utils_JniUtils_helloTest(JNIEnv *env, jclass type) {
     return env->NewStringUTF("Hello from C++");
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, jshortArray test) {
     int len = env->GetArrayLength(test);
-    jshort *pTest = new jshort[len];
+    auto *pTest = new jshort[len];
     env->GetShortArrayRegion(test, 0, len, pTest);
 
     // exception check
@@ -242,11 +310,11 @@ Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, j
     exception_check(env);
 }
 
-JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type, jshortArray out, jobject in) {
-    jint channelCount = env->GetIntField(in, channelCountFid);
-    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(in, samplesMFid));
-    jintArray inSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(in, sampleCountsMFid));
+    jint channelCount = env->GetIntField(in, sweChannelCountFid);
+    auto samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sweSamplesFid));
+    auto inSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(in, sweSampleCountsFid));
 
     jint *inSampleCountsPtr = new jint[channelCount];
     env->GetIntArrayRegion(inSampleCountsM, 0, channelCount, inSampleCountsPtr);
@@ -257,7 +325,7 @@ Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type
         if (inSampleCountsPtr[i] == 0) return 0;
         if (inSampleCountsPtr[i] < frameCount) frameCount = inSampleCountsPtr[i];
     }
-    jshort **inSamplesPtr = new jshort *[channelCount];
+    auto **inSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         inSamplesPtr[i] = new jshort[frameCount]{0};
         env->GetShortArrayRegion(reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i)), 0,
@@ -275,7 +343,8 @@ Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type
     }
 
     jint sampleCount = channelCount * frameCount;
-    jshort *outSamplesPtr = SignalUtils::interleaveSignal(inSamplesPtr, frameCount, channelCount);
+    jshort *outSamplesPtr = backyardbrains::utils::SignalUtils::interleaveSignal(inSamplesPtr, frameCount,
+                                                                                 channelCount);
 
     if (exception_check(env)) {
         for (int i = 0; i < channelCount; i++) {
@@ -298,40 +367,69 @@ Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type
     return sampleCount;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jclass type, jint sampleRate) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "SAMPLE RATE: %1d", sampleRate);
+
     amModulationProcessor->setSampleRate(sampleRate);
     sampleStreamProcessor->setSampleRate(sampleRate);
     thresholdProcessor->setSampleRate(sampleRate);
+    fftProcessor->setSampleRate(sampleRate);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jclass type, jint channelCount) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "CHANNEL COUNT: %1d", channelCount);
+
     amModulationProcessor->setChannelCount(channelCount);
     sampleStreamProcessor->setChannelCount(channelCount);
     thresholdProcessor->setChannelCount(channelCount);
+    fftProcessor->setChannelCount(channelCount);
 }
 
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setFilters(JNIEnv *env, jclass type, jfloat lowCutOff, jfloat highCutOff) {
-    amModulationProcessor->setFilters(lowCutOff, highCutOff);
-    sampleStreamProcessor->setFilters(lowCutOff, highCutOff);
-    thresholdProcessor->setFilters(lowCutOff, highCutOff);
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "SELECTED CHANNEL: %1d", selectedChannel);
+
+    amModulationProcessor->setSelectedChannel(selectedChannel);
+    sampleStreamProcessor->setSelectedChannel(selectedChannel);
+    thresholdProcessor->setSelectedChannel(selectedChannel);
+    fftProcessor->setSelectedChannel(selectedChannel);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, jfloat lowCutOffFreq,
+                                                     jfloat highCutOffFreq) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "BAND FILTER: %1f, %2f", lowCutOffFreq, highCutOffFreq);
+
+    amModulationProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    sampleStreamProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    thresholdProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+    fftProcessor->setBandFilter(lowCutOffFreq, highCutOffFreq);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, jfloat centerFreq) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "NOTCH FILTER: %1f", centerFreq);
+
+    amModulationProcessor->setNotchFilter(centerFreq);
+    sampleStreamProcessor->setNotchFilter(centerFreq);
+    thresholdProcessor->setNotchFilter(centerFreq);
+    fftProcessor->setNotchFilter(centerFreq);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject) {
-    jint channelCount = env->GetIntField(out, channelCountFid);
-    jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
-    jintArray eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, eventIndicesFid));
-    jobjectArray eventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(out, eventNamesFid));
+    jint channelCount = env->GetIntField(out, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sweSampleCountsFid));
+    auto eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, sweEventIndicesFid));
+    auto eventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweEventNamesFid));
 
     jint eventCount = env->GetArrayLength(eventIndices);
 
-    jbyte *inBytesPtr = new jbyte[length];
+    auto *inBytesPtr = new jbyte[length];
     env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
 
     // exception check
@@ -340,19 +438,19 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
         return;
     }
 
-    unsigned char *uInBytesPtr = new unsigned char[length];
+    auto *uInBytesPtr = new unsigned char[length];
     std::copy(inBytesPtr, inBytesPtr + length, uInBytesPtr);
 
     // pass sample source object to event listener so proper method can be triggered on it when necessary
     eventListener->setSampleSourceObj(sampleSourceObject);
 
-    jshort **outSamplesPtr = new jshort *[channelCount];
+    auto **outSamplesPtr = new jshort *[channelCount];
     jint *outSampleCounts = new jint[channelCount];
     jint *outEventIndicesPtr = new jint[eventCount];
-    std::string *outEventNamesPtr = new std::string[eventCount];
+    auto *outEventNamesPtr = new std::string[eventCount];
     jint outEventCount;
     sampleStreamProcessor->process(uInBytesPtr, length, outSamplesPtr, outSampleCounts, outEventIndicesPtr,
-                                   outEventNamesPtr, outEventCount);
+                                   outEventNamesPtr, outEventCount, channelCount);
 
     // if we did get some events create array of strings that represent event names and populate it
     for (int i = 0; i < outEventCount; i++) {
@@ -373,18 +471,16 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
         return;
     }
 
-    env->SetShortArrayRegion(samples, 0, outSampleCounts[0], outSamplesPtr[0]);
-    env->SetIntField(out, sampleCountFid, outSampleCounts[0]);
     jint *channelSampleCounts = new jint[channelCount];
     for (int i = 0; i < channelCount; i++) {
-        jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
+        auto channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i));
         env->SetShortArrayRegion(channelSamples, 0, outSampleCounts[i], outSamplesPtr[i]);
-        env->SetObjectArrayElement(samplesM, i, channelSamples);
+        env->SetObjectArrayElement(samples, i, channelSamples);
         channelSampleCounts[i] = outSampleCounts[i];
     }
-    env->SetIntArrayRegion(sampleCountsM, 0, channelCount, channelSampleCounts);
+    env->SetIntArrayRegion(sampleCounts, 0, channelCount, channelSampleCounts);
     env->SetIntArrayRegion(eventIndices, 0, outEventCount, outEventIndicesPtr);
-    env->SetIntField(out, eventCountFid, outEventCount);
+    env->SetIntField(out, sweEventCountFid, outEventCount);
     delete[] inBytesPtr;
     delete[] uInBytesPtr;
     for (int i = 0; i < channelCount; i++) {
@@ -397,20 +493,19 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
     delete[] channelSampleCounts;
 }
 
-JNIEXPORT jboolean JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jclass type) {
     return static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jclass type, jobject out,
                                                                jbyteArray inBytes, jint length) {
-    jint channelCount = env->GetIntField(out, channelCountFid);
-    jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
+    jint channelCount = env->GetIntField(out, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sweSampleCountsFid));
 
-    jbyte *inBytesPtr = new jbyte[length];
+    auto *inBytesPtr = new jbyte[length];
     env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
 
     // exception check
@@ -421,15 +516,16 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jcla
 
     jint sampleCount = length / 2;
     jint frameCount = sampleCount / channelCount;
-    jshort **outSamplesPtr = new jshort *[channelCount];
+    auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++)
         outSamplesPtr[i] = new jshort[frameCount]{0};
-    jboolean isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
+    auto isReceivingAmSignalBefore = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
     amModulationProcessor->process(reinterpret_cast<short *>(inBytesPtr), outSamplesPtr, sampleCount, frameCount);
-    jboolean isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
+    auto isReceivingAmSignalAfter = static_cast<jboolean>(amModulationProcessor->isReceivingAmSignal());
     // if we detected that AM modulation started/ended java code needs to be informed
     if (isReceivingAmSignalBefore != isReceivingAmSignalAfter) {
-        jniHelper.invokeStaticVoid(vm, "onAmDemodulationChange", "(Z)V", isReceivingAmSignalAfter);
+        backyardbrains::utils::JniHelper::invokeStaticVoid(vm, "onAmDemodulationChange", "(Z)V",
+                                                           isReceivingAmSignalAfter);
     }
 
     // exception check
@@ -441,15 +537,13 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jcla
         return;
     }
 
-    env->SetShortArrayRegion(samples, 0, frameCount, outSamplesPtr[0]);
-    env->SetIntField(out, sampleCountFid, frameCount);
     jint *deinterleavedSampleCounts = new jint[channelCount];
     for (int i = 0; i < channelCount; i++) {
-        jshortArray deinterleavedSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
+        auto deinterleavedSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i));
         env->SetShortArrayRegion(deinterleavedSamples, 0, frameCount, outSamplesPtr[i]);
         deinterleavedSampleCounts[i] = frameCount;
     }
-    env->SetIntArrayRegion(sampleCountsM, 0, channelCount, deinterleavedSampleCounts);
+    env->SetIntArrayRegion(sampleCounts, 0, channelCount, deinterleavedSampleCounts);
 
     delete[] inBytesPtr;
     for (int i = 0; i < channelCount; i++)
@@ -458,19 +552,18 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jcla
     delete[] deinterleavedSampleCounts;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
                                                              jint length, jintArray inEventIndices,
                                                              jobjectArray inEventNames, jint inEventCount, jlong start,
                                                              jlong end, jint prependSamples) {
-    jint channelCount = env->GetIntField(out, channelCountFid);
-    jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
-    jintArray eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, eventIndicesFid));
-    jobjectArray eventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(out, eventNamesFid));
+    jint channelCount = env->GetIntField(out, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sweSampleCountsFid));
+    auto eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, sweEventIndicesFid));
+    auto eventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweEventNamesFid));
 
-    jbyte *inBytesPtr = new jbyte[length];
+    auto *inBytesPtr = new jbyte[length];
     env->GetByteArrayRegion(inBytes, 0, length, inBytesPtr);
 
     jint *inEventIndicesPtr = new jint[inEventCount];
@@ -485,12 +578,12 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
 
     jint sampleCount = length / 2;
     jint frameCount = sampleCount / channelCount;
-    jshort **outSamplesPtr = new jshort *[channelCount];
+    auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         outSamplesPtr[i] = new jshort[frameCount]{0};
     }
-    SignalUtils::deinterleaveSignal(outSamplesPtr, reinterpret_cast<short *>(inBytesPtr),
-                                    sampleCount, channelCount);
+    backyardbrains::utils::SignalUtils::deinterleaveSignal(outSamplesPtr, reinterpret_cast<short *>(inBytesPtr),
+                                                           sampleCount, channelCount);
     jint *outEventIndicesPtr = new jint[inEventCount];
 
     jint eventCounter = 0;
@@ -500,7 +593,7 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
         if (start <= sampleIndex && sampleIndex < end) {
             outEventIndicesPtr[eventCounter] = static_cast<jint>(sampleIndex - start);
 
-            jstring string = (jstring) (env->GetObjectArrayElement(inEventNames, i));
+            auto string = (jstring) (env->GetObjectArrayElement(inEventNames, i));
             const char *rawString = env->GetStringUTFChars(string, JNI_FALSE);
             env->SetObjectArrayElement(eventNames, eventCounter++, env->NewStringUTF(rawString));
             env->ReleaseStringUTFChars(string, rawString);
@@ -518,17 +611,15 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
         return;
     }
 
-    env->SetShortArrayRegion(samples, 0, frameCount, outSamplesPtr[0]);
-    env->SetIntField(out, sampleCountFid, frameCount);
     jint *deinterleavedSampleCounts = new jint[channelCount];
     for (int i = 0; i < channelCount; i++) {
-        jshortArray deinterleavedSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
+        auto deinterleavedSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i));
         env->SetShortArrayRegion(deinterleavedSamples, 0, frameCount, outSamplesPtr[i]);
         deinterleavedSampleCounts[i] = frameCount;
     }
-    env->SetIntArrayRegion(sampleCountsM, 0, channelCount, deinterleavedSampleCounts);
+    env->SetIntArrayRegion(sampleCounts, 0, channelCount, deinterleavedSampleCounts);
     env->SetIntArrayRegion(eventIndices, 0, eventCounter, outEventIndicesPtr);
-    env->SetIntField(out, eventCountFid, eventCounter);
+    env->SetIntField(out, sweEventCountFid, eventCounter);
     env->SetLongField(out, lastSampleIndexFid, prepend + end);
     delete[] inBytesPtr;
     for (int i = 0; i < channelCount; i++)
@@ -539,75 +630,70 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
     delete[] outEventIndicesPtr;
 }
 
-JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_getAveragedSampleCount(JNIEnv *env, jclass type) {
     return thresholdProcessor->getAveragedSampleCount();
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setAveragedSampleCount(JNIEnv *env, jclass type, jint averagedSampleCount) {
     thresholdProcessor->setAveragedSampleCount(averagedSampleCount);
 }
 
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel) {
-    thresholdProcessor->setSelectedChannel(selectedChannel);
-}
-
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setThreshold(JNIEnv *env, jclass type, jfloat threshold) {
     thresholdProcessor->setThreshold(threshold);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_resetThreshold(JNIEnv *env, jclass type) {
     thresholdProcessor->resetThreshold();
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_pauseThreshold(JNIEnv *env, jclass type) {
     thresholdProcessor->setPaused(true);
 }
 
-JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_getAveragingTriggerType(JNIEnv *env, jclass type) {
     return thresholdProcessor->getTriggerType();
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setAveragingTriggerType(JNIEnv *env, jclass type, jint triggerType) {
     thresholdProcessor->setTriggerType(triggerType);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_resumeThreshold(JNIEnv *env, jclass type) {
     thresholdProcessor->setPaused(false);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setBpmProcessing(JNIEnv *env, jclass type, jboolean processBpm) {
     thresholdProcessor->setBpmProcessing(processBpm);
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples) {
-    jobjectArray inSamplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(in, samplesMFid));
-    jintArray inSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(in, sampleCountsMFid));
+    jint channelCount = env->GetIntField(out, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(in, sweSampleCountsFid));
 
-    jint channelCount = env->GetArrayLength(inSamplesM);
     jint *inSampleCountsPtr = new jint[channelCount];
-    env->GetIntArrayRegion(inSampleCountsM, 0, channelCount, inSampleCountsPtr);
+    env->GetIntArrayRegion(sampleCounts, 0, channelCount, inSampleCountsPtr);
 
     // check if we didn't get any samples... in that case we can return
     for (int i = 0; i < channelCount; i++) {
         if (inSampleCountsPtr[i] == 0) return;
     }
 
-    jshort **inSamplesPtr = new jshort *[channelCount];
+    auto **inSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         inSamplesPtr[i] = new jshort[inSampleCountsPtr[i]]{0};
-        env->GetShortArrayRegion(reinterpret_cast<jshortArray>(env->GetObjectArrayElement(inSamplesM, i)), 0,
+        env->GetShortArrayRegion(reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i)), 0,
                                  inSampleCountsPtr[i], inSamplesPtr[i]);
     }
 
@@ -621,6 +707,7 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
         return;
     }
 
+    thresholdProcessor->setChannelCount(channelCount);
     if (!averageSamples) {
         thresholdProcessor->appendIncomingSamples(inSamplesPtr, inSampleCountsPtr);
 
@@ -633,18 +720,17 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
         return;
     }
 
-    jshortArray outSamples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray outSamplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray outSampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
-    jintArray inEventIndices = reinterpret_cast<jintArray>(env->GetObjectField(in, eventIndicesFid));
-    jobjectArray inEventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(in, eventNamesFid));
-    jint inEventCount = env->GetIntField(in, eventCountFid);
+    auto outSamples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sweSamplesFid));
+    auto outSampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sweSampleCountsFid));
+    auto inEventIndices = reinterpret_cast<jintArray>(env->GetObjectField(in, sweEventIndicesFid));
+    auto inEventNames = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sweEventNamesFid));
+    jint inEventCount = env->GetIntField(in, sweEventCountFid);
 
     jint *inEventIndicesPtr = new jint[inEventCount];
     env->GetIntArrayRegion(inEventIndices, 0, inEventCount, inEventIndicesPtr);
     jint *inEventsPtr = new jint[inEventCount];
     for (int i = 0; i < inEventCount; i++) {
-        jstring string = (jstring) (env->GetObjectArrayElement(inEventNames, i));
+        auto string = (jstring) (env->GetObjectArrayElement(inEventNames, i));
         const char *rawString = env->GetStringUTFChars(string, JNI_FALSE);
         inEventsPtr[i] = std::stoi(rawString);
         env->ReleaseStringUTFChars(string, rawString);
@@ -662,7 +748,7 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
         return;
     }
 
-    jshort **outSamplesPtr = new jshort *[channelCount];
+    auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++) outSamplesPtr[i] = new jshort[ThresholdProcessor::DEFAULT_SAMPLE_COUNT]{0};
     jint *averagedSampleCount = new jint[channelCount]{0};
     thresholdProcessor->process(outSamplesPtr, averagedSampleCount, inSamplesPtr, inSampleCountsPtr, inEventIndicesPtr,
@@ -685,17 +771,15 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     }
 
     jint *channelSampleCounts = new jint[channelCount];
-    env->SetShortArrayRegion(outSamples, 0, averagedSampleCount[0], outSamplesPtr[0]);
-    env->SetIntField(out, sampleCountFid, averagedSampleCount[0]);
     for (int i = 0; i < channelCount; i++) {
-        jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(outSamplesM, i));
+        auto channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(outSamples, i));
         env->SetShortArrayRegion(channelSamples, 0, averagedSampleCount[i], outSamplesPtr[i]);
-        env->SetObjectArrayElement(outSamplesM, i, channelSamples);
+        env->SetObjectArrayElement(outSamples, i, channelSamples);
         env->DeleteLocalRef(channelSamples);
 
         channelSampleCounts[i] = averagedSampleCount[i];
     }
-    env->SetIntArrayRegion(outSampleCountsM, 0, channelCount, channelSampleCounts);
+    env->SetIntArrayRegion(outSampleCounts, 0, channelCount, channelSampleCounts);
 
     delete[] inSampleCountsPtr;
     for (int i = 0; i < channelCount; i++) {
@@ -711,26 +795,99 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     delete[] channelSampleCounts;
 }
 
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray inSamples,
-                                                         jint frameCount, jintArray inEventIndices, jint eventCount,
-                                                         jint start, jint end, jint drawSurfaceWidth) {
-    jshortArray samples = reinterpret_cast<jshortArray>(env->GetObjectField(out, samplesFid));
-    jobjectArray samplesM = reinterpret_cast<jobjectArray>(env->GetObjectField(out, samplesMFid));
-    jintArray sampleCountsM = reinterpret_cast<jintArray>(env->GetObjectField(out, sampleCountsMFid));
-    jintArray eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, eventIndicesFid));
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject inSamples) {
+    jint channelCount = env->GetIntField(out, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(inSamples, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(inSamples, sweSampleCountsFid));
 
-    jint channelCount = env->GetArrayLength(inSamples);
-    jshort **inSamplesPtr = new jshort *[channelCount];
+//    jint channelCount = env->GetArrayLength(samples);
+    jint *inSampleCountsPtr = new jint[channelCount];
+    env->GetIntArrayRegion(sampleCounts, 0, channelCount, inSampleCountsPtr);
+
+    // check if we didn't get any samples... in that case we can return
+    for (int i = 0; i < channelCount; i++) {
+        if (inSampleCountsPtr[i] == 0) return;
+    }
+
+    auto **inSamplesPtr = new jshort *[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        inSamplesPtr[i] = new jshort[inSampleCountsPtr[i]]{0};
+        env->GetShortArrayRegion(reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i)), 0,
+                                 inSampleCountsPtr[i], inSamplesPtr[i]);
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSampleCountsPtr;
+        for (int i = 0; i < channelCount; i++) {
+            delete[] inSamplesPtr[i];
+        }
+        delete[] inSamplesPtr;
+        return;
+    }
+
+    auto maxWindowCount = env->GetIntField(out, maxWindowCountFid);
+    auto maxThirtyHzDataSize = env->GetIntField(out, maxThirtyHzDataSizeFid);
+    auto outFft = reinterpret_cast<jobjectArray>(env->GetObjectField(out, fftFid));
+
+    auto **outFftPtr = new jfloat *[maxWindowCount];
+    for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxThirtyHzDataSize]{0};
+    uint32_t windowCount, thirtyHzDataSize;
+    fftProcessor->process(outFftPtr, windowCount, thirtyHzDataSize, inSamplesPtr,
+                          reinterpret_cast<uint32_t *>(inSampleCountsPtr));
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inSampleCountsPtr;
+        for (int i = 0; i < channelCount; i++) {
+            delete[] inSamplesPtr[i];
+        }
+        delete[] inSamplesPtr;
+        for (int i = 0; i < maxWindowCount; i++) {
+            delete[] outFftPtr[i];
+        }
+        delete[] outFftPtr;
+        return;
+    }
+
+    for (int i = 0; i < windowCount; i++) {
+        auto fft = reinterpret_cast<jfloatArray >(env->GetObjectArrayElement(outFft, i));
+        env->SetFloatArrayRegion(fft, 0, thirtyHzDataSize, outFftPtr[i]);
+        env->SetObjectArrayElement(outFft, i, fft);
+        env->DeleteLocalRef(fft);
+    }
+    env->SetIntField(out, windowCountFid, windowCount);
+    env->SetIntField(out, thirtyHzDataSizeFid, thirtyHzDataSize);
+
+    delete[] inSampleCountsPtr;
+    for (int i = 0; i < channelCount; i++) {
+        delete[] inSamplesPtr[i];
+    }
+    delete[] inSamplesPtr;
+    for (int i = 0; i < maxWindowCount; i++) {
+        delete[] outFftPtr[i];
+    }
+    delete[] outFftPtr;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
+                                                               jobject outEvents, jobjectArray inSignal,
+                                                               int inFrameCount, jintArray inEventIndices,
+                                                               jint inEventCount, jint start, jint end,
+                                                               jint drawSurfaceWidth) {
+    jint channelCount = env->GetArrayLength(inSignal);
+    auto **inSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; ++i) {
-        jshortArray tmpSamples = (jshortArray) env->GetObjectArrayElement(inSamples, i);
-        inSamplesPtr[i] = new jshort[frameCount];
-        env->GetShortArrayRegion(tmpSamples, 0, frameCount, inSamplesPtr[i]);
+        auto tmpSamples = (jshortArray) env->GetObjectArrayElement(inSignal, i);
+        inSamplesPtr[i] = new jshort[inFrameCount];
+        env->GetShortArrayRegion(tmpSamples, 0, inFrameCount, inSamplesPtr[i]);
         env->DeleteLocalRef(tmpSamples);
     }
 
-    jint *inEventIndicesPtr = new jint[eventCount];
-    env->GetIntArrayRegion(inEventIndices, 0, eventCount, inEventIndicesPtr);
+    jint *inEventIndicesPtr = new jint[inEventCount];
+    env->GetIntArrayRegion(inEventIndices, 0, inEventCount, inEventIndicesPtr);
 
     // exception check
     if (exception_check(env)) {
@@ -744,29 +901,33 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass typ
 
     int maxSampleCount = drawSurfaceWidth * 5; // can't be more than x5 when enveloping (deducted from testing)
     int maxEventCount = 100;
-    jshort **outSamplesPtr = new jshort *[channelCount];
+    auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++)
         outSamplesPtr[i] = new jshort[maxSampleCount]{0};
     jint *outSampleCounts = new jint[channelCount]{0};
     jint *outEventIndicesPtr = new int[maxEventCount];
     jint outEventCount;
-    DrawingUtils::prepareForDrawing(outSamplesPtr, outSampleCounts, outEventIndicesPtr, outEventCount, inSamplesPtr,
-                                    channelCount, inEventIndicesPtr, eventCount, start, end, drawSurfaceWidth);
+    backyardbrains::utils::DrawingUtils::prepareSignalForDrawing(outSamplesPtr, outSampleCounts, outEventIndicesPtr,
+                                                                 outEventCount, inSamplesPtr, channelCount,
+                                                                 inEventIndicesPtr, inEventCount, start, end,
+                                                                 drawSurfaceWidth);
 
-    env->SetShortArrayRegion(samples, 0, outSampleCounts[0], outSamplesPtr[0]);
-    env->SetIntField(out, sampleCountFid, outSampleCounts[0]);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(outSignal, sddSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(outSignal, sddSampleCountsFid));
+    auto eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(outEvents, sddEventIndicesFid));
+
     jint *channelSampleCounts = new jint[channelCount];
     for (int i = 0; i < channelCount; i++) {
-        jshortArray channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samplesM, i));
+        auto channelSamples = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(samples, i));
         env->SetShortArrayRegion(channelSamples, 0, outSampleCounts[i], outSamplesPtr[i]);
-        env->SetObjectArrayElement(samplesM, i, channelSamples);
+        env->SetObjectArrayElement(samples, i, channelSamples);
         env->DeleteLocalRef(channelSamples);
 
         channelSampleCounts[i] = outSampleCounts[i];
     }
-    env->SetIntArrayRegion(sampleCountsM, 0, channelCount, channelSampleCounts);
+    env->SetIntArrayRegion(sampleCounts, 0, channelCount, channelSampleCounts);
     env->SetIntArrayRegion(eventIndices, 0, outEventCount, outEventIndicesPtr);
-    env->SetIntField(out, eventCountFid, outEventCount);
+    env->SetIntField(outEvents, sddEventCountFid, outEventCount);
 
     for (int i = 0; i < channelCount; i++) {
         delete[] inSamplesPtr[i];
@@ -782,20 +943,86 @@ Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(JNIEnv *env, jclass typ
     delete[] channelSampleCounts;
 }
 
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jclass type, jobject out,
-                                                                  jobjectArray inSamples, jint sampleCount,
-                                                                  jintArray inEventIndices, jint eventCount,
-                                                                  jint start, jint end, jint drawSurfaceWidth) {
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, jclass type, jobject outSignal,
+                                                                  jobject outEvents, jobjectArray inSignal,
+                                                                  jint inFrameCount, jintArray inEventIndices,
+                                                                  jint inEventCount, jint start, jint end,
+                                                                  jint drawSurfaceWidth) {
     int drawSamplesCount = end - start;
-    int from = (int) ((sampleCount - drawSamplesCount) * .5);
-    int to = (int) ((sampleCount + drawSamplesCount) * .5);
+    int from = (int) ((inFrameCount - drawSamplesCount) * .5);
+    int to = (int) ((inFrameCount + drawSamplesCount) * .5);
 
-    Java_com_backyardbrains_utils_JniUtils_prepareForDrawing(env, type, out, inSamples, sampleCount, inEventIndices,
-                                                             eventCount, from, to, drawSurfaceWidth);
+    Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(env, type, outSignal, outEvents, inSignal,
+                                                                   inFrameCount, inEventIndices, inEventCount, from, to,
+                                                                   drawSurfaceWidth);
 }
 
-JNIEXPORT jobjectArray JNICALL
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray in,
+                                                            jint drawSurfaceWidth, jint drawSurfaceHeight) {
+    jint windowSize = -1;
+    jint windowCount = env->GetArrayLength(in);
+
+    // if there is no fft windows just return
+    if (windowCount == 0) return;
+
+    auto **inFftPtr = new jfloat *[windowCount];
+    for (int i = 0; i < windowCount; ++i) {
+        auto tmpSamples = (jfloatArray) env->GetObjectArrayElement(in, i);
+        windowSize = env->GetArrayLength(tmpSamples);
+        inFftPtr[i] = new jfloat[windowSize];
+        env->GetFloatArrayRegion(tmpSamples, 0, windowSize, inFftPtr[i]);
+        env->DeleteLocalRef(tmpSamples);
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        for (int i = 0; i < windowCount; i++) {
+            delete[] inFftPtr[i];
+        }
+        delete[] inFftPtr;
+        return;
+    }
+
+    // if fft windows are empty just return
+    if (windowSize < 0) {
+        for (int i = 0; i < windowCount; i++) {
+            delete[] inFftPtr[i];
+        }
+        delete[] inFftPtr;
+        return;
+    }
+
+    auto outVertices = reinterpret_cast<jfloatArray>(env->GetObjectField(out, verticesFid));
+    auto outIndices = reinterpret_cast<jshortArray>(env->GetObjectField(out, indicesFid));
+    auto outColors = reinterpret_cast<jfloatArray>(env->GetObjectField(out, colorsFid));
+    auto *outVerticesPtr = new jfloat[env->GetArrayLength(outVertices)];
+    auto *outIndicesPtr = new jshort[env->GetArrayLength(outIndices)];
+    auto *outColorsPtr = new jfloat[env->GetArrayLength(outColors)];
+    jint outVertexCount = 0, outIndexCount = 0, outColorCount = 0;
+    backyardbrains::utils::DrawingUtils::prepareFftForDrawing(outVerticesPtr, outIndicesPtr, outColorsPtr,
+                                                              outVertexCount, outIndexCount, outColorCount,
+                                                              inFftPtr, windowCount, windowSize, drawSurfaceWidth,
+                                                              drawSurfaceHeight);
+
+    env->SetFloatArrayRegion(outVertices, 0, outVertexCount, outVerticesPtr);
+    env->SetShortArrayRegion(outIndices, 0, outIndexCount, outIndicesPtr);
+    env->SetFloatArrayRegion(outColors, 0, outColorCount, outColorsPtr);
+    env->SetIntField(out, vertexCountFid, outVertexCount);
+    env->SetIntField(out, indexCountFid, outIndexCount);
+    env->SetIntField(out, colorCountFid, outColorCount);
+
+    for (int i = 0; i < windowCount; i++) {
+        delete[] inFftPtr[i];
+    }
+    delete[] inFftPtr;
+    delete[] outVerticesPtr;
+    delete[] outIndicesPtr;
+    delete[] outColorsPtr;
+}
+
+extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
                                                   jobjectArray indicesPos, jobjectArray timesPos,
                                                   jobjectArray valuesNeg, jobjectArray indicesNeg,
@@ -803,12 +1030,12 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
     // get pointer to file path string
     const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
     // get pointer to positive values array
-    jshort **valuesPosPtr = new jshort *[channelCount];
+    auto **valuesPosPtr = new jshort *[channelCount];
     jint **indicesPosPtr = new jint *[channelCount];
-    jfloat **timesPosPtr = new jfloat *[channelCount];
-    jshort **valuesNegPtr = new jshort *[channelCount];
+    auto **timesPosPtr = new jfloat *[channelCount];
+    auto **valuesNegPtr = new jshort *[channelCount];
     jint **indicesNegPtr = new jint *[channelCount];
-    jfloat **timesNegPtr = new jfloat *[channelCount];
+    auto **timesNegPtr = new jfloat *[channelCount];
     for (int i = 0; i < channelCount; ++i) {
         valuesPosPtr[i] = new jshort[maxSpikes];
         indicesPosPtr[i] = new jint[maxSpikes];
@@ -819,7 +1046,7 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
     }
 
     jclass intArrayClass = env->FindClass("[I");
-    jobjectArray result = env->NewObjectArray(channelCount, intArrayClass, NULL);
+    jobjectArray result = env->NewObjectArray(channelCount, intArrayClass, nullptr);
     for (int i = 0; i < channelCount; i++) {
         jintArray tmpResult = env->NewIntArray(2);
         env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{0});
@@ -853,37 +1080,37 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
                               timesNegPtr, channelCount, outPosCount, outNegCount);
 
     for (int i = 0; i < channelCount; i++) {
-        jintArray tmpResult = static_cast<jintArray>(env->GetObjectArrayElement(result, i));
+        auto tmpResult = reinterpret_cast<jintArray>(env->GetObjectArrayElement(result, i));
         env->SetIntArrayRegion(tmpResult, 0, 2, new int[2]{outPosCount[i], outNegCount[i]});
         env->SetObjectArrayElement(result, i, tmpResult);
         env->DeleteLocalRef(tmpResult);
 
-        jshortArray tempValuesPos = static_cast<jshortArray>(env->GetObjectArrayElement(valuesPos, i));
+        auto tempValuesPos = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(valuesPos, i));
         env->SetShortArrayRegion(tempValuesPos, 0, outPosCount[i], valuesPosPtr[i]);
         env->SetObjectArrayElement(valuesPos, i, tempValuesPos);
         env->DeleteLocalRef(tempValuesPos);
 
-        jintArray tempIndicesPos = static_cast<jintArray>(env->GetObjectArrayElement(indicesPos, i));
+        auto tempIndicesPos = reinterpret_cast<jintArray>(env->GetObjectArrayElement(indicesPos, i));
         env->SetIntArrayRegion(tempIndicesPos, 0, outPosCount[i], indicesPosPtr[i]);
         env->SetObjectArrayElement(indicesPos, i, tempIndicesPos);
         env->DeleteLocalRef(tempIndicesPos);
 
-        jfloatArray tempTimesPos = static_cast<jfloatArray>(env->GetObjectArrayElement(timesPos, i));
+        auto tempTimesPos = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(timesPos, i));
         env->SetFloatArrayRegion(tempTimesPos, 0, outPosCount[i], timesPosPtr[i]);
         env->SetObjectArrayElement(timesPos, i, tempTimesPos);
         env->DeleteLocalRef(tempTimesPos);
 
-        jshortArray tempValuesNeg = static_cast<jshortArray>(env->GetObjectArrayElement(valuesNeg, i));
+        auto tempValuesNeg = reinterpret_cast<jshortArray>(env->GetObjectArrayElement(valuesNeg, i));
         env->SetShortArrayRegion(tempValuesNeg, 0, outNegCount[i], valuesNegPtr[i]);
         env->SetObjectArrayElement(valuesNeg, i, tempValuesNeg);
         env->DeleteLocalRef(tempValuesNeg);
 
-        jintArray tempIndicesNeg = static_cast<jintArray>(env->GetObjectArrayElement(indicesNeg, i));
+        auto tempIndicesNeg = reinterpret_cast<jintArray>(env->GetObjectArrayElement(indicesNeg, i));
         env->SetIntArrayRegion(tempIndicesNeg, 0, outNegCount[i], indicesNegPtr[i]);
         env->SetObjectArrayElement(indicesNeg, i, tempIndicesNeg);
         env->DeleteLocalRef(tempIndicesNeg);
 
-        jfloatArray tempTimesNeg = static_cast<jfloatArray>(env->GetObjectArrayElement(timesNeg, i));
+        auto tempTimesNeg = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(timesNeg, i));
         env->SetFloatArrayRegion(tempTimesNeg, 0, outNegCount[i], timesNegPtr[i]);
         env->SetObjectArrayElement(timesNeg, i, tempTimesNeg);
         env->DeleteLocalRef(tempTimesNeg);
@@ -910,16 +1137,16 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
     return result;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jclass type, jobjectArray spikeTrains,
                                                                jint spikeTrainCount, jintArray spikeCounts,
                                                                jobjectArray analysis, jint analysisBinCount) {
     jint *spikeCountsPtr = new jint[spikeTrainCount];
     env->GetIntArrayRegion(spikeCounts, 0, spikeTrainCount, spikeCountsPtr);
 
-    jfloat **spikeTrainsPtr = new jfloat *[spikeTrainCount];
+    auto **spikeTrainsPtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
+        auto spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
 
         spikeTrainsPtr[i] = new jfloat[spikeCountsPtr[i]];
         env->GetFloatArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
@@ -928,7 +1155,7 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jcla
     }
     jint **analysisPtr = new jint *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         analysisPtr[i] = new jint[analysisBinCount];
         env->GetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
@@ -951,7 +1178,7 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jcla
     autocorrelationAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         env->SetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
         env->SetObjectArrayElement(analysis, i, trainAnalysis);
@@ -967,16 +1194,16 @@ Java_com_backyardbrains_utils_JniUtils_autocorrelationAnalysis(JNIEnv *env, jcla
     delete[] analysisPtr;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jclass type, jobjectArray spikeTrains,
                                                    jint spikeTrainCount, jintArray spikeCounts, jobjectArray analysis,
                                                    jint analysisBinCount) {
     jint *spikeCountsPtr = new jint[spikeTrainCount];
     env->GetIntArrayRegion(spikeCounts, 0, spikeTrainCount, spikeCountsPtr);
 
-    jfloat **spikeTrainsPtr = new jfloat *[spikeTrainCount];
+    auto **spikeTrainsPtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
+        auto spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
 
         spikeTrainsPtr[i] = new jfloat[spikeCountsPtr[i]];
         env->GetFloatArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
@@ -985,7 +1212,7 @@ Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jclass type, job
     }
     jint **analysisPtr = new jint *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         analysisPtr[i] = new jint[analysisBinCount];
         env->GetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
@@ -1008,7 +1235,7 @@ Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jclass type, job
     isiAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         env->SetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
         env->SetObjectArrayElement(analysis, i, trainAnalysis);
@@ -1024,7 +1251,7 @@ Java_com_backyardbrains_utils_JniUtils_isiAnalysis(JNIEnv *env, jclass type, job
     delete[] analysisPtr;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jclass type, jobjectArray spikeTrains,
                                                                 jint spikeTrainCount, jintArray spikeCounts,
                                                                 jobjectArray analysis, jint analysisCount,
@@ -1032,9 +1259,9 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jcl
     jint *spikeCountsPtr = new jint[spikeTrainCount];
     env->GetIntArrayRegion(spikeCounts, 0, spikeTrainCount, spikeCountsPtr);
 
-    jfloat **spikeTrainsPtr = new jfloat *[spikeTrainCount];
+    auto **spikeTrainsPtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
+        auto spikeTrain = (jfloatArray) env->GetObjectArrayElement(spikeTrains, i);
 
         spikeTrainsPtr[i] = new jfloat[spikeCountsPtr[i]];
         env->GetFloatArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
@@ -1043,7 +1270,7 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jcl
     }
     jint **analysisPtr = new jint *[analysisCount];
     for (int i = 0; i < analysisCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         analysisPtr[i] = new jint[analysisBinCount];
         env->GetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
@@ -1064,7 +1291,7 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jcl
     crossCorrelationAnalysis->process(spikeTrainsPtr, spikeTrainCount, spikeCountsPtr, analysisPtr, analysisBinCount);
 
     for (int i = 0; i < analysisCount; ++i) {
-        jintArray trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
+        auto trainAnalysis = (jintArray) env->GetObjectArrayElement(analysis, i);
 
         env->SetIntArrayRegion(trainAnalysis, 0, analysisBinCount, analysisPtr[i]);
         env->SetObjectArrayElement(analysis, i, trainAnalysis);
@@ -1078,7 +1305,7 @@ Java_com_backyardbrains_utils_JniUtils_crossCorrelationAnalysis(JNIEnv *env, jcl
     delete[] analysisPtr;
 }
 
-JNIEXPORT void JNICALL
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass type, jstring filePath,
                                                             jobjectArray spikeTrains, jint spikeTrainCount,
                                                             jintArray spikeCounts, jobjectArray averageSpike,
@@ -1092,7 +1319,7 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
 
     jint **spikeTrainsPtr = new jint *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jintArray spikeTrain = (jintArray) env->GetObjectArrayElement(spikeTrains, i);
+        auto spikeTrain = (jintArray) env->GetObjectArrayElement(spikeTrains, i);
 
         spikeTrainsPtr[i] = new jint[spikeCountsPtr[i]];
         env->GetIntArrayRegion(spikeTrain, 0, spikeCountsPtr[i], spikeTrainsPtr[i]);
@@ -1100,9 +1327,9 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(spikeTrain);
     }
 
-    jfloat **averageSpikePtr = new jfloat *[spikeTrainCount];
+    auto **averageSpikePtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
 
         averageSpikePtr[i] = new jfloat[batchSpikeCount];
         env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, averageSpikePtr[i]);
@@ -1110,9 +1337,9 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(trainAnalysis);
     }
 
-    jfloat **normAverageSpikePtr = new jfloat *[spikeTrainCount];
+    auto **normAverageSpikePtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
 
         normAverageSpikePtr[i] = new jfloat[batchSpikeCount];
         env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normAverageSpikePtr[i]);
@@ -1120,18 +1347,18 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(trainAnalysis);
     }
 
-    jfloat **normTopStdLinePtr = new jfloat *[spikeTrainCount];
+    auto **normTopStdLinePtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
 
         normTopStdLinePtr[i] = new jfloat[batchSpikeCount];
         env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normTopStdLinePtr[i]);
 
         env->DeleteLocalRef(trainAnalysis);
     }
-    jfloat **normBottomStdLinePtr = new jfloat *[spikeTrainCount];
+    auto **normBottomStdLinePtr = new jfloat *[spikeTrainCount];
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
 
         normBottomStdLinePtr[i] = new jfloat[batchSpikeCount];
         env->GetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normBottomStdLinePtr[i]);
@@ -1162,7 +1389,7 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
                                   normAverageSpikePtr, normTopStdLinePtr, normBottomStdLinePtr, batchSpikeCount);
 
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(averageSpike, i);
 
         env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, averageSpikePtr[i]);
         env->SetObjectArrayElement(averageSpike, i, trainAnalysis);
@@ -1170,7 +1397,7 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(trainAnalysis);
     }
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normAverageSpike, i);
 
         env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normAverageSpikePtr[i]);
         env->SetObjectArrayElement(normAverageSpike, i, trainAnalysis);
@@ -1178,7 +1405,7 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(trainAnalysis);
     }
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normTopStdLine, i);
 
         env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normTopStdLinePtr[i]);
         env->SetObjectArrayElement(normTopStdLine, i, trainAnalysis);
@@ -1186,7 +1413,7 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         env->DeleteLocalRef(trainAnalysis);
     }
     for (int i = 0; i < spikeTrainCount; ++i) {
-        jfloatArray trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
+        auto trainAnalysis = (jfloatArray) env->GetObjectArrayElement(normBottomStdLine, i);
 
         env->SetFloatArrayRegion(trainAnalysis, 0, batchSpikeCount, normBottomStdLinePtr[i]);
         env->SetObjectArrayElement(normBottomStdLine, i, trainAnalysis);

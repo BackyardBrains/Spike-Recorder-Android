@@ -45,10 +45,13 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="@dimen/activity_vertical_margin_half"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:layout_marginStart="@dimen/activity_vertical_margin_half"
         android:layout_gravity="top|start"
         android:background="@android:color/transparent"
-        app:srcCompat="@drawable/ic_chevron_left_white_32dp"/>
+        android:contentDescription="@string/content_desc_back"
+        app:srcCompat="@drawable/ic_chevron_left_white_32dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
         android:id="@+id/tv_analysis_title"

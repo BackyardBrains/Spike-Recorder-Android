@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:gravity="top"
         android:textColor="@color/white"
-        android:textSize="@dimen/font_size_tiny"
+        android:textSize="@dimen/font_size_10"
         android:typeface="monospace"
         android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"

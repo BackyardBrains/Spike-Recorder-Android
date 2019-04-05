@@ -5,7 +5,7 @@
     <dimen name="activity_horizontal_margin_quarter">4dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="activity_vertical_margin_half">8dp</dimen>
-    <dimen name="activity_vertical_margin_quarter">8dp</dimen>
+    <dimen name="activity_vertical_margin_quarter">4dp</dimen>
 
     <dimen name="tiny_button_tappable_h">32dp</dimen>
     <dimen name="min_button_tappable_h">48dp</dimen>
@@ -18,7 +18,12 @@
     <dimen name="threshold_drag_surface_w">40dp</dimen>
     <dimen name="threshold_drag_surface_w_with_padding">56dp</dimen>
 
-    <dimen name="font_size_tiny">10sp</dimen>
-    <dimen name="font_size_normal">14sp</dimen>
-    <dimen name="font_size_large">22sp</dimen>
+    <dimen name="font_size_8">8sp</dimen>
+    <dimen name="font_size_10">10sp</dimen>
+    <dimen name="font_size_12">12sp</dimen>
+    <dimen name="font_size_14">14sp</dimen>
+    <dimen name="font_size_16">16sp</dimen>
+    <dimen name="font_size_18">18sp</dimen>
+    <dimen name="font_size_20">20sp</dimen>
+    <dimen name="font_size_22">22sp</dimen>
 </resources>

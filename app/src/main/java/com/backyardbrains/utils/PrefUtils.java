@@ -22,23 +22,6 @@ public class PrefUtils {
     }
 
     /**
-     * Boolean indicating whether scaling instructions should be shown or not.
-     */
-    private static final String PREF_BOOL_SHOW_SCALING_INSTRUCTIONS = "_show_scaling_instructions";
-
-    public static boolean isShowScalingInstructions(@NonNull Context context, @NonNull Class clazz) {
-        return getSharedPreferences(context).getBoolean(constructPrefKey(clazz, PREF_BOOL_SHOW_SCALING_INSTRUCTIONS),
-            true);
-    }
-
-    public static void setShowScalingInstructions(@NonNull Context context, @NonNull Class clazz,
-        boolean showScalingInstructions) {
-        getSharedPreferences(context).edit()
-            .putBoolean(constructPrefKey(clazz, PREF_BOOL_SHOW_SCALING_INSTRUCTIONS), showScalingInstructions)
-            .apply();
-    }
-
-    /**
      * Float indicating horizontal size of the GL window.
      */
     private static final String PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE = "_gl_window_horizontal_size";
@@ -57,28 +40,6 @@ public class PrefUtils {
         float glWindowHorizontalSize) {
         getSharedPreferences(context).edit()
             .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE), glWindowHorizontalSize)
-            .apply();
-    }
-
-    /**
-     * Float indicating vertical size of the GL window.
-     */
-    private static final String PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE = "_gl_window_vertical_size";
-
-    public static float getGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz) {
-        try {
-            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE),
-                GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
-        } catch (Exception ex) {
-            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE),
-                (int) GlUtils.DEFAULT_GL_WINDOW_VERTICAL_SIZE);
-        }
-    }
-
-    public static void setGlWindowVerticalSize(@NonNull Context context, @NonNull Class clazz,
-        float glWindowVerticalSize) {
-        getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_VERTICAL_SIZE), glWindowVerticalSize)
             .apply();
     }
 
@@ -131,23 +92,6 @@ public class PrefUtils {
     public static void setViewportHeight(@NonNull Context context, @NonNull Class clazz, int viewportHeight) {
         getSharedPreferences(context).edit()
             .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_HEIGHT), viewportHeight)
-            .apply();
-    }
-
-    /**
-     * Float indicating minimum detected PCM value.
-     */
-    private static final String PREF_FLOAT_MINIMUM_DETECTED_PCM_VALUE = "_minimum_detected_pcm_value";
-
-    public static float getMinimumDetectedPcmValue(@NonNull Context context, @NonNull Class clazz) {
-        return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_MINIMUM_DETECTED_PCM_VALUE),
-            GlUtils.DEFAULT_MIN_DETECTED_PCM_VALUE);
-    }
-
-    public static void setMinimumDetectedPcmValue(@NonNull Context context, @NonNull Class clazz,
-        float minimumDetectedPcmValue) {
-        getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_MINIMUM_DETECTED_PCM_VALUE), minimumDetectedPcmValue)
             .apply();
     }
 

@@ -2,13 +2,13 @@ package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Size;
-import android.util.SparseArray;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlHLine;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.drawing.gl.GlWaveform;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
@@ -26,7 +26,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private static final int LINE_WIDTH = 1;
 
     private final GlHandleDragHelper thresholdHandleDragHelper;
-    private final GlHandleDragHelper.Rect rect = new GlHandleDragHelper.Rect();
+    private final Rect rect = new Rect();
 
     private final GlWaveform glWaveform;
     private final GlSpikes glSpikes;
@@ -117,11 +117,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     //  OVERRIDES
     //=================================================
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override public void setSelectedChannel(int selectedChannel) {
-        super.setSelectedChannel(selectedChannel);
+    @Override public void onChannelSelectionChanged(int channelIndex) {
+        super.onChannelSelectionChanged(channelIndex);
 
         loadSpikeTrains();
     }
@@ -140,18 +137,19 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        @NonNull short[][] waveformVertices, int[] waveformVerticesCount, @NonNull SparseArray<String> events,
+        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
         int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
         float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
         long lastFrameIndex) {
-        final float samplesToDraw = waveformVerticesCount[0] * .5f;
+        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
         final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
         final float scaleX1 = samplesToDraw / glWindowWidth;
 
         gl.glPushMatrix();
         gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
         // draw waveform
-        glWaveform.draw(gl, waveformVertices[selectedChannel], waveformVerticesCount[selectedChannel], Colors.GRAY);
+        glWaveform.draw(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
+            Colors.GRAY);
         gl.glPopMatrix();
 
         if (getAnalysisManager() != null) {

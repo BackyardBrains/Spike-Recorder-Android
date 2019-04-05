@@ -90,14 +90,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
      */
     @Override protected FindSpikesRenderer createRenderer() {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(this, filePath);
-        renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getActivity() != null) {
-                viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
-                viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-                // we need to call it on UI thread because renderer is drawing on background thread
-                getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-            }
-        });
+        renderer.setOnDrawListener((drawSurfaceWidth) -> setMilliseconds(sampleRate, drawSurfaceWidth));
         renderer.setOnScrollListener(new BaseWaveformRenderer.OnScrollListener() {
 
             @Override public void onScrollStart() {
@@ -105,18 +98,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
             }
 
             @Override public void onScroll(float dx) {
-                if (getActivity() != null) {
-                    int max = toSamples(sbAudioProgress.getMax());
-                    int progress = (int) (toSamples(sbAudioProgress.getProgress()) - dx);
-                    progress -= progress % channelCount;
-                    if (progress < 0) progress = 0;
-                    if (progress > max) progress = max;
-                    playbackSeekRunnable.setProgress(progress);
-                    playbackSeekRunnable.setUpdateProgressSeekBar(true);
-                    playbackSeekRunnable.setUpdateProgressTimeLabel(true);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(playbackSeekRunnable);
-                }
+                seek(getProgress(dx));
             }
 
             @Override public void onScrollEnd() {
@@ -187,7 +169,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     public void onAnalysisDoneEvent(AnalysisDoneEvent event) {
         LOGD(TAG, "Analysis of audio file finished. Success - " + event.isSuccess());
         if (event.isSuccess() && getAnalysisManager() != null) {
-            getAnalysisManager().spikesAnalysisExists(filePath, (exists, trainCount) -> {
+            getAnalysisManager().spikesAnalysisExists(filePath, true, (analysis, trainCount) -> {
                 if (trainCount <= 0) addThreshold();
                 updateThresholdActions();
             });
@@ -201,15 +183,15 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
     // Initializes user interface
     private void setupUI() {
         if (getAnalysisManager() != null) {
-            getAnalysisManager().spikesAnalysisExists(filePath, (exists, trainCount) -> {
+            getAnalysisManager().spikesAnalysisExists(filePath, false, (analysis, trainCount) -> {
                 // if Find Spike analysis doesn't exist show loader until analysis is finished
-                if (!exists) llFindingSpikesProgress.setVisibility(View.VISIBLE);
+                if (analysis == null) llFindingSpikesProgress.setVisibility(View.VISIBLE);
             });
         }
 
         tvSelectChannel.setOnClickListener(v -> openChannelsDialog());
         // set initial selected channel
-        getRenderer().setSelectedChannel(selectedChannel);
+        if (getAudioService() != null) getAudioService().setSelectedChannel(selectedChannel);
 
         setupThresholdActions();
 
@@ -223,7 +205,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
             MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
                 .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
                     selectedChannel = which;
-                    getRenderer().setSelectedChannel(selectedChannel);
+                    if (getAudioService() != null) getAudioService().setSelectedChannel(which);
                     return true;
                 })
                 .alwaysCallSingleChoiceCallback()

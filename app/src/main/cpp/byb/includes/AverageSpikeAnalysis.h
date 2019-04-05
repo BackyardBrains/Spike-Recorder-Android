@@ -11,44 +11,45 @@
 
 #include "AnalysisUtils.h"
 
-namespace analysis {
-    class AverageSpikeAnalysis;
+namespace backyardbrains {
+
+    namespace analysis {
+
+        struct AverageSpikeData {
+            float *averageSpike;
+            float *normAverageSpike;
+            float maxAverageSpike;
+            float minAverageSpike;
+
+            float *topSTDLine;
+            float *bottomSTDLine;
+            float *normTopSTDLine;
+            float *normBottomSTDLine;
+            float maxStd;
+            float minStd;
+
+            int countOfSpikes;
+
+        };
+
+        class AverageSpikeAnalysis {
+        public:
+            AverageSpikeAnalysis();
+
+            ~AverageSpikeAnalysis();
+
+            void process(const char *filePath, int **inSpikeTrains, int spikeTrainCount, const int *spikeCounts,
+                         float **outAverageSpike, float **outNormAverageSpike, float **outNormTopSTDLine,
+                         float **outNormBottomSTDLine, int batchSpikeCount);
+
+        private:
+            static const char *TAG;
+
+            void allocateAverageSpikeData(AverageSpikeData *averageSpikeData, int length, drwav_uint64 batchSpikeCount);
+
+            void deallocateAverageSpikeData(AverageSpikeData *averageSpikeData, int length);
+        };
+    }
 }
-
-struct AverageSpikeData {
-    float *averageSpike;
-    float *normAverageSpike;
-    float maxAverageSpike;
-    float minAverageSpike;
-
-    float *topSTDLine;
-    float *bottomSTDLine;
-    float *normTopSTDLine;
-    float *normBottomSTDLine;
-    float maxStd;
-    float minStd;
-
-    int countOfSpikes;
-
-};
-
-class AverageSpikeAnalysis {
-public:
-    AverageSpikeAnalysis();
-
-    ~AverageSpikeAnalysis();
-
-    void process(const char *filePath, int **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
-                 float **outAverageSpike, float **outNormAverageSpike, float **outNormTopSTDLine,
-                 float **outNormBottomSTDLine, int batchSpikeCount);
-
-private:
-    static const char *TAG;
-
-    void allocateAverageSpikeData(AverageSpikeData *averageSpikeData, const int length, drwav_uint64 batchSpikeCount);
-
-    void deallocateAverageSpikeData(AverageSpikeData *averageSpikeData, const int length);
-};
-
 
 #endif //SPIKE_RECORDER_ANDROID_AVERAGESPIKEANALYSIS_H

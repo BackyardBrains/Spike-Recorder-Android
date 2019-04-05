@@ -6,9 +6,12 @@
 
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
+    <color name="black_80">#F2000000</color>
+    <color name="white_12">#1FFFFFFF</color>
     <color name="blue">#FF007AFF</color>
     <color name="blue_dark">#FF00366F</color>
     <color name="gray_white">#FFF0F0F0</color>
+    <color name="gray_lighter">#FFB3B3B3</color>
     <color name="gray_light">#FF8c8c8c</color>
     <color name="gray_light_50">#808c8c8c</color>
     <color name="gray_dark">#FF656666</color>
@@ -17,10 +20,17 @@
     <color name="grey22">#FF222222</color>
     <color name="grey40">#FF404040</color>
     <color name="red_orange">#FFFF3300</color>
-    <color name="red_orange_75">#80FF3300</color>
+    <color name="red_orange_50">#80FF3300</color>
 
     <color name="red">#FFFF0000</color>
     <color name="yellow">#FFFFFF00</color>
     <color name="cyan">#FF00FFFF</color>
     <color name="green">#FF00FF00</color>
+
+    <color name="channel_0">#FF00FF1C</color>
+    <color name="channel_1">#FFFF003B</color>
+    <color name="channel_2">#FFE1FC5A</color>
+    <color name="channel_3">#FFFF8A5B</color>
+    <color name="channel_4">#FF6AE96A</color>
+    <color name="channel_5">#FF00BEC8</color>
 </resources>

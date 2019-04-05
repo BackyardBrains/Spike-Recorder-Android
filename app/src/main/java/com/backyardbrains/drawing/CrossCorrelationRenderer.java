@@ -6,7 +6,7 @@ import android.view.MotionEvent;
 import com.android.texample.GLText;
 import com.backyardbrains.drawing.gl.GlBarGraph;
 import com.backyardbrains.drawing.gl.GlBarGraphThumb;
-import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper.Rect;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.ui.BaseFragment;
 import javax.microedition.khronos.egl.EGLConfig;

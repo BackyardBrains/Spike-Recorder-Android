@@ -7,24 +7,24 @@
 
 #include <algorithm>
 
-namespace analysis {
-    class IsiAnalysis;
-}
+namespace backyardbrains {
 
-class IsiAnalysis {
-public:
-    IsiAnalysis();
+    namespace analysis {
 
-    ~IsiAnalysis();
+        class IsiAnalysis {
+        public:
+            IsiAnalysis();
 
-    void process(float **inSpikeTrains, const int spikeTrainCount, const int *spikeCounts,
-                 int **outAnalysis, const int analysisBinCount);
+            ~IsiAnalysis();
 
-private:
-    static const char *TAG;
+            void process(float **inSpikeTrains, int spikeTrainCount, const int *spikeCounts,
+                         int **outAnalysis, int analysisBinCount);
 
-    static constexpr int BIN_COUNT = 100;
-};
+        private:
+            static const char *TAG;
 
+            static constexpr int BIN_COUNT = 100;
+        };
+    }}
 
 #endif //SPIKE_RECORDER_ANDROID_ISIANALYSIS_H
