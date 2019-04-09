@@ -209,7 +209,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         LOGD(TAG, "onStart()");
 
         // this will start microphone if we are switching from another fragment
-        if (getAudioService() != null) startActiveInput(getAudioService());
+        if (getProcessingService() != null) startActiveInput(getProcessingService());
     }
 
     @Override public void onResume() {
@@ -223,7 +223,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         super.onStop();
         LOGD(TAG, "onStop()");
 
-        if (getAudioService() != null) getAudioService().stopActiveInputSource();
+        if (getProcessingService() != null) getProcessingService().stopActiveInputSource();
     }
 
     @Override public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -266,10 +266,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
         renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getAudioService() != null) setMilliseconds(getAudioService().getSampleRate(), drawSurfaceWidth);
+            if (getProcessingService() != null) setMilliseconds(getProcessingService().getSampleRate(), drawSurfaceWidth);
         });
         renderer.setOnWaveformSelectionListener(index -> {
-            if (getAudioService() != null) getAudioService().setSelectedChannel(index);
+            if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
         });
         return renderer;
     }
@@ -287,15 +287,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //==============================================
 
     protected boolean isRecording() {
-        return getAudioService() != null && getAudioService().isRecording();
+        return getProcessingService() != null && getProcessingService().isRecording();
     }
 
     protected boolean usbDetected() {
-        return getAudioService() != null && getAudioService().getUsbDeviceCount() > 0;
+        return getProcessingService() != null && getProcessingService().getUsbDeviceCount() > 0;
     }
 
     protected boolean usbDisconnecting() {
-        return getAudioService() != null && getAudioService().isUsbDeviceDisconnecting();
+        return getProcessingService() != null && getProcessingService().isUsbDeviceDisconnecting();
     }
 
     //==============================================
@@ -305,7 +305,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will setup signal source and averaging if we are coming from background
-        if (getAudioService() != null) startActiveInput(getAudioService());
+        if (getProcessingService() != null) startActiveInput(getProcessingService());
 
         // setup settings view
         setupSettingsView();
@@ -340,7 +340,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
-        if (!event.isConnected() && getAudioService() != null) startMicrophone(getAudioService());
+        if (!event.isConnected() && getProcessingService() != null) startMicrophone(getProcessingService());
         // setup USB button
         setupUsbButton();
     }
@@ -353,7 +353,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
 
             // user didn't get , we should start listening to microphone again
-            if (getAudioService() != null) startMicrophone(getAudioService());
+            if (getProcessingService() != null) startMicrophone(getProcessingService());
         }
         // setup USB button
         setupUsbButton();
@@ -361,7 +361,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
-        if (!event.isStarted()) if (getAudioService() != null) startMicrophone(getAudioService());
+        if (!event.isStarted()) if (getProcessingService() != null) startMicrophone(getProcessingService());
 
         // update filters button
         //setupFiltersButton();
@@ -413,7 +413,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         LOGD(TAG, "BOARD DETECTED: " + spikerBoxBoard);
 
         // preset filter for the connected board
-        if (getAudioService() != null && filter != null) getAudioService().setBandFilter(filter);
+        if (getProcessingService() != null && filter != null) getProcessingService().setBandFilter(filter);
         // show what boar is connected in toast
         if (getActivity() != null) {
             ViewUtils.customToast(getActivity(),
@@ -469,7 +469,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // stop record button
         stopRecButton = new SlidingView(tvStopRecording, null/*recordAnimationListener*/);
         tvStopRecording.setOnClickListener(v -> {
-            if (getAudioService() != null) getAudioService().stopRecording();
+            if (getProcessingService() != null) getProcessingService().stopRecording();
         });
         // recording buttons
         setupRecordingButtons(false);
@@ -491,15 +491,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             // setup settings button
             ibtnSettings.setBackgroundResource(R.drawable.circle_gray_white_active);
             // setup settings overlay
-            if (getAudioService() != null) {
-                vSettings.setupMuteSpeakers(getAudioService().isMuteSpeakers());
+            if (getProcessingService() != null) {
+                vSettings.setupMuteSpeakers(getProcessingService().isMuteSpeakers());
                 vSettings.setupFilters(
-                    getAudioService().getBandFilter() != null ? getAudioService().getBandFilter() : new BandFilter(),
-                    getAudioService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
+                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new BandFilter(),
+                    getProcessingService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
                         : Filters.FREQ_HIGH_MAX_CUT_OFF,
-                    getAudioService().getNotchFilter() != null ? getAudioService().getNotchFilter()
+                    getProcessingService().getNotchFilter() != null ? getProcessingService().getNotchFilter()
                         : new NotchFilter());
-                vSettings.setupChannels(getAudioService().getChannelCount(), getRenderer().getChannelColors());
+                vSettings.setupChannels(getProcessingService().getChannelCount(), getRenderer().getChannelColors());
             }
             vSettings.setVisibility(View.VISIBLE);
             vSettings.setOnSettingChangeListener(settingChangeListener);
@@ -518,12 +518,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     void setMuteSpeakers(boolean mute) {
-        if (getAudioService() != null) getAudioService().setMuteSpeakers(mute);
+        if (getProcessingService() != null) getProcessingService().setMuteSpeakers(mute);
     }
 
     // Sets a band filter that should be applied while processing incoming data
     void setBandFilter(@Nullable BandFilter filter) {
-        if (getAudioService() != null) getAudioService().setBandFilter(filter);
+        if (getProcessingService() != null) getProcessingService().setBandFilter(filter);
 
         // update BPM UI
         updateBpmUI();
@@ -531,7 +531,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets a notch filter that should be applied while processing incoming data
     void setNotchFilter(@Nullable NotchFilter filter) {
-        if (getAudioService() != null) getAudioService().setNotchFilter(filter);
+        if (getProcessingService() != null) getProcessingService().setNotchFilter(filter);
     }
 
     // Sets a new color to the channel with specified channelIndex
@@ -540,12 +540,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     void showChannel(int channelIndex, @Size(4) float[] color) {
-        if (getAudioService() != null) getAudioService().showChannel(channelIndex);
+        if (getProcessingService() != null) getProcessingService().showChannel(channelIndex);
         getRenderer().setChannelColor(channelIndex, color);
     }
 
     void hideChannel(int channelIndex) {
-        if (getAudioService() != null) getAudioService().hideChannel(channelIndex);
+        if (getProcessingService() != null) getProcessingService().hideChannel(channelIndex);
     }
 
     //==============================================
@@ -560,23 +560,23 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Whether filter options button should be visible or not
     //private boolean shouldShowFilterOptions() {
-    //    return getAudioService() != null && (getAudioService().isUsbActiveInput()
-    //        || getAudioService().isAmModulationDetected());
+    //    return getProcessingService() != null && (getProcessingService().isUsbActiveInput()
+    //        || getProcessingService().isAmModulationDetected());
     //}
 
     // Opens a dialog with predefined filters that can be applied while processing incoming data
     //void openFilterDialog() {
-    //    if (getContext() != null && getAudioService() != null) {
+    //    if (getContext() != null && getProcessingService() != null) {
     //        filterSettingsDialog =
-    //            getAudioService().isAmModulationDetected() ? new AmModulationFilterSettingsDialog(getContext(),
+    //            getProcessingService().isAmModulationDetected() ? new AmModulationFilterSettingsDialog(getContext(),
     //                filterSelectionListener)
-    //                : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
+    //                : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
     //                    ? new UsbMuscleProFilterSettingsDialog(getContext(), filterSelectionListener)
-    //                    : getAudioService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
+    //                    : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
     //                        ? new UsbNeuronProFilterSettingsDialog(getContext(), filterSelectionListener)
     //                        : new UsbSerialFilterSettingsDialog(getContext(), filterSelectionListener);
     //        filterSettingsDialog.show(
-    //            getAudioService().getBandFilter() != null ? getAudioService().getBandFilter() : new Filter());
+    //            getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new Filter());
     //    }
     //}
 
@@ -661,13 +661,13 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // Starts the threshold mode
     void startThresholdMode() {
         thresholdOn = true;
-        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+        if (getProcessingService() != null) getProcessingService().setSignalAveraging(thresholdOn);
     }
 
     // Stops the threshold mode
     void stopThresholdMode() {
         thresholdOn = false;
-        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+        if (getProcessingService() != null) getProcessingService().setSignalAveraging(thresholdOn);
 
         // threshold should be reset every time it's enabled so let's reset every time on closing
         JniUtils.resetThreshold();
@@ -688,7 +688,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
-        if (getAudioService() != null) getAudioService().setSignalAveragingTriggerType(triggerType);
+        if (getProcessingService() != null) getProcessingService().setSignalAveragingTriggerType(triggerType);
 
         setupThresholdHandleAndAveragingTriggerTypeButtons();
     }
@@ -714,8 +714,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private boolean shouldShowBpm() {
         // BPM should be shown if either usb is active input source or we are in AM modulation,
         // and if current filter is default EKG filter
-        return getAudioService() != null && thresholdOn && (getAudioService().isUsbActiveInput()
-            || getAudioService().isAmModulationDetected()) && ObjectUtils.equals(getAudioService().getBandFilter(),
+        return getProcessingService() != null && thresholdOn && (getProcessingService().isUsbActiveInput()
+            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(getProcessingService().getBandFilter(),
             Filters.FILTER_BAND_HEART);
     }
 
@@ -729,7 +729,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
         ibtnUsb.setImageResource(disconnecting ? 0 : R.drawable.ic_usb_black_24dp);
         setupUsbDisconnectingView(!disconnecting);
-        if (getAudioService() != null && getAudioService().isUsbActiveInput() || disconnecting) {
+        if (getProcessingService() != null && getProcessingService().isUsbActiveInput() || disconnecting) {
             ibtnUsb.setBackgroundResource(R.drawable.circle_gray_white_active);
             ibtnUsb.setOnClickListener(v -> {
                 setupUsbDisconnectingView(false);
@@ -745,11 +745,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void connectWithDevice() {
         if (usbDetected()) {
             //noinspection ConstantConditions
-            final UsbDevice device = getAudioService().getDevice(0);
+            final UsbDevice device = getProcessingService().getDevice(0);
             if (device != null) {
                 final String deviceName = device.getDeviceName();
                 try {
-                    startUsb(getAudioService(), deviceName);
+                    startUsb(getProcessingService(), deviceName);
                 } catch (IllegalArgumentException e) {
                     Crashlytics.logException(e);
                     if (getContext() != null) {
@@ -767,9 +767,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Triggers currently connected usb device to disconnect
     void disconnectFromDevice() {
-        if (getAudioService() != null) {
+        if (getProcessingService() != null) {
             try {
-                getAudioService().stopUsb();
+                getProcessingService().stopUsb();
             } catch (IllegalArgumentException e) {
                 Crashlytics.logException(e);
                 if (getContext() != null) {
@@ -860,7 +860,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) void startRecording() {
         if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
             Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            if (getAudioService() != null) getAudioService().startRecording();
+            if (getProcessingService() != null) getProcessingService().startRecording();
         } else {
             // Request one permission
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage),
