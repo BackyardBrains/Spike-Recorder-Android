@@ -119,6 +119,8 @@ public class Recorder {
         }
 
         void stopRecording() {
+            if (!recording.get()) return;
+
             // stop
             recording.set(false);
 
@@ -137,6 +139,8 @@ public class Recorder {
         }
 
         void stopPlayback() {
+            if (!playing.get()) return;
+
             // stop
             playing.set(false);
 

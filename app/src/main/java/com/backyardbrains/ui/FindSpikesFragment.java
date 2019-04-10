@@ -191,7 +191,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
 
         tvSelectChannel.setOnClickListener(v -> openChannelsDialog());
         // set initial selected channel
-        if (getAudioService() != null) getAudioService().setSelectedChannel(selectedChannel);
+        if (getProcessingService() != null) getProcessingService().setSelectedChannel(selectedChannel);
 
         setupThresholdActions();
 
@@ -205,7 +205,7 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
             MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
                 .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
                     selectedChannel = which;
-                    if (getAudioService() != null) getAudioService().setSelectedChannel(which);
+                    if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
                     return true;
                 })
                 .alwaysCallSingleChoiceCallback()

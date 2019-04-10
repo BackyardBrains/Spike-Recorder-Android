@@ -12,9 +12,9 @@ public class GlSpikes {
 
     // We can maximally handle 6 seconds of sample data and spike can appear max every 5 ms
     // We multiply by 2 because we have 2 vertices for every spike
-    public static final int MAX_POINT_VERTICES = 5000 * 2;
+    public static final int MAX_POINT_VERTICES = 8000 * 2;
     // We multiply by 4 because we have 4 vertices for every color
-    public static final int MAX_COLOR_VERTICES = 5000 * 4;
+    public static final int MAX_COLOR_VERTICES = 8000 * 4;
 
     private static final float POINT_SIZE = 10f;
 

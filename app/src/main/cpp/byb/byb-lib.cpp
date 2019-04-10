@@ -86,7 +86,7 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
                                                                jobject outEvents, jobjectArray inSignal,
-                                                               int inFrameCount, jintArray inEventIndices,
+                                                               jint inFrameCount, jintArray inEventIndices,
                                                                jint inEventCount, jint start, jint end,
                                                                jint drawSurfaceWidth);
 JNIEXPORT void JNICALL
@@ -874,7 +874,7 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
 extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
                                                                jobject outEvents, jobjectArray inSignal,
-                                                               int inFrameCount, jintArray inEventIndices,
+                                                               jint inFrameCount, jintArray inEventIndices,
                                                                jint inEventCount, jint start, jint end,
                                                                jint drawSurfaceWidth) {
     jint channelCount = env->GetArrayLength(inSignal);

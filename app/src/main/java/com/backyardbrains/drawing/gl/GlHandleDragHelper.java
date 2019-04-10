@@ -94,12 +94,11 @@ public class GlHandleDragHelper {
      * returns {@code true} if it was, {@code false} otherwise.
      */
     public boolean onTouch(MotionEvent event) {
-        int pointerIndex;
         float x, y, dy;
         final int action = event.getActionMasked();
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                pointerIndex = event.getActionIndex();
+            case MotionEvent.ACTION_DOWN: {
+                final int pointerIndex = event.getActionIndex();
                 x = event.getX(pointerIndex);
                 y = event.getY(pointerIndex);
 
@@ -114,12 +113,12 @@ public class GlHandleDragHelper {
                 if (selectedDraggableArea != NONE && listener != null) listener.onDragStart(selectedDraggableArea);
 
                 return selectedDraggableArea != NONE;
-            case MotionEvent.ACTION_MOVE:
+            }
+            case MotionEvent.ACTION_MOVE: {
                 if (selectedDraggableArea != NONE) {
                     // find the index of the active pointer and fetch its position
-                    pointerIndex = event.findPointerIndex(activePointerId);
+                    final int pointerIndex = event.findPointerIndex(activePointerId);
 
-                    // FIXME: 27-Dec-18 SOMETIMES THIS LINE TRIGGERS "java.lang.IllegalArgumentException: pointerIndex out of range" EXCEPTION
                     y = event.getY(pointerIndex);
 
                     // calculate the distance moved
@@ -134,9 +133,10 @@ public class GlHandleDragHelper {
                     return true;
                 }
                 break;
+            }
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_OUTSIDE:
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_UP: {
                 activePointerId = MotionEvent.INVALID_POINTER_ID;
 
                 if (selectedDraggableArea != NONE) {
@@ -148,6 +148,25 @@ public class GlHandleDragHelper {
                     return true;
                 }
                 break;
+            }
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int pointerIndex = event.getActionIndex();
+                final int pointerId = event.getPointerId(pointerIndex);
+
+                if (pointerId == activePointerId) {
+                    activePointerId = MotionEvent.INVALID_POINTER_ID;
+
+                    if (selectedDraggableArea != NONE) {
+                        // trigger OnDragListener.onDragStop() callback if listener has been set
+                        if (listener != null) listener.onDragStop(selectedDraggableArea);
+
+                        selectedDraggableArea = NONE;
+
+                        return true;
+                    }
+                }
+                break;
+            }
         }
 
         return false;

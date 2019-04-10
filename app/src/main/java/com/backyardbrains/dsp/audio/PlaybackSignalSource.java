@@ -186,6 +186,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             // index of the sample from which we check the events
             fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
 
+            // buffer needs to be initialized
+            if (buffer == null) return;
+            
             // number of bytes actually read during single read
             if (raf.read(buffer) > 0) {
                 if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));

@@ -5,7 +5,6 @@
     <string name="action_privacy_policy">Privacy Policy</string>
 
     <string name="menu_item_scope">View/Record</string>
-    <string name="menu_item_threshold">Threshold</string>
     <string name="menu_item_recordings">Recordings</string>
 
     <string name="action_setting">Settings</string>
