@@ -36,10 +36,12 @@ public class AudioHelper {
     private MicrophoneSignalSource micSource;
 
     public AudioHelper() {
-        this.audioRecord = AudioUtils.createAudioRecord();
-        setupAudioRecord(audioRecord);
+        audioRecord = AudioUtils.createAudioRecord();
+        if (audioRecord != null) {
+            setupAudioRecord(audioRecord);
 
-        this.micSource = new MicrophoneSignalSource(audioRecord);
+            micSource = new MicrophoneSignalSource(audioRecord);
+        }
     }
 
     /**
@@ -73,7 +75,7 @@ public class AudioHelper {
             if (audioManager != null) audioManager.unregisterAudioDeviceCallback(deviceCallback);
         }
         audioRecord = null;
-        micSource.requestStop();
+        if (micSource != null) micSource.requestStop();
         micSource = null;
     }
 
@@ -177,19 +179,24 @@ public class AudioHelper {
         }
 
         // current AudioRecord configuration is not supported by the routed device so we need to update
-        if (audioRecord.getSampleRate() != sampleRate || audioRecord.getChannelConfiguration() != channelMask
-            || audioRecord.getAudioFormat() != encoding) {
-            audioRecord = micSource.updateRecorder(AudioUtils.createAudioRecord(sampleRate, channelMask, encoding,
-                AudioRecord.getMinBufferSize(sampleRate, channelMask, encoding)));
-            setupAudioRecord(audioRecord);
+        if (audioRecord != null && (audioRecord.getSampleRate() != sampleRate
+            || audioRecord.getChannelConfiguration() != channelMask || audioRecord.getAudioFormat() != encoding)) {
+            final AudioRecord ar = AudioUtils.createAudioRecord(sampleRate, channelMask, encoding,
+                AudioRecord.getMinBufferSize(sampleRate, channelMask, encoding));
+            if (ar != null) {
+                if (micSource != null) audioRecord = micSource.updateRecorder(ar);
+                setupAudioRecord(audioRecord);
 
-            LOGD(TAG, "==============================");
-            printDevices(new AudioDeviceInfo[] { routedDevice });
-            LOGD(TAG, ">>>>>>>>>>>>>>>>>>>>>>>");
-            LOGD(TAG, "SAMPLE RATE: " + audioRecord.getSampleRate());
-            LOGD(TAG, "CHANNEL MASK: " + audioRecord.getChannelConfiguration());
-            LOGD(TAG, "ENCODING: " + audioRecord.getAudioFormat());
-            LOGD(TAG, "==============================");
+                LOGD(TAG, "==============================");
+                printDevices(new AudioDeviceInfo[] { routedDevice });
+                LOGD(TAG, ">>>>>>>>>>>>>>>>>>>>>>>");
+                LOGD(TAG, "SAMPLE RATE: " + audioRecord.getSampleRate());
+                LOGD(TAG, "CHANNEL MASK: " + audioRecord.getChannelConfiguration());
+                LOGD(TAG, "ENCODING: " + audioRecord.getAudioFormat());
+                LOGD(TAG, "==============================");
+            } else {
+                // TODO: 10-Apr-19 INFORM USER THAT CONNECTING TO MIC FAILED AND THAT APP SHOULD BE RESTARTED
+            }
         }
     }
 
@@ -197,7 +204,7 @@ public class AudioHelper {
         for (AudioDeviceInfo adi : devices) {
             LOGD(TAG, "ID: " + adi.getId());
             LOGD(TAG, "PRODUCT NAME: " + adi.getProductName());
-            LOGD(TAG, "ADDRESS: " + adi.getAddress());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) LOGD(TAG, "ADDRESS: " + adi.getAddress());
             LOGD(TAG, "SAMPLE RATES: " + Arrays.toString(adi.getSampleRates()));
             LOGD(TAG, "CHANNEL COUNTS: " + Arrays.toString(adi.getChannelCounts()));
             LOGD(TAG, "CHANNEL INDEX MASKS: " + Arrays.toString(adi.getChannelIndexMasks()));

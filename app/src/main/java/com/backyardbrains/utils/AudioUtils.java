@@ -8,6 +8,7 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Build;
+import android.support.annotation.Nullable;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -92,7 +93,7 @@ public class AudioUtils {
             : outBufferSize * BUFFER_SIZE_FACTOR;
     }
 
-    public static AudioRecord createAudioRecord() {
+    @Nullable public static AudioRecord createAudioRecord() {
         return createAudioRecord(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING,
             DEFAULT_IN_BUFFER_SIZE);
     }
@@ -100,17 +101,21 @@ public class AudioUtils {
     /**
      * Creates and returns configured {@link AudioRecord} for recording audio files.
      */
-    public static AudioRecord createAudioRecord(int sampleRate, int channelMask, int encoding, int inBufferSize) {
+    @Nullable public static AudioRecord createAudioRecord(int sampleRate, int channelMask, int encoding,
+        int inBufferSize) {
         LOGD(TAG, "Create new AudioRecorder");
-        final AudioRecord ar;
+        AudioRecord ar = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ar = new AudioRecord.Builder().setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(channelMask)
-                    .build())
-                .setBufferSizeInBytes(inBufferSize)
-                .build();
+            try {
+                ar = new AudioRecord.Builder().setAudioSource(MediaRecorder.AudioSource.DEFAULT)
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(channelMask)
+                        .build())
+                    .setBufferSizeInBytes(inBufferSize)
+                    .build();
+            } catch (Exception ignored) {
+            }
         } else {
             ar = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, channelMask, encoding, inBufferSize);
         }
