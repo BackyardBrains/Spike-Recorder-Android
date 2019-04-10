@@ -800,7 +800,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),
                         signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount()));
             }
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             Crashlytics.logException(e);
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
         }
