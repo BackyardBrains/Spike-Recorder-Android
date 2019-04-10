@@ -378,7 +378,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(filePath, this);
         renderer.setOnDrawListener((drawSurfaceWidth) -> setMilliseconds(sampleRate, drawSurfaceWidth));
         renderer.setOnWaveformSelectionListener(index -> {
-            if (getAudioService() != null) getAudioService().setSelectedChannel(index);
+            if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
         });
         renderer.setOnScrollListener(new BaseWaveformRenderer.OnScrollListener() {
 
@@ -463,7 +463,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
      * Returns length of the played audio file in frames.
      */
     protected int getLength() {
-        if (getAudioService() != null) return toFrames((int) getAudioService().getPlaybackLength());
+        if (getProcessingService() != null) return toFrames((int) getProcessingService().getPlaybackLength());
 
         return 0;
     }
@@ -475,27 +475,27 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         // resume the threshold
         if (play) JniUtils.resumeThreshold();
 
-        if (getAudioService() != null) getAudioService().togglePlayback(play);
+        if (getProcessingService() != null) getProcessingService().togglePlayback(play);
     }
 
     /**
      * Whether audio file is currently being played or not.
      */
     protected boolean isPlaying() {
-        return getAudioService() != null && getAudioService().isAudioPlaying();
+        return getProcessingService() != null && getProcessingService().isAudioPlaying();
     }
 
     /**
      * Starts playing audio file.
      */
     protected void startPlaying(boolean autoPlay) {
-        if (getAudioService() != null) {
+        if (getProcessingService() != null) {
             // this will set signal averaging if we are coming from background
-            getAudioService().setSignalAveraging(thresholdOn);
+            getProcessingService().setSignalAveraging(thresholdOn);
             // this will set signal averaging trigger type if we are coming from background
-            getAudioService().setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
+            getProcessingService().setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
             // this will start playback if we are coming from background
-            getAudioService().startPlayback(filePath, autoPlay, playbackPosition);
+            getProcessingService().startPlayback(filePath, autoPlay, playbackPosition);
         }
 
         // resume the threshold
@@ -506,21 +506,21 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
      * Stops playing audio file.
      */
     protected void stopPlaying() {
-        if (getAudioService() != null) getAudioService().stopPlayback();
+        if (getProcessingService() != null) getProcessingService().stopPlayback();
     }
 
     /**
-     * Tells audio service that seek is about to start.
+     * Tells processing service that seek is about to start.
      */
     protected void startSeek() {
-        if (getAudioService() != null) getAudioService().startPlaybackSeek();
+        if (getProcessingService() != null) getProcessingService().startPlaybackSeek();
     }
 
     /**
-     * Tells audio service to seek to the sample at specified {@code position}.
+     * Tells processing service to seek to the sample at specified {@code position}.
      */
     protected void seek(int progress) {
-        if (getAudioService() != null) getAudioService().seekPlayback(progress);
+        if (getProcessingService() != null) getProcessingService().seekPlayback(progress);
 
         playbackSeekRunnable.setProgress(progress);
         playbackSeekRunnable.setUpdateProgressTimeLabel(true);
@@ -529,10 +529,10 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     /**
-     * Tells audio service that seek should stop.f
+     * Tells processing service that seek should stop.f
      */
     protected void stopSeek() {
-        if (getAudioService() != null) getAudioService().stopPlaybackSeek();
+        if (getProcessingService() != null) getProcessingService().stopPlaybackSeek();
     }
 
     /**
@@ -705,13 +705,13 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     // Starts the threshold mode
     void startThresholdMode() {
         thresholdOn = true;
-        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+        if (getProcessingService() != null) getProcessingService().setSignalAveraging(thresholdOn);
     }
 
     // Stops the threshold mode
     void stopThresholdMode() {
         thresholdOn = false;
-        if (getAudioService() != null) getAudioService().setSignalAveraging(thresholdOn);
+        if (getProcessingService() != null) getProcessingService().setSignalAveraging(thresholdOn);
 
         // threshold should be reset every time it's enabled so let's reset every time on closing
         JniUtils.resetThreshold();
@@ -732,7 +732,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
-        if (getAudioService() != null) getAudioService().setSignalAveragingTriggerType(triggerType);
+        if (getProcessingService() != null) getProcessingService().setSignalAveragingTriggerType(triggerType);
 
         setupThresholdHandleAndAveragingTriggerTypeButtons();
     }

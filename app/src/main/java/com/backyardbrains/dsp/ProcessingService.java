@@ -48,6 +48,7 @@ import com.backyardbrains.events.UsbPermissionEvent;
 import com.backyardbrains.events.UsbSignalSourceDisconnectEvent;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.NotchFilter;
+import com.backyardbrains.ui.MainActivity;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ExpansionBoardType;
@@ -138,13 +139,6 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * {@inheritDoc}
      */
-    @Override public int onStartCommand(Intent intent, int flags, int startId) {
-        return super.onStartCommand(intent, flags, startId);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override public void onDestroy() {
         created = false;
 
@@ -165,12 +159,12 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     //========================================================
 
     /**
-     * return a binding pointer for GL threads to reference this object
+     * Returns a binding pointer for {@link MainActivity} to reference this object
      *
      * @return binding reference to this object
      * @see Service#onBind(Intent)
      */
-    @Override public IBinder onBind(Intent arg0) {
+    @Override public IBinder onBind(Intent intent) {
         return binder;
     }
 
@@ -806,7 +800,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                     .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),
                         signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount()));
             }
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             Crashlytics.logException(e);
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
         }

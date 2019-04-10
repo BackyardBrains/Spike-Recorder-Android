@@ -136,10 +136,10 @@ public class MainActivity extends AppCompatActivity
             setIntent(null);
         }
 
-        // start the audio service for reads mic data, recording and playing recorded files
-        start();
-
         super.onStart();
+
+        // start the processing service for reads mic data, recording and playing recorded files
+        start();
 
         // register activity with event bus
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity
 
         super.onStop();
 
-        // stop audio service
+        // stop processing service
         stop();
     }
 
@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity
             }
             LOGD(TAG, s.toString());
         } else {
-            LOGI(TAG, "printBackStack noStack");
+            LOGD(TAG, "printBackStack noStack");
         }
     }
 
@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity
     @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void start() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
             startAnalysisManager();
-            startAudioService();
+            startProcessingService();
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
                 Manifest.permission.RECORD_AUDIO);
@@ -457,11 +457,11 @@ public class MainActivity extends AppCompatActivity
      */
     private void stop() {
         stopAnalysisManager();
-        stopAudioService();
+        stopProcessingService();
     }
 
     //==============================================
-    //  AUDIO SERVICE
+    //  PROCESSING SERVICE
     //==============================================
 
     /**
@@ -479,54 +479,39 @@ public class MainActivity extends AppCompatActivity
     }
 
     // Starts ProcessingService
-    private void startAudioService() {
+    private void startProcessingService() {
         if (!audioServiceRunning) {
             LOGD(TAG, "Starting ProcessingService");
 
-            startService(new Intent(this, ProcessingService.class));
+            Intent intent = new Intent(this, ProcessingService.class);
+            bindService(intent, audioServiceConnection, Context.BIND_AUTO_CREATE);
             audioServiceRunning = true;
-            bindAudioService(true);
         }
     }
 
     // Stops ProcessingService
-    private void stopAudioService() {
+    private void stopProcessingService() {
         if (audioServiceRunning) {
             LOGD(TAG, "Stopping ProcessingService");
 
-            bindAudioService(false);
-            stopService(new Intent(this, ProcessingService.class));
             audioServiceRunning = false;
-        }
-    }
-
-    protected void bindAudioService(boolean on) {
-        if (on) {
-            Intent intent = new Intent(this, ProcessingService.class);
-            bindService(intent, audioServiceConnection, Context.BIND_AUTO_CREATE);
-        } else {
             unbindService(audioServiceConnection);
         }
     }
 
     protected ServiceConnection audioServiceConnection = new ServiceConnection() {
 
-        // Sets a reference in this activity to the {@link ProcessingService}, which
-        // allows for {@link ByteBuffer}s full of audio information to be passed
-        // from the {@link ProcessingService} down into the local
-        // {@link OscilloscopeGLSurfaceView}
-        //
-        // @see
-        // android.content.ServiceConnection#onServiceConnected(android.content.ComponentName,
-        // android.os.IBinder)
+        /**
+         * Saves a reference to the {@link ProcessingService} through which UI will be able to communication with part
+         * of the application in charge of incoming signal processing.
+         */
         @Override public void onServiceConnected(ComponentName className, IBinder service) {
             LOGD(TAG, "ProcessingService connected!");
-            // We've bound to LocalService, cast the IBinder and get
-            // LocalService instance
+            // we're bound to ProcessingService, cast the IBinder and get ProcessingService instance
             ProcessingService.ServiceBinder binder = (ProcessingService.ServiceBinder) service;
             processingService = binder.getService();
 
-            // inform interested parties that audio service is successfully connected
+            // inform interested parties that processing service is successfully connected
             EventBus.getDefault().post(new AudioServiceConnectionEvent(true));
         }
 
@@ -535,7 +520,7 @@ public class MainActivity extends AppCompatActivity
 
             processingService = null;
 
-            // inform interested parties that audio service successfully disconnected
+            // inform interested parties that processing service successfully disconnected
             EventBus.getDefault().post(new AudioServiceConnectionEvent(false));
         }
     };

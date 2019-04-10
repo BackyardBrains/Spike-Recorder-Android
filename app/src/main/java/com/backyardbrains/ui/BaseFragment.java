@@ -66,7 +66,7 @@ public class BaseFragment extends Fragment {
         return false;
     }
 
-    @Nullable protected ProcessingService getAudioService() {
+    @Nullable protected ProcessingService getProcessingService() {
         return provider != null ? provider.processingService() : null;
     }
 

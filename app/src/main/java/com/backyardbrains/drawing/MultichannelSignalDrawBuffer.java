@@ -101,7 +101,8 @@ public class MultichannelSignalDrawBuffer {
 
         int counter = 0;
         for (int i = 0; i < channelCount; i++) {
-            if (signalConfiguration.isChannelVisible(i)) {
+            if (signalConfiguration.isChannelVisible(i) && visibleSignalDrawBuffer.buffer.length > counter
+                && buffer.length > i) {
                 visibleSignalDrawBuffer.buffer[counter++] = buffer[i];
             }
         }

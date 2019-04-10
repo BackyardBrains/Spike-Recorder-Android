@@ -7,14 +7,6 @@
         android:icon="@drawable/ic_scope"
         android:title="@string/menu_item_scope"
         app:showAsAction="ifRoom"/>
-<!--
-    <item
-        android:id="@+id/action_threshold"
-        android:enabled="true"
-        android:icon="@drawable/ic_threshold_bkp"
-        android:title="@string/menu_item_threshold"
-        app:showAsAction="ifRoom"/>
--->
     <item
         android:id="@+id/action_recordings"
         android:enabled="true"
