@@ -151,7 +151,7 @@ public class ProcessingBuffer {
                 eventNames[eventCounter++] = eventNames[i];
             }
             // add new events
-            int baseIndex = sampleBufferSize - signalData.sampleCounts[0];
+            int baseIndex = Math.max(0, sampleBufferSize - signalData.sampleCounts[0]);
             for (int i = 0; i < signalData.eventCount; i++) {
                 eventIndices[eventCounter] = baseIndex + signalData.eventIndices[i];
                 eventNames[eventCounter++] = signalData.eventNames[i];
