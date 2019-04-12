@@ -556,8 +556,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final float drawnSamplesCount = signalDrawData.sampleCounts[0] * .5f;
 
             // prepare FFT data for drawing
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), (int) drawnSamplesCount);
+            prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), (int) drawnSamplesCount);
 
             // calculate scale x and scale y
             if (surfaceSizeDirty || glWindowWidthDirty) {

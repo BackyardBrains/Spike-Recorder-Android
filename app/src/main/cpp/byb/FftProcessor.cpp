@@ -29,7 +29,7 @@ namespace backyardbrains {
 //    return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 //}
 
-        void FftProcessor::process(float **outData, uint32_t &windowCount, uint32_t &perWindowCount, short **inSamples,
+        void FftProcessor::process(float **outData, uint32_t &windowCount, uint32_t &windowSize, short **inSamples,
                                    uint32_t *inSampleCount) {
             auto selectedChannel = getSelectedChannel();
             auto *samples = inSamples[selectedChannel];
@@ -40,7 +40,7 @@ namespace backyardbrains {
 //    __android_log_print(ANDROID_LOG_DEBUG, TAG, "========================================");
 
             // simple downsampling because only low frequencies are required
-            const uint8_t dsFactor = 4;
+            const uint8_t dsFactor = FFT_DOWNSAMPLING_FACTOR;
             auto dsLength = sampleCount / dsFactor;
             auto dsSamples = new short[dsLength]{0};
             for (int i = 0; i < dsLength; i++)
@@ -57,7 +57,7 @@ namespace backyardbrains {
                 unanalyzedSampleCount += dsLength;
 
                 windowCount = addWindowsCount;
-                perWindowCount = thirtyHzDataSize;
+                windowSize = thirtyHzDataSize;
 
                 return;
             }
@@ -78,6 +78,7 @@ namespace backyardbrains {
                           in + sampleWindowSize - windowSampleDiffCount);
 
                 // perform FFT analysis
+//                input.resize(sampleWindowSize);
                 input.assign(in, in + sampleWindowSize);
 
                 fft.fft(input.data(), outReal.data(), outImaginary.data());
@@ -111,7 +112,7 @@ namespace backyardbrains {
             unanalyzedSampleCount = newUnanalyzedSampleCount - windowSampleDiffCount * addWindowsCount;
 
             windowCount = addWindowsCount;
-            perWindowCount = thirtyHzDataSize;
+            windowSize = thirtyHzDataSize;
 
             delete[] in;
             delete[] samplesToAnalyze;
@@ -119,18 +120,19 @@ namespace backyardbrains {
 
         void FftProcessor::init() {
             __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
-            float sampleRate = getSampleRate();
+            float sampleRate = getSampleRate() / FFT_DOWNSAMPLING_FACTOR;
 
             // try to make under 1Hz resolution if it is too much than limit it to samplingRate/2^11
             auto log2n = static_cast<int>(log2f(sampleRate));
             sampleWindowSize = static_cast<uint32_t>(pow(2, log2n + 2));
-            fftDataSize = static_cast<uint32_t>(sampleWindowSize * .5f);
-            oneFrequencyStep = .5f * sampleRate / fftDataSize;
+            // Size of fft data that will be returned when providing sampleWindowSize of samples
+            auto fftDataSize = static_cast<uint32_t>(sampleWindowSize * .5f);
+            // Difference between two consecutive frequency values represented in the output graph
+            float oneFrequencyStep = .5f * sampleRate / (float) fftDataSize;
             thirtyHzDataSize = static_cast<uint32_t>(FFT_30HZ_LENGTH / oneFrequencyStep);
 
-            if (fftDataSize < 2) fftDataSize = 2;
-
-            windowSampleDiffCount = static_cast<uint32_t>(sampleWindowSize * (1.0f - (windowOverlapPercent / 100.0f)));
+            windowSampleDiffCount = static_cast<uint32_t>(sampleWindowSize *
+                                                          (1.0f - ((float) windowOverlapPercent / 100.0f)));
 
             input.resize(sampleWindowSize, 0.0f);
             outReal.resize(audiofft::AudioFFT::ComplexSize(sampleWindowSize));

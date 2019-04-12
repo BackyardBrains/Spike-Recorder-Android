@@ -6,21 +6,21 @@ package com.backyardbrains.dsp;
 public class FftData {
 
     public int maxWindowCount;
-    public int maxThirtyHzDataSize;
+    public int maxWindowSize;
 
     public float[][] fft;
     public int windowCount;
-    public int thirtyHzDataSize;
+    public int windowSize;
 
-    public FftData(int maxWindowCount, int maxThirtyHzDataSize) {
+    public FftData(int maxWindowCount, int maxWindowSize) {
         this.maxWindowCount = maxWindowCount;
-        this.maxThirtyHzDataSize = maxThirtyHzDataSize;
+        this.maxWindowSize = maxWindowSize;
 
         fft = new float[maxWindowCount][];
         for (int i = 0; i < maxWindowCount; i++) {
-            fft[i] = new float[maxThirtyHzDataSize];
+            fft[i] = new float[maxWindowSize];
         }
         windowCount = 0;
-        thirtyHzDataSize = 0;
+        windowSize = 0;
     }
 }

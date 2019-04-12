@@ -105,11 +105,10 @@ public class ProcessingBuffer {
             System.arraycopy(this.eventIndices, 0, eventIndices, 0, eventCount);
             System.arraycopy(this.eventNames, 0, eventNames, 0, eventCount);
             // copy fft data
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //if (fftBuffer != null) {
-            //    int count = fftBuffer.get(fft);
-            //    if (count > 0) fftDrawBuffer.add(fft, count);
-            //}
+            if (fftBuffer != null) {
+                int count = fftBuffer.get(fft);
+                if (count > 0) fftDrawBuffer.add(fft, count);
+            }
 
             return eventCount;
         }
@@ -162,8 +161,7 @@ public class ProcessingBuffer {
             lastSampleIndex = signalData.lastSampleIndex;
 
             // add fft data to buffer
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
+            if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
         }
     }
 

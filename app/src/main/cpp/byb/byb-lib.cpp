@@ -82,7 +82,7 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject inSamples);
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
                                                                jobject outEvents, jobjectArray inSignal,
@@ -267,10 +267,10 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     // let's cache fields of the FftData java object
     cls = env->FindClass("com/backyardbrains/dsp/FftData");
     maxWindowCountFid = env->GetFieldID(cls, "maxWindowCount", "I");
-    maxThirtyHzDataSizeFid = env->GetFieldID(cls, "maxThirtyHzDataSize", "I");
+    maxThirtyHzDataSizeFid = env->GetFieldID(cls, "maxWindowSize", "I");
     fftFid = env->GetFieldID(cls, "fft", "[[F");
     windowCountFid = env->GetFieldID(cls, "windowCount", "I");;
-    thirtyHzDataSizeFid = env->GetFieldID(cls, "thirtyHzDataSize", "I");
+    thirtyHzDataSizeFid = env->GetFieldID(cls, "windowSize", "I");
 
     // let's cache fields of the FftData java object
     cls = env->FindClass("com/backyardbrains/drawing/FftDrawData");
@@ -796,12 +796,11 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject inSamples) {
-    jint channelCount = env->GetIntField(out, sweChannelCountFid);
-    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(inSamples, sweSamplesFid));
-    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(inSamples, sweSampleCountsFid));
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in) {
+    jint channelCount = env->GetIntField(in, sweChannelCountFid);
+    auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sweSamplesFid));
+    auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(in, sweSampleCountsFid));
 
-//    jint channelCount = env->GetArrayLength(samples);
     jint *inSampleCountsPtr = new jint[channelCount];
     env->GetIntArrayRegion(sampleCounts, 0, channelCount, inSampleCountsPtr);
 
@@ -828,13 +827,13 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
     }
 
     auto maxWindowCount = env->GetIntField(out, maxWindowCountFid);
-    auto maxThirtyHzDataSize = env->GetIntField(out, maxThirtyHzDataSizeFid);
+    auto maxWindowSize = env->GetIntField(out, maxThirtyHzDataSizeFid);
     auto outFft = reinterpret_cast<jobjectArray>(env->GetObjectField(out, fftFid));
 
     auto **outFftPtr = new jfloat *[maxWindowCount];
-    for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxThirtyHzDataSize]{0};
-    uint32_t windowCount, thirtyHzDataSize;
-    fftProcessor->process(outFftPtr, windowCount, thirtyHzDataSize, inSamplesPtr,
+    for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxWindowSize]{0};
+    uint32_t windowCount, windowSize;
+    fftProcessor->process(outFftPtr, windowCount, windowSize, inSamplesPtr,
                           reinterpret_cast<uint32_t *>(inSampleCountsPtr));
 
     // exception check
@@ -853,12 +852,12 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
 
     for (int i = 0; i < windowCount; i++) {
         auto fft = reinterpret_cast<jfloatArray >(env->GetObjectArrayElement(outFft, i));
-        env->SetFloatArrayRegion(fft, 0, thirtyHzDataSize, outFftPtr[i]);
+        env->SetFloatArrayRegion(fft, 0, windowSize, outFftPtr[i]);
         env->SetObjectArrayElement(outFft, i, fft);
         env->DeleteLocalRef(fft);
     }
     env->SetIntField(out, windowCountFid, windowCount);
-    env->SetIntField(out, thirtyHzDataSizeFid, thirtyHzDataSize);
+    env->SetIntField(out, thirtyHzDataSizeFid, windowSize);
 
     delete[] inSampleCountsPtr;
     for (int i = 0; i < channelCount; i++) {
