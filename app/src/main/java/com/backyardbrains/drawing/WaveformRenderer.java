@@ -26,6 +26,7 @@ import android.support.annotation.Size;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
+import com.backyardbrains.drawing.gl.GlFft;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlWaveform;
@@ -55,6 +56,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private final Rect rect = new Rect();
 
     private final GlWaveform glWaveform;
+    private final GlFft glFft;
     private final GlHandle glHandle;
     private final GlDashedHLine glThresholdLine;
     private GlEventMarker glEventMarker;
@@ -110,6 +112,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         });
 
         glWaveform = new GlWaveform();
+        glFft = new GlFft();
         glHandle = new GlHandle();
         glThresholdLine = new GlDashedHLine();
     }
@@ -299,6 +302,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
         boolean selected, showThresholdHandle;
         float[] waveformColor;
+
+        //gl.glMatrixMode(GL10.GL_PROJECTION);
+        //gl.glLoadIdentity();
+        //gl.glOrthof(0f, samplesToDraw - 1, 0, MAX_GL_VERTICAL_SIZE, -1f, 1f);
+        //
+        //glFft.draw(gl, fftDrawData);
 
         for (int i = 0; i < signalDrawData.channelCount; i++) {
             selected = getSelectedChanel() == i;

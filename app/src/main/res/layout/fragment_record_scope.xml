@@ -56,19 +56,6 @@
         app:srcCompat="@drawable/ic_trigger_threshold_black_24dp"
         tools:ignore="ContentDescription"/>
 
-    <!--<ImageButton-->
-    <!--android:id="@+id/ibtn_filters"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:layout_marginStart="5dp"-->
-    <!--android:layout_marginTop="5dp"-->
-    <!--android:background="@android:color/transparent"-->
-    <!--android:src="@drawable/ic_am_modulation"-->
-    <!--app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"-->
-    <!--app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"-->
-    <!--app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"-->
-    <!--tools:ignore="ContentDescription"/>-->
-
     <SeekBar
         android:id="@+id/sb_averaged_sample_count"
         android:layout_width="130dp"

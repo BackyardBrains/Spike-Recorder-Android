@@ -80,7 +80,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @BindView(R.id.v_settings) SettingsView vSettings;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
-    //@BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
     @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
     @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
     @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
@@ -266,7 +265,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
         renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getProcessingService() != null) setMilliseconds(getProcessingService().getSampleRate(), drawSurfaceWidth);
+            if (getProcessingService() != null) {
+                setMilliseconds(getProcessingService().getSampleRate(), drawSurfaceWidth);
+            }
         });
         renderer.setOnWaveformSelectionListener(index -> {
             if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
@@ -311,8 +312,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupSettingsView();
         // setup threshold button
         setupThresholdView();
-        // setup filters button
-        //setupFiltersButton();
         // setup USB button
         setupUsbButton();
         // setup BPM UI
@@ -363,8 +362,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         if (!event.isStarted()) if (getProcessingService() != null) startMicrophone(getProcessingService());
 
-        // update filters button
-        //setupFiltersButton();
         // setup settings view
         setupSettingsView();
         // setup USB button
@@ -423,8 +420,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
-        // setup filters button
-        //setupFiltersButton();
         // filters dialog is opened and AM modulation just ended, close it
         if (!event.isStart() && filterSettingsDialog != null) {
             filterSettingsDialog.dismiss();
@@ -455,8 +450,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupSettingsView();
         // threshold button
         setupThresholdView();
-        // filters button
-        //setupFiltersButton();
         // usb button
         setupUsbButton();
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
@@ -494,7 +487,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             if (getProcessingService() != null) {
                 vSettings.setupMuteSpeakers(getProcessingService().isMuteSpeakers());
                 vSettings.setupFilters(
-                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new BandFilter(),
+                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter()
+                        : new BandFilter(),
                     getProcessingService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
                         : Filters.FREQ_HIGH_MAX_CUT_OFF,
                     getProcessingService().getNotchFilter() != null ? getProcessingService().getNotchFilter()
@@ -547,38 +541,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void hideChannel(int channelIndex) {
         if (getProcessingService() != null) getProcessingService().hideChannel(channelIndex);
     }
-
-    //==============================================
-    // FILTERS
-    //==============================================
-
-    // Sets up the filters button depending on the input source
-    //private void setupFiltersButton() {
-    //    ibtnFilters.setVisibility(shouldShowFilterOptions() ? View.VISIBLE : View.GONE);
-    //    ibtnFilters.setOnClickListener(v -> openFilterDialog());
-    //}
-
-    // Whether filter options button should be visible or not
-    //private boolean shouldShowFilterOptions() {
-    //    return getProcessingService() != null && (getProcessingService().isUsbActiveInput()
-    //        || getProcessingService().isAmModulationDetected());
-    //}
-
-    // Opens a dialog with predefined filters that can be applied while processing incoming data
-    //void openFilterDialog() {
-    //    if (getContext() != null && getProcessingService() != null) {
-    //        filterSettingsDialog =
-    //            getProcessingService().isAmModulationDetected() ? new AmModulationFilterSettingsDialog(getContext(),
-    //                filterSelectionListener)
-    //                : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
-    //                    ? new UsbMuscleProFilterSettingsDialog(getContext(), filterSelectionListener)
-    //                    : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
-    //                        ? new UsbNeuronProFilterSettingsDialog(getContext(), filterSelectionListener)
-    //                        : new UsbSerialFilterSettingsDialog(getContext(), filterSelectionListener);
-    //        filterSettingsDialog.show(
-    //            getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new Filter());
-    //    }
-    //}
 
     //==============================================
     // THRESHOLD
@@ -715,8 +677,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // BPM should be shown if either usb is active input source or we are in AM modulation,
         // and if current filter is default EKG filter
         return getProcessingService() != null && thresholdOn && (getProcessingService().isUsbActiveInput()
-            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(getProcessingService().getBandFilter(),
-            Filters.FILTER_BAND_HEART);
+            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(
+            getProcessingService().getBandFilter(), Filters.FILTER_BAND_HEART);
     }
 
     //==============================================
