@@ -120,15 +120,15 @@ namespace backyardbrains {
 
         void FftProcessor::init() {
             __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
-            float sampleRate = getSampleRate() / FFT_DOWNSAMPLING_FACTOR;
+            float fftSampleRate = getSampleRate() / FFT_DOWNSAMPLING_FACTOR;
 
             // try to make under 1Hz resolution if it is too much than limit it to samplingRate/2^11
-            auto log2n = static_cast<int>(log2f(sampleRate));
+            auto log2n = static_cast<int>(log2f(fftSampleRate));
             sampleWindowSize = static_cast<uint32_t>(pow(2, log2n + 2));
             // Size of fft data that will be returned when providing sampleWindowSize of samples
             auto fftDataSize = static_cast<uint32_t>(sampleWindowSize * .5f);
             // Difference between two consecutive frequency values represented in the output graph
-            float oneFrequencyStep = .5f * sampleRate / (float) fftDataSize;
+            float oneFrequencyStep = .5f * fftSampleRate / (float) fftDataSize;
             thirtyHzDataSize = static_cast<uint32_t>(FFT_30HZ_LENGTH / oneFrequencyStep);
 
             windowSampleDiffCount = static_cast<uint32_t>(sampleWindowSize *

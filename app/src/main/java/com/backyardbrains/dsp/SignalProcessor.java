@@ -466,10 +466,13 @@ public class SignalProcessor implements SignalSource.Processor {
         maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
         // fft
         int fftSampleRate = sampleRate / FFT_DOWNSAMPLING_FACTOR;
-        int processedFftFullWindowSize = (int) Math.pow(2, (int) LOG2(fftSampleRate) + 2);
+        int log2n = (int) LOG2(fftSampleRate);
+        int sampleWindowSize = (int) Math.pow(2, log2n + 2);
+        int fftDataSize = (int) (sampleWindowSize * .5f);
+        float oneFrequencyStep = .5f * fftSampleRate / (float) fftDataSize;
         processedFftWindowCount =
-            (int) ((MAX_AUDIO_PROCESSING_TIME * fftSampleRate) / (processedFftFullWindowSize * (1.0f - (
-                WINDOW_OVERLAP_PERCENT / 100.0f))));
-        processedFftWindowSize = (processedFftFullWindowSize * FFT_30HZ_LENGTH) / fftSampleRate;
+            (int) ((MAX_AUDIO_PROCESSING_TIME * fftSampleRate) / (sampleWindowSize * (1.0f - (WINDOW_OVERLAP_PERCENT
+                / 100.0f))));
+        processedFftWindowSize = (int) (FFT_30HZ_LENGTH / oneFrequencyStep);
     }
 }

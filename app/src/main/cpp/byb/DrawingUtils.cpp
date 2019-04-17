@@ -45,7 +45,7 @@ namespace backyardbrains {
             int heightSegments = windowSize - 1;
 
             outVertexCount = (widthSegments + 1) * (heightSegments + 1) * 2;
-            outIndexCount = (widthSegments + 1) * (heightSegments + 1) * 6;
+            outIndexCount = widthSegments * heightSegments * 6;
             outColorCount = (widthSegments + 1) * (heightSegments + 1) * 4;
 
             float xOffset = 0;
