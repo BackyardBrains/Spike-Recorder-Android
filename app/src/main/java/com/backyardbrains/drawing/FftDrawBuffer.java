@@ -20,6 +20,7 @@
 package com.backyardbrains.drawing;
 
 import com.crashlytics.android.Crashlytics;
+import java.util.Arrays;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -33,11 +34,13 @@ public class FftDrawBuffer {
 
     private float[][] buffer;
 
-    public FftDrawBuffer(int windowCount, int windowSize) {
+    FftDrawBuffer(int windowCount, int windowSize) {
         this.windowCount = windowCount;
         this.windowSize = windowSize;
 
         buffer = new float[windowCount][windowSize];
+        for (int i = 0; i < windowCount; i++)
+            Arrays.fill(buffer[i], -1);
     }
 
     /**

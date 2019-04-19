@@ -226,6 +226,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Passes information about whether incoming signal should be processed through FFT.
+     */
+    public void setFftProcessing(boolean fftProcessing) {
+        signalProcessor.setFftProcessing(fftProcessing);
+    }
+
+    /**
      * Returns filter that is additionally applied when processing incoming data.
      */
     public BandFilter getBandFilter() {

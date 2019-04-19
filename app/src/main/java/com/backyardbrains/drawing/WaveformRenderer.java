@@ -50,6 +50,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private static final int LINE_WIDTH = 1;
     private static final float MARKER_LABEL_TOP = 230f;
     private static final float MARKER_LABEL_TOP_OFFSET = 20f;
+    // Percentage of the screen that FFT drawing requires
+    private static final float FFT_HEIGHT_PERCENTAGE = .6f; // 60%
+    // Size of the bottom half of the screen (below zero) when drawing waveform
+    private static final float MAX_GL_FFT_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_HALF_SIZE * 4f;
 
     private final GlHandleDragHelper waveformHandleDragHelper;
     private final GlHandleDragHelper thresholdHandleDragHelper;
@@ -259,21 +263,23 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void prepareSignalForDrawing(@NonNull SignalDrawData outSignalDrawData,
-        EventsDrawData outEvents, @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices,
-        int inEventCount, int fromSample, int toSample, int drawSurfaceWidth) {
-        if (isSignalAveraging()) {
-            try {
-                JniUtils.prepareForThresholdDrawing(outSignalDrawData, outEvents, inSamples, inFrameCount,
-                    inEventIndices, inEventCount, fromSample, toSample, drawSurfaceWidth);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                LOGE(TAG, e.getMessage());
-                Crashlytics.logException(e);
+    @Override protected void prepareSignalForDrawing(@NonNull SignalDrawData outSignalData, EventsDrawData outEvents,
+        @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices, int inEventCount, int fromSample,
+        int toSample, int drawSurfaceWidth) {
+        //benchmark.start();
+        try {
+            if (isSignalAveraging()) {
+                JniUtils.prepareForThresholdDrawing(outSignalData, outEvents, inSamples, inFrameCount, inEventIndices,
+                    inEventCount, fromSample, toSample, drawSurfaceWidth);
+            } else {
+                JniUtils.prepareForSignalDrawing(outSignalData, outEvents, inSamples, inFrameCount, inEventIndices,
+                    inEventCount, fromSample, toSample, drawSurfaceWidth);
             }
-        } else {
-            super.prepareSignalForDrawing(outSignalDrawData, outEvents, inSamples, inFrameCount, inEventIndices,
-                inEventCount, fromSample, toSample, drawSurfaceWidth);
+        } catch (Exception e) {
+            LOGE(TAG, e.getMessage());
+            Crashlytics.logException(e);
         }
+        //benchmark.end();
     }
 
     /**
@@ -283,8 +289,33 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         @NonNull String[] eventNames, int eventCount) {
         // only process events if threshold is off
         if (!isSignalAveraging()) {
-            super.addEventsToEventDrawData(eventsDrawData, eventNames, eventCount);
+            int indexBase = eventCount - eventsDrawData.eventCount;
+            if (indexBase >= 0) {
+                if (eventsDrawData.eventCount >= 0) {
+                    System.arraycopy(eventNames, indexBase, eventsDrawData.eventNames, 0, eventsDrawData.eventCount);
+                }
+            }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param fftDrawData FFT data prepared for drawing.
+     * @param fft Incoming FFT data.
+     * @param drawSurfaceWidth Width of the surface FFT data is being drawn to.
+     */
+    @Override protected void prepareFftForDrawing(@NonNull FftDrawData fftDrawData, @NonNull float[][] fft,
+        int drawSurfaceWidth) {
+        //benchmark.start();
+        try {
+            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawSurfaceWidth,
+                (int) (MAX_GL_VERTICAL_SIZE * FFT_HEIGHT_PERCENTAGE));
+        } catch (Exception e) {
+            LOGE(TAG, e.getMessage());
+            Crashlytics.logException(e);
+        }
+        //benchmark.end();
     }
 
     /**
@@ -300,14 +331,15 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         final boolean showWaveformHandle = signalDrawData.channelCount > 1;
         final boolean isSignalAveraging = isSignalAveraging();
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
+        final boolean isFftProcessing = isFftProcessing();
         boolean selected, showThresholdHandle;
         float[] waveformColor;
 
-        //gl.glMatrixMode(GL10.GL_PROJECTION);
-        //gl.glLoadIdentity();
-        //gl.glOrthof(0f, samplesToDraw - 1, 0, MAX_GL_VERTICAL_SIZE, -1f, 1f);
-        //
-        //glFft.draw(gl, fftDrawData);
+        if (isFftProcessing) {
+            gl.glMatrixMode(GL10.GL_PROJECTION);
+            gl.glLoadIdentity();
+            gl.glOrthof(0f, samplesToDraw - 1, -MAX_GL_FFT_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
+        }
 
         for (int i = 0; i < signalDrawData.channelCount; i++) {
             selected = getSelectedChanel() == i;
@@ -386,6 +418,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
                 prevX = x;
                 prevLabelYOffset = labelYOffset;
+            }
+
+            if (isFftProcessing) {
+                gl.glMatrixMode(GL10.GL_PROJECTION);
+                gl.glLoadIdentity();
+                gl.glOrthof(0f, samplesToDraw - 1, 0, MAX_GL_VERTICAL_SIZE, -1f, 1f);
+
+                glFft.draw(gl, fftDrawData);
             }
         }
     }

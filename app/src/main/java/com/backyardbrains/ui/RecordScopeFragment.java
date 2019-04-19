@@ -11,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -75,10 +76,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_SETTINGS_ON = "bb_settings_on";
+    private static final String BOOL_FFT_ON = "bb_fft_on";
 
     @BindView(R.id.ibtn_settings) ImageButton ibtnSettings;
     @BindView(R.id.v_settings) SettingsView vSettings;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
+    @BindView(R.id.btn_fft) Button btnFft;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
     @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
@@ -99,8 +102,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Whether settings popup is visible or not
     private boolean settingsOn;
-    // Whether signal triggering is turned on or off
+    // Whether signal averaging is turned on or off
     private boolean thresholdOn;
+    // Whether fft processing is turned on or off
+    private boolean fftOn;
 
     //==============================================
     // EVENT LISTENERS
@@ -156,6 +161,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         updateBpmUI();
     };
 
+    private final View.OnClickListener fftClickListener = v -> {
+        toggleFft();
+        setupFftButton();
+    };
+
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
         new SeekBar.OnSeekBarChangeListener() {
 
@@ -200,6 +210,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (savedInstanceState != null) {
             settingsOn = savedInstanceState.getBoolean(BOOL_SETTINGS_ON);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+            fftOn = savedInstanceState.getBoolean(BOOL_FFT_ON);
         }
     }
 
@@ -230,6 +241,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         outState.putBoolean(BOOL_SETTINGS_ON, settingsOn);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
+        outState.putBoolean(BOOL_FFT_ON, fftOn);
     }
 
     @Override public void onDestroyView() {
@@ -312,6 +324,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupSettingsView();
         // setup threshold button
         setupThresholdView();
+        // setup fft button
+        setupFftButton();
         // setup USB button
         setupUsbButton();
         // setup BPM UI
@@ -450,6 +464,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupSettingsView();
         // threshold button
         setupThresholdView();
+        // fft button
+        setupFftButton();
         // usb button
         setupUsbButton();
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
@@ -548,6 +564,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets up the threshold view (threshold on/off button, threshold handle, averaged sample count and averaging trigger type button)
     void setupThresholdView() {
+        // setup threshold view
         if (thresholdOn) {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white_active);
@@ -558,6 +575,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             sbAvgSamplesCount.setProgress(JniUtils.getAveragedSampleCount());
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.VISIBLE);
+            // stop fft (if threshold is turned on fft should be stopped)
+            stopFft();
         } else {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white);
@@ -568,7 +587,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.INVISIBLE);
         }
+        // setup threshold trigger type button
         setupThresholdHandleAndAveragingTriggerTypeButtons();
+        // setup fft button
+        setupFftButton();
     }
 
     // Sets up threshold handle and averaging trigger type button
@@ -682,6 +704,31 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     }
 
     //==============================================
+    // FFT
+    //==============================================
+
+    private void setupFftButton() {
+        if (fftOn) {
+            // setup settings button
+            btnFft.setBackgroundResource(R.drawable.circle_gray_white_active);
+        } else {
+            // setup threshold button
+            btnFft.setBackgroundResource(R.drawable.circle_gray_white);
+        }
+        btnFft.setVisibility(thresholdOn ? View.GONE : View.VISIBLE);
+        btnFft.setOnClickListener(fftClickListener);
+    }
+
+    private void toggleFft() {
+        fftOn = !fftOn;
+        if (getProcessingService() != null) getProcessingService().setFftProcessing(fftOn);
+    }
+
+    private void stopFft() {
+        if (fftOn) toggleFft();
+    }
+
+    //==============================================
     // USB
     //==============================================
 
@@ -776,6 +823,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         processingService.setSignalAveraging(thresholdOn);
         // this will set signal averaging trigger type if we are coming from background
         processingService.setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
+        // this will set fft processing if we are coming from background
+        processingService.setFftProcessing(fftOn);
         // this will start microphone if we are coming from background
         processingService.startActiveInputSource();
 

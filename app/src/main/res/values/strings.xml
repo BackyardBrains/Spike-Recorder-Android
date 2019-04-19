@@ -48,11 +48,12 @@
     <string name="template_delete_file">"Delete %s "?"</string>
 
     <string name="label_mute_speakers">Mute Speakers:</string>
-    <string name="label_letter_h">ECG</string>
-    <string name="label_letter_b">EEG</string>
-    <string name="label_letter_m">EMG</string>
-    <string name="label_letter_p">Plant</string>
-    <string name="label_letter_n">Neuron</string>
+    <string name="label_ecg">ECG</string>
+    <string name="label_eeg">EEG</string>
+    <string name="label_emg">EMG</string>
+    <string name="label_plant">Plant</string>
+    <string name="label_neuron">Neuron</string>
+    <string name="label_fft">FFT</string>
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
     <string name="label_custom_filter_high">High</string>

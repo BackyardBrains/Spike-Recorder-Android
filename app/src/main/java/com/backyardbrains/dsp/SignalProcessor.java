@@ -372,6 +372,16 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Sets whether incoming signal should be processed with FFT.
+     */
+    void setFftProcessing(boolean fftProcessing) {
+        LOGD(TAG, "fftProcessing(" + fftProcessing + ")");
+
+        // update signal configuration
+        signalConfiguration.setFftProcessing(fftProcessing);
+    }
+
+    /**
      * A data source that will provide data to data processor and notify it when different events occur.
      */
     void setSignalSource(@NonNull AbstractSignalSource signalSource) {

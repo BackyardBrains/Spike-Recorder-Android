@@ -24,6 +24,7 @@ public final class SignalConfiguration {
     private int selectedChannel;
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int signalAveragingTriggerType;
+    private boolean fftProcessing;
 
     /**
      * Interface definition for a callback to be invoked when one of signal properties changes.
@@ -70,6 +71,13 @@ public final class SignalConfiguration {
          * @param averagingTriggerType Trigger type that is set. One of {@link SignalAveragingTriggerType} values
          */
         void onSignalAveragingTriggerTypeChanged(@SignalAveragingTriggerType int averagingTriggerType);
+
+        /**
+         * Called when fft processing is turned on or off.
+         *
+         * @param fftProcessing Whether fft processing is turned on/off.
+         */
+        void onFftProcessingChange(boolean fftProcessing);
     }
 
     private Set<OnSignalPropertyChangeListener> onSignalPropertyChangeListeners;
@@ -83,6 +91,7 @@ public final class SignalConfiguration {
         selectedChannel = 0;
         signalAveraging = false;
         signalAveragingTriggerType = SignalAveragingTriggerType.THRESHOLD;
+        fftProcessing = false;
     }
 
     /**
@@ -267,7 +276,7 @@ public final class SignalConfiguration {
     }
 
     /**
-     * Sets whether processed is being averaged or not.
+     * Sets whether processed signal is being averaged or not.
      */
     void setSignalAveraging(boolean signalAveraging) {
         this.signalAveraging = signalAveraging;
@@ -295,6 +304,26 @@ public final class SignalConfiguration {
         if (onSignalPropertyChangeListeners != null) {
             for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
                 listener.onSignalAveragingTriggerTypeChanged(triggerType);
+            }
+        }
+    }
+
+    /**
+     * Whether fft processing is on or off.
+     */
+    public boolean isFftProcessing() {
+        return fftProcessing;
+    }
+
+    /**
+     * Sets whether fft processing is on or off.
+     */
+    public void setFftProcessing(boolean fftProcessing) {
+        this.fftProcessing = fftProcessing;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onFftProcessingChange(fftProcessing);
             }
         }
     }
