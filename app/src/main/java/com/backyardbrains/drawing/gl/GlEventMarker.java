@@ -52,7 +52,7 @@ public class GlEventMarker {
         vLine.draw(gl, 0f, height, LINE_WIDTH, glColor);
 
         // draw label background
-        text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
+        text.setScale(scaleX, scaleY);
         float textW = text.getLength(eventName);
         float textH = text.getHeight();
         float labelW = textW * 1.3f;

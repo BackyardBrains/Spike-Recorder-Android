@@ -10,6 +10,7 @@ import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
+import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
@@ -32,13 +33,13 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private final GlSpikes glSpikes;
     private final GlHLine glThresholdLine;
     private final GlHandle glThresholdHandle;
-    private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
-    private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
+
+    private final SpikesDrawData spikesDrawData = new SpikesDrawData(GlSpikes.MAX_SPIKES);
 
     private int[] thresholds = new int[2];
 
-    private float[] currentColor = BYBColors.getColorAsGlById(BYBColors.red);
-    private float[] whiteColor = BYBColors.getColorAsGlById(BYBColors.white);
+    private float[] currentColor = Colors.RED;
+    private float[] whiteColor = Colors.WHITE;
 
     private String filePath;
     private long spikeAnalysisId = -1;
@@ -136,14 +137,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex) {
-        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
-        final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
-        final float scaleX1 = samplesToDraw / glWindowWidth;
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull SignalDrawData signalDrawData,
+        @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData, int selectedChannel, int surfaceWidth,
+        int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
+        int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
+        final int samplesToDraw = (int) (signalDrawData.sampleCounts[0] * .5f);
 
         gl.glPushMatrix();
         gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
@@ -170,14 +168,21 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     getAnalysisManager().getSpikesForRange(spikeAnalysisId, selectedChannel, fromSample, toSample);
             }
             //benchmark.end();
-            int verticesCount =
-                fillSpikesAndColorsBuffers(valuesAndIndices, spikesVertices, spikesColors, glWindowWidth, fromSample,
-                    toSample);
+            final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
+            final int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
+            try {
+                JniUtils.prepareForSpikesDrawing(spikesDrawData, valuesAndIndices, currentColor, whiteColor, min, max,
+                    fromSample, toSample, drawStartIndex, drawEndIndex, samplesToDraw, surfaceWidth);
+            } catch (Exception e) {
+                LOGE(TAG, e.getMessage());
+                Crashlytics.logException(e);
+            }
+            //fillSpikesAndColorsBuffers(valuesAndIndices, spikesDrawData, glWindowWidth, fromSample, toSample);
             // draw spikes
-            if (verticesCount > 0) {
+            if (spikesDrawData.vertexCount > 0) {
                 gl.glPushMatrix();
-                gl.glScalef(scaleX1, waveformScaleFactors[selectedChannel], 1f);
-                glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+                glSpikes.draw(gl, spikesDrawData.vertices, spikesDrawData.colors, spikesDrawData.vertexCount);
                 gl.glPopMatrix();
             }
 
@@ -188,18 +193,18 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // draw left threshold
         float scaledThreshold = thresholds[ThresholdOrientation.LEFT] * waveformScaleFactors[selectedChannel];
-        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
-        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         // draw threshold line
         gl.glPushMatrix();
-        gl.glScalef(scaleX, waveformScaleFactors[selectedChannel], 1f);
-        gl.glTranslatef(0f, thresholds[ThresholdOrientation.LEFT], 0f);
-        glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
+        gl.glTranslatef(0f, scaledThreshold, 0f);
+        gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+        glThresholdLine.draw(gl, 0f, surfaceWidth, LINE_WIDTH, currentColor);
         gl.glPopMatrix();
         // draw threshold handle
+        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
+        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         gl.glPushMatrix();
         gl.glTranslatef(0f, scaledThreshold, 0f);
-        gl.glScalef(drawScale, scaleY, 1f);
+        gl.glScalef(1f, scaleY, 1f);
         glThresholdHandle.draw(gl, currentColor, true);
         gl.glPopMatrix();
 
@@ -210,18 +215,18 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
         // draw right threshold
         scaledThreshold = thresholds[ThresholdOrientation.RIGHT] * waveformScaleFactors[selectedChannel];
-        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
-        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         // draw threshold line
         gl.glPushMatrix();
-        gl.glScalef(scaleX, waveformScaleFactors[selectedChannel], 1f);
-        gl.glTranslatef(0f, thresholds[ThresholdOrientation.RIGHT], 0f);
-        glThresholdLine.draw(gl, 0f, samplesToDraw - 1, LINE_WIDTH, currentColor);
+        gl.glTranslatef(0f, scaledThreshold, 0f);
+        gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+        glThresholdLine.draw(gl, 0f, surfaceWidth, LINE_WIDTH, currentColor);
         gl.glPopMatrix();
         // draw threshold handle
+        if (scaledThreshold < -MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE;
+        if (scaledThreshold > MAX_GL_VERTICAL_HALF_SIZE) scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE;
         gl.glPushMatrix();
-        gl.glTranslatef(samplesToDraw - 1, scaledThreshold, 0f);
-        gl.glScalef(-drawScale, scaleY, 1f);
+        gl.glTranslatef(surfaceWidth, scaledThreshold, 0f);
+        gl.glScalef(-1f, scaleY, 1f);
         glThresholdHandle.draw(gl, currentColor, true);
         gl.glPopMatrix();
 
@@ -273,34 +278,34 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     }
 
     // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, @NonNull float[] spikesVertices,
-        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample) {
-        int verticesCounter = 0;
+    private void fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, SpikesDrawData spikesDrawData,
+        float glWindowWidth, long fromSample, long toSample) {
+        int vertexCounter = 0;
+        int colorsCounter = 0;
         try {
             if (valueAndIndices.length > 0) {
-                int colorsCounter = 0;
                 long index;
 
                 final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
                 final int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
 
                 for (SpikeIndexValue valueAndIndex : valueAndIndices) {
-                    if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
+                    if (fromSample <= valueAndIndex.index && valueAndIndex.index < toSample) {
                         if (toSample - fromSample < glWindowWidth) { // buffer contains 0 samples in front
-                            index = (long) (valueAndIndex.getIndex() + glWindowWidth - toSample);
+                            index = (long) (valueAndIndex.index + glWindowWidth - toSample);
                         } else { // buffer only contains sample data (no 0 samples in front)
-                            index = valueAndIndex.getIndex() - fromSample;
+                            index = valueAndIndex.index - fromSample;
                         }
-                        spikesVertices[verticesCounter++] = index;
-                        float spikeValue = valueAndIndex.getValue();
-                        spikesVertices[verticesCounter++] = spikeValue;
+                        spikesDrawData.vertices[vertexCounter++] = index;
+                        float spikeValue = valueAndIndex.value;
+                        spikesDrawData.vertices[vertexCounter++] = spikeValue;
                         float[] colorToSet;
                         if (spikeValue >= min && spikeValue < max) {
                             colorToSet = currentColor;
                         } else {
                             colorToSet = whiteColor;
                         }
-                        System.arraycopy(colorToSet, 0, spikesColors, colorsCounter, colorToSet.length);
+                        System.arraycopy(colorToSet, 0, spikesDrawData.colors, colorsCounter, colorToSet.length);
                         colorsCounter += 4;
                     }
                 }
@@ -310,6 +315,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             Crashlytics.logException(e);
         }
 
-        return verticesCounter;
+        spikesDrawData.vertexCount = vertexCounter;
+        spikesDrawData.colorCount = colorsCounter;
     }
 }

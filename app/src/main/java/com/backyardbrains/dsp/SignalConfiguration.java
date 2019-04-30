@@ -77,7 +77,7 @@ public final class SignalConfiguration {
          *
          * @param fftProcessing Whether fft processing is turned on/off.
          */
-        void onFftProcessingChange(boolean fftProcessing);
+        void onFftProcessingChanged(boolean fftProcessing);
     }
 
     private Set<OnSignalPropertyChangeListener> onSignalPropertyChangeListeners;
@@ -323,7 +323,7 @@ public final class SignalConfiguration {
 
         if (onSignalPropertyChangeListeners != null) {
             for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
-                listener.onFftProcessingChange(fftProcessing);
+                listener.onFftProcessingChanged(fftProcessing);
             }
         }
     }

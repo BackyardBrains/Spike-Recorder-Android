@@ -24,7 +24,7 @@ public class GlDraggableWaveform {
         rect.set(dragArea.x, dragArea.y, dragArea.width, dragArea.height);
     }
 
-    public void draw(@NonNull GL10 gl, short[] waveformVertices, int waveformVerticesCount, float waveformScaleFactor,
+    public void draw(@NonNull GL10 gl, float[] waveformVertices, int waveformVerticesCount, float waveformScaleFactor,
         float waveformPosition, float scaleX, float scaleY, @NonNull @Size(4) float[] color, boolean selected,
         boolean showWaveformHandle) {
 

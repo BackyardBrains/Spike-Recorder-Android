@@ -451,11 +451,12 @@ public class SignalProcessor implements SignalSource.Processor {
 
             if (visibleSignalData.channelCount > 0) { // only configure channels if there is at least one visible
                 final boolean signalAveraging = signalConfiguration.isSignalAveraging();
+                final boolean fftProcessing = signalConfiguration.isFftProcessing();
                 // configure channels of processed signal
                 signalData.copyReconfigured(visibleSignalData, signalConfiguration);
                 // average processed signal
                 JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
-                if (!signalAveraging) JniUtils.processFft(fft, signalData);
+                if (!signalAveraging && fftProcessing) JniUtils.processFft(fft, signalData);
 
                 // forward received samples to Processing Service
                 if (listener != null) listener.onDataProcessed(visibleSignalData);
