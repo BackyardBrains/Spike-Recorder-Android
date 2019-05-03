@@ -39,6 +39,7 @@ import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -53,16 +54,16 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     // Size of the bottom half of the screen (below zero) when drawing waveform alongside FFT
     private static final float MAX_GL_FFT_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_HALF_SIZE * 4f;
     // Height of the draw surface occupied by the FFT should be 60%
-    private static final float FFT_DRAW_SURFACE_HEIGHT = MAX_GL_VERTICAL_SIZE * .6f;
+    private static final float FFT_HEIGHT = MAX_GL_VERTICAL_SIZE * .6f;
 
     private final GlHandleDragHelper waveformHandleDragHelper;
     private final GlHandleDragHelper thresholdHandleDragHelper;
     private final Rect rect = new Rect();
 
     private final GlWaveform glWaveform;
-    private final GlFft glFft;
     private final GlHandle glHandle;
     private final GlDashedHLine glThresholdLine;
+    private GlFft glFft;
     private GlEventMarker glEventMarker;
 
     private float threshold;
@@ -116,7 +117,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         });
 
         glWaveform = new GlWaveform();
-        glFft = new GlFft();
         glHandle = new GlHandle();
         glThresholdLine = new GlDashedHLine();
     }
@@ -171,6 +171,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         super.onSurfaceCreated(gl, config);
 
         glEventMarker = new GlEventMarker(context, gl);
+        glFft = new GlFft(context, gl);
     }
 
     /**
@@ -291,7 +292,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         //benchmark.start();
         try {
             JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawSurfaceWidth,
-                (int) FFT_DRAW_SURFACE_HEIGHT);
+                (int) FFT_HEIGHT);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -306,7 +307,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData, int selectedChannel, int surfaceWidth,
         int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
         int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
-        final int samplesToDraw = (int) (signalDrawData.sampleCounts[0] * .5f);
         final boolean showWaveformHandle = signalDrawData.channelCount > 1;
         final boolean isSignalAveraging = isSignalAveraging();
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
@@ -315,7 +315,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         float[] waveformColor;
 
         if (isFftProcessing) {
-            reshape(gl, 0f, -MAX_GL_FFT_VERTICAL_HALF_SIZE, samplesToDraw, MAX_GL_VERTICAL_HALF_SIZE);
+            updateOrthoProjection(gl, 0f, -MAX_GL_FFT_VERTICAL_HALF_SIZE, surfaceWidth, MAX_GL_VERTICAL_HALF_SIZE);
         }
 
         for (int i = 0; i < signalDrawData.channelCount; i++) {
@@ -397,9 +397,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             }
 
             if (isFftProcessing) {
-                reshape(gl, 0f, 0f, samplesToDraw, MAX_GL_VERTICAL_SIZE);
+                updateOrthoProjection(gl, 0f, 0f, surfaceWidth, MAX_GL_VERTICAL_SIZE);
 
-                glFft.draw(gl, fftDrawData, samplesToDraw, FFT_DRAW_SURFACE_HEIGHT);
+                ////LOGD(TAG, "SCALE X: " + scaleX);
+                LOGD(TAG, "MVC: " + fftDrawData.vertices.length + ", VC: " + fftDrawData.vertexCount);
+
+                glFft.draw(gl, fftDrawData, surfaceWidth, FFT_HEIGHT, scaleY);
             }
         }
     }

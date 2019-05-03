@@ -35,7 +35,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private static final float MIN_WAVEFORM_SCALE_FACTOR = 1f;
     private static final float MAX_WAVEFORM_SCALE_FACTOR = 5000f;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
-    private static final float MIN_GL_WINDOW_WIDTH_FFT_IN_SECONDS = 1.2f;
+    private static final float MIN_GL_WINDOW_WIDTH_FFT_IN_SECONDS = 1.1f;
     private static final float AUTO_SCALE_PERCENT = .8f;
 
     // Lock used when reading/writing samples and events
@@ -77,6 +77,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private final String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private float scaleX;
     private float scaleY;
+    private boolean fftProcessingDirty;
 
     private boolean scrollEnabled;
     private boolean measureEnabled;
@@ -268,6 +269,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     @Override public void onFftProcessingChanged(boolean fftProcessing) {
         // reset GL window width cause min GL window width is different when processing FFT
         setGlWindowWidth(glWindowWidth);
+        // set FFT processing dirty so we can recalculate projection
+        fftProcessingDirty = true;
     }
 
     //==============================================
@@ -380,10 +383,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     int getSurfaceWidth() {
         return surfaceWidth;
-    }
-
-    int getSurfaceHeight() {
-        return surfaceHeight;
     }
 
     void setGlWindowWidth(float width) {
@@ -559,6 +558,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final boolean signalAveraging = signalConfiguration.isSignalAveraging();
             final int averagingTriggerType = signalConfiguration.getSignalAveragingTriggerType();
             final boolean fftProcessing = signalConfiguration.isFftProcessing();
+            final boolean fftProcessingDirty = this.fftProcessingDirty;
 
             // copy samples, averaged samples and events and fft to local buffers
             final int copiedEventsCount =
@@ -584,6 +584,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // let's reset dirty flags right away
             this.glWindowWidthDirty = false;
+            this.fftProcessingDirty = false;
 
             final int frameCount = tmpSampleDrawBuffer.getFrameCount();
             final long lastSampleIndex = processingBuffer.getLastSampleIndex();
@@ -601,7 +602,14 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             // prepare FFT data for drawing
             if (fftProcessing) {
                 prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), drawStartIndex, drawEndIndex,
-                    drawnSamplesCount);
+                    surfaceWidth);
+            }
+
+            if (fftProcessingDirty) {
+                // select and reset the projection matrix
+                gl.glMatrixMode(GL10.GL_PROJECTION);
+                gl.glLoadIdentity();
+                gl.glOrthof(0f, surfaceWidth, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
             }
 
             // clear the screen and depth buffer
@@ -613,7 +621,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // calculate scale x and scale y
             if (surfaceSizeDirty || glWindowWidthDirty) {
-                scaleX = drawnSamplesCount > 0 ? glWindowWidth / drawnSamplesCount : 1f;
+                scaleX = surfaceWidth > 0 ? glWindowWidth / surfaceWidth : 1f;
             }
             if (surfaceSizeDirty) {
                 scaleY = surfaceHeight > 0 ? MAX_GL_VERTICAL_SIZE / surfaceHeight : 1f;
@@ -626,11 +634,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // draw average triggering line
             if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
-                final float drawScale = surfaceWidth > 0 ? (float) drawnSamplesCount / surfaceWidth : 1f;
                 gl.glPushMatrix();
-                gl.glTranslatef(drawnSamplesCount * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
+                gl.glTranslatef(surfaceWidth * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
                 glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, drawScale, scaleY);
+                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, scaleY);
                 gl.glPopMatrix();
             }
 
@@ -705,8 +712,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * @param right Coordinate for the right vertical clipping plane
      * @param bottom Coordinate for the bottom horizontal clipping plane
      */
-    void reshape(GL10 gl, float left, float top, float right, float bottom) {
+    void updateOrthoProjection(GL10 gl, float left, float top, float right, float bottom) {
+        // select and reset the projection matrix
+        gl.glMatrixMode(GL10.GL_PROJECTION);
+        gl.glLoadIdentity();
+        gl.glOrthof(left, right, top, bottom, -1f, 1f);
 
+        // select and reset the model-view matrix
+        gl.glMatrixMode(GL10.GL_MODELVIEW);
+        gl.glLoadIdentity();
     }
 
     //
@@ -729,7 +743,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     //
     private void resetLocalSignalDrawData(int visibleChannelCount) {
-        int maxSamplesPerChannel = Math.max(getSurfaceWidth(), getSurfaceHeight()) * 8;
+        int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
         if (signalDrawData == null || signalDrawData.channelCount != visibleChannelCount
             || signalDrawData.maxSamplesPerChannel < maxSamplesPerChannel) {
             signalDrawData = new SignalDrawData(visibleChannelCount, maxSamplesPerChannel);

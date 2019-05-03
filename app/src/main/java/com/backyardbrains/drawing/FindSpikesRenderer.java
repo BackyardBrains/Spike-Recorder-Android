@@ -276,46 +276,4 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     private void setCurrentColor(@Size(4) float[] color) {
         System.arraycopy(color, 0, currentColor, 0, currentColor.length);
     }
-
-    // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private void fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, SpikesDrawData spikesDrawData,
-        float glWindowWidth, long fromSample, long toSample) {
-        int vertexCounter = 0;
-        int colorsCounter = 0;
-        try {
-            if (valueAndIndices.length > 0) {
-                long index;
-
-                final int min = Math.min(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
-                final int max = Math.max(thresholds[ThresholdOrientation.LEFT], thresholds[ThresholdOrientation.RIGHT]);
-
-                for (SpikeIndexValue valueAndIndex : valueAndIndices) {
-                    if (fromSample <= valueAndIndex.index && valueAndIndex.index < toSample) {
-                        if (toSample - fromSample < glWindowWidth) { // buffer contains 0 samples in front
-                            index = (long) (valueAndIndex.index + glWindowWidth - toSample);
-                        } else { // buffer only contains sample data (no 0 samples in front)
-                            index = valueAndIndex.index - fromSample;
-                        }
-                        spikesDrawData.vertices[vertexCounter++] = index;
-                        float spikeValue = valueAndIndex.value;
-                        spikesDrawData.vertices[vertexCounter++] = spikeValue;
-                        float[] colorToSet;
-                        if (spikeValue >= min && spikeValue < max) {
-                            colorToSet = currentColor;
-                        } else {
-                            colorToSet = whiteColor;
-                        }
-                        System.arraycopy(colorToSet, 0, spikesDrawData.colors, colorsCounter, colorToSet.length);
-                        colorsCounter += 4;
-                    }
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-
-        spikesDrawData.vertexCount = vertexCounter;
-        spikesDrawData.colorCount = colorsCounter;
-    }
 }

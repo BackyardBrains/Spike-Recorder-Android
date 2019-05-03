@@ -1,7 +1,6 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Size;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.drawing.gl.GlMeasurementArea;
@@ -337,38 +336,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         // create
         spikesDrawData = new SpikesDrawData[trainCount];
         for (int i = 0; i < trainCount; i++) spikesDrawData[i] = new SpikesDrawData(GlSpikes.MAX_SPIKES);
-    }
-
-    // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private void fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, SpikesDrawData spikesDrawData,
-        int startDrawIndex, int endDrawIndex, long fromSample, long toSample, long surfaceWidth, @Size(4) float[] color,
-        int samplesToDraw) {
-        int vertexCounter = 0;
-        int colorCounter = 0;
-        try {
-            if (valueAndIndices.length > 0) {
-                int glWindowWidth = endDrawIndex - startDrawIndex;
-                float scale = (float) surfaceWidth / (samplesToDraw - 1);
-                float index;
-                for (SpikeIndexValue valueAndIndex : valueAndIndices) {
-                    if (fromSample <= valueAndIndex.index && valueAndIndex.index < toSample) {
-                        index = (valueAndIndex.index + glWindowWidth - toSample);
-                        index = BYBUtils.map(index, 0, glWindowWidth, 0, samplesToDraw);
-                        index *= scale;
-                        spikesDrawData.vertices[vertexCounter++] = index;
-                        spikesDrawData.vertices[vertexCounter++] = valueAndIndex.value;
-                        System.arraycopy(color, 0, spikesDrawData.colors, colorCounter, color.length);
-                        colorCounter += 4;
-                    }
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-
-        spikesDrawData.vertexCount = vertexCounter;
-        spikesDrawData.colorCount = colorCounter;
     }
 
     // Check whether service is currently in playback mode
