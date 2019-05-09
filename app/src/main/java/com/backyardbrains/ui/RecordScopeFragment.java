@@ -806,7 +806,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Set buttons visibility depending on whether audio is currently being recorded or not
     private void setupRecordingButtons(boolean animate) {
-        ibtnRecord.setVisibility(isRecording() ? View.GONE : View.VISIBLE);
+        ibtnRecord.setVisibility(isRecording() ? View.INVISIBLE : View.VISIBLE);
         if (animate) {
             stopRecButton.show(isRecording());
         } else {
