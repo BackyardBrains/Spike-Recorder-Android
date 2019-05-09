@@ -13,6 +13,9 @@ public class FftDrawData {
     public int indexCount;
     public int colorCount;
 
+    public float scaleX;
+    public float scaleY;
+
     public FftDrawData(int maxSegments) {
         vertices = new float[maxSegments * 2];
         indices = new short[maxSegments * 6];

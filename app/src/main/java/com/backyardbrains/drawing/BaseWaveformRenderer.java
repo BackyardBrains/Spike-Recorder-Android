@@ -5,7 +5,6 @@ import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.SignalConfiguration;
 import com.backyardbrains.dsp.SignalProcessor;
@@ -24,14 +23,13 @@ import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BaseWaveformRenderer extends BaseRenderer
-    implements SignalConfiguration.OnSignalPropertyChangeListener, TouchEnabledRenderer {
+    implements SignalConfiguration.OnSignalPropertyChangeListener, TouchEnabledRenderer, ZoomEnabledRenderer {
 
     private static final String TAG = makeLogTag(BaseWaveformRenderer.class);
 
     static final float MAX_GL_VERTICAL_SIZE = Short.MAX_VALUE * 40f;
     static final float MAX_GL_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_SIZE * .5f;
 
-    private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
     private static final float MIN_WAVEFORM_SCALE_FACTOR = 1f;
     private static final float MAX_WAVEFORM_SCALE_FACTOR = 5000f;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
@@ -85,9 +83,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
-
-    private GlAveragingTriggerLine glAveragingTrigger;
-    protected Context context;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -160,8 +155,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     BaseWaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
-
-        context = fragment.getContext();
 
         processingBuffer = ProcessingBuffer.get();
         signalConfiguration = SignalConfiguration.get();
@@ -273,6 +266,24 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         fftProcessingDirty = true;
     }
 
+    //===========================================================
+    // ZoomEnabledRenderer INTERFACE IMPLEMENTATIONS
+    //===========================================================
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onHorizontalZoom(float zoomFactor, float zoomFocusX, float zoomFocusY) {
+        setGlWindowWidth(glWindowWidth * zoomFactor);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onVerticalZoom(float zoomFactor, float zoomFocusX, float zoomFocusY) {
+        setWaveformScaleFactor(zoomFactor);
+    }
+
     //==============================================
     // PUBLIC AND PROTECTED METHODS
     //==============================================
@@ -303,6 +314,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     int getVisibleChannelCount() {
         return signalConfiguration.getVisibleChannelCount();
+    }
+
+    /**
+     * Returns currently selected channel
+     */
+    int getSelectedChannel() {
+        return signalConfiguration.getSelectedChannel();
     }
 
     /**
@@ -351,6 +369,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
+     * Whether currently selected signal averaging type is of type {@link SignalAveragingTriggerType#ALL_EVENTS}.
+     */
+    boolean isAllEventsAveragingTriggerType() {
+        return signalConfiguration.getSignalAveragingTriggerType() == SignalAveragingTriggerType.ALL_EVENTS;
+    }
+
+    /**
      * Resets buffers for averaged samples
      */
     public void resetAveragedSignal() {
@@ -381,11 +406,29 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         return signalConfiguration.getSelectedChannel();
     }
 
+    /**
+     * Returns height of the drawing viewport.
+     */
+    int getSurfaceHeight() {
+        return surfaceHeight;
+    }
+
+    /**
+     * Returns width of the drawing viewport.
+     */
     int getSurfaceWidth() {
         return surfaceWidth;
     }
 
-    void setGlWindowWidth(float width) {
+    /**
+     * Returns width of the OpenGl drawing surface.
+     */
+    public float getGlWindowWidth() {
+        return glWindowWidth;
+    }
+
+    // Sets width of the OpenGl drawing surface.
+    private void setGlWindowWidth(float width) {
         if (width < 0) return;
 
         final float minGlWindowWidthInSeconds =
@@ -401,10 +444,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         glWindowWidthDirty = true;
     }
 
-    public float getGlWindowWidth() {
-        return glWindowWidth;
-    }
-
     private void initWaveformScaleFactor(float scaleFactor) {
         if (signalConfiguration.getVisibleChannelCount() <= 0) return;
 
@@ -414,7 +453,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         if (selectedChannel == 0) waveformScaleFactor = waveformScaleFactors[selectedChannel];
     }
 
-    void setWaveformScaleFactor(float scaleFactor) {
+    private void setWaveformScaleFactor(float scaleFactor) {
         if (signalConfiguration.getVisibleChannelCount() <= 0) return;
 
         int selectedChannel = signalConfiguration.getSelectedChannel();
@@ -507,9 +546,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-
-        // we draw signal averaging trigger line with this object when triggering by events
-        glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
     /**
@@ -556,7 +592,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             final int selectedChannel = signalConfiguration.getSelectedChannel();
             final boolean signalAveraging = signalConfiguration.isSignalAveraging();
-            final int averagingTriggerType = signalConfiguration.getSignalAveragingTriggerType();
             final boolean fftProcessing = signalConfiguration.isFftProcessing();
             final boolean fftProcessingDirty = this.fftProcessingDirty;
 
@@ -595,10 +630,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final int drawEndIndex = (int) Math.min(drawStartIndex + glWindowWidth, frameCount);
 
             // prepare signal data for drawing
-            final int drawnSamplesCount =
-                prepareSignalForDrawing(signalDrawData, eventsDrawData, tmpSampleDrawBuffer.getBuffer(), frameCount,
-                    eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth,
-                    lastSampleIndex);
+            prepareSignalForDrawing(signalDrawData, eventsDrawData, tmpSampleDrawBuffer.getBuffer(), frameCount,
+                eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth,
+                lastSampleIndex);
             // prepare FFT data for drawing
             if (fftProcessing) {
                 prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), drawStartIndex, drawEndIndex,
@@ -632,15 +666,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 surfaceWidth, surfaceHeight, glWindowWidth, tempWaveformScaleFactors, tempWaveformPositions,
                 drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
 
-            // draw average triggering line
-            if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
-                gl.glPushMatrix();
-                gl.glTranslatef(surfaceWidth * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
-                glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, scaleY);
-                gl.glPopMatrix();
-            }
-
             // invoke callback that the surface has been drawn
             if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth);
 
@@ -664,9 +689,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * @param drawEndIndex Index of the last signal sample to take into account.
      * @param drawSurfaceWidth Width of the surface signal is being drawn to.
      * @param lastFrameIndex Index of the last incoming signal frame that should be drawn (used only during playback)
-     * @return Number of samples that should be drawn.
      */
-    abstract protected int prepareSignalForDrawing(SignalDrawData signalDrawData, EventsDrawData eventsDrawData,
+    abstract protected void prepareSignalForDrawing(SignalDrawData signalDrawData, EventsDrawData eventsDrawData,
         @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices, @NonNull String[] eventNames,
         int inEventCount, int drawStartIndex, int drawEndIndex, int drawSurfaceWidth, long lastFrameIndex);
 
@@ -721,15 +745,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         // select and reset the model-view matrix
         gl.glMatrixMode(GL10.GL_MODELVIEW);
         gl.glLoadIdentity();
-    }
-
-    //
-    @Nullable private String getAveragingTriggerEventName(String[] eventNames, int eventsCount) {
-        if (signalConfiguration.getSignalAveragingTriggerType() == SignalAveragingTriggerType.ALL_EVENTS
-            && eventsCount > 0) {
-            return eventNames[eventsCount - 1];
-        }
-        return null;
     }
 
     //
@@ -891,8 +906,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     /**
      * Called when drawing surface is double-tapped. This method is called only if {@link #isAutoScaleEnabled()} returns {@code true}.
+     *
+     * @param x X coordinate of the tap point.
+     * @param y Y coordinate of the tap point.
      */
-    void autoScale() {
+    void autoScale(float x, float y) {
         autoScale.set(true);
     }
 

@@ -27,10 +27,6 @@ import org.greenrobot.eventbus.EventBus;
 
 public class BybApplication extends Application {
 
-    public boolean isTouchSupported() {
-        return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
-    }
-
     @Override public void onCreate() {
         super.onCreate();
 
@@ -46,5 +42,9 @@ public class BybApplication extends Application {
             .sendNoSubscriberEvent(false)
             .throwSubscriberException(BuildConfig.DEBUG)
             .installDefaultEventBus();
+    }
+
+    public boolean isTouchSupported() {
+        return getPackageManager().hasSystemFeature("android.hardware.touchscreen");
     }
 }

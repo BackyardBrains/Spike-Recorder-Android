@@ -19,8 +19,8 @@ namespace backyardbrains {
             envelope(envelopedSamples, outSampleCounts, outEventIndices, outEventCount, inSamples, channelCount,
                      inEventIndices, inEventCount, fromSample, toSample, drawSurfaceWidth);
 
-            int sampleIndex = 0;
             float xStep = (float) drawSurfaceWidth / (outSampleCounts[0] - 1);
+            int sampleIndex = 0;
             for (int i = 0; i < inEventCount; i++)
                 outEventIndices[i] *= xStep;
             for (int i = 0; i < channelCount; i++) {
@@ -30,7 +30,6 @@ namespace backyardbrains {
                 }
                 outSampleCounts[i] = sampleIndex;
                 sampleIndex = 0;
-                xStep = 0;
             }
 
             for (int i = 0; i < channelCount; i++) {

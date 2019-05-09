@@ -74,7 +74,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
 
         @Override public boolean onDoubleTap(MotionEvent e) {
-            if (renderer.isAutoScaleEnabled()) renderer.autoScale();
+            if (renderer.isAutoScaleEnabled()) renderer.autoScale(e.getX(), e.getY());
 
             return false;
         }
@@ -85,7 +85,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         }
     };
 
-    private boolean bZoomButtonsEnabled = false;
+    private boolean zoomButtonsEnabled = false;
     float scalingFactor = 0.5f;
     float scalingFactorOut;
     float scalingFactorIn;
@@ -179,8 +179,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     }
 
     @Override public void surfaceDestroyed(SurfaceHolder holder) {
-        if (bZoomButtonsEnabled) {
-            bZoomButtonsEnabled = false;
+        if (zoomButtonsEnabled) {
+            zoomButtonsEnabled = false;
             enableZoomButtonListeners(false);
         }
 
@@ -271,7 +271,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
     //  PRIVATE METHODS
     //==============================================
 
-    // Initializes the view
+    // Initializes surface view
     private void init() {
         scalingFactorIn = 1 - scalingFactor;
         scalingFactorOut = 1 + scalingFactor;
@@ -279,8 +279,8 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         getHolder().setFormat(PixelFormat.RGBA_8888);
 
         if (getContext() != null) {
-            boolean bHasTouch = ((BybApplication) getContext().getApplicationContext()).isTouchSupported();
-            enableZoomButtons(!bHasTouch);
+            boolean hasTouch = ((BybApplication) getContext().getApplicationContext()).isTouchSupported();
+            enableZoomButtons(!hasTouch);
         }
     }
 
@@ -293,9 +293,10 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
                 scaling = scalingFactorOut;
             }
             if (isScalingHorizontally(zoomMode)) {
-                renderer.setGlWindowWidth(renderer.getGlWindowWidth() * scaling);
+                renderer.onHorizontalZoom(scaling, ZoomEnabledRenderer.UNKNOWN_FOCUS,
+                    ZoomEnabledRenderer.UNKNOWN_FOCUS);
             } else {
-                renderer.setWaveformScaleFactor(scaling);
+                renderer.onVerticalZoom(scaling, ZoomEnabledRenderer.UNKNOWN_FOCUS, ZoomEnabledRenderer.UNKNOWN_FOCUS);
             }
         }
     }
@@ -316,21 +317,21 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         return (mode == MODE_ZOOM_IN_H || mode == MODE_ZOOM_OUT_H);
     }
 
-    public void enableZoomButtons(boolean bEnable) {
-        boolean bBroadcast = false;
-        if (bEnable && !bZoomButtonsEnabled) {
-            bZoomButtonsEnabled = true;
+    public void enableZoomButtons(boolean enable) {
+        boolean broadcast = false;
+        if (enable && !zoomButtonsEnabled) {
+            zoomButtonsEnabled = true;
             enableZoomButtonListeners(true);
-            bBroadcast = true;
-        } else if (!bEnable && bZoomButtonsEnabled) {
-            bZoomButtonsEnabled = false;
+            broadcast = true;
+        } else if (!enable && zoomButtonsEnabled) {
+            zoomButtonsEnabled = false;
             enableZoomButtonListeners(false);
-            bBroadcast = true;
+            broadcast = true;
         }
-        if (getContext() != null && bBroadcast) {
+        if (getContext() != null && broadcast) {
             Intent i = new Intent();
             i.setAction("BYBShowZoomUI");
-            i.putExtra("showUI", bZoomButtonsEnabled);
+            i.putExtra("showUI", zoomButtonsEnabled);
             getContext().sendBroadcast(i);
         }
     }

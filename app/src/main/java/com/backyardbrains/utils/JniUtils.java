@@ -71,7 +71,7 @@ public class JniUtils {
         int drawEndIndex, int drawSurfaceWidth);
 
     public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawStartIndex, int drawEndIndex,
-        int drawSurfaceWidth, int drawSurfaceHeight);
+        int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
 
     public static native void prepareForSpikesDrawing(SpikesDrawData out, SpikeIndexValue[] in, float[] colorInRange,
         float[] colorOutOfRange, int rangeStart, int rangeEnd, int sampleStartIndex, int sampleEndIndex,

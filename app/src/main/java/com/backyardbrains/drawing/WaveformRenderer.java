@@ -24,6 +24,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.Size;
 import android.view.MotionEvent;
+import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
 import com.backyardbrains.drawing.gl.GlFft;
@@ -39,7 +40,6 @@ import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -51,23 +51,33 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private static final int LINE_WIDTH = 1;
     private static final float MARKER_LABEL_TOP = 230f;
     private static final float MARKER_LABEL_TOP_OFFSET = 20f;
+    private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
     // Size of the bottom half of the screen (below zero) when drawing waveform alongside FFT
     private static final float MAX_GL_FFT_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_HALF_SIZE * 4f;
     // Height of the draw surface occupied by the FFT should be 60%
-    private static final float FFT_HEIGHT = MAX_GL_VERTICAL_SIZE * .6f;
+    private static final float FFT_HEIGHT_PERCENT = .6f; // 60%
+    private static final float FFT_HEIGHT = MAX_GL_VERTICAL_SIZE * FFT_HEIGHT_PERCENT;
+    private static final float MIN_FFT_SCALE_FACTOR = 1f;
+    private static final float MAX_FFT_SCALE_FACTOR = 30f;
 
+    private final Rect rect = new Rect();
     private final GlHandleDragHelper waveformHandleDragHelper;
     private final GlHandleDragHelper thresholdHandleDragHelper;
-    private final Rect rect = new Rect();
+
+    private Context context;
 
     private final GlWaveform glWaveform;
     private final GlHandle glHandle;
     private final GlDashedHLine glThresholdLine;
     private GlFft glFft;
     private GlEventMarker glEventMarker;
+    private GlAveragingTriggerLine glAveragingTrigger;
 
+    private float fftSurfaceHeight;
     private float threshold;
+    private String lastTriggerEventName;
     private float[][] channelColors = new float[][] { Colors.CHANNEL_0.clone() };
+    private float fftScaleFactor = MIN_FFT_SCALE_FACTOR;
 
     /**
      * Interface definition for a callback to be invoked when one of the drawn waveforms is selected by clicking he
@@ -172,6 +182,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         glEventMarker = new GlEventMarker(context, gl);
         glFft = new GlFft(context, gl);
+        glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
     /**
@@ -185,6 +196,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         thresholdHandleDragHelper.resetDraggableAreas();
         thresholdHandleDragHelper.setSurfaceHeight(height);
+
+        fftSurfaceHeight = height * FFT_HEIGHT_PERCENT;
     }
 
     //=================================================
@@ -199,11 +212,42 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     }
 
     //=================================================
+    //  ZoomEnabledRenderer INTERFACE IMPLEMENTATIONS
+    //=================================================
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onVerticalZoom(float zoomFactor, float zoomFocusX, float zoomFocusY) {
+        // depending on the zoom focus point we zoom either waveform or fft spectrogram
+        if (isFftProcessing() && getSurfaceHeight() - zoomFocusY < fftSurfaceHeight) {
+            setFftScaleFactor(zoomFactor);
+        } else {
+            super.onVerticalZoom(zoomFactor, zoomFocusX, zoomFocusY);
+        }
+    }
+
+    //=================================================
     //  BaseWaveformRenderer OVERRIDES
     //=================================================
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param x X coordinate of the tap point.
+     * @param y Y coordinate of the tap point.
+     */
+    @Override void autoScale(float x, float y) {
+        // auto scale only if user tapped within waveform area
+        if (!isFftProcessing() || getSurfaceHeight() - y > fftSurfaceHeight) {
+            super.autoScale(x, y);
+        }
+    }
+
     @Override public void onChannelCountChanged(int channelCount) {
         super.onChannelCountChanged(channelCount);
+
+        fftScaleFactor = MIN_FFT_SCALE_FACTOR;
 
         channelColors = new float[channelCount][];
         for (int i = 0; i < channelCount; i++) {
@@ -219,6 +263,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     @Override public void onChannelConfigChanged(boolean[] channelConfig) {
         super.onChannelConfigChanged(channelConfig);
 
+        fftScaleFactor = MIN_FFT_SCALE_FACTOR;
+
         for (int i = 0; i < channelConfig.length; i++) {
             if (!channelConfig[i]) setChannelColor(i, Colors.BLACK);
         }
@@ -228,6 +274,22 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         super.onChannelSelectionChanged(channelIndex);
 
         thresholdHandleDragHelper.resetDraggableAreas();
+    }
+
+    @Override public void onSignalAveragingChanged(boolean signalAveraging) {
+        super.onSignalAveragingChanged(signalAveraging);
+
+        lastTriggerEventName = null;
+    }
+
+    @Override public void onSignalAveragingTriggerTypeChanged(int triggerType) {
+        super.onSignalAveragingTriggerTypeChanged(triggerType);
+
+        lastTriggerEventName = null;
+    }
+
+    @Override public void onFftProcessingChanged(boolean fftProcessing) {
+        super.onFftProcessingChanged(fftProcessing);
     }
 
     /**
@@ -251,7 +313,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected int prepareSignalForDrawing(@NonNull SignalDrawData signalDrawData,
+    @Override protected void prepareSignalForDrawing(@NonNull SignalDrawData signalDrawData,
         @NonNull EventsDrawData eventsDrawData, @NonNull short[][] inSamples, int inFrameCount,
         @NonNull int[] inEventIndices, @NonNull String[] inEventNames, int inEventCount, int drawStartIndex,
         int drawEndIndex, int drawSurfaceWidth, long lastFrameIndex) {
@@ -279,9 +341,9 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 }
             }
         }
-        //benchmark.end();
 
-        return (int) (signalDrawData.sampleCounts[0] * .5f);
+        saveAveragingTriggerEventName(inEventNames, inEventCount);
+        //benchmark.end();
     }
 
     /**
@@ -292,7 +354,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         //benchmark.start();
         try {
             JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawSurfaceWidth,
-                (int) FFT_HEIGHT);
+                (int) FFT_HEIGHT, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -399,10 +461,17 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             if (isFftProcessing) {
                 updateOrthoProjection(gl, 0f, 0f, surfaceWidth, MAX_GL_VERTICAL_SIZE);
 
-                ////LOGD(TAG, "SCALE X: " + scaleX);
-                LOGD(TAG, "MVC: " + fftDrawData.vertices.length + ", VC: " + fftDrawData.vertexCount);
-
+                gl.glPushMatrix();
                 glFft.draw(gl, fftDrawData, surfaceWidth, FFT_HEIGHT, scaleY);
+                gl.glPopMatrix();
+            }
+        } else {
+            if (!isThresholdSignalAveraging) {
+                // draw average triggering line
+                gl.glPushMatrix();
+                gl.glTranslatef(surfaceWidth * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
+                glAveragingTrigger.draw(gl, lastTriggerEventName, MAX_GL_VERTICAL_SIXTH_SIZE * 4, scaleY);
+                gl.glPopMatrix();
             }
         }
     }
@@ -435,5 +504,22 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         }
 
         return channelColors[channel];
+    }
+
+    // Saves name of the event that was last to trigger signal averaging
+    private void saveAveragingTriggerEventName(String[] eventNames, int eventsCount) {
+        if (isAllEventsAveragingTriggerType() && eventsCount > 0) {
+            lastTriggerEventName = eventNames[eventsCount - 1];
+        }
+    }
+
+    // Sets the scale factor for the FFT zoom
+    private void setFftScaleFactor(float scaleFactor) {
+        if (scaleFactor < 0 || scaleFactor == fftScaleFactor) return;
+        scaleFactor *= fftScaleFactor;
+        if (scaleFactor < MIN_FFT_SCALE_FACTOR) scaleFactor = MIN_FFT_SCALE_FACTOR;
+        if (scaleFactor > MAX_FFT_SCALE_FACTOR) scaleFactor = MAX_FFT_SCALE_FACTOR;
+
+        fftScaleFactor = scaleFactor;
     }
 }

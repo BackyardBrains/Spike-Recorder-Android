@@ -13,9 +13,9 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlSpectrogram {
 
-    private static final int MAX_VERTICES = 200 * 200;
-    private static final int MAX_INDICES = 200 * 200;
-    private static final int MAX_COLORS = 200 * 200;
+    private static final int MAX_VERTICES = 1000;
+    private static final int MAX_INDICES = 1000;
+    private static final int MAX_COLORS = 1000;
 
     private ByteBuffer vbb;
     private FloatBuffer vfb;
@@ -23,10 +23,6 @@ public class GlSpectrogram {
     private ShortBuffer isb;
     private ByteBuffer cbb;
     private FloatBuffer cfb;
-
-    //private float[] vertices = new float[MAX_VERTICES];
-    //private short[] indices = new short[MAX_INDICES];
-    //private float[] colors = new float[MAX_COLORS];
 
     public GlSpectrogram() {
         vbb = ByteBuffer.allocateDirect(MAX_VERTICES * 4);
@@ -45,8 +41,7 @@ public class GlSpectrogram {
     public void draw(GL10 gl, @NonNull FftDrawData fft) {
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
         gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
-        //System.arraycopy(fft.vertices, 0, vertices, 0, fft.vertexCount);
-        if (vbb.capacity() != fft.vertexCount * 4) {
+        if (vbb == null || vbb.capacity() < fft.vertexCount * 4) {
             vbb = ByteBuffer.allocateDirect(fft.vertexCount * 4);
             vbb.order(ByteOrder.nativeOrder());
             vfb = vbb.asFloatBuffer();
@@ -54,8 +49,7 @@ public class GlSpectrogram {
         vfb.put(fft.vertices, 0, fft.vertexCount);
         vfb.position(0);
         gl.glVertexPointer(2, GL10.GL_FLOAT, 0, vfb);
-        //System.arraycopy(fft.colors, 0, colors, 0, fft.colorCount);
-        if (cbb.capacity() != fft.colorCount * 4) {
+        if (cbb == null || cbb.capacity() < fft.colorCount * 4) {
             cbb = ByteBuffer.allocateDirect(fft.colorCount * 4);
             cbb.order(ByteOrder.nativeOrder());
             cfb = cbb.asFloatBuffer();
@@ -63,8 +57,7 @@ public class GlSpectrogram {
         cfb.put(fft.colors, 0, fft.colorCount);
         cfb.position(0);
         gl.glColorPointer(4, GL10.GL_FLOAT, 0, cfb);
-        //System.arraycopy(fft.indices, 0, indices, 0, fft.indexCount);
-        if (ibb.capacity() != fft.indexCount * 2) {
+        if (ibb == null || ibb.capacity() < fft.indexCount * 2) {
             ibb = ByteBuffer.allocateDirect(fft.indexCount * 2);
             ibb.order(ByteOrder.nativeOrder());
             isb = ibb.asShortBuffer();

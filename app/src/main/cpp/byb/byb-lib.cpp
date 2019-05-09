@@ -98,7 +98,8 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray in,
                                                             jint drawStartIndex, jint drawEndIndex,
-                                                            jint drawSurfaceWidth, jint drawSurfaceHeight);
+                                                            jint drawSurfaceWidth, jint drawSurfaceHeight,
+                                                            jfloat fftScaleFactor);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSpikesDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray in,
                                                                jfloatArray colorInRange, jfloatArray colorOutOfRange,
@@ -162,18 +163,20 @@ jfieldID eddEventIndicesFid;
 jfieldID eddEventNamesFid;
 jfieldID eddEventCountFid;
 // FftData field IDs
-jfieldID maxWindowCountFid;
-jfieldID maxThirtyHzDataSizeFid;
-jfieldID fftFid;
-jfieldID windowCountFid;
-jfieldID thirtyHzDataSizeFid;
+jfieldID fdMaxWindowCountFid;
+jfieldID fdMaxWindowSizeFid;
+jfieldID fdFftFid;
+jfieldID fdWindowCountFid;
+jfieldID fdWindowSizeFid;
 // FftDrawData field IDs
-jfieldID verticesFid;
-jfieldID indicesFid;
-jfieldID colorsFid;
-jfieldID vertexCountFid;
-jfieldID indexCountFid;
-jfieldID colorCountFid;
+jfieldID fddVerticesFid;
+jfieldID fddIndicesFid;
+jfieldID fddColorsFid;
+jfieldID fddVertexCountFid;
+jfieldID fddIndexCountFid;
+jfieldID fddColorCountFid;
+jfieldID fddScaleXFid;
+jfieldID fddScaleYFid;
 // SpikeIndexValue
 jfieldID sivValueFid;
 jfieldID sivIndexFid;
@@ -282,20 +285,22 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     // let's cache fields of the FftData java object
     cls = env->FindClass("com/backyardbrains/dsp/FftData");
-    maxWindowCountFid = env->GetFieldID(cls, "maxWindowCount", "I");
-    maxThirtyHzDataSizeFid = env->GetFieldID(cls, "maxWindowSize", "I");
-    fftFid = env->GetFieldID(cls, "fft", "[[F");
-    windowCountFid = env->GetFieldID(cls, "windowCount", "I");;
-    thirtyHzDataSizeFid = env->GetFieldID(cls, "windowSize", "I");
+    fdMaxWindowCountFid = env->GetFieldID(cls, "maxWindowCount", "I");
+    fdMaxWindowSizeFid = env->GetFieldID(cls, "maxWindowSize", "I");
+    fdFftFid = env->GetFieldID(cls, "fft", "[[F");
+    fdWindowCountFid = env->GetFieldID(cls, "windowCount", "I");;
+    fdWindowSizeFid = env->GetFieldID(cls, "windowSize", "I");
 
     // let's cache fields of the FftDrawData java object
     cls = env->FindClass("com/backyardbrains/drawing/FftDrawData");
-    verticesFid = env->GetFieldID(cls, "vertices", "[F");
-    indicesFid = env->GetFieldID(cls, "indices", "[S");
-    colorsFid = env->GetFieldID(cls, "colors", "[F");
-    vertexCountFid = env->GetFieldID(cls, "vertexCount", "I");
-    indexCountFid = env->GetFieldID(cls, "indexCount", "I");
-    colorCountFid = env->GetFieldID(cls, "colorCount", "I");
+    fddVerticesFid = env->GetFieldID(cls, "vertices", "[F");
+    fddIndicesFid = env->GetFieldID(cls, "indices", "[S");
+    fddColorsFid = env->GetFieldID(cls, "colors", "[F");
+    fddVertexCountFid = env->GetFieldID(cls, "vertexCount", "I");
+    fddIndexCountFid = env->GetFieldID(cls, "indexCount", "I");
+    fddColorCountFid = env->GetFieldID(cls, "colorCount", "I");
+    fddScaleXFid = env->GetFieldID(cls, "scaleX", "F");
+    fddScaleYFid = env->GetFieldID(cls, "scaleY", "F");
 
     // let's cache fields of the SpikeIndexValue java object
     cls = env->FindClass("com/backyardbrains/vo/SpikeIndexValue");
@@ -854,9 +859,9 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
         return;
     }
 
-    auto maxWindowCount = env->GetIntField(out, maxWindowCountFid);
-    auto maxWindowSize = env->GetIntField(out, maxThirtyHzDataSizeFid);
-    auto outFft = reinterpret_cast<jobjectArray>(env->GetObjectField(out, fftFid));
+    auto maxWindowCount = env->GetIntField(out, fdMaxWindowCountFid);
+    auto maxWindowSize = env->GetIntField(out, fdMaxWindowSizeFid);
+    auto outFft = reinterpret_cast<jobjectArray>(env->GetObjectField(out, fdFftFid));
 
     auto **outFftPtr = new jfloat *[maxWindowCount];
     for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxWindowSize]{0};
@@ -884,8 +889,8 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
         env->SetObjectArrayElement(outFft, i, fft);
         env->DeleteLocalRef(fft);
     }
-    env->SetIntField(out, windowCountFid, windowCount);
-    env->SetIntField(out, thirtyHzDataSizeFid, windowSize);
+    env->SetIntField(out, fdWindowCountFid, windowCount);
+    env->SetIntField(out, fdWindowSizeFid, windowSize);
 
     delete[] inSampleCountsPtr;
     for (int i = 0; i < channelCount; i++) {
@@ -988,8 +993,8 @@ Java_com_backyardbrains_utils_JniUtils_prepareForThresholdDrawing(JNIEnv *env, j
 extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass type, jobject out, jobjectArray in,
                                                             jint drawStartIndex, jint drawEndIndex,
-                                                            jint drawSurfaceWidth,
-                                                            jint drawSurfaceHeight) {
+                                                            jint drawSurfaceWidth, jint drawSurfaceHeight,
+                                                            jfloat fftScaleFactor) {
     jint windowSize = -1;
     jint maxWindowCount = env->GetArrayLength(in);
     jint windowCount = ((drawEndIndex - drawStartIndex) * maxWindowCount) / drawEndIndex;
@@ -1002,7 +1007,7 @@ Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass 
     for (int i = 0; i < windowCount; ++i) {
         index = maxWindowCount - windowCount + i;
         auto tmpSamples = (jfloatArray) env->GetObjectArrayElement(in, index);
-        windowSize = env->GetArrayLength(tmpSamples);
+        windowSize = static_cast<jint>(env->GetArrayLength(tmpSamples) / fftScaleFactor);
         inFftPtr[i] = new jfloat[windowSize];
         env->GetFloatArrayRegion(tmpSamples, 0, windowSize, inFftPtr[i]);
         env->DeleteLocalRef(tmpSamples);
@@ -1026,9 +1031,9 @@ Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass 
         return;
     }
 
-    auto outVertices = reinterpret_cast<jfloatArray>(env->GetObjectField(out, verticesFid));
-    auto outIndices = reinterpret_cast<jshortArray>(env->GetObjectField(out, indicesFid));
-    auto outColors = reinterpret_cast<jfloatArray>(env->GetObjectField(out, colorsFid));
+    auto outVertices = reinterpret_cast<jfloatArray>(env->GetObjectField(out, fddVerticesFid));
+    auto outIndices = reinterpret_cast<jshortArray>(env->GetObjectField(out, fddIndicesFid));
+    auto outColors = reinterpret_cast<jfloatArray>(env->GetObjectField(out, fddColorsFid));
     auto *outVerticesPtr = new jfloat[env->GetArrayLength(outVertices)];
     auto *outIndicesPtr = new jshort[env->GetArrayLength(outIndices)];
     auto *outColorsPtr = new jfloat[env->GetArrayLength(outColors)];
@@ -1041,9 +1046,11 @@ Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass 
     env->SetFloatArrayRegion(outVertices, 0, outVertexCount, outVerticesPtr);
     env->SetShortArrayRegion(outIndices, 0, outIndexCount, outIndicesPtr);
     env->SetFloatArrayRegion(outColors, 0, outColorCount, outColorsPtr);
-    env->SetIntField(out, vertexCountFid, outVertexCount);
-    env->SetIntField(out, indexCountFid, outIndexCount);
-    env->SetIntField(out, colorCountFid, outColorCount);
+    env->SetIntField(out, fddVertexCountFid, outVertexCount);
+    env->SetIntField(out, fddIndexCountFid, outIndexCount);
+    env->SetIntField(out, fddColorCountFid, outColorCount);
+    env->SetFloatField(out, fddScaleXFid, (jfloat) maxWindowCount / windowCount);
+    env->SetFloatField(out, fddScaleYFid, fftScaleFactor);
 
     for (int i = 0; i < windowCount; i++) {
         delete[] inFftPtr[i];
