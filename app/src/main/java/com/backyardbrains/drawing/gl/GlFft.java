@@ -3,6 +3,7 @@ package com.backyardbrains.drawing.gl;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.android.texample.GLText;
+import com.backyardbrains.drawing.Colors;
 import com.backyardbrains.drawing.FftDrawData;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -38,6 +39,7 @@ public class GlFft {
     private FloatBuffer freqAxisValuesVFB;
 
     private GlSpectrogram glSpectrogram;
+    private GlRectangleMask glRectangleMask;
     private GLText glText;
 
     private float timeAxisValueY;
@@ -47,6 +49,7 @@ public class GlFft {
 
     public GlFft(Context context, GL10 gl) {
         glSpectrogram = new GlSpectrogram();
+        glRectangleMask = new GlRectangleMask();
         glText = new GLText(gl, context.getAssets());
         glText.load("dos-437.ttf", 32, 2, 2);
 
@@ -62,21 +65,33 @@ public class GlFft {
     /**
      * This function draws FFT spectrogram with axis on screen.
      */
-    public void draw(GL10 gl, @NonNull FftDrawData fft, float w, float h, float scaleY) {
+    public void draw(GL10 gl, @NonNull FftDrawData fft, float w, float h) {
+        gl.glClearStencil(0);
+        gl.glEnable(GL10.GL_STENCIL_TEST);
+
+        // draw mask
+        gl.glPushMatrix();
+        glRectangleMask.draw(gl, w, h, Colors.RED);
+        gl.glPopMatrix();
+
         // draw spectrogram
+        gl.glPushMatrix();
+        gl.glScalef(1f, fft.scaleY, 1f);
         glSpectrogram.draw(gl, fft);
+        gl.glPopMatrix();
 
         // draw time axis
         gl.glPushMatrix();
         gl.glTranslatef(0f, h, 0f);
-        gl.glScalef(1f, scaleY, 1f);
         drawTimeAxis(gl, w, fft.scaleX);
         gl.glPopMatrix();
 
         // draw frequency axis
         gl.glPushMatrix();
-        drawFrequencyAxis(gl, h, scaleY, fft.scaleY);
+        drawFrequencyAxis(gl, h, fft.scaleY);
         gl.glPopMatrix();
+
+        gl.glDisable(GL10.GL_STENCIL_TEST);
     }
 
     private void drawTimeAxis(GL10 gl, float w, float scaleX) {
@@ -135,16 +150,16 @@ public class GlFft {
         gl.glDisable(GL10.GL_TEXTURE_2D);
     }
 
-    private void drawFrequencyAxis(GL10 gl, float h, float scaleY, float notchScaleY) {
+    private void drawFrequencyAxis(GL10 gl, float h, float scaleY) {
         final int notchCount =
-            notchScaleY < FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE ? FREQ_AXIS_NOTCH_COUNT : FREQ_AXIS_NOTCH_COUNT_ZOOMED;
+            scaleY < FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE ? FREQ_AXIS_NOTCH_COUNT : FREQ_AXIS_NOTCH_COUNT_ZOOMED;
         final String[] notchValues =
-            notchScaleY < FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE ? FREQ_AXIS_VALUES : FREQ_AXIS_VALUES_ZOOMED;
-        if (notchScaleY >= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE) notchScaleY /= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE;
-        final float valueStep = h / (notchCount - 1) * notchScaleY;
+            scaleY < FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE ? FREQ_AXIS_VALUES : FREQ_AXIS_VALUES_ZOOMED;
+        if (scaleY >= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE) scaleY /= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE;
+        final float valueStep = h / (notchCount - 1) * scaleY;
         final float[] valuesVertices = new float[notchCount * 4];
         final float[] values = new float[notchValues.length];
-        final float drawMarginYScaled = drawMarginY * scaleY;
+        final float drawMarginYScaled = drawMarginY;
         int vertexCounter = 0, valueCounter = 0;
 
         // draw scale notches
@@ -183,7 +198,6 @@ public class GlFft {
         gl.glEnable(GL10.GL_TEXTURE_2D);
         gl.glEnable(GL10.GL_BLEND);
         gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-        glText.setScale(1f, scaleY);
         glText.begin(1f, 1f, 1f, 1f);
         for (int i = 0; i < valueCounter; i++) {
             if (values[i] > drawMarginYScaled && h - values[i] > drawMarginYScaled) {

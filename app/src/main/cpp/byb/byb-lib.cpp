@@ -82,6 +82,8 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
@@ -828,6 +830,12 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     delete[] channelSampleCounts;
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type) {
+    fftProcessor->resetFft();
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in) {
     jint channelCount = env->GetIntField(in, sdChannelCountFid);
@@ -1007,7 +1015,7 @@ Java_com_backyardbrains_utils_JniUtils_prepareForFftDrawing(JNIEnv *env, jclass 
     for (int i = 0; i < windowCount; ++i) {
         index = maxWindowCount - windowCount + i;
         auto tmpSamples = (jfloatArray) env->GetObjectArrayElement(in, index);
-        windowSize = static_cast<jint>(env->GetArrayLength(tmpSamples) / fftScaleFactor);
+        windowSize = /*static_cast<jint>(*/env->GetArrayLength(tmpSamples)/* / fftScaleFactor)*/;
         inFftPtr[i] = new jfloat[windowSize];
         env->GetFloatArrayRegion(tmpSamples, 0, windowSize, inFftPtr[i]);
         env->DeleteLocalRef(tmpSamples);

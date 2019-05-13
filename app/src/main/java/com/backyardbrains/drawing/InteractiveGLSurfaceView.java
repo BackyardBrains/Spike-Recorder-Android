@@ -159,7 +159,7 @@ public class InteractiveGLSurfaceView extends GLSurfaceView {
         scrollDetector = new GestureDetector(getContext(), scrollListener);
         scrollDetector.setIsLongpressEnabled(false);
 
-        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 8);
 
         super.setRenderer(renderer);
     }

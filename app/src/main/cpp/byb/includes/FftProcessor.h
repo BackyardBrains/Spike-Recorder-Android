@@ -25,6 +25,10 @@ namespace backyardbrains {
 
             ~FftProcessor() override;
 
+            void setSampleRate(float sampleRate) override;
+
+            void resetFft();
+
             void
             process(float **outData, uint32_t &windowCount, uint32_t &windowSize, short **inSamples,
                     uint32_t *inSampleCount);
@@ -37,6 +41,8 @@ namespace backyardbrains {
             static constexpr uint8_t FFT_DOWNSAMPLING_FACTOR = 4;
 
             void init();
+
+            void clean();
 
             audiofft::AudioFFT fft;
 
@@ -52,7 +58,10 @@ namespace backyardbrains {
             uint8_t windowOverlapPercent = WINDOW_OVERLAP_PERCENT;
             // Number of samples needed to be collected before starting new sample window
             uint32_t windowSampleDiffCount;
-            //
+
+            // Whether buffers and normalization needs to be reset before processing
+            bool resetOnNextCycle = false;
+
             // Holds all unanalyzed samples left from the latest sample batch
             float *unanalyzedSamples;
             int32_t unanalyzedSampleCount;
@@ -63,7 +72,6 @@ namespace backyardbrains {
             float halfMaxMagnitude;
             float maxMagnitudeOptimized;
             float halfMaxMagnitudeOptimized;
-//            long long currentTimeInMilliseconds();
         };
     }
 }

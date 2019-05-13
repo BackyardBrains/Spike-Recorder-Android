@@ -98,4 +98,12 @@ public class FftDrawBuffer {
             Crashlytics.logException(e);
         }
     }
+
+    /**
+     * Clears the buffer.
+     */
+    public void clear() {
+        for (int i = 0; i < windowCount; i++)
+            Arrays.fill(buffer[i], -1);
+    }
 }

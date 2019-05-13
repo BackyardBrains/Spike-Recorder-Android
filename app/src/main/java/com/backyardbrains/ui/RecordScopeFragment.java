@@ -20,6 +20,7 @@ import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.afollestad.materialdialogs.GravityEnum;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
@@ -51,6 +52,7 @@ import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SettingsView;
 import com.backyardbrains.view.SlidingView;
 import com.crashlytics.android.Crashlytics;
+import java.util.ArrayList;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -73,6 +75,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Default number of sample sets that should be summed when averaging
     private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
+    // Holds names of all the available channels
+    private static final List<String> CHANNEL_NAMES = new ArrayList<>();
 
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_SETTINGS_ON = "bb_settings_on";
@@ -82,6 +86,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @BindView(R.id.v_settings) SettingsView vSettings;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
     @BindView(R.id.btn_fft) Button btnFft;
+    @BindView(R.id.tv_select_channel) TextView tvSelectChannel;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
     @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
     @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
@@ -165,6 +170,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         toggleFft();
         setupFftButton();
     };
+
+    private final View.OnClickListener selectChannelClickListener = v -> openChannelsDialog();
 
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
         new SeekBar.OnSeekBarChangeListener() {
@@ -354,6 +361,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
         if (!event.isConnected() && getProcessingService() != null) startMicrophone(getProcessingService());
+        // setup fft button
+        setupFftButton();
         // setup USB button
         setupUsbButton();
     }
@@ -378,6 +387,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // setup settings view
         setupSettingsView();
+        // setup fft button
+        setupFftButton();
         // setup USB button
         setupUsbButton();
         // update BPM label
@@ -386,6 +397,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbSignalSourceDisconnectEvent(UsbSignalSourceDisconnectEvent event) {
+        // setup fft button
+        setupFftButton();
         // setup USB button
         setupUsbButton();
     }
@@ -552,10 +565,16 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void showChannel(int channelIndex, @Size(4) float[] color) {
         if (getProcessingService() != null) getProcessingService().showChannel(channelIndex);
         getRenderer().setChannelColor(channelIndex, color);
+
+        // setup fft button
+        setupFftButton();
     }
 
     void hideChannel(int channelIndex) {
         if (getProcessingService() != null) getProcessingService().hideChannel(channelIndex);
+
+        // setup fft button
+        setupFftButton();
     }
 
     //==============================================
@@ -708,15 +727,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //==============================================
 
     private void setupFftButton() {
-        if (fftOn) {
-            // setup settings button
-            btnFft.setBackgroundResource(R.drawable.circle_gray_white_active);
-        } else {
-            // setup threshold button
-            btnFft.setBackgroundResource(R.drawable.circle_gray_white);
-        }
+        // setup settings button
+        btnFft.setBackgroundResource(fftOn ? R.drawable.circle_gray_white_active : R.drawable.circle_gray_white);
         btnFft.setVisibility(thresholdOn ? View.GONE : View.VISIBLE);
         btnFft.setOnClickListener(fftClickListener);
+        // setup select channel text view
+        tvSelectChannel.setVisibility(
+            getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
+                && fftOn ? View.VISIBLE : View.GONE);
+        tvSelectChannel.setOnClickListener(selectChannelClickListener);
     }
 
     private void toggleFft() {
@@ -726,6 +745,31 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private void stopFft() {
         if (fftOn) toggleFft();
+    }
+
+    // Index of the currently selected channel
+    int selectedChannel;
+
+    // Opens a dialog for channel selection
+    void openChannelsDialog() {
+        if (getContext() != null) {
+            // populate channel names collection
+            int channelCount = getProcessingService() != null ? getProcessingService().getChannelCount() : 1;
+            CHANNEL_NAMES.clear();
+            for (int i = 0; i < channelCount; i++) {
+                CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+            }
+            final MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
+                .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
+                    selectedChannel = which;
+                    if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
+                    return true;
+                })
+                .alwaysCallSingleChoiceCallback()
+                .itemsGravity(GravityEnum.CENTER)
+                .build();
+            channelsDialog.show();
+        }
     }
 
     //==============================================

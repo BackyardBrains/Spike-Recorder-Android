@@ -191,6 +191,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Returns number of currently visible channels.
+     */
+    public int getVisibleChannelCount() {
+        return signalProcessor.getVisibleChannelCount();
+    }
+
+    /**
      * Shows channel at {@code channelIndex}.
      */
     public void showChannel(int channelIndex) {

@@ -66,6 +66,7 @@
     <string name="label_sampling_rate">Sampling rate</string>
     <string name="label_num_of_channels">Number of channels</string>
     <string name="label_file_length">File length (s)</string>
+    <string name="label_channel_abbr">Ch</string>
 
     <string name="template_connected_to_board">Connected to\n%s</string>
     <string name="board_type_plant">Plant SpikerBox</string>

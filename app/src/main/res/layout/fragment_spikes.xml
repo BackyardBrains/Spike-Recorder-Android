@@ -93,7 +93,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:gravity="center"
             android:visibility="gone"
-            android:text="Ch"
+            android:text="@string/label_channel_abbr"
             android:textColor="@color/white"
             android:textSize="@dimen/font_size_22"
             android:textStyle="bold"/>

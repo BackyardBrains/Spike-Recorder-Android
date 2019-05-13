@@ -42,9 +42,8 @@ public class ProcessingBuffer {
     // Buffer for the FFT data
     private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT,
         SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
-    // Temp buffer used to copy buffered fft data to draw buffer
-    private float[][] fft =
-        new float[SignalProcessor.DEFAULT_FFT_WINDOW_COUNT][SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE];
+    // Temp buffer used to copy buffered fft data to draw buffer (500x500 is enough for any sample rate we use)
+    private float[][] fft = new float[500][500];
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {

@@ -342,6 +342,8 @@ public class SignalProcessor implements SignalSource.Processor {
 
         // pass selected channel to native code
         JniUtils.setSelectedChannel(channelIndex);
+        // fft should be reset every time channel is switched
+        if (signalConfiguration.isFftProcessing()) JniUtils.resetFft();
     }
 
     /**
@@ -364,6 +366,8 @@ public class SignalProcessor implements SignalSource.Processor {
      * Sets type of triggering that will trigger signal averaging.
      */
     void setSignalAveragingTriggerType(@SignalAveragingTriggerType int triggerType) {
+        LOGD(TAG, "setSignalAveragingTriggerType(" + triggerType + ")");
+
         // update signal configuration
         signalConfiguration.setSignalAveragingTriggerType(triggerType);
 
@@ -379,6 +383,9 @@ public class SignalProcessor implements SignalSource.Processor {
 
         // update signal configuration
         signalConfiguration.setFftProcessing(fftProcessing);
+
+        // fft should be reset every time it's opened
+        if (fftProcessing) JniUtils.resetFft();
     }
 
     /**
@@ -469,9 +476,9 @@ public class SignalProcessor implements SignalSource.Processor {
 
     // Set max number of samples that can be processed in normal processing, in threshold and in fft
     private void calculateMaxNumberOfProcessedSamples(int sampleRate, boolean signalAveraging) {
-        processedSamplesCount =
-            signalSource != null && signalSource.isUsb() ? (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate)
-                : (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
+        final float maxProcessingTime = signalSource != null && signalSource.isUsb() ? MAX_SAMPLE_STREAM_PROCESSING_TIME
+            : MAX_AUDIO_PROCESSING_TIME;
+        processedSamplesCount = (int) (maxProcessingTime * sampleRate);
         processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
         // this is queried by renderer to know how big drawing surface should be
         maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
@@ -482,7 +489,7 @@ public class SignalProcessor implements SignalSource.Processor {
         int fftDataSize = (int) (sampleWindowSize * .5f);
         float oneFrequencyStep = .5f * fftSampleRate / (float) fftDataSize;
         processedFftWindowCount =
-            (int) ((MAX_AUDIO_PROCESSING_TIME * fftSampleRate) / (sampleWindowSize * (1.0f - (WINDOW_OVERLAP_PERCENT
+            (int) ((maxProcessingTime * fftSampleRate) / (sampleWindowSize * (1.0f - (WINDOW_OVERLAP_PERCENT
                 / 100.0f))));
         processedFftWindowSize = (int) (FFT_30HZ_LENGTH / oneFrequencyStep);
     }

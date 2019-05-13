@@ -187,6 +187,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 signalConfiguration.getVisibleChannelCount());
             fftDrawBuffer = new FftDrawBuffer(SignalProcessor.getProcessedFftWindowCount(),
                 SignalProcessor.getProcessedFftWindowSize());
+            fftDrawData = new FftDrawData(
+                SignalProcessor.getProcessedFftWindowCount() * SignalProcessor.getProcessedFftWindowSize());
         }
 
         // reset gl window width cause ample rate changed
@@ -232,6 +234,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     @Override public void onChannelSelectionChanged(int channelIndex) {
         LOGD(TAG, "onChannelSelectionChanged(" + channelIndex + ")");
+
+        // fft draw data should be reset every time channel selection changes
+        if (isFftProcessing()) fftDrawBuffer.clear();
     }
 
     /**
@@ -262,6 +267,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     @Override public void onFftProcessingChanged(boolean fftProcessing) {
         // reset GL window width cause min GL window width is different when processing FFT
         setGlWindowWidth(glWindowWidth);
+
+        // let's reset fft draw data for next time
+        if (fftProcessing) fftDrawBuffer.clear();
+
         // set FFT processing dirty so we can recalculate projection
         fftProcessingDirty = true;
     }
@@ -586,7 +595,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             //benchmark.start();
 
             if (signalConfiguration.getVisibleChannelCount() <= 0) {
-                gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+                gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
                 return;
             }
 
@@ -647,7 +656,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             }
 
             // clear the screen and depth buffer
-            gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+            gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
 
             // select and reset the model-view matrix
             gl.glMatrixMode(GL10.GL_MODELVIEW);

@@ -47,6 +47,20 @@
         app:srcCompat="@drawable/ic_usb_black_24dp"
         tools:ignore="ContentDescription"/>
 
+    <TextView
+        android:id="@+id/tv_select_channel"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:gravity="center"
+        android:text="@string/label_channel_abbr"
+        android:textColor="@color/white"
+        android:textSize="@dimen/font_size_22"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_usb"
+        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"/>
+
     <ProgressBar
         android:id="@+id/pb_usb_disconnecting"
         android:layout_width="24dp"

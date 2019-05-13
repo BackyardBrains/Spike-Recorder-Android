@@ -56,7 +56,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private static final float MAX_GL_FFT_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_HALF_SIZE * 4f;
     // Height of the draw surface occupied by the FFT should be 60%
     private static final float FFT_HEIGHT_PERCENT = .6f; // 60%
-    private static final float FFT_HEIGHT = MAX_GL_VERTICAL_SIZE * FFT_HEIGHT_PERCENT;
     private static final float MIN_FFT_SCALE_FACTOR = 1f;
     private static final float MAX_FFT_SCALE_FACTOR = 30f;
 
@@ -73,10 +72,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private GlEventMarker glEventMarker;
     private GlAveragingTriggerLine glAveragingTrigger;
 
-    private float fftSurfaceHeight;
     private float threshold;
     private String lastTriggerEventName;
     private float[][] channelColors = new float[][] { Colors.CHANNEL_0.clone() };
+    private float fftSurfaceHeight;
     private float fftScaleFactor = MIN_FFT_SCALE_FACTOR;
 
     /**
@@ -244,6 +243,11 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param channelCount The new number of channels.
+     */
     @Override public void onChannelCountChanged(int channelCount) {
         super.onChannelCountChanged(channelCount);
 
@@ -354,7 +358,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         //benchmark.start();
         try {
             JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawSurfaceWidth,
-                (int) FFT_HEIGHT, fftScaleFactor);
+                (int) fftSurfaceHeight, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -378,63 +382,70 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
         if (isFftProcessing) {
             updateOrthoProjection(gl, 0f, -MAX_GL_FFT_VERTICAL_HALF_SIZE, surfaceWidth, MAX_GL_VERTICAL_HALF_SIZE);
-        }
-
-        for (int i = 0; i < signalDrawData.channelCount; i++) {
-            selected = getSelectedChanel() == i;
-            showThresholdHandle = selected && isSignalAveraging && isThresholdSignalAveraging;
-            waveformColor = isFftProcessing ? Colors.WHITE : getWaveformColor(i);
-
-            gl.glPushMatrix();
-            gl.glTranslatef(0f, waveformPositions[i], 0f);
 
             // draw waveform
             gl.glPushMatrix();
-            gl.glScalef(1f, waveformScaleFactors[i], 1f);
-            glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformColor);
+            gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+            glWaveform.draw(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
+                Colors.WHITE);
             gl.glPopMatrix();
+        } else {
+            for (int i = 0; i < signalDrawData.channelCount; i++) {
+                selected = selectedChannel == i;
+                showThresholdHandle = selected && isSignalAveraging && isThresholdSignalAveraging;
+                waveformColor = getWaveformColor(i);
 
-            if (showWaveformHandle) {
-                // draw waveform handle
                 gl.glPushMatrix();
-                gl.glScalef(1f, scaleY, 1f);
-                glHandle.draw(gl, waveformColor, selected);
-                gl.glPopMatrix();
+                gl.glTranslatef(0f, waveformPositions[i], 0f);
 
-                // register waveform handle as draggable area with drag helper
-                glHandle.getBorders(rect);
-                waveformHandleDragHelper.registerDraggableArea(i, rect.x, rect.y + glYToSurfaceY(waveformPositions[i]),
-                    rect.width, rect.height);
-            }
-
-            if (showThresholdHandle) {
-                float scaledThreshold = threshold * waveformScaleFactors[i];
-                // draw threshold line
+                // draw waveform
                 gl.glPushMatrix();
-                gl.glTranslatef(0f, scaledThreshold, 0f);
                 gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                glThresholdLine.draw(gl, 0f, surfaceWidth, DASH_SIZE, LINE_WIDTH, Colors.RED);
-                gl.glPopMatrix();
-                // draw threshold handle
-                if (scaledThreshold + waveformPositions[i] < -MAX_GL_VERTICAL_HALF_SIZE) {
-                    scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
-                }
-                if (scaledThreshold + waveformPositions[i] > MAX_GL_VERTICAL_HALF_SIZE) {
-                    scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
-                }
-                gl.glPushMatrix();
-                gl.glTranslatef(surfaceWidth, scaledThreshold, 0f);
-                gl.glScalef(-1f, scaleY, 1f);
-                glHandle.draw(gl, Colors.RED, true);
+                glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformColor);
                 gl.glPopMatrix();
 
-                // register threshold handle as draggable area with drag helper
-                glHandle.getBorders(rect);
-                thresholdHandleDragHelper.registerDraggableArea(i, surfaceWidth - rect.width,
-                    rect.y + glYToSurfaceY(waveformPositions[i] + scaledThreshold), rect.width, rect.height);
+                if (showWaveformHandle) {
+                    // draw waveform handle
+                    gl.glPushMatrix();
+                    gl.glScalef(1f, scaleY, 1f);
+                    glHandle.draw(gl, waveformColor, selected);
+                    gl.glPopMatrix();
+
+                    // register waveform handle as draggable area with drag helper
+                    glHandle.getBorders(rect);
+                    waveformHandleDragHelper.registerDraggableArea(i, rect.x,
+                        rect.y + glYToSurfaceY(waveformPositions[i]), rect.width, rect.height);
+                }
+
+                if (showThresholdHandle) {
+                    float scaledThreshold = threshold * waveformScaleFactors[i];
+                    // draw threshold line
+                    gl.glPushMatrix();
+                    gl.glTranslatef(0f, scaledThreshold, 0f);
+                    gl.glScalef(1f, waveformScaleFactors[i], 1f);
+                    glThresholdLine.draw(gl, 0f, surfaceWidth, DASH_SIZE, LINE_WIDTH, Colors.RED);
+                    gl.glPopMatrix();
+                    // draw threshold handle
+                    if (scaledThreshold + waveformPositions[i] < -MAX_GL_VERTICAL_HALF_SIZE) {
+                        scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
+                    }
+                    if (scaledThreshold + waveformPositions[i] > MAX_GL_VERTICAL_HALF_SIZE) {
+                        scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
+                    }
+                    gl.glPushMatrix();
+                    gl.glTranslatef(surfaceWidth, scaledThreshold, 0f);
+                    gl.glScalef(-1f, scaleY, 1f);
+                    glHandle.draw(gl, Colors.RED, true);
+                    gl.glPopMatrix();
+
+                    // register threshold handle as draggable area with drag helper
+                    glHandle.getBorders(rect);
+                    thresholdHandleDragHelper.registerDraggableArea(i, surfaceWidth - rect.width,
+                        rect.y + glYToSurfaceY(waveformPositions[i] + scaledThreshold), rect.width, rect.height);
+                }
+
+                gl.glPopMatrix();
             }
-
-            gl.glPopMatrix();
         }
 
         // draw markers
@@ -459,10 +470,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             }
 
             if (isFftProcessing) {
-                updateOrthoProjection(gl, 0f, 0f, surfaceWidth, MAX_GL_VERTICAL_SIZE);
+                updateOrthoProjection(gl, 0f, 0f, surfaceWidth, surfaceHeight);
 
                 gl.glPushMatrix();
-                glFft.draw(gl, fftDrawData, surfaceWidth, FFT_HEIGHT, scaleY);
+                glFft.draw(gl, fftDrawData, surfaceWidth, fftSurfaceHeight);
                 gl.glPopMatrix();
             }
         } else {
