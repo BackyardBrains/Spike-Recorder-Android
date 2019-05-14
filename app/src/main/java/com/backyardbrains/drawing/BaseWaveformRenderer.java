@@ -75,7 +75,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private final String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private float scaleX;
     private float scaleY;
-    private boolean fftProcessingDirty;
 
     private boolean scrollEnabled;
     private boolean measureEnabled;
@@ -270,9 +269,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
         // let's reset fft draw data for next time
         if (fftProcessing) fftDrawBuffer.clear();
-
-        // set FFT processing dirty so we can recalculate projection
-        fftProcessingDirty = true;
     }
 
     //===========================================================
@@ -602,7 +598,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final int selectedChannel = signalConfiguration.getSelectedChannel();
             final boolean signalAveraging = signalConfiguration.isSignalAveraging();
             final boolean fftProcessing = signalConfiguration.isFftProcessing();
-            final boolean fftProcessingDirty = this.fftProcessingDirty;
 
             // copy samples, averaged samples and events and fft to local buffers
             final int copiedEventsCount =
@@ -628,7 +623,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // let's reset dirty flags right away
             this.glWindowWidthDirty = false;
-            this.fftProcessingDirty = false;
 
             final int frameCount = tmpSampleDrawBuffer.getFrameCount();
             final long lastSampleIndex = processingBuffer.getLastSampleIndex();
@@ -648,12 +642,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                     surfaceWidth);
             }
 
-            if (fftProcessingDirty) {
-                // select and reset the projection matrix
-                gl.glMatrixMode(GL10.GL_PROJECTION);
-                gl.glLoadIdentity();
-                gl.glOrthof(0f, surfaceWidth, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
-            }
+            // select and reset the projection matrix
+            gl.glMatrixMode(GL10.GL_PROJECTION);
+            gl.glLoadIdentity();
+            gl.glOrthof(0f, surfaceWidth, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
 
             // clear the screen and depth buffer
             gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);

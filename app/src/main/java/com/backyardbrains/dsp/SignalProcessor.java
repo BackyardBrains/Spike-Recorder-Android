@@ -352,12 +352,12 @@ public class SignalProcessor implements SignalSource.Processor {
         synchronized (lock) {
             // update signal configuration
             signalConfiguration.setSelectedChannel(channelIndex);
-        }
 
-        // pass selected channel to native code
-        JniUtils.setSelectedChannel(channelIndex);
-        // fft should be reset every time channel is switched
-        if (signalConfiguration.isFftProcessing()) JniUtils.resetFft();
+            // pass selected channel to native code
+            JniUtils.setSelectedChannel(channelIndex);
+            // fft should be reset every time channel is switched
+            if (signalConfiguration.isFftProcessing()) JniUtils.resetFft();
+        }
     }
 
     /**
@@ -366,14 +366,16 @@ public class SignalProcessor implements SignalSource.Processor {
     void setSignalAveraging(boolean signalAveraging) {
         LOGD(TAG, "setSignalAveraging(" + signalAveraging + ")");
 
-        // calculate max number of processed samples
-        calculateMaxNumberOfProcessedSamples(signalConfiguration.getSampleRate(), signalAveraging);
+        synchronized (lock) {
+            // calculate max number of processed samples
+            calculateMaxNumberOfProcessedSamples(signalConfiguration.getSampleRate(), signalAveraging);
 
-        // update signal configuration
-        signalConfiguration.setSignalAveraging(signalAveraging);
+            // update signal configuration
+            signalConfiguration.setSignalAveraging(signalAveraging);
 
-        // reset processing buffer
-        processingBuffer.resetAveragedSamplesBuffer(signalConfiguration.getVisibleChannelCount());
+            // reset processing buffer
+            processingBuffer.resetAveragedSamplesBuffer(signalConfiguration.getVisibleChannelCount());
+        }
     }
 
     /**
@@ -382,11 +384,13 @@ public class SignalProcessor implements SignalSource.Processor {
     void setSignalAveragingTriggerType(@SignalAveragingTriggerType int triggerType) {
         LOGD(TAG, "setSignalAveragingTriggerType(" + triggerType + ")");
 
-        // update signal configuration
-        signalConfiguration.setSignalAveragingTriggerType(triggerType);
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setSignalAveragingTriggerType(triggerType);
 
-        // pass signal averaging trigger type to native code
-        JniUtils.setAveragingTriggerType(triggerType);
+            // pass signal averaging trigger type to native code
+            JniUtils.setAveragingTriggerType(triggerType);
+        }
     }
 
     /**
@@ -395,11 +399,13 @@ public class SignalProcessor implements SignalSource.Processor {
     void setFftProcessing(boolean fftProcessing) {
         LOGD(TAG, "fftProcessing(" + fftProcessing + ")");
 
-        // update signal configuration
-        signalConfiguration.setFftProcessing(fftProcessing);
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setFftProcessing(fftProcessing);
 
-        // fft should be reset every time it's opened
-        if (fftProcessing) JniUtils.resetFft();
+            // fft should be reset every time it's opened
+            if (fftProcessing) JniUtils.resetFft();
+        }
     }
 
     /**
