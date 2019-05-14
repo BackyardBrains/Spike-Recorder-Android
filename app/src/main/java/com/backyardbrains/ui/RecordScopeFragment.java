@@ -240,6 +240,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         super.onStop();
         LOGD(TAG, "onStop()");
 
+        // stop currently active input source (mic/usb)
         if (getProcessingService() != null) getProcessingService().stopActiveInputSource();
     }
 

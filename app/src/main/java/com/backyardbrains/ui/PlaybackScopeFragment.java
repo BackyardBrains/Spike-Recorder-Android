@@ -494,6 +494,9 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             getProcessingService().setSignalAveraging(thresholdOn);
             // this will set signal averaging trigger type if we are coming from background
             getProcessingService().setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
+            // this will turn off FFT processing if we are coming from background
+            getProcessingService().setFftProcessing(false);
+
             // this will start playback if we are coming from background
             getProcessingService().startPlayback(filePath, autoPlay, playbackPosition);
         }
@@ -561,6 +564,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioPlaybackStartedEvent(AudioPlaybackStartedEvent event) {
         LOGD(TAG, "Start audio playback - " + event.getLength());
+
         sampleRate = event.getSampleRate();
         channelCount = event.getChannelCount();
         if (event.getLength() > 0) { // we are starting playback, not resuming
