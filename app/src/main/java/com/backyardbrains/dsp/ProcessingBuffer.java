@@ -42,9 +42,8 @@ public class ProcessingBuffer {
     // Buffer for the FFT data
     private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT,
         SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
-    // Temp buffer used to copy buffered fft data to draw buffer
-    private float[][] fft =
-        new float[SignalProcessor.DEFAULT_FFT_WINDOW_COUNT][SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE];
+    // Temp buffer used to copy buffered fft data to draw buffer (500x500 is enough for any sample rate we use)
+    private float[][] fft = new float[500][500];
 
     // Private constructor through which we create singleton instance
     private ProcessingBuffer() {
@@ -105,11 +104,10 @@ public class ProcessingBuffer {
             System.arraycopy(this.eventIndices, 0, eventIndices, 0, eventCount);
             System.arraycopy(this.eventNames, 0, eventNames, 0, eventCount);
             // copy fft data
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //if (fftBuffer != null) {
-            //    int count = fftBuffer.get(fft);
-            //    if (count > 0) fftDrawBuffer.add(fft, count);
-            //}
+            if (fftBuffer != null) {
+                int count = fftBuffer.get(fft);
+                if (count > 0) fftDrawBuffer.add(fft, count);
+            }
 
             return eventCount;
         }
@@ -162,8 +160,7 @@ public class ProcessingBuffer {
             lastSampleIndex = signalData.lastSampleIndex;
 
             // add fft data to buffer
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
+            if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
         }
     }
 

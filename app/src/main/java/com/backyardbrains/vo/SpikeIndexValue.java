@@ -5,22 +5,14 @@ package com.backyardbrains.vo;
  */
 public class SpikeIndexValue {
 
-    private float value;
-    private int index;
+    public float value;
+    public int index;
 
-    public float getValue() {
-        return value;
+    public SpikeIndexValue() {
     }
 
-    public void setValue(float value) {
+    public SpikeIndexValue(float value, int index) {
         this.value = value;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public void setIndex(int index) {
         this.index = index;
     }
 }

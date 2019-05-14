@@ -25,8 +25,13 @@ namespace backyardbrains {
 
             ~FftProcessor() override;
 
+            void setSampleRate(float sampleRate) override;
+
+            void resetFft();
+
             void
-            process(float **outData, uint32_t &windowCount, uint32_t &perWindowCount, short **inSamples,
+            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
+                    short **inSamples,
                     uint32_t *inSampleCount);
 
         private:
@@ -34,8 +39,11 @@ namespace backyardbrains {
 
             static constexpr uint8_t WINDOW_OVERLAP_PERCENT = 99;
             static constexpr uint8_t FFT_30HZ_LENGTH = 32;
+            static constexpr uint8_t FFT_DOWNSAMPLING_FACTOR = 4;
 
             void init();
+
+            void clean();
 
             audiofft::AudioFFT fft;
 
@@ -45,17 +53,16 @@ namespace backyardbrains {
 
             // Size of single window of samples - must be 2^N
             uint32_t sampleWindowSize;
-            // Size of fft data that will be returned when providing sampleWindowSize of samples
-            uint32_t fftDataSize;
             // Size of actual fft data that we take into account when creating output graph
             uint32_t thirtyHzDataSize;
-            // Difference between two consecutive frequency values represented in the output graph
-            float oneFrequencyStep;
             // Percentage of overlap between to consecutive sample windows
             uint8_t windowOverlapPercent = WINDOW_OVERLAP_PERCENT;
             // Number of samples needed to be collected before starting new sample window
             uint32_t windowSampleDiffCount;
-            //
+
+            // Whether buffers and normalization needs to be reset before processing
+            bool resetOnNextCycle = false;
+
             // Holds all unanalyzed samples left from the latest sample batch
             float *unanalyzedSamples;
             int32_t unanalyzedSampleCount;
@@ -66,7 +73,6 @@ namespace backyardbrains {
             float halfMaxMagnitude;
             float maxMagnitudeOptimized;
             float halfMaxMagnitudeOptimized;
-//            long long currentTimeInMilliseconds();
         };
     }
 }

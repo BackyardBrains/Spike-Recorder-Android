@@ -1,10 +1,10 @@
 package com.backyardbrains.drawing;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.SignalConfiguration;
 import com.backyardbrains.dsp.SignalProcessor;
@@ -12,31 +12,28 @@ import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.GlUtils;
-import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
-import com.crashlytics.android.Crashlytics;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public abstract class BaseWaveformRenderer extends BaseRenderer
-    implements SignalConfiguration.OnSignalPropertyChangeListener, TouchEnabledRenderer {
+    implements SignalConfiguration.OnSignalPropertyChangeListener, TouchEnabledRenderer, ZoomEnabledRenderer {
 
     private static final String TAG = makeLogTag(BaseWaveformRenderer.class);
 
     static final float MAX_GL_VERTICAL_SIZE = Short.MAX_VALUE * 40f;
     static final float MAX_GL_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_SIZE * .5f;
 
-    private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
     private static final float MIN_WAVEFORM_SCALE_FACTOR = 1f;
     private static final float MAX_WAVEFORM_SCALE_FACTOR = 5000f;
     private static final float MIN_GL_WINDOW_WIDTH_IN_SECONDS = .0004f;
+    private static final float MIN_GL_WINDOW_WIDTH_FFT_IN_SECONDS = 1.1f;
     private static final float AUTO_SCALE_PERCENT = .8f;
 
     // Lock used when reading/writing samples and events
@@ -47,10 +44,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     private final AtomicBoolean autoScale = new AtomicBoolean();
 
-    private SignalDrawData signalDrawData;
-    private EventsDrawData eventsDrawData;
-    private FftDrawData fftDrawData;
-
     private MultichannelSignalDrawBuffer signalDrawBuffer =
         new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
     private MultichannelSignalDrawBuffer visibleSignalDrawBuffer =
@@ -60,6 +53,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             SignalProcessor.DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
     private FftDrawBuffer fftDrawBuffer =
         new FftDrawBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT, SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
+
+    private SignalDrawData signalDrawData;
+    private EventsDrawData eventsDrawData = new EventsDrawData(EventUtils.MAX_EVENT_COUNT);
+    private FftDrawData fftDrawData =
+        new FftDrawData(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT * SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
 
     private int surfaceWidth;
     private int surfaceHeight;
@@ -84,9 +82,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private OnDrawListener onDrawListener;
     private OnScrollListener onScrollListener;
     private OnMeasureListener onMeasureListener;
-
-    private GlAveragingTriggerLine glAveragingTrigger;
-    protected Context context;
 
     /**
      * Interface definition for a callback to be invoked on every surface redraw.
@@ -160,13 +155,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     BaseWaveformRenderer(@NonNull BaseFragment fragment) {
         super(fragment);
 
-        context = fragment.getContext();
-
         processingBuffer = ProcessingBuffer.get();
         signalConfiguration = SignalConfiguration.get();
         signalConfiguration.addOnSignalPropertyChangeListener(this);
-        eventsDrawData = new EventsDrawData();
-        fftDrawData = new FftDrawData();
 
         resetWaveformScaleFactorsAndPositions(signalConfiguration.getVisibleChannelCount());
     }
@@ -195,19 +186,12 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 signalConfiguration.getVisibleChannelCount());
             fftDrawBuffer = new FftDrawBuffer(SignalProcessor.getProcessedFftWindowCount(),
                 SignalProcessor.getProcessedFftWindowSize());
+            fftDrawData = new FftDrawData(
+                SignalProcessor.getProcessedFftWindowCount() * SignalProcessor.getProcessedFftWindowSize());
         }
 
-        final int minGlWindowWidth = (int) (sampleRate * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
-        final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
-
-        // recalculate width of the GL window
-        float newSize = glWindowWidth;
-        if (newSize < minGlWindowWidth) newSize = minGlWindowWidth;
-        if (newSize > maxGlWindowWidth) newSize = maxGlWindowWidth;
-        // save new GL window
-        glWindowWidth = newSize;
-        // set GL window size dirty so we can recalculate projection
-        glWindowWidthDirty = true;
+        // reset gl window width cause ample rate changed
+        setGlWindowWidth(glWindowWidth);
     }
 
     /**
@@ -242,6 +226,23 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param channelIndex Index of the selected channel.
+     */
+    @Override public void onChannelSelectionChanged(int channelIndex) {
+        LOGD(TAG, "onChannelSelectionChanged(" + channelIndex + ")");
+
+        // fft draw data should be reset every time channel selection changes
+        if (isFftProcessing()) fftDrawBuffer.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param signalAveraging Whether signal averaging is turned on/off.
+     */
     @Override public void onSignalAveragingChanged(boolean signalAveraging) {
         final Context context = getContext();
         if (context != null) onSaveSettings(context);
@@ -250,8 +251,47 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         if (context != null) onLoadSettings(context);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override public void onSignalAveragingTriggerTypeChanged(int triggerType) {
+        LOGD(TAG, "onSignalAveragingTriggerTypeChanged(" + triggerType + ")");
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param fftProcessing Whether fft processing is turned on/off.
+     */
+    @Override public void onFftProcessingChanged(boolean fftProcessing) {
+        // reset GL window width cause min GL window width is different when processing FFT
+        setGlWindowWidth(glWindowWidth);
+
+        // let's reset fft draw data for next time
+        if (fftProcessing) fftDrawBuffer.clear();
+    }
+
+    //===========================================================
+    // ZoomEnabledRenderer INTERFACE IMPLEMENTATIONS
+    //===========================================================
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onHorizontalZoom(float zoomFactor, float zoomFocusX, float zoomFocusY) {
+        setGlWindowWidth(glWindowWidth * zoomFactor);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override public void onVerticalZoom(float zoomFactor, float zoomFocusX, float zoomFocusY) {
+        setWaveformScaleFactor(zoomFactor);
+    }
+
+    //==============================================
+    // PUBLIC AND PROTECTED METHODS
+    //==============================================
 
     /**
      * Returns sample rate.
@@ -270,13 +310,23 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     /**
      * Returns whether channel at specified {@code channelIndex} is visible or not.
      */
-    protected boolean isChannelVisible(int channelIndex) {
+    boolean isChannelVisible(int channelIndex) {
         return signalConfiguration.isChannelVisible(channelIndex);
     }
 
-    //==============================================
-    // PUBLIC AND PROTECTED METHODS
-    //==============================================
+    /**
+     * Returns number of visible channels
+     */
+    int getVisibleChannelCount() {
+        return signalConfiguration.getVisibleChannelCount();
+    }
+
+    /**
+     * Returns currently selected channel
+     */
+    int getSelectedChannel() {
+        return signalConfiguration.getSelectedChannel();
+    }
 
     /**
      * Registers a callback to be invoked on every surface redraw.
@@ -324,12 +374,30 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
+     * Whether currently selected signal averaging type is of type {@link SignalAveragingTriggerType#ALL_EVENTS}.
+     */
+    boolean isAllEventsAveragingTriggerType() {
+        return signalConfiguration.getSignalAveragingTriggerType() == SignalAveragingTriggerType.ALL_EVENTS;
+    }
+
+    /**
      * Resets buffers for averaged samples
      */
     public void resetAveragedSignal() {
         int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
         averagedSignalDrawBuffer =
             new MultichannelSignalDrawBuffer(signalConfiguration.getVisibleChannelCount(), frameSize);
+    }
+
+    //==============================================
+    //  FFT
+    //==============================================
+
+    /**
+     * Returns whether incoming signal is passed through FFT.
+     */
+    boolean isFftProcessing() {
+        return signalConfiguration.isFftProcessing();
     }
 
     //==============================================
@@ -343,14 +411,34 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         return signalConfiguration.getSelectedChannel();
     }
 
+    /**
+     * Returns height of the drawing viewport.
+     */
+    int getSurfaceHeight() {
+        return surfaceHeight;
+    }
+
+    /**
+     * Returns width of the drawing viewport.
+     */
     int getSurfaceWidth() {
         return surfaceWidth;
     }
 
-    void setGlWindowWidth(float width) {
+    /**
+     * Returns width of the OpenGl drawing surface.
+     */
+    public float getGlWindowWidth() {
+        return glWindowWidth;
+    }
+
+    // Sets width of the OpenGl drawing surface.
+    private void setGlWindowWidth(float width) {
         if (width < 0) return;
 
-        final int minGlWindowWidth = (int) (signalConfiguration.getSampleRate() * MIN_GL_WINDOW_WIDTH_IN_SECONDS);
+        final float minGlWindowWidthInSeconds =
+            signalConfiguration.isFftProcessing() ? MIN_GL_WINDOW_WIDTH_FFT_IN_SECONDS : MIN_GL_WINDOW_WIDTH_IN_SECONDS;
+        final int minGlWindowWidth = (int) (signalConfiguration.getSampleRate() * minGlWindowWidthInSeconds);
         final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
 
         if (width < minGlWindowWidth) width = minGlWindowWidth;
@@ -359,10 +447,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         glWindowWidth = width;
         // set GL window size dirty so we can recalculate projection
         glWindowWidthDirty = true;
-    }
-
-    public float getGlWindowWidth() {
-        return glWindowWidth;
     }
 
     private void initWaveformScaleFactor(float scaleFactor) {
@@ -374,7 +458,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         if (selectedChannel == 0) waveformScaleFactor = waveformScaleFactors[selectedChannel];
     }
 
-    void setWaveformScaleFactor(float scaleFactor) {
+    private void setWaveformScaleFactor(float scaleFactor) {
         if (signalConfiguration.getVisibleChannelCount() <= 0) return;
 
         int selectedChannel = signalConfiguration.getSelectedChannel();
@@ -422,7 +506,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to load it's local settings so it can render inital state correctly. It is the counterpart
      * to {@link #onSaveSettings(Context)}.
      *
-     * This method should typically be called in {@link android.app.Activity#onStart Activity.onStart}. Subclasses
+     * This method should typically be called in {@link Activity#onStart()}. Subclasses
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
@@ -437,7 +521,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to save it's local settings so they can be retrieved when renderer is recreated. It is the
      * counterpart to {@link #onLoadSettings(Context)}.
      *
-     * This method should typically be called in {@link android.app.Activity#onStart Activity.onStop}. Subclasses
+     * This method should typically be called in {@link Activity#onStart()}. Subclasses
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
@@ -467,9 +551,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         gl.glDisable(GL10.GL_DITHER);
         gl.glHint(GL10.GL_LINE_SMOOTH_HINT, GL10.GL_NICEST);
         gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-
-        // we draw signal averaging trigger line with this object when triggering by events
-        glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
     }
 
     /**
@@ -487,7 +568,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         resetLocalSignalDrawData(signalConfiguration.getVisibleChannelCount());
 
         gl.glViewport(0, 0, width, height);
-        reshape(gl, surfaceWidth);
+
+        // select and reset the projection matrix
+        gl.glMatrixMode(GL10.GL_PROJECTION);
+        gl.glLoadIdentity();
+        gl.glOrthof(0f, surfaceWidth, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
     }
 
     //private final Benchmark benchmark = new Benchmark("RENDERER_DRAW_TEST").warmUp(500)
@@ -506,15 +591,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             //benchmark.start();
 
             if (signalConfiguration.getVisibleChannelCount() <= 0) {
-                gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+                gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
                 return;
             }
 
             final int selectedChannel = signalConfiguration.getSelectedChannel();
             final boolean signalAveraging = signalConfiguration.isSignalAveraging();
-            final int averagingTriggerType = signalConfiguration.getSignalAveragingTriggerType();
+            final boolean fftProcessing = signalConfiguration.isFftProcessing();
 
-            // copy samples, averaged samples and events to local buffers
+            // copy samples, averaged samples and events and fft to local buffers
             final int copiedEventsCount =
                 processingBuffer.copy(signalDrawBuffer, averagedSignalDrawBuffer, eventIndices, eventNames,
                     fftDrawBuffer);
@@ -549,46 +634,38 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             // prepare signal data for drawing
             prepareSignalForDrawing(signalDrawData, eventsDrawData, tmpSampleDrawBuffer.getBuffer(), frameCount,
-                eventIndices, copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth);
-            // prepare events for drawing
-            addEventsToEventDrawData(eventsDrawData, eventNames, copiedEventsCount);
-
-            final float drawnSamplesCount = signalDrawData.sampleCounts[0] * .5f;
-
+                eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth,
+                lastSampleIndex);
             // prepare FFT data for drawing
-            // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-            //prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), (int) drawnSamplesCount);
+            if (fftProcessing) {
+                prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), drawStartIndex, drawEndIndex,
+                    surfaceWidth);
+            }
+
+            // select and reset the projection matrix
+            gl.glMatrixMode(GL10.GL_PROJECTION);
+            gl.glLoadIdentity();
+            gl.glOrthof(0f, surfaceWidth, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
+
+            // clear the screen and depth buffer
+            gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
+
+            // select and reset the model-view matrix
+            gl.glMatrixMode(GL10.GL_MODELVIEW);
+            gl.glLoadIdentity();
 
             // calculate scale x and scale y
             if (surfaceSizeDirty || glWindowWidthDirty) {
-                scaleX = drawnSamplesCount > 0 ? glWindowWidth / drawnSamplesCount : 1f;
+                scaleX = surfaceWidth > 0 ? glWindowWidth / surfaceWidth : 1f;
             }
             if (surfaceSizeDirty) {
                 scaleY = surfaceHeight > 0 ? MAX_GL_VERTICAL_SIZE / surfaceHeight : 1f;
             }
 
-            // init surface before drawing
-            if (surfaceSizeDirty || glWindowWidthDirty) reshape(gl, drawnSamplesCount);
-
-            // setup drawing surface and switch to Model-View matrix
-            gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-            gl.glMatrixMode(GL10.GL_MODELVIEW);
-            gl.glLoadIdentity();
-
             // draw on surface
-            draw(gl, tmpSampleDrawBuffer.getBuffer(), selectedChannel, signalDrawData, eventsDrawData, fftDrawData,
+            draw(gl, tmpSampleDrawBuffer.getBuffer(), signalDrawData, eventsDrawData, fftDrawData, selectedChannel,
                 surfaceWidth, surfaceHeight, glWindowWidth, tempWaveformScaleFactors, tempWaveformPositions,
                 drawStartIndex, drawEndIndex, scaleX, scaleY, lastSampleIndex);
-
-            // draw average triggering line
-            if (signalAveraging && averagingTriggerType != SignalAveragingTriggerType.THRESHOLD) {
-                final float drawScale = surfaceWidth > 0 ? drawnSamplesCount / surfaceWidth : 1f;
-                gl.glPushMatrix();
-                gl.glTranslatef(drawnSamplesCount * .5f, -MAX_GL_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_SIXTH_SIZE, 0f);
-                glAveragingTrigger.draw(gl, getAveragingTriggerEventName(eventNames, copiedEventsCount),
-                    MAX_GL_VERTICAL_SIXTH_SIZE * 4, drawScale, scaleY);
-                gl.glPopMatrix();
-            }
 
             // invoke callback that the surface has been drawn
             if (onDrawListener != null) onDrawListener.onDraw(glWindowWidth);
@@ -597,91 +674,81 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         }
     }
 
+    //==============================================
+    //  ABSTRACT METHODS
+    //==============================================
+
     /**
-     * Forwards preparing of incoming signal data for drawing to C++ code.
+     * Prepares incoming signal data for drawing.
      *
-     * @param outSignalData Signal data prepared for drawing.
-     * @param outEvents Events mapped to signal data prepared for drawing.
      * @param inSamples Incoming signal data.
      * @param inFrameCount Number of incoming signal frames.
      * @param inEventIndices Indices of events mapped to incoming signal.
+     * @param eventNames Names of events mapped to incoming signal.
      * @param inEventCount Number of events.
-     * @param fromSample Index of the first signal sample to take into account.
-     * @param toSample Index of the last signal sample to take into account.
+     * @param drawStartIndex Index of the first signal sample to take into account.
+     * @param drawEndIndex Index of the last signal sample to take into account.
      * @param drawSurfaceWidth Width of the surface signal is being drawn to.
+     * @param lastFrameIndex Index of the last incoming signal frame that should be drawn (used only during playback)
      */
-    protected void prepareSignalForDrawing(@NonNull SignalDrawData outSignalData, EventsDrawData outEvents,
-        @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices, int inEventCount, int fromSample,
-        int toSample, int drawSurfaceWidth) {
-        //benchmark.start();
-        try {
-            JniUtils.prepareForSignalDrawing(outSignalData, outEvents, inSamples, inFrameCount, inEventIndices,
-                inEventCount, fromSample, toSample, drawSurfaceWidth);
-        } catch (Exception e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-        //benchmark.end();
-    }
+    abstract protected void prepareSignalForDrawing(SignalDrawData signalDrawData, EventsDrawData eventsDrawData,
+        @NonNull short[][] inSamples, int inFrameCount, @NonNull int[] inEventIndices, @NonNull String[] eventNames,
+        int inEventCount, int drawStartIndex, int drawEndIndex, int drawSurfaceWidth, long lastFrameIndex);
 
     /**
-     * Adds events to event draw data and calculates their offset in regard to already drawn events.
+     * Prepares incoming signal FFT data for FFT drawing.
      *
-     * @param eventsDrawData Holds events indices and names mapped to incoming signal sample batch.
-     * @param eventNames Names of the events processed with the incoming signal sample batch.
-     * @param eventCount Number of the processed events.
-     */
-    protected void addEventsToEventDrawData(@NonNull EventsDrawData eventsDrawData, @NonNull String[] eventNames,
-        int eventCount) {
-        int indexBase = eventCount - eventsDrawData.eventCount;
-        if (indexBase >= 0) {
-            if (eventsDrawData.eventCount >= 0) {
-                System.arraycopy(eventNames, indexBase, eventsDrawData.eventNames, 0, eventsDrawData.eventCount);
-            }
-            //for (int i = 0; i < eventsDrawData.eventCount; i++) {
-            //    eventsDrawData.eventNames[i] = eventNames[indexBase + i];
-            //}
-        }
-    }
-
-    /**
-     * Forwards preparing of incoming signal FFT data for FFT drawing to C++ code.
-     *
-     * @param fftDrawData FFT data prepared for drawing.
      * @param fft Incoming FFT data.
+     * @param drawStartIndex Index of the first signal sample to take into account.
+     * @param drawEndIndex Index of the last signal sample to take into account.
      * @param drawSurfaceWidth Width of the surface FFT data is being drawn to.
      */
-    private void prepareFftForDrawing(@NonNull FftDrawData fftDrawData, @NonNull float[][] fft, int drawSurfaceWidth) {
-        //benchmark.start();
-        try {
-            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawSurfaceWidth, (int) MAX_GL_VERTICAL_SIZE);
-        } catch (Exception e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-        //benchmark.end();
-    }
+    abstract protected void prepareFftForDrawing(FftDrawData fftDrawData, @NonNull float[][] fft, int drawStartIndex,
+        int drawEndIndex, int drawSurfaceWidth);
 
-    abstract protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex);
+    /**
+     * Draws previously prepared data onto drawing surface.
+     *
+     * @param gl Instance of GL10 used for drawing
+     * @param samples Incoming samples organized by channels
+     * @param selectedChannel Currently selected channel
+     * @param surfaceWidth Width of the drawing surface
+     * @param surfaceHeight Height of the drawing surface
+     * @param glWindowWidth Width of the drawing window
+     * @param waveformScaleFactors Scale factors that should be used when drawing incoming signal waveform organized by channels
+     * @param waveformPositions Vertical positions of the waveform organized by channels
+     * @param drawStartIndex Index of the first sample that should be drawn
+     * @param drawEndIndex Index of the last sample that should be drawn
+     * @param scaleX Scale factor of the drawing window width
+     * @param scaleY Scale factor of the drawing window height
+     * @param lastFrameIndex Index of the last incoming signal frame that should be drawn (used only during playback)
+     */
+    abstract protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull SignalDrawData signalDrawData,
+        @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData, int selectedChannel, int surfaceWidth,
+        int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
+        int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex);
 
-    private void reshape(GL10 gl, float drawnSamplesCount) {
+    /**
+     * Updates the clipping area (zoom).
+     *
+     * @param gl Instance of GL10 used for drawing
+     * @param left Coordinate for the left vertical clipping plane
+     * @param top Coordinate for the top horizontal clipping plane
+     * @param right Coordinate for the right vertical clipping plane
+     * @param bottom Coordinate for the bottom horizontal clipping plane
+     */
+    void updateOrthoProjection(GL10 gl, float left, float top, float right, float bottom) {
+        // select and reset the projection matrix
         gl.glMatrixMode(GL10.GL_PROJECTION);
         gl.glLoadIdentity();
-        gl.glOrthof(0f, drawnSamplesCount - 1, -MAX_GL_VERTICAL_HALF_SIZE, MAX_GL_VERTICAL_HALF_SIZE, -1f, 1f);
+        gl.glOrthof(left, right, top, bottom, -1f, 1f);
+
+        // select and reset the model-view matrix
+        gl.glMatrixMode(GL10.GL_MODELVIEW);
+        gl.glLoadIdentity();
     }
 
-    @Nullable private String getAveragingTriggerEventName(String[] eventNames, int eventsCount) {
-        if (signalConfiguration.getSignalAveragingTriggerType() == SignalAveragingTriggerType.ALL_EVENTS
-            && eventsCount > 0) {
-            return eventNames[eventsCount - 1];
-        }
-        return null;
-    }
-
+    //
     private void resetLocalSignalDrawBuffers(int channelCount, int visibleChannelCount) {
         int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount());
         signalDrawBuffer = new MultichannelSignalDrawBuffer(channelCount, frameSize);
@@ -690,6 +757,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount, frameSize);
     }
 
+    //
     private void resetLocalSignalDrawData(int visibleChannelCount) {
         int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
         if (signalDrawData == null || signalDrawData.channelCount != visibleChannelCount
@@ -698,6 +766,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         }
     }
 
+    //
     private void resetWaveformScaleFactorsAndPositions(int visibleChannelCount) {
         waveformScaleFactors = new float[visibleChannelCount];
         for (int i = 0; i < visibleChannelCount; i++) {
@@ -838,8 +907,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     /**
      * Called when drawing surface is double-tapped. This method is called only if {@link #isAutoScaleEnabled()} returns {@code true}.
+     *
+     * @param x X coordinate of the tap point.
+     * @param y Y coordinate of the tap point.
      */
-    void autoScale() {
+    void autoScale(float x, float y) {
         autoScale.set(true);
     }
 

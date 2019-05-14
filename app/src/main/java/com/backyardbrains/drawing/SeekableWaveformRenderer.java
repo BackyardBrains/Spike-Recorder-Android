@@ -1,7 +1,6 @@
 package com.backyardbrains.drawing;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Size;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.drawing.gl.GlMeasurementArea;
@@ -27,8 +26,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private final GlMeasurementArea glMeasurementArea;
     private final GlSpikes glSpikes;
-    private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
-    private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
+
+    private SpikesDrawData[] spikesDrawData;
 
     private short[][] rmsSamples;
     private float measureSampleCount;
@@ -104,18 +103,14 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull SignalDrawData signalDrawData,
+        @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData, int selectedChannel, int surfaceWidth,
+        int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
+        int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         final int toSample = (int) lastFrameIndex;
         final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
         final boolean shouldQuerySamples = prevFromSample != fromSample || prevToSample != toSample;
-
-        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
-        final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
 
         if (spikeTrains != null && valuesAndIndexes != null) {
             if (drawSpikes()) {
@@ -145,17 +140,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     || prevMeasurementEndX != measurementAreaDrawEnd;
             // if start and end measurement area draw coordinates haven't changed from last draw don't waste resources recalculating
             if (shouldRemeasure || shouldQuerySamples) {
-                // convert measure start index to drawing plane
-                int measureStartIndex =
-                    (int) BYBUtils.map(measurementAreaDrawStart, 0f, surfaceWidth, 0f, samplesToDraw);
                 // convert measure start index to sample plane
-                measureStartIndex = (int) BYBUtils.map(measureStartIndex, 0f, samplesToDraw - 1, 0f, glWindowWidth);
+                int measureStartIndex =
+                    (int) BYBUtils.map(measurementAreaDrawStart, 0f, surfaceWidth, 0f, glWindowWidth);
                 // convert measure end index to drawing plane
-                int measureEndIndex = (int) BYBUtils.map(measurementAreaDrawEnd, 0f, surfaceWidth, 0f, samplesToDraw);
-                // convert measure end index to sample plane
-                measureEndIndex = (int) BYBUtils.map(measureEndIndex, 0f, samplesToDraw - 1, 0f, glWindowWidth);
+                int measureEndIndex = (int) BYBUtils.map(measurementAreaDrawEnd, 0f, surfaceWidth, 0f, glWindowWidth);
 
-                final int channelCount = signalDrawData.channelCount;
+                final int channelCount = getChannelCount();
                 int measureSampleCount = Math.abs(measureEndIndex - measureStartIndex);
                 // fill array of samples used for RMS calculation
                 if (rmsSamples == null || measureSampleCount != this.measureSampleCount) {
@@ -194,8 +185,8 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                                 spikeCounts[trainIndex][channelIndex] = 0;
                                 for (int spikeIndex = 0; spikeIndex < valuesAndIndexes[channelIndex][trainIndex].length;
                                     spikeIndex++) {
-                                    if (startIndex <= valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
-                                        && valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
+                                    if (startIndex <= valuesAndIndexes[channelIndex][trainIndex][spikeIndex].index
+                                        && valuesAndIndexes[channelIndex][trainIndex][spikeIndex].index
                                         <= startIndex + measureSampleCount) {
                                         spikeCounts[trainIndex][channelIndex]++;
                                     }
@@ -210,7 +201,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
             //draw measurement area
             gl.glPushMatrix();
-            gl.glScalef(drawScale, 1f, 1f);
             gl.glTranslatef(measurementAreaDrawStart, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
             glMeasurementArea.draw(gl, measurementAreaDrawEnd - measurementAreaDrawStart, MAX_GL_VERTICAL_SIZE,
                 Colors.GRAY_LIGHT, Colors.GRAY_50);
@@ -220,27 +210,33 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             prevMeasurementEndX = measurementAreaDrawEnd;
         }
 
-        super.draw(gl, samples, selectedChannel, signalDrawData, eventsDrawData, fftDrawData, surfaceWidth,
+        super.draw(gl, samples, signalDrawData, eventsDrawData, fftDrawData, selectedChannel, surfaceWidth,
             surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX,
             scaleY, lastFrameIndex);
 
         if (valuesAndIndexes != null) {
             if (drawSpikes()) {
+                int samplesToDraw = (int) (signalDrawData.samples[0].length * .5f);
+                float[] color;
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     if (valuesAndIndexes[i] != null) {
                         for (int j = 0; j < valuesAndIndexes[i].length; j++) {
                             if (valuesAndIndexes[i][j] != null) {
-                                //benchmark.start();
-                                int verticesCount =
-                                    fillSpikesAndColorsBuffers(valuesAndIndexes[i][j], spikesVertices, spikesColors,
-                                        glWindowWidth, fromSample, toSample, (long) samplesToDraw,
-                                        Colors.SPIKE_TRAIN_COLORS[j]);
-                                //benchmark.end();
-                                if (verticesCount > 0) {
+                                color = Colors.SPIKE_TRAIN_COLORS[j];
+                                try {
+                                    JniUtils.prepareForSpikesDrawing(spikesDrawData[j], valuesAndIndexes[i][j], color,
+                                        color, Integer.MIN_VALUE, Integer.MAX_VALUE, fromSample, toSample,
+                                        drawStartIndex, drawEndIndex, samplesToDraw, surfaceWidth);
+                                } catch (Exception e) {
+                                    LOGE(TAG, e.getMessage());
+                                    Crashlytics.logException(e);
+                                }
+                                if (spikesDrawData[j].vertexCount > 0) {
                                     gl.glPushMatrix();
                                     gl.glTranslatef(0f, waveformPositions[i], 0f);
                                     gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                                    glSpikes.draw(gl, spikesDrawData[j].vertices, spikesDrawData[j].colors,
+                                        spikesDrawData[j].vertexCount);
                                     gl.glPopMatrix();
                                 }
                             }
@@ -337,37 +333,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         // create arrays that holds spike data
         valuesAndIndexes = new SpikeIndexValue[channelCount][trainCount][];
-    }
-
-    // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, @NonNull float[] spikesVertices,
-        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample, long drawSampleCount,
-        @Size(4) float[] color) {
-        int verticesCounter = 0;
-        try {
-            if (valueAndIndices.length > 0) {
-                int colorsCounter = 0;
-                float scaleX = (float) drawSampleCount / glWindowWidth;
-                long index;
-
-                for (SpikeIndexValue valueAndIndex : valueAndIndices) {
-                    if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
-                        index = toSample - fromSample < glWindowWidth ? (long) (valueAndIndex.getIndex() + glWindowWidth
-                            - toSample) : valueAndIndex.getIndex() - fromSample;
-                        index = (long) (index * scaleX);
-                        spikesVertices[verticesCounter++] = index;
-                        spikesVertices[verticesCounter++] = valueAndIndex.getValue();
-                        System.arraycopy(color, 0, spikesColors, colorsCounter, color.length);
-                        colorsCounter += 4;
-                    }
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-
-        return verticesCounter;
+        // create
+        spikesDrawData = new SpikesDrawData[trainCount];
+        for (int i = 0; i < trainCount; i++) spikesDrawData[i] = new SpikesDrawData(GlSpikes.MAX_SPIKES);
     }
 
     // Check whether service is currently in playback mode

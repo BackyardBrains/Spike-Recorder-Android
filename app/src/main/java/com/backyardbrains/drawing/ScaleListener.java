@@ -34,8 +34,6 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
     private final BaseWaveformRenderer renderer;
 
-    private float sizeAtBeginningX = -1f;
-    private float scaleFactorX = 1.f;
     private boolean horizontalScaling;
     private boolean scalingAxisDetermined;
 
@@ -48,8 +46,6 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
     @Override public boolean onScaleBegin(ScaleGestureDetector detector) {
         if (renderer == null) return false;
 
-        sizeAtBeginningX = renderer.getGlWindowWidth();
-        scaleFactorX = 1.f;
         scalingAxisDetermined = false;
 
         return true;
@@ -60,7 +56,7 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
         try {
             // determine scale factors for both axis
-            scaleFactorX *=
+            float scaleFactorX =
                 (1 + SCALE_FACTOR_MULTIPLIER * (1 - detector.getCurrentSpanX() / detector.getPreviousSpanX()));
 
             final float xDiff = Math.abs(detector.getPreviousSpanX() - detector.getCurrentSpanX());
@@ -76,9 +72,10 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
 
             // scale
             if (horizontalScaling) {
-                renderer.setGlWindowWidth(sizeAtBeginningX * scaleFactorX);
+                renderer.onHorizontalZoom(scaleFactorX, detector.getFocusX(), detector.getFocusY());
             } else {
-                renderer.setWaveformScaleFactor((float) Math.pow(detector.getScaleFactor(), 2));
+                renderer.onVerticalZoom((float) Math.pow(detector.getScaleFactor(), 2), detector.getFocusX(),
+                    detector.getFocusY());
             }
 
             return true;

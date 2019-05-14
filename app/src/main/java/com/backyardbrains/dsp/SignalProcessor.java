@@ -8,7 +8,6 @@ import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.greenrobot.essentials.io.CircularByteBuffer;
 
@@ -28,6 +27,8 @@ public class SignalProcessor implements SignalSource.Processor {
     private static final float MAX_SAMPLE_STREAM_PROCESSING_TIME = 12f; // 12 seconds
     // Maximum time that should be processed when averaging signal
     private static final float MAX_THRESHOLD_PROCESSING_TIME = 2.4f; // 2.4 seconds
+    // FFT downsampling factor
+    private static final int FFT_DOWNSAMPLING_FACTOR = 4;
     // We only look at approx. 30% of the fft data cause we only want to analyze low frequency
     private static final int FFT_30HZ_LENGTH = 32; // ~30%
     // Percent of overlap between to consecutive FFT windows
@@ -42,9 +43,6 @@ public class SignalProcessor implements SignalSource.Processor {
     public static final int DEFAULT_SAMPLE_RATE = AudioUtils.DEFAULT_SAMPLE_RATE;
     // Default channel count
     public static final int DEFAULT_CHANNEL_COUNT = AudioUtils.DEFAULT_CHANNEL_COUNT;
-    // Default channel config
-    public static final boolean[] DEFAULT_CHANNEL_CONFIG =
-        Arrays.copyOf(AudioUtils.DEFAULT_CHANNEL_CONFIG, AudioUtils.DEFAULT_CHANNEL_COUNT);
     // Default samples buffer size
     static final int DEFAULT_SAMPLE_BUFFER_SIZE = (int) (MAX_AUDIO_PROCESSING_TIME * AudioUtils.DEFAULT_SAMPLE_RATE);
     // Default averaged samples buffer size
@@ -53,21 +51,18 @@ public class SignalProcessor implements SignalSource.Processor {
     // Default frame size (samples per channel)
     public static final int DEFAULT_FRAME_SIZE =
         (int) Math.floor((float) DEFAULT_SAMPLE_BUFFER_SIZE / AudioUtils.DEFAULT_CHANNEL_COUNT);
+    // Default sample rate after downsampling used for FFT
+    private static final int DEFAULT_FFT_SAMPLE_RATE = DEFAULT_SAMPLE_RATE / FFT_DOWNSAMPLING_FACTOR;
     // Default size of a single FFT window
-    private static final int DEFAULT_FFT_FULL_WINDOW_SIZE = (int) Math.pow(2, LOG2(AudioUtils.DEFAULT_SAMPLE_RATE) + 2);
+    private static final int DEFAULT_FFT_FULL_WINDOW_SIZE = (int) Math.pow(2, (int) LOG2(DEFAULT_FFT_SAMPLE_RATE) + 2);
 
     // Default number of windows used for FFT analysis
-    public static final int DEFAULT_FFT_WINDOW_COUNT;
+    public static final int DEFAULT_FFT_WINDOW_COUNT =
+        (int) ((MAX_AUDIO_PROCESSING_TIME * DEFAULT_FFT_SAMPLE_RATE) / (DEFAULT_FFT_FULL_WINDOW_SIZE * (1.0f - (
+            WINDOW_OVERLAP_PERCENT / 100.0f))));
     // Default number of FFF frequencies we want to take into account
-    public static final int DEFAULT_FFT_30HZ_WINDOW_SIZE;
-
-    static {
-        DEFAULT_FFT_WINDOW_COUNT =
-            (int) (DEFAULT_SAMPLE_BUFFER_SIZE / (DEFAULT_FFT_FULL_WINDOW_SIZE * (1.0f - (WINDOW_OVERLAP_PERCENT
-                / 100.0f))));
-        DEFAULT_FFT_30HZ_WINDOW_SIZE =
-            (DEFAULT_FFT_FULL_WINDOW_SIZE * FFT_30HZ_LENGTH) / AudioUtils.DEFAULT_SAMPLE_RATE;
-    }
+    public static final int DEFAULT_FFT_30HZ_WINDOW_SIZE =
+        (DEFAULT_FFT_FULL_WINDOW_SIZE * FFT_30HZ_LENGTH) / DEFAULT_FFT_SAMPLE_RATE;
 
     private static int processedSamplesCount = DEFAULT_SAMPLE_BUFFER_SIZE;
     private static int processedAveragedSamplesCount = DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE;
@@ -279,6 +274,20 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Returns whether channel at specified {@code channelIndex} is visible or not.
+     */
+    boolean isChannelVisible(int channelIndex) {
+        return signalConfiguration.isChannelVisible(channelIndex);
+    }
+
+    /**
+     * Returns currently selected channel.
+     */
+    int getSelectedChannel() {
+        return signalConfiguration.getSelectedChannel();
+    }
+
+    /**
      * Sets what incoming signal's channels are shown/hidden.
      */
     private void setChannelConfig(boolean[] channelConfig) {
@@ -343,10 +352,12 @@ public class SignalProcessor implements SignalSource.Processor {
         synchronized (lock) {
             // update signal configuration
             signalConfiguration.setSelectedChannel(channelIndex);
-        }
 
-        // pass selected channel to native code
-        JniUtils.setSelectedChannel(channelIndex);
+            // pass selected channel to native code
+            JniUtils.setSelectedChannel(channelIndex);
+            // fft should be reset every time channel is switched
+            if (signalConfiguration.isFftProcessing()) JniUtils.resetFft();
+        }
     }
 
     /**
@@ -355,25 +366,46 @@ public class SignalProcessor implements SignalSource.Processor {
     void setSignalAveraging(boolean signalAveraging) {
         LOGD(TAG, "setSignalAveraging(" + signalAveraging + ")");
 
-        // calculate max number of processed samples
-        calculateMaxNumberOfProcessedSamples(signalConfiguration.getSampleRate(), signalAveraging);
+        synchronized (lock) {
+            // calculate max number of processed samples
+            calculateMaxNumberOfProcessedSamples(signalConfiguration.getSampleRate(), signalAveraging);
 
-        // update signal configuration
-        signalConfiguration.setSignalAveraging(signalAveraging);
+            // update signal configuration
+            signalConfiguration.setSignalAveraging(signalAveraging);
 
-        // reset processing buffer
-        processingBuffer.resetAveragedSamplesBuffer(signalConfiguration.getVisibleChannelCount());
+            // reset processing buffer
+            processingBuffer.resetAveragedSamplesBuffer(signalConfiguration.getVisibleChannelCount());
+        }
     }
 
     /**
      * Sets type of triggering that will trigger signal averaging.
      */
     void setSignalAveragingTriggerType(@SignalAveragingTriggerType int triggerType) {
-        // update signal configuration
-        signalConfiguration.setSignalAveragingTriggerType(triggerType);
+        LOGD(TAG, "setSignalAveragingTriggerType(" + triggerType + ")");
 
-        // pass signal averaging trigger type to native code
-        JniUtils.setAveragingTriggerType(triggerType);
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setSignalAveragingTriggerType(triggerType);
+
+            // pass signal averaging trigger type to native code
+            JniUtils.setAveragingTriggerType(triggerType);
+        }
+    }
+
+    /**
+     * Sets whether incoming signal should be processed with FFT.
+     */
+    void setFftProcessing(boolean fftProcessing) {
+        LOGD(TAG, "fftProcessing(" + fftProcessing + ")");
+
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setFftProcessing(fftProcessing);
+
+            // fft should be reset every time it's opened
+            if (fftProcessing) JniUtils.resetFft();
+        }
     }
 
     /**
@@ -446,12 +478,12 @@ public class SignalProcessor implements SignalSource.Processor {
 
             if (visibleSignalData.channelCount > 0) { // only configure channels if there is at least one visible
                 final boolean signalAveraging = signalConfiguration.isSignalAveraging();
+                final boolean fftProcessing = signalConfiguration.isFftProcessing();
                 // configure channels of processed signal
                 signalData.copyReconfigured(visibleSignalData, signalConfiguration);
                 // average processed signal
                 JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
-                // TODO: 06-Mar-19 UNCOMMENT THIS WHEN FFT PROCESSING DEVELOPMENT CONTINUES
-                //if (!signalAveraging) JniUtils.processFft(fft, signalData);
+                if (!signalAveraging && fftProcessing) JniUtils.processFft(fft, visibleSignalData);
 
                 // forward received samples to Processing Service
                 if (listener != null) listener.onDataProcessed(visibleSignalData);
@@ -464,17 +496,21 @@ public class SignalProcessor implements SignalSource.Processor {
 
     // Set max number of samples that can be processed in normal processing, in threshold and in fft
     private void calculateMaxNumberOfProcessedSamples(int sampleRate, boolean signalAveraging) {
-        processedSamplesCount =
-            signalSource != null && signalSource.isUsb() ? (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate)
-                : (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
+        final float maxProcessingTime = signalSource != null && signalSource.isUsb() ? MAX_SAMPLE_STREAM_PROCESSING_TIME
+            : MAX_AUDIO_PROCESSING_TIME;
+        processedSamplesCount = (int) (maxProcessingTime * sampleRate);
         processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
         // this is queried by renderer to know how big drawing surface should be
         maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
         // fft
-        int processedFftFullWindowSize = (int) Math.pow(2, LOG2(sampleRate) + 2);
-        processedFftWindowSize = (processedFftFullWindowSize * FFT_30HZ_LENGTH) / sampleRate;
+        int fftSampleRate = sampleRate / FFT_DOWNSAMPLING_FACTOR;
+        int log2n = (int) LOG2(fftSampleRate);
+        int sampleWindowSize = (int) Math.pow(2, log2n + 2);
+        int fftDataSize = (int) (sampleWindowSize * .5f);
+        float oneFrequencyStep = .5f * fftSampleRate / (float) fftDataSize;
         processedFftWindowCount =
-            (int) ((MAX_AUDIO_PROCESSING_TIME * sampleRate) / (processedFftFullWindowSize * (1.0f - (
-                WINDOW_OVERLAP_PERCENT / 100.0f))));
+            (int) ((maxProcessingTime * fftSampleRate) / (sampleWindowSize * (1.0f - (WINDOW_OVERLAP_PERCENT
+                / 100.0f))));
+        processedFftWindowSize = (int) (FFT_30HZ_LENGTH / oneFrequencyStep);
     }
 }

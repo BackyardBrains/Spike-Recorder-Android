@@ -16,9 +16,23 @@
         app:layout_constraintHorizontal_bias="0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
-        app:layout_constraintRight_toLeftOf="@+id/ibtn_usb"
+        app:layout_constraintRight_toLeftOf="@+id/btn_fft"
         app:srcCompat="@drawable/ic_pulse_black_24dp"
         tools:ignore="ContentDescription"/>
+
+    <Button
+        android:id="@+id/btn_fft"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
+        android:background="@drawable/circle_gray_white"
+        android:fontFamily="@font/comic_book"
+        android:text="@string/label_fft"
+        android:textColor="@color/black"
+        android:textSize="@dimen/font_size_14"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"
+        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
+        app:layout_constraintRight_toLeftOf="@+id/ibtn_usb"/>
 
     <ImageButton
         android:id="@+id/ibtn_usb"
@@ -27,11 +41,25 @@
         android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
         android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
         android:background="@drawable/circle_gray_white"
-        app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"
+        app:layout_constraintLeft_toRightOf="@+id/btn_fft"
         app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"
         app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"
         app:srcCompat="@drawable/ic_usb_black_24dp"
         tools:ignore="ContentDescription"/>
+
+    <TextView
+        android:id="@+id/tv_select_channel"
+        android:layout_width="@dimen/min_button_tappable_h"
+        android:layout_height="@dimen/min_button_tappable_h"
+        android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:gravity="center"
+        android:text="@string/label_channel_abbr"
+        android:textColor="@color/white"
+        android:textSize="@dimen/font_size_22"
+        android:textStyle="bold"
+        app:layout_constraintLeft_toRightOf="@+id/ibtn_usb"
+        app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"/>
 
     <ProgressBar
         android:id="@+id/pb_usb_disconnecting"
@@ -56,22 +84,9 @@
         app:srcCompat="@drawable/ic_trigger_threshold_black_24dp"
         tools:ignore="ContentDescription"/>
 
-    <!--<ImageButton-->
-    <!--android:id="@+id/ibtn_filters"-->
-    <!--android:layout_width="wrap_content"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:layout_marginStart="5dp"-->
-    <!--android:layout_marginTop="5dp"-->
-    <!--android:background="@android:color/transparent"-->
-    <!--android:src="@drawable/ic_am_modulation"-->
-    <!--app:layout_constraintLeft_toRightOf="@+id/ibtn_threshold"-->
-    <!--app:layout_constraintTop_toBottomOf="@+id/tv_stop_recording"-->
-    <!--app:layout_constraintRight_toLeftOf="@+id/sb_averaged_sample_count"-->
-    <!--tools:ignore="ContentDescription"/>-->
-
     <SeekBar
         android:id="@+id/sb_averaged_sample_count"
-        android:layout_width="130dp"
+        android:layout_width="125dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/activity_horizontal_margin_quarter"
         android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
@@ -114,6 +129,7 @@
         android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
         android:layout_marginEnd="@dimen/activity_vertical_margin_quarter"
         android:background="@drawable/circle_gray_white_red"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintLeft_toLeftOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_settings"
@@ -167,6 +183,7 @@
         android:layout_height="0dp"
         android:layout_margin="@dimen/activity_horizontal_margin_quarter"
         android:visibility="gone"
+        android:translationZ="1000dp"
         app:layout_constraintVertical_bias="0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -180,6 +197,7 @@
         android:layout_marginTop="@dimen/activity_horizontal_margin_quarter"
         android:layout_marginEnd="@dimen/activity_horizontal_margin_quarter"
         android:background="@drawable/circle_gray_white"
+        android:translationZ="1001dp"
         app:layout_constraintLeft_toRightOf="@+id/ibtn_record"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -194,6 +212,7 @@
         android:gravity="center"
         android:padding="@dimen/activity_vertical_margin_half"
         android:visibility="gone"
+        android:translationZ="1002dp"
         android:text="@string/tap_to_stop_recording"
         android:textColor="@color/white"
         android:textAppearance="@android:style/TextAppearance.Small"

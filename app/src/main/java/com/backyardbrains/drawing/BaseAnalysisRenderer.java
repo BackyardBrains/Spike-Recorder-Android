@@ -6,7 +6,6 @@ import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.AnalysisUtils;
-import com.backyardbrains.utils.GlUtils;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import org.greenrobot.eventbus.EventBus;
@@ -72,8 +71,6 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
         glGraphThumbTouchHelper.setSurfaceHeight(surfaceHeight);
 
         gl.glViewport(0, 0, width, height);
-
-        GlUtils.glClear(gl);
         gl.glMatrixMode(GL10.GL_PROJECTION);
         gl.glLoadIdentity();
         gl.glOrthof(0f, surfaceWidth, 0f, surfaceHeight, -1f, 1f);
@@ -87,7 +84,10 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
         final int surfaceWidth = this.surfaceWidth;
         final int surfaceHeight = this.surfaceHeight;
 
-        GlUtils.glClear(gl);
+        // setup drawing surface
+        gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+
+        // draw on surface
         draw(gl, surfaceWidth, surfaceHeight);
     }
 

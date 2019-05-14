@@ -10,16 +10,16 @@ public class SignalDrawData {
     public int channelCount;
     public int maxSamplesPerChannel;
 
-    public short[][] samples;
+    public float[][] samples;
     public int[] sampleCounts;
 
     public SignalDrawData(int channelCount, int maxSamplesPerChannel) {
         this.channelCount = channelCount;
         this.maxSamplesPerChannel = maxSamplesPerChannel;
 
-        this.samples = new short[channelCount][];
+        this.samples = new float[channelCount][];
         for (int i = 0; i < channelCount; i++) {
-            this.samples[i] = new short[maxSamplesPerChannel];
+            this.samples[i] = new float[maxSamplesPerChannel];
         }
         this.sampleCounts = new int[channelCount];
     }

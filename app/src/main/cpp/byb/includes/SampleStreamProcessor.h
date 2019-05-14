@@ -73,6 +73,11 @@ namespace backyardbrains {
             // Resets all variables used for processing escape sequences
             void reset();
 
+//            uint batchCounter = 0;
+//            bool batchPrinted = false;
+//            unsigned char *inDataPrev = new unsigned char[10000];
+//            int inDataPrevLength;
+
             // Whether new frame is started being processed
             bool frameStarted = false;
             // Whether new sample is started being processed

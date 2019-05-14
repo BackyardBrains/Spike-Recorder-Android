@@ -2,13 +2,13 @@
 // Created by Tihomir Leka <tihomir at backyardbrains.com>
 //
 
-#include "DrawingUtils.h"
+#include <DrawingUtils.h>
 
 namespace backyardbrains {
 
     namespace utils {
 
-        void DrawingUtils::prepareSignalForDrawing(short **outSamples, int *outSampleCount, int *outEventIndices,
+        void DrawingUtils::prepareSignalForDrawing(float **outSamples, int *outSampleCounts, float *outEventIndices,
                                                    int &outEventCount, short **inSamples, int channelCount,
                                                    const int *inEventIndices, int inEventCount, int fromSample,
                                                    int toSample, int drawSurfaceWidth) {
@@ -16,19 +16,20 @@ namespace backyardbrains {
             for (int i = 0; i < channelCount; i++) {
                 envelopedSamples[i] = new short[drawSurfaceWidth * 5];
             }
-            envelope(envelopedSamples, outSampleCount, outEventIndices, outEventCount, inSamples, channelCount,
+            envelope(envelopedSamples, outSampleCounts, outEventIndices, outEventCount, inSamples, channelCount,
                      inEventIndices, inEventCount, fromSample, toSample, drawSurfaceWidth);
 
+            float xStep = (float) drawSurfaceWidth / (outSampleCounts[0] - 1);
             int sampleIndex = 0;
-            short x = 0;
+            for (int i = 0; i < inEventCount; i++)
+                outEventIndices[i] *= xStep;
             for (int i = 0; i < channelCount; i++) {
-                for (int j = 0; j < outSampleCount[i]; j++) {
-                    outSamples[i][sampleIndex++] = x++;
-                    outSamples[i][sampleIndex++] = envelopedSamples[i][j];
+                for (int j = 0; j < outSampleCounts[i]; j++) {
+                    outSamples[i][sampleIndex++] = xStep * j;
+                    outSamples[i][sampleIndex++] = (float) envelopedSamples[i][j];
                 }
-                outSampleCount[i] = sampleIndex;
+                outSampleCounts[i] = sampleIndex;
                 sampleIndex = 0;
-                x = 0;
             }
 
             for (int i = 0; i < channelCount; i++) {
@@ -45,7 +46,7 @@ namespace backyardbrains {
             int heightSegments = windowSize - 1;
 
             outVertexCount = (widthSegments + 1) * (heightSegments + 1) * 2;
-            outIndexCount = (widthSegments + 1) * (heightSegments + 1) * 6;
+            outIndexCount = widthSegments * heightSegments * 6;
             outColorCount = (widthSegments + 1) * (heightSegments + 1) * 4;
 
             float xOffset = 0;
@@ -88,9 +89,38 @@ namespace backyardbrains {
             }
         }
 
-        void DrawingUtils::envelope(short **outSamples, int *outSampleCount, int *outEventIndices, int &outEventCount,
-                                    short **inSamples, int channelCount, const int *inEventIndices,
-                                    int inEventIndicesCount, int fromSample, int toSample, int drawSurfaceWidth) {
+        void DrawingUtils::prepareSpikesForDrawing(float *outVertices, float *outColors, int &outVertexCount,
+                                                   int &outColorCount, float *inSpikeVertices, int *inSpikeIndices,
+                                                   int spikeCount, float *colorInRange, float *colorOutOfRange,
+                                                   int rangeStartIndex, int rangeEndIndex, float sampleStart,
+                                                   int sampleEnd, int drawStart, int drawEnd, int sampleCount,
+                                                   int width) {
+            int glWindowWidth = drawEnd - drawStart;
+            float scale = (float) width / (sampleCount - 1);
+            float index, value;
+            for (int i = 0; i < spikeCount; i++) {
+                index = inSpikeIndices[i];
+                if (sampleStart <= index && index < sampleEnd) {
+                    index += glWindowWidth - sampleEnd;
+                    index = backyardbrains::utils::AnalysisUtils::map(index, 0, glWindowWidth, 0, sampleCount);
+                    index *= scale;
+                    value = inSpikeVertices[i];
+                    outVertices[outVertexCount++] = index;
+                    outVertices[outVertexCount++] = value;
+                    if (value >= rangeStartIndex && value < rangeEndIndex) {
+                        std::copy(colorInRange, colorInRange + 4, outColors + outColorCount);
+                    } else {
+                        std::copy(colorOutOfRange, colorOutOfRange + 4, outColors + outColorCount);
+                    }
+                    outColorCount += 4;
+                }
+            }
+        }
+
+        void DrawingUtils::envelope(short **outSamples, int *outSampleCount, float *outEventIndices,
+                                    int &outEventIndicesCount, short **inSamples, int channelCount,
+                                    const int *inEventIndices, int inEventIndicesCount, int fromSample, int toSample,
+                                    int drawSurfaceWidth) {
             int drawSamplesCount = toSample - fromSample;
             if (drawSamplesCount < drawSurfaceWidth) drawSurfaceWidth = drawSamplesCount;
 
@@ -149,7 +179,7 @@ namespace backyardbrains {
                 }
 
                 outSampleCount[i] = sampleIndex;
-                if (!eventsProcessed) outEventCount = eventIndex;
+                if (!eventsProcessed) outEventIndicesCount = eventIndex;
 
                 eventsProcessed = true;
                 sampleIndex = 0;
