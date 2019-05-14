@@ -35,8 +35,9 @@ namespace backyardbrains {
             resetOnNextCycle = true;
         }
 
-        void FftProcessor::process(float **outData, uint32_t &windowCount, uint32_t &windowSize, short **inSamples,
-                                   uint32_t *inSampleCount) {
+        void
+        FftProcessor::process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
+                              short **inSamples, uint32_t *inSampleCount) {
             if (resetOnNextCycle) {
                 clean();
                 init();
@@ -44,6 +45,14 @@ namespace backyardbrains {
             }
 
             auto selectedChannel = getSelectedChannel();
+            // check if data for existing channel exists
+            if (selectedChannel >= channelCount) {
+                windowCount = 0;
+                windowSize = 0;
+                return;
+            }
+
+
             auto *samples = inSamples[selectedChannel];
             auto sampleCount = inSampleCount[selectedChannel];
 

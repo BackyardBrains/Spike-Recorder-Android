@@ -30,7 +30,8 @@ namespace backyardbrains {
             void resetFft();
 
             void
-            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, short **inSamples,
+            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
+                    short **inSamples,
                     uint32_t *inSampleCount);
 
         private:

@@ -748,21 +748,20 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (fftOn) toggleFft();
     }
 
-    // Index of the currently selected channel
-    int selectedChannel;
-
     // Opens a dialog for channel selection
     void openChannelsDialog() {
         if (getContext() != null) {
             // populate channel names collection
             int channelCount = getProcessingService() != null ? getProcessingService().getChannelCount() : 1;
+            int selectedChannel = getProcessingService() != null ? getProcessingService().getSelectedChanel() : 0;
             CHANNEL_NAMES.clear();
             for (int i = 0; i < channelCount; i++) {
-                CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+                if (getProcessingService() != null && getProcessingService().isChannelVisible(i)) {
+                    CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+                }
             }
             final MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
                 .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
-                    selectedChannel = which;
                     if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
                     return true;
                 })

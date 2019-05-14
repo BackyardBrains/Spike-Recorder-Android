@@ -191,10 +191,24 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Returns index of the currently selected channel.
+     */
+    public int getSelectedChanel() {
+        return signalProcessor.getSelectedChannel();
+    }
+
+    /**
      * Returns number of currently visible channels.
      */
     public int getVisibleChannelCount() {
         return signalProcessor.getVisibleChannelCount();
+    }
+
+    /**
+     * Returns {@code true} if channel at specified {@code channelIndex} is visible. {@code false} otherwise.
+     */
+    public boolean isChannelVisible(int channelIndex) {
+        return signalProcessor.isChannelVisible(channelIndex);
     }
 
     /**

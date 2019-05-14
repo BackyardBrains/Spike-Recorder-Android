@@ -42,6 +42,9 @@ public class GlFft {
     private GlRectangleMask glRectangleMask;
     private GLText glText;
 
+    private float[] valuesVertices = new float[200 * 4];
+    private float[] values = new float[200];
+
     private float timeAxisValueY;
     private float timeAxisNameY;
     private float timeAxisNameW;
@@ -96,8 +99,8 @@ public class GlFft {
 
     private void drawTimeAxis(GL10 gl, float w, float scaleX) {
         float valueStep = w / (TIME_AXIS_NOTCH_COUNT - 1) * scaleX;
-        float[] valuesVertices = new float[TIME_AXIS_NOTCH_COUNT * 4];
-        float[] values = new float[TIME_AXIS_VALUES.length];
+        //float[] valuesVertices = new float[TIME_AXIS_NOTCH_COUNT * 4];
+        //float[] values = new float[TIME_AXIS_VALUES.length];
         int vertexCounter = 0, valueCounter = 0;
 
         // draw scale notches
@@ -157,8 +160,8 @@ public class GlFft {
             scaleY < FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE ? FREQ_AXIS_VALUES : FREQ_AXIS_VALUES_ZOOMED;
         if (scaleY >= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE) scaleY /= FREQ_AXIS_NOTCH_ZOOM_SWITCH_SCALE;
         final float valueStep = h / (notchCount - 1) * scaleY;
-        final float[] valuesVertices = new float[notchCount * 4];
-        final float[] values = new float[notchValues.length];
+        //final float[] valuesVertices = new float[notchCount * 4];
+        //final float[] values = new float[notchValues.length];
         final float drawMarginYScaled = drawMarginY;
         int vertexCounter = 0, valueCounter = 0;
 

@@ -30,7 +30,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
     private static final String MSG_BOARD_INQUIRY = "board:;";
-    private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
+    //private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
 
     private ReadThread readThread;
     private WriteThread writeThread;
@@ -202,7 +202,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         // start the sample stream
         write(MSG_START_STREAM.getBytes());
         // and check maximal sample rate and number of channels
-        write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
+        //write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
     }
 
     /**

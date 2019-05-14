@@ -274,6 +274,20 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Returns whether channel at specified {@code channelIndex} is visible or not.
+     */
+    boolean isChannelVisible(int channelIndex) {
+        return signalConfiguration.isChannelVisible(channelIndex);
+    }
+
+    /**
+     * Returns currently selected channel.
+     */
+    int getSelectedChannel() {
+        return signalConfiguration.getSelectedChannel();
+    }
+
+    /**
      * Sets what incoming signal's channels are shown/hidden.
      */
     private void setChannelConfig(boolean[] channelConfig) {
@@ -463,7 +477,7 @@ public class SignalProcessor implements SignalSource.Processor {
                 signalData.copyReconfigured(visibleSignalData, signalConfiguration);
                 // average processed signal
                 JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
-                if (!signalAveraging && fftProcessing) JniUtils.processFft(fft, signalData);
+                if (!signalAveraging && fftProcessing) JniUtils.processFft(fft, visibleSignalData);
 
                 // forward received samples to Processing Service
                 if (listener != null) listener.onDataProcessed(visibleSignalData);

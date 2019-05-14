@@ -873,8 +873,8 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
 
     auto **outFftPtr = new jfloat *[maxWindowCount];
     for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxWindowSize]{0};
-    uint32_t windowCount, windowSize;
-    fftProcessor->process(outFftPtr, windowCount, windowSize, inSamplesPtr,
+    uint32_t windowCount = 0, windowSize = 0;
+    fftProcessor->process(outFftPtr, windowCount, windowSize, channelCount, inSamplesPtr,
                           reinterpret_cast<uint32_t *>(inSampleCountsPtr));
 
     // exception check
