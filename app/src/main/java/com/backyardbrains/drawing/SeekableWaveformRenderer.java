@@ -250,29 +250,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     Colors.GRAY_LIGHT, Colors.GRAY_50);
                 gl.glPopMatrix();
 
-                gl.glPushMatrix();
-                gl.glTranslatef(0f, MAX_GL_VERTICAL_HALF_SIZE, 0f);
-                gl.glScalef(1f, scaleY, 1f);
-
-                // draw RMS info label
-                gl.glPushMatrix();
-                gl.glTranslatef(surfaceWidth - infoLabelWidth, rmsInfoLabelY, 0f);
-                glLabel.draw(gl, infoLabelWidth, infoLabelHeight,
-                    String.format(context.getString(R.string.template_rms), rms), Colors.GREEN, Colors.BLACK);
-                for (int trainIndex = 0; trainIndex < spikeCounts.length; trainIndex++) {
-                    if (spikeCounts[trainIndex] >= 0) {
-                        // draw spike count label
-                        gl.glTranslatef(0f, infoLabelMove, 0f);
-                        glLabelWithCircle.draw(gl, infoLabelWidth, infoLabelHeight,
-                            String.format(context.getString(R.string.template_spike_count), spikeCounts[trainIndex],
-                                spikesPerSecond[trainIndex]), Colors.GREEN, Colors.BLACK,
-                            SPIKE_COUNT_INFO_LABEL_CIRCLE_COLORS[trainIndex]);
-                    }
-                }
-                gl.glPopMatrix();
-
-                gl.glPopMatrix();
-
                 prevMeasurementStartX = measurementAreaDrawStart;
                 prevMeasurementEndX = measurementAreaDrawEnd;
                 prevSelectedChannel = selectedChannel;
@@ -284,18 +261,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
             scaleY, lastFrameIndex);
 
         if (shouldDraw) {
-            if (measuring) {
-                // draw RMS time label
-                gl.glPushMatrix();
-                gl.glTranslatef(0f, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
-                gl.glScalef(1f, scaleY, 1f);
-                gl.glTranslatef((surfaceWidth - rmsTimeWidth) * .5f, rmsTimeBottomMargin, 0f);
-                glLabel.draw(gl, rmsTimeWidth, rmsTimeHeight,
-                    Formats.formatTime_s_msec(measureSampleCount / (float) sampleRate * 1000), Colors.WHITE,
-                    Colors.BLUE_LIGHT);
-                gl.glPopMatrix();
-            }
-
             if (valuesAndIndexes != null) {
                 int samplesToDraw = (int) (signalDrawData.samples[0].length * .5f);
                 float[] color;
@@ -324,6 +289,41 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                         }
                     }
                 }
+            }
+            
+            if (measuring) {
+                // draw RMS time label
+                gl.glPushMatrix();
+                gl.glTranslatef(0f, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                gl.glScalef(1f, scaleY, 1f);
+                gl.glTranslatef((surfaceWidth - rmsTimeWidth) * .5f, rmsTimeBottomMargin, 0f);
+                glLabel.draw(gl, rmsTimeWidth, rmsTimeHeight,
+                    Formats.formatTime_s_msec(measureSampleCount / (float) sampleRate * 1000), Colors.WHITE,
+                    Colors.BLUE_LIGHT);
+                gl.glPopMatrix();
+
+                gl.glPushMatrix();
+                gl.glTranslatef(0f, MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                gl.glScalef(1f, scaleY, 1f);
+
+                // draw RMS info label
+                gl.glPushMatrix();
+                gl.glTranslatef(surfaceWidth - infoLabelWidth, rmsInfoLabelY, 0f);
+                glLabel.draw(gl, infoLabelWidth, infoLabelHeight,
+                    String.format(context.getString(R.string.template_rms), rms), Colors.GREEN, Colors.BLACK);
+                for (int trainIndex = 0; trainIndex < spikeCounts.length; trainIndex++) {
+                    if (spikeCounts[trainIndex] >= 0) {
+                        // draw spike count label
+                        gl.glTranslatef(0f, infoLabelMove, 0f);
+                        glLabelWithCircle.draw(gl, infoLabelWidth, infoLabelHeight,
+                            String.format(context.getString(R.string.template_spike_count), spikeCounts[trainIndex],
+                                spikesPerSecond[trainIndex]), Colors.GREEN, Colors.BLACK,
+                            SPIKE_COUNT_INFO_LABEL_CIRCLE_COLORS[trainIndex]);
+                    }
+                }
+                gl.glPopMatrix();
+
+                gl.glPopMatrix();
             }
         }
 
