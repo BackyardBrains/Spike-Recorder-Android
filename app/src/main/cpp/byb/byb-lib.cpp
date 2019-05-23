@@ -36,6 +36,8 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, jshortArray test);
 JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type, jshortArray out, jobject in);
+JNIEXPORT jfloat JNICALL
+Java_com_backyardbrains_utils_JniUtils_rms(JNIEnv *env, jclass type, jshortArray in, jint length);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jclass type, jint sampleRate);
 JNIEXPORT void JNICALL
@@ -84,7 +86,8 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in);
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in,
+                                                  jfloat fftSampleRate, jint downsamplingFactor);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
                                                                jobject outEvents, jobjectArray inSignal,
@@ -400,6 +403,23 @@ Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type
     delete[] inSampleCountsPtr;
     delete[] outSamplesPtr;
     return sampleCount;
+}
+
+extern "C" JNIEXPORT jfloat JNICALL
+Java_com_backyardbrains_utils_JniUtils_rms(JNIEnv *env, jclass type, jshortArray in, jint length) {
+    auto *samplesPtr = new jshort[length];
+    env->GetShortArrayRegion(in, 0, length, samplesPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] samplesPtr;
+    }
+
+    const float rms = backyardbrains::utils::AnalysisUtils::RMS(samplesPtr, length);
+
+    delete[] samplesPtr;
+
+    return rms;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -837,7 +857,8 @@ Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in) {
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in,
+                                                  jfloat fftSampleRate, jint downsamplingFactor) {
     jint channelCount = env->GetIntField(in, sdChannelCountFid);
     auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sdSamplesFid));
     auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(in, sdSampleCountsFid));
@@ -875,7 +896,7 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
     for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxWindowSize]{0};
     uint32_t windowCount = 0, windowSize = 0;
     fftProcessor->process(outFftPtr, windowCount, windowSize, channelCount, inSamplesPtr,
-                          reinterpret_cast<uint32_t *>(inSampleCountsPtr));
+                          reinterpret_cast<uint32_t *>(inSampleCountsPtr), fftSampleRate, downsamplingFactor);
 
     // exception check
     if (exception_check(env)) {
@@ -1545,5 +1566,3 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
     delete[] spikeCountsPtr;
     delete[] spikeTrainsPtr;
 }
-
-#pragma clang diagnostic pop

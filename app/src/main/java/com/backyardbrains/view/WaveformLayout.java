@@ -5,17 +5,14 @@ import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import com.backyardbrains.ui.MainActivity;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
 import com.backyardbrains.drawing.InteractiveGLSurfaceView;
-import com.backyardbrains.utils.Formats;
+import com.backyardbrains.ui.MainActivity;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -28,9 +25,6 @@ public class WaveformLayout extends ConstraintLayout {
     private static final String TAG = makeLogTag(WaveformLayout.class);
 
     @BindView(R.id.fl_container) FrameLayout flGL;
-    @BindView(R.id.tv_signal) TextView tvSignal;
-    @BindView(R.id.tv_time) TextView tvTime;
-    @BindView(R.id.v_time_scale) View vTimeScale;
     @BindView(R.id.ibtn_zoom_in_h) ImageButton ibtnZoomInHorizontally;
     @BindView(R.id.ibtn_zoom_out_h) ImageButton ibtnZoomOutHorizontally;
     @BindView(R.id.ibtn_zoom_in_v) ImageButton ibtnZoomInVertically;
@@ -38,9 +32,6 @@ public class WaveformLayout extends ConstraintLayout {
 
     private InteractiveGLSurfaceView glSurface;
     protected ZoomButton zoomInButtonH, zoomOutButtonH, zoomInButtonV, zoomOutButtonV;
-
-    private float millivolts;
-    private float milliseconds;
 
     public WaveformLayout(Context context) {
         this(context, null);
@@ -85,26 +76,6 @@ public class WaveformLayout extends ConstraintLayout {
             // and add GL surface to UI
             flGL.addView(glSurface);
         }
-    }
-
-    /**
-     * Updates time text view
-     */
-    public void setMilliseconds(float milliseconds) {
-        if (this.milliseconds == milliseconds) return;
-
-        this.milliseconds = milliseconds;
-        tvTime.setText(Formats.formatTime_s_msec(milliseconds));
-    }
-
-    /**
-     * Updates signal text view
-     */
-    public void setMillivolts(float millivolts) {
-        if (this.millivolts == millivolts) return;
-
-        this.millivolts = millivolts;
-        tvSignal.setText(Formats.formatSignal(millivolts));
     }
 
     // Convenience method that casts context to BaseActivity

@@ -2,8 +2,10 @@ package com.backyardbrains.dsp;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.dsp.audio.PlaybackSignalSource;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
@@ -27,8 +29,10 @@ public class SignalProcessor implements SignalSource.Processor {
     private static final float MAX_SAMPLE_STREAM_PROCESSING_TIME = 12f; // 12 seconds
     // Maximum time that should be processed when averaging signal
     private static final float MAX_THRESHOLD_PROCESSING_TIME = 2.4f; // 2.4 seconds
-    // FFT downsampling factor
-    private static final int FFT_DOWNSAMPLING_FACTOR = 4;
+    // FFT downsampling factor while processing live signal
+    private static final int FFT_LIVE_SIGNAL_DOWNSAMPLING_FACTOR = 4;
+    // FFT sample rate we need to achieve while processing playback signal
+    private static final float FFT_PLAYBACK_SIGNAL_SAMPLE_RATE = 128f;
     // We only look at approx. 30% of the fft data cause we only want to analyze low frequency
     private static final int FFT_30HZ_LENGTH = 32; // ~30%
     // Percent of overlap between to consecutive FFT windows
@@ -52,7 +56,7 @@ public class SignalProcessor implements SignalSource.Processor {
     public static final int DEFAULT_FRAME_SIZE =
         (int) Math.floor((float) DEFAULT_SAMPLE_BUFFER_SIZE / AudioUtils.DEFAULT_CHANNEL_COUNT);
     // Default sample rate after downsampling used for FFT
-    private static final int DEFAULT_FFT_SAMPLE_RATE = DEFAULT_SAMPLE_RATE / FFT_DOWNSAMPLING_FACTOR;
+    private static final int DEFAULT_FFT_SAMPLE_RATE = DEFAULT_SAMPLE_RATE / FFT_LIVE_SIGNAL_DOWNSAMPLING_FACTOR;
     // Default size of a single FFT window
     private static final int DEFAULT_FFT_FULL_WINDOW_SIZE = (int) Math.pow(2, (int) LOG2(DEFAULT_FFT_SAMPLE_RATE) + 2);
 
@@ -123,11 +127,15 @@ public class SignalProcessor implements SignalSource.Processor {
         new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
     // Holds processed signal data after FFT processing
     private FftData fft = new FftData(DEFAULT_FFT_WINDOW_COUNT, DEFAULT_FFT_30HZ_WINDOW_SIZE);
+    //
+    private float fftSampleRate = DEFAULT_FFT_SAMPLE_RATE;
+    //
+    private int downsamplingFactor = FFT_LIVE_SIGNAL_DOWNSAMPLING_FACTOR;
 
     // Reference to the singleton buffer for storing data after processing
     private final ProcessingBuffer processingBuffer;
 
-    //
+    // Configuration of the incoming processed signal
     private final SignalConfiguration signalConfiguration;
 
     // Incoming signal source
@@ -466,8 +474,8 @@ public class SignalProcessor implements SignalSource.Processor {
         if (processingThread != null) processingThread = null;
     }
 
-    //private final Benchmark benchmark =
-    //    new Benchmark("DATA_PROCESSING").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
+    private final Benchmark benchmark =
+        new Benchmark("FFT_PROCESSING").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
     @SuppressWarnings("WeakerAccess") void processData(@NonNull byte[] buffer, int length) {
         synchronized (lock) {
@@ -483,7 +491,11 @@ public class SignalProcessor implements SignalSource.Processor {
                 signalData.copyReconfigured(visibleSignalData, signalConfiguration);
                 // average processed signal
                 JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
-                if (!signalAveraging && fftProcessing) JniUtils.processFft(fft, visibleSignalData);
+                if (!signalAveraging && fftProcessing) {
+                    benchmark.start();
+                    JniUtils.processFft(fft, visibleSignalData, fftSampleRate, downsamplingFactor);
+                    benchmark.end();
+                }
 
                 // forward received samples to Processing Service
                 if (listener != null) listener.onDataProcessed(visibleSignalData);
@@ -503,7 +515,16 @@ public class SignalProcessor implements SignalSource.Processor {
         // this is queried by renderer to know how big drawing surface should be
         maxProcessedSamplesCount = signalAveraging ? processedAveragedSamplesCount : processedSamplesCount;
         // fft
-        int fftSampleRate = sampleRate / FFT_DOWNSAMPLING_FACTOR;
+        //int fftDownsamplingFactor = sampleRate / FFT_LIVE_AUDIO_SAMPLE_RATE;
+        //int fftSampleRate = sampleRate / fftDownsamplingFactor;
+        //int fftSampleRate;
+        if (signalSource != null && signalSource.isFile() && ((PlaybackSignalSource) signalSource).isSeeking()) {
+            fftSampleRate = FFT_PLAYBACK_SIGNAL_SAMPLE_RATE;
+            downsamplingFactor = (int) (sampleRate / fftSampleRate);
+        } else {
+            downsamplingFactor = FFT_LIVE_SIGNAL_DOWNSAMPLING_FACTOR;
+            fftSampleRate = (float) sampleRate / downsamplingFactor;
+        }
         int log2n = (int) LOG2(fftSampleRate);
         int sampleWindowSize = (int) Math.pow(2, log2n + 2);
         int fftDataSize = (int) (sampleWindowSize * .5f);

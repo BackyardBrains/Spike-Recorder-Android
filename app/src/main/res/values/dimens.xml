@@ -12,7 +12,7 @@
     <dimen name="mid_button_tappable_h">56dp</dimen>
     <dimen name="max_button_tappable_h">72dp</dimen>
 
-    <dimen name="rms_time_top_margin">20dp</dimen>
+    <dimen name="rms_time_top_margin">58dp</dimen>
     <dimen name="rms_time_bottom_margin">10dp</dimen>
 
     <dimen name="threshold_drag_surface_w">40dp</dimen>

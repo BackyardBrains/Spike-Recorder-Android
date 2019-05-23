@@ -7,11 +7,11 @@ import com.backyardbrains.drawing.gl.GlHLine;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
 import com.backyardbrains.drawing.gl.GlSpikes;
-import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
 import com.crashlytics.android.Crashlytics;
@@ -25,16 +25,19 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
     static final String TAG = makeLogTag(FindSpikesRenderer.class);
 
     private static final int LINE_WIDTH = 1;
+    // Radius of the handle base
+    private static final float HANDLE_BASE_RADIUS_DP = 10f;
 
     private final GlHandleDragHelper thresholdHandleDragHelper;
     private final Rect rect = new Rect();
 
-    private final GlWaveform glWaveform;
     private final GlSpikes glSpikes;
     private final GlHLine glThresholdLine;
     private final GlHandle glThresholdHandle;
 
     private final SpikesDrawData spikesDrawData = new SpikesDrawData(GlSpikes.MAX_SPIKES);
+
+    private final float handleBaseRadius;
 
     private int[] thresholds = new int[2];
 
@@ -68,10 +71,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
             }
         });
 
-        glWaveform = new GlWaveform();
         glSpikes = new GlSpikes();
         glThresholdLine = new GlHLine();
         glThresholdHandle = new GlHandle();
+
+        handleBaseRadius = ViewUtils.dpToPx(fragment.getResources(), HANDLE_BASE_RADIUS_DP);
 
         loadSpikeTrains();
     }
@@ -124,13 +128,6 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         loadSpikeTrains();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override protected boolean drawSpikes() {
-        return false;
-    }
-
     //private final Benchmark benchmark =
     //    new Benchmark("SPIKES_RETRIEVAL").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
@@ -142,13 +139,11 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
         int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
         final int samplesToDraw = (int) (signalDrawData.sampleCounts[0] * .5f);
+        final int sampleRate = getSampleRate();
 
-        gl.glPushMatrix();
-        gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
         // draw waveform
-        glWaveform.draw(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
-            Colors.GRAY);
-        gl.glPopMatrix();
+        drawWaveform(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
+            waveformScaleFactors[selectedChannel], Colors.GRAY);
 
         if (getAnalysisManager() != null) {
             // retry getting spike analysis id until we have it
@@ -177,7 +172,6 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                 LOGE(TAG, e.getMessage());
                 Crashlytics.logException(e);
             }
-            //fillSpikesAndColorsBuffers(valuesAndIndices, spikesDrawData, glWindowWidth, fromSample, toSample);
             // draw spikes
             if (spikesDrawData.vertexCount > 0) {
                 gl.glPushMatrix();
@@ -196,7 +190,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         // draw threshold line
         gl.glPushMatrix();
         gl.glTranslatef(0f, scaledThreshold, 0f);
-        gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
+        //gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
         glThresholdLine.draw(gl, 0f, surfaceWidth, LINE_WIDTH, currentColor);
         gl.glPopMatrix();
         // draw threshold handle
@@ -205,7 +199,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         gl.glPushMatrix();
         gl.glTranslatef(0f, scaledThreshold, 0f);
         gl.glScalef(1f, scaleY, 1f);
-        glThresholdHandle.draw(gl, currentColor, true);
+        glThresholdHandle.draw(gl, handleBaseRadius, true, currentColor);
         gl.glPopMatrix();
 
         // register left threshold handle as draggable area with drag helper
@@ -227,13 +221,16 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         gl.glPushMatrix();
         gl.glTranslatef(surfaceWidth, scaledThreshold, 0f);
         gl.glScalef(-1f, scaleY, 1f);
-        glThresholdHandle.draw(gl, currentColor, true);
+        glThresholdHandle.draw(gl, handleBaseRadius, true, currentColor);
         gl.glPopMatrix();
 
         // register right threshold handle as draggable area with drag helper
         glThresholdHandle.getBorders(rect);
         thresholdHandleDragHelper.registerDraggableArea(ThresholdOrientation.RIGHT, surfaceWidth - rect.width,
             rect.y + glYToSurfaceY(scaledThreshold), rect.width, rect.height);
+
+        // draw time label
+        drawTimeLabel(gl, sampleRate, surfaceWidth, glWindowWidth, scaleY);
     }
 
     //=================================================

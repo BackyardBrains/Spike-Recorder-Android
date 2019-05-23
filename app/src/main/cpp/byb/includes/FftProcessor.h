@@ -30,18 +30,17 @@ namespace backyardbrains {
             void resetFft();
 
             void
-            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
-                    short **inSamples,
-                    uint32_t *inSampleCount);
+            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount, short **inSamples,
+                    const uint32_t *inSampleCount, float fftSampleRate, int downsamplingFactor);
 
         private:
             static const char *TAG;
 
             static constexpr uint8_t WINDOW_OVERLAP_PERCENT = 99;
             static constexpr uint8_t FFT_30HZ_LENGTH = 32;
-            static constexpr uint8_t FFT_DOWNSAMPLING_FACTOR = 4;
+            static constexpr float FFT_SAMPLE_RATE = 11025.0f; // 44100 / 4
 
-            void init();
+            void init(const float d);
 
             void clean();
 
@@ -62,6 +61,8 @@ namespace backyardbrains {
 
             // Whether buffers and normalization needs to be reset before processing
             bool resetOnNextCycle = false;
+            // Last set value for FFT sample rate
+            float lastFftSampleRate;
 
             // Holds all unanalyzed samples left from the latest sample batch
             float *unanalyzedSamples;

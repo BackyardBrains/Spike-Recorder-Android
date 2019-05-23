@@ -20,6 +20,8 @@ public class JniUtils {
 
     public static native int interleaveSignal(short[] out, SignalData in);
 
+    public static native float rms(short[] in, int length);
+
     public static native void setSampleRate(int sampleRate);
 
     public static native void setChannelCount(int channelCount);
@@ -62,7 +64,7 @@ public class JniUtils {
 
     public static native void resetFft();
 
-    public static native void processFft(FftData out, SignalData in);
+    public static native void processFft(FftData out, SignalData in, float fftSampleRate, int downsamplingFactor);
 
     public static native void prepareForSignalDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
         short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,

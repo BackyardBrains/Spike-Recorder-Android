@@ -1,6 +1,5 @@
 package com.backyardbrains.drawing;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
@@ -130,17 +129,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
         /**
          * Listener that is invoked while drawn signal is being measured.
-         *
-         * @param rms RMS value by channels of the selected part of drawn signal.
-         * @param firstTrainSpikeCount Number of spikes belonging to first train by channels within selected part of drawn signal.
-         * @param secondTrainSpikeCount Number of spikes belonging to second train by channels within selected part of drawn signal.
-         * @param thirdTrainSpikeCount Number of spikes belonging to third train by channels within selected part of drawn signal.
-         * @param selectedChannel Index of the currently selected channel.
-         * @param sampleCount Number of spikes within selected part of drawn signal.
          */
-        void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
-            @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
-            int sampleCount);
+        void onMeasure();
 
         /**
          * Listener that is invoked when signal measurement ends.
@@ -312,13 +302,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     boolean isChannelVisible(int channelIndex) {
         return signalConfiguration.isChannelVisible(channelIndex);
-    }
-
-    /**
-     * Returns number of visible channels
-     */
-    int getVisibleChannelCount() {
-        return signalConfiguration.getVisibleChannelCount();
     }
 
     /**
@@ -506,7 +489,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to load it's local settings so it can render inital state correctly. It is the counterpart
      * to {@link #onSaveSettings(Context)}.
      *
-     * This method should typically be called in {@link Activity#onStart()}. Subclasses
+     * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
@@ -521,7 +504,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to save it's local settings so they can be retrieved when renderer is recreated. It is the
      * counterpart to {@link #onLoadSettings(Context)}.
      *
-     * This method should typically be called in {@link Activity#onStart()}. Subclasses
+     * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
@@ -870,14 +853,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
-     * Triggers {@link OnMeasureListener#onMeasure(float[], int[], int[], int[], int, int)} call.
+     * Triggers {@link OnMeasureListener#onMeasure()} call.
      */
-    final void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount,
-        int[] thirdTrainSpikeCount, int selectedChannel, int sampleCount) {
-        if (onMeasureListener != null) {
-            onMeasureListener.onMeasure(rms, firstTrainSpikeCount, secondTrainSpikeCount, thirdTrainSpikeCount,
-                selectedChannel, sampleCount);
-        }
+    final void onMeasure() {
+        if (onMeasureListener != null) onMeasureListener.onMeasure();
     }
 
     /**
