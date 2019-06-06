@@ -315,6 +315,11 @@ public class SignalProcessor implements SignalSource.Processor {
      */
     void hideChannel(int channelIndex) {
         synchronized (lock) {
+            // if we are hiding currently selected channel we should switch to default (0) channel
+            if (channelIndex == getSelectedChannel()) {
+                setSelectedChannel(0);
+            }
+
             // update signal configuration
             signalConfiguration.setChannelVisible(channelIndex, false);
 
