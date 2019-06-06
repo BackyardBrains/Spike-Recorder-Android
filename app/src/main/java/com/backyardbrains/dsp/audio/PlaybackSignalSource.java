@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.util.Pair;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
+import com.backyardbrains.dsp.SignalProcessor;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
@@ -29,9 +30,6 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class PlaybackSignalSource extends AbstractSignalSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSignalSource.class);
-
-    // Number of seconds buffer should hold while seeking
-    private static final int SEEK_BUFFER_SIZE_IN_SEC = 6;
 
     /**
      * Thread used for reading the audio file.
@@ -101,9 +99,13 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 int read;
 
                 // set size of the buffer for seeking
-                // we need full buffer of 6 seconds (in bytes)
-                bufferSize =
-                    (raf.bitsPerSample() * raf.sampleRate() * raf.channelCount() * SEEK_BUFFER_SIZE_IN_SEC) / 8;
+                // we need full buffer of 6 seconds (in bytes) + one FFT window of samples
+                int windowSampleCount = SignalProcessor.FFT_WINDOW_TIME_LENGTH * raf.sampleRate();
+                int windowSampleDiffCount =
+                    (int) (windowSampleCount * (1.0f - (SignalProcessor.FFT_WINDOW_OVERLAP_PERCENT / 100.0f)));
+                bufferSize = (raf.bitsPerSample() * raf.channelCount() * (
+                    SignalProcessor.FFT_WINDOW_COUNT * windowSampleDiffCount + windowSampleCount
+                        - windowSampleDiffCount)) / 8;
                 buffer = new byte[bufferSize];
 
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
@@ -188,7 +190,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
             // buffer needs to be initialized
             if (buffer == null) return;
-            
+
             // number of bytes actually read during single read
             if (raf.read(buffer) > 0) {
                 if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));

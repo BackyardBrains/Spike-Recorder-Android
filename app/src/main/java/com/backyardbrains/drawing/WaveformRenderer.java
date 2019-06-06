@@ -379,11 +379,11 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void prepareFftForDrawing(@NonNull FftDrawData fftDrawData, @NonNull float[][] fft,
-        int drawStartIndex, int drawEndIndex, int drawSurfaceWidth) {
+        int drawStartIndex, int drawEndIndex, float drawWidthMax, int drawSurfaceWidth) {
         //benchmark.start();
         try {
-            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawSurfaceWidth,
-                (int) fftSurfaceHeight, fftScaleFactor);
+            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawWidthMax,
+                drawSurfaceWidth, (int) fftSurfaceHeight, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);

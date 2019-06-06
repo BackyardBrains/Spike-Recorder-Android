@@ -11,7 +11,14 @@ namespace backyardbrains {
         const char *FftProcessor::TAG = "FftProcessor";
 
         FftProcessor::FftProcessor() {
-            init(FFT_SAMPLE_RATE);
+            input.resize(FFT_WINDOW_SAMPLE_COUNT, 0.0f);
+            outReal.resize(audiofft::AudioFFT::ComplexSize(FFT_WINDOW_SAMPLE_COUNT));
+            outImaginary.resize(audiofft::AudioFFT::ComplexSize(FFT_WINDOW_SAMPLE_COUNT));
+
+            // initialize object that's doing actual FFT analysis
+            fft.init(FFT_WINDOW_SAMPLE_COUNT);
+
+            init(getSampleRate());
         }
 
         FftProcessor::~FftProcessor() {
@@ -24,6 +31,7 @@ namespace backyardbrains {
         }
 
         void FftProcessor::setSampleRate(float sampleRate) {
+            __android_log_print(ANDROID_LOG_DEBUG, TAG, "setSampleRate(%f)", sampleRate);
             Processor::setSampleRate(sampleRate);
 
             resetOnNextCycle = true;
@@ -36,136 +44,217 @@ namespace backyardbrains {
         }
 
         void
-        FftProcessor::process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
-                              short **inSamples, const uint32_t *inSampleCount, float fftSampleRate,
-                              int downsamplingFactor) {
-            bool reset = false;
-            if (lastFftSampleRate != fftSampleRate) {
-                reset = true;
-                lastFftSampleRate = fftSampleRate;
+        FftProcessor::process(float **outData, int windowCount, int &windowCounter, int &frequencyCounter,
+                              int channelCount, short **inSamples, const int *inSampleCount) {
+//            long long start = currentTimeInMilliseconds();
+//            __android_log_print(ANDROID_LOG_DEBUG, TAG, "%ld - AFTER CLEAN AND INIT -> %d",
+//                                static_cast<long>(currentTimeInMilliseconds() - start), oWindowSampleCount);
+
+            float sampleRate = getSampleRate();
+
+            // last processed batch was during seek and now we stopped seeking
+            if (lastSeeking) {
+                processSeek(outData, windowCount, windowCounter, frequencyCounter, channelCount, inSamples,
+                            inSampleCount);
+                lastSeeking = false;
+                return;
             }
-            if (resetOnNextCycle || reset) {
+
+            if (resetOnNextCycle) {
                 clean();
-                init(fftSampleRate);
+                init(sampleRate);
                 resetOnNextCycle = false;
             }
 
             auto selectedChannel = getSelectedChannel();
             // check if data for existing channel exists
             if (selectedChannel >= channelCount) {
-                windowCount = 0;
-                windowSize = 0;
+                windowCounter = 0;
+                frequencyCounter = 0;
                 return;
             }
-
 
             auto *samples = inSamples[selectedChannel];
             auto sampleCount = inSampleCount[selectedChannel];
 
-            // simple downsampling because only low frequencies are required
-//            auto dsFactor = static_cast<uint8_t>(getSampleRate() / FFT_LIVE_SAMPLE_RATE);
-//            const uint8_t dsFactor = FFT_DOWNSAMPLING_FACTOR;
-            auto dsLength = sampleCount / downsamplingFactor;
-            auto dsSamples = new short[dsLength]{0};
-            for (int i = 0; i < dsLength; i++)
-                dsSamples[i] = samples[downsamplingFactor * i];
-
-            const uint32_t newUnanalyzedSampleCount = unanalyzedSampleCount + dsLength;
-            auto addWindowsCount = static_cast<uint16_t>(newUnanalyzedSampleCount / windowSampleDiffCount);
+            const int newUnanalyzedSampleCount = unanalyzedSampleCount + sampleCount;
+            auto addWindowsCount = static_cast<uint16_t>(newUnanalyzedSampleCount / oWindowSampleDiffCount);
 
             if (addWindowsCount == 0) {
-                std::copy(dsSamples, dsSamples + dsLength, unanalyzedSamples + unanalyzedSampleCount);
-                unanalyzedSampleCount += dsLength;
+                std::copy(samples, samples + sampleCount, unanalyzedSamples + unanalyzedSampleCount);
+                unanalyzedSampleCount += sampleCount;
 
-                windowCount = addWindowsCount;
-                windowSize = thirtyHzDataSize;
+                windowCounter = addWindowsCount;
+                frequencyCounter = FFT_WINDOW_30HZ_DATA_SIZE;
 
+                return;
+            } else if (addWindowsCount >= windowCount) {
+                processSeek(outData, windowCount, windowCounter, frequencyCounter, channelCount, inSamples,
+                            inSampleCount);
                 return;
             }
 
             auto *samplesToAnalyze = new float[newUnanalyzedSampleCount];
             if (unanalyzedSampleCount > 0)
                 std::copy(unanalyzedSamples, unanalyzedSamples + unanalyzedSampleCount, samplesToAnalyze);
-            std::copy(dsSamples, dsSamples + dsLength, samplesToAnalyze + unanalyzedSampleCount);
+            std::copy(samples, samples + sampleCount, samplesToAnalyze + unanalyzedSampleCount);
 
-            uint32_t offset = 0;
-            auto *in = new float[sampleWindowSize]{0};
+
+            int offset = 0;
+            auto *in = new short[oWindowSampleCount]{0};
+            auto dsSamples = new float[dsIndexCount]{0};
+            int counter = 0;
             for (int i = 0; i < addWindowsCount; i++) {
                 // construct next window of data for analysis
-                offset = windowSampleDiffCount * i;
-                std::copy(sampleBuffer + windowSampleDiffCount, sampleBuffer + sampleWindowSize, in);
-                std::copy(samplesToAnalyze + offset, samplesToAnalyze + offset + windowSampleDiffCount,
-                          in + sampleWindowSize - windowSampleDiffCount);
+                offset = oWindowSampleDiffCount * i;
+                std::copy(sampleBuffer + oWindowSampleDiffCount, sampleBuffer + oWindowSampleCount, in);
+                std::copy(samplesToAnalyze + offset, samplesToAnalyze + offset + oWindowSampleDiffCount,
+                          in + oWindowSampleCount - oWindowSampleDiffCount);
+
+                // simple downsampling because only low frequencies are required
+                for (int j = 0; j < dsIndexCount; j++)
+                    dsSamples[j] = in[dsIndices[j]];
 
                 // perform FFT analysis
-                input.assign(in, in + sampleWindowSize);
+                input.assign(dsSamples, dsSamples + dsIndexCount);
 
                 fft.fft(input.data(), outReal.data(), outImaginary.data());
 
                 // calculate DC component
-                outData[i][0] = static_cast<float>(sqrtf(outReal[0] * outReal[0]) / halfMaxMagnitude - 1.0);
+                outData[counter][0] = static_cast<float>(sqrtf(outReal[0] * outReal[0]) / halfMaxMagnitude - 1.0);
                 // calculate magnitude for all freq.
-                for (int j = 1; j < thirtyHzDataSize; j++) {
-                    outData[i][j] = sqrtf(outReal[j] * outReal[j] + outImaginary[j] * outImaginary[j]);
-                    if (outData[i][j] > maxMagnitude) {
-                        maxMagnitude = outData[i][j];
+                for (int j = 1; j < FFT_WINDOW_30HZ_DATA_SIZE; j++) {
+                    outData[counter][j] = sqrtf(outReal[j] * outReal[j] + outImaginary[j] * outImaginary[j]);
+                    if (outData[counter][j] > maxMagnitude) {
+                        maxMagnitude = outData[counter][j];
                         halfMaxMagnitude = maxMagnitude * 0.5f;
-                        maxMagnitudeOptimized = static_cast<float>(outData[i][j] * 0.001953125);// 1/512
-                        halfMaxMagnitudeOptimized = maxMagnitudeOptimized * 0.5f;
                     }
-                    outData[i][j] = static_cast<float>(outData[i][j] / halfMaxMagnitude - 1.0);
+                    outData[counter][j] = static_cast<float>(outData[counter][j] / halfMaxMagnitude - 1.0);
                 }
+                counter++;
 
-                std::move(sampleBuffer + windowSampleDiffCount, sampleBuffer + sampleWindowSize, sampleBuffer);
-                std::copy(samplesToAnalyze + offset, samplesToAnalyze + offset + windowSampleDiffCount,
-                          sampleBuffer + sampleWindowSize - windowSampleDiffCount);
+                std::move(sampleBuffer + oWindowSampleDiffCount, sampleBuffer + oWindowSampleCount, sampleBuffer);
+                std::copy(samplesToAnalyze + offset, samplesToAnalyze + offset + oWindowSampleDiffCount,
+                          sampleBuffer + oWindowSampleCount - oWindowSampleDiffCount);
             }
 
-            std::copy(samplesToAnalyze + windowSampleDiffCount * addWindowsCount,
+            std::copy(samplesToAnalyze + oWindowSampleDiffCount * addWindowsCount,
                       samplesToAnalyze + newUnanalyzedSampleCount, unanalyzedSamples);
-            unanalyzedSampleCount = newUnanalyzedSampleCount - windowSampleDiffCount * addWindowsCount;
+            unanalyzedSampleCount = newUnanalyzedSampleCount - oWindowSampleDiffCount * addWindowsCount;
 
-            windowCount = addWindowsCount;
-            windowSize = thirtyHzDataSize;
+            windowCounter = counter;
+            frequencyCounter = FFT_WINDOW_30HZ_DATA_SIZE;
 
+            delete[] dsSamples;
             delete[] in;
             delete[] samplesToAnalyze;
         }
 
+        void FftProcessor::processSeek(float **outData, int windowCount, int &windowCounter, int &frequencyCounter,
+                                       int channelCount, short **inSamples, const int *inSampleCount) {
+            float sampleRate = getSampleRate();
+
+            // last processed batch was during play and now we started seeking
+            if (!lastSeeking) {
+                resetOnNextCycle = true;
+                lastSeeking = true;
+            }
+
+            if (resetOnNextCycle) {
+                clean();
+                init(sampleRate);
+                resetOnNextCycle = false;
+            }
+
+            auto selectedChannel = getSelectedChannel();
+            // check if data for existing channel exists
+            if (selectedChannel >= channelCount) {
+                windowCounter = 0;
+                frequencyCounter = 0;
+                return;
+            }
+
+            auto sampleCount = inSampleCount[selectedChannel];
+            auto *samples = inSamples[selectedChannel];
+
+            // just take exact number of samples that we need not all that came in
+            int tmpSampleCount = windowCount * oWindowSampleDiffCount + oWindowSampleCount - oWindowSampleDiffCount;
+            auto *tmpSamples = new short[tmpSampleCount]{0};
+            int start1 = std::max(0, sampleCount - tmpSampleCount);
+            int start2 = std::max(0, tmpSampleCount - sampleCount);
+            std::copy(samples + start1, samples + sampleCount, tmpSamples + start2);
+
+
+            int offset = 0;
+            auto *in = new short[oWindowSampleCount]{0};
+            auto dsSamples = new float[dsIndexCount]{0};
+            int counter = 0;
+            for (int i = 0; i < windowCount; i++) {
+                // construct next window of data for analysis
+                offset = oWindowSampleDiffCount * i;
+                std::copy(tmpSamples + offset, tmpSamples + offset + oWindowSampleCount, in);
+
+                // simple downsampling because only low frequencies are required
+                for (int j = 0; j < dsIndexCount; j++)
+                    dsSamples[j] = in[dsIndices[j]];
+
+                // perform FFT analysis
+                input.assign(dsSamples, dsSamples + dsIndexCount);
+                fft.fft(input.data(), outReal.data(), outImaginary.data());
+
+                // calculate DC component
+                outData[counter][0] = static_cast<float>(sqrtf(outReal[0] * outReal[0]) / halfMaxMagnitude -
+                                                         1.0);
+                // calculate magnitude for all freq.
+                for (int j = 1; j < FFT_WINDOW_30HZ_DATA_SIZE; j++) {
+                    outData[counter][j] = sqrtf(outReal[j] * outReal[j] + outImaginary[j] * outImaginary[j]);
+                    if (outData[counter][j] > maxMagnitude) {
+                        maxMagnitude = outData[counter][j];
+                        halfMaxMagnitude = maxMagnitude * 0.5f;
+                    }
+                    outData[counter][j] = static_cast<float>(outData[counter][j] / halfMaxMagnitude - 1.0);
+                }
+                counter++;
+
+            }
+
+            std::copy(tmpSamples + tmpSampleCount - oWindowSampleCount, tmpSamples + tmpSampleCount, sampleBuffer);
+
+            windowCounter = counter;
+            frequencyCounter = FFT_WINDOW_30HZ_DATA_SIZE;
+
+            delete[] dsSamples;
+            delete[] tmpSamples;
+            delete[] in;
+        }
+
+//        long long FftProcessor::currentTimeInMilliseconds() {
+//            struct timeval tv{};
+//            gettimeofday(&tv, nullptr);
+//            return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+//        }
+
         void FftProcessor::init(float sampleRate) {
-            __android_log_print(ANDROID_LOG_DEBUG, TAG, "init()");
-//            auto dsFactor = static_cast<uint8_t>(getSampleRate() / FFT_LIVE_SAMPLE_RATE);
-//            float fftSampleRate = FFT_LIVE_SAMPLE_RATE; //getSampleRate() / dsFactor;
+            __android_log_print(ANDROID_LOG_DEBUG, TAG, "init(%f)", sampleRate);
 
-            // try to make under 1Hz resolution if it is too much than limit it to samplingRate/2^11
-            auto log2n = static_cast<int>(log2f(sampleRate));
-            sampleWindowSize = static_cast<uint32_t>(pow(2, log2n + 2));
-            // Size of fft data that will be returned when providing sampleWindowSize of samples
-            auto fftDataSize = static_cast<uint32_t>(sampleWindowSize * .5f);
-            // Difference between two consecutive frequency values represented in the output graph
-            float oneFrequencyStep = .5f * sampleRate / (float) fftDataSize;
-            thirtyHzDataSize = static_cast<uint32_t>(FFT_30HZ_LENGTH / oneFrequencyStep);
-            windowSampleDiffCount = static_cast<uint32_t>(sampleWindowSize *
-                                                          (1.0f - ((float) windowOverlapPercent / 100.0f)));
+            // calculate number of samples that fit in single FFT window before downsampling
+            oWindowSampleCount = static_cast<uint32_t>(FFT_WINDOW_TIME_LENGTH * sampleRate);
+            // calculate difference between two consecutive FFT windows represented in number of samples
+            oWindowSampleDiffCount = static_cast<uint32_t>(oWindowSampleCount *
+                                                           (1.0f - (float) FFT_WINDOW_OVERLAP_PERCENT / 100.0f));
 
-            input.resize(sampleWindowSize, 0.0f);
-            outReal.resize(audiofft::AudioFFT::ComplexSize(sampleWindowSize));
-            outImaginary.resize(audiofft::AudioFFT::ComplexSize(sampleWindowSize));
-
-            // initialize object that's doing actual FFT analysis
-            fft.init(sampleWindowSize);
-
-            // cannot hold more then sampleWindowSize - 1 number of samples
-            unanalyzedSamples = new float[sampleWindowSize]{0};
+            // cannot hold more then oWindowSampleCount - 1 number of samples
+            unanalyzedSamples = new float[oWindowSampleCount]{0};
             unanalyzedSampleCount = 0;
 
-            // always holds sampleWindowSize number of samples (0s at the begining)
-            sampleBuffer = new float[sampleWindowSize]{0};
+            // always holds oWindowSampleCount number of samples (0s at the begining)
+            sampleBuffer = new float[oWindowSampleCount]{0};
 
-            maxMagnitude = 20;
-            halfMaxMagnitude = 20;
-            maxMagnitudeOptimized = 4.83;
-            halfMaxMagnitudeOptimized = maxMagnitudeOptimized * .5f;
+            auto dsFactor = static_cast<int>(FFT_WINDOW_TIME_LENGTH * sampleRate / FFT_WINDOW_SAMPLE_COUNT);
+            dsIndexCount = oWindowSampleCount / dsFactor;
+            dsIndices = new int[dsIndexCount];
+            for (int j = 0; j < dsIndexCount; j++)
+                dsIndices[j] = dsFactor * j;
         }
 
         void FftProcessor::clean() {
@@ -173,6 +262,8 @@ namespace backyardbrains {
             unanalyzedSampleCount = 0;
 
             delete[] sampleBuffer;
+
+            delete[] dsIndices;
         }
     }
 }

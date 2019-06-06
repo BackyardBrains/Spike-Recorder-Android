@@ -64,7 +64,7 @@ public class JniUtils {
 
     public static native void resetFft();
 
-    public static native void processFft(FftData out, SignalData in, float fftSampleRate, int downsamplingFactor);
+    public static native void processFft(FftData out, SignalData in, boolean seeking);
 
     public static native void prepareForSignalDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
         short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
@@ -75,7 +75,7 @@ public class JniUtils {
         int drawEndIndex, int drawSurfaceWidth);
 
     public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawStartIndex, int drawEndIndex,
-        int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
+        float drawWidthMax, int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
 
     public static native void prepareForSpikesDrawing(SpikesDrawData out, SpikeIndexValue[] in, float[] colorInRange,
         float[] colorOutOfRange, int rangeStart, int rangeEnd, int sampleStartIndex, int sampleEndIndex,

@@ -8,14 +8,10 @@ import com.backyardbrains.utils.CircularFloatArrayBuffer;
 import com.backyardbrains.utils.CircularShortBuffer;
 import com.backyardbrains.utils.EventUtils;
 
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
-
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class ProcessingBuffer {
-
-    private static final String TAG = makeLogTag(ProcessingBuffer.class);
 
     // Lock used when reading/writing samples and events
     private static final Object lock = new Object();
@@ -27,9 +23,9 @@ public class ProcessingBuffer {
     // Circular buffers that holds averaged incoming samples by channel
     private CircularShortBuffer[] averagedSamplesBuffers;
     // Size of the sample buffer
-    private int sampleBufferSize = SignalProcessor.DEFAULT_SAMPLE_BUFFER_SIZE;
+    private int sampleBufferSize = SignalProcessor.DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT;
     // Temp buffer used to copy buffered samples to draw buffer
-    private short[] samples = new short[SignalProcessor.DEFAULT_SAMPLE_BUFFER_SIZE];
+    private short[] samples = new short[SignalProcessor.DEFAULT_PLAYBACK_MAX_PROCESSED_SAMPLES_COUNT];
     // Array of processed event indices
     private final int[] eventIndices;
     // Array of processed event names
@@ -40,8 +36,7 @@ public class ProcessingBuffer {
     private long lastSampleIndex;
 
     // Buffer for the FFT data
-    private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT,
-        SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
+    private CircularFloatArrayBuffer fftBuffer = new CircularFloatArrayBuffer(500, 500);
     // Temp buffer used to copy buffered fft data to draw buffer (500x500 is enough for any sample rate we use)
     private float[][] fft = new float[500][500];
 
@@ -208,8 +203,8 @@ public class ProcessingBuffer {
             for (int i = 0; i < channelCount; i++) {
                 sampleBuffers[i] = new CircularShortBuffer(sampleBufferSize);
             }
-            fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.getProcessedFftWindowCount(),
-                SignalProcessor.getProcessedFftWindowSize());
+            //fftBuffer = new CircularFloatArrayBuffer(SignalProcessor.getProcessedFftWindowCount(),
+            //    SignalProcessor.getProcessedFftWindowSize());
         }
     }
 

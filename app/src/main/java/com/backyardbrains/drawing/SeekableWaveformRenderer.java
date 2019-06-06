@@ -290,7 +290,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     }
                 }
             }
-            
+
             if (measuring) {
                 // draw RMS time label
                 gl.glPushMatrix();
