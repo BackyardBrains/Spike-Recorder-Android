@@ -2,9 +2,9 @@ package com.backyardbrains.dsp;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.backyardbrains.dsp.audio.PlaybackSignalSource;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Benchmark;
 import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
@@ -33,13 +33,13 @@ public class SignalProcessor implements SignalSource.Processor {
     // We only look at approx. 30% of the fft data cause we only want to analyze low frequency
     private static final int FFT_30HZ_LENGTH = 32; // ~30%
     // Percent of overlap between to consecutive FFT windows
-    public static final int FFT_WINDOW_OVERLAP_PERCENT = 99;
+    private static final int FFT_WINDOW_OVERLAP_PERCENT = 99;
     // Length of a single FFT window in seconds
-    public static final int FFT_WINDOW_TIME_LENGTH = 4; // 2^2
+    private static final float FFT_WINDOW_TIME_LENGTH = 4f; // 2^2
     // Sample rate that is used when processing FFT
     private static final int FFT_SAMPLE_RATE = 128; // 2^7
     // Number of samples in a single FFT window
-    private static final int FFT_WINDOW_SAMPLE_COUNT = FFT_WINDOW_TIME_LENGTH * FFT_SAMPLE_RATE; // 2^9
+    private static final int FFT_WINDOW_SAMPLE_COUNT = (int) (FFT_WINDOW_TIME_LENGTH * FFT_SAMPLE_RATE); // 2^9
     // Number of samples between two FFT windows
     private static final int FFT_WINDOW_SAMPLE_DIFF_COUNT =
         (int) (FFT_WINDOW_SAMPLE_COUNT * (1.0f - (FFT_WINDOW_OVERLAP_PERCENT / 100.0f)));
@@ -47,26 +47,35 @@ public class SignalProcessor implements SignalSource.Processor {
     public static final int FFT_WINDOW_COUNT =
         (int) ((MAX_AUDIO_PROCESSING_TIME * FFT_SAMPLE_RATE) / FFT_WINDOW_SAMPLE_DIFF_COUNT);
     // Size of of a single FFT
-    public static final int FFT_WINDOW_SIZE = FFT_30HZ_LENGTH * FFT_WINDOW_TIME_LENGTH; // 32 / (128 / 512)
+    public static final int FFT_WINDOW_SIZE = (int) (FFT_30HZ_LENGTH * FFT_WINDOW_TIME_LENGTH); // 32 / (128 / 512)
 
     // Default sample rate
     public static final int DEFAULT_SAMPLE_RATE = AudioUtils.DEFAULT_SAMPLE_RATE;
     // Default channel count
     public static final int DEFAULT_CHANNEL_COUNT = AudioUtils.DEFAULT_CHANNEL_COUNT;
 
-    // Max number of samples that can be processed at any given time during live signal processing
-    public static final int DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT =
-        (int) (MAX_AUDIO_PROCESSING_TIME * DEFAULT_SAMPLE_RATE * DEFAULT_CHANNEL_COUNT);
-    // Max number of samples that can be processed at any given time during playback (it's during seek)
-    public static final int DEFAULT_PLAYBACK_MAX_PROCESSED_SAMPLES_COUNT =
-        DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT + 2 * (FFT_WINDOW_SAMPLE_COUNT - FFT_WINDOW_SAMPLE_DIFF_COUNT);
-    // Max number of samples that can be processed at an given time during live signal averaging
-    public static final int DEFAULT_MAX_PROCESSED_AVERAGED_SAMPLES_COUNT =
+    // Number of samples per channel that is being processed when the app starts
+    // 6s * 44100Hz per channel
+    public static final int DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT =
+        (int) (MAX_AUDIO_PROCESSING_TIME * DEFAULT_SAMPLE_RATE);
+    // Number of samples per channel that is being processed during signal averaging when the app starts
+    public static final int DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT =
         (int) (MAX_THRESHOLD_PROCESSING_TIME * DEFAULT_SAMPLE_RATE);
 
-    private static int processedSamplesCount = DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT;
-    private static int processedAveragedSamplesCount = DEFAULT_MAX_PROCESSED_AVERAGED_SAMPLES_COUNT;
-    private static int drawnSamplesCount = DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT;
+    // Max number of samples in a single FFT window achievable
+    private static final int MAX_FFT_WINDOW_SAMPLE_COUNT = (int) (FFT_WINDOW_TIME_LENGTH * DEFAULT_SAMPLE_RATE);
+    // Max number of samples between two FFT windows achievable
+    private static final int MAX_FFT_WINDOW_SAMPLE_DIFF_COUNT =
+        (int) (MAX_FFT_WINDOW_SAMPLE_COUNT * (1.0f - (FFT_WINDOW_OVERLAP_PERCENT / 100.0f)));
+    // Max number of samples that can be processed at any given moment
+    // 153 FFT windows of 4s * 44100Hz * 8 channels
+    public static final int MAX_PROCESSED_SAMPLES_COUNT =
+        (FFT_WINDOW_COUNT * MAX_FFT_WINDOW_SAMPLE_DIFF_COUNT + MAX_FFT_WINDOW_SAMPLE_COUNT
+            - MAX_FFT_WINDOW_SAMPLE_DIFF_COUNT) * 8;
+
+    private static int processedSamplesPerChannelCount = DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT;
+    private static int processedAveragedSamplesPerChannelCount = DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT;
+    private static int drawnSamplesCount = DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT;
 
     // Lock used when reading/writing samples and events
     private static final Object lock = new Object();
@@ -107,21 +116,22 @@ public class SignalProcessor implements SignalSource.Processor {
     // Whether processing is temporarily paused
     @SuppressWarnings("WeakerAccess") AtomicBoolean paused = new AtomicBoolean();
     // Ring buffer that holds raw signal data
-    // Size is determined by the max number of samples that can be processed in one incoming batch which is during seek
     @SuppressWarnings("WeakerAccess") final CircularByteBuffer ringBuffer =
-        new CircularByteBuffer(DEFAULT_PLAYBACK_MAX_PROCESSED_SAMPLES_COUNT * 2);
-    // Used for holding raw data during processing
-    @SuppressWarnings("WeakerAccess") final byte[] buffer = new byte[DEFAULT_PLAYBACK_MAX_PROCESSED_SAMPLES_COUNT * 2];
+        new CircularByteBuffer(MAX_PROCESSED_SAMPLES_COUNT * 2);
+    // Holds raw data during processing
+    @SuppressWarnings("WeakerAccess") final byte[] buffer = new byte[MAX_PROCESSED_SAMPLES_COUNT * 2];
+    // Holds data retrieved from the playback signal source when switching between channels (complete screen render)
+    private final byte[] playbackBuffer = new byte[MAX_PROCESSED_SAMPLES_COUNT * 2];
 
     // Holds signal data after processing raw signal together with processed events
     private SignalData signalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     // Holds processed signal data of only visible channels
     private SignalData visibleSignalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     // Holds processed signal data of only visible channels after averaging
     private SignalData averagedSignalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_MAX_PROCESSED_AVERAGED_SAMPLES_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT);
     // Holds processed signal data after FFT processing
     private FftData fft = new FftData(FFT_WINDOW_COUNT, FFT_WINDOW_SIZE);
 
@@ -205,10 +215,11 @@ public class SignalProcessor implements SignalSource.Processor {
             processingBuffer.resetAllSampleBuffers(channelCount, signalConfiguration.getVisibleChannelCount());
 
             // reset buffers
-            signalData = new SignalData(channelCount, processedSamplesCount);
-            visibleSignalData = new SignalData(signalConfiguration.getVisibleChannelCount(), processedSamplesCount);
+            signalData = new SignalData(channelCount, processedSamplesPerChannelCount);
+            visibleSignalData =
+                new SignalData(signalConfiguration.getVisibleChannelCount(), processedSamplesPerChannelCount);
             averagedSignalData =
-                new SignalData(signalConfiguration.getVisibleChannelCount(), processedAveragedSamplesCount);
+                new SignalData(signalConfiguration.getVisibleChannelCount(), processedAveragedSamplesPerChannelCount);
         }
 
         // pass channel count to native code
@@ -218,15 +229,15 @@ public class SignalProcessor implements SignalSource.Processor {
     /**
      * Max number of samples that can be processed by the current signal source.
      */
-    public static int getProcessedSamplesCount() {
-        return processedSamplesCount;
+    public static int getProcessedSamplesPerChannelCount() {
+        return processedSamplesPerChannelCount;
     }
 
     /**
      * Max number of averaged samples that can be processed by the current signal source.
      */
-    public static int getProcessedAveragedSamplesCount() {
-        return processedAveragedSamplesCount;
+    public static int getProcessedAveragedSamplesPerChannelCount() {
+        return processedAveragedSamplesPerChannelCount;
     }
 
     /**
@@ -286,8 +297,8 @@ public class SignalProcessor implements SignalSource.Processor {
             // reset processing buffer
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
+            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
         }
     }
 
@@ -305,8 +316,8 @@ public class SignalProcessor implements SignalSource.Processor {
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
             // reset buffer
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
+            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
         }
     }
 
@@ -316,9 +327,7 @@ public class SignalProcessor implements SignalSource.Processor {
     void hideChannel(int channelIndex) {
         synchronized (lock) {
             // if we are hiding currently selected channel we should switch to default (0) channel
-            if (channelIndex == getSelectedChannel()) {
-                setSelectedChannel(0);
-            }
+            if (channelIndex == signalConfiguration.getSelectedChannel()) setSelectedChannel(0);
 
             // update signal configuration
             signalConfiguration.setChannelVisible(channelIndex, false);
@@ -329,8 +338,8 @@ public class SignalProcessor implements SignalSource.Processor {
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
             // reset buffers
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
+            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
         }
     }
 
@@ -344,8 +353,16 @@ public class SignalProcessor implements SignalSource.Processor {
 
             // pass selected channel to native code
             JniUtils.setSelectedChannel(channelIndex);
-            // fft should be reset every time channel is switched
-            if (signalConfiguration.isFftProcessing()) JniUtils.resetFft();
+
+            if (signalConfiguration.isFftProcessing() && signalSource.isFile()) {
+                final PlaybackSignalSource pss = (PlaybackSignalSource) signalSource;
+                if (pss != null) {
+                    // we need enough bytes to render full screen
+                    int len = processedSamplesPerChannelCount * signalConfiguration.getChannelCount() * 2;
+                    pss.readLast(playbackBuffer, len);
+                    processData(playbackBuffer, len);
+                }
+            }
         }
     }
 
@@ -403,8 +420,6 @@ public class SignalProcessor implements SignalSource.Processor {
      * Sets whether incoming signal is being sought or not.
      */
     void setSignalSeeking(boolean signalSeeking) {
-        LOGD(TAG, "setSignalSeeking(" + signalSeeking + ")");
-
         synchronized (lock) {
             // update signal configuration
             signalConfiguration.setSignalSeeking(signalSeeking);
@@ -469,8 +484,8 @@ public class SignalProcessor implements SignalSource.Processor {
         if (processingThread != null) processingThread = null;
     }
 
-    private final Benchmark benchmark =
-        new Benchmark("FFT_PROCESSING").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
+    //private final Benchmark benchmark =
+    //    new Benchmark("FFT_PROCESSING").warmUp(200).sessions(10).measuresPerSession(200).logBySession(false);
 
     @SuppressWarnings("WeakerAccess") void processData(@NonNull byte[] buffer, int length) {
         synchronized (lock) {
@@ -481,17 +496,13 @@ public class SignalProcessor implements SignalSource.Processor {
 
             if (visibleSignalData.channelCount > 0) { // only configure channels if there is at least one visible
                 final boolean signalAveraging = signalConfiguration.isSignalAveraging();
-                final boolean fftProcessing = signalConfiguration.isFftProcessing();
-                final boolean signalSeeking = signalConfiguration.isSignalSeeking();
                 // configure channels of processed signal
                 signalData.copyReconfigured(visibleSignalData, signalConfiguration);
                 // average processed signal
                 JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
-                if (!signalAveraging/* && fftProcessing*/) {
-                    //benchmark.start();
-                    JniUtils.processFft(fft, visibleSignalData, signalSeeking);
-                    //benchmark.end();
-                }
+                //benchmark.start();
+                if (!signalAveraging) JniUtils.processFft(fft, visibleSignalData);
+                //benchmark.end();
 
                 // forward received samples to Processing Service
                 if (listener != null) listener.onDataProcessed(visibleSignalData);
@@ -502,19 +513,19 @@ public class SignalProcessor implements SignalSource.Processor {
         }
     }
 
-    // Set max number of samples that can be processed in normal processing, in threshold and in fft
+    // Set max number of samples that can bEe processed in normal processing, in threshold and in fft
     private void calculateMaxNumberOfProcessedSamples(int sampleRate) {
-        processedSamplesCount = (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
-        processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
+        processedSamplesPerChannelCount = (int) (MAX_AUDIO_PROCESSING_TIME * sampleRate);
+        processedAveragedSamplesPerChannelCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
         if (signalSource != null) {
             if (signalSource.isUsb()) {
-                processedSamplesCount = (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate);
+                processedSamplesPerChannelCount = (int) (MAX_SAMPLE_STREAM_PROCESSING_TIME * sampleRate);
             } else if (signalSource.isFile()) {
-                int windowSampleCount = FFT_WINDOW_TIME_LENGTH * sampleRate;
+                int windowSampleCount = (int) (FFT_WINDOW_TIME_LENGTH * sampleRate);
                 int windowSampleDiffCount = (int) (windowSampleCount * (1.0f - (FFT_WINDOW_OVERLAP_PERCENT / 100.0f)));
-                processedSamplesCount =
+                processedSamplesPerChannelCount =
                     FFT_WINDOW_COUNT * windowSampleDiffCount + windowSampleCount - windowSampleDiffCount;
-                processedAveragedSamplesCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
+                processedAveragedSamplesPerChannelCount = (int) (MAX_THRESHOLD_PROCESSING_TIME * sampleRate);
             }
         }
     }

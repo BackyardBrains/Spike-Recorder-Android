@@ -84,9 +84,7 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type);
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in, bool seeking);
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
                                                                jobject outEvents, jobjectArray inSignal,
@@ -854,14 +852,8 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     delete[] channelSampleCounts;
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_resetFft(JNIEnv *env, jclass type) {
-    fftProcessor->resetFft();
-}
-
 extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in, bool seeking) {
+Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in) {
     jint channelCount = env->GetIntField(in, sdChannelCountFid);
     auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(in, sdSamplesFid));
     auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(in, sdSampleCountsFid));
@@ -899,13 +891,8 @@ Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobj
     for (int i = 0; i < maxWindowCount; i++) outFftPtr[i] = new jfloat[maxWindowSize]{0};
     jint windowCounter = 0;
     jint frequencyCounter = 0;
-    if (seeking) {
-        fftProcessor->processSeek(outFftPtr, maxWindowCount, windowCounter, frequencyCounter, channelCount,
-                                  inSamplesPtr, inSampleCountsPtr);
-    } else {
-        fftProcessor->process(outFftPtr, maxWindowCount, windowCounter, frequencyCounter, channelCount,
-                              inSamplesPtr, inSampleCountsPtr);
-    }
+    fftProcessor->process(outFftPtr, maxWindowCount, windowCounter, frequencyCounter, channelCount, inSamplesPtr,
+                          inSampleCountsPtr);
 
     // exception check
     if (exception_check(env)) {

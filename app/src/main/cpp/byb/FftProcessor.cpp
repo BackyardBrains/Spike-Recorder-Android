@@ -51,12 +51,19 @@ namespace backyardbrains {
 //                                static_cast<long>(currentTimeInMilliseconds() - start), oWindowSampleCount);
 
             float sampleRate = getSampleRate();
+            auto selectedChannel = getSelectedChannel();
+            // check if data for existing channel exists
+            if (selectedChannel >= channelCount) {
+                windowCounter = 0;
+                frequencyCounter = 0;
+                return;
+            }
+            auto sampleCount = inSampleCount[selectedChannel];
 
-            // last processed batch was during seek and now we stopped seeking
-            if (lastSeeking) {
+            // if max number of samples is sent it means we are seeking
+            if (sampleCount == oMaxWindowsSampleCount) {
                 processSeek(outData, windowCount, windowCounter, frequencyCounter, channelCount, inSamples,
                             inSampleCount);
-                lastSeeking = false;
                 return;
             }
 
@@ -66,16 +73,7 @@ namespace backyardbrains {
                 resetOnNextCycle = false;
             }
 
-            auto selectedChannel = getSelectedChannel();
-            // check if data for existing channel exists
-            if (selectedChannel >= channelCount) {
-                windowCounter = 0;
-                frequencyCounter = 0;
-                return;
-            }
-
             auto *samples = inSamples[selectedChannel];
-            auto sampleCount = inSampleCount[selectedChannel];
 
             const int newUnanalyzedSampleCount = unanalyzedSampleCount + sampleCount;
             auto addWindowsCount = static_cast<uint16_t>(newUnanalyzedSampleCount / oWindowSampleDiffCount);
@@ -153,19 +151,6 @@ namespace backyardbrains {
         void FftProcessor::processSeek(float **outData, int windowCount, int &windowCounter, int &frequencyCounter,
                                        int channelCount, short **inSamples, const int *inSampleCount) {
             float sampleRate = getSampleRate();
-
-            // last processed batch was during play and now we started seeking
-            if (!lastSeeking) {
-                resetOnNextCycle = true;
-                lastSeeking = true;
-            }
-
-            if (resetOnNextCycle) {
-                clean();
-                init(sampleRate);
-                resetOnNextCycle = false;
-            }
-
             auto selectedChannel = getSelectedChannel();
             // check if data for existing channel exists
             if (selectedChannel >= channelCount) {
@@ -174,14 +159,19 @@ namespace backyardbrains {
                 return;
             }
 
+            if (resetOnNextCycle) {
+                clean();
+                init(sampleRate);
+                resetOnNextCycle = false;
+            }
+
             auto sampleCount = inSampleCount[selectedChannel];
             auto *samples = inSamples[selectedChannel];
 
             // just take exact number of samples that we need not all that came in
-            int tmpSampleCount = windowCount * oWindowSampleDiffCount + oWindowSampleCount - oWindowSampleDiffCount;
-            auto *tmpSamples = new short[tmpSampleCount]{0};
-            int start1 = std::max(0, sampleCount - tmpSampleCount);
-            int start2 = std::max(0, tmpSampleCount - sampleCount);
+            auto *tmpSamples = new short[oMaxWindowsSampleCount]{0};
+            int start1 = std::max(0, sampleCount - oMaxWindowsSampleCount);
+            int start2 = std::max(0, oMaxWindowsSampleCount - sampleCount);
             std::copy(samples + start1, samples + sampleCount, tmpSamples + start2);
 
 
@@ -218,7 +208,8 @@ namespace backyardbrains {
 
             }
 
-            std::copy(tmpSamples + tmpSampleCount - oWindowSampleCount, tmpSamples + tmpSampleCount, sampleBuffer);
+            std::copy(tmpSamples + oMaxWindowsSampleCount - oWindowSampleCount, tmpSamples + oMaxWindowsSampleCount,
+                      sampleBuffer);
 
             windowCounter = counter;
             frequencyCounter = FFT_WINDOW_30HZ_DATA_SIZE;
@@ -242,6 +233,8 @@ namespace backyardbrains {
             // calculate difference between two consecutive FFT windows represented in number of samples
             oWindowSampleDiffCount = static_cast<uint32_t>(oWindowSampleCount *
                                                            (1.0f - (float) FFT_WINDOW_OVERLAP_PERCENT / 100.0f));
+            oMaxWindowsSampleCount =
+                    FFT_WINDOW_COUNT * oWindowSampleDiffCount + oWindowSampleCount - oWindowSampleDiffCount;
 
             // cannot hold more then oWindowSampleCount - 1 number of samples
             unanalyzedSamples = new float[oWindowSampleCount]{0};

@@ -45,13 +45,13 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     private MultichannelSignalDrawBuffer signalDrawBuffer =
         new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
-            SignalProcessor.DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT);
+            SignalProcessor.DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     private MultichannelSignalDrawBuffer visibleSignalDrawBuffer =
         new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
-            SignalProcessor.DEFAULT_LIVE_MAX_PROCESSED_SAMPLES_COUNT);
+            SignalProcessor.DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     private MultichannelSignalDrawBuffer averagedSignalDrawBuffer =
         new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
-            SignalProcessor.DEFAULT_MAX_PROCESSED_AVERAGED_SAMPLES_COUNT);
+            SignalProcessor.DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT);
     private FftDrawBuffer fftDrawBuffer =
         new FftDrawBuffer(SignalProcessor.FFT_WINDOW_COUNT, SignalProcessor.FFT_WINDOW_SIZE);
 
@@ -221,9 +221,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     @Override public void onChannelSelectionChanged(int channelIndex) {
         LOGD(TAG, "onChannelSelectionChanged(" + channelIndex + ")");
-
-        // fft draw data should be reset every time channel selection changes
-        if (isFftProcessing()) fftDrawBuffer.clear();
     }
 
     /**
@@ -257,7 +254,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     @Override public void onSignalSeekingChanged(boolean signalSeek) {
-        LOGD(TAG, "onSignalSeekingChanged(" + signalSeek + ")");
+        //LOGD(TAG, "onSignalSeekingChanged(" + signalSeek + ")");
     }
 
     //===========================================================
@@ -367,7 +364,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     public void resetAveragedSignal() {
         averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(signalConfiguration.getVisibleChannelCount(),
-            (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount()));
+            (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesPerChannelCount()));
     }
 
     //==============================================
@@ -734,11 +731,11 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private void resetLocalSignalDrawBuffers(int channelCount, int visibleChannelCount) {
         synchronized (lock) {
             signalDrawBuffer = new MultichannelSignalDrawBuffer(channelCount,
-                (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount()));
+                (int) Math.floor((float) SignalProcessor.getProcessedSamplesPerChannelCount()));
             visibleSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount,
-                (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount()));
+                (int) Math.floor((float) SignalProcessor.getProcessedSamplesPerChannelCount()));
             averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount,
-                (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount()));
+                (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesPerChannelCount()));
         }
     }
 

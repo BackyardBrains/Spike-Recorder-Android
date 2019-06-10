@@ -73,7 +73,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private boolean disconnecting;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(SampleStreamUtils.SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
+        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
 
         this.device = device;
 
@@ -294,7 +294,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private void prepareForExpansionBoard(@ExpansionBoardType int expansionBoardType) {
         switch (expansionBoardType) {
             case ExpansionBoardType.NONE:
-                setSampleRate(SampleStreamUtils.SAMPLE_RATE);
+                setSampleRate(SampleStreamUtils.DEFAULT_SAMPLE_RATE);
                 setChannelCount(SampleStreamUtils.SPIKER_BOX_PRO_CHANNEL_COUNT);
                 break;
             case ExpansionBoardType.ADDITIONAL_INPUTS:

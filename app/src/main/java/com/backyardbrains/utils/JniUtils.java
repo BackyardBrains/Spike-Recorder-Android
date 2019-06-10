@@ -62,9 +62,7 @@ public class JniUtils {
 
     public static native void processThreshold(SignalData out, SignalData in, boolean averageSamples);
 
-    public static native void resetFft();
-
-    public static native void processFft(FftData out, SignalData in, boolean seeking);
+    public static native void processFft(FftData out, SignalData in);
 
     public static native void prepareForSignalDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
         short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
