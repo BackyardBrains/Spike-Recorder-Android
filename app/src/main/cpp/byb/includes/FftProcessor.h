@@ -27,8 +27,6 @@ namespace backyardbrains {
 
             void setSampleRate(float sampleRate) override;
 
-            void resetFft();
-
             void
             process(float **outData, int windowCount, int &windowCounter, int &frequencyCounter, int channelCount,
                     short **inSamples, const int *inSampleCount);

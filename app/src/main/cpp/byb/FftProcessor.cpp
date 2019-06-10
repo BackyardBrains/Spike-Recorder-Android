@@ -37,12 +37,6 @@ namespace backyardbrains {
             resetOnNextCycle = true;
         }
 
-        void FftProcessor::resetFft() {
-            __android_log_print(ANDROID_LOG_DEBUG, TAG, "resetFft()");
-
-            resetOnNextCycle = true;
-        }
-
         void
         FftProcessor::process(float **outData, int windowCount, int &windowCounter, int &frequencyCounter,
                               int channelCount, short **inSamples, const int *inSampleCount) {
