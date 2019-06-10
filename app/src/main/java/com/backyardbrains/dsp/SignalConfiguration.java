@@ -25,6 +25,7 @@ public final class SignalConfiguration {
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int signalAveragingTriggerType;
     private boolean fftProcessing;
+    private boolean signalSeeking;
 
     /**
      * Interface definition for a callback to be invoked when one of signal properties changes.
@@ -78,6 +79,13 @@ public final class SignalConfiguration {
          * @param fftProcessing Whether fft processing is turned on/off.
          */
         void onFftProcessingChanged(boolean fftProcessing);
+
+        /**
+         * Called when signal seek is started and ended.
+         *
+         * @param signalSeek Whether signal seek started or ended.
+         */
+        void onSignalSeekingChanged(boolean signalSeek);
     }
 
     private Set<OnSignalPropertyChangeListener> onSignalPropertyChangeListeners;
@@ -92,6 +100,7 @@ public final class SignalConfiguration {
         signalAveraging = false;
         signalAveragingTriggerType = SignalAveragingTriggerType.THRESHOLD;
         fftProcessing = false;
+        signalSeeking = false;
     }
 
     /**
@@ -140,7 +149,7 @@ public final class SignalConfiguration {
      * Sets sample rate of the processed signal.
      */
     void setSampleRate(int sampleRate) {
-        if (sampleRate <= 0 || this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return;
 
         this.sampleRate = sampleRate;
 
@@ -162,7 +171,7 @@ public final class SignalConfiguration {
      * Sets channel count of the processed signal.
      */
     void setChannelCount(int channelCount) {
-        if (channelCount < 1 || this.channelCount == channelCount) return;
+        if (channelCount < 1) return;
 
         this.channelCount = channelCount;
 
@@ -324,6 +333,26 @@ public final class SignalConfiguration {
         if (onSignalPropertyChangeListeners != null) {
             for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
                 listener.onFftProcessingChanged(fftProcessing);
+            }
+        }
+    }
+
+    /**
+     * Whether processed signal is started/ended being sought.
+     */
+    public boolean isSignalSeeking() {
+        return signalSeeking;
+    }
+
+    /**
+     * Sets whether signal seek is started or ended.
+     */
+    public void setSignalSeeking(boolean signalSeeking) {
+        this.signalSeeking = signalSeeking;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onSignalSeekingChanged(signalSeeking);
             }
         }
     }

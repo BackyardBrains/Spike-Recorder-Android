@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -14,65 +13,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
-    <TextView
-        android:id="@+id/tv_debug"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="top"
-        android:textColor="@color/white"
-        android:textSize="@dimen/font_size_10"
-        android:typeface="monospace"
-        android:visibility="gone"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintRight_toRightOf="parent"/>
-
-    <ImageView
-        android:id="@+id/iv_signal_scale"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_alignBottom="@id/fl_container"
-        android:layout_alignTop="@id/fl_container"
-        android:scaleType="fitXY"
-        android:src="@drawable/signal_scale"
-        android:visibility="invisible"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
-
-    <TextView
-        android:id="@+id/tv_signal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="invisible"
-        app:layout_constraintLeft_toRightOf="@+id/iv_signal_scale"
-        app:layout_constraintTop_toTopOf="@+id/iv_signal_scale"
-        app:layout_constraintBottom_toBottomOf="@+id/iv_signal_scale"
-        tools:text="0 ms"/>
-
-    <android.support.constraint.Guideline
-        android:id="@+id/g_time_scale_left"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.25"/>
-
-    <View
-        android:id="@+id/v_time_scale"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:background="@color/gray_dark"
-        app:layout_constraintLeft_toLeftOf="@+id/g_time_scale_left"
-        app:layout_constraintRight_toRightOf="@+id/g_time_scale_right"
-        app:layout_constraintBottom_toTopOf="@+id/tv_time"/>
-
-    <android.support.constraint.Guideline
-        android:id="@+id/g_time_scale_right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.75"/>
-
     <ImageButton
         android:id="@+id/ibtn_zoom_in_h"
         android:layout_width="wrap_content"
@@ -80,22 +20,19 @@
         android:layout_margin="20dp"
         android:src="@drawable/plus_button"
         android:background="#0000"
-        android:visibility="gone"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/tv_time"
-        app:layout_constraintRight_toLeftOf="@+id/tv_time"
-        app:layout_constraintBottom_toBottomOf="@+id/tv_time"/>
+        app:layout_constraintTop_toTopOf="@+id/space_h"
+        app:layout_constraintRight_toLeftOf="@+id/space_h"
+        app:layout_constraintBottom_toBottomOf="@+id/space_h"/>
 
-    <TextView
-        android:id="@+id/tv_time"
+    <Space
+        android:id="@+id/space_h"
         android:layout_width="80dp"
         android:layout_height="@dimen/min_button_tappable_h"
-        android:gravity="center"
         app:layout_constraintLeft_toRightOf="@+id/ibtn_zoom_in_h"
         app:layout_constraintRight_toLeftOf="@+id/ibtn_zoom_out_h"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:text="@string/default_milliseconds"/>
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <ImageButton
         android:id="@+id/ibtn_zoom_out_h"
@@ -104,11 +41,10 @@
         android:src="@drawable/minus_button"
         android:layout_margin="20dp"
         android:background="#0000"
-        android:visibility="gone"
-        app:layout_constraintLeft_toRightOf="@+id/tv_time"
-        app:layout_constraintTop_toTopOf="@+id/tv_time"
+        app:layout_constraintLeft_toRightOf="@+id/space_h"
+        app:layout_constraintTop_toTopOf="@+id/space_h"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/tv_time"/>
+        app:layout_constraintBottom_toBottomOf="@+id/space_h"/>
 
 
     <ImageButton
@@ -118,11 +54,17 @@
         android:background="#0000"
         android:padding="5sp"
         android:src="@drawable/plus_button"
-        android:visibility="gone"
         app:layout_constraintVertical_chainStyle="packed"
-        app:layout_constraintLeft_toRightOf="@+id/iv_signal_scale"
+        app:layout_constraintRight_toRightOf="@+id/space_v"
+        app:layout_constraintBottom_toTopOf="@+id/space_v"/>
+
+    <Space
+        android:id="@+id/space_v"
+        android:layout_width="80dp"
+        android:layout_height="@dimen/min_button_tappable_h"
+        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/ibtn_zoom_out_v"/>
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <ImageButton
         android:id="@+id/ibtn_zoom_out_v"
@@ -131,8 +73,6 @@
         android:background="#0000"
         android:padding="5sp"
         android:src="@drawable/minus_button"
-        android:visibility="gone"
-        app:layout_constraintLeft_toRightOf="@+id/iv_signal_scale"
-        app:layout_constraintTop_toBottomOf="@+id/ibtn_zoom_in_v"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@+id/space_v"
+        app:layout_constraintRight_toRightOf="@+id/space_v"/>
 </android.support.constraint.ConstraintLayout>

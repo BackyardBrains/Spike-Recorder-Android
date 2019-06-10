@@ -28,14 +28,18 @@ import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
 import com.backyardbrains.drawing.gl.GlFft;
+import com.backyardbrains.drawing.gl.GlHLine;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
+import com.backyardbrains.drawing.gl.GlLabel;
 import com.backyardbrains.drawing.gl.GlWaveform;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.ArrayUtils;
+import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -47,10 +51,6 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
     private static final String TAG = makeLogTag(WaveformRenderer.class);
 
-    private static final float DASH_SIZE = 30f;
-    private static final int LINE_WIDTH = 1;
-    private static final float MARKER_LABEL_TOP = 230f;
-    private static final float MARKER_LABEL_TOP_OFFSET = 20f;
     private static final float MAX_GL_VERTICAL_SIXTH_SIZE = MAX_GL_VERTICAL_SIZE / 6f;
     // Size of the bottom half of the screen (below zero) when drawing waveform alongside FFT
     private static final float MAX_GL_FFT_VERTICAL_HALF_SIZE = MAX_GL_VERTICAL_HALF_SIZE * 4f;
@@ -58,6 +58,17 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private static final float FFT_HEIGHT_PERCENT = .6f; // 60%
     private static final float MIN_FFT_SCALE_FACTOR = 1f;
     private static final float MAX_FFT_SCALE_FACTOR = 30f;
+
+    private static final float DASH_SIZE = 30f;
+    private static final int LINE_WIDTH = 1;
+    private static final float MARKER_LABEL_TOP = 230f;
+    private static final float MARKER_LABEL_TOP_OFFSET = 20f;
+    // Width of the time label in DPs
+    private final static float TIME_LABEL_WIDTH_DP = 80f;
+    // Height of the time label in DPs
+    private final static float TIME_LABEL_HEIGHT_DP = 48f;
+    // Radius of the handle base
+    private static final float HANDLE_BASE_RADIUS_DP = 10f;
 
     private final Rect rect = new Rect();
     private final GlHandleDragHelper waveformHandleDragHelper;
@@ -71,6 +82,13 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     private GlFft glFft;
     private GlEventMarker glEventMarker;
     private GlAveragingTriggerLine glAveragingTrigger;
+    private GlHLine glTimeLabelSeparator;
+    private GlLabel glTimeLabel;
+
+    private final float timeLabelWidth;
+    private final float timeLabelHeight;
+    private final int timeLabelSeparatorWidth;
+    private final float handleBaseRadius;
 
     private float threshold;
     private String lastTriggerEventName;
@@ -128,6 +146,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         glWaveform = new GlWaveform();
         glHandle = new GlHandle();
         glThresholdLine = new GlDashedHLine();
+        glTimeLabelSeparator = new GlHLine();
+
+        timeLabelWidth = ViewUtils.dpToPx(context.getResources(), TIME_LABEL_WIDTH_DP);
+        timeLabelHeight = ViewUtils.dpToPx(context.getResources(), TIME_LABEL_HEIGHT_DP);
+        timeLabelSeparatorWidth = ViewUtils.dpToPxInt(context.getResources(), LINE_WIDTH);
+        handleBaseRadius = ViewUtils.dpToPx(context.getResources(), HANDLE_BASE_RADIUS_DP);
     }
 
     //=================================================
@@ -182,6 +206,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         glEventMarker = new GlEventMarker(context, gl);
         glFft = new GlFft(context, gl);
         glAveragingTrigger = new GlAveragingTriggerLine(context, gl);
+        glTimeLabel = new GlLabel(context, gl);
     }
 
     /**
@@ -354,11 +379,11 @@ public class WaveformRenderer extends BaseWaveformRenderer {
      * {@inheritDoc}
      */
     @Override protected void prepareFftForDrawing(@NonNull FftDrawData fftDrawData, @NonNull float[][] fft,
-        int drawStartIndex, int drawEndIndex, int drawSurfaceWidth) {
+        int drawStartIndex, int drawEndIndex, float drawWidthMax, int drawSurfaceWidth) {
         //benchmark.start();
         try {
-            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawSurfaceWidth,
-                (int) fftSurfaceHeight, fftScaleFactor);
+            JniUtils.prepareForFftDrawing(fftDrawData, fft, drawStartIndex, drawEndIndex, drawWidthMax,
+                drawSurfaceWidth, (int) fftSurfaceHeight, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
             Crashlytics.logException(e);
@@ -377,18 +402,19 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         final boolean isSignalAveraging = isSignalAveraging();
         final boolean isThresholdSignalAveraging = isThresholdAveragingTriggerType();
         final boolean isFftProcessing = isFftProcessing();
+        final int sampleRate = getSampleRate();
         boolean selected, showThresholdHandle;
         float[] waveformColor;
 
-        if (isFftProcessing) {
+        if (isFftProcessing && !isSignalAveraging) {
+            // update orthographic projection and draw waveform
             updateOrthoProjection(gl, 0f, -MAX_GL_FFT_VERTICAL_HALF_SIZE, surfaceWidth, MAX_GL_VERTICAL_HALF_SIZE);
+            drawWaveform(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
+                waveformScaleFactors[selectedChannel], Colors.WHITE);
 
-            // draw waveform
-            gl.glPushMatrix();
-            gl.glScalef(1f, waveformScaleFactors[selectedChannel], 1f);
-            glWaveform.draw(gl, signalDrawData.samples[selectedChannel], signalDrawData.sampleCounts[selectedChannel],
-                Colors.WHITE);
-            gl.glPopMatrix();
+            // update orthographic projection and draw FFT spectrogram
+            updateOrthoProjection(gl, 0f, 0f, surfaceWidth, surfaceHeight);
+            drawFft(gl, fftDrawData, surfaceWidth, fftSurfaceHeight);
         } else {
             for (int i = 0; i < signalDrawData.channelCount; i++) {
                 selected = selectedChannel == i;
@@ -399,17 +425,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 gl.glTranslatef(0f, waveformPositions[i], 0f);
 
                 // draw waveform
-                gl.glPushMatrix();
-                gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                glWaveform.draw(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformColor);
-                gl.glPopMatrix();
+                drawWaveform(gl, signalDrawData.samples[i], signalDrawData.sampleCounts[i], waveformScaleFactors[i],
+                    waveformColor);
 
+                // draw waveform handle if necessary
                 if (showWaveformHandle) {
-                    // draw waveform handle
-                    gl.glPushMatrix();
-                    gl.glScalef(1f, scaleY, 1f);
-                    glHandle.draw(gl, waveformColor, selected);
-                    gl.glPopMatrix();
+                    drawWaveformHandle(gl, selected, scaleY, waveformColor);
 
                     // register waveform handle as draggable area with drag helper
                     glHandle.getBorders(rect);
@@ -417,26 +438,10 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                         rect.y + glYToSurfaceY(waveformPositions[i]), rect.width, rect.height);
                 }
 
+                // draw threshold if necessary
                 if (showThresholdHandle) {
                     float scaledThreshold = threshold * waveformScaleFactors[i];
-                    // draw threshold line
-                    gl.glPushMatrix();
-                    gl.glTranslatef(0f, scaledThreshold, 0f);
-                    gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                    glThresholdLine.draw(gl, 0f, surfaceWidth, DASH_SIZE, LINE_WIDTH, Colors.RED);
-                    gl.glPopMatrix();
-                    // draw threshold handle
-                    if (scaledThreshold + waveformPositions[i] < -MAX_GL_VERTICAL_HALF_SIZE) {
-                        scaledThreshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
-                    }
-                    if (scaledThreshold + waveformPositions[i] > MAX_GL_VERTICAL_HALF_SIZE) {
-                        scaledThreshold = MAX_GL_VERTICAL_HALF_SIZE - waveformPositions[i];
-                    }
-                    gl.glPushMatrix();
-                    gl.glTranslatef(surfaceWidth, scaledThreshold, 0f);
-                    gl.glScalef(-1f, scaleY, 1f);
-                    glHandle.draw(gl, Colors.RED, true);
-                    gl.glPopMatrix();
+                    drawThreshold(gl, scaledThreshold, waveformPositions[i], surfaceWidth, scaleY);
 
                     // register threshold handle as draggable area with drag helper
                     glHandle.getBorders(rect);
@@ -446,10 +451,17 @@ public class WaveformRenderer extends BaseWaveformRenderer {
 
                 gl.glPopMatrix();
             }
+
+            // draw time label
+            drawTimeLabel(gl, sampleRate, surfaceWidth, glWindowWidth, scaleY);
         }
 
-        // draw markers
         if (!isSignalAveraging) {
+            // draw markers
+            float h =
+                isFftProcessing ? MAX_GL_FFT_VERTICAL_HALF_SIZE + MAX_GL_VERTICAL_HALF_SIZE : MAX_GL_VERTICAL_SIZE;
+            float y = isFftProcessing ? -MAX_GL_FFT_VERTICAL_HALF_SIZE : -MAX_GL_VERTICAL_HALF_SIZE;
+            float sy = surfaceHeight > 0 ? h / surfaceHeight : 1f;
             float prevX = 0f, prevLabelYOffset = MARKER_LABEL_TOP;
             for (int i = 0; i < eventsDrawData.eventCount; i++) {
                 float x = eventsDrawData.eventIndices[i];
@@ -459,22 +471,14 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 }
 
                 gl.glPushMatrix();
-                gl.glTranslatef(x, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
-                glEventMarker.draw(gl, eventsDrawData.eventNames[i], labelYOffset, MAX_GL_VERTICAL_SIZE, 1f, scaleY);
+                gl.glTranslatef(x, y, 0f);
+                glEventMarker.draw(gl, eventsDrawData.eventNames[i], labelYOffset, h, 1f, sy);
                 gl.glPopMatrix();
 
                 if (i != 0) glEventMarker.getBorders(rect);
 
                 prevX = x;
                 prevLabelYOffset = labelYOffset;
-            }
-
-            if (isFftProcessing) {
-                updateOrthoProjection(gl, 0f, 0f, surfaceWidth, surfaceHeight);
-
-                gl.glPushMatrix();
-                glFft.draw(gl, fftDrawData, surfaceWidth, fftSurfaceHeight);
-                gl.glPopMatrix();
             }
         } else {
             if (!isThresholdSignalAveraging) {
@@ -490,6 +494,69 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     //=================================================
     // PRIVATE AND PACKAGE-PRIVATE METHODS
     //=================================================
+
+    void drawWaveform(@NonNull GL10 gl, @NonNull float[] samples, int sampleCount, float scaleFactor,
+        @NonNull @Size(4) float[] color) {
+        gl.glPushMatrix();
+        gl.glScalef(1f, scaleFactor, 1f);
+        glWaveform.draw(gl, samples, sampleCount, color);
+        gl.glPopMatrix();
+    }
+
+    void drawTimeLabel(@NonNull GL10 gl, int sampleRate, float surfaceWidth, float glWindowWidth, float scaleY) {
+        gl.glPushMatrix();
+        gl.glTranslatef(0f, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+        gl.glScalef(1f, scaleY, 1f);
+
+        // draw time label separator
+        gl.glPushMatrix();
+        gl.glTranslatef(0f, timeLabelHeight, 0f);
+        glTimeLabelSeparator.draw(gl, surfaceWidth * .25f, surfaceWidth * .75f, timeLabelSeparatorWidth,
+            Colors.GRAY_DARK);
+        gl.glPopMatrix();
+
+        // draw time label
+        gl.glPushMatrix();
+        gl.glTranslatef((surfaceWidth - timeLabelWidth) * .5f, 0f, 0f);
+        glTimeLabel.draw(gl, timeLabelWidth, timeLabelHeight,
+            Formats.formatTime_s_msec(glWindowWidth / (float) sampleRate * 1000f * .5f), Colors.WHITE, null);
+        gl.glPopMatrix();
+
+        gl.glPopMatrix();
+    }
+
+    private void drawWaveformHandle(@NonNull GL10 gl, boolean selected, float scaleY, @NonNull @Size(4) float[] color) {
+        gl.glPushMatrix();
+        gl.glScalef(1f, scaleY, 1f);
+        glHandle.draw(gl, handleBaseRadius, selected, color);
+        gl.glPopMatrix();
+    }
+
+    private void drawThreshold(@NonNull GL10 gl, float threshold, float waveformPosition, float width, float scaleY) {
+        // draw threshold line
+        gl.glPushMatrix();
+        gl.glTranslatef(0f, threshold, 0f);
+        glThresholdLine.draw(gl, 0f, width, DASH_SIZE, LINE_WIDTH, Colors.RED);
+        gl.glPopMatrix();
+        // draw threshold handle
+        if (threshold + waveformPosition < -MAX_GL_VERTICAL_HALF_SIZE) {
+            threshold = -MAX_GL_VERTICAL_HALF_SIZE - waveformPosition;
+        }
+        if (threshold + waveformPosition > MAX_GL_VERTICAL_HALF_SIZE) {
+            threshold = MAX_GL_VERTICAL_HALF_SIZE - waveformPosition;
+        }
+        gl.glPushMatrix();
+        gl.glTranslatef(width, threshold, 0f);
+        gl.glScalef(-1f, scaleY, 1f);
+        glHandle.draw(gl, handleBaseRadius, true, Colors.RED);
+        gl.glPopMatrix();
+    }
+
+    private void drawFft(@NonNull GL10 gl, @NonNull FftDrawData fftDrawData, int width, float height) {
+        gl.glPushMatrix();
+        glFft.draw(gl, fftDrawData, width, height);
+        gl.glPopMatrix();
+    }
 
     @SuppressWarnings("WeakerAccess") void selectWaveform(int index) {
         if (listener != null) listener.onWaveformSelected(index);

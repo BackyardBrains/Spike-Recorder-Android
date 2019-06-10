@@ -168,7 +168,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private final View.OnClickListener fftClickListener = v -> {
         toggleFft();
-        setupFftButton();
+        setupFftView();
     };
 
     private final View.OnClickListener selectChannelClickListener = v -> openChannelsDialog();
@@ -284,11 +284,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
-        renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getProcessingService() != null) {
-                setMilliseconds(getProcessingService().getSampleRate(), drawSurfaceWidth);
-            }
-        });
         renderer.setOnWaveformSelectionListener(index -> {
             if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
         });
@@ -330,10 +325,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // setup settings view
         setupSettingsView();
-        // setup threshold button
+        // setup threshold view
         setupThresholdView();
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
         // setup BPM UI
@@ -362,8 +357,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
         if (!event.isConnected() && getProcessingService() != null) startMicrophone(getProcessingService());
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
     }
@@ -388,8 +383,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // setup settings view
         setupSettingsView();
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
         // update BPM label
@@ -398,8 +393,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbSignalSourceDisconnectEvent(UsbSignalSourceDisconnectEvent event) {
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
     }
@@ -476,10 +471,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void setupUI() {
         // settings button
         setupSettingsView();
-        // threshold button
+        // threshold view
         setupThresholdView();
-        // fft button
-        setupFftButton();
+        // fft view
+        setupFftView();
         // usb button
         setupUsbButton();
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
@@ -567,15 +562,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getProcessingService() != null) getProcessingService().showChannel(channelIndex);
         getRenderer().setChannelColor(channelIndex, color);
 
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
     }
 
     void hideChannel(int channelIndex) {
         if (getProcessingService() != null) getProcessingService().hideChannel(channelIndex);
 
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
     }
 
     //==============================================
@@ -609,8 +604,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         }
         // setup threshold trigger type button
         setupThresholdHandleAndAveragingTriggerTypeButtons();
-        // setup fft button
-        setupFftButton();
+        // setup fft view
+        setupFftView();
     }
 
     // Sets up threshold handle and averaging trigger type button
@@ -727,7 +722,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // FFT
     //==============================================
 
-    private void setupFftButton() {
+    private void setupFftView() {
         // setup settings button
         btnFft.setBackgroundResource(fftOn ? R.drawable.circle_gray_white_active : R.drawable.circle_gray_white);
         btnFft.setVisibility(thresholdOn ? View.GONE : View.VISIBLE);

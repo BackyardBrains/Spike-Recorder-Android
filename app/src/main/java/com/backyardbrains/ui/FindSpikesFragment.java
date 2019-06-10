@@ -90,7 +90,6 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
      */
     @Override protected FindSpikesRenderer createRenderer() {
         final FindSpikesRenderer renderer = new FindSpikesRenderer(this, filePath);
-        renderer.setOnDrawListener((drawSurfaceWidth) -> setMilliseconds(sampleRate, drawSurfaceWidth));
         renderer.setOnScrollListener(new BaseWaveformRenderer.OnScrollListener() {
 
             @Override public void onScrollStart() {
@@ -131,6 +130,13 @@ public class FindSpikesFragment extends PlaybackScopeFragment {
      * {@inheritDoc}
      */
     @Override protected boolean showThresholdView() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override protected boolean showFftView() {
         return false;
     }
 

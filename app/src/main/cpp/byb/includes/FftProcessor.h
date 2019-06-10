@@ -27,21 +27,44 @@ namespace backyardbrains {
 
             void setSampleRate(float sampleRate) override;
 
-            void resetFft();
-
             void
-            process(float **outData, uint32_t &windowCount, uint32_t &windowSize, int channelCount,
-                    short **inSamples,
-                    uint32_t *inSampleCount);
+            process(float **outData, int windowCount, int &windowCounter, int &frequencyCounter, int channelCount,
+                    short **inSamples, const int *inSampleCount);
 
         private:
             static const char *TAG;
 
-            static constexpr uint8_t WINDOW_OVERLAP_PERCENT = 99;
-            static constexpr uint8_t FFT_30HZ_LENGTH = 32;
-            static constexpr uint8_t FFT_DOWNSAMPLING_FACTOR = 4;
+            //
+            static constexpr float FFT_PROCESSING_TIME = 6.0f;
+            // Percentage of overlap between to consecutive FFT windows
+            static constexpr int FFT_WINDOW_OVERLAP_PERCENT = 99;
+            // We only look at approx. 30% of the fft data cause we only want to analyze low frequency
+            static constexpr int FFT_30HZ_LENGTH = 32; // ~30%
+            //
+            static constexpr int FFT_WINDOW_TIME_LENGTH = 4; // 2^2
+            //
+            static constexpr float FFT_SAMPLE_RATE = 128; // 2^7
+            //
+            static constexpr uint32_t FFT_WINDOW_SAMPLE_COUNT = static_cast<const uint32_t>(FFT_WINDOW_TIME_LENGTH *
+                                                                                            FFT_SAMPLE_RATE); // 2^9
+            //
+            static constexpr int FFT_WINDOW_30HZ_DATA_SIZE = static_cast<const int>(FFT_30HZ_LENGTH /
+                                                                                    (FFT_SAMPLE_RATE /
+                                                                                     (float) FFT_WINDOW_SAMPLE_COUNT));
+            // Number of samples between two FFT windows
+            static constexpr int FFT_WINDOW_SAMPLE_DIFF_COUNT =
+                    (int) (FFT_WINDOW_SAMPLE_COUNT * (1.0f - (FFT_WINDOW_OVERLAP_PERCENT / 100.0f)));
+            // Number of FFT windows needed to render 6s of signal
+            static constexpr int FFT_WINDOW_COUNT =
+                    (int) ((FFT_PROCESSING_TIME * FFT_SAMPLE_RATE) / FFT_WINDOW_SAMPLE_DIFF_COUNT);
 
-            void init();
+            void
+            processSeek(float **outData, int windowCount, int &windowCounter, int &frequencyCounter, int channelCount,
+                        short **inSamples, const int *inSampleCount);
+
+//            long long currentTimeInMilliseconds();
+
+            void init(float sampleRate);
 
             void clean();
 
@@ -52,27 +75,28 @@ namespace backyardbrains {
             std::vector<float> outImaginary;
 
             // Size of single window of samples - must be 2^N
-            uint32_t sampleWindowSize;
-            // Size of actual fft data that we take into account when creating output graph
-            uint32_t thirtyHzDataSize;
-            // Percentage of overlap between to consecutive sample windows
-            uint8_t windowOverlapPercent = WINDOW_OVERLAP_PERCENT;
+            int oWindowSampleCount;
             // Number of samples needed to be collected before starting new sample window
-            uint32_t windowSampleDiffCount;
+            int oWindowSampleDiffCount;
+            //
+            int oMaxWindowsSampleCount;
 
             // Whether buffers and normalization needs to be reset before processing
             bool resetOnNextCycle = false;
 
             // Holds all unanalyzed samples left from the latest sample batch
             float *unanalyzedSamples;
-            int32_t unanalyzedSampleCount;
-            // Holds latest sampleWindowSize number of samples
+            int unanalyzedSampleCount;
+            // Holds latest oWindowSampleCount number of samples
             float *sampleBuffer;
 
-            float maxMagnitude;
-            float halfMaxMagnitude;
-            float maxMagnitudeOptimized;
-            float halfMaxMagnitudeOptimized;
+            // Holds indices for the downsampled samples so we don't have to calculate them with every new batch
+            int *dsIndices;
+            int dsIndexCount;
+
+
+            float maxMagnitude = 4.83;
+            float halfMaxMagnitude = maxMagnitude * .5f;
         };
     }
 }

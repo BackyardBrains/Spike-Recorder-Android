@@ -1,6 +1,5 @@
 package com.backyardbrains.drawing;
 
-import android.app.Activity;
 import android.content.Context;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
@@ -45,19 +44,21 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private final AtomicBoolean autoScale = new AtomicBoolean();
 
     private MultichannelSignalDrawBuffer signalDrawBuffer =
-        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
+        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
+            SignalProcessor.DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     private MultichannelSignalDrawBuffer visibleSignalDrawBuffer =
-        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT, SignalProcessor.DEFAULT_FRAME_SIZE);
+        new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
+            SignalProcessor.DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
     private MultichannelSignalDrawBuffer averagedSignalDrawBuffer =
         new MultichannelSignalDrawBuffer(SignalProcessor.DEFAULT_CHANNEL_COUNT,
-            SignalProcessor.DEFAULT_AVERAGED_SAMPLE_BUFFER_SIZE);
+            SignalProcessor.DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT);
     private FftDrawBuffer fftDrawBuffer =
-        new FftDrawBuffer(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT, SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
+        new FftDrawBuffer(SignalProcessor.FFT_WINDOW_COUNT, SignalProcessor.FFT_WINDOW_SIZE);
 
     private SignalDrawData signalDrawData;
     private EventsDrawData eventsDrawData = new EventsDrawData(EventUtils.MAX_EVENT_COUNT);
     private FftDrawData fftDrawData =
-        new FftDrawData(SignalProcessor.DEFAULT_FFT_WINDOW_COUNT * SignalProcessor.DEFAULT_FFT_30HZ_WINDOW_SIZE);
+        new FftDrawData(SignalProcessor.FFT_WINDOW_COUNT * SignalProcessor.FFT_WINDOW_SIZE);
 
     private int surfaceWidth;
     private int surfaceHeight;
@@ -130,17 +131,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
         /**
          * Listener that is invoked while drawn signal is being measured.
-         *
-         * @param rms RMS value by channels of the selected part of drawn signal.
-         * @param firstTrainSpikeCount Number of spikes belonging to first train by channels within selected part of drawn signal.
-         * @param secondTrainSpikeCount Number of spikes belonging to second train by channels within selected part of drawn signal.
-         * @param thirdTrainSpikeCount Number of spikes belonging to third train by channels within selected part of drawn signal.
-         * @param selectedChannel Index of the currently selected channel.
-         * @param sampleCount Number of spikes within selected part of drawn signal.
          */
-        void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
-            @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
-            int sampleCount);
+        void onMeasure();
 
         /**
          * Listener that is invoked when signal measurement ends.
@@ -184,10 +176,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         synchronized (lock) {
             resetLocalSignalDrawBuffers(signalConfiguration.getChannelCount(),
                 signalConfiguration.getVisibleChannelCount());
-            fftDrawBuffer = new FftDrawBuffer(SignalProcessor.getProcessedFftWindowCount(),
-                SignalProcessor.getProcessedFftWindowSize());
-            fftDrawData = new FftDrawData(
-                SignalProcessor.getProcessedFftWindowCount() * SignalProcessor.getProcessedFftWindowSize());
         }
 
         // reset gl window width cause ample rate changed
@@ -233,9 +221,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     @Override public void onChannelSelectionChanged(int channelIndex) {
         LOGD(TAG, "onChannelSelectionChanged(" + channelIndex + ")");
-
-        // fft draw data should be reset every time channel selection changes
-        if (isFftProcessing()) fftDrawBuffer.clear();
     }
 
     /**
@@ -266,9 +251,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     @Override public void onFftProcessingChanged(boolean fftProcessing) {
         // reset GL window width cause min GL window width is different when processing FFT
         setGlWindowWidth(glWindowWidth);
+    }
 
-        // let's reset fft draw data for next time
-        if (fftProcessing) fftDrawBuffer.clear();
+    @Override public void onSignalSeekingChanged(boolean signalSeek) {
+        //LOGD(TAG, "onSignalSeekingChanged(" + signalSeek + ")");
     }
 
     //===========================================================
@@ -312,13 +298,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     boolean isChannelVisible(int channelIndex) {
         return signalConfiguration.isChannelVisible(channelIndex);
-    }
-
-    /**
-     * Returns number of visible channels
-     */
-    int getVisibleChannelCount() {
-        return signalConfiguration.getVisibleChannelCount();
     }
 
     /**
@@ -384,9 +363,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Resets buffers for averaged samples
      */
     public void resetAveragedSignal() {
-        int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
-        averagedSignalDrawBuffer =
-            new MultichannelSignalDrawBuffer(signalConfiguration.getVisibleChannelCount(), frameSize);
+        averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(signalConfiguration.getVisibleChannelCount(),
+            (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesPerChannelCount()));
     }
 
     //==============================================
@@ -438,8 +416,8 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
         final float minGlWindowWidthInSeconds =
             signalConfiguration.isFftProcessing() ? MIN_GL_WINDOW_WIDTH_FFT_IN_SECONDS : MIN_GL_WINDOW_WIDTH_IN_SECONDS;
-        final int minGlWindowWidth = (int) (signalConfiguration.getSampleRate() * minGlWindowWidthInSeconds);
-        final int maxGlWindowWidth = SignalProcessor.getMaxProcessedSamplesCount();
+        final float minGlWindowWidth = (int) (signalConfiguration.getSampleRate() * minGlWindowWidthInSeconds);
+        final float maxGlWindowWidth = SignalProcessor.getDrawnSamplesCount();
 
         if (width < minGlWindowWidth) width = minGlWindowWidth;
         if (width > maxGlWindowWidth) width = maxGlWindowWidth;
@@ -506,7 +484,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to load it's local settings so it can render inital state correctly. It is the counterpart
      * to {@link #onSaveSettings(Context)}.
      *
-     * This method should typically be called in {@link Activity#onStart()}. Subclasses
+     * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to load any renderer specific settings.
      */
     @CallSuper public void onLoadSettings(@NonNull Context context) {
@@ -521,7 +499,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * Called to ask renderer to save it's local settings so they can be retrieved when renderer is recreated. It is the
      * counterpart to {@link #onLoadSettings(Context)}.
      *
-     * This method should typically be called in {@link Activity#onStart()}. Subclasses
+     * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to save any renderer specific settings.
      */
     @CallSuper public void onSaveSettings(@NonNull Context context) {
@@ -618,6 +596,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             final int surfaceHeight = this.surfaceHeight;
             final boolean glWindowWidthDirty = this.glWindowWidthDirty;
             final float glWindowWidth = this.glWindowWidth;
+            final float glWindowWidthMax = SignalProcessor.getDrawnSamplesCount();
             System.arraycopy(waveformScaleFactors, 0, tempWaveformScaleFactors, 0, waveformScaleFactors.length);
             System.arraycopy(waveformPositions, 0, tempWaveformPositions, 0, waveformPositions.length);
 
@@ -637,10 +616,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 eventIndices, eventNames, copiedEventsCount, drawStartIndex, drawEndIndex, surfaceWidth,
                 lastSampleIndex);
             // prepare FFT data for drawing
-            if (fftProcessing) {
-                prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), drawStartIndex, drawEndIndex,
-                    surfaceWidth);
-            }
+            //if (fftProcessing) {
+            prepareFftForDrawing(fftDrawData, fftDrawBuffer.getBuffer(), drawStartIndex, drawEndIndex, glWindowWidthMax,
+                surfaceWidth);
+            //}
 
             // select and reset the projection matrix
             gl.glMatrixMode(GL10.GL_PROJECTION);
@@ -704,7 +683,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      * @param drawSurfaceWidth Width of the surface FFT data is being drawn to.
      */
     abstract protected void prepareFftForDrawing(FftDrawData fftDrawData, @NonNull float[][] fft, int drawStartIndex,
-        int drawEndIndex, int drawSurfaceWidth);
+        int drawEndIndex, float drawWidthMax, int drawSurfaceWidth);
 
     /**
      * Draws previously prepared data onto drawing surface.
@@ -750,37 +729,44 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     //
     private void resetLocalSignalDrawBuffers(int channelCount, int visibleChannelCount) {
-        int frameSize = (int) Math.floor((float) SignalProcessor.getProcessedSamplesCount());
-        signalDrawBuffer = new MultichannelSignalDrawBuffer(channelCount, frameSize);
-        visibleSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount, frameSize);
-        frameSize = (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesCount());
-        averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount, frameSize);
+        synchronized (lock) {
+            signalDrawBuffer = new MultichannelSignalDrawBuffer(channelCount,
+                (int) Math.floor((float) SignalProcessor.getProcessedSamplesPerChannelCount()));
+            visibleSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount,
+                (int) Math.floor((float) SignalProcessor.getProcessedSamplesPerChannelCount()));
+            averagedSignalDrawBuffer = new MultichannelSignalDrawBuffer(visibleChannelCount,
+                (int) Math.floor((float) SignalProcessor.getProcessedAveragedSamplesPerChannelCount()));
+        }
     }
 
     //
     private void resetLocalSignalDrawData(int visibleChannelCount) {
-        int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
-        if (signalDrawData == null || signalDrawData.channelCount != visibleChannelCount
-            || signalDrawData.maxSamplesPerChannel < maxSamplesPerChannel) {
-            signalDrawData = new SignalDrawData(visibleChannelCount, maxSamplesPerChannel);
+        synchronized (lock) {
+            int maxSamplesPerChannel = Math.max(surfaceWidth, surfaceHeight) * 8;
+            if (signalDrawData == null || signalDrawData.channelCount != visibleChannelCount
+                || signalDrawData.maxSamplesPerChannel < maxSamplesPerChannel) {
+                signalDrawData = new SignalDrawData(visibleChannelCount, maxSamplesPerChannel);
+            }
         }
     }
 
     //
     private void resetWaveformScaleFactorsAndPositions(int visibleChannelCount) {
-        waveformScaleFactors = new float[visibleChannelCount];
-        for (int i = 0; i < visibleChannelCount; i++) {
-            waveformScaleFactors[i] = waveformScaleFactor;
+        synchronized (lock) {
+            waveformScaleFactors = new float[visibleChannelCount];
+            for (int i = 0; i < visibleChannelCount; i++) {
+                waveformScaleFactors[i] = waveformScaleFactor;
+            }
+            waveformPositions = new float[visibleChannelCount];
+            float step = MAX_GL_VERTICAL_SIZE / (visibleChannelCount + 1);
+            float prev = -MAX_GL_VERTICAL_HALF_SIZE;
+            for (int i = 0; i < visibleChannelCount; i++) {
+                waveformPositions[i] = prev + step;
+                prev += step;
+            }
+            tempWaveformScaleFactors = new float[visibleChannelCount];
+            tempWaveformPositions = new float[visibleChannelCount];
         }
-        waveformPositions = new float[visibleChannelCount];
-        float step = MAX_GL_VERTICAL_SIZE / (visibleChannelCount + 1);
-        float prev = -MAX_GL_VERTICAL_HALF_SIZE;
-        for (int i = 0; i < visibleChannelCount; i++) {
-            waveformPositions[i] = prev + step;
-            prev += step;
-        }
-        tempWaveformScaleFactors = new float[visibleChannelCount];
-        tempWaveformPositions = new float[visibleChannelCount];
     }
 
     //==============================================
@@ -870,14 +856,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     }
 
     /**
-     * Triggers {@link OnMeasureListener#onMeasure(float[], int[], int[], int[], int, int)} call.
+     * Triggers {@link OnMeasureListener#onMeasure()} call.
      */
-    final void onMeasure(float[] rms, int[] firstTrainSpikeCount, int[] secondTrainSpikeCount,
-        int[] thirdTrainSpikeCount, int selectedChannel, int sampleCount) {
-        if (onMeasureListener != null) {
-            onMeasureListener.onMeasure(rms, firstTrainSpikeCount, secondTrainSpikeCount, thirdTrainSpikeCount,
-                selectedChannel, sampleCount);
-        }
+    final void onMeasure() {
+        if (onMeasureListener != null) onMeasureListener.onMeasure();
     }
 
     /**

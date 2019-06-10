@@ -23,35 +23,10 @@ public abstract class BaseWaveformFragment extends BaseFragment {
 
     private String TAG = makeLogTag(BaseWaveformFragment.class);
 
-    // Runnable used for updating viewable time span number
-    protected final ViewableTimeSpanUpdateRunnable viewableTimeSpanUpdateRunnable =
-        new ViewableTimeSpanUpdateRunnable();
-
     protected WaveformLayout waveform;
     protected ImageButton ibtnBack;
 
     BaseWaveformRenderer renderer;
-
-    /**
-     * Runnable that is executed on the UI thread every time GL window is scaled vertically or horizontally.
-     */
-    protected class ViewableTimeSpanUpdateRunnable implements Runnable {
-
-        private int sampleRate;
-        private float drawSurfaceWidth;
-
-        @Override public void run() {
-            waveform.setMilliseconds(drawSurfaceWidth / sampleRate * 1000f * .5f);
-        }
-
-        void setSampleRate(int sampleRate) {
-            this.sampleRate = sampleRate;
-        }
-
-        void setDrawSurfaceWidth(float drawSurfaceWidth) {
-            this.drawSurfaceWidth = drawSurfaceWidth;
-        }
-    }
 
     //==============================================
     //  LIFECYCLE IMPLEMENTATIONS
@@ -108,23 +83,6 @@ public abstract class BaseWaveformFragment extends BaseFragment {
     //==============================================
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
-
-    /**
-     * Update millivolts UI.
-     */
-    protected void setMillivolts(float millivolts) {
-        waveform.setMillivolts(millivolts);
-    }
-
-    /**
-     * Updates milliseconds UI.
-     */
-    protected void setMilliseconds(int sampleRate, float drawSurfaceWidth) {
-        viewableTimeSpanUpdateRunnable.setSampleRate(sampleRate);
-        viewableTimeSpanUpdateRunnable.setDrawSurfaceWidth(drawSurfaceWidth);
-        // we need to call it on UI thread because renderer is drawing on background thread
-        if (getActivity() != null) getActivity().runOnUiThread(viewableTimeSpanUpdateRunnable);
-    }
 
     /**
      * Returns renderer for the surface view.

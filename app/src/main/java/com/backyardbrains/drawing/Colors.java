@@ -13,6 +13,7 @@ public class Colors {
     public static final @Size(4) float[] GREEN = { 0f, 1f, 0f, 1f };
     public static final int GREEN_HEX = 0xff00ff00;
     public static final @Size(4) float[] BLUE = new float[] { 0f, 0f, 1f, 1f };
+    public static final @Size(4) float[] BLUE_LIGHT = new float[] { 0f, 0.47843f, 1f, 1f };
     public static final @Size(4) float[] YELLOW = { 1f, 1f, 0f, 1f };
     public static final int YELLOW_HEX = 0xffffff00;
     public static final @Size(4) float[] CYAN = { 0f, 1f, 1f, 1f };

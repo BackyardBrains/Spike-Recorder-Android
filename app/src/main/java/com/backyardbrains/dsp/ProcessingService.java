@@ -607,7 +607,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void startPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(true);
+        if (created && isPlaybackMode()) {
+            ((PlaybackSignalSource) signalSource).seek(true);
+            signalProcessor.setSignalSeeking(true);
+        }
     }
 
     /**
@@ -628,7 +631,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void stopPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(false);
+        if (created && isPlaybackMode()) {
+            ((PlaybackSignalSource) signalSource).seek(false);
+            signalProcessor.setSignalSeeking(false);
+        }
     }
 
     /**

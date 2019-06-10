@@ -8,7 +8,7 @@ public class SampleStreamUtils {
     /**
      * Sample rate used throughout the app.
      */
-    public static final int SAMPLE_RATE = 10000;
+    public static final int DEFAULT_SAMPLE_RATE = 10000;
     /**
      * Sample rate used throughout the app.
      */

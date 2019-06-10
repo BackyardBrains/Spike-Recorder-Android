@@ -7,11 +7,13 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import com.afollestad.materialdialogs.GravityEnum;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
@@ -22,12 +24,13 @@ import com.backyardbrains.events.AudioPlaybackStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
-import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.utils.WavUtils;
+import java.util.ArrayList;
+import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -43,28 +46,26 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     private static final String INT_SAMPLE_RATE = "bb_sample_rate";
     private static final String INT_CHANNEL_COUNT = "bb_channel_count";
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
+    private static final String BOOL_FFT_ON = "bb_fft_on";
     private static final String LONG_PLAYBACK_POSITION = "bb_playback_position";
 
     // Default number of sample sets that should be summed when averaging
     private static final int AVERAGED_SAMPLE_COUNT = 30;
+    // Holds names of all the available channels
+    private static final List<String> CHANNEL_NAMES = new ArrayList<>();
 
     // Runnable used for updating playback seek bar
     final protected PlaybackSeekRunnable playbackSeekRunnable = new PlaybackSeekRunnable();
-    // Runnable used for updating selected samples measurements (RMS, spike count and spike frequency)
-    final protected MeasurementsUpdateRunnable measurementsUpdateRunnable = new MeasurementsUpdateRunnable();
 
     protected ImageButton ibtnThreshold;
+    protected Button btnFft;
+    protected TextView tvSelectChannel;
     protected ImageButton ibtnAvgTriggerType;
     protected SeekBar sbAvgSamplesCount;
     protected TextView tvAvgSamplesCount;
-    protected TextView tvRms;
-    protected TextView tvSpikeCount0;
-    protected TextView tvSpikeCount1;
-    protected TextView tvSpikeCount2;
     protected ImageView ibtnPlayPause;
     protected SeekBar sbAudioProgress;
     protected TextView tvProgressTime;
-    protected TextView tvRmsTime;
 
     protected String filePath;
 
@@ -74,6 +75,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     int channelCount = AudioUtils.DEFAULT_CHANNEL_COUNT;
     // Whether signal triggering is turned on or off
     boolean thresholdOn;
+    // Whether fft processing is turned on or off
+    private boolean fftOn;
     // Holds position of the playback while in background
     int playbackPosition;
 
@@ -97,127 +100,6 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         void setUpdateProgressTimeLabel(@SuppressWarnings("SameParameterValue") boolean updateProgressTimeLabel) {
             this.updateProgressTimeLabel = updateProgressTimeLabel;
-        }
-    }
-
-    /**
-     * Runnable that is executed on the UI thread every time RMS of the selected samples is updated.
-     */
-    protected class MeasurementsUpdateRunnable implements Runnable {
-
-        private boolean measuring;
-        private float[] rms;
-        private int[] firstTrainSpikeCounts;
-        private float[] firstTrainSpikesPerSecond;
-        private int[] secondTrainSpikeCounts;
-        private float[] secondTrainSpikesPerSecond;
-        private int[] thirdTrainSpikeCounts;
-        private float[] thirdTrainSpikesPerSecond;
-        private int sampleCount;
-        private int selectedChannel;
-
-        @Override public void run() {
-            if (getContext() != null && measuring) {
-                tvRms.setText(String.format(getString(R.string.template_rms), rms[selectedChannel]));
-                // avoid division by zero
-                tvRmsTime.setText(Formats.formatTime_s_msec(sampleCount / (float) sampleRate * 1000));
-                if (firstTrainSpikeCounts != null && firstTrainSpikeCounts[selectedChannel] >= 0) {
-                    tvSpikeCount0.setVisibility(View.VISIBLE);
-                    tvSpikeCount0.setText(
-                        String.format(getString(R.string.template_spike_count), firstTrainSpikeCounts[selectedChannel],
-                            firstTrainSpikesPerSecond[selectedChannel]));
-                } else {
-                    tvSpikeCount0.setVisibility(View.INVISIBLE);
-                }
-                if (secondTrainSpikeCounts != null && secondTrainSpikeCounts[selectedChannel] >= 0) {
-                    tvSpikeCount1.setVisibility(View.VISIBLE);
-                    tvSpikeCount1.setText(
-                        String.format(getString(R.string.template_spike_count), secondTrainSpikeCounts[selectedChannel],
-                            secondTrainSpikesPerSecond[selectedChannel]));
-                } else {
-                    tvSpikeCount1.setVisibility(View.INVISIBLE);
-                }
-                if (thirdTrainSpikeCounts != null && thirdTrainSpikeCounts[selectedChannel] >= 0) {
-                    tvSpikeCount2.setVisibility(View.VISIBLE);
-                    tvSpikeCount2.setText(
-                        String.format(getString(R.string.template_spike_count), thirdTrainSpikeCounts[selectedChannel],
-                            thirdTrainSpikesPerSecond[selectedChannel]));
-                } else {
-                    tvSpikeCount2.setVisibility(View.INVISIBLE);
-                }
-            }
-        }
-
-        void setMeasuring(boolean measuring) {
-            this.measuring = measuring;
-        }
-
-        void setRms(@NonNull float[] rms) {
-            this.rms = rms;
-            for (int i = 0; i < rms.length; i++) {
-                if (Float.isInfinite(rms[i]) || Float.isNaN(rms[i])) {
-                    this.rms[i] = 0f;
-                }
-            }
-        }
-
-        public void setSelectedChannel(int selectedChannel) {
-            this.selectedChannel = selectedChannel;
-        }
-
-        public void setSampleCount(int sampleCount) {
-            this.sampleCount = sampleCount;
-        }
-
-        void setFirstTrainSpikeCounts(@Nullable int[] firstTrainSpikeCountss) {
-            this.firstTrainSpikeCounts = firstTrainSpikeCountss;
-
-            if (firstTrainSpikeCountss != null) {
-                if (this.firstTrainSpikesPerSecond == null) {
-                    this.firstTrainSpikesPerSecond = new float[firstTrainSpikeCountss.length];
-                }
-
-                for (int i = 0; i < firstTrainSpikeCountss.length; i++) {
-                    firstTrainSpikesPerSecond[i] = (firstTrainSpikeCountss[i] * sampleRate) / (float) sampleCount;
-                    if (Float.isInfinite(firstTrainSpikesPerSecond[i]) || Float.isNaN(firstTrainSpikesPerSecond[i])) {
-                        firstTrainSpikesPerSecond[i] = 0f;
-                    }
-                }
-            }
-        }
-
-        void setSecondTrainSpikeCounts(@Nullable int[] secondTrainSpikeCounts) {
-            this.secondTrainSpikeCounts = secondTrainSpikeCounts;
-
-            if (secondTrainSpikeCounts != null) {
-                if (this.secondTrainSpikesPerSecond == null) {
-                    this.secondTrainSpikesPerSecond = new float[secondTrainSpikeCounts.length];
-                }
-
-                for (int i = 0; i < secondTrainSpikeCounts.length; i++) {
-                    secondTrainSpikesPerSecond[i] = (secondTrainSpikeCounts[i] * sampleRate) / (float) sampleCount;
-                    if (Float.isInfinite(secondTrainSpikesPerSecond[i]) || Float.isNaN(secondTrainSpikesPerSecond[i])) {
-                        secondTrainSpikesPerSecond[i] = 0f;
-                    }
-                }
-            }
-        }
-
-        void setThirdTrainSpikeCounts(@Nullable int[] thirdTrainSpikeCounts) {
-            this.thirdTrainSpikeCounts = thirdTrainSpikeCounts;
-
-            if (thirdTrainSpikeCounts != null) {
-                if (this.thirdTrainSpikesPerSecond == null) {
-                    this.thirdTrainSpikesPerSecond = new float[thirdTrainSpikeCounts.length];
-                }
-
-                for (int i = 0; i < thirdTrainSpikeCounts.length; i++) {
-                    thirdTrainSpikesPerSecond[i] = (thirdTrainSpikeCounts[i] * sampleRate) / (float) sampleCount;
-                    if (Float.isInfinite(thirdTrainSpikesPerSecond[i]) || Float.isNaN(thirdTrainSpikesPerSecond[i])) {
-                        thirdTrainSpikesPerSecond[i] = 0f;
-                    }
-                }
-            }
         }
     }
 
@@ -246,6 +128,13 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         stopThresholdMode();
         setupThresholdView();
     };
+
+    private final View.OnClickListener fftClickListener = v -> {
+        toggleFft();
+        setupFftView();
+    };
+
+    private final View.OnClickListener selectChannelClickListener = v -> openChannelsDialog();
 
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
         new SeekBar.OnSeekBarChangeListener() {
@@ -308,6 +197,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.DEFAULT_SAMPLE_RATE);
             channelCount = savedInstanceState.getInt(INT_CHANNEL_COUNT, AudioUtils.DEFAULT_CHANNEL_COUNT);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+            fftOn = savedInstanceState.getBoolean(BOOL_FFT_ON);
             playbackPosition = savedInstanceState.getInt(LONG_PLAYBACK_POSITION, 0);
         }
     }
@@ -336,6 +226,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         outState.putInt(INT_SAMPLE_RATE, sampleRate);
         outState.putInt(INT_CHANNEL_COUNT, channelCount);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
+        outState.putBoolean(BOOL_FFT_ON, fftOn);
         outState.putInt(LONG_PLAYBACK_POSITION, playbackPosition);
     }
 
@@ -347,17 +238,14 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         @Nullable Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_playback_scope, container, false);
         ibtnThreshold = view.findViewById(R.id.ibtn_threshold);
+        btnFft = view.findViewById(R.id.btn_fft);
+        tvSelectChannel = view.findViewById(R.id.tv_select_channel);
         ibtnAvgTriggerType = view.findViewById(R.id.ibtn_avg_trigger_type);
         sbAvgSamplesCount = view.findViewById(R.id.sb_averaged_sample_count);
         tvAvgSamplesCount = view.findViewById(R.id.tv_averaged_sample_count);
-        tvRms = view.findViewById(R.id.tv_rms);
-        tvSpikeCount0 = view.findViewById(R.id.tv_spike_count0);
-        tvSpikeCount1 = view.findViewById(R.id.tv_spike_count1);
-        tvSpikeCount2 = view.findViewById(R.id.tv_spike_count2);
         ibtnPlayPause = view.findViewById(R.id.iv_play_pause);
         sbAudioProgress = view.findViewById(R.id.sb_audio_progress);
         tvProgressTime = view.findViewById(R.id.tv_progress_time);
-        tvRmsTime = view.findViewById(R.id.tv_rms_time);
 
         // we should set averaged sample count before UI setup
         int averagedSampleCount = PrefUtils.getAveragedSampleCount(view.getContext(), BaseWaveformFragment.class);
@@ -376,7 +264,6 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     @Override protected BaseWaveformRenderer createRenderer() {
         final SeekableWaveformRenderer renderer = new SeekableWaveformRenderer(filePath, this);
-        renderer.setOnDrawListener((drawSurfaceWidth) -> setMilliseconds(sampleRate, drawSurfaceWidth));
         renderer.setOnWaveformSelectionListener(index -> {
             if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
         });
@@ -392,40 +279,6 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
             @Override public void onScrollEnd() {
                 stopSeek();
-            }
-        });
-        renderer.setOnMeasureListener(new BaseWaveformRenderer.OnMeasureListener() {
-
-            @Override public void onMeasureStart() {
-                tvRms.setVisibility(View.VISIBLE);
-                tvRmsTime.setVisibility(View.VISIBLE);
-
-                measurementsUpdateRunnable.setMeasuring(true);
-            }
-
-            @Override public void onMeasure(@NonNull float[] rms, @Nullable int[] firstTrainSpikeCount,
-                @Nullable int[] secondTrainSpikeCount, @Nullable int[] thirdTrainSpikeCount, int selectedChannel,
-                int sampleCount) {
-                if (getActivity() != null) {
-                    measurementsUpdateRunnable.setRms(rms);
-                    measurementsUpdateRunnable.setSelectedChannel(selectedChannel);
-                    measurementsUpdateRunnable.setSampleCount(sampleCount);
-                    measurementsUpdateRunnable.setFirstTrainSpikeCounts(firstTrainSpikeCount);
-                    measurementsUpdateRunnable.setSecondTrainSpikeCounts(secondTrainSpikeCount);
-                    measurementsUpdateRunnable.setThirdTrainSpikeCounts(thirdTrainSpikeCount);
-                    // we need to call it on UI thread because renderer is drawing on background thread
-                    getActivity().runOnUiThread(measurementsUpdateRunnable);
-                }
-            }
-
-            @Override public void onMeasureEnd() {
-                measurementsUpdateRunnable.setMeasuring(false);
-
-                tvRms.setVisibility(View.INVISIBLE);
-                tvRmsTime.setVisibility(View.INVISIBLE);
-                tvSpikeCount0.setVisibility(View.INVISIBLE);
-                tvSpikeCount1.setVisibility(View.INVISIBLE);
-                tvSpikeCount2.setVisibility(View.INVISIBLE);
             }
         });
         return renderer;
@@ -456,6 +309,13 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
      * Subclasses should override this method if they shouldn't show the Threshold view.
      */
     protected boolean showThresholdView() {
+        return true;
+    }
+
+    /**
+     * Subclasses should override this method if they shouldn't show the Fft view.
+     */
+    protected boolean showFftView() {
         return true;
     }
 
@@ -495,7 +355,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             // this will set signal averaging trigger type if we are coming from background
             getProcessingService().setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
             // this will turn off FFT processing if we are coming from background
-            getProcessingService().setFftProcessing(false);
+            getProcessingService().setFftProcessing(fftOn);
 
             // this will start playback if we are coming from background
             getProcessingService().startPlayback(filePath, autoPlay, playbackPosition);
@@ -609,6 +469,13 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             ibtnThreshold.setVisibility(View.INVISIBLE);
             ibtnAvgTriggerType.setVisibility(View.INVISIBLE);
         }
+        if (showFftView()) {
+            // fft view
+            setupFftView();
+        } else {
+            btnFft.setVisibility(View.INVISIBLE);
+            tvSelectChannel.setVisibility(View.INVISIBLE);
+        }
         // play/pause button
         setupPlayPauseButton();
         ibtnPlayPause.setOnClickListener(v -> toggle(!isPlaying()));
@@ -634,6 +501,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
     // Sets up the threshold view (button, handle and averaged sample count
     void setupThresholdView() {
+        // setup threshold view
         if (thresholdOn) {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white_active);
@@ -644,6 +512,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             sbAvgSamplesCount.setProgress(JniUtils.getAveragedSampleCount());
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.VISIBLE);
+            // stop fft (if threshold is turned on fft should be stopped)
+            stopFft();
         } else {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white);
@@ -654,7 +524,10 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.INVISIBLE);
         }
+        // setup threshold trigger type button
         setupThresholdHandleAndAveragingTriggerTypeButtons();
+        // setup fft view
+        setupFftView();
     }
 
     // Sets up threshold handle and averaging trigger type button
@@ -739,6 +612,55 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (getProcessingService() != null) getProcessingService().setSignalAveragingTriggerType(triggerType);
 
         setupThresholdHandleAndAveragingTriggerTypeButtons();
+    }
+
+    //==============================================
+    // FFT
+    //==============================================
+
+    private void setupFftView() {
+        // setup fft button
+        btnFft.setBackgroundResource(fftOn ? R.drawable.circle_gray_white_active : R.drawable.circle_gray_white);
+        btnFft.setVisibility(thresholdOn ? View.GONE : View.VISIBLE);
+        btnFft.setOnClickListener(fftClickListener);
+        // setup select channel text view
+        tvSelectChannel.setVisibility(
+            getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
+                && fftOn ? View.VISIBLE : View.GONE);
+        tvSelectChannel.setOnClickListener(selectChannelClickListener);
+    }
+
+    private void toggleFft() {
+        fftOn = !fftOn;
+        if (getProcessingService() != null) getProcessingService().setFftProcessing(fftOn);
+    }
+
+    private void stopFft() {
+        if (fftOn) toggleFft();
+    }
+
+    // Opens a dialog for channel selection
+    void openChannelsDialog() {
+        if (getContext() != null) {
+            // populate channel names collection
+            int channelCount = getProcessingService() != null ? getProcessingService().getChannelCount() : 1;
+            int selectedChannel = getProcessingService() != null ? getProcessingService().getSelectedChanel() : 0;
+            CHANNEL_NAMES.clear();
+            for (int i = 0; i < channelCount; i++) {
+                if (getProcessingService() != null && getProcessingService().isChannelVisible(i)) {
+                    CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+                }
+            }
+            final MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
+                .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
+                    if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
+                    return true;
+                })
+                .alwaysCallSingleChoiceCallback()
+                .itemsGravity(GravityEnum.CENTER)
+                .build();
+            channelsDialog.show();
+        }
     }
 
     //==============================================
