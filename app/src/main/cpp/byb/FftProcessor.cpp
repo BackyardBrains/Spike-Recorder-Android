@@ -35,6 +35,11 @@ namespace backyardbrains {
             Processor::setSampleRate(sampleRate);
 
             resetOnNextCycle = true;
+            resetNormalizationOnNextCycle = true;
+        }
+
+        void FftProcessor::resetNormalization() {
+            resetNormalizationOnNextCycle = true;
         }
 
         void
@@ -66,6 +71,11 @@ namespace backyardbrains {
                 init(sampleRate);
                 resetOnNextCycle = false;
             }
+            if (resetNormalizationOnNextCycle) {
+                initNormalizationParams();
+                resetNormalizationOnNextCycle = false;
+            }
+
 
             auto *samples = inSamples[selectedChannel];
 
@@ -158,6 +168,10 @@ namespace backyardbrains {
                 init(sampleRate);
                 resetOnNextCycle = false;
             }
+            if (resetNormalizationOnNextCycle) {
+                initNormalizationParams();
+                resetNormalizationOnNextCycle = false;
+            }
 
             auto sampleCount = inSampleCount[selectedChannel];
             auto *samples = inSamples[selectedChannel];
@@ -242,6 +256,15 @@ namespace backyardbrains {
             dsIndices = new int[dsIndexCount];
             for (int j = 0; j < dsIndexCount; j++)
                 dsIndices[j] = dsFactor * j;
+
+//            initNormalizationParams();
+        }
+
+        void FftProcessor::initNormalizationParams() {
+            __android_log_print(ANDROID_LOG_DEBUG, TAG, "initNormalizationParams()");
+
+            maxMagnitude = 4.83;
+            halfMaxMagnitude = maxMagnitude * .5f;
         }
 
         void FftProcessor::clean() {

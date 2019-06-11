@@ -446,6 +446,8 @@ public class SignalProcessor implements SignalSource.Processor {
         // let's notify any interested party of the data source initial sample rate and channel count
         onSampleRateChanged(signalSource.getSampleRate());
         onChannelCountChanged(signalSource.getChannelCount());
+        // reset to first channel
+        setSelectedChannel(0);
 
         if (this.signalSource instanceof AbstractUsbSignalSource) {
             ((AbstractUsbSignalSource) this.signalSource).addOnSpikerBoxHardwareTypeDetectionListener(

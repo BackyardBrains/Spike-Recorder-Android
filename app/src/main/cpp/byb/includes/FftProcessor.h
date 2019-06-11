@@ -27,6 +27,8 @@ namespace backyardbrains {
 
             void setSampleRate(float sampleRate) override;
 
+            void resetNormalization();
+
             void
             process(float **outData, int windowCount, int &windowCounter, int &frequencyCounter, int channelCount,
                     short **inSamples, const int *inSampleCount);
@@ -66,6 +68,8 @@ namespace backyardbrains {
 
             void init(float sampleRate);
 
+            void initNormalizationParams();
+
             void clean();
 
             audiofft::AudioFFT fft;
@@ -81,8 +85,10 @@ namespace backyardbrains {
             //
             int oMaxWindowsSampleCount;
 
-            // Whether buffers and normalization needs to be reset before processing
+            // Whether buffers need to be reset before processing
             bool resetOnNextCycle = false;
+            // Whether normalization need to be reset before processing
+            bool resetNormalizationOnNextCycle = false;
 
             // Holds all unanalyzed samples left from the latest sample batch
             float *unanalyzedSamples;
@@ -93,7 +99,6 @@ namespace backyardbrains {
             // Holds indices for the downsampled samples so we don't have to calculate them with every new batch
             int *dsIndices;
             int dsIndexCount;
-
 
             float maxMagnitude = 4.83;
             float halfMaxMagnitude = maxMagnitude * .5f;

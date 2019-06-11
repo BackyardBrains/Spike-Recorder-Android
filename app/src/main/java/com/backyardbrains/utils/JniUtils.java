@@ -26,6 +26,8 @@ public class JniUtils {
 
     public static native void setChannelCount(int channelCount);
 
+    public static native void setSelectedChannel(int selectedChannel);
+
     public static native void setBandFilter(float lowCutOffFreq, float highCutOffFreq);
 
     public static native void setNotchFilter(float centerFreq);
@@ -44,8 +46,6 @@ public class JniUtils {
 
     public static native void setAveragedSampleCount(int averagedSampleCount);
 
-    public static native void setSelectedChannel(int selectedChannel);
-
     public static native void setThreshold(float threshold);
 
     public static native void resetThreshold();
@@ -61,6 +61,8 @@ public class JniUtils {
     public static native void setBpmProcessing(boolean processBpm);
 
     public static native void processThreshold(SignalData out, SignalData in, boolean averageSamples);
+
+    public static native void resetFftNormalization();
 
     public static native void processFft(FftData out, SignalData in);
 
