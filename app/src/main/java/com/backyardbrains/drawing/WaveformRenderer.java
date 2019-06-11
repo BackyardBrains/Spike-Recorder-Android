@@ -266,7 +266,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
         if (!isFftProcessing() || getSurfaceHeight() - y > fftSurfaceHeight) {
             super.autoScale(x, y);
         }
-        // TODO: 11-Jun-19 TBD WHETHER WE WANT RESET OF FFT NORMALIZATION PARAMETERS ON SPECTOGRAM DOUBLE-CLICK
+        // TODO: 11-Jun-19 TBD WHETHER WE WANT RESET OF FFT NORMALIZATION PARAMETERS ON SPECTROGRAM DOUBLE-CLICK
         /* else {
             JniUtils.resetFftNormalization();
         }*/

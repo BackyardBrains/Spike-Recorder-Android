@@ -1,8 +1,10 @@
 package com.backyardbrains.utils;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,8 +16,9 @@ public class Formats {
     private static final String UNIT_SECS = "s";
     private static final String UNIT_MILLIVOLTS = "mV";
 
-    private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.0");
-    private static final DecimalFormat SIGNAL_FORMAT = new DecimalFormat("#.##");
+    private static final DecimalFormatSymbols FORMAT_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+    private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.0", FORMAT_SYMBOLS);
+    private static final DecimalFormat SIGNAL_FORMAT = new DecimalFormat("#.##", FORMAT_SYMBOLS);
 
     static {
         TIME_FORMAT.setMaximumFractionDigits(1);
