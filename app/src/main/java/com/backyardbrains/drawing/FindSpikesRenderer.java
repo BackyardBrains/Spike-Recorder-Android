@@ -41,7 +41,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
 
     private int[] thresholds = new int[2];
 
-    private float[] currentColor = Colors.RED;
+    private float[] currentColor = new float[4];
     private float[] whiteColor = Colors.WHITE;
 
     private String filePath;
@@ -76,6 +76,8 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
         glThresholdHandle = new GlHandle();
 
         handleBaseRadius = ViewUtils.dpToPx(fragment.getResources(), HANDLE_BASE_RADIUS_DP);
+
+        setCurrentColor(Colors.RED);
 
         loadSpikeTrains();
     }

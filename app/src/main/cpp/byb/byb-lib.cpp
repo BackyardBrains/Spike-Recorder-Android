@@ -84,6 +84,8 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type, jobject out, jobject in,
                                                         jboolean averageSamples);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetFftNormalization(JNIEnv *env, jclass type);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processFft(JNIEnv *env, jclass type, jobject out, jobject in);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_prepareForSignalDrawing(JNIEnv *env, jclass type, jobject outSignal,
@@ -850,6 +852,11 @@ Java_com_backyardbrains_utils_JniUtils_processThreshold(JNIEnv *env, jclass type
     }
     delete[] outSamplesPtr;
     delete[] channelSampleCounts;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_resetFftNormalization(JNIEnv *env, jclass type) {
+    fftProcessor->resetNormalization();
 }
 
 extern "C" JNIEXPORT void JNICALL
