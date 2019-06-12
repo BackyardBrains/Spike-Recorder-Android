@@ -1,7 +1,6 @@
 package com.backyardbrains.utils;
 
 import android.support.annotation.NonNull;
-import javax.microedition.khronos.opengles.GL10;
 
 public class GlUtils {
 
@@ -15,10 +14,6 @@ public class GlUtils {
 
     public static final int V_AXIS_VALUES_COUNT = 0;
     public static final int V_AXIS_VALUES_STEP = 1;
-
-    public static void glClear(GL10 gl) {
-        gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-    }
 
     public static int[] getMinMax(@NonNull int[] values) {
         if (values.length > 0) {

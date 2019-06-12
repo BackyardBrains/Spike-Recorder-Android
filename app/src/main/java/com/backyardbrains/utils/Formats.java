@@ -1,8 +1,10 @@
 package com.backyardbrains.utils;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,36 +16,44 @@ public class Formats {
     private static final String UNIT_SECS = "s";
     private static final String UNIT_MILLIVOLTS = "mV";
 
-    private static final DecimalFormat timeFormat = new DecimalFormat("#.0");
-    private static final DecimalFormat signalFormat = new DecimalFormat("#.##");
+    private static final DecimalFormatSymbols FORMAT_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+    private static final DecimalFormat TIME_FORMAT = new DecimalFormat("#.0", FORMAT_SYMBOLS);
+    private static final DecimalFormat SIGNAL_FORMAT = new DecimalFormat("#.##", FORMAT_SYMBOLS);
 
-    private static final StringBuffer stringBuilder = new StringBuffer(10);
+    static {
+        TIME_FORMAT.setMaximumFractionDigits(1);
+    }
+
+    private static final StringBuffer mMsecStringBuilder = new StringBuffer(10);
+    private static final StringBuffer mmSsStringBuilder = new StringBuffer(10);
+    private static final StringBuffer msStringBuilder = new StringBuffer(10);
+    private static final StringBuffer signalStringBuilder = new StringBuffer(10);
     private static final FieldPosition fieldPosition = new FieldPosition(NumberFormat.FRACTION_FIELD);
 
     /**
      * Formats specified millisecond. If {@code ms} is < 1000 time is formatted as millis, else as seconds.
      */
-    public static String formatTime_s_msec(float ms) {
-        stringBuilder.delete(0, stringBuilder.length());
+    public static synchronized String formatTime_s_msec(float ms) {
+        mMsecStringBuilder.setLength(0);
 
         final double time = ms < 1000 ? ms : ms / 1000;
-        timeFormat.format(time, stringBuilder, fieldPosition);
-        return stringBuilder.append(" ").append(ms < 1000 ? UNIT_MILLIS : UNIT_SECS).toString();
+        TIME_FORMAT.format(time, mMsecStringBuilder, fieldPosition);
+        return mMsecStringBuilder.append(" ").append(ms < 1000 ? UNIT_MILLIS : UNIT_SECS).toString();
     }
 
     /**
      * Formats specified milliseconds as "mm:ss".
      */
-    public static String formatTime_mm_ss(long ms) {
-        stringBuilder.delete(0, stringBuilder.length());
+    static synchronized String formatTime_mm_ss(long ms) {
+        mmSsStringBuilder.setLength(0);
 
         long minutes = TimeUnit.MILLISECONDS.toMinutes(ms);
-        if (minutes < 10) stringBuilder.append(0);
-        stringBuilder.append(minutes).append(":");
+        if (minutes < 10) mmSsStringBuilder.append(0);
+        mmSsStringBuilder.append(minutes).append(":");
         long seconds = TimeUnit.MILLISECONDS.toSeconds(ms) % TimeUnit.MINUTES.toSeconds(1);
-        if (seconds < 10) stringBuilder.append(0);
-        stringBuilder.append(seconds);
-        return stringBuilder.toString();
+        if (seconds < 10) mmSsStringBuilder.append(0);
+        mmSsStringBuilder.append(seconds);
+        return mmSsStringBuilder.toString();
     }
 
     /**
@@ -51,28 +61,28 @@ public class Formats {
      *
      * @param s seconds that need to be formatted.
      */
-    public static String formatTime_m_s(long s) {
-        stringBuilder.delete(0, stringBuilder.length());
+    static synchronized String formatTime_m_s(long s) {
+        msStringBuilder.delete(0, msStringBuilder.length());
 
         final long minute = TimeUnit.MINUTES.toSeconds(1);
         if (s >= minute) {
             long minutes = s / minute;
             s -= minutes * minute;
-            stringBuilder.append(minutes).append("m ").append(s).append("s");
+            msStringBuilder.append(minutes).append("m ").append(s).append("s");
         } else {
-            stringBuilder.append(s).append("s");
+            msStringBuilder.append(s).append("s");
         }
 
-        return stringBuilder.toString();
+        return msStringBuilder.toString();
     }
 
     /**
      * Formats specified millivolts.
      */
-    public static String formatSignal(float mV) {
-        stringBuilder.delete(0, stringBuilder.length());
+    public static synchronized String formatSignal(float mV) {
+        signalStringBuilder.delete(0, signalStringBuilder.length());
 
-        signalFormat.format(mV, stringBuilder, fieldPosition);
-        return stringBuilder.append(" ").append(UNIT_MILLIVOLTS).toString();
+        SIGNAL_FORMAT.format(mV, signalStringBuilder, fieldPosition);
+        return signalStringBuilder.append(" ").append(UNIT_MILLIVOLTS).toString();
     }
 }

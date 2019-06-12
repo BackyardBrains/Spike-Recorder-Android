@@ -31,8 +31,8 @@ public interface SignalSource {
     }
 
     /**
-     * A processor receives notifications from a data source. Notifications indicate data source related events, such
-     * as when new batch of bytes is available or data source sample rate is detected.
+     * A processor receives notifications from a signal source. Notifications indicate signal source related events,
+     * such as when new batch of bytes is available or signal source sample rate or channel count is changed.
      */
     interface Processor {
 
@@ -43,6 +43,8 @@ public interface SignalSource {
          * @param length The length of the received data.
          */
         void onDataReceived(@NonNull byte[] data, int length);
+
+        //void onSignalChanged(int sampleRate, int channelCount);
 
         /**
          * Called when sample source sample rate is changed.

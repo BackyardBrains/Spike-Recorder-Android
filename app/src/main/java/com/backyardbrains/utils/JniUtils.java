@@ -3,9 +3,11 @@ package com.backyardbrains.utils;
 import com.backyardbrains.drawing.EventsDrawData;
 import com.backyardbrains.drawing.FftDrawData;
 import com.backyardbrains.drawing.SignalDrawData;
+import com.backyardbrains.drawing.SpikesDrawData;
 import com.backyardbrains.dsp.FftData;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
+import com.backyardbrains.vo.SpikeIndexValue;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -18,9 +20,13 @@ public class JniUtils {
 
     public static native int interleaveSignal(short[] out, SignalData in);
 
+    public static native float rms(short[] in, int length);
+
     public static native void setSampleRate(int sampleRate);
 
     public static native void setChannelCount(int channelCount);
+
+    public static native void setSelectedChannel(int selectedChannel);
 
     public static native void setBandFilter(float lowCutOffFreq, float highCutOffFreq);
 
@@ -33,14 +39,12 @@ public class JniUtils {
 
     public static native void processMicrophoneStream(SignalData out, byte[] data, int length);
 
-    public static native void processPlaybackStream(SignalData signalData, byte[] data, int length,
-        int[] eventIndices, String[] eventNames, int eventCount, long fromSample, long toSample, int prependSamples);
+    public static native void processPlaybackStream(SignalData signalData, byte[] data, int length, int[] eventIndices,
+        String[] eventNames, int eventCount, long fromSample, long toSample, int prependSamples);
 
     public static native int getAveragedSampleCount();
 
     public static native void setAveragedSampleCount(int averagedSampleCount);
-
-    public static native void setSelectedChannel(int selectedChannel);
 
     public static native void setThreshold(float threshold);
 
@@ -58,18 +62,24 @@ public class JniUtils {
 
     public static native void processThreshold(SignalData out, SignalData in, boolean averageSamples);
 
+    public static native void resetFftNormalization();
+
     public static native void processFft(FftData out, SignalData in);
 
     public static native void prepareForSignalDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
-        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int fromSample, int toSample,
-        int drawSurfaceWidth);
+        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
+        int drawEndIndex, int drawSurfaceWidth);
 
     public static native void prepareForThresholdDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
-        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int fromSample, int toSample,
-        int drawSurfaceWidth);
+        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
+        int drawEndIndex, int drawSurfaceWidth);
 
-    public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawSurfaceWidth,
-        int drawSurfaceHeight);
+    public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawStartIndex, int drawEndIndex,
+        float drawWidthMax, int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
+
+    public static native void prepareForSpikesDrawing(SpikesDrawData out, SpikeIndexValue[] in, float[] colorInRange,
+        float[] colorOutOfRange, int rangeStart, int rangeEnd, int sampleStartIndex, int sampleEndIndex,
+        int drawStartIndex, int drawEndIndex, int samplesToDraw, int drawSurfaceWidth);
 
     public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos,
         float[][] timesPos, short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount,

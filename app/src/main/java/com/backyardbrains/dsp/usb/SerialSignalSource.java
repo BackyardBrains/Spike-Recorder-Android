@@ -58,7 +58,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
 
     static {
         MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
-            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, SampleStreamUtils.SAMPLE_RATE)
+            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, SampleStreamUtils.DEFAULT_SAMPLE_RATE)
                 + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 

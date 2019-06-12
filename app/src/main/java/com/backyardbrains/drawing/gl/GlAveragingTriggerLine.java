@@ -30,7 +30,7 @@ public class GlAveragingTriggerLine {
         text.load("dos-437.ttf", 48, 2, 2);
     }
 
-    public void draw(@NonNull GL10 gl, @Nullable String eventName, float height, float scaleX, float scaleY) {
+    public void draw(@NonNull GL10 gl, @Nullable String eventName, float height, float scaleY) {
         // draw black line
         vLine.draw(gl, 0f, height, LINE_WIDTH, Colors.BLACK);
 
@@ -53,7 +53,7 @@ public class GlAveragingTriggerLine {
             gl.glColor4f(glColor[0], glColor[1], glColor[2], glColor[3]);
 
             // scale text before drawing background so we have correct measurements
-            text.setScale(scaleX < 1 ? scaleX : 1f, scaleY);
+            text.setScale(1f, scaleY);
             // draw label background
             float textW = text.getLength(eventName);
             float textH = text.getHeight();

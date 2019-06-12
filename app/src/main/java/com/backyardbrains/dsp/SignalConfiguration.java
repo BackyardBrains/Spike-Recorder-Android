@@ -24,6 +24,8 @@ public final class SignalConfiguration {
     private int selectedChannel;
     private boolean signalAveraging;
     private @SignalAveragingTriggerType int signalAveragingTriggerType;
+    private boolean fftProcessing;
+    private boolean signalSeeking;
 
     /**
      * Interface definition for a callback to be invoked when one of signal properties changes.
@@ -70,6 +72,20 @@ public final class SignalConfiguration {
          * @param averagingTriggerType Trigger type that is set. One of {@link SignalAveragingTriggerType} values
          */
         void onSignalAveragingTriggerTypeChanged(@SignalAveragingTriggerType int averagingTriggerType);
+
+        /**
+         * Called when fft processing is turned on or off.
+         *
+         * @param fftProcessing Whether fft processing is turned on/off.
+         */
+        void onFftProcessingChanged(boolean fftProcessing);
+
+        /**
+         * Called when signal seek is started and ended.
+         *
+         * @param signalSeek Whether signal seek started or ended.
+         */
+        void onSignalSeekingChanged(boolean signalSeek);
     }
 
     private Set<OnSignalPropertyChangeListener> onSignalPropertyChangeListeners;
@@ -83,6 +99,8 @@ public final class SignalConfiguration {
         selectedChannel = 0;
         signalAveraging = false;
         signalAveragingTriggerType = SignalAveragingTriggerType.THRESHOLD;
+        fftProcessing = false;
+        signalSeeking = false;
     }
 
     /**
@@ -131,7 +149,7 @@ public final class SignalConfiguration {
      * Sets sample rate of the processed signal.
      */
     void setSampleRate(int sampleRate) {
-        if (sampleRate <= 0 || this.sampleRate == sampleRate) return;
+        if (sampleRate <= 0) return;
 
         this.sampleRate = sampleRate;
 
@@ -153,7 +171,7 @@ public final class SignalConfiguration {
      * Sets channel count of the processed signal.
      */
     void setChannelCount(int channelCount) {
-        if (channelCount < 1 || this.channelCount == channelCount) return;
+        if (channelCount < 1) return;
 
         this.channelCount = channelCount;
 
@@ -267,7 +285,7 @@ public final class SignalConfiguration {
     }
 
     /**
-     * Sets whether processed is being averaged or not.
+     * Sets whether processed signal is being averaged or not.
      */
     void setSignalAveraging(boolean signalAveraging) {
         this.signalAveraging = signalAveraging;
@@ -295,6 +313,46 @@ public final class SignalConfiguration {
         if (onSignalPropertyChangeListeners != null) {
             for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
                 listener.onSignalAveragingTriggerTypeChanged(triggerType);
+            }
+        }
+    }
+
+    /**
+     * Whether fft processing is on or off.
+     */
+    public boolean isFftProcessing() {
+        return fftProcessing;
+    }
+
+    /**
+     * Sets whether fft processing is on or off.
+     */
+    public void setFftProcessing(boolean fftProcessing) {
+        this.fftProcessing = fftProcessing;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onFftProcessingChanged(fftProcessing);
+            }
+        }
+    }
+
+    /**
+     * Whether processed signal is started/ended being sought.
+     */
+    public boolean isSignalSeeking() {
+        return signalSeeking;
+    }
+
+    /**
+     * Sets whether signal seek is started or ended.
+     */
+    public void setSignalSeeking(boolean signalSeeking) {
+        this.signalSeeking = signalSeeking;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onSignalSeekingChanged(signalSeeking);
             }
         }
     }

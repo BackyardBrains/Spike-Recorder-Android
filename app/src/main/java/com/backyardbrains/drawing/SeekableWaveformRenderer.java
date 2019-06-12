@@ -1,18 +1,24 @@
 package com.backyardbrains.drawing;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Size;
+import com.backyardbrains.R;
+import com.backyardbrains.analysis.RmsHelper;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.entity.Train;
+import com.backyardbrains.drawing.gl.GlLabel;
+import com.backyardbrains.drawing.gl.GlLabelWithCircle;
 import com.backyardbrains.drawing.gl.GlMeasurementArea;
 import com.backyardbrains.drawing.gl.GlSpikes;
 import com.backyardbrains.ui.BaseFragment;
-import com.backyardbrains.utils.AnalysisUtils;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.crashlytics.android.Crashlytics;
 import java.util.Arrays;
+import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGE;
@@ -22,16 +28,47 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
     private static final String TAG = makeLogTag(SeekableWaveformRenderer.class);
 
-    // Root mean square quantifier used when analyzing selected spikes
-    private static final float RMS_QUANTIFIER = 0.005f;
+    // Width of the RMS time label in DPs
+    private final static float RMS_TIME_LABEL_WIDTH_DP = 108f;
+    // Height of the RMS time label in DPs
+    private final static float RMS_TIME_LABEL_HEIGHT_DP = 28f;
+    // Bottom margin for the RMS time label
+    private static final float RMS_TIME_LABEL_BOTTOM_MARGIN_DPI = 10f;
+    // Width of the RMS and spike count labels
+    private final static float INFO_LABEL_WIDTH_DP = 160f;
+    // Height of the RMS and spike count labels
+    private final static float INFO_LABEL_HEIGHT_DP = 19f;
+    // Space between RMS and spike count info labels
+    private final static float INFO_LABEL_Y_SPACE_DP = 4f;
+    // Top margin for the RMS info label
+    private final static float RMS_INFO_LABEL_TOP_MARGIN_DP = 120f;
+    // Colors of the spikes by train
+    private final static float[][] SPIKE_COUNT_INFO_LABEL_CIRCLE_COLORS =
+        new float[][] { Colors.RED, Colors.YELLOW, Colors.GREEN };
+
+    private final Context context;
 
     private final GlMeasurementArea glMeasurementArea;
     private final GlSpikes glSpikes;
-    private final float[] spikesVertices = new float[GlSpikes.MAX_POINT_VERTICES];
-    private final float[] spikesColors = new float[GlSpikes.MAX_COLOR_VERTICES];
+    private GlLabel glLabel;
+    private GlLabelWithCircle glLabelWithCircle;
 
-    private short[][] rmsSamples;
-    private float measureSampleCount;
+    private final RmsHelper rmsHelper;
+
+    private final float infoLabelWidth;
+    private final float infoLabelHeight;
+    private final float infoLabelMove;
+    private final float rmsInfoLabelY;
+    private final float rmsTimeWidth;
+    private final float rmsTimeHeight;
+    private final float rmsTimeBottomMargin;
+
+    private SpikesDrawData[] spikesDrawData;
+
+    private float rms;
+    private int measureSampleCount;
+    private final int[] spikeCounts = new int[] { -1, -1, -1 };
+    private final float[] spikesPerSecond = new float[spikeCounts.length];
 
     private boolean measuring;
     private float measurementStartX;
@@ -40,6 +77,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     private float prevFromSample, prevToSample;
     private float prevMeasurementStartX, prevMeasurementEndX;
     private int prevSelectedChannel;
+    private boolean prevShouldDraw;
 
     @SuppressWarnings("WeakerAccess") Train[][] spikeTrains;
     @SuppressWarnings("WeakerAccess") SpikeIndexValue[][][] valuesAndIndexes;
@@ -47,11 +85,24 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     public SeekableWaveformRenderer(@NonNull String filePath, @NonNull BaseFragment fragment) {
         super(fragment);
 
+        context = fragment.getContext();
+
         setScrollEnabled();
         setMeasureEnabled(true);
 
         glMeasurementArea = new GlMeasurementArea();
         glSpikes = new GlSpikes();
+
+        rmsHelper = new RmsHelper();
+
+        //noinspection ConstantConditions
+        infoLabelWidth = ViewUtils.dpToPx(context.getResources(), INFO_LABEL_WIDTH_DP);
+        infoLabelHeight = ViewUtils.dpToPx(context.getResources(), INFO_LABEL_HEIGHT_DP);
+        infoLabelMove = ViewUtils.dpToPx(context.getResources(), INFO_LABEL_Y_SPACE_DP) + infoLabelHeight;
+        rmsInfoLabelY = -(infoLabelHeight + ViewUtils.dpToPx(context.getResources(), RMS_INFO_LABEL_TOP_MARGIN_DP));
+        rmsTimeWidth = ViewUtils.dpToPx(context.getResources(), RMS_TIME_LABEL_WIDTH_DP);
+        rmsTimeHeight = ViewUtils.dpToPx(context.getResources(), RMS_TIME_LABEL_HEIGHT_DP);
+        rmsTimeBottomMargin = ViewUtils.dpToPx(context.getResources(), RMS_TIME_LABEL_BOTTOM_MARGIN_DPI);
 
         if (getAnalysisManager() != null) {
             getAnalysisManager().getSpikeTrains(filePath, new AnalysisDataSource.GetAnalysisCallback<Train[]>() {
@@ -71,11 +122,6 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     //  PUBLIC AND PROTECTED METHODS
     //==============================================
 
-    // FIXME: 11-Apr-18 THIS IS A HACK FOR NOW SO THAT SUBCLASSES CAN TELL THE PARENT NOT TO DRAW SPIKES IF NECESSARY
-    protected boolean drawSpikes() {
-        return !isSignalAveraging();
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -83,6 +129,13 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
         super.setThreshold(threshold);
 
         JniUtils.resetThreshold();
+    }
+
+    @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        super.onSurfaceCreated(gl, config);
+
+        glLabel = new GlLabel(context, gl);
+        glLabelWithCircle = new GlLabelWithCircle(context, gl);
     }
 
     /**
@@ -104,21 +157,21 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override protected void draw(GL10 gl, @NonNull short[][] samples, int selectedChannel,
-        SignalDrawData signalDrawData, @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData,
-        int surfaceWidth, int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors,
-        float[] waveformPositions, int drawStartIndex, int drawEndIndex, float scaleX, float scaleY,
-        long lastFrameIndex) {
+    @Override protected void draw(GL10 gl, @NonNull short[][] samples, @NonNull SignalDrawData signalDrawData,
+        @NonNull EventsDrawData eventsDrawData, @NonNull FftDrawData fftDrawData, int selectedChannel, int surfaceWidth,
+        int surfaceHeight, float glWindowWidth, float[] waveformScaleFactors, float[] waveformPositions,
+        int drawStartIndex, int drawEndIndex, float scaleX, float scaleY, long lastFrameIndex) {
         // let's save start and end sample positions that are being drawn before triggering the actual draw
         final int toSample = (int) lastFrameIndex;
         final int fromSample = (int) Math.max(0, toSample - glWindowWidth);
         final boolean shouldQuerySamples = prevFromSample != fromSample || prevToSample != toSample;
+        final boolean shouldDraw = !isSignalAveraging() && !isFftProcessing();
+        final int sampleRate = getSampleRate();
 
-        final float samplesToDraw = signalDrawData.sampleCounts[0] * .5f;
-        final float drawScale = surfaceWidth > 0 ? samplesToDraw / surfaceWidth : 1f;
+        if (prevShouldDraw && !shouldDraw) onMeasureEnd();
 
-        if (spikeTrains != null && valuesAndIndexes != null) {
-            if (drawSpikes()) {
+        if (shouldDraw) {
+            if (spikeTrains != null && valuesAndIndexes != null) {
                 if (getAnalysisManager() != null) {
                     for (int i = 0; i < spikeTrains.length; i++) {
                         for (int j = 0; j < spikeTrains[i].length; j++) {
@@ -133,114 +186,103 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     }
                 }
             }
-        }
 
-        // draw measurement area
-        if (measuring) {
-            // calculate start and end measurement area draw coordinates
-            final float measurementAreaDrawStart = measurementStartX;
-            final float measurementAreaDrawEnd = measurementEndX;
-            final boolean shouldRemeasure =
-                prevSelectedChannel != selectedChannel || prevMeasurementStartX != measurementAreaDrawStart
-                    || prevMeasurementEndX != measurementAreaDrawEnd;
-            // if start and end measurement area draw coordinates haven't changed from last draw don't waste resources recalculating
-            if (shouldRemeasure || shouldQuerySamples) {
-                // convert measure start index to drawing plane
-                int measureStartIndex =
-                    (int) BYBUtils.map(measurementAreaDrawStart, 0f, surfaceWidth, 0f, samplesToDraw);
-                // convert measure start index to sample plane
-                measureStartIndex = (int) BYBUtils.map(measureStartIndex, 0f, samplesToDraw - 1, 0f, glWindowWidth);
-                // convert measure end index to drawing plane
-                int measureEndIndex = (int) BYBUtils.map(measurementAreaDrawEnd, 0f, surfaceWidth, 0f, samplesToDraw);
-                // convert measure end index to sample plane
-                measureEndIndex = (int) BYBUtils.map(measureEndIndex, 0f, samplesToDraw - 1, 0f, glWindowWidth);
+            // draw measurement area
+            if (measuring) {
+                // calculate start and end measurement area draw coordinates
+                final float measurementAreaDrawStart = measurementStartX;
+                final float measurementAreaDrawEnd = measurementEndX;
+                final boolean shouldRemeasure =
+                    prevSelectedChannel != selectedChannel || prevMeasurementStartX != measurementAreaDrawStart
+                        || prevMeasurementEndX != measurementAreaDrawEnd;
 
-                final int channelCount = signalDrawData.channelCount;
-                int measureSampleCount = Math.abs(measureEndIndex - measureStartIndex);
-                // fill array of samples used for RMS calculation
-                if (rmsSamples == null || measureSampleCount != this.measureSampleCount) {
-                    this.measureSampleCount = measureSampleCount;
-                    rmsSamples = new short[channelCount][measureSampleCount];
-                }
+                // if start and end measurement area draw coordinates haven't changed from last draw don't waste resources recalculating
+                if (shouldRemeasure || shouldQuerySamples) {
+                    // convert measure start index to sample plane
+                    int measureStartIndex =
+                        (int) BYBUtils.map(measurementAreaDrawStart, 0f, surfaceWidth, 0f, glWindowWidth);
+                    // convert measure end index to drawing plane
+                    int measureEndIndex =
+                        (int) BYBUtils.map(measurementAreaDrawEnd, 0f, surfaceWidth, 0f, glWindowWidth);
 
-                // calculate index for the first sample we take for measurement
-                int startIndex = Math.min(measureStartIndex, measureEndIndex);
-                final int measureFirstSampleIndex = drawStartIndex + startIndex;
-                final int diff = (int) (glWindowWidth - (toSample - fromSample));
-                if (diff > 0) startIndex -= diff;
-                startIndex += fromSample;
+                    rms = rmsHelper.calculateRms(samples[selectedChannel], drawStartIndex, measureStartIndex,
+                        measureEndIndex);
+                    measureSampleCount = rmsHelper.getMeasureSampleCount();
 
-                final float[] rms = new float[channelCount];
-                final int[][] spikeCounts = new int[AnalysisUtils.MAX_SPIKE_TRAIN_COUNT][];
-                for (int channelIndex = 0; channelIndex < channelCount; channelIndex++) {
-                    // we need to check number of samples we're copying cause converting indices might have not been that precise
-                    if (measureFirstSampleIndex + measureSampleCount > samples[channelIndex].length) {
-                        measureSampleCount = samples[channelIndex].length - measureFirstSampleIndex;
-                    }
-                    System.arraycopy(samples[channelIndex], measureFirstSampleIndex, rmsSamples[channelIndex], 0,
-                        measureSampleCount);
-                    // calculate RMS
-                    rms[channelIndex] =
-                        AnalysisUtils.RMS(rmsSamples[channelIndex], measureSampleCount) * RMS_QUANTIFIER;
-                    if (Float.isNaN(rms[channelIndex])) rms[channelIndex] = 0f;
+                    // calculate index for the first sample we take for measurement
+                    int startIndex = Math.min(measureStartIndex, measureEndIndex);
+                    final int diff = (int) (glWindowWidth - (toSample - fromSample));
+                    if (diff > 0) startIndex -= diff;
+                    startIndex += fromSample;
+
                     if (valuesAndIndexes != null) {
-                        for (int trainIndex = 0; trainIndex < valuesAndIndexes[channelIndex].length; trainIndex++) {
-                            // init spike counts for first train
-                            if (spikeCounts[trainIndex] == null) {
-                                spikeCounts[trainIndex] = new int[channelCount];
-                                Arrays.fill(spikeCounts[trainIndex], -1);
-                            }
-                            if (valuesAndIndexes[channelIndex][trainIndex] != null) {
-                                spikeCounts[trainIndex][channelIndex] = 0;
-                                for (int spikeIndex = 0; spikeIndex < valuesAndIndexes[channelIndex][trainIndex].length;
-                                    spikeIndex++) {
-                                    if (startIndex <= valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
-                                        && valuesAndIndexes[channelIndex][trainIndex][spikeIndex].getIndex()
+                        // init spike counts if necessary
+                        if (prevSelectedChannel != selectedChannel) Arrays.fill(spikeCounts, -1);
+                        for (int trainIndex = 0; trainIndex < valuesAndIndexes[selectedChannel].length; trainIndex++) {
+                            if (valuesAndIndexes[selectedChannel][trainIndex] != null) {
+                                spikeCounts[trainIndex] = 0;
+                                for (int spikeIndex = 0;
+                                    spikeIndex < valuesAndIndexes[selectedChannel][trainIndex].length; spikeIndex++) {
+                                    if (startIndex <= valuesAndIndexes[selectedChannel][trainIndex][spikeIndex].index
+                                        && valuesAndIndexes[selectedChannel][trainIndex][spikeIndex].index
                                         <= startIndex + measureSampleCount) {
-                                        spikeCounts[trainIndex][channelIndex]++;
+                                        spikeCounts[trainIndex]++;
                                     }
+                                }
+                                spikesPerSecond[trainIndex] =
+                                    (spikeCounts[trainIndex] * sampleRate) / (float) measureSampleCount;
+                                if (Float.isInfinite(spikesPerSecond[trainIndex]) || Float.isNaN(
+                                    spikesPerSecond[trainIndex])) {
+                                    spikesPerSecond[trainIndex] = 0f;
                                 }
                             }
                         }
                     }
+
+                    // give chance to anyone listening to react on new measure
+                    onMeasure();
                 }
 
-                onMeasure(rms, spikeCounts[0], spikeCounts[1], spikeCounts[2], selectedChannel, measureSampleCount);
+                // draw measurement area
+                gl.glPushMatrix();
+                gl.glTranslatef(measurementAreaDrawStart, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                glMeasurementArea.draw(gl, measurementAreaDrawEnd - measurementAreaDrawStart, MAX_GL_VERTICAL_SIZE,
+                    Colors.GRAY_LIGHT, Colors.GRAY_50);
+                gl.glPopMatrix();
+
+                prevMeasurementStartX = measurementAreaDrawStart;
+                prevMeasurementEndX = measurementAreaDrawEnd;
+                prevSelectedChannel = selectedChannel;
             }
-
-            //draw measurement area
-            gl.glPushMatrix();
-            gl.glScalef(drawScale, 1f, 1f);
-            gl.glTranslatef(measurementAreaDrawStart, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
-            glMeasurementArea.draw(gl, measurementAreaDrawEnd - measurementAreaDrawStart, MAX_GL_VERTICAL_SIZE,
-                Colors.GRAY_LIGHT, Colors.GRAY_50);
-            gl.glPopMatrix();
-
-            prevMeasurementStartX = measurementAreaDrawStart;
-            prevMeasurementEndX = measurementAreaDrawEnd;
         }
 
-        super.draw(gl, samples, selectedChannel, signalDrawData, eventsDrawData, fftDrawData, surfaceWidth,
+        super.draw(gl, samples, signalDrawData, eventsDrawData, fftDrawData, selectedChannel, surfaceWidth,
             surfaceHeight, glWindowWidth, waveformScaleFactors, waveformPositions, drawStartIndex, drawEndIndex, scaleX,
             scaleY, lastFrameIndex);
 
-        if (valuesAndIndexes != null) {
-            if (drawSpikes()) {
+        if (shouldDraw) {
+            if (valuesAndIndexes != null) {
+                int samplesToDraw = (int) (signalDrawData.samples[0].length * .5f);
+                float[] color;
                 for (int i = 0; i < valuesAndIndexes.length; i++) {
                     if (valuesAndIndexes[i] != null) {
                         for (int j = 0; j < valuesAndIndexes[i].length; j++) {
                             if (valuesAndIndexes[i][j] != null) {
-                                //benchmark.start();
-                                int verticesCount =
-                                    fillSpikesAndColorsBuffers(valuesAndIndexes[i][j], spikesVertices, spikesColors,
-                                        glWindowWidth, fromSample, toSample, (long) samplesToDraw,
-                                        Colors.SPIKE_TRAIN_COLORS[j]);
-                                //benchmark.end();
-                                if (verticesCount > 0) {
+                                color = Colors.SPIKE_TRAIN_COLORS[j];
+                                try {
+                                    JniUtils.prepareForSpikesDrawing(spikesDrawData[j], valuesAndIndexes[i][j], color,
+                                        color, Integer.MIN_VALUE, Integer.MAX_VALUE, fromSample, toSample,
+                                        drawStartIndex, drawEndIndex, samplesToDraw, surfaceWidth);
+                                } catch (Exception e) {
+                                    LOGE(TAG, e.getMessage());
+                                    Crashlytics.logException(e);
+                                }
+                                if (spikesDrawData[j].vertexCount > 0) {
                                     gl.glPushMatrix();
                                     gl.glTranslatef(0f, waveformPositions[i], 0f);
                                     gl.glScalef(1f, waveformScaleFactors[i], 1f);
-                                    glSpikes.draw(gl, spikesVertices, spikesColors, verticesCount);
+                                    glSpikes.draw(gl, spikesDrawData[j].vertices, spikesDrawData[j].colors,
+                                        spikesDrawData[j].vertexCount);
                                     gl.glPopMatrix();
                                 }
                             }
@@ -248,11 +290,46 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                     }
                 }
             }
+
+            if (measuring) {
+                // draw RMS time label
+                gl.glPushMatrix();
+                gl.glTranslatef(0f, -MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                gl.glScalef(1f, scaleY, 1f);
+                gl.glTranslatef((surfaceWidth - rmsTimeWidth) * .5f, rmsTimeBottomMargin, 0f);
+                glLabel.draw(gl, rmsTimeWidth, rmsTimeHeight,
+                    Formats.formatTime_s_msec(measureSampleCount / (float) sampleRate * 1000), Colors.WHITE,
+                    Colors.BLUE_LIGHT);
+                gl.glPopMatrix();
+
+                gl.glPushMatrix();
+                gl.glTranslatef(0f, MAX_GL_VERTICAL_HALF_SIZE, 0f);
+                gl.glScalef(1f, scaleY, 1f);
+
+                // draw RMS info label
+                gl.glPushMatrix();
+                gl.glTranslatef(surfaceWidth - infoLabelWidth, rmsInfoLabelY, 0f);
+                glLabel.draw(gl, infoLabelWidth, infoLabelHeight,
+                    String.format(context.getString(R.string.template_rms), rms), Colors.GREEN, Colors.BLACK);
+                for (int trainIndex = 0; trainIndex < spikeCounts.length; trainIndex++) {
+                    if (spikeCounts[trainIndex] >= 0) {
+                        // draw spike count label
+                        gl.glTranslatef(0f, infoLabelMove, 0f);
+                        glLabelWithCircle.draw(gl, infoLabelWidth, infoLabelHeight,
+                            String.format(context.getString(R.string.template_spike_count), spikeCounts[trainIndex],
+                                spikesPerSecond[trainIndex]), Colors.GREEN, Colors.BLACK,
+                            SPIKE_COUNT_INFO_LABEL_CIRCLE_COLORS[trainIndex]);
+                    }
+                }
+                gl.glPopMatrix();
+
+                gl.glPopMatrix();
+            }
         }
 
         prevFromSample = fromSample;
         prevToSample = toSample;
-        prevSelectedChannel = selectedChannel;
+        prevShouldDraw = shouldDraw;
     }
 
     /**
@@ -337,37 +414,9 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
 
         // create arrays that holds spike data
         valuesAndIndexes = new SpikeIndexValue[channelCount][trainCount][];
-    }
-
-    // Fills spike and color buffers preparing them for drawing. Number of vertices is returned.
-    private int fillSpikesAndColorsBuffers(@NonNull SpikeIndexValue[] valueAndIndices, @NonNull float[] spikesVertices,
-        @NonNull float[] spikesColors, float glWindowWidth, long fromSample, long toSample, long drawSampleCount,
-        @Size(4) float[] color) {
-        int verticesCounter = 0;
-        try {
-            if (valueAndIndices.length > 0) {
-                int colorsCounter = 0;
-                float scaleX = (float) drawSampleCount / glWindowWidth;
-                long index;
-
-                for (SpikeIndexValue valueAndIndex : valueAndIndices) {
-                    if (fromSample <= valueAndIndex.getIndex() && valueAndIndex.getIndex() < toSample) {
-                        index = toSample - fromSample < glWindowWidth ? (long) (valueAndIndex.getIndex() + glWindowWidth
-                            - toSample) : valueAndIndex.getIndex() - fromSample;
-                        index = (long) (index * scaleX);
-                        spikesVertices[verticesCounter++] = index;
-                        spikesVertices[verticesCounter++] = valueAndIndex.getValue();
-                        System.arraycopy(color, 0, spikesColors, colorsCounter, color.length);
-                        colorsCounter += 4;
-                    }
-                }
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
-        }
-
-        return verticesCounter;
+        // create
+        spikesDrawData = new SpikesDrawData[trainCount];
+        for (int i = 0; i < trainCount; i++) spikesDrawData[i] = new SpikesDrawData(GlSpikes.MAX_SPIKES);
     }
 
     // Check whether service is currently in playback mode

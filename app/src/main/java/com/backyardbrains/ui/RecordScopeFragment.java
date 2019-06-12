@@ -11,6 +11,7 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -19,6 +20,7 @@ import android.widget.ToggleButton;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import com.afollestad.materialdialogs.GravityEnum;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.BaseWaveformRenderer;
@@ -50,6 +52,7 @@ import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SettingsView;
 import com.backyardbrains.view.SlidingView;
 import com.crashlytics.android.Crashlytics;
+import java.util.ArrayList;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -72,15 +75,19 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Default number of sample sets that should be summed when averaging
     private static final int DEFAULT_AVERAGED_SAMPLE_COUNT = 30;
+    // Holds names of all the available channels
+    private static final List<String> CHANNEL_NAMES = new ArrayList<>();
 
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_SETTINGS_ON = "bb_settings_on";
+    private static final String BOOL_FFT_ON = "bb_fft_on";
 
     @BindView(R.id.ibtn_settings) ImageButton ibtnSettings;
     @BindView(R.id.v_settings) SettingsView vSettings;
     @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
+    @BindView(R.id.btn_fft) Button btnFft;
+    @BindView(R.id.tv_select_channel) TextView tvSelectChannel;
     @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
-    //@BindView(R.id.ibtn_filters) ImageButton ibtnFilters;
     @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
     @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
     @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
@@ -100,8 +107,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Whether settings popup is visible or not
     private boolean settingsOn;
-    // Whether signal triggering is turned on or off
+    // Whether signal averaging is turned on or off
     private boolean thresholdOn;
+    // Whether fft processing is turned on or off
+    private boolean fftOn;
 
     //==============================================
     // EVENT LISTENERS
@@ -157,6 +166,13 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         updateBpmUI();
     };
 
+    private final View.OnClickListener fftClickListener = v -> {
+        toggleFft();
+        setupFftView();
+    };
+
+    private final View.OnClickListener selectChannelClickListener = v -> openChannelsDialog();
+
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
         new SeekBar.OnSeekBarChangeListener() {
 
@@ -201,6 +217,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (savedInstanceState != null) {
             settingsOn = savedInstanceState.getBoolean(BOOL_SETTINGS_ON);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
+            fftOn = savedInstanceState.getBoolean(BOOL_FFT_ON);
         }
     }
 
@@ -223,6 +240,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         super.onStop();
         LOGD(TAG, "onStop()");
 
+        // stop currently active input source (mic/usb)
         if (getProcessingService() != null) getProcessingService().stopActiveInputSource();
     }
 
@@ -231,6 +249,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         outState.putBoolean(BOOL_SETTINGS_ON, settingsOn);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
+        outState.putBoolean(BOOL_FFT_ON, fftOn);
     }
 
     @Override public void onDestroyView() {
@@ -265,9 +284,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @Override protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
-        renderer.setOnDrawListener((drawSurfaceWidth) -> {
-            if (getProcessingService() != null) setMilliseconds(getProcessingService().getSampleRate(), drawSurfaceWidth);
-        });
         renderer.setOnWaveformSelectionListener(index -> {
             if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
         });
@@ -309,10 +325,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
         // setup settings view
         setupSettingsView();
-        // setup threshold button
+        // setup threshold view
         setupThresholdView();
-        // setup filters button
-        //setupFiltersButton();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
         // setup BPM UI
@@ -341,6 +357,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
         if (!event.isConnected() && getProcessingService() != null) startMicrophone(getProcessingService());
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
     }
@@ -363,10 +381,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         if (!event.isStarted()) if (getProcessingService() != null) startMicrophone(getProcessingService());
 
-        // update filters button
-        //setupFiltersButton();
         // setup settings view
         setupSettingsView();
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
         // update BPM label
@@ -375,6 +393,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbSignalSourceDisconnectEvent(UsbSignalSourceDisconnectEvent event) {
+        // setup fft view
+        setupFftView();
         // setup USB button
         setupUsbButton();
     }
@@ -423,8 +443,6 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
-        // setup filters button
-        //setupFiltersButton();
         // filters dialog is opened and AM modulation just ended, close it
         if (!event.isStart() && filterSettingsDialog != null) {
             filterSettingsDialog.dismiss();
@@ -453,10 +471,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void setupUI() {
         // settings button
         setupSettingsView();
-        // threshold button
+        // threshold view
         setupThresholdView();
-        // filters button
-        //setupFiltersButton();
+        // fft view
+        setupFftView();
         // usb button
         setupUsbButton();
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
@@ -494,7 +512,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             if (getProcessingService() != null) {
                 vSettings.setupMuteSpeakers(getProcessingService().isMuteSpeakers());
                 vSettings.setupFilters(
-                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new BandFilter(),
+                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter()
+                        : new BandFilter(),
                     getProcessingService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
                         : Filters.FREQ_HIGH_MAX_CUT_OFF,
                     getProcessingService().getNotchFilter() != null ? getProcessingService().getNotchFilter()
@@ -542,43 +561,17 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void showChannel(int channelIndex, @Size(4) float[] color) {
         if (getProcessingService() != null) getProcessingService().showChannel(channelIndex);
         getRenderer().setChannelColor(channelIndex, color);
+
+        // setup fft view
+        setupFftView();
     }
 
     void hideChannel(int channelIndex) {
         if (getProcessingService() != null) getProcessingService().hideChannel(channelIndex);
+
+        // setup fft view
+        setupFftView();
     }
-
-    //==============================================
-    // FILTERS
-    //==============================================
-
-    // Sets up the filters button depending on the input source
-    //private void setupFiltersButton() {
-    //    ibtnFilters.setVisibility(shouldShowFilterOptions() ? View.VISIBLE : View.GONE);
-    //    ibtnFilters.setOnClickListener(v -> openFilterDialog());
-    //}
-
-    // Whether filter options button should be visible or not
-    //private boolean shouldShowFilterOptions() {
-    //    return getProcessingService() != null && (getProcessingService().isUsbActiveInput()
-    //        || getProcessingService().isAmModulationDetected());
-    //}
-
-    // Opens a dialog with predefined filters that can be applied while processing incoming data
-    //void openFilterDialog() {
-    //    if (getContext() != null && getProcessingService() != null) {
-    //        filterSettingsDialog =
-    //            getProcessingService().isAmModulationDetected() ? new AmModulationFilterSettingsDialog(getContext(),
-    //                filterSelectionListener)
-    //                : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.MUSCLE_PRO)
-    //                    ? new UsbMuscleProFilterSettingsDialog(getContext(), filterSelectionListener)
-    //                    : getProcessingService().isActiveUsbInputOfType(SpikerBoxHardwareType.NEURON_PRO)
-    //                        ? new UsbNeuronProFilterSettingsDialog(getContext(), filterSelectionListener)
-    //                        : new UsbSerialFilterSettingsDialog(getContext(), filterSelectionListener);
-    //        filterSettingsDialog.show(
-    //            getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter() : new Filter());
-    //    }
-    //}
 
     //==============================================
     // THRESHOLD
@@ -586,6 +579,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets up the threshold view (threshold on/off button, threshold handle, averaged sample count and averaging trigger type button)
     void setupThresholdView() {
+        // setup threshold view
         if (thresholdOn) {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white_active);
@@ -596,6 +590,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             sbAvgSamplesCount.setProgress(JniUtils.getAveragedSampleCount());
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.VISIBLE);
+            // stop fft (if threshold is turned on fft should be stopped)
+            stopFft();
         } else {
             // setup threshold button
             ibtnThreshold.setBackgroundResource(R.drawable.circle_gray_white);
@@ -606,7 +602,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             // setup averaged sample count text view
             tvAvgSamplesCount.setVisibility(View.INVISIBLE);
         }
+        // setup threshold trigger type button
         setupThresholdHandleAndAveragingTriggerTypeButtons();
+        // setup fft view
+        setupFftView();
     }
 
     // Sets up threshold handle and averaging trigger type button
@@ -715,8 +714,57 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // BPM should be shown if either usb is active input source or we are in AM modulation,
         // and if current filter is default EKG filter
         return getProcessingService() != null && thresholdOn && (getProcessingService().isUsbActiveInput()
-            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(getProcessingService().getBandFilter(),
-            Filters.FILTER_BAND_HEART);
+            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(
+            getProcessingService().getBandFilter(), Filters.FILTER_BAND_HEART);
+    }
+
+    //==============================================
+    // FFT
+    //==============================================
+
+    private void setupFftView() {
+        // setup settings button
+        btnFft.setBackgroundResource(fftOn ? R.drawable.circle_gray_white_active : R.drawable.circle_gray_white);
+        btnFft.setVisibility(thresholdOn ? View.GONE : View.VISIBLE);
+        btnFft.setOnClickListener(fftClickListener);
+        // setup select channel text view
+        tvSelectChannel.setVisibility(
+            getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
+                && fftOn ? View.VISIBLE : View.GONE);
+        tvSelectChannel.setOnClickListener(selectChannelClickListener);
+    }
+
+    private void toggleFft() {
+        fftOn = !fftOn;
+        if (getProcessingService() != null) getProcessingService().setFftProcessing(fftOn);
+    }
+
+    private void stopFft() {
+        if (fftOn) toggleFft();
+    }
+
+    // Opens a dialog for channel selection
+    void openChannelsDialog() {
+        if (getContext() != null) {
+            // populate channel names collection
+            int channelCount = getProcessingService() != null ? getProcessingService().getChannelCount() : 1;
+            int selectedChannel = getProcessingService() != null ? getProcessingService().getSelectedChanel() : 0;
+            CHANNEL_NAMES.clear();
+            for (int i = 0; i < channelCount; i++) {
+                if (getProcessingService() != null && getProcessingService().isChannelVisible(i)) {
+                    CHANNEL_NAMES.add(String.format(getString(R.string.template_channel_name), i + 1));
+                }
+            }
+            final MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
+                .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
+                    if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
+                    return true;
+                })
+                .alwaysCallSingleChoiceCallback()
+                .itemsGravity(GravityEnum.CENTER)
+                .build();
+            channelsDialog.show();
+        }
     }
 
     //==============================================
@@ -797,7 +845,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Set buttons visibility depending on whether audio is currently being recorded or not
     private void setupRecordingButtons(boolean animate) {
-        ibtnRecord.setVisibility(isRecording() ? View.GONE : View.VISIBLE);
+        ibtnRecord.setVisibility(isRecording() ? View.INVISIBLE : View.VISIBLE);
         if (animate) {
             stopRecButton.show(isRecording());
         } else {
@@ -814,6 +862,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         processingService.setSignalAveraging(thresholdOn);
         // this will set signal averaging trigger type if we are coming from background
         processingService.setSignalAveragingTriggerType(JniUtils.getAveragingTriggerType());
+        // this will set fft processing if we are coming from background
+        processingService.setFftProcessing(fftOn);
         // this will start microphone if we are coming from background
         processingService.startActiveInputSource();
 

@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.util.Pair;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
+import com.backyardbrains.dsp.SignalProcessor;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
@@ -30,8 +31,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
     @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(PlaybackSignalSource.class);
 
-    // Number of seconds buffer should hold while seeking
-    private static final int SEEK_BUFFER_SIZE_IN_SEC = 6;
+    // Lock used when reading samples and events
+    @SuppressWarnings("WeakerAccess") static final Object lock = new Object();
 
     /**
      * Thread used for reading the audio file.
@@ -101,9 +102,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 int read;
 
                 // set size of the buffer for seeking
-                // we need full buffer of 6 seconds (in bytes)
                 bufferSize =
-                    (raf.bitsPerSample() * raf.sampleRate() * raf.channelCount() * SEEK_BUFFER_SIZE_IN_SEC) / 8;
+                    (raf.bitsPerSample() * SignalProcessor.getProcessedSamplesPerChannelCount() * raf.channelCount())
+                        / 8;
                 buffer = new byte[bufferSize];
 
                 LOGD(TAG, "Processing buffer size is: " + bufferSize);
@@ -117,45 +118,47 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
                 while (working.get() && raf != null) {
                     if (playing.get()) {
-                        // if we are playing after seek we need to fix position
-                        if (Math.abs(raf.getFilePointer() - progress.get()) > bytesToReadWhilePlaying) {
-                            raf.seek(progress.get());
+                        synchronized (lock) {
+                            // if we are playing after seek we need to fix position
+                            if (Math.abs(raf.getFilePointer() - progress.get()) > bytesToReadWhilePlaying) {
+                                raf.seek(progress.get());
+                            }
+
+                            // index of the sample from which we check the events
+                            fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
+
+                            // number of samples to prepend
+                            samplesToPrepend.set(0);
+
+                            // check if audio playback reached end
+                            if ((read = raf.read(buffer, 0, bytesToReadWhilePlaying)) < 0) {
+                                // set playing flag
+                                playing.set(false);
+
+                                LOGD(TAG, "Playback completed");
+
+                                if (playbackListener != null) playbackListener.onStop();
+
+                                continue;
+                            }
+
+                            // save progress
+                            progress.set(raf.getFilePointer());
+
+                            // index of the sample up to which we check the events
+                            toSample.set(AudioUtils.getFrameCount(progress.get(), raf.channelCount()));
+
+                            // write data to buffer
+                            writeToBuffer(buffer, read);
+
+                            // trigger progress listener
+                            if (playbackListener != null) {
+                                playbackListener.onProgress(progress.get(), raf.sampleRate(), raf.channelCount());
+                            }
+
+                            // play audio data if we're not seeking
+                            track.write(buffer, 0, read);
                         }
-
-                        // index of the sample from which we check the events
-                        fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
-
-                        // number of samples to prepend
-                        samplesToPrepend.set(0);
-
-                        // check if audio playback reached end
-                        if ((read = raf.read(buffer, 0, bytesToReadWhilePlaying)) < 0) {
-                            // set playing flag
-                            playing.set(false);
-
-                            LOGD(TAG, "Playback completed");
-
-                            if (playbackListener != null) playbackListener.onStop();
-
-                            continue;
-                        }
-
-                        // save progress
-                        progress.set(raf.getFilePointer());
-
-                        // index of the sample up to which we check the events
-                        toSample.set(AudioUtils.getFrameCount(progress.get(), raf.channelCount()));
-
-                        // write data to buffer
-                        writeToBuffer(buffer, read);
-
-                        // trigger progress listener
-                        if (playbackListener != null) {
-                            playbackListener.onProgress(progress.get(), raf.sampleRate(), raf.channelCount());
-                        }
-
-                        // play audio data if we're not seeking
-                        track.write(buffer, 0, read);
                     }
                 }
 
@@ -173,60 +176,92 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             }
         }
 
-        // This represents a single seek loop.
+        /**
+         * This represents a single seek loop.
+         *
+         * @throws IOException
+         */
         synchronized void seekToPosition() throws IOException {
             // if we don't have file we can't seek
             if (raf == null) return;
 
-            final long zerosPrependCount = progress.get() - bufferSize;
-            final long seekPosition = Math.max(0, zerosPrependCount);
-            // fix seek position so that it's positioned at the begining of the frame
-            raf.seek(seekPosition);
+            synchronized (lock) {
+                final long zerosPrependCount = progress.get() - bufferSize;
+                final long seekPosition = Math.max(0, zerosPrependCount);
+                // fix seek position so that it's positioned at the begining of the frame
+                raf.seek(seekPosition);
 
-            // index of the sample from which we check the events
-            fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
+                // index of the sample from which we check the events
+                fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
 
-            // buffer needs to be initialized
-            if (buffer == null) return;
-            
-            // number of bytes actually read during single read
-            if (raf.read(buffer) > 0) {
-                if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
+                // buffer needs to be initialized
+                if (buffer == null) return;
 
-                // number of samples to prepend
-                samplesToPrepend.set((int) AudioUtils.getFrameCount(zerosPrependCount, raf.channelCount()));
+                // number of bytes actually read during single read
+                if (raf.read(buffer) > 0) {
+                    if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
 
-                // index of the sample up to which we check the events
-                long toByte = raf.getFilePointer();
-                if (bufferSize > toByte) toByte = bufferSize;
-                toSample.set(AudioUtils.getFrameCount(toByte, raf.channelCount()));
+                    // number of samples to prepend
+                    samplesToPrepend.set((int) AudioUtils.getFrameCount(zerosPrependCount, raf.channelCount()));
 
-                // write data to buffer
-                writeToBuffer(buffer, bufferSize);
+                    // index of the sample up to which we check the events
+                    long toByte = raf.getFilePointer();
+                    if (bufferSize > toByte) toByte = bufferSize;
+                    toSample.set(AudioUtils.getFrameCount(toByte, raf.channelCount()));
+
+                    // write data to buffer
+                    writeToBuffer(buffer, bufferSize);
+                }
             }
         }
 
-        // Rewinds audio file.
-        void rewind() {
-            if (seeking.get()) return; // we can't rewind while seeking
+        /**
+         * Reads last {@code len} number of bytes from the currently played file and copies them to the specified
+         * {@code buffer}. Current position of the file pointer is not changed after this method finishes. If there are
+         * less then requested amount of bytes zeros will be prepended to the specified {@code buffer}.
+         *
+         * @throws IOException
+         */
+        synchronized void readLast(byte[] buffer, int len) throws IOException {
+            synchronized (lock) {
+                // save current position before copying the data cause we'll need to move through file
+                final long currentPos = raf.getFilePointer();
 
-            try {
-                if (raf != null) raf.seek(0);
-            } catch (IOException e) {
-                LOGE(TAG, "IOException while rewinding: " + e.toString());
-                Crashlytics.logException(e);
+                // this call will fill the fully buffer with bytes up to current position
+                seekToPosition();
+                // copy data to the provided buffer
+                System.arraycopy(this.buffer, 0, buffer, 0, len);
+
+                // get back to the current position so playback (if playing) can continue normally
+                raf.seek(currentPos);
             }
-            // update progress to 0 and trigger listener
-            progress.set(0);
-            // update from and to sample to start values
-            fromSample.set(0);
-            toSample.set(0);
-            samplesToPrepend.set(0);
+        }
 
-            BufferUtils.emptyBuffer(buffer);
-            writeToBuffer(buffer, bufferSize);
+        /**
+         * Rewinds audio file.
+         */
+        synchronized void rewind() {
+            synchronized (lock) {
+                if (seeking.get()) return; // we can't rewind while seeking
 
-            LOGD(TAG, "Audio file rewind");
+                try {
+                    if (raf != null) raf.seek(0);
+                } catch (IOException e) {
+                    LOGE(TAG, "IOException while rewinding: " + e.toString());
+                    Crashlytics.logException(e);
+                }
+                // update progress to 0 and trigger listener
+                progress.set(0);
+                // update from and to sample to start values
+                fromSample.set(0);
+                toSample.set(0);
+                samplesToPrepend.set(0);
+
+                BufferUtils.emptyBuffer(buffer);
+                writeToBuffer(buffer, bufferSize);
+
+                LOGD(TAG, "Audio file rewind");
+            }
         }
 
         // Closes InputStream
@@ -421,6 +456,20 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             if (start && playing.get()) pausePlayback();
 
             seeking.set(start);
+        }
+    }
+
+    /**
+     * Copies last {@code len} bytes of the currently played file to the buffer.
+     */
+    public void readLast(byte[] buffer, int len) {
+        if (playbackThread != null) {
+            try {
+                playbackThread.readLast(buffer, len);
+            } catch (IOException e) {
+                Crashlytics.logException(e);
+                LOGE(TAG, "Error reading random access file stream", e);
+            }
         }
     }
 

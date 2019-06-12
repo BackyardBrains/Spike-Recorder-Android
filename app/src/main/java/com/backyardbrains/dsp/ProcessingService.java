@@ -191,6 +191,27 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     /**
+     * Returns index of the currently selected channel.
+     */
+    public int getSelectedChanel() {
+        return signalProcessor.getSelectedChannel();
+    }
+
+    /**
+     * Returns number of currently visible channels.
+     */
+    public int getVisibleChannelCount() {
+        return signalProcessor.getVisibleChannelCount();
+    }
+
+    /**
+     * Returns {@code true} if channel at specified {@code channelIndex} is visible. {@code false} otherwise.
+     */
+    public boolean isChannelVisible(int channelIndex) {
+        return signalProcessor.isChannelVisible(channelIndex);
+    }
+
+    /**
      * Shows channel at {@code channelIndex}.
      */
     public void showChannel(int channelIndex) {
@@ -223,6 +244,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      */
     public void setSignalAveragingTriggerType(@SignalAveragingTriggerType int triggerType) {
         signalProcessor.setSignalAveragingTriggerType(triggerType);
+    }
+
+    /**
+     * Passes information about whether incoming signal should be processed through FFT.
+     */
+    public void setFftProcessing(boolean fftProcessing) {
+        signalProcessor.setFftProcessing(fftProcessing);
     }
 
     /**
@@ -579,7 +607,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void startPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(true);
+        if (created && isPlaybackMode()) {
+            ((PlaybackSignalSource) signalSource).seek(true);
+            signalProcessor.setSignalSeeking(true);
+        }
     }
 
     /**
@@ -600,7 +631,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * sequence is not really a sequence but just a simple "jump" to a specific playback point in time.
      */
     public void stopPlaybackSeek() {
-        if (created && isPlaybackMode()) ((PlaybackSignalSource) signalSource).seek(false);
+        if (created && isPlaybackMode()) {
+            ((PlaybackSignalSource) signalSource).seek(false);
+            signalProcessor.setSignalSeeking(false);
+        }
     }
 
     /**

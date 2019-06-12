@@ -25,6 +25,8 @@ namespace backyardbrains {
         SampleStreamProcessor::process(const unsigned char *inData, const int length, short **outSamples,
                                        int *outSampleCounts, int *outEventIndices, std::string *outEventLabels,
                                        int &outEventCount, const int channelCount) {
+//            batchCounter++;
+
             if (prevChannelCount != channelCount) { // number of channels changed during processing of previous batch
                 frameStarted = false;
                 sampleStarted = false;
@@ -126,6 +128,7 @@ namespace backyardbrains {
                                 if (msb > 127) {
                                     __android_log_print(ANDROID_LOG_DEBUG, TAG,
                                                         "MSB > 127 WITHIN THE FRAME! DROP WHOLE FRAME!");
+
                                     frameStarted = false;
                                     sampleStarted = false;
                                     currentChannel = 0;
@@ -144,6 +147,37 @@ namespace backyardbrains {
                                 sampleStarted = true;
                             } else {
                                 __android_log_print(ANDROID_LOG_DEBUG, TAG, "MSB < 128 AT FRAME START! DROP!");
+//                                if (batchCounter > 100 && !batchPrinted) {
+//                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "PREV BATCH: (%d)", inDataPrevLength);
+//                                    char tmp[6];
+//                                    char prev[inDataPrevLength * 5 - 2];
+//                                    prev[0] = 0;
+//                                    for (int r = 0; r < inDataPrevLength; r++) {
+//                                        if (r == 0) {
+//                                            sprintf(tmp, "%u", inDataPrev[r]);
+//                                        } else {
+//                                            sprintf(tmp, " ,%u", inDataPrev[r]);
+//                                        }
+//                                        strcat(prev, tmp);
+//                                    }
+//                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", prev);
+//                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "NEW BATCH: (%d)", length);
+//                                    char current[inDataPrevLength * 5 - 2];
+//                                    current[0] = 0;
+//                                    for (int r = 0; r < length; r++) {
+//                                        if (r == 0) {
+//                                            sprintf(tmp, "%u", inData[r]);
+//                                        } else {
+//                                            sprintf(tmp, " ,%u", inData[r]);
+//                                        }
+//                                        strcat(current, tmp);
+//                                    }
+//                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", current);
+//                                    __android_log_print(ANDROID_LOG_DEBUG, TAG,
+//                                                        "------------------------------------- (%d)", i);
+//
+//                                    batchPrinted = true;
+//                                }
 
                                 frameStarted = false;
                                 sampleStarted = false;
@@ -158,6 +192,8 @@ namespace backyardbrains {
                 }
             }
 
+//            std::copy(inData, inData + length, inDataPrev);
+//            inDataPrevLength = length;
 
             bool avoidFilteringOfChannels = stopFilteringAfterChannelIndex >= 0;
             for (int i = 0; i < channelCount; i++) {

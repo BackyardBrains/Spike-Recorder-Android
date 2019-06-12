@@ -10,11 +10,12 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlSpikes {
 
-    // We can maximally handle 6 seconds of sample data and spike can appear max every 5 ms
+    // We can maximally handle 6 seconds of sample data and spike can appear max every 5 ms so 8000 is more then enough
+    public static final int MAX_SPIKES = 8000;
     // We multiply by 2 because we have 2 vertices for every spike
-    public static final int MAX_POINT_VERTICES = 8000 * 2;
+    private static final int MAX_POINT_VERTICES = MAX_SPIKES * 2;
     // We multiply by 4 because we have 4 vertices for every color
-    public static final int MAX_COLOR_VERTICES = 8000 * 4;
+    private static final int MAX_COLOR_VERTICES = MAX_SPIKES * 4;
 
     private static final float POINT_SIZE = 10f;
 

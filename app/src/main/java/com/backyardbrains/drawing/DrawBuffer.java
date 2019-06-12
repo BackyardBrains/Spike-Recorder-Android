@@ -30,12 +30,12 @@ public class DrawBuffer {
 
     private final int size;
 
-    private short[] buffer;
+    private byte[] buffer;
 
-    DrawBuffer(int size) {
+    public DrawBuffer(int size) {
         this.size = size;
 
-        buffer = new short[size];
+        buffer = new byte[size];
     }
 
     public int getSize() {
@@ -45,21 +45,35 @@ public class DrawBuffer {
     /**
      * Adds new {@code incoming} samples to the buffer.
      */
-    public void add(short[] incoming, int length) {
+    public void put(byte[] src, int len) {
         try {
-            System.arraycopy(buffer, length, buffer, 0, buffer.length - length);
-            System.arraycopy(incoming, 0, buffer, buffer.length - length, length);
+            System.arraycopy(buffer, len, buffer, 0, buffer.length - len);
+            System.arraycopy(src, 0, buffer, buffer.length - len, len);
         } catch (Exception e) {
-            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos="
-                + length + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length - length));
+            LOGD(TAG,
+                "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos=" + len
+                    + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length - len));
             Crashlytics.logException(e);
         }
+    }
+
+    public int get(byte[] dst, int off, int len) {
+        try {
+            System.arraycopy(buffer, off, dst, 0, len);
+            return len;
+        } catch (Exception e) {
+            LOGD(TAG, "Can't copy from buffer to destination - src.length=" + buffer.length + " srcPos=" + off
+                + " dst.length=" + dst.length + " dstPos=" + 0 + " length=" + len);
+            Crashlytics.logException(e);
+        }
+
+        return 0;
     }
 
     /**
      * @return an order-adjusted version of the whole buffer
      */
-    public short[] getArray() {
+    public byte[] getArray() {
         return buffer;
     }
 
@@ -67,6 +81,6 @@ public class DrawBuffer {
      * Clears the buffer as sets all values to zeros
      */
     public void clear() {
-        buffer = new short[size];
+        buffer = new byte[size];
     }
 }

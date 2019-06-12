@@ -170,7 +170,7 @@ public class AudioHelper {
         if (len > 0) {
             boolean exists = false;
             for (int e : values) {
-                if (encoding == e) {
+                if (encoding < e) {
                     exists = true;
                     break;
                 }

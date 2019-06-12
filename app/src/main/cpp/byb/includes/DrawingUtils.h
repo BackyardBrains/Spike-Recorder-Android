@@ -5,7 +5,9 @@
 #ifndef SPIKE_RECORDER_ANDROID_DRAWINGUTILS_H
 #define SPIKE_RECORDER_ANDROID_DRAWINGUTILS_H
 
+#include <AnalysisUtils.h>
 #include <climits>
+#include <algorithm>
 
 namespace backyardbrains {
 
@@ -14,7 +16,8 @@ namespace backyardbrains {
         class DrawingUtils {
         public:
             static void
-            prepareSignalForDrawing(short **outSamples, int *outSampleCount, int *outEventIndices, int &outEventCount,
+            prepareSignalForDrawing(float **outSamples, int *outSampleCounts, float *outEventIndices,
+                                    int &outEventCount,
                                     short **inSamples, int channelCount, const int *inEventIndices, int inEventCount,
                                     int fromSample, int toSample, int drawSurfaceWidth);
 
@@ -23,9 +26,15 @@ namespace backyardbrains {
                                  int &outIndexCount, int &outColorCount, float **fft, int windowCount, int windowSize,
                                  float width, float height);
 
+            static void
+            prepareSpikesForDrawing(float *outVertices, float *outColors, int &outVertexCount, int &outColorCount,
+                                    float *inSpikeVertices, int *inSpikeIndices, int spikeCount, float *colorInRange,
+                                    float *colorOutOfRange, int rangeStartIndex, int rangeEndIndex, float sampleStart,
+                                    int sampleEnd, int drawStart, int drawEnd, int sampleCount, int width);
+
         private:
             static void
-            envelope(short **outSamples, int *outSampleCount, int *outEventIndices, int &outEventCount,
+            envelope(short **outSamples, int *outSampleCount, float *outEventIndices, int &outEventIndicesCount,
                      short **inSamples, int channelCount, const int *inEventIndices, int inEventIndicesCount,
                      int fromSample, int toSample, int drawSurfaceWidth);
 
