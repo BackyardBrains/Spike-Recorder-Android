@@ -1,5 +1,6 @@
 package com.backyardbrains.ui;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -35,18 +36,26 @@ import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import org.greenrobot.eventbus.EventBus;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class RecordingOptionsFragment extends BaseFragment {
+public class RecordingOptionsFragment extends BaseFragment implements EasyPermissions.PermissionCallbacks {
 
     public static final String TAG = makeLogTag(RecordingOptionsFragment.class);
 
     private static final String ARG_FILE_PATH = "bb_analysis_id";
+
+    private static final int BYB_SETTINGS_SCREEN = 121;
+    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
     @BindView(R.id.ibtn_back) ImageButton ibtnBack;
     @BindView(R.id.tv_filename) TextView tvTextName;
@@ -126,7 +135,7 @@ public class RecordingOptionsFragment extends BaseFragment {
 
         tvTextName.setText(RecordingUtils.getFileNameWithoutExtension(file));
         ibtnBack.setOnClickListener(v -> openRecordingsList());
-        adapter = new OptionsAdapter(context, (id, name) -> exeOption(id, file));
+        adapter = new OptionsAdapter(context, (id, name) -> execOption(id, file));
         rvFileOptions.setAdapter(adapter);
         rvFileOptions.setHasFixedSize(true);
         rvFileOptions.setLayoutManager(new LinearLayoutManager(context));
@@ -147,7 +156,7 @@ public class RecordingOptionsFragment extends BaseFragment {
     }
 
     // Executes option for the specified ID
-    void exeOption(int id, @NonNull File file) {
+    void execOption(int id, @NonNull File file) {
         switch (id) {
             case OptionsAdapter.OptionItem.ID_DETAILS:
                 fileDetails();
@@ -174,7 +183,7 @@ public class RecordingOptionsFragment extends BaseFragment {
                 share(file);
                 break;
             case OptionsAdapter.OptionItem.ID_DELETE:
-                delete(file);
+                deleteFile();
                 break;
         }
     }
@@ -330,6 +339,44 @@ public class RecordingOptionsFragment extends BaseFragment {
         final SparseArray<String> options =
             canAnalyze ? (showCrossCorrelation ? optionsAll : optionsNoCrossCorrelation) : optionsBase;
         adapter.setOptions(options);
+    }
+
+    //==============================================
+    // WRITE_EXTERNAL_STORAGE PERMISSION
+    //==============================================
+
+    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+        @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    }
+
+    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
+                .setRequestCode(BYB_SETTINGS_SCREEN)
+                .build()
+                .show();
+        }
+    }
+
+    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) void deleteFile() {
+        if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            if (filePath != null) delete(new File(filePath));
+        } else {
+            // Request one permission
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage_delete),
+                BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
     }
 
     /**

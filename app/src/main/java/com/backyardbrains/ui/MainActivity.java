@@ -35,7 +35,7 @@ import com.backyardbrains.events.PlayAudioFileEvent;
 import com.backyardbrains.events.ShowToastEvent;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ImportUtils;
-import com.backyardbrains.utils.ImportUtils.ImportResult;
+import com.backyardbrains.utils.ImportUtils.ImportResultCode;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity
     public static final String RECORDING_DETAILS_FRAGMENT = "RecordingDetailsFragment";
 
     private static final int BYB_RECORD_AUDIO_PERM = 123;
+    private static final int BYB_WRITE_STORAGE_PERM = 124;
     private static final int BYB_SETTINGS_SCREEN = 125;
 
     static {
@@ -121,22 +122,12 @@ public class MainActivity extends AppCompatActivity
 
         getSupportFragmentManager().addOnBackStackChangedListener(this::printBackStack);
 
-        // check if we should process file import
-        if (getIntent() != null && ImportUtils.checkImport(getIntent())) {
-            @ImportResult int result =
-                ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
-            if (result != ImportResult.SUCCESS) {
-                showImportError(result);
-            } else {
-                ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
-                    Toast.LENGTH_LONG);
-                loadFragment(RECORDINGS_VIEW, false);
-            }
-
-            setIntent(null);
-        }
-
         super.onStart();
+
+        // start AnalysisManager right away cause we might need it for import
+        startAnalysisManager();
+        // check if we should process file import
+        if (getIntent() != null && ImportUtils.checkImport(getIntent())) importRecording();
 
         // start the processing service for reads mic data, recording and playing recorded files
         start();
@@ -346,20 +337,20 @@ public class MainActivity extends AppCompatActivity
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
     }
 
-    @SuppressLint("SwitchIntDef") private void showImportError(@ImportResult int result) {
+    @SuppressLint("SwitchIntDef") private void showImportError(@ImportResultCode int result) {
         final @StringRes int stringRes;
         switch (result) {
-            case ImportResult.ERROR_EXISTS:
+            case ImportResultCode.ERROR_EXISTS:
                 stringRes = R.string.error_message_import_exists;
                 break;
-            case ImportResult.ERROR_OPEN:
+            case ImportResultCode.ERROR_OPEN:
                 stringRes = R.string.error_message_import_open;
                 break;
-            case ImportResult.ERROR_SAVE:
+            case ImportResultCode.ERROR_SAVE:
                 stringRes = R.string.error_message_import_save;
                 break;
             default:
-            case ImportResult.ERROR:
+            case ImportResultCode.ERROR:
                 stringRes = R.string.error_message_import_error;
                 break;
         }
@@ -423,17 +414,35 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
-        if (perms.contains(Manifest.permission.RECORD_AUDIO) && requestCode == BYB_RECORD_AUDIO_PERM) {
-            LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
-            if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-                new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
-                    .setTitle(R.string.title_settings_dialog)
-                    .setPositiveButton(R.string.action_setting)
-                    .setNegativeButton(R.string.action_cancel)
-                    .setRequestCode(BYB_SETTINGS_SCREEN)
-                    .build()
-                    .show();
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
+                .setRequestCode(BYB_SETTINGS_SCREEN)
+                .build()
+                .show();
+        }
+    }
+
+    @AfterPermissionGranted(BYB_WRITE_STORAGE_PERM) private void importRecording() {
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            ImportUtils.ImportResult result =
+                ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
+            // we don't need intent data anymore
+            if (!result.isSuccessful()) {
+                showImportError(result.getCode());
+            } else {
+                ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
+                    Toast.LENGTH_LONG);
+                loadFragment(RECORDINGS_VIEW, false);
+                loadFragment(RECORDING_OPTIONS_VIEW, false, result.getFile().getAbsolutePath());
             }
+            setIntent(null);
+        } else {
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage_import),
+                BYB_WRITE_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
 
@@ -443,7 +452,6 @@ public class MainActivity extends AppCompatActivity
      */
     @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void start() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
-            startAnalysisManager();
             startProcessingService();
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,

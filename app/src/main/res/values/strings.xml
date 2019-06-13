@@ -117,7 +117,9 @@
 
     <string name="rationale_record_audio">This app needs access to your microphone/sound input to be able to work.</string>
     <string name="rationale_read_external_storage">This app needs to have read access to be able to list existing recordings.</string>
-    <string name="rationale_write_external_storage">This app needs to have write access to be able to store recordings.</string>
+    <string name="rationale_write_external_storage_record">This app needs to have write access to be able to store recordings.</string>
+    <string name="rationale_write_external_storage_delete">This app needs to have write access to be able to delete recordings.</string>
+    <string name="rationale_write_external_storage_import">This app needs to have write access to be able to import recordings.</string>
     <string name="rationale_ask_again">This app may not work correctly without the requested permissions. Open the app settings screen to modify app permissions.</string>
     <string name="title_settings_dialog">Permissions Required</string>
     <string name="settings_dialog_canceled">Settings dialog canceled</string>
