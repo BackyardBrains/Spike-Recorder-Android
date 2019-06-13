@@ -913,7 +913,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             if (getProcessingService() != null) getProcessingService().startRecording();
         } else {
             // Request one permission
-            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage),
+            EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage_record),
                 BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
