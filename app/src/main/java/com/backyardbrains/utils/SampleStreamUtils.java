@@ -31,6 +31,8 @@ public class SampleStreamUtils {
      */
     public static String getSpikerBoxHardwareName(@SpikerBoxHardwareType int hardwareType) {
         switch (hardwareType) {
+            case SpikerBoxHardwareType.NONE:
+                return "No BYB Board attached";
             case SpikerBoxHardwareType.HEART_AND_BRAIN:
                 return "Heart & Brain SpikerBox";
             case SpikerBoxHardwareType.MUSCLE_PRO:

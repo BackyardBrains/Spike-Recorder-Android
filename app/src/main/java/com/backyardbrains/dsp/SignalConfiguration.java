@@ -3,7 +3,9 @@ package com.backyardbrains.dsp;
 import android.support.annotation.NonNull;
 import android.support.v4.util.ArraySet;
 import com.backyardbrains.utils.AudioUtils;
+import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -26,6 +28,8 @@ public final class SignalConfiguration {
     private @SignalAveragingTriggerType int signalAveragingTriggerType;
     private boolean fftProcessing;
     private boolean signalSeeking;
+    private @SpikerBoxHardwareType int boardType;
+    private @ExpansionBoardType int expansionBoardType;
 
     /**
      * Interface definition for a callback to be invoked when one of signal properties changes.
@@ -86,6 +90,20 @@ public final class SignalConfiguration {
          * @param signalSeek Whether signal seek started or ended.
          */
         void onSignalSeekingChanged(boolean signalSeek);
+
+        /**
+         * Called when BYB board is changed.
+         *
+         * @param boardType BYB board type that is set.
+         */
+        void onBoardTypeChanged(@SpikerBoxHardwareType int boardType);
+
+        /**
+         * Called when expansion board is changed.
+         *
+         * @param expansionBoardType Expansion board that is set.
+         */
+        void onExpansionBoardTypeChanged(@ExpansionBoardType int expansionBoardType);
     }
 
     private Set<OnSignalPropertyChangeListener> onSignalPropertyChangeListeners;
@@ -353,6 +371,46 @@ public final class SignalConfiguration {
         if (onSignalPropertyChangeListeners != null) {
             for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
                 listener.onSignalSeekingChanged(signalSeeking);
+            }
+        }
+    }
+
+    /**
+     * Returns currently connected BYB board.
+     */
+    public @SpikerBoxHardwareType int getBoardType() {
+        return boardType;
+    }
+
+    /**
+     * Sets currently connected BYB board.
+     */
+    public void setBoardType(int boardType) {
+        this.boardType = boardType;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onBoardTypeChanged(boardType);
+            }
+        }
+    }
+
+    /**
+     * Returns currently connected expansion board.
+     */
+    public @SpikerBoxHardwareType int getExpansionBoardType() {
+        return expansionBoardType;
+    }
+
+    /**
+     * Sets currently connected expansion board.
+     */
+    public void setExpansionBoardType(int expansionBoardType) {
+        this.expansionBoardType = expansionBoardType;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onExpansionBoardTypeChanged(expansionBoardType);
             }
         }
     }

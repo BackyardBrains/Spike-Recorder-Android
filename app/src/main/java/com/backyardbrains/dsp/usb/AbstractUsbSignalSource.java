@@ -273,7 +273,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * Sets connected SpikerBox expansion board type for the input source.
      */
-    @SuppressWarnings({ "WeakerAccess", "unused" }) void setExpansionBoardType(int expansionBoardType) {
+    void setExpansionBoardType(int expansionBoardType) {
         if (this.expansionBoardType == expansionBoardType) return;
 
         LOGD(TAG, "EXPANSION BOARD TYPE: " + SampleStreamUtils.getExpansionBoardName(expansionBoardType));

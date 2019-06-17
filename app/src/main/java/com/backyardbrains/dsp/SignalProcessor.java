@@ -427,6 +427,26 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Sets current BYB board type.
+     */
+    void setBoardType(@SpikerBoxHardwareType int boardType) {
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setBoardType(boardType);
+        }
+    }
+
+    /**
+     * Sets current expansion board type.
+     */
+    void setExpansionBoardType(@ExpansionBoardType int expansionBoardType) {
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setExpansionBoardType(expansionBoardType);
+        }
+    }
+
+    /**
      * A data source that will provide data to data processor and notify it when different events occur.
      */
     void setSignalSource(@NonNull AbstractSignalSource signalSource) {

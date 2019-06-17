@@ -8,9 +8,15 @@ import java.lang.annotation.RetentionPolicy;
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
-    SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT, SpikerBoxHardwareType.MUSCLE,
-    SpikerBoxHardwareType.HEART_AND_BRAIN, SpikerBoxHardwareType.MUSCLE_PRO, SpikerBoxHardwareType.NEURON_PRO
+    SpikerBoxHardwareType.NONE, SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT,
+    SpikerBoxHardwareType.MUSCLE, SpikerBoxHardwareType.HEART_AND_BRAIN, SpikerBoxHardwareType.MUSCLE_PRO,
+    SpikerBoxHardwareType.NEURON_PRO
 }) public @interface SpikerBoxHardwareType {
+
+    /**
+     * Unknown hardware type.
+     */
+    int NONE = 100;
 
     /**
      * Unknown hardware type.

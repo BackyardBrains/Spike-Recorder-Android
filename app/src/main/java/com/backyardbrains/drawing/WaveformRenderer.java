@@ -182,7 +182,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     }
 
     /**
-     * Sets
+     * Sets signal threshold value so threshold line and handle can be drawn.
      */
     protected void setThreshold(float threshold) {
         if (threshold == 0) return;
@@ -328,8 +328,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override public void onLoadSettings(@NonNull Context context) {
-        super.onLoadSettings(context);
+    @Override public void onLoadSettings(@NonNull Context context, String from) {
+        super.onLoadSettings(context, from);
 
         setThreshold(PrefUtils.getThreshold(context, getClass()));
     }
@@ -337,8 +337,8 @@ public class WaveformRenderer extends BaseWaveformRenderer {
     /**
      * {@inheritDoc}
      */
-    @Override public void onSaveSettings(@NonNull Context context) {
-        super.onSaveSettings(context);
+    @Override public void onSaveSettings(@NonNull Context context, String from) {
+        super.onSaveSettings(context, from);
 
         PrefUtils.setThreshold(context, getClass(), threshold);
     }
