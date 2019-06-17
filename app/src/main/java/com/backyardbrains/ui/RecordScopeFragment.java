@@ -32,6 +32,7 @@ import com.backyardbrains.events.AudioRecordingProgressEvent;
 import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
+import com.backyardbrains.events.ExpansionBoardTypeDetectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
@@ -41,6 +42,7 @@ import com.backyardbrains.events.UsbSignalSourceDisconnectEvent;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.NotchFilter;
+import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -379,7 +381,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
-        if (!event.isStarted()) if (getProcessingService() != null) startMicrophone(getProcessingService());
+        if (!event.isStarted()) {
+            if (getProcessingService() != null) startMicrophone(getProcessingService());
+            // load correct horizontal and vertical zoom factors for the connected board
+            if (getRenderer() != null) getRenderer().resetBoardType();
+        }
 
         // setup settings view
         setupSettingsView();
@@ -401,9 +407,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
+        final @SpikerBoxHardwareType int boardType = event.getHardwareType();
         final String spikerBoxBoard;
         BandFilter filter = null;
-        switch (event.getHardwareType()) {
+        switch (boardType) {
             case SpikerBoxHardwareType.HEART_AND_BRAIN:
                 spikerBoxBoard = getString(R.string.board_type_heart);
                 filter = Filters.FILTER_BAND_HEART;
@@ -426,6 +433,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:
+            case SpikerBoxHardwareType.NONE:
                 spikerBoxBoard = "UNKNOWN";
                 break;
         }
@@ -439,6 +447,29 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             ViewUtils.customToast(getActivity(),
                 String.format(getString(R.string.template_connected_to_board), spikerBoxBoard));
         }
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onExpansionBoardTypeDetectionEvent(ExpansionBoardTypeDetectionEvent event) {
+        final @ExpansionBoardType int expansionBoardType = event.getExpansionBoardType();
+        final String expansionBoard;
+        switch (expansionBoardType) {
+            case ExpansionBoardType.ADDITIONAL_INPUTS:
+                expansionBoard = "ADDITIONAL INPUTS";
+                break;
+            case ExpansionBoardType.HAMMER:
+                expansionBoard = "HAMMER";
+                break;
+            case ExpansionBoardType.JOYSTICK:
+                expansionBoard = "JOYSTICK";
+                break;
+            default:
+            case ExpansionBoardType.NONE:
+                expansionBoard = "NONE";
+                break;
+        }
+
+        LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoard);
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)

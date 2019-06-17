@@ -173,7 +173,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     //========================================================
-    //  DATA PROCESSING
+    //  SIGNAL PROCESSING
     //========================================================
 
     /**
@@ -288,6 +288,14 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         JniUtils.setNotchFilter(centerFreq);
 
         FILTERS.setNotchFilter(filter);
+    }
+
+    private void updateSignalProcessorBoardType(@SpikerBoxHardwareType int boardType) {
+        signalProcessor.setBoardType(boardType);
+    }
+
+    private void updateSignalProcessorExpansionBoardType(@ExpansionBoardType int expansionBoardType) {
+        signalProcessor.setExpansionBoardType(expansionBoardType);
     }
 
     //========================================================
@@ -421,6 +429,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         if (hardwareType != SpikerBoxHardwareType.UNKNOWN) {
             EventBus.getDefault().post(new SpikerBoxHardwareTypeDetectionEvent(hardwareType));
         }
+        updateSignalProcessorBoardType(hardwareType);
     };
 
     final OnExpansionBoardTypeDetectionListener expansionBoardDetectionListener = expansionBoardType -> {
@@ -428,6 +437,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         if (expansionBoardType != ExpansionBoardType.NONE) {
             EventBus.getDefault().post(new ExpansionBoardTypeDetectionEvent(expansionBoardType));
         }
+        updateSignalProcessorExpansionBoardType(expansionBoardType);
     };
 
     final OnUsbSignalSourceDisconnectListener usbSignalSourceDisconnectListener = () -> {
@@ -485,10 +495,11 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             if (usbHelper.getUsbDevice().getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
                 EventBus.getDefault()
                     .post(new SpikerBoxHardwareTypeDetectionEvent(usbHelper.getUsbDevice().getHardwareType()));
+                updateSignalProcessorBoardType(usbHelper.getUsbDevice().getHardwareType());
             } else {
                 usbHelper.getUsbDevice().addOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
-                usbHelper.getUsbDevice().addOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
             }
+            usbHelper.getUsbDevice().addOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
             usbHelper.getUsbDevice().setOnUsbSignalSourceDisconnectListener(usbSignalSourceDisconnectListener);
             signalSource = usbHelper.getUsbDevice();
             signalProcessor.setSignalSource(signalSource);

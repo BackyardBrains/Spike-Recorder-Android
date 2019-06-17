@@ -53,14 +53,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onStart();
         LOGD(TAG, "onStart()");
         waveform.resumeGL();
-        if (getContext() != null) renderer.onLoadSettings(getContext());
+        if (getContext() != null) renderer.onLoadSettings(getContext(), "onStart()");
     }
 
     @CallSuper @Override public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
         waveform.pauseGL();
-        if (getContext() != null) renderer.onSaveSettings(getContext());
+        if (getContext() != null) renderer.onSaveSettings(getContext(), "onStop()");
     }
 
     @Override public void onDestroy() {
