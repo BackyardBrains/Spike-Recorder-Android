@@ -346,7 +346,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         stringBuilder.delete(tapToStopLength, stringBuilder.length());
         stringBuilder.append(
-            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate(), event.getChannelCount()));
+            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate(), event.getChannelCount(),
+                event.getBitsPerSample()));
         tvStopRecording.setText(stringBuilder);
     }
 

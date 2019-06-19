@@ -26,6 +26,8 @@ public class JniUtils {
 
     public static native void setChannelCount(int channelCount);
 
+    public static native void setBitsPerSample(int bitsPerSample);
+
     public static native void setSelectedChannel(int selectedChannel);
 
     public static native void setBandFilter(float lowCutOffFreq, float highCutOffFreq);

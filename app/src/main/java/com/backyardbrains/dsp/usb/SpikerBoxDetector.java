@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.util.ArrayMap;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.dsp.SignalSource;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
@@ -83,7 +84,8 @@ class SpikerBoxDetector {
             if (usbDevice != null) {
                 usbDevice.setProcessor(new SignalSource.Processor() {
 
-                    private SignalData signalData = new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE);
+                    private SignalData signalData =
+                        new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
 
                     @Override public void onDataReceived(@NonNull byte[] data, int length) {
                         JniUtils.processSampleStream(signalData, data, length, usbDevice);
@@ -93,6 +95,9 @@ class SpikerBoxDetector {
                     }
 
                     @Override public void onChannelCountChanged(int channelCount) {
+                    }
+
+                    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
                     }
                 });
                 // For some devices we set hardware type on creation just by checking VID and PID

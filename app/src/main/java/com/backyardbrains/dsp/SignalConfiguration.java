@@ -21,6 +21,7 @@ public final class SignalConfiguration {
 
     private int sampleRate;
     private int channelCount;
+    private int bitsPerSample;
     private boolean[] channelConfig;
     private int visibleChannelCount;
     private int selectedChannel;
@@ -48,6 +49,13 @@ public final class SignalConfiguration {
          * @param channelCount The new number of channels.
          */
         void onChannelCountChanged(int channelCount);
+
+        /**
+         * Called when number of bits per sample changes.
+         *
+         * @param bitsPerSample The new number of bits per sample.
+         */
+        void onBitsPerSampleChanged(int bitsPerSample);
 
         /**
          * Called when channel is added/removed.
@@ -112,6 +120,7 @@ public final class SignalConfiguration {
     private SignalConfiguration() {
         sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
         channelCount = AudioUtils.DEFAULT_CHANNEL_COUNT;
+        bitsPerSample = AudioUtils.DEFAULT_BITS_PER_SAMPLE;
         channelConfig = Arrays.copyOf(AudioUtils.DEFAULT_CHANNEL_CONFIG, AudioUtils.DEFAULT_CHANNEL_CONFIG.length);
         visibleChannelCount = AudioUtils.DEFAULT_CHANNEL_COUNT;
         selectedChannel = 0;
@@ -206,6 +215,28 @@ public final class SignalConfiguration {
                 listener.onChannelCountChanged(channelCount);
                 listener.onChannelConfigChanged(channelConfig);
                 listener.onChannelSelectionChanged(selectedChannel);
+            }
+        }
+    }
+
+    /**
+     * Returns number of bits per sample of the processed signal.
+     */
+    public int getBitsPerSample() {
+        return bitsPerSample;
+    }
+
+    /**
+     * Sets number of bits per sample of the processed signal.
+     */
+    void setBitsPerSample(int bitsPerSample) {
+        if (bitsPerSample <= 0) return;
+
+        this.bitsPerSample = bitsPerSample;
+
+        if (onSignalPropertyChangeListeners != null) {
+            for (OnSignalPropertyChangeListener listener : onSignalPropertyChangeListeners) {
+                listener.onBitsPerSampleChanged(bitsPerSample);
             }
         }
     }

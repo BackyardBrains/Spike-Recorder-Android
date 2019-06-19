@@ -1,6 +1,8 @@
 package com.backyardbrains.dsp.audio;
 
+import android.media.AudioFormat;
 import android.media.AudioTrack;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Pair;
@@ -15,6 +17,7 @@ import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,6 +66,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             try {
                 raf = newRandomAccessFile();
                 if (raf == null) return;
+                // Android version below Lollipop cannot read 32bit files
+                if (raf.bitsPerSample() == 32 && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
 
                 LOGD(TAG, "RandomAccessFile created");
 
@@ -88,16 +93,26 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 LOGD(TAG, "Audio file sample rate is: " + raf.sampleRate());
                 setChannelCount(raf.channelCount());
                 LOGD(TAG, "Audio file channel count is: " + raf.channelCount());
+                setBitsPerSample(raf.bitsPerSample());
+                LOGD(TAG, "Audio file bits/sample is: " + raf.bitsPerSample());
 
                 // setup audio track
-                final AudioTrack track = AudioUtils.createAudioTrack(raf.sampleRate(), raf.channelCount());
+                AudioTrack track =
+                    AudioUtils.createAudioTrack(raf.sampleRate(), raf.channelCount(), raf.bitsPerSample());
                 track.play();
                 LOGD(TAG, "AudioTrack created");
 
                 if (autoPlay) playing.set(true);
 
                 // number of bytes that should be read during playback
-                int bytesToReadWhilePlaying = AudioUtils.getOutBufferSize(raf.sampleRate(), raf.channelCount());
+                final int bytesToReadWhilePlaying =
+                    AudioUtils.getOutBufferSize(raf.sampleRate(), raf.channelCount(), raf.bitsPerSample());
+                // ByteBuffer that will be used if encoding is AudioFormat.ENCODING_PCM_FLOAT
+                final ByteBuffer pcmFloatByteBuffer = ByteBuffer.allocateDirect(bytesToReadWhilePlaying);
+                // number of float that should be rad during playback if encoding is AudioFormat.ENCODING_PCM_FLOAT
+                final int floatsToReadWhilePlaying = (int) (bytesToReadWhilePlaying * .25f);
+                // buffer that will be used for transferring float if encoding is AudioFormat.ENCODING_PCM_FLOAT
+                final float[] pcmFloatBuffer = new float[floatsToReadWhilePlaying];
                 // number of bytes actually read during single read
                 int read;
 
@@ -113,7 +128,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
                 // inform any interested parties that playback has started
                 if (playbackListener != null && position == 0) {
-                    playbackListener.onStart(duration.get(), raf.sampleRate(), raf.channelCount());
+                    playbackListener.onStart(duration.get(), raf.sampleRate(), raf.channelCount(), raf.bitsPerSample());
                 }
 
                 while (working.get() && raf != null) {
@@ -125,7 +140,8 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                             }
 
                             // index of the sample from which we check the events
-                            fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
+                            fromSample.set(
+                                AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount(), getBitsPerSample()));
 
                             // number of samples to prepend
                             samplesToPrepend.set(0);
@@ -146,18 +162,27 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                             progress.set(raf.getFilePointer());
 
                             // index of the sample up to which we check the events
-                            toSample.set(AudioUtils.getFrameCount(progress.get(), raf.channelCount()));
+                            toSample.set(
+                                AudioUtils.getFrameCount(progress.get(), raf.channelCount(), raf.bitsPerSample()));
 
                             // write data to buffer
                             writeToBuffer(buffer, read);
 
                             // trigger progress listener
                             if (playbackListener != null) {
-                                playbackListener.onProgress(progress.get(), raf.sampleRate(), raf.channelCount());
+                                playbackListener.onProgress(progress.get(), raf.sampleRate(), raf.channelCount(),
+                                    raf.bitsPerSample());
                             }
 
-                            // play audio data if we're not seeking
-                            track.write(buffer, 0, read);
+                            if (track.getAudioFormat() == AudioFormat.ENCODING_PCM_FLOAT) {
+                                pcmFloatByteBuffer.put(buffer, 0, read);
+                                pcmFloatByteBuffer.clear();
+                                pcmFloatByteBuffer.asFloatBuffer().get(pcmFloatBuffer, 0, floatsToReadWhilePlaying);
+                                // play audio data if we're not seeking
+                                track.write(pcmFloatBuffer, 0, floatsToReadWhilePlaying, AudioTrack.WRITE_BLOCKING);
+                            } else {
+                                track.write(buffer, 0, read);
+                            }
                         }
                     }
                 }
@@ -192,7 +217,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 raf.seek(seekPosition);
 
                 // index of the sample from which we check the events
-                fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount()));
+                fromSample.set(AudioUtils.getFrameCount(raf.getFilePointer(), raf.channelCount(), raf.bitsPerSample()));
 
                 // buffer needs to be initialized
                 if (buffer == null) return;
@@ -202,12 +227,13 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                     if (zerosPrependCount < 0) BufferUtils.shiftRight(buffer, (int) Math.abs(zerosPrependCount));
 
                     // number of samples to prepend
-                    samplesToPrepend.set((int) AudioUtils.getFrameCount(zerosPrependCount, raf.channelCount()));
+                    samplesToPrepend.set(
+                        (int) AudioUtils.getFrameCount(zerosPrependCount, raf.channelCount(), raf.bitsPerSample()));
 
                     // index of the sample up to which we check the events
                     long toByte = raf.getFilePointer();
                     if (bufferSize > toByte) toByte = bufferSize;
-                    toSample.set(AudioUtils.getFrameCount(toByte, raf.channelCount()));
+                    toSample.set(AudioUtils.getFrameCount(toByte, raf.channelCount(), raf.bitsPerSample()));
 
                     // write data to buffer
                     writeToBuffer(buffer, bufferSize);
@@ -302,16 +328,18 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          * @param length Length of the playback in bytes.
          * @param sampleRate Sample rate of the played file.
          * @param channelCount Number of channels of the played file.
+         * @param bitsPerSample Number of bits per sample of the played file.
          */
-        void onStart(long length, int sampleRate, int channelCount);
+        void onStart(long length, int sampleRate, int channelCount, int bitsPerSample);
 
         /**
          * Triggered when playback resumes after pause.
          *
          * @param sampleRate Sample rate of the played file.
          * @param channelCount Number of channels of the played file.
+         * @param bitsPerSample Number of bits per sample of the played file.
          */
-        void onResume(int sampleRate, int channelCount);
+        void onResume(int sampleRate, int channelCount, int bitsPerSample);
 
         /**
          * Triggered constantly during playback progress.
@@ -319,8 +347,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
          * @param progress Current byte being played
          * @param sampleRate Sample rate of the played file.
          * @param channelCount Number of channels of the played file.
+         * @param bitsPerSample Number of bits per sample of the played file.
          */
-        void onProgress(long progress, int sampleRate, int channelCount);
+        void onProgress(long progress, int sampleRate, int channelCount, int bitsPerSample);
 
         /**
          * Triggered when playback pauses.
@@ -369,7 +398,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
     @SuppressWarnings("WeakerAccess") String[] eventNames;
 
     public PlaybackSignalSource(@NonNull String filePath, boolean autoPlay, int position) {
-        super(AudioUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
+        super(AudioUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
 
         this.filePath = filePath;
         this.autoPlay = autoPlay;
@@ -426,7 +455,9 @@ public class PlaybackSignalSource extends AbstractSignalSource {
 
             LOGD(TAG, "Playback resumed");
 
-            if (playbackListener != null) playbackListener.onResume(getSampleRate(), getChannelCount());
+            if (playbackListener != null) {
+                playbackListener.onResume(getSampleRate(), getChannelCount(), getBitsPerSample());
+            }
         }
     }
 

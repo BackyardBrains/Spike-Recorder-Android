@@ -32,6 +32,10 @@ public class AudioUtils {
      * Default channel config that will be used for input audio source.
      */
     public static final boolean[] DEFAULT_CHANNEL_CONFIG = new boolean[] { true };
+    /**
+     * Default number of bits per sample.
+     */
+    public static final int DEFAULT_BITS_PER_SAMPLE = 16;
 
     /**
      * Default channel configuration that will be used for input audio source.
@@ -59,17 +63,18 @@ public class AudioUtils {
     /**
      * Creates and returns configured {@link AudioTrack} for playing recorded audio files.
      */
-    public static AudioTrack createAudioTrack(int sampleRate, int channelCount) {
+    public static AudioTrack createAudioTrack(int sampleRate, int channelCount, int bitsPerSample) {
         LOGD(TAG, "Create new AudioTrack");
 
-        int outBufferSize = getOutBufferSize(sampleRate, channelCount);
+        int outBufferSize = getOutBufferSize(sampleRate, channelCount, bitsPerSample);
         int channelMask = getChannelMask(channelCount);
+        int encoding = getEncoding(bitsPerSample);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return new AudioTrack.Builder().setAudioAttributes(
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(DEFAULT_ENCODING)
+                .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
                     .setSampleRate(sampleRate)
                     .setChannelMask(channelMask)
                     .build())
@@ -77,7 +82,7 @@ public class AudioUtils {
                 .build();
         } else {
             //noinspection deprecation
-            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, DEFAULT_ENCODING, outBufferSize,
+            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, encoding, outBufferSize,
                 AudioTrack.MODE_STREAM);
         }
     }
@@ -85,10 +90,10 @@ public class AudioUtils {
     /**
      * Returns estimated minimum buffer size required for an {@link AudioTrack} object to be created.
      */
-    public static int getOutBufferSize(int sampleRate, int channelCount) {
+    public static int getOutBufferSize(int sampleRate, int channelCount, int bitsPerSample) {
         // out buffer size
         final int outBufferSize =
-            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount), DEFAULT_ENCODING);
+            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount), getEncoding(bitsPerSample));
         return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
             : outBufferSize * BUFFER_SIZE_FACTOR;
     }
@@ -143,22 +148,53 @@ public class AudioUtils {
     /**
      * Returns number of samples that this number of bytes represents using current audio format.
      */
-    public static long getSampleCount(long byteCount) {
-        return (long) (byteCount * .5f);
+    public static long getSampleCount(long byteCount, int bitsPerSample) {
+        return byteCount * 8 / bitsPerSample;
     }
 
     /**
      * Returns number of frames that this number of bytes represents using current audio format and channel count.
      */
-    public static long getFrameCount(long byteCount, int channelCount) {
-        return (long) (byteCount * .5f / channelCount);
+    public static long getFrameCount(long byteCount, int channelCount, int bitsPerSample) {
+        return (byteCount * 8) / (bitsPerSample * channelCount);
     }
 
     /**
      * Returns number of bytes that this number of samples represents using current audio format.
      */
-    public static int getByteCount(int sampleCount) {
-        return sampleCount * 2;
+    public static int getByteCount(int sampleCount, int bitsPerSample) {
+        return sampleCount * bitsPerSample / 8;
+    }
+
+    /**
+     * Returns number of bits per sample depending on the specified {@code audioFormat}.
+     *
+     * @param audioFormat Audio format, currently one of {@link AudioFormat#ENCODING_PCM_8BIT}, {@link
+     * AudioFormat#ENCODING_PCM_16BIT} or {@link AudioFormat#ENCODING_PCM_FLOAT} is supported.
+     */
+    public static int getBitsPerSample(int audioFormat) {
+        switch (audioFormat) {
+            case AudioFormat.ENCODING_PCM_8BIT:
+                return 8;
+            default:
+            case AudioFormat.ENCODING_PCM_16BIT:
+                return 16;
+            case AudioFormat.ENCODING_PCM_FLOAT:
+                return 32;
+        }
+    }
+
+    // Returns encoding depending on the specified bitsPerSample
+    private static int getEncoding(int bitsPerSample) {
+        switch (bitsPerSample) {
+            case 8:
+                return AudioFormat.ENCODING_PCM_8BIT;
+            default:
+            case 16:
+                return AudioFormat.ENCODING_PCM_16BIT;
+            case 32:
+                return AudioFormat.ENCODING_PCM_FLOAT;
+        }
     }
 
     // Returns channel configuration depending on the specified channelCount

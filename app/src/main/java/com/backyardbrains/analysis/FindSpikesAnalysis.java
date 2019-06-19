@@ -24,7 +24,7 @@ class FindSpikesAnalysis extends BaseAnalysis<Spike> {
     }
 
     @Nullable @Override public Spike[] process() throws Exception {
-        final long totalSamples = AudioUtils.getSampleCount(audioFile.length());
+        final long totalSamples = AudioUtils.getSampleCount(audioFile.length(), audioFile.bitsPerSample());
         final int channelCount = audioFile.channelCount();
         int maxSpikes = (int) (totalSamples / 10);
 

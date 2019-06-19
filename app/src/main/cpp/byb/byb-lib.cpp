@@ -43,6 +43,8 @@ Java_com_backyardbrains_utils_JniUtils_setSampleRate(JNIEnv *env, jclass type, j
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jclass type, jint channelCount);
 JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBitsPerSample(JNIEnv *env, jclass type, jint bitsPerSample);
+JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, jfloat lowCutOffFreq,
@@ -154,6 +156,7 @@ JavaVM *vm = nullptr;
 // SignalData field IDs
 jfieldID sdChannelCountFid;
 jfieldID sdMaxSamplesPerChannel;
+jfieldID sdBitsPerSample;
 jfieldID sdSamplesFid;
 jfieldID sdSampleCountsFid;
 jfieldID sdEventIndicesFid;
@@ -271,6 +274,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     jclass cls = env->FindClass("com/backyardbrains/dsp/SignalData");
     sdChannelCountFid = env->GetFieldID(cls, "channelCount", "I");
     sdMaxSamplesPerChannel = env->GetFieldID(cls, "maxSamplesPerChannel", "I");
+    sdBitsPerSample = env->GetFieldID(cls, "bitsPerSample", "I");
     sdSamplesFid = env->GetFieldID(cls, "samples", "[[S");
     sdSampleCountsFid = env->GetFieldID(cls, "sampleCounts", "[I");
     sdEventIndicesFid = env->GetFieldID(cls, "eventIndices", "[I");
@@ -444,6 +448,16 @@ Java_com_backyardbrains_utils_JniUtils_setChannelCount(JNIEnv *env, jclass type,
 }
 
 extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_setBitsPerSample(JNIEnv *env, jclass type, jint bitsPerSample) {
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "BITS PER SAMPLE: %1d", bitsPerSample);
+
+    amModulationProcessor->setBitsPerSample(bitsPerSample);
+    sampleStreamProcessor->setBitsPerSample(bitsPerSample);
+    thresholdProcessor->setBitsPerSample(bitsPerSample);
+    fftProcessor->setBitsPerSample(bitsPerSample);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setSelectedChannel(JNIEnv *env, jclass type, jint selectedChannel) {
     __android_log_print(ANDROID_LOG_DEBUG, TAG, "SELECTED CHANNEL: %1d", selectedChannel);
 
@@ -558,6 +572,7 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jclass type, jobject out,
                                                                jbyteArray inBytes, jint length) {
     jint channelCount = env->GetIntField(out, sdChannelCountFid);
+    jint bitsPerSample = env->GetIntField(out, sdBitsPerSample);
     auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sdSamplesFid));
     auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sdSampleCountsFid));
 
@@ -570,7 +585,7 @@ Java_com_backyardbrains_utils_JniUtils_processMicrophoneStream(JNIEnv *env, jcla
         return;
     }
 
-    jint sampleCount = length / 2;
+    jint sampleCount = length * 8 / bitsPerSample;
     jint frameCount = sampleCount / channelCount;
     auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++)
@@ -615,6 +630,7 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
                                                              jlong end, jint prependSamples) {
     jint channelCount = env->GetIntField(out, sdChannelCountFid);
     jint maxSamplesPerChannel = env->GetIntField(out, sdMaxSamplesPerChannel);
+    jint bitsPerSample = env->GetIntField(out, sdBitsPerSample);
     auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sdSamplesFid));
     auto sampleCounts = reinterpret_cast<jintArray>(env->GetObjectField(out, sdSampleCountsFid));
     auto eventIndices = reinterpret_cast<jintArray>(env->GetObjectField(out, sdEventIndicesFid));
@@ -633,14 +649,22 @@ Java_com_backyardbrains_utils_JniUtils_processPlaybackStream(JNIEnv *env, jclass
         return;
     }
 
-    jint sampleCount = length / 2;
+    jint sampleCount = length * 8 / bitsPerSample;
     jint frameCount = sampleCount / channelCount;
     auto **outSamplesPtr = new jshort *[channelCount];
     for (int i = 0; i < channelCount; i++) {
         outSamplesPtr[i] = new jshort[frameCount]{0};
     }
-    backyardbrains::utils::SignalUtils::deinterleaveSignal(outSamplesPtr, reinterpret_cast<short *>(inBytesPtr),
-                                                           sampleCount, channelCount);
+    if (bitsPerSample == backyardbrains::utils::SignalUtils::ENCODING_FLOAT) {
+        backyardbrains::utils::SignalUtils::deinterleaveSignal1(outSamplesPtr,
+                                                                reinterpret_cast<const float *>(inBytesPtr),
+                                                                sampleCount, channelCount);
+    } else {
+        backyardbrains::utils::SignalUtils::deinterleaveSignal(outSamplesPtr,
+                                                               reinterpret_cast<const short *>(inBytesPtr),
+                                                               sampleCount, channelCount);
+    }
+
     jint *outEventIndicesPtr = new jint[inEventCount];
 
     jint eventCounter = 0;
@@ -1570,5 +1594,4 @@ Java_com_backyardbrains_utils_JniUtils_averageSpikeAnalysis(JNIEnv *env, jclass 
         delete[] normBottomStdLinePtr[i];
     }
     delete[] spikeCountsPtr;
-    delete[] spikeTrainsPtr;
 }

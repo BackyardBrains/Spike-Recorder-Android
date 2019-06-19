@@ -61,6 +61,8 @@ public class Recorder {
         private int sampleRate;
         // Number of channels the recorded file should have
         private int channelCount;
+        // Number of bits per sample of the recorded file
+        private int bitsPerSample = AudioUtils.DEFAULT_BITS_PER_SAMPLE; // always record 16 bits per sample
 
         private File audioFile;
         private OutputStream outputStream;
@@ -128,10 +130,10 @@ public class Recorder {
             saveFiles();
         }
 
-        void startPlayback(int sampleRate, int channelCount) {
+        void startPlayback(int sampleRate, int channelCount, int bitsPerSample) {
             if (audioTrack != null) stopPlayback();
             // create and start audio track
-            audioTrack = AudioUtils.createAudioTrack(sampleRate, channelCount);
+            audioTrack = AudioUtils.createAudioTrack(sampleRate, channelCount, bitsPerSample);
             audioTrack.play();
 
             // start
@@ -160,7 +162,9 @@ public class Recorder {
                 boolean isRecording = recording.get();
 
                 // we need to save current recording length before writing the actual samples
-                if (isRecording) frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount);
+                if (isRecording) {
+                    frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount, bitsPerSample);
+                }
 
                 // save samples to buffer as bytes
                 if (isRecording || playing.get()) {
@@ -284,8 +288,8 @@ public class Recorder {
     /**
      * Starts playing back incoming signal.
      */
-    public void startPlaying(int sampleRate, int channelCount) {
-        writeThread.startPlayback(sampleRate, channelCount);
+    public void startPlaying(int sampleRate, int channelCount, int bitsPerSample) {
+        writeThread.startPlayback(sampleRate, channelCount, bitsPerSample);
     }
 
     /**
