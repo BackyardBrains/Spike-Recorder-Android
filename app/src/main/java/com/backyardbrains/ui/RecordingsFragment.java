@@ -286,7 +286,7 @@ public class RecordingsFragment extends BaseFragment implements EasyPermissions.
                 } catch (IOException ignored) {
                 }
                 tvFileSize.setText(
-                    waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate(), waf.channelCount())
+                    waf != null ? WavUtils.formatWavLength(file.length(), waf.sampleRate(), waf.channelCount(), waf.bitsPerSample())
                         : "UNKNOWN");
                 date.setTime(file.lastModified());
                 tvFileLasModified.setText(DateUtils.format_MMM_d_yyyy_HH_mm_a(date));

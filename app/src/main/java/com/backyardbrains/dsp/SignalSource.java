@@ -59,6 +59,13 @@ public interface SignalSource {
          * @param channelCount New channel count.
          */
         void onChannelCountChanged(int channelCount);
+
+        /**
+         * Called when sample source number of bits per sample is changed.
+         *
+         * @param bitsPerSample New number of bits per sample.
+         */
+        void onBitsPerSampleChanged(int bitsPerSample);
     }
 
     /**

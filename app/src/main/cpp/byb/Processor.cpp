@@ -2,17 +2,18 @@
 // Created by  Tihomir Leka <tihomir at backyardbrains.com>
 //
 
-#include "Processor.h"
+#include <Processor.h>
 
 namespace backyardbrains {
 
     namespace processing {
 
-        Processor::Processor(float sampleRate, int channelCount) {
+        Processor::Processor(float sampleRate, int channelCount, int bitsPerSample) {
             Processor::sampleRate = sampleRate;
             Processor::channelCount = channelCount;
+            Processor::bitsPerSample = bitsPerSample;
 
-            createFilters(channelCount);
+            createFilters(0, channelCount);
 
             initialized = true;
         }
@@ -27,7 +28,7 @@ namespace backyardbrains {
             if (initialized) deleteFilters(channelCount);
             Processor::sampleRate = sampleRate;
 
-            createFilters(channelCount);
+            createFilters(sampleRate, channelCount);
         }
 
         int Processor::getChannelCount() {
@@ -38,7 +39,18 @@ namespace backyardbrains {
             if (initialized) deleteFilters(Processor::channelCount);
             Processor::channelCount = channelCount;
 
-            createFilters(channelCount);
+            createFilters(Processor::sampleRate, channelCount);
+        }
+
+        int Processor::getBitsPerSample() {
+            return bitsPerSample;
+        }
+
+        void Processor::setBitsPerSample(int bitsPerSample) {
+            if (initialized) deleteFilters(Processor::channelCount);
+            Processor::bitsPerSample = bitsPerSample;
+
+            createFilters(Processor::sampleRate, channelCount);
         }
 
         int Processor::getSelectedChannel() {
@@ -56,7 +68,7 @@ namespace backyardbrains {
             if (initialized) deleteFilters(Processor::channelCount);
             Processor::channelCount = channelCount;
 
-            createFilters(channelCount);
+            createFilters(Processor::sampleRate, channelCount);
         }
 
         void Processor::applyFilters(int channel, short *data, int sampleCount) {
@@ -74,7 +86,7 @@ namespace backyardbrains {
             Processor::highCutOff = highCutOffFreq;
 
             if (initialized) deleteFilters(channelCount);
-            createFilters(channelCount);
+            createFilters(Processor::sampleRate, channelCount);
         }
 
         void Processor::setNotchFilter(float centerFreq) {
@@ -83,10 +95,10 @@ namespace backyardbrains {
             Processor::centerFrequency = centerFreq;
 
             if (initialized) deleteFilters(channelCount);
-            createFilters(channelCount);
+            createFilters(Processor::sampleRate, channelCount);
         }
 
-        void Processor::createFilters(int channelCount) {
+        void Processor::createFilters(float sampleRate, int channelCount) {
             lowPassFilter = new LowPassFilterPtr[channelCount];
             highPassFilter = new HighPassFilterPtr[channelCount];
             notchFilter = new NotchFilterPtr[channelCount];

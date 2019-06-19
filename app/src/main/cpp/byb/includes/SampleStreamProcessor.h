@@ -36,6 +36,7 @@ namespace backyardbrains {
             static constexpr int DEFAULT_CHANNEL_COUNT = 2;
             static constexpr int HAMMER_JOYSTICK_CHANNEL_COUNT = 3;
             static constexpr int ADDITIONAL_INPUTS_CHANNEL_COUNT = 4;
+            static constexpr int DEFAULT_BITS_PER_SAMPLE = 16;
 
             static constexpr uint CLEANER = 0xFF;
             static constexpr uint REMOVER = 0x7F;

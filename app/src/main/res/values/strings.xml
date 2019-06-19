@@ -65,6 +65,7 @@
     <string name="label_recorded_on">Recorded on</string>
     <string name="label_sampling_rate">Sampling rate</string>
     <string name="label_num_of_channels">Number of channels</string>
+    <string name="label_bits_per_sample">Bits per sample</string>
     <string name="label_file_length">File length (s)</string>
     <string name="label_channel_abbr">Ch</string>
 

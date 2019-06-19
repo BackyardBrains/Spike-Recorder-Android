@@ -73,7 +73,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private boolean disconnecting;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
+        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT,
+            AudioUtils.getBitsPerSample(AudioUtils.DEFAULT_BITS_PER_SAMPLE));
 
         this.device = device;
 

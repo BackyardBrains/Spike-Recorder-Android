@@ -584,7 +584,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * starts playing as soon as first samples are loaded, if it's {@code false} file is initially paused.
      */
     public void startPlayback(@NonNull String filePath, boolean autoPlay, int position) {
-        if (created) startPlaybackSource(filePath, autoPlay, AudioUtils.getByteCount(position));
+        if (created) startPlaybackSource(filePath, autoPlay, position);
     }
 
     /**
@@ -632,7 +632,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             // let's pause the threshold while seeking
             JniUtils.pauseThreshold();
 
-            ((PlaybackSignalSource) signalSource).seek(AudioUtils.getByteCount(position));
+            final PlaybackSignalSource source = (PlaybackSignalSource) signalSource;
+            source.seek(AudioUtils.getByteCount(position, source.getBitsPerSample()));
         }
     }
 
@@ -652,7 +653,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * Returns number of playback samples.
      */
     public long getPlaybackLength() {
-        if (isPlaybackMode()) return AudioUtils.getSampleCount(((PlaybackSignalSource) signalSource).getLength());
+        if (isPlaybackMode()) {
+            final PlaybackSignalSource source = (PlaybackSignalSource) signalSource;
+            return AudioUtils.getSampleCount(source.getLength(), source.getBitsPerSample());
+        }
 
         return 0;
     }
@@ -719,23 +723,26 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
 
-                    @Override public void onStart(long length, int sampleRate, int channelCount) {
+                    @Override public void onStart(long length, int sampleRate, int channelCount, int bitsPerSample) {
                         // post event that audio playback has started, but post a sticky event
                         // because the view might sill not be initialized
                         EventBus.getDefault()
-                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length), sampleRate,
-                                channelCount));
+                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length, bitsPerSample),
+                                sampleRate, channelCount, bitsPerSample));
                     }
 
-                    @Override public void onResume(int sampleRate, int channelCount) {
+                    @Override public void onResume(int sampleRate, int channelCount, int bitsPerSample) {
                         // post event that audio playback has started
-                        EventBus.getDefault().post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount));
+                        EventBus.getDefault()
+                            .post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount, bitsPerSample));
                     }
 
-                    @Override public void onProgress(long progress, int sampleRate, int channelCount) {
-                        progressEvent.setProgress(AudioUtils.getSampleCount(progress));
+                    @Override
+                    public void onProgress(long progress, int sampleRate, int channelCount, int bitsPerSample) {
+                        progressEvent.setProgress(AudioUtils.getSampleCount(progress, bitsPerSample));
                         progressEvent.setSampleRate(sampleRate);
                         progressEvent.setChannelCount(channelCount);
+                        progressEvent.setBitsPerSample(bitsPerSample);
                         EventBus.getDefault().post(progressEvent);
                     }
 
@@ -812,7 +819,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 if (recorder.isPlaying()) recorder.stopPlaying();
             } else {
                 if (!recorder.isPlaying()) {
-                    recorder.startPlaying(signalProcessor.getSampleRate(), signalProcessor.getChannelCount());
+                    recorder.startPlaying(signalProcessor.getSampleRate(), signalProcessor.getChannelCount(),
+                        signalProcessor.getBitsPerSample());
                 }
             }
         }
@@ -842,8 +850,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 // recorder can be set to null if stopRecording() is called between this and previous line
                 // post current recording progress
                 EventBus.getDefault()
-                    .post(new AudioRecordingProgressEvent(AudioUtils.getSampleCount(recorder.getAudioLength()),
-                        signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount()));
+                    .post(new AudioRecordingProgressEvent(
+                        AudioUtils.getSampleCount(recorder.getAudioLength(), signalProcessor.getBitsPerSample()),
+                        signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount(),
+                        signalProcessor.getBitsPerSample()));
             }
         } catch (Exception e) {
             Crashlytics.logException(e);

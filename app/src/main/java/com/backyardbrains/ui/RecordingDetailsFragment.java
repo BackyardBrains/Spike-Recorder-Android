@@ -48,6 +48,7 @@ public class RecordingDetailsFragment extends BaseFragment {
     @BindView(R.id.tv_recorded_on) TextView tvRecordedOn;
     @BindView(R.id.tv_sampling_rate) TextView tvSamplingRate;
     @BindView(R.id.tv_num_of_channels) TextView tvNumOfChannels;
+    @BindView(R.id.tv_bits_per_sample) TextView tvBitsPerSample;
     @BindView(R.id.tv_file_length) TextView tvFileLength;
 
     private Unbinder unbinder;
@@ -166,9 +167,11 @@ public class RecordingDetailsFragment extends BaseFragment {
             tvSamplingRate.setText(String.valueOf(waf.sampleRate()));
             // number of channels
             tvNumOfChannels.setText(String.valueOf(waf.channelCount()));
+            // number of bits per sample1
+            tvBitsPerSample.setText(String.valueOf(waf.bitsPerSample()));
             // recording length
-            tvFileLength.setText(
-                String.valueOf(WavUtils.toSeconds(file.length(), waf.sampleRate(), waf.channelCount())));
+            tvFileLength.setText(String.valueOf(
+                WavUtils.toSeconds(file.length(), waf.sampleRate(), waf.channelCount(), waf.bitsPerSample())));
         }
     }
 

@@ -8,7 +8,7 @@ namespace backyardbrains {
 
     namespace utils {
 
-        short **
+        void
         SignalUtils::deinterleaveSignal(short **outSamples, const short *inSamples, int sampleCount, int channelCount) {
             int frameCount = sampleCount / channelCount;
             for (int ch = 0; ch < channelCount; ch++) {
@@ -16,8 +16,17 @@ namespace backyardbrains {
                     outSamples[ch][i] = inSamples[channelCount * i + ch];
                 }
             }
+        }
 
-            return outSamples;
+        void
+        SignalUtils::deinterleaveSignal1(short **outSamples, const float *inSamples, int sampleCount,
+                                         int channelCount) {
+            int frameCount = sampleCount / channelCount;
+            for (int ch = 0; ch < channelCount; ch++) {
+                for (int i = 0; i < frameCount; i++) {
+                    outSamples[ch][i] = static_cast<short>(inSamples[channelCount * i + ch] * SHRT_MAX);
+                }
+            }
         }
 
         short *SignalUtils::interleaveSignal(short **samples, int frameCount, int channelCount) {

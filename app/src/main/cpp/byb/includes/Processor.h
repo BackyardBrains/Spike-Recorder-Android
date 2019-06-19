@@ -20,15 +20,17 @@ namespace backyardbrains {
 
         class Processor {
         public:
-            Processor(float sampleRate, int channelCount);
+            Processor(float sampleRate, int channelCount, int bitsPerSample);
 
-            Processor() : Processor(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT) {}
+            Processor() : Processor(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_BITS_PER_SAMPLE) {}
 
             virtual ~Processor();
 
             virtual void setSampleRate(float sampleRate);
 
             virtual void setChannelCount(int channelCount);
+
+            virtual void setBitsPerSample(int bitsPerSample);
 
             void setSelectedChannel(int selectedChannel);
 
@@ -40,6 +42,8 @@ namespace backyardbrains {
             float getSampleRate();
 
             int getChannelCount();
+
+            int getBitsPerSample();
 
             int getSelectedChannel();
 
@@ -56,8 +60,10 @@ namespace backyardbrains {
             static constexpr float DEFAULT_SAMPLE_RATE = 44100.0f;
             // Default channel count
             static constexpr int DEFAULT_CHANNEL_COUNT = 1;
+            // Default number of bits  per sample
+            static constexpr int DEFAULT_BITS_PER_SAMPLE = 16;
 
-            void createFilters(int channelCount);
+            void createFilters(float sampleRate, int channelCount);
 
             void deleteFilters(int channelCount);
 
@@ -71,6 +77,8 @@ namespace backyardbrains {
             float sampleRate = DEFAULT_SAMPLE_RATE;
             // Current channel count
             int channelCount = DEFAULT_CHANNEL_COUNT;
+            // Current number of bits per sample
+            int bitsPerSample = DEFAULT_BITS_PER_SAMPLE;
             // Index of currently selected channel
             int selectedChannel = 0;
             // Current low pass filter high cutoff frequency

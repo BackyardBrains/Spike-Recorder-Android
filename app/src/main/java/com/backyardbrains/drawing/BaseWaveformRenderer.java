@@ -209,6 +209,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     /**
      * {@inheritDoc}
      *
+     * @param bitsPerSample The new number of bits per sample.
+     */
+    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
+        LOGD(TAG, "onBitsPerSampleChanged(" + bitsPerSample + ")");
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @param channelConfig Array of booleans indicating which channel is on and which is off.
      */
     @Override public void onChannelConfigChanged(boolean[] channelConfig) {

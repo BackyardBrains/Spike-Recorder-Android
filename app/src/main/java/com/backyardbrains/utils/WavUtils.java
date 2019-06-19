@@ -21,21 +21,21 @@ public class WavUtils {
     /**
      * Converts specified {@code sampleCount} to wav time progress and returns it formatted as {@code mm:ss}.
      */
-    public static String formatWavProgress(int sampleCount, int sampleRate, int channelCount) {
-        long byteCount = AudioUtils.getByteCount(sampleCount);
+    public static String formatWavProgress(int sampleCount, int sampleRate, int channelCount, int bitsPerSample) {
+        long byteCount = AudioUtils.getByteCount(sampleCount, bitsPerSample);
         byteCount -= HEADER_SIZE;
 
         return Formats.formatTime_mm_ss(
-            TimeUnit.SECONDS.toMillis((long) toSeconds(byteCount, sampleRate, channelCount)));
+            TimeUnit.SECONDS.toMillis((long) toSeconds(byteCount, sampleRate, channelCount, bitsPerSample)));
     }
 
     /**
      * Returns length of the wav file of specified {@code byteCount} length formatted as "XX s" or "XX m XX s".
      */
-    public static CharSequence formatWavLength(long byteCount, int sampleRate, int channelCount) {
+    public static CharSequence formatWavLength(long byteCount, int sampleRate, int channelCount, int bitsPerSample) {
         byteCount -= HEADER_SIZE;
 
-        return Formats.formatTime_m_s((long) toSeconds(byteCount, sampleRate, channelCount));
+        return Formats.formatTime_m_s((long) toSeconds(byteCount, sampleRate, channelCount, bitsPerSample));
     }
 
     public static byte[] writeHeader(long totalAudioLength, int sampleRateInHz, int channelCount, int audioFormat) {
@@ -69,7 +69,7 @@ public class WavUtils {
         // audio format
         int format = buffer.getShort();
         // PCM = 1 (i.e. Linear quantization) Values other than 1 indicate some form of compression.
-        check(format == 1, "Unsupported audio format: " + format); // 1 means PCM
+        check(format == 1 || format == 3, "Unsupported audio format: " + format); // 1 means PCM, 2 means FLOATS
         // number of channels
         int channels = buffer.getShort();
         // Mono = 1, Stereo = 2, etc.
@@ -84,7 +84,7 @@ public class WavUtils {
         buffer.position(buffer.position() + 6);
         // bits per sample
         int bits = buffer.getShort();
-        check(bits == 16, "Unsupported number of bits per sample: " + bits);
+        check(bits == 16 || bits == 32, "Unsupported number of bits per sample: " + bits);
         // data
         int dataSize;
         while (buffer.getInt() != 0x61746164) { // "data" marker
@@ -106,8 +106,8 @@ public class WavUtils {
     //fileSize = (bitsPerSample * samplesPerSecond * channels * duration) / 8;
 
     // Converts specified byteCount to seconds
-    public static float toSeconds(long byteCount, int sampleRate, int channelCount) {
-        return (float) byteCount / (2 * sampleRate * channelCount);
+    public static float toSeconds(long byteCount, int sampleRate, int channelCount, int bitsPerSample) {
+        return byteCount / (float) (sampleRate * channelCount * bitsPerSample / 8);
     }
 
     // Writes and returns WAV header following specified parameters

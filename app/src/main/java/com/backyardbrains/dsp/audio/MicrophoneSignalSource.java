@@ -72,7 +72,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     private static final Object lock = new Object();
 
     MicrophoneSignalSource(@NonNull AudioRecord recorder) {
-        super(recorder.getSampleRate(), recorder.getChannelCount());
+        super(recorder.getSampleRate(), recorder.getChannelCount(),
+            AudioUtils.getBitsPerSample(recorder.getAudioFormat()));
 
         this.recorder = recorder;
     }
