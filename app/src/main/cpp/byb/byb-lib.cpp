@@ -12,12 +12,14 @@
 #include "ThresholdProcessor.h"
 #include "FftProcessor.h"
 #include "DrawingUtils.h"
+#include "EventTriggeredAverageAnalysis.h"
 #include "SpikeAnalysis.h"
 #include "AutocorrelationAnalysis.h"
 #include "CrossCorrelationAnalysis.h"
 #include "IsiAnalysis.h"
 #include "AverageSpikeAnalysis.h"
 #include "AnalysisUtils.h"
+#include "EventUtils.h"
 #include "JniHelper.h"
 
 using namespace backyardbrains::processing;
@@ -36,6 +38,9 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, jshortArray test);
 JNIEXPORT jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type, jshortArray out, jobject in);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_map(JNIEnv *env, jclass type, jfloatArray out, jfloatArray in, jint length,
+                                           jfloat inMin, jfloat inMax, jfloat outMin, jfloat outMax);
 JNIEXPORT jfloat JNICALL
 Java_com_backyardbrains_utils_JniUtils_rms(JNIEnv *env, jclass type, jshortArray in, jint length);
 JNIEXPORT void JNICALL
@@ -113,6 +118,17 @@ Java_com_backyardbrains_utils_JniUtils_prepareForSpikesDrawing(JNIEnv *env, jcla
                                                                jint sampleEndIndex, jint drawStartIndex,
                                                                jint drawEndIndex, jint sampleCount,
                                                                jint drawSurfaceWidth);
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_parseEvents(JNIEnv *env, jclass type, jstring filePath, jfloat sampleRate,
+                                                   jintArray eventIndices, jobjectArray eventNames);
+JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_checkEvents(JNIEnv *env, jclass type, jstring filePath, jobjectArray eventNames);
+JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env, jclass type, jstring filePath,
+                                                                     jstring eventsFilePath, jobjectArray events,
+                                                                     jint eventCount, jobjectArray averages,
+                                                                     jobjectArray normAverages, jint channelCount,
+                                                                     jint frameCount, jboolean removeNoiseIntervals);
 JNIEXPORT jobjectArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
                                                   jobjectArray indicesPos, jobjectArray timesPos,
@@ -146,6 +162,7 @@ AmModulationProcessor *amModulationProcessor;
 SampleStreamProcessor *sampleStreamProcessor;
 ThresholdProcessor *thresholdProcessor;
 FftProcessor *fftProcessor;
+EventTriggeredAverageAnalysis *eventTriggeredAverageAnalysis;
 SpikeAnalysis *spikeAnalysis;
 AutocorrelationAnalysis *autocorrelationAnalysis;
 IsiAnalysis *isiAnalysis;
@@ -264,6 +281,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     sampleStreamProcessor = new SampleStreamProcessor(eventListener);
     thresholdProcessor = new ThresholdProcessor(new HeartbeatListener());
     fftProcessor = new FftProcessor();
+    eventTriggeredAverageAnalysis = new EventTriggeredAverageAnalysis();
     spikeAnalysis = new SpikeAnalysis();
     autocorrelationAnalysis = new AutocorrelationAnalysis();
     isiAnalysis = new IsiAnalysis();
@@ -386,8 +404,8 @@ Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type
     }
 
     jint sampleCount = channelCount * frameCount;
-    jshort *outSamplesPtr = backyardbrains::utils::SignalUtils::interleaveSignal(inSamplesPtr, frameCount,
-                                                                                 channelCount);
+    jshort *outSamplesPtr = new jshort[sampleCount];
+    backyardbrains::utils::SignalUtils::interleaveSignal(outSamplesPtr, inSamplesPtr, frameCount, channelCount);
 
     if (exception_check(env)) {
         for (int i = 0; i < channelCount; i++) {
@@ -425,6 +443,26 @@ Java_com_backyardbrains_utils_JniUtils_rms(JNIEnv *env, jclass type, jshortArray
     delete[] samplesPtr;
 
     return rms;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_map(JNIEnv *env, jclass type, jfloatArray out, jfloatArray in, jint length,
+                                           jfloat inMin, jfloat inMax, jfloat outMin, jfloat outMax) {
+    auto *inPtr = new jfloat[length];
+    env->GetFloatArrayRegion(in, 0, length, inPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inPtr;
+    }
+
+    auto *outPtr = new jfloat[length];
+    backyardbrains::utils::AnalysisUtils::map(inPtr, outPtr, length, inMin, inMax, outMin, outMax);
+
+    env->SetFloatArrayRegion(out, 0, length, outPtr);
+
+    delete[] inPtr;
+    delete[] outPtr;
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -515,8 +553,8 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
     eventListener->setSampleSourceObj(sampleSourceObject);
 
     auto **outSamplesPtr = new jshort *[channelCount];
-    jint *outSampleCounts = new jint[channelCount];
-    jint *outEventIndicesPtr = new jint[eventCount];
+    auto *outSampleCounts = new jint[channelCount];
+    auto *outEventIndicesPtr = new jint[eventCount];
     auto *outEventNamesPtr = new std::string[eventCount];
     jint outEventCount;
     sampleStreamProcessor->process(uInBytesPtr, length, outSamplesPtr, outSampleCounts, outEventIndicesPtr,
@@ -1183,6 +1221,131 @@ Java_com_backyardbrains_utils_JniUtils_prepareForSpikesDrawing(JNIEnv *env, jcla
     delete[] outSpikeColorsPtr;
 }
 
+extern "C" JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_parseEvents(JNIEnv *env, jclass type, jstring filePath, jfloat sampleRate,
+                                                   jintArray eventIndices, jobjectArray eventNames) {
+
+    const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
+    auto *eventTimesPtr = new jfloat[env->GetArrayLength(eventIndices)];
+    auto *eventNamesPtr = new std::string[env->GetArrayLength(eventNames)];
+    jint eventCount = 0;
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] eventTimesPtr;
+        delete[] eventNamesPtr;
+        return 0;
+    }
+
+    backyardbrains::utils::EventUtils::parseEvents(filePathPtr, eventTimesPtr, eventNamesPtr, eventCount);
+
+    auto *eventIndicesPtr = new jint[eventCount];
+    for (int i = 0; i < eventCount; i++) {
+        eventIndicesPtr[i] = static_cast<jint>(eventTimesPtr[i] * sampleRate);
+        env->SetObjectArrayElement(eventNames, i, env->NewStringUTF(eventNamesPtr[i].c_str()));
+    }
+    env->SetIntArrayRegion(eventIndices, 0, eventCount, eventIndicesPtr);
+    delete[] eventTimesPtr;
+    delete[] eventNamesPtr;
+    delete[] eventIndicesPtr;
+
+    return eventCount;
+}
+
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_backyardbrains_utils_JniUtils_checkEvents(JNIEnv *env, jclass type, jstring filePath,
+                                                   jobjectArray eventNames) {
+    const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
+    auto *eventNamesPtr = new std::string[env->GetArrayLength(eventNames)];
+    jint eventCount = 0;
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] eventNamesPtr;
+        return 0;
+    }
+
+    backyardbrains::utils::EventUtils::checkEvents(filePathPtr, eventNamesPtr, eventCount);
+
+    for (int i = 0; i < eventCount; i++) {
+        env->SetObjectArrayElement(eventNames, i, env->NewStringUTF(eventNamesPtr[i].c_str()));
+    }
+    delete[] eventNamesPtr;
+
+    return eventCount;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env, jclass type, jstring filePath,
+                                                                     jstring eventsFilePath, jobjectArray events,
+                                                                     jint eventCount, jobjectArray averages,
+                                                                     jobjectArray normAverages, jint channelCount,
+                                                                     jint frameCount, jboolean removeNoiseIntervals) {
+    const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
+    const char *eventsFilePathPtr = env->GetStringUTFChars(eventsFilePath, JNI_FALSE);
+    auto *eventNamesPtr = new std::string[eventCount];
+    for (int i = 0; i < eventCount; i++) {
+        auto string = (jstring) (env->GetObjectArrayElement(events, i));
+        const char *rawString = env->GetStringUTFChars(string, JNI_FALSE);
+        eventNamesPtr[i] = std::string(rawString);
+//        env->SetObjectArrayElement(eventNames, eventCounter++, env->NewStringUTF(rawString));
+        env->ReleaseStringUTFChars(string, rawString);
+    }
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] eventNamesPtr;
+        return;
+    }
+
+    auto ***averagesPtr = new jfloat **[channelCount];
+    auto ***normAveragesPtr = new jfloat **[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        averagesPtr[i] = new jfloat *[eventCount];
+        normAveragesPtr[i] = new jfloat *[eventCount];
+        for (int j = 0; j < eventCount; j++) {
+            averagesPtr[i][j] = new jfloat[frameCount];
+            normAveragesPtr[i][j] = new jfloat[frameCount];
+        }
+    }
+
+    eventTriggeredAverageAnalysis->process(filePathPtr, eventsFilePathPtr, eventNamesPtr, eventCount,
+                                           removeNoiseIntervals, averagesPtr, normAveragesPtr);
+
+    for (int i = 0; i < channelCount; i++) {
+        auto channelEventAverages = reinterpret_cast<jobjectArray>(env->GetObjectArrayElement(averages, i));
+        auto channelEventNormAverages = reinterpret_cast<jobjectArray>(env->GetObjectArrayElement(normAverages, i));
+        for (int j = 0; j < eventCount; j++) {
+            auto eventAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(channelEventAverages, j));
+            auto eventNormAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(channelEventNormAverages,
+                                                                                              j));
+            env->SetFloatArrayRegion(eventAverages, 0, frameCount, averagesPtr[i][j]);
+            env->DeleteLocalRef(eventAverages);
+
+            env->SetFloatArrayRegion(eventNormAverages, 0, frameCount, normAveragesPtr[i][j]);
+            env->DeleteLocalRef(eventNormAverages);
+        }
+        env->SetObjectArrayElement(averages, i, channelEventAverages);
+        env->DeleteLocalRef(channelEventAverages);
+
+        env->SetObjectArrayElement(normAverages, i, channelEventNormAverages);
+        env->DeleteLocalRef(channelEventNormAverages);
+    }
+
+    delete[] eventNamesPtr;
+    for (int i = 0; i < channelCount; i++) {
+        for (int j = 0; j < eventCount; j++) {
+            delete[] averagesPtr[i][j];
+            delete[] normAveragesPtr[i][j];
+        }
+        delete[] averagesPtr[i];
+        delete[] normAveragesPtr[i];
+    }
+    delete[] averagesPtr;
+    delete[] normAveragesPtr;
+}
+
 extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
                                                   jobjectArray indicesPos, jobjectArray timesPos,
@@ -1238,7 +1401,7 @@ Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstr
     jint *outPosCount = new jint[channelCount];
     jint *outNegCount = new jint[channelCount];
     spikeAnalysis->findSpikes(filePathPtr, valuesPosPtr, indicesPosPtr, timesPosPtr, valuesNegPtr, indicesNegPtr,
-                              timesNegPtr, channelCount, outPosCount, outNegCount);
+                              timesNegPtr, outPosCount, outNegCount);
 
     for (int i = 0; i < channelCount; i++) {
         auto tmpResult = reinterpret_cast<jintArray>(env->GetObjectArrayElement(result, i));

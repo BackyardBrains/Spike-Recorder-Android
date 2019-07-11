@@ -21,7 +21,7 @@
         tools:ignore="ContentDescription"/>
 
     <TextView
-        android:id="@+id/tv_filename"
+        android:id="@+id/tv_title"
         android:layout_width="0dp"
         android:layout_height="@dimen/min_button_tappable_h"
         android:layout_marginStart="@dimen/activity_horizontal_margin_half"
@@ -37,15 +37,15 @@
         app:layout_constraintLeft_toRightOf="@+id/ibtn_back"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        tools:text="Some file name"/>
+        tools:text="Some Title"/>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/rv_file_options"
+        android:id="@+id/rv_options"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_filename"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@layout/item_recording_option"/>
+        tools:listitem="@layout/item_option"/>
 </android.support.constraint.ConstraintLayout>

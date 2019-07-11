@@ -87,6 +87,10 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
         // setup drawing surface
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 
+        // select and reset the model-view matrix
+        gl.glMatrixMode(GL10.GL_MODELVIEW);
+        gl.glLoadIdentity();
+
         // draw on surface
         draw(gl, surfaceWidth, surfaceHeight);
     }

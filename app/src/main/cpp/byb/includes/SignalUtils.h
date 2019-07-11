@@ -22,7 +22,9 @@ namespace backyardbrains {
             static void
             deinterleaveSignal1(short **outSamples, const float *inSamples, int sampleCount, int channelCount);
 
-            static short *interleaveSignal(short **samples, int frameCount, int channelCount);
+            static void interleaveSignal(short *outSamples, short **inSamples, int frameCount, int channelCount);
+
+            static void normalizeSignalToFloat(float *outSamples, short *inSamples, int sampleCount);
         };
     }
 }

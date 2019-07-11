@@ -11,7 +11,7 @@ import java.util.List;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class FindSpikesAnalysis extends BaseAnalysis<Spike> {
+class FindSpikesAnalysis extends BaseAnalysis<Void, Spike> {
 
     private static final String TAG = makeLogTag(FindSpikesAnalysis.class);
 
@@ -23,7 +23,7 @@ class FindSpikesAnalysis extends BaseAnalysis<Spike> {
         this.audioFile = audioFile;
     }
 
-    @Nullable @Override public Spike[] process() throws Exception {
+    @Nullable @Override public Spike[] process(Void... params) throws Exception {
         final long totalSamples = AudioUtils.getSampleCount(audioFile.length(), audioFile.bitsPerSample());
         final int channelCount = audioFile.channelCount();
         int maxSpikes = (int) (totalSamples / 10);

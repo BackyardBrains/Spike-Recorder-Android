@@ -1,5 +1,6 @@
 package com.backyardbrains.drawing;
 
+import android.support.annotation.ColorInt;
 import android.support.annotation.Size;
 
 /**
@@ -9,13 +10,13 @@ public class Colors {
     public static final @Size(4) float[] BLACK = { 0f, 0f, 0f, 1f };
     public static final @Size(4) float[] WHITE = { 1f, 1f, 1f, 1f };
     public static final @Size(4) float[] RED = { 1f, 0f, 0f, 1f };
-    public static final int RED_HEX = 0xffff0000;
+    public static final @ColorInt int RED_HEX = 0xffff0000;
     public static final @Size(4) float[] GREEN = { 0f, 1f, 0f, 1f };
-    public static final int GREEN_HEX = 0xff00ff00;
+    public static final @ColorInt int GREEN_HEX = 0xff00ff00;
     public static final @Size(4) float[] BLUE = new float[] { 0f, 0f, 1f, 1f };
     public static final @Size(4) float[] BLUE_LIGHT = new float[] { 0f, 0.47843f, 1f, 1f };
     public static final @Size(4) float[] YELLOW = { 1f, 1f, 0f, 1f };
-    public static final int YELLOW_HEX = 0xffffff00;
+    public static final @ColorInt int YELLOW_HEX = 0xffffff00;
     public static final @Size(4) float[] CYAN = { 0f, 1f, 1f, 1f };
     public static final @Size(4) float[] MAGENTA = { 1f, 0f, 1f, 1f };
     public static final @Size(4) float[] GRAY_LIGHT = new float[] { 0.8f, 0.8f, 0.8f, 1f };
@@ -32,6 +33,20 @@ public class Colors {
     public static final float[][] CHANNEL_COLORS =
         new float[][] { CHANNEL_0, CHANNEL_1, CHANNEL_2, CHANNEL_3, CHANNEL_4, CHANNEL_5 };
     // marker colors
+    private static final @ColorInt int MARKER_0_HEX = 0xffd8b4e7;
+    private static final @ColorInt int MARKER_1_HEX = 0xffb0e57c;
+    private static final @ColorInt int MARKER_2_HEX = 0xffff5000;
+    private static final @ColorInt int MARKER_3_HEX = 0xffffec94;
+    private static final @ColorInt int MARKER_4_HEX = 0xffffaeae;
+    private static final @ColorInt int MARKER_5_HEX = 0xffb4d8e7;
+    private static final @ColorInt int MARKER_6_HEX = 0xffc1dad6;
+    private static final @ColorInt int MARKER_7_HEX = 0xffacd1e9;
+    private static final @ColorInt int MARKER_8_HEX = 0xffaeffae;
+    private static final @ColorInt int MARKER_9_HEX = 0xffffecff;
+    public static final @ColorInt int[] MARKER_HEX_COLORS = new int[] {
+        MARKER_0_HEX, MARKER_1_HEX, MARKER_2_HEX, MARKER_3_HEX, MARKER_4_HEX, MARKER_5_HEX, MARKER_6_HEX, MARKER_7_HEX,
+        MARKER_8_HEX, MARKER_9_HEX
+    };
     private static final @Size(4) float[] MARKER_0 = new float[] { .847f, .706f, .906f, 1f };
     private static final @Size(4) float[] MARKER_1 = new float[] { .69f, .898f, .486f, 1f };
     private static final @Size(4) float[] MARKER_2 = new float[] { 1f, .314f, 0f, 1f };

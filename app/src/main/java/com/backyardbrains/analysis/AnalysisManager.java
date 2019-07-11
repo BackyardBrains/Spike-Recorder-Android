@@ -15,6 +15,7 @@ import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.vo.AverageSpike;
+import com.backyardbrains.vo.EventTriggeredAverages;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
 import com.crashlytics.android.Crashlytics;
@@ -37,6 +38,7 @@ public class AnalysisManager {
     // Reference to the data manager that stores and processes the data
     @SuppressWarnings("WeakerAccess") final AnalysisRepository analysisRepository;
 
+    @SuppressWarnings("WeakerAccess") EventTriggeredAverages[] eventTriggeredAverages;
     @SuppressWarnings("WeakerAccess") int[][] autocorrelation;
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelation;
     @SuppressWarnings("WeakerAccess") int[][] isi;
@@ -348,7 +350,9 @@ public class AnalysisManager {
      * Initiates a check of whether specified analysis {@code type} already exists for the file at specified {@code
      * filePath}. The check will either start the analysis process if it doesn't exist, or inform caller that it does.
      */
-    @SuppressLint("SwitchIntDef") public void startAnalysis(@NonNull final String filePath, @AnalysisType int type) {
+    @SuppressLint("SwitchIntDef") public void startAnalysis(@NonNull final AnalysisConfig analysisConfig) {
+        final String filePath = analysisConfig.getFilePath();
+        final @AnalysisType int type = analysisConfig.getAnalysisType();
         switch (type) {
             case AnalysisType.AUTOCORRELATION:
                 getSpikeAnalysisByTrains(filePath, AnalysisType.AUTOCORRELATION);
@@ -362,6 +366,62 @@ public class AnalysisManager {
             case AnalysisType.AVERAGE_SPIKE:
                 averageSpikeAnalysis(filePath);
                 break;
+            case AnalysisType.EVENT_TRIGGERED_AVERAGE:
+                final EventTriggeredAveragesConfig etaConfig = (EventTriggeredAveragesConfig) analysisConfig;
+                eventTriggeredAverageAnalysis(filePath, etaConfig);
+                break;
+        }
+    }
+
+    //=================================================
+    //  EVENT TRIGGERED AVERAGES
+    //=================================================
+
+    /**
+     * Returns results for the Event Triggered Average analysis
+     */
+    @Nullable public EventTriggeredAverages[] getEventTriggeredAverages() {
+        return eventTriggeredAverages;
+    }
+
+    // Loads file with specified filePath if not already loaded and starts Event Triggered Average analysis.
+    private void eventTriggeredAverageAnalysis(@NonNull String filePath, @Nullable EventTriggeredAveragesConfig etaConfig) {
+        if (audioFile != null) {
+            if (!ObjectUtils.equals(filePath, audioFile.getAbsolutePath())) {
+                if (load(filePath)) {
+                    eventTriggeredAverageAnalysis(etaConfig);
+                } else {
+                    // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+                }
+            } else {
+                eventTriggeredAverageAnalysis(etaConfig);
+            }
+        } else {
+            if (load(filePath)) {
+                eventTriggeredAverageAnalysis(etaConfig);
+            } else {
+                // TODO: 09-Feb-18 BROADCAST EVENT THAT LOADING OF THE FILE FAILED
+            }
+        }
+    }
+
+    // Starts Event Triggered Average analysis depending on the set flags.
+    private void eventTriggeredAverageAnalysis(@Nullable EventTriggeredAveragesConfig etaConfig) {
+        LOGD(TAG, "eventTriggeredAverageAnalysis()");
+        if (audioFile != null && etaConfig != null) {
+            new EventTriggeredAverageAnalysis(audioFile, new BaseAnalysis.AnalysisListener<EventTriggeredAverages>() {
+                @Override
+                public void onAnalysisDone(@NonNull String filePath, @Nullable EventTriggeredAverages[] result) {
+                    eventTriggeredAverages = result;
+                    // post event that audio file analysis successfully finished
+                    EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.EVENT_TRIGGERED_AVERAGE));
+                }
+
+                @Override public void onAnalysisFailed(@NonNull String filePath) {
+                    // post event that audio file analysis failed
+                    EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.EVENT_TRIGGERED_AVERAGE));
+                }
+            }).startAnalysis(etaConfig);
         }
     }
 
@@ -380,9 +440,9 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void autocorrelationAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "autocorrelationAnalysis()");
-        new AutocorrelationAnalysis(filePath, spikeAnalysisByTrains, new BaseAnalysis.AnalysisListener<int[]>() {
-            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
-                autocorrelation = results;
+        new AutocorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
+                autocorrelation = result;
                 // post event that audio file analysis successfully finished
                 EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AUTOCORRELATION));
             }
@@ -391,7 +451,7 @@ public class AnalysisManager {
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.AUTOCORRELATION));
             }
-        }).startAnalysis();
+        }).startAnalysis(spikeAnalysisByTrains);
     }
 
     //=================================================
@@ -409,9 +469,9 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void isiAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "isiAnalysis()");
-        new IsiAnalysis(filePath, spikeAnalysisByTrains, new BaseAnalysis.AnalysisListener<int[]>() {
-            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
-                isi = results;
+        new IsiAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
+                isi = result;
                 // post event that audio file analysis successfully finished
                 EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.ISI));
             }
@@ -420,7 +480,7 @@ public class AnalysisManager {
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.ISI));
             }
-        }).startAnalysis();
+        }).startAnalysis(spikeAnalysisByTrains);
     }
 
     //=================================================
@@ -438,9 +498,9 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void crossCorrelationAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "crossCorrelationAnalysis()");
-        new CrossCorrelationAnalysis(filePath, spikeAnalysisByTrains, new BaseAnalysis.AnalysisListener<int[]>() {
-            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] results) {
-                crossCorrelation = results;
+        new CrossCorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+            @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
+                crossCorrelation = result;
                 // post event that audio file analysis successfully finished
                 EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.CROSS_CORRELATION));
             }
@@ -449,7 +509,7 @@ public class AnalysisManager {
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.CROSS_CORRELATION));
             }
-        }).startAnalysis();
+        }).startAnalysis(spikeAnalysisByTrains);
     }
 
     //=================================================
@@ -488,19 +548,18 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void averageSpikeAnalysis(@NonNull int[][] spikeAnalysisByTrains) {
         LOGD(TAG, "averageSpikeAnalysis()");
         if (audioFile != null) {
-            new AverageSpikeAnalysis(audioFile, spikeAnalysisByTrains,
-                new BaseAnalysis.AnalysisListener<AverageSpike>() {
-                    @Override public void onAnalysisDone(@NonNull String filePath, @Nullable AverageSpike[] results) {
-                        averageSpikes = results;
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
-                    }
+            new AverageSpikeAnalysis(audioFile, new BaseAnalysis.AnalysisListener<AverageSpike>() {
+                @Override public void onAnalysisDone(@NonNull String filePath, @Nullable AverageSpike[] result) {
+                    averageSpikes = result;
+                    // post event that audio file analysis is successfully finished
+                    EventBus.getDefault().post(new AnalysisDoneEvent(true, AnalysisType.AVERAGE_SPIKE));
+                }
 
-                    @Override public void onAnalysisFailed(@NonNull String filePath) {
-                        // post event that audio file analysis is successfully finished
-                        EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.AVERAGE_SPIKE));
-                    }
-                }).startAnalysis();
+                @Override public void onAnalysisFailed(@NonNull String filePath) {
+                    // post event that audio file analysis is successfully finished
+                    EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.AVERAGE_SPIKE));
+                }
+            }).startAnalysis(spikeAnalysisByTrains);
         }
     }
 }

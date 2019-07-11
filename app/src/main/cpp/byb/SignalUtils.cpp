@@ -29,16 +29,19 @@ namespace backyardbrains {
             }
         }
 
-        short *SignalUtils::interleaveSignal(short **samples, int frameCount, int channelCount) {
-            int sampleCount = frameCount * channelCount;
-            auto *result = new short[sampleCount];
+        void SignalUtils::interleaveSignal(short *outSamples, short **inSamples, int frameCount, int channelCount) {
             for (int i = 0; i < frameCount; i++) {
                 for (int ch = 0; ch < channelCount; ch++) {
-                    result[channelCount * i + ch] = samples[ch][i];
+                    outSamples[channelCount * i + ch] = inSamples[ch][i];
                 }
             }
+        }
 
-            return result;
+        void SignalUtils::normalizeSignalToFloat(float *outSamples, short *inSamples, int sampleCount) {
+            auto max = (float) SHRT_MAX;
+            for (int i = 0; i < sampleCount; i++) {
+                outSamples[i] = inSamples[i] / max;
+            }
         }
     }
 }

@@ -14,11 +14,13 @@
     <string name="action_pause">Pause</string>
     <string name="action_close">Close</string>
     <string name="action_set">Set</string>
+    <string name="label_show">Show</string>
 
     <string name="analysis_isi">Inter Spike Interval (ISI)</string>
     <string name="analysis_autocorrelation">Autocorrelation</string>
     <string name="analysis_cross_correlation">Cross Correlation</string>
     <string name="analysis_average_spike">Average Spike</string>
+    <string name="analysis_event_triggered_averages">Event Triggered Averages</string>
     <string name="analysis_please_wait">Please wait…</string>
 
     <string name="title_share">Share file</string>
@@ -40,6 +42,8 @@
     <string name="content_desc_clear_file_name">Clear file name</string>
     <string name="content_desc_settings_show">Show settings</string>
     <string name="content_desc_settings_hide">Hide settings</string>
+    <string name="content_desc_event_triggered_averaging_select_event">Select events that should trigger averaging</string>
+    <string name="content_desc_event_triggered_averaging_remove_noise">Remove noise intervals</string>
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
@@ -139,36 +143,20 @@
         <item>Event 9</item>
         <item>Events</item>
     </string-array>
-    <string-array name="options_recording_base">
-        <item>File Details</item>
-        <item>Play</item>
-        <item>Find Spikes</item>
-        <item>Share</item>
-        <!--<item>Rename this file</item>-->
-        <item>Delete</item>
-    </string-array>
-    <string-array name="options_recording_no_cross_correlation">
-        <item>File Details</item>
-        <item>Play</item>
-        <item>Find Spikes</item>
-        <item>Autocorrelation</item>
-        <item>ISI</item>
-        <item>Average Spike</item>
-        <item>Share</item>
-        <!--<item>Rename this file</item>-->
-        <item>Delete</item>
-    </string-array>
     <string-array name="options_recording">
         <item>File Details</item>
         <item>Play</item>
+        <item>Analysis</item>
+        <item>Share</item>
+        <item>Delete</item>
+    </string-array>
+    <string-array name="options_recording_analysis">
+        <item>Event Triggered Averaging</item>
         <item>Find Spikes</item>
         <item>Autocorrelation</item>
         <item>ISI</item>
         <item>Cross Correlation</item>
         <item>Average Spike</item>
-        <item>Share</item>
-        <!--<item>Rename this file</item>-->
-        <item>Delete</item>
     </string-array>
 
     <!-- Toasts -->

@@ -15,7 +15,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class GlBarGraphThumb {
+public class GlColumnGraphThumb {
 
     private static final float GRAPH_NAME_MARGIN = 5f;
     private static final float BORDER_LINES_WIDTH = 2f;
@@ -32,7 +32,7 @@ public class GlBarGraphThumb {
 
     private final float[] borderVertices = new float[BORDER_VERTICES_COUNT];
 
-    public GlBarGraphThumb(@NonNull Context context, @NonNull GL10 gl) {
+    public GlColumnGraphThumb(@NonNull Context context, @NonNull GL10 gl) {
         ByteBuffer borderLinesVBB = ByteBuffer.allocateDirect(BORDER_VERTICES_COUNT * 4);
         borderLinesVBB.order(ByteOrder.nativeOrder());
         borderVFB = borderLinesVBB.asFloatBuffer();

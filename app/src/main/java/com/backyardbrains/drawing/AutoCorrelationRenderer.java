@@ -2,8 +2,8 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import com.backyardbrains.drawing.gl.GlBarGraph;
-import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlColumnGraph;
+import com.backyardbrains.drawing.gl.GlColumnGraphThumb;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -27,8 +27,8 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
         H_GRAPH_AXIS_VALUES[5] = .1f;
     }
 
-    private GlBarGraph glBarGraph;
-    private GlBarGraphThumb glBarGraphThumb;
+    private GlColumnGraph glColumnGraph;
+    private GlColumnGraphThumb glColumnGraphThumb;
     private Context context;
 
     @SuppressWarnings("WeakerAccess") int[][] autocorrelationAnalysis;
@@ -45,8 +45,8 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        glBarGraph = new GlBarGraph(context, gl);
-        glBarGraphThumb = new GlBarGraphThumb(context, gl);
+        glColumnGraph = new GlColumnGraph(context, gl);
+        glColumnGraphThumb = new GlColumnGraphThumb(context, gl);
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
@@ -63,7 +63,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i],
+                    glColumnGraphThumb.draw(gl, x, y, w, h, autocorrelationAnalysis[i],
                         Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length],
                         SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX + (i + 1));
                 }
@@ -73,7 +73,7 @@ public class AutoCorrelationRenderer extends BaseAnalysisRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
-                glBarGraph.draw(gl, x, y, w, h, autocorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
+                glColumnGraph.draw(gl, x, y, w, h, autocorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
                     Colors.CHANNEL_COLORS[selected % Colors.CHANNEL_COLORS.length]);
             }
         }
