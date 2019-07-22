@@ -4,8 +4,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.view.MotionEvent;
 import com.android.texample.GLText;
-import com.backyardbrains.drawing.gl.GlBarGraph;
-import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import com.backyardbrains.drawing.gl.GlColumnGraph;
+import com.backyardbrains.drawing.gl.GlColumnGraphThumb;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
 import com.backyardbrains.ui.BaseFragment;
@@ -35,8 +35,8 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
     private boolean thumbsView = true;
 
     private Context context;
-    private GlBarGraph glBarGraph;
-    private GlBarGraphThumb glBarGraphThumb;
+    private GlColumnGraph glColumnGraph;
+    private GlColumnGraphThumb glColumnGraphThumb;
     private GLText glText;
 
     @SuppressWarnings("WeakerAccess") int[][] crossCorrelationAnalysis;
@@ -53,8 +53,8 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        glBarGraph = new GlBarGraph(context, gl);
-        glBarGraphThumb = new GlBarGraphThumb(context, gl);
+        glColumnGraph = new GlColumnGraph(context, gl);
+        glColumnGraphThumb = new GlColumnGraphThumb(context, gl);
         glText = new GLText(gl, context.getAssets());
         glText.load("dos-437.ttf", 32, 0, 0);
     }
@@ -120,7 +120,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                                 x = textOffset + j * (w + margin) + margin;
                                 y = surfaceHeight - (textOffset + (h + margin) * (i + 1));
                                 glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, w, h));
-                                glBarGraphThumb.draw(gl, x, y, w, h, crossCorrelationAnalysis[i * trainCount + j],
+                                glColumnGraphThumb.draw(gl, x, y, w, h, crossCorrelationAnalysis[i * trainCount + j],
                                     Colors.CHANNEL_COLORS[(i * trainCount + j) % Colors.CHANNEL_COLORS.length], "");
 
                                 // draw spike train names
@@ -142,7 +142,7 @@ public class CrossCorrelationRenderer extends BaseAnalysisRenderer {
                         }
                     } else {
                         int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
-                        glBarGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
+                        glColumnGraph.draw(gl, MARGIN, MARGIN, surfaceWidth - 2 * MARGIN, surfaceHeight - 2 * MARGIN,
                             crossCorrelationAnalysis[selected], H_GRAPH_AXIS_VALUES,
                             Colors.CHANNEL_COLORS[selected % Colors.CHANNEL_COLORS.length]);
                     }

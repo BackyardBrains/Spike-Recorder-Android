@@ -8,55 +8,53 @@ import java.lang.ref.WeakReference;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-abstract class BaseAnalysis<T> {
+abstract class BaseAnalysis<Params, Result> {
 
     private static final String TAG = makeLogTag(BaseAnalysis.class);
 
     private final String filePath;
-    private final AnalysisListener<T> listener;
-    private final AnalysisThread<T> analysisThread;
+    private final AnalysisListener<Result> listener;
+    private final AnalysisThread<Params, Result> analysisThread;
 
     /**
      *
      */
-    interface AnalysisListener<T> {
-
-        /**
-         *  @param filePath
-         * @param results
-         */
-        void onAnalysisDone(@NonNull String filePath, @Nullable T[] results);
+    interface AnalysisListener<Result> {
 
         /**
          *
-         * @param filePath
+         */
+        void onAnalysisDone(@NonNull String filePath, @Nullable Result results);
+
+        /**
+         *
          */
         void onAnalysisFailed(@NonNull String filePath);
     }
 
-    BaseAnalysis(@NonNull String filePath, @NonNull AnalysisListener<T> listener) {
+    BaseAnalysis(@NonNull String filePath, @NonNull AnalysisListener<Result> listener) {
         this.filePath = filePath;
         this.listener = listener;
-        this.analysisThread = new AnalysisThread<>(this);
+
+        analysisThread = new AnalysisThread<>(this);
     }
 
     /**
      *
      */
-    @Nullable abstract T[] process() throws Exception;
+    @Nullable protected abstract Result process(Params... params) throws Exception;
 
     /**
      * Triggers the analysis process.
      */
-    final void startAnalysis() {
-        analysisThread.start();
+    @SafeVarargs final void startAnalysis(Params... params) {
+        analysisThread.start(params);
     }
 
     /**
      *
-     * @param result
      */
-    @SuppressWarnings("WeakerAccess") void onResult(@Nullable T[] result) {
+    @SuppressWarnings("WeakerAccess") void onResult(@Nullable Result result) {
     }
 
     /**
@@ -68,7 +66,7 @@ abstract class BaseAnalysis<T> {
     /**
      *
      */
-    void asyncOnResult(@Nullable T[] result) {
+    @SuppressWarnings("WeakerAccess") void asyncOnResult(@Nullable Result result) {
         LOGD(TAG, "asyncOnResult");
         listener.onAnalysisDone(filePath, result);
         onResult(result);
@@ -77,7 +75,7 @@ abstract class BaseAnalysis<T> {
     /**
      *
      */
-    void asyncOnFailed() {
+    @SuppressWarnings("WeakerAccess") void asyncOnFailed() {
         LOGD(TAG, "asyncOnFailed");
         listener.onAnalysisFailed(filePath);
 
@@ -87,29 +85,35 @@ abstract class BaseAnalysis<T> {
     /**
      * Background thread that initializes the analysis process.
      */
-    private static class AnalysisThread<T> extends Thread {
+    private static class AnalysisThread<Params, Result> extends Thread {
 
-        private WeakReference<BaseAnalysis<T>> analysisRef;
         private final Benchmark benchmark;
 
-        AnalysisThread(BaseAnalysis<T> analysis) {
+        private WeakReference<BaseAnalysis<Params, Result>> analysisRef;
+        private Params[] params;
+
+        AnalysisThread(BaseAnalysis<Params, Result> analysis) {
             analysisRef = new WeakReference<>(analysis);
             benchmark = new Benchmark("ANALYSIS_" + analysis.getClass().getName()).sessions(1)
                 .measuresPerSession(1)
                 .logBySession(true)
-                .listener(new Benchmark.OnBenchmarkListener() {
-                    @Override public void onEnd() {
-                        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
-                    }
+                .listener(() -> {
+                    //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
                 });
         }
 
+        @SafeVarargs public synchronized final void start(Params... params) {
+            this.params = params;
+
+            start();
+        }
+
         @Override public void run() {
-            final BaseAnalysis<T> analysis;
+            final BaseAnalysis<Params, Result> analysis;
             if ((analysis = analysisRef.get()) != null) {
                 try {
                     //benchmark.start();
-                    analysis.asyncOnResult(analysis.process());
+                    analysis.asyncOnResult(analysis.process(params));
                     //benchmark.end();
                 } catch (Exception e) {
                     analysis.asyncOnFailed();

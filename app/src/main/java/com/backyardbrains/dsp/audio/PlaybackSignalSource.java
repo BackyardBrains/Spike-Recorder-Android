@@ -13,6 +13,7 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.JniUtils;
+import com.backyardbrains.utils.RecordingUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;

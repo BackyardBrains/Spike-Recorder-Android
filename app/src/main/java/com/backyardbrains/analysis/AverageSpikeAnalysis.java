@@ -7,24 +7,24 @@ import com.backyardbrains.vo.AverageSpike;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class AverageSpikeAnalysis extends BaseAnalysis<AverageSpike> {
+class AverageSpikeAnalysis extends BaseAnalysis<int[][], AverageSpike[]> {
 
     private static final String TAG = makeLogTag(AverageSpikeAnalysis.class);
 
     private static final float BATCH_SPIKE_HALF_IN_SECS = 0.002f;
 
     private final AudioFile audioFile;
-    private final int[][] trains;
 
-    AverageSpikeAnalysis(@NonNull AudioFile audioFile, @NonNull int[][] trains,
-        @NonNull AnalysisListener<AverageSpike> listener) {
+    AverageSpikeAnalysis(@NonNull AudioFile audioFile, @NonNull AnalysisListener<AverageSpike[]> listener) {
         super(audioFile.getAbsolutePath(), listener);
 
         this.audioFile = audioFile;
-        this.trains = trains;
     }
 
-    @Override AverageSpike[] process() {
+    @Override protected AverageSpike[] process(int[][]... params) {
+        if (params.length <= 0) return new AverageSpike[0];
+
+        final int[][] trains = params[0];
         final int trainCount = trains.length;
         final int sampleRate = audioFile.sampleRate();
         final int batchSpikeHalfCount = (int) (sampleRate * BATCH_SPIKE_HALF_IN_SECS);

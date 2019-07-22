@@ -22,8 +22,8 @@ namespace backyardbrains {
 
         void
         SpikeAnalysis::findSpikes(const char *filePath, short **outValuesPos, int **outIndicesPos, float **outTimesPos,
-                                  short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int channelCount,
-                                  int *outPosCounts, int *outNegCounts) {
+                                  short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int *outPosCounts,
+                                  int *outNegCounts) {
             long long start = currentTimeInMilliseconds();
 
             // open audio file we need to analyze
@@ -35,17 +35,20 @@ namespace backyardbrains {
 
             // check whether file is long enough for processing
             drwav_uint64 totalSamples = wavPtr->totalSampleCount;
+            drwav_uint16 channelCount = wavPtr->channels;
             __android_log_print(ANDROID_LOG_DEBUG, TAG, "Audio file sample count is: %ld",
                                 static_cast<long>(totalSamples));
-            if (totalSamples < wavPtr->sampleRate * channelCount * MIN_VALID_FILE_LENGTH_IN_SECS) {
+            if (totalSamples < wavPtr->sampleRate * channelCount *
+                               backyardbrains::utils::AnalysisUtils::MIN_VALID_FILE_LENGTH_IN_SECS) {
                 __android_log_print(ANDROID_LOG_DEBUG, TAG, "File to short! Don't process!");
                 return;
             }
 
             // determine buffer size
-            auto bufferSize = static_cast<drwav_uint64>(ceil(totalSamples / BIN_COUNT));
+            auto bufferSize = static_cast<drwav_uint64>(ceil(
+                    totalSamples / backyardbrains::utils::AnalysisUtils::BIN_COUNT));
             auto maxBufferSize = static_cast<drwav_uint64>(ceil(
-                    (wavPtr->sampleRate * BUFFER_SIZE_IN_SECS) / channelCount));
+                    (wavPtr->sampleRate * backyardbrains::utils::AnalysisUtils::BUFFER_SIZE_IN_SECS) / channelCount));
             if (bufferSize > maxBufferSize) bufferSize = maxBufferSize;
 
             // create buffers
@@ -87,7 +90,7 @@ namespace backyardbrains {
                                 static_cast<long>(currentTimeInMilliseconds() - start));
 
 
-            // 3. DETERMINE ACCEPTABLE SPIKE VALUES WHICH ARE VALUES GRATER THEN 40% OF SDTs MULTIPLIED BY 2 and
+            // 3. DETERMINE ACCEPTABLE SPIKE VALUES WHICH ARE VALUES GRATER THEN 40% OF SDTs MULTIPLIED BY 2
             auto *sig = new short[channelCount]{0};
             auto *negSig = new short[channelCount]{0};
             for (int i = 0; i < channelCount; i++) {

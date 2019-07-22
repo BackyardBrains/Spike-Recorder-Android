@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,12 +24,16 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
+import com.backyardbrains.analysis.AnalysisConfig;
 import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.analysis.AnalysisType;
+import com.backyardbrains.analysis.EventTriggeredAveragesConfig;
 import com.backyardbrains.dsp.ProcessingService;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
+import com.backyardbrains.events.AnalyzeEventTriggeredAveragesEvent;
 import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.FindSpikesEvent;
+import com.backyardbrains.events.OpenRecordingAnalysisEvent;
 import com.backyardbrains.events.OpenRecordingDetailsEvent;
 import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
@@ -66,6 +71,8 @@ public class MainActivity extends AppCompatActivity
     public static final int PLAY_AUDIO_VIEW = 5;
     public static final int RECORDING_OPTIONS_VIEW = 6;
     public static final int RECORDING_DETAILS_VIEW = 7;
+    public static final int RECORDING_ANALYSIS_VIEW = 8;
+    public static final int EVENT_TRIGGERED_AVERAGES_VIEW = 9;
 
     public static final String RECORDINGS_FRAGMENT = "RecordingsFragment";
     public static final String SPIKES_FRAGMENT = "FindSpikesFragment";
@@ -74,6 +81,7 @@ public class MainActivity extends AppCompatActivity
     public static final String PLAY_AUDIO_FRAGMENT = "PlaybackScopeFragment";
     public static final String RECORDING_OPTIONS_FRAGMENT = "RecordingOptionsFragment";
     public static final String RECORDING_DETAILS_FRAGMENT = "RecordingDetailsFragment";
+    public static final String RECORDING_ANALYSIS_FRAGMENT = "RecordingAnalysisFragment";
 
     private static final int BYB_RECORD_AUDIO_PERM = 123;
     private static final int BYB_WRITE_STORAGE_PERM = 124;
@@ -200,22 +208,19 @@ public class MainActivity extends AppCompatActivity
                     fragName = SPIKES_FRAGMENT;
                     break;
                 case ANALYSIS_VIEW:
-                    frag = AnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null,
-                        args.length > 0 ? (int) args[1] : AnalysisType.NONE);
+                case EVENT_TRIGGERED_AVERAGES_VIEW:
+                    frag = AnalysisFragment.newInstance(args.length > 0 ? (Parcelable) args[0] : null);
                     fragName = ANALYSIS_FRAGMENT;
                     break;
-                //------------------------------
                 case OSCILLOSCOPE_VIEW:
                 default:
                     frag = OscilloscopeFragment.newInstance();
                     fragName = OSCILLOSCOPE_FRAGMENT;
                     break;
-                //------------------------------
                 case PLAY_AUDIO_VIEW:
                     frag = PlaybackScopeFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = PLAY_AUDIO_FRAGMENT;
                     break;
-                //------------------------------
                 case RECORDING_OPTIONS_VIEW:
                     frag = RecordingOptionsFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = RECORDING_OPTIONS_FRAGMENT;
@@ -223,6 +228,10 @@ public class MainActivity extends AppCompatActivity
                 case RECORDING_DETAILS_VIEW:
                     frag = RecordingDetailsFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = RECORDING_DETAILS_FRAGMENT;
+                    break;
+                case RECORDING_ANALYSIS_VIEW:
+                    frag = RecordingAnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
+                    fragName = RECORDING_ANALYSIS_FRAGMENT;
                     break;
             }
             // Log with Fabric Answers what view did the user opened
@@ -306,13 +315,22 @@ public class MainActivity extends AppCompatActivity
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAnalyzeEventTriggeredAveragesEvent(AnalyzeEventTriggeredAveragesEvent event) {
+        final AnalysisConfig config =
+            new EventTriggeredAveragesConfig(event.getFilePath(), AnalysisType.EVENT_TRIGGERED_AVERAGE,
+                event.getEvents(), event.isRemoveNoiseIntervals(), event.getConfidenceIntervalsEvent());
+        loadFragment(EVENT_TRIGGERED_AVERAGES_VIEW, false, config);
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onFindSpikesEvent(FindSpikesEvent event) {
         loadFragment(FIND_SPIKES_VIEW, false, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
-        loadFragment(ANALYSIS_VIEW, false, event.getFilePath(), event.getType());
+        final AnalysisConfig config = new AnalysisConfig(event.getFilePath(), event.getType());
+        loadFragment(ANALYSIS_VIEW, false, config);
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -328,6 +346,11 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingDetailsEvent(OpenRecordingDetailsEvent event) {
         loadFragment(RECORDING_DETAILS_VIEW, false, event.getFilePath());
+    }
+
+    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onOpenRecordingAnalysisEvent(OpenRecordingAnalysisEvent event) {
+        loadFragment(RECORDING_ANALYSIS_VIEW, false, event.getFilePath());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -390,6 +413,8 @@ public class MainActivity extends AppCompatActivity
                 return RECORDING_OPTIONS_VIEW;
             case RECORDING_DETAILS_FRAGMENT:
                 return RECORDING_DETAILS_VIEW;
+            case RECORDING_ANALYSIS_FRAGMENT:
+                return RECORDING_ANALYSIS_VIEW;
             default:
                 return INVALID_VIEW;
         }
