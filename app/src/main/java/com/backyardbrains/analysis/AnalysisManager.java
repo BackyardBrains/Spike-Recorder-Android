@@ -165,7 +165,7 @@ public class AnalysisManager {
 
     // Clears current spike analysis and triggers the new one
     @SuppressWarnings("WeakerAccess") void findSpikes() {
-        new FindSpikesAnalysis(audioFile, new BaseAnalysis.AnalysisListener<Spike>() {
+        new FindSpikesAnalysis(audioFile, new BaseAnalysis.AnalysisListener<Spike[]>() {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable Spike[] results) {
                 analysisRepository.saveSpikeAnalysis(filePath, results != null ? results : new Spike[0]);
 
@@ -409,7 +409,7 @@ public class AnalysisManager {
     private void eventTriggeredAverageAnalysis(@Nullable EventTriggeredAveragesConfig etaConfig) {
         LOGD(TAG, "eventTriggeredAverageAnalysis()");
         if (audioFile != null && etaConfig != null) {
-            new EventTriggeredAverageAnalysis(audioFile, new BaseAnalysis.AnalysisListener<EventTriggeredAverages>() {
+            new EventTriggeredAverageAnalysis(audioFile, new BaseAnalysis.AnalysisListener<EventTriggeredAverages[]>() {
                 @Override
                 public void onAnalysisDone(@NonNull String filePath, @Nullable EventTriggeredAverages[] result) {
                     eventTriggeredAverages = result;
@@ -440,7 +440,7 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void autocorrelationAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "autocorrelationAnalysis()");
-        new AutocorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+        new AutocorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[][]>() {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
                 autocorrelation = result;
                 // post event that audio file analysis successfully finished
@@ -469,7 +469,7 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void isiAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "isiAnalysis()");
-        new IsiAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+        new IsiAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[][]>() {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
                 isi = result;
                 // post event that audio file analysis successfully finished
@@ -498,7 +498,7 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void crossCorrelationAnalysis(final @NonNull String filePath,
         @NonNull float[][] spikeAnalysisByTrains) {
         LOGD(TAG, "crossCorrelationAnalysis()");
-        new CrossCorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[]>() {
+        new CrossCorrelationAnalysis(filePath, new BaseAnalysis.AnalysisListener<int[][]>() {
             @Override public void onAnalysisDone(@NonNull String filePath, @Nullable int[][] result) {
                 crossCorrelation = result;
                 // post event that audio file analysis successfully finished
@@ -548,7 +548,7 @@ public class AnalysisManager {
     @SuppressWarnings("WeakerAccess") void averageSpikeAnalysis(@NonNull int[][] spikeAnalysisByTrains) {
         LOGD(TAG, "averageSpikeAnalysis()");
         if (audioFile != null) {
-            new AverageSpikeAnalysis(audioFile, new BaseAnalysis.AnalysisListener<AverageSpike>() {
+            new AverageSpikeAnalysis(audioFile, new BaseAnalysis.AnalysisListener<AverageSpike[]>() {
                 @Override public void onAnalysisDone(@NonNull String filePath, @Nullable AverageSpike[] result) {
                     averageSpikes = result;
                     // post event that audio file analysis is successfully finished

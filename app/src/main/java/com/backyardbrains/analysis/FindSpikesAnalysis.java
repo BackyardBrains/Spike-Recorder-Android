@@ -11,13 +11,13 @@ import java.util.List;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class FindSpikesAnalysis extends BaseAnalysis<Void, Spike> {
+class FindSpikesAnalysis extends BaseAnalysis<Void, Spike[]> {
 
     private static final String TAG = makeLogTag(FindSpikesAnalysis.class);
 
     private final AudioFile audioFile;
 
-    FindSpikesAnalysis(@NonNull AudioFile audioFile, @NonNull AnalysisListener<Spike> listener) {
+    FindSpikesAnalysis(@NonNull AudioFile audioFile, @NonNull AnalysisListener<Spike[]> listener) {
         super(audioFile.getAbsolutePath(), listener);
 
         this.audioFile = audioFile;

@@ -5,13 +5,13 @@ import com.backyardbrains.utils.JniUtils;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class IsiAnalysis extends BaseAnalysis<float[][], int[]> {
+class IsiAnalysis extends BaseAnalysis<float[][], int[][]> {
 
     private static final String TAG = makeLogTag(IsiAnalysis.class);
 
     private static final int BIN_COUNT = 100;
 
-    IsiAnalysis(@NonNull String filePath, @NonNull AnalysisListener<int[]> listener) {
+    IsiAnalysis(@NonNull String filePath, @NonNull AnalysisListener<int[][]> listener) {
         super(filePath, listener);
     }
 

@@ -44,6 +44,7 @@
     <string name="content_desc_settings_hide">Hide settings</string>
     <string name="content_desc_event_triggered_averaging_select_event">Select events that should trigger averaging</string>
     <string name="content_desc_event_triggered_averaging_remove_noise">Remove noise intervals</string>
+    <string name="content_desc_event_triggered_averaging_compute_confidence">Compute confidence intervals\nfor event</string>
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
@@ -174,4 +175,5 @@
     <string name="error_message_import_open">An error occurred while tyring to import a file. File could not be opened. Please try again later.</string>
     <string name="error_message_import_save">An error occurred while trying to import a file. File could not be saved. Please try again.</string>
     <string name="error_message_import_exists">An error occurred while trying to import a file. File with the same name was already imported.</string>
+    <string name="error_message_validation_event_selection">Please select at least one of the available events.</string>
 </resources>

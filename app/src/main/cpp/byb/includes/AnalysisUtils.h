@@ -6,6 +6,8 @@
 #define SPIKE_RECORDER_ANDROID_ANALYSISUTILS_H
 
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 namespace backyardbrains {
 

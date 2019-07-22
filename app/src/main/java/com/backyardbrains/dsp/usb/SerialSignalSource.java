@@ -57,9 +57,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
 
     static {
-        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
-            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, SampleStreamUtils.DEFAULT_SAMPLE_RATE)
-                + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
+        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS = MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
+            SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
     private UsbSerialDevice serialDevice;

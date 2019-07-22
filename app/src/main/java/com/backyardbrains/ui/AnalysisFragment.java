@@ -40,8 +40,6 @@ public class AnalysisFragment extends BaseFragment {
 
     private static final String TAG = makeLogTag(AnalysisFragment.class);
 
-    private static final String ARG_FILE_PATH = "bb_file_path";
-    private static final String ARG_ANALYSIS_TYPE = "bb_analysis_type";
     private static final String ARG_ANALYSIS_CONFIG = "bb_analysis_config";
 
     @BindView(R.id.fl_container) FrameLayout flGL;
@@ -230,6 +228,7 @@ public class AnalysisFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
+        tvTitle.setText(getTitle(analysisConfig.getAnalysisType()));
         ibtnBack.setOnClickListener(v -> {
             if (getActivity() != null) getActivity().onBackPressed();
         });

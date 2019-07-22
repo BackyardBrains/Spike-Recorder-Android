@@ -25,6 +25,8 @@ public class JniUtils {
     public static native void map(float[] out, float[] in, int length, float inMin, float inMax, float outMin,
         float outMax);
 
+    public static native void minMax(float[] out, float[] in, int length);
+
     public static native void setSampleRate(int sampleRate);
 
     public static native void setChannelCount(int channelCount);
@@ -91,8 +93,9 @@ public class JniUtils {
     public static native int checkEvents(String filePath, String[] eventNames);
 
     public static native void eventTriggeredAverageAnalysis(String filePath, String eventsFilePath, String[] events,
-        int eventCount, float[][][] averages, float[][][] normAverages, int channelCount, int frameCount,
-        boolean removeNoiseIntervals);
+        int eventCount, float[][][] averages, float[][][] normAverages, float[][] normMcAverages, float[][] normMcTop,
+        float[][] normMcBottom, float[][] minMax, int channelCount, int frameCount, boolean removeNoiseIntervals,
+        String confidenceIntervalsEvent);
 
     public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos,
         float[][] timesPos, short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount,

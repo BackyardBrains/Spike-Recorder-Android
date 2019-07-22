@@ -24,7 +24,7 @@ abstract class BaseAnalysis<Params, Result> {
         /**
          *
          */
-        void onAnalysisDone(@NonNull String filePath, @Nullable Result[] results);
+        void onAnalysisDone(@NonNull String filePath, @Nullable Result results);
 
         /**
          *
@@ -42,7 +42,7 @@ abstract class BaseAnalysis<Params, Result> {
     /**
      *
      */
-    @Nullable protected abstract Result[] process(Params... params) throws Exception;
+    @Nullable protected abstract Result process(Params... params) throws Exception;
 
     /**
      * Triggers the analysis process.
@@ -54,7 +54,7 @@ abstract class BaseAnalysis<Params, Result> {
     /**
      *
      */
-    @SuppressWarnings("WeakerAccess") void onResult(@Nullable Result[] result) {
+    @SuppressWarnings("WeakerAccess") void onResult(@Nullable Result result) {
     }
 
     /**
@@ -66,7 +66,7 @@ abstract class BaseAnalysis<Params, Result> {
     /**
      *
      */
-    @SuppressWarnings("WeakerAccess") void asyncOnResult(@Nullable Result[] result) {
+    @SuppressWarnings("WeakerAccess") void asyncOnResult(@Nullable Result result) {
         LOGD(TAG, "asyncOnResult");
         listener.onAnalysisDone(filePath, result);
         onResult(result);

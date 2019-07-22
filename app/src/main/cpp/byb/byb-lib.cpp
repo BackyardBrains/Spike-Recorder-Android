@@ -127,8 +127,12 @@ JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env, jclass type, jstring filePath,
                                                                      jstring eventsFilePath, jobjectArray events,
                                                                      jint eventCount, jobjectArray averages,
-                                                                     jobjectArray normAverages, jint channelCount,
-                                                                     jint frameCount, jboolean removeNoiseIntervals);
+                                                                     jobjectArray normAverages,
+                                                                     jobjectArray normMcAverages,
+                                                                     jobjectArray normMcTop, jobjectArray normMcBottom,
+                                                                     jobjectArray minMax, jint channelCount,
+                                                                     jint frameCount, jboolean removeNoiseIntervals,
+                                                                     jstring confidenceIntervalsEvent);
 JNIEXPORT jobjectArray JNICALL
 Java_com_backyardbrains_utils_JniUtils_findSpikes(JNIEnv *env, jclass type, jstring filePath, jobjectArray valuesPos,
                                                   jobjectArray indicesPos, jobjectArray timesPos,
@@ -202,10 +206,10 @@ jfieldID fddIndexCountFid;
 jfieldID fddColorCountFid;
 jfieldID fddScaleXFid;
 jfieldID fddScaleYFid;
-// SpikeIndexValue
+// SpikeIndexValue field IDs
 jfieldID sivValueFid;
 jfieldID sivIndexFid;
-// SpikesDrawData
+// SpikesDrawData field IDs
 jfieldID spddVerticesFid;
 jfieldID spddColorsFid;
 jfieldID spddVertexCountFid;
@@ -460,6 +464,29 @@ Java_com_backyardbrains_utils_JniUtils_map(JNIEnv *env, jclass type, jfloatArray
     backyardbrains::utils::AnalysisUtils::map(inPtr, outPtr, length, inMin, inMax, outMin, outMax);
 
     env->SetFloatArrayRegion(out, 0, length, outPtr);
+
+    delete[] inPtr;
+    delete[] outPtr;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_backyardbrains_utils_JniUtils_minMax(JNIEnv *env, jclass type, jfloatArray out, jfloatArray in, jint length) {
+    auto *inPtr = new jfloat[length];
+    env->GetFloatArrayRegion(in, 0, length, inPtr);
+
+    // exception check
+    if (exception_check(env)) {
+        delete[] inPtr;
+    }
+
+    jfloat min;
+    jfloat max;
+    backyardbrains::utils::AnalysisUtils::minMax(inPtr, length, min, max);
+
+    auto *outPtr = new jfloat[2];
+    outPtr[0] = min;
+    outPtr[1] = max;
+    env->SetFloatArrayRegion(out, 0, 2, outPtr);
 
     delete[] inPtr;
     delete[] outPtr;
@@ -1280,8 +1307,12 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env, jclass type, jstring filePath,
                                                                      jstring eventsFilePath, jobjectArray events,
                                                                      jint eventCount, jobjectArray averages,
-                                                                     jobjectArray normAverages, jint channelCount,
-                                                                     jint frameCount, jboolean removeNoiseIntervals) {
+                                                                     jobjectArray normAverages,
+                                                                     jobjectArray normMcAverages,
+                                                                     jobjectArray normMcTop, jobjectArray normMcBottom,
+                                                                     jobjectArray minMax, jint channelCount,
+                                                                     jint frameCount, jboolean removeNoiseIntervals,
+                                                                     jstring confidenceIntervalsEvent) {
     const char *filePathPtr = env->GetStringUTFChars(filePath, JNI_FALSE);
     const char *eventsFilePathPtr = env->GetStringUTFChars(eventsFilePath, JNI_FALSE);
     auto *eventNamesPtr = new std::string[eventCount];
@@ -1292,6 +1323,8 @@ Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env
 //        env->SetObjectArrayElement(eventNames, eventCounter++, env->NewStringUTF(rawString));
         env->ReleaseStringUTFChars(string, rawString);
     }
+    const char *confidenceIntervalsEventPtr =
+            confidenceIntervalsEvent != nullptr ? env->GetStringUTFChars(confidenceIntervalsEvent, JNI_FALSE) : nullptr;
 
     // exception check
     if (exception_check(env)) {
@@ -1299,43 +1332,77 @@ Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env
         return;
     }
 
-    auto ***averagesPtr = new jfloat **[channelCount];
-    auto ***normAveragesPtr = new jfloat **[channelCount];
-    for (int i = 0; i < channelCount; i++) {
-        averagesPtr[i] = new jfloat *[eventCount];
-        normAveragesPtr[i] = new jfloat *[eventCount];
-        for (int j = 0; j < eventCount; j++) {
+    auto ***averagesPtr = new jfloat **[eventCount];
+    auto ***normAveragesPtr = new jfloat **[eventCount];
+    for (int i = 0; i < eventCount; i++) {
+        averagesPtr[i] = new jfloat *[channelCount];
+        normAveragesPtr[i] = new jfloat *[channelCount];
+        for (int j = 0; j < channelCount; j++) {
             averagesPtr[i][j] = new jfloat[frameCount];
             normAveragesPtr[i][j] = new jfloat[frameCount];
         }
     }
+    auto **normMcAveragesPtr = new jfloat *[channelCount];
+    auto **normMcTopPtr = new jfloat *[channelCount];
+    auto **normMcBottomPtr = new jfloat *[channelCount];
+    for (int i = 0; i < channelCount; i++) {
+        normMcAveragesPtr[i] = new jfloat[frameCount];
+        normMcTopPtr[i] = new jfloat[frameCount];
+        normMcBottomPtr[i] = new jfloat[frameCount];
+    }
+    auto *minPtr = new jfloat[2];
+    auto *maxPtr = new jfloat[2];
 
     eventTriggeredAverageAnalysis->process(filePathPtr, eventsFilePathPtr, eventNamesPtr, eventCount,
-                                           removeNoiseIntervals, averagesPtr, normAveragesPtr);
+                                           removeNoiseIntervals, confidenceIntervalsEventPtr, averagesPtr,
+                                           normAveragesPtr, normMcAveragesPtr, normMcTopPtr, normMcBottomPtr, minPtr,
+                                           maxPtr);
 
-    for (int i = 0; i < channelCount; i++) {
+    for (int i = 0; i < eventCount; i++) {
         auto channelEventAverages = reinterpret_cast<jobjectArray>(env->GetObjectArrayElement(averages, i));
         auto channelEventNormAverages = reinterpret_cast<jobjectArray>(env->GetObjectArrayElement(normAverages, i));
-        for (int j = 0; j < eventCount; j++) {
+
+        for (int j = 0; j < channelCount; j++) {
             auto eventAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(channelEventAverages, j));
-            auto eventNormAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(channelEventNormAverages,
-                                                                                              j));
             env->SetFloatArrayRegion(eventAverages, 0, frameCount, averagesPtr[i][j]);
             env->DeleteLocalRef(eventAverages);
 
+            auto eventNormAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(channelEventNormAverages,
+                                                                                              j));
             env->SetFloatArrayRegion(eventNormAverages, 0, frameCount, normAveragesPtr[i][j]);
             env->DeleteLocalRef(eventNormAverages);
         }
+
         env->SetObjectArrayElement(averages, i, channelEventAverages);
         env->DeleteLocalRef(channelEventAverages);
 
         env->SetObjectArrayElement(normAverages, i, channelEventNormAverages);
         env->DeleteLocalRef(channelEventNormAverages);
     }
+    auto *minMaxPtr = new jfloat[2];
+    for (int i = 0; i < channelCount; i++) {
+        auto chNormMcAverages = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(normMcAverages, i));
+        env->SetFloatArrayRegion(chNormMcAverages, 0, frameCount, normMcAveragesPtr[i]);
+        env->DeleteLocalRef(chNormMcAverages);
+
+        auto chNormMcTop = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(normMcTop, i));
+        env->SetFloatArrayRegion(chNormMcTop, 0, frameCount, normMcTopPtr[i]);
+        env->DeleteLocalRef(chNormMcTop);
+
+        auto chNormMcBottom = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(normMcBottom, i));
+        env->SetFloatArrayRegion(chNormMcBottom, 0, frameCount, normMcBottomPtr[i]);
+        env->DeleteLocalRef(chNormMcBottom);
+
+        minMaxPtr[0] = minPtr[i];
+        minMaxPtr[1] = maxPtr[i];
+        auto channelMinMax = reinterpret_cast<jfloatArray>(env->GetObjectArrayElement(minMax, i));
+        env->SetFloatArrayRegion(channelMinMax, 0, 2, minMaxPtr);
+        env->DeleteLocalRef(channelMinMax);
+    }
 
     delete[] eventNamesPtr;
-    for (int i = 0; i < channelCount; i++) {
-        for (int j = 0; j < eventCount; j++) {
+    for (int i = 0; i < eventCount; i++) {
+        for (int j = 0; j < channelCount; j++) {
             delete[] averagesPtr[i][j];
             delete[] normAveragesPtr[i][j];
         }
@@ -1344,6 +1411,17 @@ Java_com_backyardbrains_utils_JniUtils_eventTriggeredAverageAnalysis(JNIEnv *env
     }
     delete[] averagesPtr;
     delete[] normAveragesPtr;
+    for (int i = 0; i < channelCount; i++) {
+        delete[] normMcAveragesPtr[i];
+        delete[] normMcTopPtr[i];
+        delete[] normMcBottomPtr[i];
+    }
+    delete[] normMcAveragesPtr;
+    delete[] normMcTopPtr;
+    delete[] normMcBottomPtr;
+    delete[] minPtr;
+    delete[] maxPtr;
+    delete[] minMaxPtr;
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL

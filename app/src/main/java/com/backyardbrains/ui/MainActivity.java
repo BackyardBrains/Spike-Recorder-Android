@@ -19,7 +19,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
-import android.view.View;
 import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -193,9 +192,6 @@ public class MainActivity extends AppCompatActivity
                     fragName = SPIKES_FRAGMENT;
                     break;
                 case ANALYSIS_VIEW:
-                    frag = AnalysisFragment.newInstance(args.length > 0 ? (Parcelable) args[0] : null);
-                    fragName = ANALYSIS_FRAGMENT;
-                    break;
                 case EVENT_TRIGGERED_AVERAGES_VIEW:
                     frag = AnalysisFragment.newInstance(args.length > 0 ? (Parcelable) args[0] : null);
                     fragName = ANALYSIS_FRAGMENT;
@@ -306,7 +302,7 @@ public class MainActivity extends AppCompatActivity
     public void onAnalyzeEventTriggeredAveragesEvent(AnalyzeEventTriggeredAveragesEvent event) {
         final AnalysisConfig config =
             new EventTriggeredAveragesConfig(event.getFilePath(), AnalysisType.EVENT_TRIGGERED_AVERAGE,
-                event.getEvents(), event.isRemoveNoiseIntervals());
+                event.getEvents(), event.isRemoveNoiseIntervals(), event.getConfidenceIntervalsEvent());
         loadFragment(EVENT_TRIGGERED_AVERAGES_VIEW, false, config);
     }
 

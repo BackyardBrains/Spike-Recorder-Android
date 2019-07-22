@@ -19,6 +19,7 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
     private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
     static final float MARGIN = 30f;
     static final String SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX = "ST";
+    static final String CHANNEL_THUMB_GRAPH_NAME_PREFIX = "CH";
 
     final GlGraphThumbTouchHelper glGraphThumbTouchHelper = new GlGraphThumbTouchHelper();
 

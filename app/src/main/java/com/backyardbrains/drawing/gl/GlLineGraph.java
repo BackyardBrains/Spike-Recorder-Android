@@ -18,8 +18,8 @@ public class GlLineGraph {
     private float[] vertices;
     private float[] normalizedData;
 
-    public void draw(@NonNull GL10 gl, float x, float y, float w, float h, @NonNull float[] data,
-        @Size(4) float[] color) {
+    public void draw(@NonNull GL10 gl, float x, float y, float w, float h, @NonNull float[] data, float lineWidth,
+        @NonNull @Size(4) float[] lineColor) {
         int length = data.length;
         int verticesCount = length * 2;
 
@@ -28,8 +28,8 @@ public class GlLineGraph {
         JniUtils.map(normalizedData, data, length, -1f, 1f, 0f, h);
 
         gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glColor4f(color[0], color[1], color[2], color[3]);
-        gl.glLineWidth(3f);
+        gl.glColor4f(lineColor[0], lineColor[1], lineColor[2], lineColor[3]);
+        gl.glLineWidth(lineWidth);
         if (vertices == null || vertices.length < verticesCount) vertices = new float[verticesCount];
         float xIncrement = w / (length - 1);
         int j = 0, i;

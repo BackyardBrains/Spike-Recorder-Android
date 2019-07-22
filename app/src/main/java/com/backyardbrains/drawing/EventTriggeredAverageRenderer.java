@@ -3,6 +3,8 @@ package com.backyardbrains.drawing;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import com.backyardbrains.drawing.gl.GlEventTriggeredAveragesGraph;
+import com.backyardbrains.drawing.gl.GlEventTriggeredAveragesGraphThumb;
+import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.vo.EventTriggeredAverages;
 import java.text.DecimalFormat;
@@ -20,11 +22,16 @@ public class EventTriggeredAverageRenderer extends BaseAnalysisRenderer {
 
     static final String TAG = makeLogTag(EventTriggeredAverageRenderer.class);
 
-    private static final NumberFormat FORMATTER = new DecimalFormat("#0.000");
+    private static final NumberFormat FORMATTER = new DecimalFormat("#0.00##");
+
+    static {
+        FORMATTER.setMaximumFractionDigits(4);
+    }
 
     private final Context context;
 
-    private GlEventTriggeredAveragesGraph eventTriggeredAveragesGraph;
+    private GlEventTriggeredAveragesGraph glEventTriggeredAveragesGraph;
+    private GlEventTriggeredAveragesGraphThumb glEventTriggeredAveragesGraphThumb;
 
     @SuppressWarnings("WeakerAccess") EventTriggeredAverages[] eventTriggeredAverageAnalysis;
 
@@ -40,7 +47,8 @@ public class EventTriggeredAverageRenderer extends BaseAnalysisRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        eventTriggeredAveragesGraph = new GlEventTriggeredAveragesGraph(context, gl, null, FORMATTER);
+        glEventTriggeredAveragesGraph = new GlEventTriggeredAveragesGraph(context, gl, null, FORMATTER);
+        glEventTriggeredAveragesGraphThumb = new GlEventTriggeredAveragesGraphThumb(context, gl);
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
@@ -50,24 +58,29 @@ public class EventTriggeredAverageRenderer extends BaseAnalysisRenderer {
                 final float thumbSize = len > 1 ? getDefaultGraphThumbSize(surfaceWidth, surfaceHeight, len) : 0f;
                 final boolean portraitOrientation = surfaceWidth < surfaceHeight;
                 float x, y, w, h;
-                //for (int i = 0; i < len; i++) {
-                //    x = portraitOrientation ? MARGIN * (i + 1) + thumbSize * i
-                //        : (float) surfaceWidth - (thumbSize + MARGIN);
-                //    y = portraitOrientation ? MARGIN : (float) surfaceHeight - (MARGIN * (i + 1) + thumbSize * (i + 1));
-                //    w = h = thumbSize;
-                //    // pass thumb to parent class so we can detect thumb click
-                //    glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
-                //    glBarGraphThumb.draw(gl, x, y, w, h, eventTriggeredAverageAnalysis[i],
-                //        Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length],
-                //        SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX + (i + 1));
-                //}
+                if (len > 1) {
+                    for (int i = 0; i < len; i++) {
+                        x = portraitOrientation ? MARGIN * (i + 1) + thumbSize * i
+                            : (float) surfaceWidth - (thumbSize + MARGIN);
+                        y = portraitOrientation ? MARGIN
+                            : (float) surfaceHeight - (MARGIN * (i + 1) + thumbSize * (i + 1));
+                        w = h = thumbSize;
+                        // pass thumb to parent class so we can detect thumb click
+                        glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
+
+                        glEventTriggeredAveragesGraphThumb.draw(gl, x, y, w, h, eventTriggeredAverageAnalysis[i],
+                            CHANNEL_THUMB_GRAPH_NAME_PREFIX + (i + 1));
+                    }
+                }
                 x = MARGIN;
                 y = portraitOrientation ? 2 * MARGIN + thumbSize : MARGIN;
-                w = portraitOrientation ? surfaceWidth - 2 * MARGIN : surfaceWidth - 3 * MARGIN - thumbSize;
-                h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
+                w = portraitOrientation ? surfaceWidth - 2 * MARGIN
+                    : surfaceWidth - (len > 1 ? 3 : 2) * MARGIN - thumbSize;
+                h = portraitOrientation ? surfaceHeight - (len > 1 ? 3 : 2) * MARGIN - thumbSize
+                    : surfaceHeight - 2 * MARGIN;
 
                 int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
-                eventTriggeredAveragesGraph.draw(gl, x, y, w, h, eventTriggeredAverageAnalysis[selected]);
+                glEventTriggeredAveragesGraph.draw(gl, x, y, w, h, eventTriggeredAverageAnalysis[selected]);
             }
         }
     }

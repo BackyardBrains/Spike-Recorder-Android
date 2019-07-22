@@ -7,7 +7,7 @@ import com.backyardbrains.vo.AverageSpike;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class AverageSpikeAnalysis extends BaseAnalysis<int[][], AverageSpike> {
+class AverageSpikeAnalysis extends BaseAnalysis<int[][], AverageSpike[]> {
 
     private static final String TAG = makeLogTag(AverageSpikeAnalysis.class);
 
@@ -15,7 +15,7 @@ class AverageSpikeAnalysis extends BaseAnalysis<int[][], AverageSpike> {
 
     private final AudioFile audioFile;
 
-    AverageSpikeAnalysis(@NonNull AudioFile audioFile, @NonNull AnalysisListener<AverageSpike> listener) {
+    AverageSpikeAnalysis(@NonNull AudioFile audioFile, @NonNull AnalysisListener<AverageSpike[]> listener) {
         super(audioFile.getAbsolutePath(), listener);
 
         this.audioFile = audioFile;

@@ -6,24 +6,62 @@ package com.backyardbrains.vo;
 public class EventTriggeredAverages {
 
     private final String[] events;
-    private final float[][] average;
-    private final float[][] normalizedAverage;
+    private final float[][] averages;
+    private final float[][] normAverages;
+    private final boolean showConfidenceIntervals;
+    private final float[] normMonteCarloAverages;
+    private final float[] normMonteCarloTop;
+    private final float[] normMonteCarloBottom;
+    private final float min;
+    private final float max;
 
-    public EventTriggeredAverages(String[] events, float[][] average, float[][] normalizedAverage) {
+    public EventTriggeredAverages(String[] events, float[][] averages, float[][] normAverages,
+        boolean showConfidenceIntervals, float[] normMonteCarloAverages, float[] normMonteCarloTop,
+        float[] normMonteCarloBottom, float min, float max) {
         this.events = events;
-        this.average = average;
-        this.normalizedAverage = normalizedAverage;
+        this.averages = averages;
+        this.normAverages = normAverages;
+        this.showConfidenceIntervals = showConfidenceIntervals;
+        this.normMonteCarloAverages = normMonteCarloAverages;
+        this.normMonteCarloTop = normMonteCarloTop;
+        this.normMonteCarloBottom = normMonteCarloBottom;
+        this.min = min;
+        this.max = max;
     }
 
     public String[] getEvents() {
         return events;
     }
 
-    public float[][] getMean() {
-        return average;
+    public float[][] getAverages() {
+        return averages;
     }
 
-    public float[][] getNormalizedAverage() {
-        return normalizedAverage;
+    public float[][] getNormAverages() {
+        return normAverages;
+    }
+
+    public boolean isShowConfidenceIntervals() {
+        return showConfidenceIntervals;
+    }
+
+    public float[] getNormMonteCarloAverages() {
+        return normMonteCarloAverages;
+    }
+
+    public float[] getNormMonteCarloTop() {
+        return normMonteCarloTop;
+    }
+
+    public float[] getNormMonteCarloBottom() {
+        return normMonteCarloBottom;
+    }
+
+    public float getMin() {
+        return min;
+    }
+
+    public float getMax() {
+        return max;
     }
 }

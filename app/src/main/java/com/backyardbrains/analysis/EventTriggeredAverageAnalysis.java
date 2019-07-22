@@ -11,7 +11,8 @@ import java.io.File;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class EventTriggeredAverageAnalysis extends BaseAnalysis<EventTriggeredAveragesConfig, EventTriggeredAverages> {
+public class EventTriggeredAverageAnalysis
+    extends BaseAnalysis<EventTriggeredAveragesConfig, EventTriggeredAverages[]> {
 
     private static final float EVENT_LEFT_OFFSET_IN_SECS = .7f;
     private static final float EVENT_RIGHT_OFFSET_IN_SECS = .7f;
@@ -19,7 +20,7 @@ public class EventTriggeredAverageAnalysis extends BaseAnalysis<EventTriggeredAv
     private final AudioFile audioFile;
 
     EventTriggeredAverageAnalysis(@NonNull AudioFile audioFile,
-        @NonNull AnalysisListener<EventTriggeredAverages> listener) {
+        @NonNull AnalysisListener<EventTriggeredAverages[]> listener) {
         super(audioFile.getAbsolutePath(), listener);
 
         this.audioFile = audioFile;
@@ -41,27 +42,44 @@ public class EventTriggeredAverageAnalysis extends BaseAnalysis<EventTriggeredAv
             final int sampleCount = leftOffsetSampleCount + rightOffsetSampleCount;
             final int frameCount = sampleCount / channelCount;
             //
-            final float[][][] averages = new float[channelCount][][];
-            final float[][][] normAverages = new float[channelCount][][];
-            for (int i = 0; i < channelCount; i++) {
-                averages[i] = new float[eventCount][];
-                normAverages[i] = new float[eventCount][];
-                for (int j = 0; j < eventCount; j++) {
+            final float[][][] averages = new float[eventCount][][];
+            final float[][][] normAverages = new float[eventCount][][];
+            for (int i = 0; i < eventCount; i++) {
+                averages[i] = new float[channelCount][];
+                normAverages[i] = new float[channelCount][];
+                for (int j = 0; j < channelCount; j++) {
                     averages[i][j] = new float[frameCount];
                     normAverages[i][j] = new float[frameCount];
                 }
             }
+            final float[][] normMcAverages = new float[channelCount][];
+            final float[][] normMcTop = new float[channelCount][];
+            final float[][] normMcBottom = new float[channelCount][];
+            final float[][] minMax = new float[channelCount][];
+            for (int i = 0; i < channelCount; i++) {
+                normMcAverages[i] = new float[frameCount];
+                normMcTop[i] = new float[frameCount];
+                normMcBottom[i] = new float[frameCount];
+                minMax[i] = new float[2];
+            }
 
             JniUtils.eventTriggeredAverageAnalysis(audioFile.getAbsolutePath(), eventsFile.getAbsolutePath(),
-                config.getEvents(), eventCount, averages, normAverages, channelCount, frameCount,
-                config.isRemoveNoiseIntervals());
+                config.getEvents(), eventCount, averages, normAverages, normMcAverages, normMcTop, normMcBottom, minMax,
+                channelCount, frameCount, config.isRemoveNoiseIntervals(), config.getConfidenceIntervalsEvent());
 
             // let's populate avr array
-            final int len = averages.length;
-            final EventTriggeredAverages[] eventTriggeredAverages = new EventTriggeredAverages[len];
-            for (int i = 0; i < len; i++) {
+            final EventTriggeredAverages[] eventTriggeredAverages = new EventTriggeredAverages[channelCount];
+            for (int i = 0; i < channelCount; i++) {
+                float[][] channelAverages = new float[eventCount][];
+                float[][] channelNormAverages = new float[eventCount][];
+                for (int j = 0; j < eventCount; j++) {
+                    channelAverages[j] = averages[j][i];
+                    channelNormAverages[j] = normAverages[j][i];
+                }
                 eventTriggeredAverages[i] =
-                    new EventTriggeredAverages(config.getEvents(), averages[i], normAverages[i]);
+                    new EventTriggeredAverages(config.getEvents(), channelAverages, channelNormAverages,
+                        config.getConfidenceIntervalsEvent() != null, normMcAverages[i], normMcTop[i], normMcBottom[i],
+                        minMax[i][0], minMax[i][1]);
             }
 
             return eventTriggeredAverages;

@@ -162,7 +162,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:enabled="false"
+        android:text="@string/content_desc_event_triggered_averaging_remove_noise"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_event_0"
-        android:text="@string/content_desc_event_triggered_averaging_remove_noise"/>
+        app:layout_constraintBottom_toTopOf="@+id/cb_compute_confidence_intervals"/>
+
+    <CheckBox
+        android:id="@+id/cb_compute_confidence_intervals"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:enabled="false"
+        android:text="@string/content_desc_event_triggered_averaging_compute_confidence"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cb_remove_noise_intervals"
+        app:layout_constraintRight_toLeftOf="@+id/sp_confidence_intervals_event"/>
+
+    <Spinner
+        android:id="@+id/sp_confidence_intervals_event"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:visibility="invisible"
+        android:dropDownWidth="@dimen/spinner_item_width"
+        app:layout_constraintLeft_toRightOf="@+id/cb_compute_confidence_intervals"
+        app:layout_constraintTop_toTopOf="@+id/cb_compute_confidence_intervals"
+        app:layout_constraintBottom_toBottomOf="@+id/cb_compute_confidence_intervals"/>
 </android.support.constraint.ConstraintLayout>

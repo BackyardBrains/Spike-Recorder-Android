@@ -6,14 +6,14 @@ import com.backyardbrains.utils.JniUtils;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
-class CrossCorrelationAnalysis extends BaseAnalysis<float[][], int[]> {
+class CrossCorrelationAnalysis extends BaseAnalysis<float[][], int[][]> {
 
     private static final String TAG = makeLogTag(CrossCorrelationAnalysis.class);
 
     private static final float MAX_TIME = 0.1f;
     private static final float BIN_SIZE = 0.001f;
 
-    CrossCorrelationAnalysis(@NonNull String filePath, @NonNull AnalysisListener<int[]> listener) {
+    CrossCorrelationAnalysis(@NonNull String filePath, @NonNull AnalysisListener<int[][]> listener) {
         super(filePath, listener);
     }
 

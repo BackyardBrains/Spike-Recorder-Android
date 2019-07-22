@@ -186,7 +186,8 @@ public class RecordingAnalysisFragment extends BaseOptionsFragment {
         if (f.exists()) {
             EventBus.getDefault()
                 .post(new AnalyzeEventTriggeredAveragesEvent(filePath,
-                    Arrays.copyOfRange(options.events, 0, options.eventCount), options.removeNoiseIntervals));
+                    Arrays.copyOfRange(options.events, 0, options.eventCount), options.removeNoiseIntervals,
+                    options.confidenceIntervalsEvent));
         }
     }
 
