@@ -144,7 +144,7 @@ public class GlEventTriggeredAveragesGraph {
             JniUtils.minMax(minMax, data.getNormMonteCarloBottom(), sampleCount);
             JniUtils.map(tmpMinMax, minMax, 2, -1f, 1f, -0.9f, 0.9f);
             JniUtils.map(minMax, tmpMinMax, 2, -1f, 1f, 0f, graphH);
-            glText.draw(MC_LEGEND_SD_MINUS, graphX + 2 * margin, graphY + minMax[0] - glText.getHeight());
+            glText.draw(MC_LEGEND_SD_MINUS, graphX + margin, graphY + minMax[0] - glText.getHeight());
 
             glText.end();
             gl.glDisable(GL10.GL_TEXTURE_2D);
