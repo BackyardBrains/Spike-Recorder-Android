@@ -23,9 +23,6 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
 
     private static final String TAG = makeLogTag(HIDSignalSource.class);
 
-    // TI Vendor ID
-    private static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
-
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
@@ -58,10 +55,10 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
                     if (numberBytes > 0) {
-                        usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
+                        numberBytes = usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
-                        writeToBuffer(dataReceived, dataReceived.length);
+                        writeToBuffer(dataReceived, numberBytes);
                     }
                 }
             }
@@ -98,7 +95,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
                         data = Arrays.copyOfRange(data, 253, data.length - 1);
 
                         byte[] arr = new byte[255];
-                        arr[0] = TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
+                        arr[0] = HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
                         arr[1] = (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
 
                         System.arraycopy(temp, 0, arr, 2, temp.length);
@@ -106,8 +103,8 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
                     }
 
                     // number of written bytes is less than 252
-                    byte arr[] = new byte[data.length + 2];
-                    arr[0] = TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
+                    byte[] arr = new byte[data.length + 2];
+                    arr[0] = HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
                     arr[1] = (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
 
                     System.arraycopy(data, 0, arr, 2, data.length);
