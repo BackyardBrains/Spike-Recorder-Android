@@ -12,7 +12,7 @@ class HIDBuffer {
     // TI Vendor ID
     static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
     // Valid number of bytes to copy in each packet
-    static final byte VALID_DATA_PACKET_SIZE = 62;
+    private static final byte VALID_DATA_PACKET_SIZE = 62;
 
     private static final int PACKET_SIZE = 64;
     private static final int BUFFER_MULTIPLIER = 8;
@@ -34,9 +34,9 @@ class HIDBuffer {
     private HIDBuffer(int readBufferSize, int writeBufferSize) {
         writeBuffer = new SynchronizedBuffer(writeBufferSize);
         readBuffer_compatible = new byte[readBufferSize];
-        tmp = new byte[readBufferSize];
-        tmp2 = new byte[readBufferSize];
-        tmp3 = new byte[readBufferSize];
+        //tmp = new byte[readBufferSize];
+        //tmp2 = new byte[readBufferSize];
+        //tmp3 = new byte[readBufferSize];
     }
 
     byte[] getBufferCompatible() {
