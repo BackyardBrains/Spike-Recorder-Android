@@ -2,22 +2,21 @@ package com.backyardbrains.dsp.usb;
 
 import java.util.Arrays;
 
-class HIDBuffer {
+class SerialBuffer {
 
     private static final int PACKET_SIZE = 64;
     private static final int BUFFER_MULTIPLIER = 8;
     static final int DEFAULT_READ_BUFFER_SIZE = PACKET_SIZE * BUFFER_MULTIPLIER;
-    static final int DEFAULT_READ_PAYLOAD_BUFFER_SIZE = DEFAULT_READ_BUFFER_SIZE - BUFFER_MULTIPLIER * 2;
     private static final int DEFAULT_WRITE_BUFFER_SIZE = 255 * 2;
 
     private SynchronizedBuffer writeBuffer;
     private byte[] readBuffer;
 
-    HIDBuffer() {
+    SerialBuffer() {
         this(DEFAULT_READ_BUFFER_SIZE, DEFAULT_WRITE_BUFFER_SIZE);
     }
 
-    private HIDBuffer(int readBufferSize, int writeBufferSize) {
+    private SerialBuffer(int readBufferSize, int writeBufferSize) {
         writeBuffer = new SynchronizedBuffer(writeBufferSize);
         readBuffer = new byte[readBufferSize];
     }
@@ -27,13 +26,7 @@ class HIDBuffer {
     }
 
     void getDataReceived(byte[] buffer, int length) {
-        int counter = 0;
-        int copy;
-        for (int i = 0; i < length; i += PACKET_SIZE) {
-            copy = readBuffer[i + 1];
-            System.arraycopy(readBuffer, i + 2, buffer, counter, copy);
-            counter += copy;
-        }
+        System.arraycopy(readBuffer, 0, buffer, 0, length);
     }
 
     byte[] getWriteBuffer() {

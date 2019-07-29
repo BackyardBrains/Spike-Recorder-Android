@@ -27,7 +27,7 @@ class SpikerBoxDetector {
     private static final String TAG = makeLogTag(SpikerBoxDetector.class);
 
     private static final int MAX_ATTEMPTS = 10;
-    private static final int BUFFER_SIZE = 5000;
+    private static final int BUFFER_SIZE = 10000;
 
     private final Map<String, DetectionThread> detectionThreadMap = new ArrayMap<>();
 
@@ -171,7 +171,7 @@ class SpikerBoxDetector {
 
         private UsbSignalSource usbDevice;
 
-        DetectionThread(@NonNull AbstractUsbSignalSource usbDevice) {
+        DetectionThread(@NonNull UsbSignalSource usbDevice) {
             this.usbDevice = usbDevice;
         }
 

@@ -55,13 +55,13 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         @Override public void run() {
             while (working.get()) {
                 if (inEndpoint != null) {
-                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getBufferCompatible(),
+                    int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getReadBuffer(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
                     if (numberBytes > 0) {
-                        usbBuffer.getDataReceivedCompatible(dataReceived, numberBytes);
+                        usbBuffer.getDataReceived(dataReceived, numberBytes);
 
                         // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
-                        writeToBuffer(dataReceived, dataReceived.length);
+                        writeToBuffer(dataReceived, numberBytes);
                     }
                 }
             }
