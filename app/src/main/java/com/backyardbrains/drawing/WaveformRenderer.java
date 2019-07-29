@@ -20,9 +20,9 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.Size;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.drawing.gl.GlDashedHLine;

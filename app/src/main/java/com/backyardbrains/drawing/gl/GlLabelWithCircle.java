@@ -2,7 +2,7 @@ package com.backyardbrains.drawing.gl;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.drawing.Colors;
 import com.backyardbrains.utils.ViewUtils;
 import javax.microedition.khronos.opengles.GL10;

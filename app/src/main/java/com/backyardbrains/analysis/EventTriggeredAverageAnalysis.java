@@ -1,7 +1,7 @@
 package com.backyardbrains.analysis;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.backyardbrains.dsp.audio.AudioFile;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;

@@ -1,7 +1,7 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.NonNull;
-import android.support.v4.util.ArraySet;
+import androidx.annotation.NonNull;
+import androidx.collection.ArraySet;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.SignalAveragingTriggerType;

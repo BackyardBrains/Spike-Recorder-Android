@@ -1,9 +1,6 @@
 package com.backyardbrains.view;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,9 +8,14 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
+import butterknife.Setter;
+import butterknife.ViewCollections;
 import com.backyardbrains.R;
 import com.backyardbrains.dsp.Filters;
 import com.backyardbrains.filters.BandFilter;
@@ -41,12 +43,12 @@ public class FilterSettingsView extends ConstraintLayout {
     };
     private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
 
-    private static final ButterKnife.Setter<View, OnClickListener> INIT_PRESETS = (view, value, index) -> {
+    private static final Setter<View, OnClickListener> INIT_PRESETS = (view, value, index) -> {
         view.setTag(FILTERS[index]);
         view.setOnClickListener(value);
     };
 
-    private static final ButterKnife.Setter<View, BandFilter> SELECT_PRESET = (view, value, index) -> {
+    private static final Setter<View, BandFilter> SELECT_PRESET = (view, value, index) -> {
         if (FILTERS[index].isEqual(value.getLowCutOffFrequency(), value.getHighCutOffFrequency())) {
             view.setBackgroundResource(R.drawable.circle_gray_white_active);
         } else {
@@ -144,7 +146,7 @@ public class FilterSettingsView extends ConstraintLayout {
         setBandFilter(filter);
 
         // select filter preset if necessary
-        ButterKnife.apply(btnPresets, SELECT_PRESET, filter);
+        ViewCollections.set(btnPresets, SELECT_PRESET, filter);
     }
 
     /**
@@ -166,7 +168,7 @@ public class FilterSettingsView extends ConstraintLayout {
     // Initial UI setup
     private void setupUI() {
         // presets
-        ButterKnife.apply(btnPresets, INIT_PRESETS, presetOnClickListener);
+        ViewCollections.set(btnPresets, INIT_PRESETS, presetOnClickListener);
         // low cut-off
         etLowCutOff.setOnEditorActionListener((textView, actionId, keyEvent) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -282,7 +284,7 @@ public class FilterSettingsView extends ConstraintLayout {
         // also update input fields
         setCutOffValue(etLowCutOff, lowCutOff);
         setCutOffValue(etHighCutOff, highCutOff);
-        
+
         srbCutOffs.post(() -> {
             // this is kind of a hack because thumb values can only be set both at once and right thumb is always set first
             // within the library, so when try to set a value for both thumbs and the value is lower then the current left
@@ -329,7 +331,7 @@ public class FilterSettingsView extends ConstraintLayout {
         final BandFilter filter = new BandFilter(lowCutOff, highCutOff);
 
         // select filter preset if necessary
-        ButterKnife.apply(btnPresets, SELECT_PRESET, filter);
+        ViewCollections.set(btnPresets, SELECT_PRESET, filter);
 
         if (listener != null) listener.onBandFilterSet(filter);
     }

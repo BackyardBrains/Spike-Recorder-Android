@@ -8,7 +8,7 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Build;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;

@@ -1,6 +1,6 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.drawing.FftDrawBuffer;
 import com.backyardbrains.drawing.MultichannelSignalDrawBuffer;
 import com.backyardbrains.utils.AudioUtils;

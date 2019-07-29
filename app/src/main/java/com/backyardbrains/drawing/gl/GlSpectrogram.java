@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing.gl;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.drawing.FftDrawData;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

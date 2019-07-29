@@ -1,7 +1,7 @@
 package com.backyardbrains.drawing;
 
-import android.support.annotation.ColorInt;
-import android.support.annotation.Size;
+import androidx.annotation.ColorInt;
+import androidx.annotation.Size;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>

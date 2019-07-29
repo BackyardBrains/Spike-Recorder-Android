@@ -1,6 +1,6 @@
 package com.backyardbrains.analysis;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.dsp.audio.AudioFile;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.vo.AverageSpike;

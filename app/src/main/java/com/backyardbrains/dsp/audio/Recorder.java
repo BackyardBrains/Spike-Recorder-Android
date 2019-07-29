@@ -20,7 +20,7 @@
 package com.backyardbrains.dsp.audio;
 
 import android.media.AudioTrack;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Pair;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;

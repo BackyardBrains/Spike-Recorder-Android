@@ -1,7 +1,7 @@
 package com.backyardbrains.drawing;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Size;
+import androidx.annotation.NonNull;
+import androidx.annotation.Size;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlHLine;
 import com.backyardbrains.drawing.gl.GlHandle;
