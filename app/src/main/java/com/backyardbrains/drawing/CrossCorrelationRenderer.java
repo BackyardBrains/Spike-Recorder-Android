@@ -1,7 +1,7 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.MotionEvent;
 import com.android.texample.GLText;
 import com.backyardbrains.drawing.gl.GlColumnGraph;

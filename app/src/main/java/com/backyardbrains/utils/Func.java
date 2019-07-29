@@ -1,6 +1,6 @@
 package com.backyardbrains.utils;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * Generic interface for handling basic functional programming

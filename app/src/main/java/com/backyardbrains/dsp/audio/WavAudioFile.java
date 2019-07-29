@@ -1,6 +1,6 @@
 package com.backyardbrains.dsp.audio;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.WavUtils;
 import com.crashlytics.android.Crashlytics;

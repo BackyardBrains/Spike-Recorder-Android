@@ -1,6 +1,6 @@
 package com.backyardbrains.analysis;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.utils.JniUtils;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;

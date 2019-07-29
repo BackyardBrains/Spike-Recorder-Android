@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing.gl;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import javax.microedition.khronos.opengles.GL10;
 
 /**

@@ -2,7 +2,7 @@ package com.backyardbrains.analysis;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>

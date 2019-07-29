@@ -19,7 +19,7 @@
 
 package com.backyardbrains.drawing;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.dsp.SignalConfiguration;
 import com.crashlytics.android.Crashlytics;
 

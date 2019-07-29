@@ -19,7 +19,7 @@
 
 package com.backyardbrains.drawing;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.view.ScaleGestureDetector;
 import com.crashlytics.android.Crashlytics;
 

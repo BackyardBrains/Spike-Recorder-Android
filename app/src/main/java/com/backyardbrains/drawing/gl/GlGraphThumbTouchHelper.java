@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing.gl;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.MotionEvent;
 import java.util.ArrayList;
 import java.util.List;

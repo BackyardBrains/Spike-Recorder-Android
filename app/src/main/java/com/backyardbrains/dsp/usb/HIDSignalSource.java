@@ -6,7 +6,7 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 

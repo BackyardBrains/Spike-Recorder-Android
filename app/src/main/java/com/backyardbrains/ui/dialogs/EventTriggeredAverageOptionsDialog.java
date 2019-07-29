@@ -1,8 +1,6 @@
 package com.backyardbrains.ui.dialogs;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.SparseBooleanArray;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -10,11 +8,16 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import butterknife.Action;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import butterknife.OnCheckedChanged;
 import butterknife.OnClick;
+import butterknife.Setter;
+import butterknife.ViewCollections;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.utils.EventUtils;
@@ -28,7 +31,7 @@ import java.util.List;
 public class EventTriggeredAverageOptionsDialog {
 
     // Action that initializes event buttons
-    private static final ButterKnife.Action<Button> INIT_EVENT_BUTTONS = (button, index) -> {
+    private static final Action<Button> INIT_EVENT_BUTTONS = (button, index) -> {
         // set value of the event as tag so we can reference it on click
         button.setTag(String.valueOf(index));
         // set event value as text
@@ -36,7 +39,7 @@ public class EventTriggeredAverageOptionsDialog {
     };
 
     // Setter that resets event buttons UI
-    private static final ButterKnife.Setter<Button, String[]> RESET_EVENT_BUTTONS = (button, value, index) -> {
+    private static final Setter<Button, String[]> RESET_EVENT_BUTTONS = (button, value, index) -> {
         // set button as inactive
         button.setBackgroundResource(R.drawable.circle_gray_white);
         // enable button only if linked event is available
@@ -164,7 +167,7 @@ public class EventTriggeredAverageOptionsDialog {
         if (view == null) return;
 
         ButterKnife.bind(this, view);
-        ButterKnife.apply(eventButtons, INIT_EVENT_BUTTONS);
+        ViewCollections.run(eventButtons, INIT_EVENT_BUTTONS);
 
         spConfidenceIntervalsEvent.setAdapter(confidenceIntervalsEventAdapter);
     }
@@ -177,7 +180,7 @@ public class EventTriggeredAverageOptionsDialog {
         selectedButtons.clear();
         // reset event buttons UI
         if (eventButtons != null) {
-            ButterKnife.apply(eventButtons, RESET_EVENT_BUTTONS, Arrays.copyOfRange(eventNames, 0, eventCount));
+            ViewCollections.set(eventButtons, RESET_EVENT_BUTTONS, Arrays.copyOfRange(eventNames, 0, eventCount));
         }
     }
 
