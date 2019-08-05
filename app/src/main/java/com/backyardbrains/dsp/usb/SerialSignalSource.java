@@ -202,7 +202,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
             serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
             serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
 
-            serialDevice.read(readCallback);
+            serialDevice.read(readCallback, 1024);
         }
 
         // we don't actually start the stream, it's automatically stared after connection, but we should
