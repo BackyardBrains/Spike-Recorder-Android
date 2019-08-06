@@ -26,14 +26,17 @@ class HIDBuffer {
         return readBuffer;
     }
 
-    void getDataReceived(byte[] buffer, int length) {
+    int getDataReceived(byte[] buffer, int length) {
         int counter = 0;
         int copy;
         for (int i = 0; i < length; i += PACKET_SIZE) {
             copy = readBuffer[i + 1];
+            // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
             System.arraycopy(readBuffer, i + 2, buffer, counter, copy);
             counter += copy;
         }
+
+        return counter;
     }
 
     byte[] getWriteBuffer() {

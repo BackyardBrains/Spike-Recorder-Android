@@ -58,9 +58,9 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getReadBuffer(),
                         HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
                     if (numberBytes > 0) {
-                        usbBuffer.getDataReceived(dataReceived, numberBytes);
+                        numberBytes = usbBuffer.getDataReceived(dataReceived, numberBytes);
 
-                        // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
+                        // write data to buffer
                         writeToBuffer(dataReceived, numberBytes);
                     }
                 }
