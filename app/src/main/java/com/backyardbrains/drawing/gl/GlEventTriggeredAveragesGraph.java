@@ -96,8 +96,9 @@ public class GlEventTriggeredAveragesGraph {
         gl.glPopMatrix();
 
         int event;
-        final String[] legendData = new String[eventCount + 1];
-        final float[][] legendDataColors = new float[legendData.length][];
+        final int legendDataLength = eventCount + (data.isShowConfidenceIntervals() ? 1 : 0);
+        final String[] legendData = new String[legendDataLength];
+        final float[][] legendDataColors = new float[legendDataLength][];
         for (int i = 0; i < eventCount; i++) {
             event = Integer.valueOf(data.getEvents()[i]);
             // draw graph average current event
@@ -135,7 +136,6 @@ public class GlEventTriggeredAveragesGraph {
 
             float[] minMax = new float[2];
             float[] tmpMinMax = new float[2];
-            float textHeightHalf = glText.getHeight() * .5f;
             int sampleCount = data.getNormMonteCarloAverages().length;
             JniUtils.minMax(minMax, data.getNormMonteCarloTop(), sampleCount);
             JniUtils.map(tmpMinMax, minMax, 2, -1f, 1f, -0.9f, 0.9f);

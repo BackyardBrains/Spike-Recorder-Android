@@ -8,8 +8,8 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 83
-        versionName '1.8.2.2'
+        versionCode 88
+        versionName '1.8.3'
 
         externalNativeBuild {
             cmake {
@@ -52,8 +52,11 @@ android {
     flavorDimensions "devProd"
 
     productFlavors {
-        production {}
+        production {
+            dimension 'devProd'
+        }
         development {
+            dimension 'devProd'
             minSdkVersion 21
             resConfigs "en", "xxhdpi,xhdpi"
             ndk.abiFilters 'armeabi-v7a', 'arm64-v8a'
@@ -135,8 +138,12 @@ dependencies {
     implementation "org.greenrobot:essentials:$essentialsVersion"
 
     // serial communication
-    //noinspection GradleDependency
-    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
+    //    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
+    //    implementation project(path: ':usbserial', configuration: 'default')
+    implementation(name: 'usbserial-6.1.0-release', ext: 'aar')
+    // next 2 lines load dependencies that are used by UsbSerial module (aar doesn't transfer dependencies)
+    implementation 'com.annimon:stream:1.2.1'
+    implementation 'com.squareup.okio:okio:2.1.0'
 
     // signal filtering
     implementation "org.apache.commons:commons-math3:$commonsMathVersion"
