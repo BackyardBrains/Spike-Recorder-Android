@@ -2,17 +2,17 @@ package com.backyardbrains.ui;
 
 import android.content.Context;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -31,6 +31,7 @@ public abstract class BaseOptionsFragment extends BaseFragment {
     @BindView(R.id.ibtn_back) ImageButton ibtnBack;
     @BindView(R.id.tv_title) TextView tvTitle;
     @BindView(R.id.rv_options) RecyclerView rvOptions;
+    @BindView(R.id.tv_info) TextView tvInfo;
 
     private Unbinder unbinder;
 
@@ -40,8 +41,8 @@ public abstract class BaseOptionsFragment extends BaseFragment {
     //  LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+        Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_base_options, container, false);
         unbinder = ButterKnife.bind(this, view);
 
@@ -70,9 +71,20 @@ public abstract class BaseOptionsFragment extends BaseFragment {
     /**
      * Sets available options.
      */
-    public void setOptions(@NonNull List<OptionsAdapter.OptionItem> options,
+    void setOptions(@NonNull List<OptionsAdapter.OptionItem> options,
         @Nullable OptionsAdapter.Callback callback) {
         adapter.setOptions(options, callback);
+    }
+
+    /**
+     * Shows/hides info overlay. If specified {@code info} is not {@code null} overlay is visible,
+     * otherwise is gone.
+     */
+    void showInfo(@Nullable String info) {
+        if (tvInfo != null) {
+            tvInfo.setText(info);
+            tvInfo.setVisibility(info != null ? View.VISIBLE : View.GONE);
+        }
     }
 
     //==============================================
@@ -87,7 +99,9 @@ public abstract class BaseOptionsFragment extends BaseFragment {
         rvOptions.setAdapter(adapter);
         rvOptions.setHasFixedSize(true);
         rvOptions.setLayoutManager(new LinearLayoutManager(context));
-        rvOptions.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
+        rvOptions.addItemDecoration(
+            new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
+        tvInfo.setVisibility(View.GONE);
     }
 
     /**
@@ -116,8 +130,10 @@ public abstract class BaseOptionsFragment extends BaseFragment {
             notifyDataSetChanged();
         }
 
-        @NonNull @Override public OptionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new OptionViewHolder(inflater.inflate(R.layout.item_option, parent, false), callback);
+        @NonNull @Override
+        public OptionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new OptionViewHolder(inflater.inflate(R.layout.item_option, parent, false),
+                callback);
         }
 
         @Override public void onBindViewHolder(@NonNull OptionViewHolder holder, int position) {

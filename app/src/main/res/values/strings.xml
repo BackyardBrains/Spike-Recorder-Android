@@ -25,6 +25,7 @@
 
     <string name="title_share">Share file</string>
     <string name="title_delete">Delete file</string>
+    <string name="title_convert">Convert file</string>
     <string name="title_error">Error</string>
     <string name="title_file_details">File Details</string>
 
@@ -45,12 +46,14 @@
     <string name="content_desc_event_triggered_averaging_select_event">Select events that should trigger averaging</string>
     <string name="content_desc_event_triggered_averaging_remove_noise">Remove noise intervals</string>
     <string name="content_desc_event_triggered_averaging_compute_confidence">Compute confidence intervals\nfor event</string>
+    <string name="content_desc_conversion_progress">Conversion progress: %d%%\n\nDon\'t leave screen during conversion</string>
 
     <string name="template_beats_per_minute">%d BPM</string>
     <string name="template_rms">RMS: %.3f mV</string>
     <string name="template_spike_count">%1$d(%2$.1fHz)</string>
     <string name="template_channel_name">Channel %d</string>
     <string name="template_delete_file">"Delete %s "?"</string>
+    <string name="template_convert_file">"Convert %s to WAV"?"</string>
 
     <string name="label_mute_speakers">Mute Speakers:</string>
     <string name="label_ecg">ECG</string>
@@ -67,6 +70,7 @@
     <string name="label_attenuate_frequency">Attenuate freq. (notch filter):</string>
     <string name="label_finding_spikes">Finding spikes…</string>
     <string name="label_filename">Filename</string>
+    <string name="label_mime_type">Mime type</string>
     <string name="label_recorded_on">Recorded on</string>
     <string name="label_sampling_rate">Sampling rate</string>
     <string name="label_num_of_channels">Number of channels</string>
@@ -150,6 +154,7 @@
         <item>Analysis</item>
         <item>Share</item>
         <item>Delete</item>
+        <item>Convert to WAV</item>
     </string-array>
     <string-array name="options_recording_analysis">
         <item>Event Triggered Averaging</item>
@@ -163,11 +168,21 @@
     <!-- Toasts -->
     <string name="toast_import_successful">File successfully imported</string>
 
+    <!-- Notifications -->
+    <string name="notification_conversion_title">Converting %s to WAV</string>
+    <string name="notification_conversion_text_start">Conversion in progress…</string>
+    <string name="notification_conversion_text_progress">%d %% converted</string>
+    <string name="notification_conversion_text_end_success">Conversion completed</string>
+    <string name="notification_conversion_text_end_fail">Conversion failed</string>
+
     <!-- Error messages -->
     <string name="error_message_files_no_file">The requested file could not be found. Please try again.</string>
     <string name="error_message_files_exists">File with the specified name already exists. Please use a different name.</string>
+    <string name="error_message_files_exists_2">File with the name %s already exists. Please rename the file before continuing.</string>
     <string name="error_message_files_delete">The requested file could not be deleted. Please try again.</string>
     <string name="error_message_files_events_delete">The associated file that holds saved events could not be deleted. Please use any file manager app to delete the associated file manually.</string>
+    <string name="error_message_files_convert">The requested file could not be converted. Please try again.</string>
+    <string name="error_message_files_convert_delete">The requested file could not be deleted after conversion. Please try to delete it manually.</string>
     <string name="error_message_files_rename">The requested file could not be renamed. Please try again.</string>
     <string name="error_message_files_events_rename">The associated file that holds saved events could not be renamed. Please use any file manager app to rename the associated file manually. The name should be the same as the recording (.wav) file but with "-events" suffix.</string>
     <string name="error_message_validation_file_name">File name cannot be empty. Please enter the file name.</string>
