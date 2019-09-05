@@ -62,9 +62,7 @@ public class RecordingUtils {
     @SuppressWarnings("WeakerAccess") @NonNull public static File createSharedRecordingFile(
         @Nullable String filename) {
         if (filename != null) {
-            return new File(BYB_DIRECTORY,
-                BYB_SHARED_RECORDING_NAME_PREFIX + filename + (filename.endsWith(BYB_RECORDING_EXT)
-                    ? "" : BYB_RECORDING_EXT));
+            return new File(BYB_DIRECTORY, BYB_SHARED_RECORDING_NAME_PREFIX + filename);
         } else {
             int counter = 0;
             String name =

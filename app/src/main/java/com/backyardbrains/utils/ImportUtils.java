@@ -24,8 +24,8 @@ import org.greenrobot.essentials.io.IoUtils;
 public class ImportUtils {
 
     @Retention(RetentionPolicy.SOURCE) @IntDef({
-        ImportResultCode.SUCCESS, ImportResultCode.ERROR, ImportResultCode.ERROR_EXISTS, ImportResultCode.ERROR_OPEN,
-        ImportResultCode.ERROR_SAVE
+        ImportResultCode.SUCCESS, ImportResultCode.ERROR, ImportResultCode.ERROR_EXISTS,
+        ImportResultCode.ERROR_OPEN, ImportResultCode.ERROR_SAVE
     }) public @interface ImportResultCode {
         int SUCCESS = 0;
         int ERROR = 1;
@@ -68,8 +68,9 @@ public class ImportUtils {
      * Checks whether specified {@code intent} holds valid data for import.
      */
     public static boolean checkImport(@NonNull Intent intent) {
-        // FIXME: 05-Oct-18 For now we lean on OS and just check action and scheme because MIME type is not always set
-        //                  but in the future we should find a way to be sure that WAV file is being imported
+        // FIXME: 05-Oct-18 For now we lean on OS and just check action and scheme because MIME
+        //  type is not always set but in the future we should find a way to be sure that audio is
+        //  being imported
         return checkAction(intent.getAction()) && checkScheme(intent.getScheme());
     }
 
@@ -128,7 +129,6 @@ public class ImportUtils {
     }
 
     private static boolean checkMemeType(@Nullable String mimeType) {
-        return mimeType != null && (mimeType.equals("audio/wave") || mimeType.equals("audio/wav") || mimeType.equals(
-            "audio/x-wav") || mimeType.equals("audio/x-pn-wav") || mimeType.equals("audio/vnd.wave"));
+        return mimeType != null && mimeType.startsWith("audio/");
     }
 }
