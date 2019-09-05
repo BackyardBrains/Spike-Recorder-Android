@@ -2,7 +2,17 @@ package com.backyardbrains.dsp.usb;
 
 import java.util.Arrays;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 class HIDBuffer {
+
+    private static final String TAG = makeLogTag(HIDBuffer.class);
+
+    // TI Vendor ID
+    static final byte TEXAS_INSTRUMENTS_VENDOR_ID = 63;
+    // Valid number of bytes to copy in each packet
+    private static final byte VALID_DATA_PACKET_SIZE = 62;
 
     private static final int PACKET_SIZE = 64;
     private static final int BUFFER_MULTIPLIER = 8;
@@ -12,6 +22,10 @@ class HIDBuffer {
 
     private SynchronizedBuffer writeBuffer;
     private byte[] readBuffer;
+    //private byte[] tmp;
+    //private byte[] tmp2;
+    //private byte[] tmp3;
+    //boolean printNext;
 
     HIDBuffer() {
         this(DEFAULT_READ_BUFFER_SIZE, DEFAULT_WRITE_BUFFER_SIZE);
@@ -20,6 +34,9 @@ class HIDBuffer {
     private HIDBuffer(int readBufferSize, int writeBufferSize) {
         writeBuffer = new SynchronizedBuffer(writeBufferSize);
         readBuffer = new byte[readBufferSize];
+        //tmp = new byte[readBufferSize];
+        //tmp2 = new byte[readBufferSize];
+        //tmp3 = new byte[readBufferSize];
     }
 
     byte[] getReadBuffer() {
@@ -28,13 +45,33 @@ class HIDBuffer {
 
     int getDataReceived(byte[] buffer, int length) {
         int counter = 0;
-        int copy;
+        int copy, vendorId;
+        //if (printNext) {
+        //    LOGD(TAG, Arrays.toString(tmp3));
+        //    LOGD(TAG, Arrays.toString(tmp2));
+        //    LOGD(TAG, Arrays.toString(tmp));
+        //    LOGD(TAG, Arrays.toString(readBuffer_compatible));
+        //    LOGD(TAG, "===================");
+        //    printNext = false;
+        //}
         for (int i = 0; i < length; i += PACKET_SIZE) {
-            copy = readBuffer[i + 1];
             // first two bytes are reserved for HID Report ID(vendor specific), and number of transferred bytes
+            vendorId = readBuffer[i];
+            copy = readBuffer[i + 1];
+            if (vendorId != TEXAS_INSTRUMENTS_VENDOR_ID || copy != VALID_DATA_PACKET_SIZE) {
+                //LOGD(TAG, "(" + length + ") -> " + copy);
+                //printNext = true;
+                break;
+            }
             System.arraycopy(readBuffer, i + 2, buffer, counter, copy);
             counter += copy;
         }
+        //if (length < DEFAULT_READ_BUFFER_SIZE) {
+        //    LOGD(TAG, "(" + length + ") -> " + counter);
+        //}
+        //System.arraycopy(tmp2, 0, tmp3, 0, DEFAULT_READ_BUFFER_SIZE);
+        //System.arraycopy(tmp, 0, tmp2, 0, DEFAULT_READ_BUFFER_SIZE);
+        //System.arraycopy(readBuffer_compatible, 0, tmp, 0, DEFAULT_READ_BUFFER_SIZE);
 
         return counter;
     }

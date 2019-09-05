@@ -1,19 +1,22 @@
 package com.backyardbrains.view;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.Size;
-import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import butterknife.Action;
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
+import butterknife.Setter;
+import butterknife.ViewCollections;
 import com.backyardbrains.R;
 import com.backyardbrains.drawing.Colors;
 import java.util.Arrays;
@@ -24,13 +27,13 @@ import java.util.List;
  */
 public class ChannelSettingsView extends ConstraintLayout {
 
-    private static final ButterKnife.Setter<View, OnClickListener> INIT_CHANNEL_COLORS = (view, value, index) -> {
+    private static final Setter<View, OnClickListener> INIT_CHANNEL_COLORS = (view, value, index) -> {
         int channel = (index - 1) % Colors.CHANNEL_COLORS.length;
         view.setTag(index == 0 ? Colors.BLACK : Colors.CHANNEL_COLORS[channel]);
         view.setOnClickListener(value);
     };
 
-    private static final ButterKnife.Action<ImageButton> RESET_CHANNEL_COLORS_SELECTION =
+    private static final Action<ImageButton> RESET_CHANNEL_COLORS_SELECTION =
         (view, index) -> view.setImageDrawable(null);
 
     @BindView(R.id.tv_channel_name) TextView tvChannelName;
@@ -64,7 +67,7 @@ public class ChannelSettingsView extends ConstraintLayout {
         if (Arrays.equals(prevColor, newColor)) return;
 
         // remove check mark from all colors
-        ButterKnife.apply(ibtnChannelColors, RESET_CHANNEL_COLORS_SELECTION);
+        ViewCollections.run(ibtnChannelColors, RESET_CHANNEL_COLORS_SELECTION);
         // select the clicked one
         ((ImageButton) v).setImageResource(R.drawable.ic_check_gray_dark_24dp);
 
@@ -72,7 +75,7 @@ public class ChannelSettingsView extends ConstraintLayout {
         prevColor = newColor;
     };
 
-    private final ButterKnife.Setter<ImageButton, float[]> setChannelColorSelection = (view, value, index) -> {
+    private final Setter<ImageButton, float[]> setChannelColorSelection = (view, value, index) -> {
         float[] compareColor = index == 0 ? Colors.BLACK : Colors.CHANNEL_COLORS[index - 1];
         if (Arrays.equals(compareColor, value)) {
             view.setImageResource(R.drawable.ic_check_gray_dark_24dp);
@@ -120,7 +123,7 @@ public class ChannelSettingsView extends ConstraintLayout {
      * Checks circle with specified {@code color} and un-checks all the other circles
      */
     public void setChannelColor(@Size(4) float[] color) {
-        ButterKnife.apply(ibtnChannelColors, setChannelColorSelection, color);
+        ViewCollections.set(ibtnChannelColors, setChannelColorSelection, color);
 
         prevColor = color;
     }
@@ -131,6 +134,6 @@ public class ChannelSettingsView extends ConstraintLayout {
         ButterKnife.bind(this);
 
         // init channel colors
-        ButterKnife.apply(ibtnChannelColors, INIT_CHANNEL_COLORS, channelColorOnClickListener);
+        ViewCollections.set(ibtnChannelColors, INIT_CHANNEL_COLORS, channelColorOnClickListener);
     }
 }

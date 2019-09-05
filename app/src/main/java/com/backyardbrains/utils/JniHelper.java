@@ -1,6 +1,6 @@
 package com.backyardbrains.utils;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 import com.backyardbrains.events.AmModulationDetectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import org.greenrobot.eventbus.EventBus;

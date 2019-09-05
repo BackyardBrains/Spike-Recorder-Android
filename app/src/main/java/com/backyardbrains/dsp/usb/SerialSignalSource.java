@@ -2,7 +2,7 @@ package com.backyardbrains.dsp.usb;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;

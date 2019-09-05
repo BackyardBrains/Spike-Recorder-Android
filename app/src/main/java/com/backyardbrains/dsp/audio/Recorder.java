@@ -20,8 +20,8 @@
 package com.backyardbrains.dsp.audio;
 
 import android.media.AudioTrack;
-import android.support.annotation.NonNull;
 import android.util.Pair;
+import androidx.annotation.NonNull;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
@@ -52,7 +52,8 @@ public class Recorder {
     private class WriteThread extends Thread {
 
         private static final int BUFFER_SIZE_IN_SEC = 1;
-        private static final int BUFFER_SIZE_IN_SAMPLES = AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
+        private static final int BUFFER_SIZE_IN_SAMPLES =
+            AudioUtils.DEFAULT_SAMPLE_RATE * BUFFER_SIZE_IN_SEC;
         private static final int BUFFER_SIZE_IN_BYTES = BUFFER_SIZE_IN_SAMPLES * 2;
 
         private final ByteBuffer bb;
@@ -62,13 +63,15 @@ public class Recorder {
         // Number of channels the recorded file should have
         private int channelCount;
         // Number of bits per sample of the recorded file
-        private int bitsPerSample = AudioUtils.DEFAULT_BITS_PER_SAMPLE; // always record 16 bits per sample
+        private int bitsPerSample = AudioUtils.DEFAULT_BITS_PER_SAMPLE;
+            // always record 16 bits per sample
 
         private File audioFile;
         private OutputStream outputStream;
         private File eventsFile;
         private AudioTrack audioTrack;
-        private StringBuffer eventsFileContent = new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
+        private StringBuffer eventsFileContent =
+            new StringBuffer(EVENT_MARKERS_FILE_HEADER_CONTENT);
         private List<Pair<Integer, String>> events = new ArrayList<>();
         private CircularByteBuffer buffer = new CircularByteBuffer(BUFFER_SIZE_IN_BYTES);
         private byte[] byteBuffer = new byte[BUFFER_SIZE_IN_BYTES];
@@ -108,7 +111,8 @@ public class Recorder {
                 outputStream = new FileOutputStream(audioFile);
             } catch (FileNotFoundException e) {
                 Crashlytics.logException(e);
-                throw new IOException("Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
+                throw new IOException(
+                    "Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
                     e);
             }
             // create events file
@@ -163,7 +167,8 @@ public class Recorder {
 
                 // we need to save current recording length before writing the actual samples
                 if (isRecording) {
-                    frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount, bitsPerSample);
+                    frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount,
+                        bitsPerSample);
                 }
 
                 // save samples to buffer as bytes
@@ -178,7 +183,9 @@ public class Recorder {
                     String event;
                     for (int i = 0; i < signalData.eventCount; i++) {
                         event = signalData.eventNames[i];
-                        if (event != null) events.add(new Pair<>(frameCount + signalData.eventIndices[i], event));
+                        if (event != null) {
+                            events.add(new Pair<>(frameCount + signalData.eventIndices[i], event));
+                        }
                     }
                 }
             }
@@ -200,7 +207,9 @@ public class Recorder {
                     outputStream.flush();
                     outputStream.close();
                 }
-                if (audioFile != null) WavAudioFile.save(audioFile, sampleRate, channelCount);
+                if (audioFile != null) {
+                    WavAudioFile.save(audioFile, channelCount, sampleRate, AudioUtils.DEFAULT_ENCODING);
+                }
 
                 if (events.size() > 0) saveEventFile();
             } catch (IOException e) {
@@ -234,7 +243,8 @@ public class Recorder {
                 outputStream.close();
             } catch (IOException e) {
                 Crashlytics.logException(e);
-                throw new IOException("could not build OutputStream from events file: " + audioFile.getAbsolutePath(),
+                throw new IOException(
+                    "could not build OutputStream from events file: " + audioFile.getAbsolutePath(),
                     e);
             }
         }

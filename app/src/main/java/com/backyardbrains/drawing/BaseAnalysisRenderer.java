@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;

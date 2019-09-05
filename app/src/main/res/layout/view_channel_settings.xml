@@ -22,7 +22,7 @@
         app:layout_constraintTop_toBottomOf="@+id/tv_channel_name"
         app:layout_constraintRight_toRightOf="parent">
 
-        <android.support.constraint.ConstraintLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
 
@@ -110,6 +110,6 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 tools:ignore="ContentDescription"/>
-        </android.support.constraint.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </HorizontalScrollView>
 </merge>

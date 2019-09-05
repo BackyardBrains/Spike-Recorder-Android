@@ -1,6 +1,6 @@
 package com.backyardbrains.events;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>

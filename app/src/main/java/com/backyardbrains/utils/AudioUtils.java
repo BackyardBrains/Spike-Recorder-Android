@@ -5,10 +5,22 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaCodec;
+import android.media.MediaCodecList;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Build;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -54,10 +66,12 @@ public class AudioUtils {
 
     static {
         // in buffer size
-        int inBufferSize = AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING);
+        int inBufferSize =
+            AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK,
+                DEFAULT_ENCODING);
         DEFAULT_IN_BUFFER_SIZE =
-            inBufferSize == AudioRecord.ERROR || inBufferSize == AudioRecord.ERROR_BAD_VALUE ? DEFAULT_SAMPLE_RATE * 2
-                : inBufferSize * BUFFER_SIZE_FACTOR;
+            inBufferSize == AudioRecord.ERROR || inBufferSize == AudioRecord.ERROR_BAD_VALUE ?
+                DEFAULT_SAMPLE_RATE * 2 : inBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**
@@ -82,8 +96,8 @@ public class AudioUtils {
                 .build();
         } else {
             //noinspection deprecation
-            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, encoding, outBufferSize,
-                AudioTrack.MODE_STREAM);
+            return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, encoding,
+                outBufferSize, AudioTrack.MODE_STREAM);
         }
     }
 
@@ -93,11 +107,16 @@ public class AudioUtils {
     public static int getOutBufferSize(int sampleRate, int channelCount, int bitsPerSample) {
         // out buffer size
         final int outBufferSize =
-            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount), getEncoding(bitsPerSample));
-        return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ? sampleRate * 2
-            : outBufferSize * BUFFER_SIZE_FACTOR;
+            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount),
+                getEncoding(bitsPerSample));
+        return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ?
+            sampleRate * 2 : outBufferSize * BUFFER_SIZE_FACTOR;
     }
 
+    /**
+     * Creates and returns configured {@link AudioRecord} for recording audio files with default
+     * configuration.
+     */
     @Nullable public static AudioRecord createAudioRecord() {
         return createAudioRecord(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING,
             DEFAULT_IN_BUFFER_SIZE);
@@ -106,8 +125,8 @@ public class AudioUtils {
     /**
      * Creates and returns configured {@link AudioRecord} for recording audio files.
      */
-    @Nullable public static AudioRecord createAudioRecord(int sampleRate, int channelMask, int encoding,
-        int inBufferSize) {
+    @Nullable public static AudioRecord createAudioRecord(int sampleRate, int channelMask,
+        int encoding, int inBufferSize) {
         LOGD(TAG, "Create new AudioRecorder");
         AudioRecord ar = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -122,7 +141,8 @@ public class AudioUtils {
             } catch (Exception ignored) {
             }
         } else {
-            ar = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, channelMask, encoding, inBufferSize);
+            ar = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, channelMask,
+                encoding, inBufferSize);
         }
 
         return ar;
@@ -134,7 +154,8 @@ public class AudioUtils {
     public static SoundPool createSoundPool() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return new SoundPool.Builder().setMaxStreams(1)
-                .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                .setAudioAttributes(new AudioAttributes.Builder().setUsage(
+                    AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .setLegacyStreamType(AudioManager.STREAM_RING)
                     .build())
@@ -216,8 +237,8 @@ public class AudioUtils {
             case 7:
                 return AudioFormat.CHANNEL_OUT_5POINT1 | AudioFormat.CHANNEL_OUT_BACK_CENTER;
             case 8:
-                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
-                    : AudioFormat.CHANNEL_OUT_7POINT1;
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                    ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND : AudioFormat.CHANNEL_OUT_7POINT1;
         }
     }
 }

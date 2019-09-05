@@ -2,8 +2,8 @@ package com.backyardbrains.drawing;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.dsp.ProcessingService;
 import com.backyardbrains.ui.BaseFragment;

@@ -1,8 +1,8 @@
 package com.backyardbrains.utils;
 
 import android.app.Activity;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.view.ContextThemeWrapper;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ContextThemeWrapper;
 import com.backyardbrains.R;
 
 public class BYBUtils {

@@ -1,7 +1,7 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.drawing.gl.GlEventTriggeredAveragesGraph;
 import com.backyardbrains.drawing.gl.GlEventTriggeredAveragesGraphThumb;
 import com.backyardbrains.drawing.gl.Rect;
