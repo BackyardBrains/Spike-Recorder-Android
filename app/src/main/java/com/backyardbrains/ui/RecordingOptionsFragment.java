@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import com.backyardbrains.BuildConfig;
 import com.backyardbrains.R;
+import com.backyardbrains.dsp.audio.AudioFile;
 import com.backyardbrains.dsp.audio.BaseAudioFile;
 import com.backyardbrains.dsp.audio.WavAudioFile;
 import com.backyardbrains.events.OpenRecordingAnalysisEvent;
@@ -147,8 +148,8 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
     private void createOptionsData() {
         final String[] optionLabels = getResources().getStringArray(R.array.options_recording);
         final List<OptionItem> options = new ArrayList<>();
-        final BaseAudioFile af = (BaseAudioFile) BaseAudioFile.create(new File(filePath));
-        if (af != null && af.isWav()) {
+        final AudioFile af = BaseAudioFile.create(new File(filePath));
+        if (af instanceof WavAudioFile) {
             options.add(new OptionItem(RecordingOption.ID_DETAILS.value(), optionLabels[0], true));
             options.add(new OptionItem(RecordingOption.ID_PLAY.value(), optionLabels[1], true));
             options.add(new OptionItem(RecordingOption.ID_ANALYSIS.value(), optionLabels[2], true));
@@ -308,6 +309,8 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                         new Thread(() -> {
                             final Handler handler = new Handler(Looper.getMainLooper());
                             final MediaFormat oFormat;
+                            final Runnable runnable = () -> ViewUtils.toast(getContext(),
+                                getString(R.string.error_message_files_convert));
                             try {
                                 oFormat = AudioConversionUtils.convertToWav(f, wavFile,
                                     new AudioConversionUtils.ToWavConversionProgressListener() {
@@ -355,17 +358,13 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                                     openRecordingsList();
                                 } else {
                                     handler.post(() -> showInfo(null));
-
-                                    ViewUtils.toast(getContext(),
-                                        getString(R.string.error_message_files_convert));
+                                    handler.post(runnable);
                                     Crashlytics.logException(new Throwable(
                                         "Converting " + f.getPath() + " to WAV failed"));
                                 }
                             } catch (IOException e) {
                                 handler.post(() -> showInfo(null));
-
-                                ViewUtils.toast(getContext(),
-                                    getString(R.string.error_message_files_convert));
+                                handler.post(runnable);
                                 Crashlytics.logException(
                                     new Throwable("Converting " + f.getPath() + " to WAV failed"));
                             }

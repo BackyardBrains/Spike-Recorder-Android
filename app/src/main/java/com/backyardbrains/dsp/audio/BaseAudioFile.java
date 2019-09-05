@@ -2,16 +2,32 @@ package com.backyardbrains.dsp.audio;
 
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.collection.ArraySet;
+import com.backyardbrains.utils.AudioUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class BaseAudioFile implements AudioFile {
+
+    private static final String WAV_EXT = ".wav";
+    private static final Set<String> WAV_MIME_TYPES = new ArraySet<>();
+
+    static {
+        WAV_MIME_TYPES.add("audio/raw");
+        WAV_MIME_TYPES.add("audio/wav");
+        WAV_MIME_TYPES.add("audio/wave");
+        WAV_MIME_TYPES.add("audio/x-wav");
+        WAV_MIME_TYPES.add("audio/x-pn-wav");
+        WAV_MIME_TYPES.add("audio/vnd.wav");
+    }
 
     private final String absolutePath;
 
@@ -23,9 +39,24 @@ public abstract class BaseAudioFile implements AudioFile {
     private long sampleCount;
     private float lengthInSeconds;
 
-    BaseAudioFile(@NonNull File file) {
-        // save name and absolute file path
-        absolutePath = file.getAbsolutePath();
+    BaseAudioFile(@NonNull String absolutePath, @NonNull MediaExtractor extractor) {
+        // save absolute file path
+        this.absolutePath = absolutePath;
+
+        final MediaFormat format = extractor.getTrackFormat(0);
+        mimeType = format.getString(MediaFormat.KEY_MIME);
+        channelCount = format.containsKey(MediaFormat.KEY_CHANNEL_COUNT) ? format.getInteger(
+            MediaFormat.KEY_CHANNEL_COUNT) : AudioUtils.DEFAULT_CHANNEL_COUNT;
+        sampleRate = format.containsKey(MediaFormat.KEY_SAMPLE_RATE) ? format.getInteger(
+            MediaFormat.KEY_SAMPLE_RATE) : AudioUtils.DEFAULT_SAMPLE_RATE;
+        bitsPerSample = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && format.containsKey(
+            MediaFormat.KEY_PCM_ENCODING) ? AudioUtils.getBitsPerSample(
+            format.getInteger(MediaFormat.KEY_PCM_ENCODING)) : AudioUtils.DEFAULT_BITS_PER_SAMPLE;
+        if (format.containsKey(MediaFormat.KEY_DURATION)) {
+            lengthInSeconds = (float) format.getLong(MediaFormat.KEY_DURATION) / 1000000;
+            sampleCount = (long) (lengthInSeconds * sampleRate);
+            byteCount = sampleCount * channelCount * bitsPerSample / 8;
+        }
     }
 
     @Nullable public static AudioFile create(@NonNull File file) {
@@ -42,18 +73,9 @@ public abstract class BaseAudioFile implements AudioFile {
     @Nullable public static AudioFile create(@NonNull File file, @NonNull MediaExtractor extractor,
         @NonNull FileInputStream source) throws IOException {
         if (file.exists()) {
-            try {
-                extractor.setDataSource(source.getFD());
-            } catch (IOException e) {
-                // instantiation of MediaExtractor failed, fallback to file extension
-                final String absolutePath = file.getAbsolutePath();
-                final String ext = absolutePath.substring(absolutePath.lastIndexOf("."));
-                if (".m4a".equalsIgnoreCase(ext)) {
-                    return new M4aAudioFile(file);
-                } else if (".wav".equalsIgnoreCase(ext)) {
-                    return new WavAudioFile(file);
-                }
-            }
+            final String absolutePath = file.getAbsolutePath();
+            final String ext = absolutePath.substring(absolutePath.lastIndexOf("."));
+            extractor.setDataSource(source.getFD());
 
             if (extractor.getTrackCount() != 1) {
                 throw new IOException("More then one track per file is not supported.");
@@ -67,11 +89,10 @@ public abstract class BaseAudioFile implements AudioFile {
                     throw new IOException("Unsupported file format (not audio).");
                 }
 
-                switch (mime) {
-                    case "audio/mp4a-latm":
-                        return new M4aAudioFile(file);
-                    case "audio/raw":
-                        return new WavAudioFile(file);
+                if (WAV_EXT.equalsIgnoreCase(ext) && WAV_MIME_TYPES.contains(mime)) {
+                    return new WavAudioFile(file, extractor);
+                } else {
+                    return new SimpleAudioFile(absolutePath, extractor);
                 }
             }
         }
@@ -79,64 +100,32 @@ public abstract class BaseAudioFile implements AudioFile {
         return null;
     }
 
-    public final boolean isWav() {
-        return WAV_MIME_TYPE.equals(mimeType);
-    }
-
     @Override public String getAbsolutePath() {
         return absolutePath;
-    }
-
-    protected void mimeType(@NonNull String mimeType) {
-        this.mimeType = mimeType;
     }
 
     @Override public String mimeType() {
         return mimeType;
     }
 
-    protected void channelCount(int channelCount) {
-        this.channelCount = channelCount;
-    }
-
     @Override public int channelCount() {
         return channelCount;
-    }
-
-    protected void sampleRate(int sampleRate) {
-        this.sampleRate = sampleRate;
     }
 
     @Override public int sampleRate() {
         return sampleRate;
     }
 
-    protected void bitsPerSample(int bitsPerSample) {
-        this.bitsPerSample = bitsPerSample;
-    }
-
     @Override public int bitsPerSample() {
         return bitsPerSample;
-    }
-
-    protected void length(long length) {
-        this.byteCount = length;
     }
 
     @Override public long length() {
         return byteCount;
     }
 
-    protected void sampleCount(long sampleCount) {
-        this.sampleCount = sampleCount;
-    }
-
     @Override public long sampleCount() {
         return sampleCount;
-    }
-
-    protected void duration(float duration) {
-        this.lengthInSeconds = duration;
     }
 
     @Override public float duration() {

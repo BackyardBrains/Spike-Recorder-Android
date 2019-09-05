@@ -1,10 +1,9 @@
 package com.backyardbrains.dsp.audio;
 
+import android.media.MediaExtractor;
 import androidx.annotation.NonNull;
 import com.backyardbrains.utils.WavUtils;
-import com.backyardbrains.utils.WavUtils.WavHeader;
 import com.crashlytics.android.Crashlytics;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -17,27 +16,11 @@ public class WavAudioFile extends BaseAudioFile {
 
     private final RandomAccessFile raf;
 
-    WavAudioFile(@NonNull File file) throws IOException {
-        super(file);
+    WavAudioFile(@NonNull File file, @NonNull MediaExtractor extractor) throws IOException {
+        super(file.getAbsolutePath(), extractor);
 
         // create RandomAccessFile
         raf = new RandomAccessFile(file, "r");
-
-        // create header
-        final byte[] headerBytes = new byte[WavUtils.HEADER_SIZE];
-        read(headerBytes);
-        final WavHeader header = WavUtils.readHeader(new ByteArrayInputStream(headerBytes));
-
-        // save audio file info
-        mimeType(WAV_MIME_TYPE);
-        channelCount(header.getChannelCount());
-        sampleRate(header.getSampleRate());
-        bitsPerSample(header.getBitsPerSample());
-        length(header.getDataSize());
-        sampleCount(header.getDataSize() * 8 / header.getBitsPerSample());
-        final float duration = header.getDataSize() / (float) (
-            header.getSampleRate() * header.getChannelCount() * header.getBitsPerSample() / 8);
-        duration(duration);
     }
 
     /**
