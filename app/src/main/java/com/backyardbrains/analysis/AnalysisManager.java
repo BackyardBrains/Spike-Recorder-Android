@@ -10,6 +10,7 @@ import com.backyardbrains.db.SpikeRecorderDatabase;
 import com.backyardbrains.db.entity.Spike;
 import com.backyardbrains.db.entity.Train;
 import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.dsp.audio.BaseAudioFile;
 import com.backyardbrains.dsp.audio.WavAudioFile;
 import com.backyardbrains.events.AnalysisDoneEvent;
 import com.backyardbrains.utils.ObjectUtils;
@@ -158,7 +159,7 @@ public class AnalysisManager {
         }
 
         reset();
-        audioFile = new WavAudioFile(file);
+        audioFile = BaseAudioFile.create(file);
 
         return true;
     }

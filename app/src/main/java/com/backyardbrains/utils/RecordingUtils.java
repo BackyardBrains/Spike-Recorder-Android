@@ -32,8 +32,9 @@ public class RecordingUtils {
     private static final String BYB_EVENTS_EXT = ".txt";
 
     static {
-        BYB_DIRECTORY =
-            new File(Environment.getExternalStorageDirectory() + File.separator + BYB_DIRECTORY_NAME + File.separator);
+        BYB_DIRECTORY = new File(
+            Environment.getExternalStorageDirectory() + File.separator + BYB_DIRECTORY_NAME
+                + File.separator);
         //noinspection ResultOfMethodCallIgnored
         BYB_DIRECTORY.mkdir();
     }
@@ -50,25 +51,26 @@ public class RecordingUtils {
      */
     @NonNull public static File createRecordingFile() {
         return new File(BYB_DIRECTORY,
-            BYB_RECORDING_NAME_PREFIX + DateUtils.format_yyyy_MM_dd_HH_mm_ss(new Date(System.currentTimeMillis()))
-                + BYB_RECORDING_EXT);
+            BYB_RECORDING_NAME_PREFIX + DateUtils.format_yyyy_MM_dd_HH_mm_ss(
+                new Date(System.currentTimeMillis())) + BYB_RECORDING_EXT);
     }
 
     /**
      * Creates and returns new {@link File} for recordings with the specified {@code filename}. If parameter is {@code
      * null} a generic shared name will be used (e.g. Shared Recording 1).
      */
-    @SuppressWarnings("WeakerAccess") @NonNull public static File createSharedRecordingFile(@Nullable String filename) {
+    @SuppressWarnings("WeakerAccess") @NonNull public static File createSharedRecordingFile(
+        @Nullable String filename) {
         if (filename != null) {
-            return new File(BYB_DIRECTORY,
-                BYB_SHARED_RECORDING_NAME_PREFIX + filename + (filename.endsWith(BYB_RECORDING_EXT) ? ""
-                    : BYB_RECORDING_EXT));
+            return new File(BYB_DIRECTORY, BYB_SHARED_RECORDING_NAME_PREFIX + filename);
         } else {
             int counter = 0;
-            String name = BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
+            String name =
+                BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
             File f = new File(BYB_DIRECTORY, name);
             while (f.exists()) {
-                filename = BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
+                filename =
+                    BYB_GENERIC_SHARED_RECORDING_NAME_PREFIX + (++counter) + BYB_RECORDING_EXT;
                 f = new File(BYB_DIRECTORY, filename);
             }
 
@@ -77,12 +79,21 @@ public class RecordingUtils {
     }
 
     /**
+     * Creates and returns new {@link File} for recording with the same file name as specified
+     * {@code file} but with WAV extension.
+     */
+    @NonNull public static File createConvertedRecordingFile(@NonNull File file) {
+        return new File(BYB_DIRECTORY, getFileNameWithoutExtension(file) + BYB_RECORDING_EXT);
+    }
+
+    /**
      * Creates and returns new {@link File} for accompanying events for the specified {@code file}.
      */
     @NonNull public static File createEventsFile(@NonNull File file) {
         // PATCH FOR FILES THAT HAVE NO EXTENSION
         int endIndex = file.getName().lastIndexOf(".");
-        String fileName = endIndex < 0 ? file.getName() : file.getName().substring(0, file.getName().lastIndexOf("."));
+        String fileName = endIndex < 0 ? file.getName()
+            : file.getName().substring(0, file.getName().lastIndexOf("."));
         return new File(BYB_DIRECTORY, fileName + BYB_EVENTS_NAME_SUFFIX + BYB_EVENTS_EXT);
     }
 
