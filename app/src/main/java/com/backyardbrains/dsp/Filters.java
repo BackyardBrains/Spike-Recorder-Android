@@ -1,6 +1,6 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ObjectUtils;

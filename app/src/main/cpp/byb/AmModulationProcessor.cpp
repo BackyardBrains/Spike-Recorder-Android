@@ -74,12 +74,13 @@ namespace backyardbrains {
         void
         AmModulationProcessor::process(const short *inSamples, short **outSamples, const int sampleCount,
                                        const int frameCount) {
-            auto **deinterleavedSignal = new short *[getChannelCount()];
-            for (int i = 0; i < getChannelCount(); i++) {
+            auto channelCount = getChannelCount();
+            auto **deinterleavedSignal = new short *[channelCount];
+            for (int i = 0; i < channelCount; i++) {
                 deinterleavedSignal[i] = new short[frameCount];
             }
             backyardbrains::utils::SignalUtils::deinterleaveSignal(deinterleavedSignal, inSamples, sampleCount,
-                                                                   getChannelCount());
+                                                                   channelCount);
 
             auto *amBuffer = new short[frameCount];
             // always use only first channel for detection
@@ -101,7 +102,7 @@ namespace backyardbrains {
             if (sqrtf(rmsOfOriginalSignal) / sqrtf(rmsOfNotchedAMSignal) > 5) {
                 if (!receivingAmSignal) receivingAmSignal = true;
 
-                for (int i = 0; i < getChannelCount(); i++) {
+                for (int i = 0; i < channelCount; i++) {
                     for (int j = 0; j < frameCount; j++) {
                         outSamples[i][j] = static_cast<short>(abs(deinterleavedSignal[i][j]));
                     }
@@ -120,14 +121,14 @@ namespace backyardbrains {
                 }
 
                 // free memory
-                for (int i = 0; i < getChannelCount(); i++) {
+                for (int i = 0; i < channelCount; i++) {
                     delete[] deinterleavedSignal[i];
                 }
                 delete[] deinterleavedSignal;
 
                 return;
             } else {
-                for (int i = 0; i < getChannelCount(); i++) {
+                for (int i = 0; i < channelCount; i++) {
                     std::copy(deinterleavedSignal[i], deinterleavedSignal[i] + frameCount, outSamples[i]);
 
                     // apply additional filtering if necessary
@@ -135,7 +136,7 @@ namespace backyardbrains {
                 }
 
                 // free memory
-                for (int i = 0; i < getChannelCount(); i++) {
+                for (int i = 0; i < channelCount; i++) {
                     delete[] deinterleavedSignal[i];
                 }
                 delete[] deinterleavedSignal;

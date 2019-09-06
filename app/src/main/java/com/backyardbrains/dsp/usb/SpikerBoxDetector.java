@@ -3,11 +3,12 @@ package com.backyardbrains.dsp.usb;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.util.ArrayMap;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.collection.ArrayMap;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.dsp.SignalSource;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.crashlytics.android.Crashlytics;
@@ -26,7 +27,7 @@ class SpikerBoxDetector {
     private static final String TAG = makeLogTag(SpikerBoxDetector.class);
 
     private static final int MAX_ATTEMPTS = 10;
-    private static final int BUFFER_SIZE = 5000;
+    private static final int BUFFER_SIZE = 10000;
 
     private final Map<String, DetectionThread> detectionThreadMap = new ArrayMap<>();
 
@@ -83,7 +84,8 @@ class SpikerBoxDetector {
             if (usbDevice != null) {
                 usbDevice.setProcessor(new SignalSource.Processor() {
 
-                    private SignalData signalData = new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE);
+                    private SignalData signalData =
+                        new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
 
                     @Override public void onDataReceived(@NonNull byte[] data, int length) {
                         JniUtils.processSampleStream(signalData, data, length, usbDevice);
@@ -93,6 +95,9 @@ class SpikerBoxDetector {
                     }
 
                     @Override public void onChannelCountChanged(int channelCount) {
+                    }
+
+                    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
                     }
                 });
                 // For some devices we set hardware type on creation just by checking VID and PID
@@ -166,7 +171,7 @@ class SpikerBoxDetector {
 
         private UsbSignalSource usbDevice;
 
-        DetectionThread(@NonNull AbstractUsbSignalSource usbDevice) {
+        DetectionThread(@NonNull UsbSignalSource usbDevice) {
             this.usbDevice = usbDevice;
         }
 

@@ -1,6 +1,6 @@
 package com.backyardbrains.analysis;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
     AnalysisType.NONE, AnalysisType.FIND_SPIKES, AnalysisType.AUTOCORRELATION, AnalysisType.ISI,
-    AnalysisType.CROSS_CORRELATION, AnalysisType.AVERAGE_SPIKE
+    AnalysisType.CROSS_CORRELATION, AnalysisType.AVERAGE_SPIKE, AnalysisType.EVENT_TRIGGERED_AVERAGE
 }) public @interface AnalysisType {
     /**
      * Invalid analysis type.
@@ -40,4 +40,9 @@ import java.lang.annotation.RetentionPolicy;
      * Average Spike analysis.
      */
     int AVERAGE_SPIKE = 4;
+
+    /**
+     * Event Triggered Average analysis.
+     */
+    int EVENT_TRIGGERED_AVERAGE = 5;
 }

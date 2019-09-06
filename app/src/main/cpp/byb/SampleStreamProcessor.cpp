@@ -14,7 +14,7 @@ namespace backyardbrains {
         const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
 
         SampleStreamProcessor::SampleStreamProcessor(backyardbrains::utils::OnEventListenerListener *listener)
-                : Processor(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT) {
+                : Processor(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_BITS_PER_SAMPLE) {
             SampleStreamProcessor::listener = listener;
         }
 

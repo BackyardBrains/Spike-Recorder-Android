@@ -2,12 +2,11 @@ package com.backyardbrains.dsp.usb;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
@@ -53,55 +52,85 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_SAMPLE_RATE = "s:%d;";
     private static final String MSG_CHANNELS = "c:%d;";
 
-    private static final String MSG_BOARD_TYPE_INQUIRY = "b:;\n";
+    private static final String MSG_BOARD_TYPE_INQUIRY = "b:;";
     private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
 
     static {
-        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
-            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE, SampleStreamUtils.DEFAULT_SAMPLE_RATE)
-                + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
+        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS = MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
+            SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
-    private UsbSerialDevice serialDevice;
+    //private ReadThread readThread;
+    //private WriteThread writeThread;
 
-    private ReadThread readThread;
+    @SuppressWarnings("WeakerAccess") UsbSerialDevice serialDevice;
+    @SuppressWarnings("WeakerAccess") final SerialBuffer usbBuffer;
+
+    private UsbSerialInterface.UsbReadCallback readCallback = data -> {
+        if (serialDevice != null) {
+            //LOGD(TAG, "READ(" + data.length + ") -> " + Arrays.toString(data));
+            if (data.length > 0) {
+                writeToBuffer(data, data.length);
+            }
+        }
+    };
 
     /**
      * Thread used for reading data sent by connected USB device
      */
-    protected class ReadThread extends Thread {
+    //protected class ReadThread extends Thread {
+    //
+    //    private AtomicBoolean working = new AtomicBoolean(true);
+    //
+    //    private final byte[] dataReceived = new byte[SerialBuffer.DEFAULT_READ_BUFFER_SIZE];
+    //
+    //    @Override public void run() {
+    //        while (working.get()) {
+    //            if (serialDevice != null) {
+    //                int numberBytes = serialDevice.syncRead(usbBuffer.getReadBuffer(), 64);
+    //                LOGD(TAG, "READ(" + numberBytes + ") -> " + Arrays.toString(
+    //                    Arrays.copyOfRange(usbBuffer.getReadBuffer(), 0, numberBytes)));
+    //                if (numberBytes > 0) {
+    //                    usbBuffer.getDataReceived(dataReceived, numberBytes);
+    //
+    //                    writeToBuffer(dataReceived, numberBytes);
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    void stopReadThread() {
+    //        working.set(false);
+    //    }
+    //}
 
-        private static final int DEFAULT_READ_BUFFER_SIZE = 256;
-
-        private final byte[] dataBuffer = new byte[DEFAULT_READ_BUFFER_SIZE];
-
-        private UsbSerialDevice serialDevice;
-        private AtomicBoolean working = new AtomicBoolean(true);
-
-        @Override public void run() {
-            while (working.get()) {
-                if (serialDevice != null) {
-                    int numberBytes = serialDevice.syncRead(dataBuffer, 64);
-                    if (numberBytes > 0) {
-                        //LOGD(TAG, "READING: " + (numberBytes - 2));
-                        writeToBuffer(dataBuffer, numberBytes);
-                    }
-                }
-            }
-        }
-
-        void setSerialDevice(UsbSerialDevice serialDevice) {
-            this.serialDevice = serialDevice;
-        }
-
-        void stopReadThread() {
-            working.set(false);
-        }
-    }
-
+    /**
+     * Thread used for writing data to connected USB device.
+     */
+    //protected class WriteThread extends Thread {
+    //
+    //    private AtomicBoolean working = new AtomicBoolean(true);
+    //
+    //    @Override public void run() {
+    //        while (working.get()) {
+    //            if (serialDevice != null) {
+    //                byte[] data = usbBuffer.getWriteBuffer();
+    //                LOGD(TAG, "WRITE(" + data.length + ") -> " + Arrays.toString(data));
+    //                if (data.length > 0) {
+    //                    serialDevice.syncWrite(data, 64);
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    void stopWriteThread() {
+    //        working.set(false);
+    //    }
+    //}
     private SerialSignalSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
         super(device);
 
+        usbBuffer = new SerialBuffer();
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
     }
 
@@ -140,14 +169,11 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public boolean open() {
-        //return serialDevice != null && serialDevice.open();
-        boolean ret = serialDevice != null && serialDevice.syncOpen();
+        boolean ret = serialDevice != null && serialDevice.open()/*serialDevice.syncOpen()*/;
         if (ret) {
-            if (readThread == null) {
-                readThread = new ReadThread();
-                readThread.setSerialDevice(serialDevice);
-                readThread.start();
-            }
+            // restart the working thread if it has been killed before and  get and claim interface
+            //restartReadThread();
+            //restartWriteThread();
 
             return true;
         } else {
@@ -159,7 +185,9 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public void write(byte[] buffer) {
-        if (serialDevice != null) serialDevice.syncWrite(buffer, 64);
+        //LOGD(TAG, "WRITE(" + buffer.length + ") -> " + Arrays.toString(buffer));
+        //usbBuffer.putWriteBuffer(buffer);
+        serialDevice.write(buffer);
     }
 
     /**
@@ -173,6 +201,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
             serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
             serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
             serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
+            serialDevice.read(readCallback, 1024);
         }
 
         // we don't actually start the stream, it's automatically stared after connection, but we should
@@ -184,12 +214,12 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * {@inheritDoc}
      */
     @Override public void stopReadingStream() {
-        //if (serialDevice != null) serialDevice.close();
-        if (readThread != null) {
-            readThread.stopReadThread();
-            readThread = null;
+        //killReadThread();
+        //killWriteThread();
+        if (serialDevice != null) {
+            //serialDevice.syncClose();
+            serialDevice.close();
         }
-        if (serialDevice != null) serialDevice.syncClose();
     }
 
     /**
@@ -198,4 +228,37 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     @Override public void checkHardwareType() {
         write(MSG_BOARD_TYPE_INQUIRY.getBytes());
     }
+
+    // Kill readThread. This must be called when closing a device.
+    //private void killReadThread() {
+    //    if (readThread != null) {
+    //        readThread.stopReadThread();
+    //        readThread = null;
+    //    }
+    //}
+
+    // Restart readThread if it has been killed before
+    //private void restartReadThread() {
+    //    if (readThread == null) {
+    //        readThread = new ReadThread();
+    //        readThread.start();
+    //    }
+    //}
+
+    // Kill writeThread. This must be called when closing a device.
+    //private void killWriteThread() {
+    //    if (writeThread != null) {
+    //        writeThread.stopWriteThread();
+    //        writeThread = null;
+    //        usbBuffer.resetWriteBuffer();
+    //    }
+    //}
+
+    // Restart writeThread if it has been killed before
+    //private void restartWriteThread() {
+    //    if (writeThread == null) {
+    //        writeThread = new WriteThread();
+    //        writeThread.start();
+    //    }
+    //}
 }

@@ -27,7 +27,7 @@ import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;

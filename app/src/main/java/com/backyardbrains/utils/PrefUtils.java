@@ -3,7 +3,8 @@ package com.backyardbrains.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -18,7 +19,11 @@ public class PrefUtils {
     }
 
     private static String constructPrefKey(@NonNull Class clazz, @NonNull String key) {
-        return PREF_NAME_PREFIX + clazz.getName() + key;
+        return constructPrefKey(clazz, key, null);
+    }
+
+    private static String constructPrefKey(@NonNull Class clazz, @NonNull String key, @Nullable String suffix) {
+        return PREF_NAME_PREFIX + clazz.getName() + (suffix != null ? suffix : "") + key;
     }
 
     /**
@@ -26,20 +31,23 @@ public class PrefUtils {
      */
     private static final String PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE = "_gl_window_horizontal_size";
 
-    public static float getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz) {
+    public static float getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
+        @NonNull String boardName) {
         try {
-            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE),
+            return getSharedPreferences(context).getFloat(
+                constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
                 GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
         } catch (Exception ex) {
-            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE),
+            return getSharedPreferences(context).getInt(
+                constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
                 (int) GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
         }
     }
 
     public static void setGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
-        float glWindowHorizontalSize) {
+        @NonNull String boardName, float glWindowHorizontalSize) {
         getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE), glWindowHorizontalSize)
+            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName), glWindowHorizontalSize)
             .apply();
     }
 
@@ -48,20 +56,23 @@ public class PrefUtils {
      */
     private static final String PREF_FLOAT_WAVEFORM_SCALE_FACTOR = "_gl_waveform_scale_factor";
 
-    public static float getWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz) {
+    public static float getWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz,
+        @NonNull String boardName) {
         try {
-            return getSharedPreferences(context).getFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR),
+            return getSharedPreferences(context).getFloat(
+                constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
                 GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
         } catch (Exception ex) {
-            return getSharedPreferences(context).getInt(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR),
+            return getSharedPreferences(context).getInt(
+                constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
                 (int) GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
         }
     }
 
-    public static void setWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz,
+    public static void setWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz, @NonNull String boardName,
         float glWindowVerticalSize) {
         getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR), glWindowVerticalSize)
+            .putFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName), glWindowVerticalSize)
             .apply();
     }
 

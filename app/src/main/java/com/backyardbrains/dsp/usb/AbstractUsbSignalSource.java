@@ -3,9 +3,9 @@ package com.backyardbrains.dsp.usb;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.util.ArraySet;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.collection.ArraySet;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
@@ -73,7 +73,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     private boolean disconnecting;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT);
+        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT,
+            AudioUtils.getBitsPerSample(AudioUtils.DEFAULT_BITS_PER_SAMPLE));
 
         this.device = device;
 
@@ -273,7 +274,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * Sets connected SpikerBox expansion board type for the input source.
      */
-    @SuppressWarnings({ "WeakerAccess", "unused" }) void setExpansionBoardType(int expansionBoardType) {
+    void setExpansionBoardType(int expansionBoardType) {
         if (this.expansionBoardType == expansionBoardType) return;
 
         LOGD(TAG, "EXPANSION BOARD TYPE: " + SampleStreamUtils.getExpansionBoardName(expansionBoardType));

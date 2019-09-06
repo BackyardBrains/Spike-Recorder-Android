@@ -1,20 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.backyardbrains">
 
-    <supports-screens android:xlargeScreens="true"/>
+    <supports-screens android:xlargeScreens="true" />
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <uses-feature
         android:name="android.hardware.touchscreen"
-        android:required="false"/>
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.usb.host"
-        android:required="false"/>
+        android:required="false" />
 
     <application
         android:name=".BybApplication"
@@ -29,45 +29,41 @@
             android:launchMode="singleTask"
             android:theme="@style/BYBAppStyle">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
+                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.APP_MUSIC"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.APP_MUSIC" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.DEFAULT" />
 
-                <data android:mimeType="audio/wave"/>
-                <data android:mimeType="audio/wav"/>
-                <data android:mimeType="audio/x-wav"/>
-                <data android:mimeType="audio/x-pn-wav"/>
-                <data android:mimeType="audio/vnd.wave"/>
+                <data android:mimeType="audio/*" />
                 <data
-                    android:scheme="content"
-                    android:host="*"/>
+                    android:host="*"
+                    android:scheme="content" />
                 <data
-                    android:scheme="file"
-                    android:host="*"/>
+                    android:host="*"
+                    android:scheme="file" />
             </intent-filter>
         </activity>
 
         <provider
-            android:name="android.support.v4.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
+                android:resource="@xml/provider_paths" />
         </provider>
 
-        <service android:name=".dsp.ProcessingService"/>
+        <service android:name=".dsp.ProcessingService" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="03339903a5ebeb0ce572431bcfc3c9dd25e5b2cc"/>
+            android:value="03339903a5ebeb0ce572431bcfc3c9dd25e5b2cc" />
     </application>
 </manifest>

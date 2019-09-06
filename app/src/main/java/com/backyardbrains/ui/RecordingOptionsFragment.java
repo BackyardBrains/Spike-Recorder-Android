@@ -1,72 +1,95 @@
 package com.backyardbrains.ui;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaFormat;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.util.SparseArray;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.TextView;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import com.backyardbrains.BuildConfig;
 import com.backyardbrains.R;
-import com.backyardbrains.analysis.AnalysisType;
-import com.backyardbrains.db.AnalysisDataSource;
-import com.backyardbrains.events.AnalyzeAudioFileEvent;
-import com.backyardbrains.events.FindSpikesEvent;
+import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.dsp.audio.BaseAudioFile;
+import com.backyardbrains.dsp.audio.WavAudioFile;
+import com.backyardbrains.events.OpenRecordingAnalysisEvent;
 import com.backyardbrains.events.OpenRecordingDetailsEvent;
 import com.backyardbrains.events.OpenRecordingsEvent;
 import com.backyardbrains.events.PlayAudioFileEvent;
+import com.backyardbrains.ui.BaseOptionsFragment.OptionsAdapter.OptionItem;
+import com.backyardbrains.utils.AudioConversionUtils;
+import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import org.greenrobot.eventbus.EventBus;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.AppSettingsDialog;
+import pub.devrel.easypermissions.EasyPermissions;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class RecordingOptionsFragment extends BaseFragment {
+public class RecordingOptionsFragment extends BaseOptionsFragment
+    implements EasyPermissions.PermissionCallbacks {
 
     public static final String TAG = makeLogTag(RecordingOptionsFragment.class);
 
     private static final String ARG_FILE_PATH = "bb_analysis_id";
 
-    @BindView(R.id.ibtn_back) ImageButton ibtnBack;
-    @BindView(R.id.tv_filename) TextView tvTextName;
-    @BindView(R.id.rv_file_options) RecyclerView rvFileOptions;
+    private static final int BYB_SETTINGS_SCREEN = 121;
+    private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
 
-    private Unbinder unbinder;
-
-    private OptionsAdapter adapter;
+    private static final String NOTIFICATION_CHANNEL_ID = "byb_notification_channel_id";
 
     private String filePath;
-    private SparseArray<String> optionsBase;
-    private SparseArray<String> optionsNoCrossCorrelation;
-    private SparseArray<String> optionsAll;
+
+    private enum RecordingOption {
+        ID_DETAILS(0), ID_PLAY(1), ID_ANALYSIS(2), ID_SHARE(3), ID_DELETE(4), ID_CONVERT(5);
+
+        private final int id;
+
+        RecordingOption(final int id) {
+            this.id = id;
+        }
+
+        public int value() {
+            return id;
+        }
+
+        public static RecordingOption find(int id) {
+            for (RecordingOption v : values()) {
+                if (v.id == id) return v;
+            }
+
+            return null;
+        }
+    }
 
     /**
      * Factory for creating a new instance of the fragment.
      *
      * @return A new instance of fragment {@link RecordingOptionsFragment}.
      */
-    public static RecordingOptionsFragment newInstance(@Nullable String filePath) {
+    static RecordingOptionsFragment newInstance(@Nullable String filePath) {
         final RecordingOptionsFragment fragment = new RecordingOptionsFragment();
         final Bundle args = new Bundle();
         args.putString(ARG_FILE_PATH, filePath);
@@ -84,12 +107,11 @@ public class RecordingOptionsFragment extends BaseFragment {
         if (getArguments() != null) filePath = getArguments().getString(ARG_FILE_PATH);
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_recording_options, container, false);
-        unbinder = ButterKnife.bind(this, view);
+    @Override public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+        Bundle savedInstanceState) {
+        View view = super.onCreateView(inflater, container, savedInstanceState);
 
-        setupUI(view.getContext());
+        createOptionsData();
 
         return view;
     }
@@ -98,11 +120,6 @@ public class RecordingOptionsFragment extends BaseFragment {
         super.onActivityCreated(savedInstanceState);
 
         if (savedInstanceState != null) filePath = savedInstanceState.getString(ARG_FILE_PATH);
-
-        if (filePath != null) {
-            spikesAnalysisExists(filePath,
-                (analysis, trainCount) -> constructOptions(analysis != null, trainCount > 0));
-        }
     }
 
     @Override public void onSaveInstanceState(@NonNull Bundle outState) {
@@ -111,28 +128,41 @@ public class RecordingOptionsFragment extends BaseFragment {
         outState.putString(ARG_FILE_PATH, filePath);
     }
 
-    @Override public void onDestroyView() {
-        super.onDestroyView();
-        unbinder.unbind();
+    //==============================================
+    //  ABSTRACT IMPLEMENTATIONS
+    //==============================================
+
+    @Override protected String getTitle() {
+        return RecordingUtils.getFileNameWithoutExtension(new File(filePath));
+    }
+
+    @Override protected View.OnClickListener getBackClickListener() {
+        return v -> openRecordingsList();
     }
 
     //==============================================
     //  PRIVATE METHODS
     //==============================================
 
-    // Initializes user interface
-    private void setupUI(@NonNull Context context) {
-        final File file = new File(filePath);
+    // Creates and sets base options for the current file
+    private void createOptionsData() {
+        final String[] optionLabels = getResources().getStringArray(R.array.options_recording);
+        final List<OptionItem> options = new ArrayList<>();
+        final AudioFile af = BaseAudioFile.create(new File(filePath));
+        if (af instanceof WavAudioFile) {
+            options.add(new OptionItem(RecordingOption.ID_DETAILS.value(), optionLabels[0], true));
+            options.add(new OptionItem(RecordingOption.ID_PLAY.value(), optionLabels[1], true));
+            options.add(new OptionItem(RecordingOption.ID_ANALYSIS.value(), optionLabels[2], true));
+            options.add(new OptionItem(RecordingOption.ID_SHARE.value(), optionLabels[3], false));
+            options.add(new OptionItem(RecordingOption.ID_DELETE.value(), optionLabels[4], false));
+        } else {
+            options.add(new OptionItem(RecordingOption.ID_DETAILS.value(), optionLabels[0], true));
+            options.add(new OptionItem(RecordingOption.ID_CONVERT.value(), optionLabels[5], false));
+            options.add(new OptionItem(RecordingOption.ID_SHARE.value(), optionLabels[3], false));
+            options.add(new OptionItem(RecordingOption.ID_DELETE.value(), optionLabels[4], false));
+        }
 
-        tvTextName.setText(RecordingUtils.getFileNameWithoutExtension(file));
-        ibtnBack.setOnClickListener(v -> openRecordingsList());
-        adapter = new OptionsAdapter(context, (id, name) -> exeOption(id, file));
-        rvFileOptions.setAdapter(adapter);
-        rvFileOptions.setHasFixedSize(true);
-        rvFileOptions.setLayoutManager(new LinearLayoutManager(context));
-        rvFileOptions.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
-
-        createOptionsData();
+        setOptions(options, (id, name) -> execOption(id));
     }
 
     // Opens recordings list view
@@ -140,104 +170,62 @@ public class RecordingOptionsFragment extends BaseFragment {
         EventBus.getDefault().post(new OpenRecordingsEvent());
     }
 
-    // Specified callback is invoked after check that spike analysis for file located at specified filePath exists or not
-    private void spikesAnalysisExists(@NonNull String filePath,
-        @Nullable AnalysisDataSource.SpikeAnalysisCheckCallback callback) {
-        if (getAnalysisManager() != null) getAnalysisManager().spikesAnalysisExists(filePath, false, callback);
-    }
-
     // Executes option for the specified ID
-    void exeOption(int id, @NonNull File file) {
-        switch (id) {
-            case OptionsAdapter.OptionItem.ID_DETAILS:
+    private void execOption(int id) {
+        RecordingOption option = RecordingOption.find(id);
+        if (option == null) return;
+
+        switch (option) {
+            case ID_DETAILS:
                 fileDetails();
                 break;
-            case OptionsAdapter.OptionItem.ID_PLAY:
-                play(file);
+            case ID_PLAY:
+                play();
                 break;
-            case OptionsAdapter.OptionItem.ID_FIND_SPIKES:
-                findSpikes(file);
+            case ID_ANALYSIS:
+                analysis();
                 break;
-            case OptionsAdapter.OptionItem.ID_AUTOCORRELATION:
-                autocorrelation(file);
+            case ID_SHARE:
+                share();
                 break;
-            case OptionsAdapter.OptionItem.ID_ISI:
-                ISI(file);
+            case ID_DELETE:
+                deleteFile();
                 break;
-            case OptionsAdapter.OptionItem.ID_CROSS_CORRELATION:
-                crossCorrelation(file);
-                break;
-            case OptionsAdapter.OptionItem.ID_AVERAGE_SPIKE:
-                averageSpike(file);
-                break;
-            case OptionsAdapter.OptionItem.ID_SHARE:
-                share(file);
-                break;
-            case OptionsAdapter.OptionItem.ID_DELETE:
-                delete(file);
+            case ID_CONVERT:
+                convert();
                 break;
         }
     }
 
     // Opens dialog with recording details
-    void fileDetails() {
+    private void fileDetails() {
         EventBus.getDefault().post(new OpenRecordingDetailsEvent(filePath));
     }
 
     // Starts playing specified audio file
-    void play(@NonNull File f) {
-        EventBus.getDefault().post(new PlayAudioFileEvent(f.getAbsolutePath()));
+    private void play() {
+        EventBus.getDefault().post(new PlayAudioFileEvent(filePath));
     }
 
-    // Start process of finding spikes for the specified audio file
-    void findSpikes(@NonNull File f) {
-        if (f.exists()) EventBus.getDefault().post(new FindSpikesEvent(f.getAbsolutePath()));
-    }
-
-    // Start process of autocorrelation analysis for specified audio file
-    void autocorrelation(@NonNull File f) {
-        startAnalysis(f, AnalysisType.AUTOCORRELATION);
-    }
-
-    // Start process of inter spike interval analysis for specified audio file
-    void ISI(@NonNull File f) {
-        startAnalysis(f, AnalysisType.ISI);
-    }
-
-    // Start process of cross-correlation analysis for specified audio file
-    void crossCorrelation(@NonNull File f) {
-        startAnalysis(f, AnalysisType.CROSS_CORRELATION);
-    }
-
-    // Start process of average spike analysis for specified audio file
-    void averageSpike(@NonNull File f) {
-        startAnalysis(f, AnalysisType.AVERAGE_SPIKE);
-    }
-
-    // Starts analysis process for specified type and specified audio file
-    private void startAnalysis(@NonNull final File file, @AnalysisType final int type) {
-        spikesAnalysisExists(file.getAbsolutePath(), (analysis, trainCount) -> {
-            if (analysis != null) {
-                if (file.exists()) {
-                    EventBus.getDefault().post(new AnalyzeAudioFileEvent(file.getAbsolutePath(), type));
-                }
-            } else {
-                BYBUtils.showAlert(getActivity(), getString(R.string.find_spikes_not_done_title),
-                    getString(R.string.find_spikes_not_done_message));
-            }
-        });
+    // Opens screen with available analysis
+    private void analysis() {
+        EventBus.getDefault().post(new OpenRecordingAnalysisEvent(filePath));
     }
 
     // Initiates sending of the selected recording via email
-    void share(@NonNull File f) {
+    private void share() {
         final Context context = getContext();
+        final File f = new File(filePath);
         if (context != null) {
             // first check if accompanying events file exists because it needs to be shared as well
             final ArrayList<Uri> uris = new ArrayList<>();
-            uris.add(FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", f));
+            uris.add(
+                FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", f));
             final File eventsFile = RecordingUtils.getEventFile(f);
             if (eventsFile != null) {
-                uris.add(FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider", eventsFile));
+                uris.add(
+                    FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".provider",
+                        eventsFile));
             }
             Intent sendIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
             sendIntent.putExtra(Intent.EXTRA_SUBJECT, "My BackyardBrains Recording");
@@ -248,7 +236,8 @@ public class RecordingOptionsFragment extends BaseFragment {
     }
 
     // Triggers deletion of the selected file
-    void delete(@NonNull final File f) {
+    private void delete() {
+        final File f = new File(filePath);
         new AlertDialog.Builder(getContext()).setTitle(getString(R.string.title_delete))
             .setMessage(String.format(getString(R.string.template_delete_file), f.getName()))
             .setPositiveButton(R.string.action_yes, (dialog, which) -> {
@@ -265,22 +254,29 @@ public class RecordingOptionsFragment extends BaseFragment {
                                 BYBUtils.showAlert(getActivity(), getString(R.string.title_error),
                                     getString(R.string.error_message_files_events_delete));
                                 Crashlytics.logException(new Throwable(
-                                    "Deleting events file for the given recording " + f.getPath() + " failed"));
+                                    "Deleting events file for the given recording " + f.getPath()
+                                        + " failed"));
                             }
                         }
                         // delete db analysis data for the deleted audio file
-                        if (getAnalysisManager() != null) getAnalysisManager().deleteSpikeAnalysis(f.getAbsolutePath());
+                        if (getAnalysisManager() != null) {
+                            getAnalysisManager().deleteSpikeAnalysis(f.getAbsolutePath());
+                        }
                     } else {
                         if (getContext() != null) {
-                            ViewUtils.toast(getContext(), getString(R.string.error_message_files_delete));
+                            ViewUtils.toast(getContext(),
+                                getString(R.string.error_message_files_delete));
                         }
-                        Crashlytics.logException(new Throwable("Deleting file " + f.getPath() + " failed"));
+                        Crashlytics.logException(
+                            new Throwable("Deleting file " + f.getPath() + " failed"));
                     }
                 } else {
                     if (getContext() != null) {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
+                        ViewUtils.toast(getContext(),
+                            getString(R.string.error_message_files_no_file));
                     }
-                    Crashlytics.logException(new Throwable("File " + f.getPath() + " doesn't exist"));
+                    Crashlytics.logException(
+                        new Throwable("File " + f.getPath() + " doesn't exist"));
                 }
 
                 openRecordingsList();
@@ -290,120 +286,143 @@ public class RecordingOptionsFragment extends BaseFragment {
             .show();
     }
 
-    // Creates all possible combination of options for the current file
-    private void createOptionsData() {
-        // create options for file that hasn't been analyzed yet
-        String[] options = getResources().getStringArray(R.array.options_recording_base);
-        optionsBase = new SparseArray<>();
-        optionsBase.put(OptionsAdapter.OptionItem.ID_DETAILS, options[0]);
-        optionsBase.put(OptionsAdapter.OptionItem.ID_PLAY, options[1]);
-        optionsBase.put(OptionsAdapter.OptionItem.ID_FIND_SPIKES, options[2]);
-        optionsBase.put(OptionsAdapter.OptionItem.ID_SHARE, options[3]);
-        optionsBase.put(OptionsAdapter.OptionItem.ID_DELETE, options[4]);
-        // create options for file that has only one spike train (cross-correlation not possible)
-        options = getResources().getStringArray(R.array.options_recording_no_cross_correlation);
-        optionsNoCrossCorrelation = new SparseArray<>();
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_DETAILS, options[0]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_PLAY, options[1]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_FIND_SPIKES, options[2]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_AUTOCORRELATION, options[3]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_ISI, options[4]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_AVERAGE_SPIKE, options[5]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_SHARE, options[6]);
-        optionsNoCrossCorrelation.put(OptionsAdapter.OptionItem.ID_DELETE, options[7]);
-        // create options for file with all the options
-        options = getResources().getStringArray(R.array.options_recording);
-        optionsAll = new SparseArray<>();
-        optionsAll.put(OptionsAdapter.OptionItem.ID_DETAILS, options[0]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_PLAY, options[1]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_FIND_SPIKES, options[2]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_AUTOCORRELATION, options[3]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_ISI, options[4]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_CROSS_CORRELATION, options[5]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_AVERAGE_SPIKE, options[6]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_SHARE, options[7]);
-        optionsAll.put(OptionsAdapter.OptionItem.ID_DELETE, options[8]);
+    // Triggers conversion of the M4A file to WAV
+    private void convert() {
+        final File f = new File(filePath);
+        new AlertDialog.Builder(getContext()).setTitle(getString(R.string.title_convert))
+            .setMessage(String.format(getString(R.string.template_convert_file), f.getName()))
+            .setPositiveButton(R.string.action_yes, (dialog, which) -> {
+                // validate if the specified file already exists
+                if (f.exists()) {
+                    // create recording file
+                    final File wavFile = RecordingUtils.createConvertedRecordingFile(f);
+                    if (getContext() != null) {
+                        // if file with same name and .wav extension already exists
+                        // stop and show toast
+                        if (wavFile.exists()) {
+                            ViewUtils.toast(getContext(),
+                                String.format(getString(R.string.error_message_files_exists_2),
+                                    f.getName()), Toast.LENGTH_LONG);
+                            return;
+                        }
+                        // start the conversion in background thread
+                        new Thread(() -> {
+                            final Handler handler = new Handler(Looper.getMainLooper());
+                            final MediaFormat oFormat;
+                            final Runnable runnable = () -> ViewUtils.toast(getContext(),
+                                getString(R.string.error_message_files_convert));
+                            try {
+                                oFormat = AudioConversionUtils.convertToWav(f, wavFile,
+                                    new AudioConversionUtils.ToWavConversionProgressListener() {
+                                        @Override public void onConversionProgress(float progress) {
+                                            // updates the info with the current progress
+                                            handler.post(() -> showInfo(String.format(getString(
+                                                R.string.content_desc_conversion_progress),
+                                                (int) progress)));
+                                        }
+
+                                        @Override public void onConversionComplete() {
+                                            // updates the info with the current progress
+                                            handler.post(() -> showInfo(String.format(getString(
+                                                R.string.content_desc_conversion_progress), 100)));
+                                            handler.postDelayed(() -> showInfo(null), 500);
+                                            LOGD(TAG, "CONVERSION COMPLETED");
+                                        }
+                                    });
+                                if (oFormat != null) {
+                                    int channelCount =
+                                        oFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT) ? oFormat
+                                            .getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                                            : AudioUtils.DEFAULT_CHANNEL_COUNT;
+                                    int sampleRate =
+                                        oFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE)
+                                            ? oFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                                            : AudioUtils.DEFAULT_SAMPLE_RATE;
+                                    int encoding = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                                        && oFormat.containsKey(MediaFormat.KEY_PCM_ENCODING)
+                                        ? oFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                                        : AudioUtils.DEFAULT_ENCODING;
+                                    WavAudioFile.save(wavFile, channelCount, sampleRate, encoding);
+
+                                    // delete the original file
+                                    if (!f.delete()) {
+                                        if (getContext() != null) {
+                                            ViewUtils.toast(getContext(), getString(
+                                                R.string.error_message_files_convert_delete));
+                                        }
+                                        Crashlytics.logException(new Throwable(
+                                            "Deleting file " + f.getPath()
+                                                + " after conversion failed"));
+                                    }
+
+                                    openRecordingsList();
+                                } else {
+                                    handler.post(() -> showInfo(null));
+                                    handler.post(runnable);
+                                    Crashlytics.logException(new Throwable(
+                                        "Converting " + f.getPath() + " to WAV failed"));
+                                }
+                            } catch (IOException e) {
+                                handler.post(() -> showInfo(null));
+                                handler.post(runnable);
+                                Crashlytics.logException(
+                                    new Throwable("Converting " + f.getPath() + " to WAV failed"));
+                            }
+                        }).start(); // starts the thread by calling the run() method in its Runnable
+                    } else {
+                        Crashlytics.logException(
+                            new Throwable("Converting " + f.getPath() + " to WAV failed"));
+                    }
+                } else {
+                    if (getContext() != null) {
+                        ViewUtils.toast(getContext(),
+                            getString(R.string.error_message_files_no_file));
+                    }
+                    Crashlytics.logException(
+                        new Throwable("File " + f.getPath() + " doesn't exist"));
+                }
+            })
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+            .show();
     }
 
-    // Creates and opens recording options dialog
-    void constructOptions(final boolean canAnalyze, final boolean showCrossCorrelation) {
-        final SparseArray<String> options =
-            canAnalyze ? (showCrossCorrelation ? optionsAll : optionsNoCrossCorrelation) : optionsBase;
-        adapter.setOptions(options);
+    //==============================================
+    // WRITE_EXTERNAL_STORAGE PERMISSION
+    //==============================================
+
+    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+        @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    /**
-     * Adapter for listing all the available options for the currently file.
-     */
-    static class OptionsAdapter extends RecyclerView.Adapter<OptionsAdapter.OptionViewHolder> {
+    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+        LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
+    }
 
-        private final LayoutInflater inflater;
-        private final Callback callback;
-
-        private SparseArray<String> options;
-
-        interface Callback {
-            void onClick(int id, @NonNull String name);
+    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
+        LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
+                .setTitle(R.string.title_settings_dialog)
+                .setPositiveButton(R.string.action_setting)
+                .setNegativeButton(R.string.action_cancel)
+                .setRequestCode(BYB_SETTINGS_SCREEN)
+                .build()
+                .show();
         }
+    }
 
-        OptionsAdapter(@NonNull Context context, @Nullable Callback callback) {
-            super();
-
-            this.inflater = LayoutInflater.from(context);
-            this.callback = callback;
-        }
-
-        void setOptions(@NonNull SparseArray<String> options) {
-            this.options = options;
-            notifyDataSetChanged();
-        }
-
-        @NonNull @Override public OptionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new OptionViewHolder(inflater.inflate(R.layout.item_recording_option, parent, false), callback);
-        }
-
-        @Override public void onBindViewHolder(@NonNull OptionViewHolder holder, int position) {
-            final int key = options.keyAt(position);
-            holder.setOption(key, options.get(key));
-        }
-
-        @Override public int getItemCount() {
-            return options != null ? options.size() : 0;
-        }
-
-        static class OptionItem {
-            static final int ID_DETAILS = 0;
-            static final int ID_PLAY = 1;
-            static final int ID_FIND_SPIKES = 2;
-            static final int ID_AUTOCORRELATION = 3;
-            static final int ID_ISI = 4;
-            static final int ID_CROSS_CORRELATION = 5;
-            static final int ID_AVERAGE_SPIKE = 6;
-            static final int ID_SHARE = 7;
-            static final int ID_DELETE = 8;
-        }
-
-        static class OptionViewHolder extends RecyclerView.ViewHolder {
-            @BindView(R.id.tv_option_name) TextView tvOptionName;
-
-            int id;
-            String name;
-
-            OptionViewHolder(@NonNull View view, @Nullable final Callback callback) {
-                super(view);
-                ButterKnife.bind(this, view);
-
-                view.setOnClickListener(v -> {
-                    if (callback != null) callback.onClick(id, name);
-                });
-            }
-
-            void setOption(int id, @NonNull String name) {
-                this.id = id;
-                this.name = name;
-
-                tvOptionName.setText(this.name);
-            }
+    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) private void deleteFile() {
+        if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            if (filePath != null) delete();
+        } else {
+            // Request one permission
+            EasyPermissions.requestPermissions(this,
+                getString(R.string.rationale_write_external_storage_delete),
+                BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
 }

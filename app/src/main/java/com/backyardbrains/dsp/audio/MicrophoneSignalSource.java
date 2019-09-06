@@ -3,8 +3,8 @@ package com.backyardbrains.dsp.audio;
 import android.media.AudioRecord;
 import android.os.Build;
 import android.os.Process;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
@@ -72,7 +72,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     private static final Object lock = new Object();
 
     MicrophoneSignalSource(@NonNull AudioRecord recorder) {
-        super(recorder.getSampleRate(), recorder.getChannelCount());
+        super(recorder.getSampleRate(), recorder.getChannelCount(),
+            AudioUtils.getBitsPerSample(recorder.getAudioFormat()));
 
         this.recorder = recorder;
     }

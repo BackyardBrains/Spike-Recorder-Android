@@ -1,18 +1,22 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.SignalConfiguration;
 import com.backyardbrains.dsp.SignalProcessor;
 import com.backyardbrains.ui.BaseFragment;
 import com.backyardbrains.utils.BYBUtils;
+import com.backyardbrains.utils.BoardNames;
 import com.backyardbrains.utils.EventUtils;
+import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.GlUtils;
 import com.backyardbrains.utils.PrefUtils;
+import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -76,6 +80,7 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
     private final String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private float scaleX;
     private float scaleY;
+    private String boardName = BoardNames.toBoardName(SpikerBoxHardwareType.NONE);
 
     private boolean scrollEnabled;
     private boolean measureEnabled;
@@ -178,6 +183,9 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
                 signalConfiguration.getVisibleChannelCount());
         }
 
+        // save settings before resetting gl window width
+        final Context context = getContext();
+        if (context != null) onSaveSettings(context, "onSampleRateChanged()");
         // reset gl window width cause ample rate changed
         setGlWindowWidth(glWindowWidth);
     }
@@ -196,6 +204,15 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             resetLocalSignalDrawData(visibleChannelCount);
             resetWaveformScaleFactorsAndPositions(visibleChannelCount);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param bitsPerSample The new number of bits per sample.
+     */
+    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
+        LOGD(TAG, "onBitsPerSampleChanged(" + bitsPerSample + ")");
     }
 
     /**
@@ -230,10 +247,10 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
      */
     @Override public void onSignalAveragingChanged(boolean signalAveraging) {
         final Context context = getContext();
-        if (context != null) onSaveSettings(context);
+        if (context != null) onSaveSettings(context, "onSignalAveragingChanged()");
         // we should reset buffers for averaged samples
         if (signalAveraging) resetAveragedSignal();
-        if (context != null) onLoadSettings(context);
+        if (context != null) onLoadSettings(context, "onSignalAveragingChanged()");
     }
 
     /**
@@ -255,6 +272,28 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     @Override public void onSignalSeekingChanged(boolean signalSeek) {
         //LOGD(TAG, "onSignalSeekingChanged(" + signalSeek + ")");
+    }
+
+    @Override public void onBoardTypeChanged(int boardType) {
+        LOGD(TAG, "onBoardTypeChanged(" + SampleStreamUtils.getSpikerBoxHardwareName(boardType) + ")");
+        final Context context = getContext();
+        if (context != null) onSaveSettings(context, "onBoardTypeChanged()");
+        // change board type so we can load correct zoom values
+        this.boardName = BoardNames.toBoardName(boardType);
+        if (context != null) onLoadSettings(context, "onBoardTypeChanged()");
+    }
+
+    @Override public void onExpansionBoardTypeChanged(int expansionBoardType) {
+        LOGD(TAG, "onExpansionBoardTypeChanged(" + SampleStreamUtils.getExpansionBoardName(expansionBoardType) + ")");
+        final Context context = getContext();
+        if (context != null) onSaveSettings(context, "onExpansionBoardTypeChanged()");
+        // change board type so we can load correct zoom values
+        if (expansionBoardType != ExpansionBoardType.NONE) {
+            this.boardName = BoardNames.toExpansionBoardName(expansionBoardType);
+        } else {
+            this.boardName = BoardNames.toBoardName(signalConfiguration.getBoardType());
+        }
+        if (context != null) onLoadSettings(context, "onExpansionBoardTypeChanged()");
     }
 
     //===========================================================
@@ -389,6 +428,21 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
         return signalConfiguration.getSelectedChannel();
     }
 
+    //==============================================
+    //  BOARD TYPES
+    //==============================================
+
+    /**
+     * Resets current board type to {@link SpikerBoxHardwareType#NONE} so zoom levels can be save per board.
+     */
+    public void resetBoardType() {
+        onBoardTypeChanged(SpikerBoxHardwareType.NONE);
+    }
+
+    //==============================================
+    // VIEWPORT AND CLIPPING AREA
+    //==============================================
+
     /**
      * Returns height of the drawing viewport.
      */
@@ -482,32 +536,36 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
     /**
      * Called to ask renderer to load it's local settings so it can render inital state correctly. It is the counterpart
-     * to {@link #onSaveSettings(Context)}.
+     * to {@link #onSaveSettings(Context, String)}.
      *
      * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to load any renderer specific settings.
      */
-    @CallSuper public void onLoadSettings(@NonNull Context context) {
+    @CallSuper public void onLoadSettings(@NonNull Context context, String from) {
+        LOGD(TAG,
+            "LOAD SETTINGS FROM " + from + " (" + boardName + " -> " + PrefUtils.getGlWindowHorizontalSize(context,
+                getClass(), boardName) + ")");
         surfaceWidth = PrefUtils.getViewportWidth(context, getClass());
         surfaceHeight = PrefUtils.getViewportHeight(context, getClass());
         surfaceSizeDirty = true;
-        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass()));
-        initWaveformScaleFactor(PrefUtils.getWaveformScaleFactor(context, getClass()));
+        setGlWindowWidth(PrefUtils.getGlWindowHorizontalSize(context, getClass(), boardName));
+        initWaveformScaleFactor(PrefUtils.getWaveformScaleFactor(context, getClass(), boardName));
     }
 
     /**
      * Called to ask renderer to save it's local settings so they can be retrieved when renderer is recreated. It is the
-     * counterpart to {@link #onLoadSettings(Context)}.
+     * counterpart to {@link #onLoadSettings(Context, String)}.
      *
      * This method should typically be called in {@code Activity.onStart()}. Subclasses
      * should override this method if they need to save any renderer specific settings.
      */
-    @CallSuper public void onSaveSettings(@NonNull Context context) {
+    @CallSuper public void onSaveSettings(@NonNull Context context, String from) {
+        LOGD(TAG, "SAVING SETTINGS FROM " + from + " (" + boardName + " -> " + glWindowWidth + ")");
         PrefUtils.setViewportWidth(context, getClass(), surfaceWidth);
         PrefUtils.setViewportHeight(context, getClass(), surfaceHeight);
-        PrefUtils.setGlWindowHorizontalSize(context, getClass(), glWindowWidth);
+        PrefUtils.setGlWindowHorizontalSize(context, getClass(), boardName, glWindowWidth);
         if (signalConfiguration.getVisibleChannelCount() > 0) {
-            PrefUtils.setWaveformScaleFactor(context, getClass(), waveformScaleFactors[0]);
+            PrefUtils.setWaveformScaleFactor(context, getClass(), boardName, waveformScaleFactors[0]);
         }
     }
 
@@ -575,7 +633,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
 
             final int selectedChannel = signalConfiguration.getSelectedChannel();
             final boolean signalAveraging = signalConfiguration.isSignalAveraging();
-            final boolean fftProcessing = signalConfiguration.isFftProcessing();
 
             // copy samples, averaged samples and events and fft to local buffers
             final int copiedEventsCount =

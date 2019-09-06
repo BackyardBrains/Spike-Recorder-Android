@@ -1,9 +1,9 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import com.backyardbrains.drawing.gl.GlBarGraph;
-import com.backyardbrains.drawing.gl.GlBarGraphThumb;
+import androidx.annotation.NonNull;
+import com.backyardbrains.drawing.gl.GlColumnGraph;
+import com.backyardbrains.drawing.gl.GlColumnGraphThumb;
 import com.backyardbrains.drawing.gl.Rect;
 import com.backyardbrains.ui.BaseFragment;
 import java.text.DecimalFormat;
@@ -28,8 +28,8 @@ public class ISIRenderer extends BaseAnalysisRenderer {
     }
 
     private Context context;
-    private GlBarGraph glBarGraph;
-    private GlBarGraphThumb glBarGraphThumb;
+    private GlColumnGraph glColumnGraph;
+    private GlColumnGraphThumb glColumnGraphThumb;
 
     @SuppressWarnings("WeakerAccess") int[][] isiAnalysis;
 
@@ -45,8 +45,8 @@ public class ISIRenderer extends BaseAnalysisRenderer {
     @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         super.onSurfaceCreated(gl, config);
 
-        glBarGraph = new GlBarGraph(context, gl, new DecimalFormat("0E0"));
-        glBarGraphThumb = new GlBarGraphThumb(context, gl);
+        glColumnGraph = new GlColumnGraph(context, gl, new DecimalFormat("0E0"));
+        glColumnGraphThumb = new GlColumnGraphThumb(context, gl);
     }
 
     @Override protected void draw(GL10 gl, int surfaceWidth, int surfaceHeight) {
@@ -63,7 +63,7 @@ public class ISIRenderer extends BaseAnalysisRenderer {
                     w = h = thumbSize;
                     // pass thumb to parent class so we can detect thumb click
                     glGraphThumbTouchHelper.registerTouchableArea(new Rect(x, y, thumbSize, thumbSize));
-                    glBarGraphThumb.draw(gl, x, y, w, h, isiAnalysis[i],
+                    glColumnGraphThumb.draw(gl, x, y, w, h, isiAnalysis[i],
                         Colors.CHANNEL_COLORS[i % Colors.CHANNEL_COLORS.length],
                         SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX + (i + 1));
                 }
@@ -73,7 +73,7 @@ public class ISIRenderer extends BaseAnalysisRenderer {
                 h = portraitOrientation ? surfaceHeight - 3 * MARGIN - thumbSize : surfaceHeight - 2 * MARGIN;
 
                 int selected = glGraphThumbTouchHelper.getSelectedTouchableArea();
-                glBarGraph.draw(gl, x, y, w, h, isiAnalysis[selected], H_GRAPH_AXIS_VALUES,
+                glColumnGraph.draw(gl, x, y, w, h, isiAnalysis[selected], H_GRAPH_AXIS_VALUES,
                     Colors.CHANNEL_COLORS[selected % Colors.CHANNEL_COLORS.length]);
             }
         }

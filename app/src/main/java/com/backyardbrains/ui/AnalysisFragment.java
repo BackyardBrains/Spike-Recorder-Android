@@ -3,8 +3,9 @@ package com.backyardbrains.ui;
 import android.annotation.SuppressLint;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.os.Parcelable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,11 +17,13 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.R;
+import com.backyardbrains.analysis.AnalysisConfig;
 import com.backyardbrains.analysis.AnalysisType;
 import com.backyardbrains.drawing.AutoCorrelationRenderer;
 import com.backyardbrains.drawing.AverageSpikeRenderer;
 import com.backyardbrains.drawing.BaseAnalysisRenderer;
 import com.backyardbrains.drawing.CrossCorrelationRenderer;
+import com.backyardbrains.drawing.EventTriggeredAverageRenderer;
 import com.backyardbrains.drawing.ISIRenderer;
 import com.backyardbrains.drawing.TouchGlSurfaceView;
 import com.backyardbrains.events.AnalysisDoneEvent;
@@ -37,8 +40,7 @@ public class AnalysisFragment extends BaseFragment {
 
     private static final String TAG = makeLogTag(AnalysisFragment.class);
 
-    private static final String ARG_FILE_PATH = "bb_file_path";
-    private static final String ARG_ANALYSIS_TYPE = "bb_analysis_type";
+    private static final String ARG_ANALYSIS_CONFIG = "bb_analysis_config";
 
     @BindView(R.id.fl_container) FrameLayout flGL;
     @BindView(R.id.tv_analysis_title) TextView tvTitle;
@@ -50,19 +52,17 @@ public class AnalysisFragment extends BaseFragment {
     private TouchGlSurfaceView glSurface;
     private BaseAnalysisRenderer currentRenderer;
 
-    private String filePath;
-    private int analysisType = AnalysisType.NONE;
+    private AnalysisConfig analysisConfig;
 
     /**
      * Factory for creating a new instance of the fragment.
      *
      * @return A new instance of fragment {@link AnalysisFragment}.
      */
-    public static AnalysisFragment newInstance(@Nullable String filePath, @AnalysisType int analysisType) {
+    public static AnalysisFragment newInstance(@Nullable Parcelable config) {
         final AnalysisFragment fragment = new AnalysisFragment();
         final Bundle args = new Bundle();
-        args.putString(ARG_FILE_PATH, filePath);
-        args.putInt(ARG_ANALYSIS_TYPE, analysisType);
+        args.putParcelable(ARG_ANALYSIS_CONFIG, config);
         fragment.setArguments(args);
         return fragment;
     }
@@ -74,10 +74,7 @@ public class AnalysisFragment extends BaseFragment {
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments() != null) {
-            filePath = getArguments().getString(ARG_FILE_PATH);
-            analysisType = getArguments().getInt(ARG_ANALYSIS_TYPE);
-        }
+        if (getArguments() != null) analysisConfig = getArguments().getParcelable(ARG_ANALYSIS_CONFIG);
     }
 
     @Override
@@ -97,7 +94,7 @@ public class AnalysisFragment extends BaseFragment {
 
         if (glSurface != null) glSurface.onResume();
 
-        if (ApacheCommonsLang3Utils.isBlank(filePath)) {
+        if (ApacheCommonsLang3Utils.isBlank(analysisConfig.getFilePath())) {
             if (getContext() != null) ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
             return;
         }
@@ -105,7 +102,7 @@ public class AnalysisFragment extends BaseFragment {
         if (getAnalysisManager() != null) {
             // show "Waiting..." screen and start analysis
             showWaiting(true);
-            getAnalysisManager().startAnalysis(filePath, analysisType);
+            getAnalysisManager().startAnalysis(analysisConfig);
         }
     }
 
@@ -167,9 +164,8 @@ public class AnalysisFragment extends BaseFragment {
     // Sets new renderer for the GL surface view
     private void setRenderer(@AnalysisType int type) {
         LOGD(TAG, "setRenderer()");
-        if (type >= AnalysisType.FIND_SPIKES && type <= AnalysisType.AVERAGE_SPIKE) {
-            analysisType = type;
-            reassignSurfaceView(analysisType);
+        if (type >= AnalysisType.FIND_SPIKES && type <= AnalysisType.EVENT_TRIGGERED_AVERAGE) {
+            reassignSurfaceView(analysisConfig.getAnalysisType());
         }
     }
 
@@ -205,6 +201,9 @@ public class AnalysisFragment extends BaseFragment {
             case AnalysisType.ISI:
                 currentRenderer = new ISIRenderer(this);
                 break;
+            case AnalysisType.EVENT_TRIGGERED_AVERAGE:
+                currentRenderer = new EventTriggeredAverageRenderer(this);
+                break;
         }
 
         if (flGL != null) {
@@ -229,6 +228,7 @@ public class AnalysisFragment extends BaseFragment {
 
     // Initializes user interface
     private void setupUI() {
+        tvTitle.setText(getTitle(analysisConfig.getAnalysisType()));
         ibtnBack.setOnClickListener(v -> {
             if (getActivity() != null) getActivity().onBackPressed();
         });
@@ -245,6 +245,8 @@ public class AnalysisFragment extends BaseFragment {
                 return getString(R.string.analysis_cross_correlation);
             case AnalysisType.ISI:
                 return getString(R.string.analysis_isi);
+            case AnalysisType.EVENT_TRIGGERED_AVERAGE:
+                return getString(R.string.analysis_event_triggered_averages);
             case AnalysisType.NONE:
                 return getString(R.string.analysis_please_wait);
             case AnalysisType.FIND_SPIKES:

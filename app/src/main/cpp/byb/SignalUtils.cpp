@@ -8,7 +8,7 @@ namespace backyardbrains {
 
     namespace utils {
 
-        short **
+        void
         SignalUtils::deinterleaveSignal(short **outSamples, const short *inSamples, int sampleCount, int channelCount) {
             int frameCount = sampleCount / channelCount;
             for (int ch = 0; ch < channelCount; ch++) {
@@ -16,20 +16,32 @@ namespace backyardbrains {
                     outSamples[ch][i] = inSamples[channelCount * i + ch];
                 }
             }
-
-            return outSamples;
         }
 
-        short *SignalUtils::interleaveSignal(short **samples, int frameCount, int channelCount) {
-            int sampleCount = frameCount * channelCount;
-            auto *result = new short[sampleCount];
-            for (int i = 0; i < frameCount; i++) {
-                for (int ch = 0; ch < channelCount; ch++) {
-                    result[channelCount * i + ch] = samples[ch][i];
+        void
+        SignalUtils::deinterleaveSignal1(short **outSamples, const float *inSamples, int sampleCount,
+                                         int channelCount) {
+            int frameCount = sampleCount / channelCount;
+            for (int ch = 0; ch < channelCount; ch++) {
+                for (int i = 0; i < frameCount; i++) {
+                    outSamples[ch][i] = static_cast<short>(inSamples[channelCount * i + ch] * SHRT_MAX);
                 }
             }
+        }
 
-            return result;
+        void SignalUtils::interleaveSignal(short *outSamples, short **inSamples, int frameCount, int channelCount) {
+            for (int i = 0; i < frameCount; i++) {
+                for (int ch = 0; ch < channelCount; ch++) {
+                    outSamples[channelCount * i + ch] = inSamples[ch][i];
+                }
+            }
+        }
+
+        void SignalUtils::normalizeSignalToFloat(float *outSamples, short *inSamples, int sampleCount) {
+            auto max = (float) SHRT_MAX;
+            for (int i = 0; i < sampleCount; i++) {
+                outSamples[i] = inSamples[i] / max;
+            }
         }
     }
 }

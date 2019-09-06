@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlGraphThumbTouchHelper;
 import com.backyardbrains.events.RedrawAnalysisGraphEvent;
@@ -19,6 +19,7 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
     private static final float DEFAULT_MAX_GRAPH_THUMB_SIZE = 80f;
     static final float MARGIN = 30f;
     static final String SPIKE_TRAIN_THUMB_GRAPH_NAME_PREFIX = "ST";
+    static final String CHANNEL_THUMB_GRAPH_NAME_PREFIX = "CH";
 
     final GlGraphThumbTouchHelper glGraphThumbTouchHelper = new GlGraphThumbTouchHelper();
 
@@ -86,6 +87,10 @@ public abstract class BaseAnalysisRenderer extends BaseRenderer implements Touch
 
         // setup drawing surface
         gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+
+        // select and reset the model-view matrix
+        gl.glMatrixMode(GL10.GL_MODELVIEW);
+        gl.glLoadIdentity();
 
         // draw on surface
         draw(gl, surfaceWidth, surfaceHeight);

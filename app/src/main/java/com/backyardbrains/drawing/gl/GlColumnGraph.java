@@ -1,9 +1,9 @@
 package com.backyardbrains.drawing.gl;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.Size;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
 import com.android.texample.GLText;
 import com.backyardbrains.utils.GlUtils;
 import java.nio.ByteBuffer;
@@ -17,7 +17,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
-public class GlBarGraph {
+public class GlColumnGraph {
 
     private static final int MAX_AXIS_VALUES = 5;
     private static final float AXES_VALUES_MARGIN = 20f;
@@ -43,11 +43,11 @@ public class GlBarGraph {
 
     private final float[] borderVertices = new float[AXES_VERTICES_COUNT];
 
-    public GlBarGraph(@NonNull Context context, @NonNull GL10 gl) {
+    public GlColumnGraph(@NonNull Context context, @NonNull GL10 gl) {
         this(context, gl, DEFAULT_FORMATTER);
     }
 
-    public GlBarGraph(@NonNull Context context, @NonNull GL10 gl, @NonNull NumberFormat hAxisValuesFormatter) {
+    public GlColumnGraph(@NonNull Context context, @NonNull GL10 gl, @NonNull NumberFormat hAxisValuesFormatter) {
         this.formatter = hAxisValuesFormatter;
 
         ByteBuffer axesVBB = ByteBuffer.allocateDirect(AXES_VERTICES_COUNT * 4);

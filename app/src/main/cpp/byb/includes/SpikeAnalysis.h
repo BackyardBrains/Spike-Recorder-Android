@@ -24,15 +24,11 @@ namespace backyardbrains {
             ~SpikeAnalysis();
 
             void findSpikes(const char *filePath, short **outValuesPos, int **outIndicesPos, float **outTimesPos,
-                            short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int channelCount,
-                            int *outPosCounts, int *outNegCounts);
+                            short **outValuesNeg, int **outIndicesNeg, float **outTimesNeg, int *outPosCounts,
+                            int *outNegCounts);
 
         private:
             static const char *TAG;
-
-            static constexpr float BUFFER_SIZE_IN_SECS = 12.0f;
-            static constexpr float MIN_VALID_FILE_LENGTH_IN_SECS = 0.2f;
-            static constexpr float BIN_COUNT = 200.0f;
 
             static constexpr int SCHMITT_ON = 1;
             static constexpr int SCHMITT_OFF = 2;

@@ -2,9 +2,6 @@ package com.backyardbrains.ui;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +9,15 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import com.backyardbrains.R;
-import com.backyardbrains.dsp.audio.WavAudioFile;
+import com.backyardbrains.dsp.audio.AudioFile;
+import com.backyardbrains.dsp.audio.BaseAudioFile;
 import com.backyardbrains.events.OpenRecordingOptionsEvent;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.BYBUtils;
@@ -24,10 +25,8 @@ import com.backyardbrains.utils.DateUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
-import com.backyardbrains.utils.WavUtils;
 import com.crashlytics.android.Crashlytics;
 import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import org.greenrobot.eventbus.EventBus;
 
@@ -45,9 +44,11 @@ public class RecordingDetailsFragment extends BaseFragment {
     @BindView(R.id.tv_filename) TextView tvFilename;
     @BindView(R.id.et_filename) EditText etFilename;
     @BindView(R.id.ibtn_clear_filename) ImageButton ibtnClearFilename;
+    @BindView(R.id.tv_mime_type) TextView tvMimeType;
     @BindView(R.id.tv_recorded_on) TextView tvRecordedOn;
     @BindView(R.id.tv_sampling_rate) TextView tvSamplingRate;
     @BindView(R.id.tv_num_of_channels) TextView tvNumOfChannels;
+    @BindView(R.id.tv_bits_per_sample) TextView tvBitsPerSample;
     @BindView(R.id.tv_file_length) TextView tvFileLength;
 
     private Unbinder unbinder;
@@ -59,7 +60,7 @@ public class RecordingDetailsFragment extends BaseFragment {
      *
      * @return A new instance of fragment {@link RecordingDetailsFragment}.
      */
-    public static RecordingDetailsFragment newInstance(@Nullable String filePath) {
+    static RecordingDetailsFragment newInstance(@Nullable String filePath) {
         final RecordingDetailsFragment fragment = new RecordingDetailsFragment();
         final Bundle args = new Bundle();
         args.putString(ARG_FILE_PATH, filePath);
@@ -77,8 +78,8 @@ public class RecordingDetailsFragment extends BaseFragment {
         if (getArguments() != null) filePath = getArguments().getString(ARG_FILE_PATH);
     }
 
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+        Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_recording_details, container, false);
         unbinder = ButterKnife.bind(this, view);
 
@@ -128,13 +129,10 @@ public class RecordingDetailsFragment extends BaseFragment {
 
     private void setupUI(@NonNull Context context) {
         final File file = new File(filePath);
-        WavAudioFile waf = null;
-        try {
-            if (file.exists()) waf = new WavAudioFile(file);
-        } catch (IOException ignored) {
-        }
+        AudioFile af = null;
+        if (file.exists()) af = BaseAudioFile.create(file);
 
-        if (waf != null) {
+        if (af != null) {
             // back button
             ibtnBack.setOnClickListener(v -> {
                 if (getActivity() != null) getActivity().onBackPressed();
@@ -160,19 +158,22 @@ public class RecordingDetailsFragment extends BaseFragment {
             });
             ibtnClearFilename.setVisibility(View.GONE);
             ibtnClearFilename.setOnClickListener(v -> etFilename.setText(null));
+            // mime type
+            tvMimeType.setText(af.mimeType());
             // recorder on
             tvRecordedOn.setText(DateUtils.format_M_d_yyyy_H_mm_a(new Date(file.lastModified())));
             // sample rate
-            tvSamplingRate.setText(String.valueOf(waf.sampleRate()));
+            tvSamplingRate.setText(String.valueOf(af.sampleRate()));
             // number of channels
-            tvNumOfChannels.setText(String.valueOf(waf.channelCount()));
+            tvNumOfChannels.setText(String.valueOf(af.channelCount()));
+            // number of bits per sample1
+            tvBitsPerSample.setText(String.valueOf(af.bitsPerSample()));
             // recording length
-            tvFileLength.setText(
-                String.valueOf(WavUtils.toSeconds(file.length(), waf.sampleRate(), waf.channelCount())));
+            tvFileLength.setText(String.valueOf(af.duration()));
         }
     }
 
-    void startEditFilename() {
+    private void startEditFilename() {
         etFilename.setText(tvFilename.getText());
         tvFilename.setVisibility(View.INVISIBLE);
         etFilename.setVisibility(View.VISIBLE);
@@ -181,7 +182,7 @@ public class RecordingDetailsFragment extends BaseFragment {
         ibtnClearFilename.setVisibility(View.VISIBLE);
     }
 
-    void stopEditFilename() {
+    private void stopEditFilename() {
         tvFilename.setText(etFilename.getText());
         tvFilename.setVisibility(View.VISIBLE);
         ViewUtils.hideSoftKeyboard(etFilename, 200);
@@ -190,7 +191,7 @@ public class RecordingDetailsFragment extends BaseFragment {
     }
 
     // Triggers renaming of the selected file
-    @SuppressWarnings({ "UnusedReturnValue", "BooleanMethodIsAlwaysInverted" }) boolean renameFile() {
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted") private boolean renameFile() {
         final File oldFile = new File(filePath);
         final String oldFilename = RecordingUtils.getFileNameWithoutExtension(oldFile);
         final String newFilename = etFilename.getText().toString().trim();
@@ -200,11 +201,13 @@ public class RecordingDetailsFragment extends BaseFragment {
             // validate the new file name
             if (ApacheCommonsLang3Utils.isBlank(newFilename)) {
                 if (getContext() != null) {
-                    ViewUtils.toast(getContext(), getString(R.string.error_message_validation_file_name));
+                    ViewUtils.toast(getContext(),
+                        getString(R.string.error_message_validation_file_name));
                 }
                 return false;
             }
-            final File newFile = new File(oldFile.getParent(), newFilename + RecordingUtils.BYB_RECORDING_EXT);
+            final File newFile =
+                new File(oldFile.getParent(), newFilename + RecordingUtils.BYB_RECORDING_EXT);
             // validate if file with specified name already exists
             if (!newFile.exists()) {
                 // get events file before renaming
@@ -213,7 +216,8 @@ public class RecordingDetailsFragment extends BaseFragment {
                 if (oldFile.renameTo(newFile)) {
                     // update db spike analysis data with new file path
                     if (getAnalysisManager() != null) {
-                        getAnalysisManager().updateSpikeAnalysisFilePath(filePath, newFile.getAbsolutePath());
+                        getAnalysisManager().updateSpikeAnalysisFilePath(filePath,
+                            newFile.getAbsolutePath());
                     }
                     // save new file path locally
                     filePath = newFile.getAbsolutePath();
@@ -226,15 +230,18 @@ public class RecordingDetailsFragment extends BaseFragment {
                                 BYBUtils.showAlert(getActivity(), getString(R.string.title_error),
                                     getString(R.string.error_message_files_events_rename));
                                 Crashlytics.logException(new Throwable(
-                                    "Renaming events file for the given recording " + oldFile.getPath() + " failed"));
+                                    "Renaming events file for the given recording "
+                                        + oldFile.getPath() + " failed"));
                             }
                         }
                     }
                 } else {
                     if (getContext() != null) {
-                        ViewUtils.toast(getContext(), getString(R.string.error_message_files_rename));
+                        ViewUtils.toast(getContext(),
+                            getString(R.string.error_message_files_rename));
                     }
-                    Crashlytics.logException(new Throwable("Renaming file " + oldFile.getPath() + " failed"));
+                    Crashlytics.logException(
+                        new Throwable("Renaming file " + oldFile.getPath() + " failed"));
                 }
             } else {
                 if (getContext() != null) {

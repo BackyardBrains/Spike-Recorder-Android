@@ -1,7 +1,7 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.backyardbrains.dsp.audio.PlaybackSignalSource;
 import com.backyardbrains.dsp.usb.AbstractUsbSignalSource;
 import com.backyardbrains.utils.AudioUtils;
@@ -125,13 +125,16 @@ public class SignalProcessor implements SignalSource.Processor {
 
     // Holds signal data after processing raw signal together with processed events
     private SignalData signalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT,
+            AudioUtils.DEFAULT_BITS_PER_SAMPLE);
     // Holds processed signal data of only visible channels
     private SignalData visibleSignalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_SAMPLES_PER_CHANNEL_COUNT,
+            AudioUtils.DEFAULT_BITS_PER_SAMPLE);
     // Holds processed signal data of only visible channels after averaging
     private SignalData averagedSignalData =
-        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT);
+        new SignalData(AudioUtils.DEFAULT_CHANNEL_COUNT, DEFAULT_PROCESSED_AVERAGED_SAMPLES_PER_CHANNEL_COUNT,
+            AudioUtils.DEFAULT_BITS_PER_SAMPLE);
     // Holds processed signal data after FFT processing
     private FftData fft = new FftData(FFT_WINDOW_COUNT, FFT_WINDOW_SIZE);
 
@@ -211,19 +214,43 @@ public class SignalProcessor implements SignalSource.Processor {
             // update signal configuration
             signalConfiguration.setChannelCount(channelCount);
 
+            final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+            final int bitsPerSample = signalConfiguration.getBitsPerSample();
+
             // reset processing buffer
-            processingBuffer.resetAllSampleBuffers(channelCount, signalConfiguration.getVisibleChannelCount());
+            processingBuffer.resetAllSampleBuffers(channelCount, visibleChannelCount);
 
             // reset buffers
-            signalData = new SignalData(channelCount, processedSamplesPerChannelCount);
-            visibleSignalData =
-                new SignalData(signalConfiguration.getVisibleChannelCount(), processedSamplesPerChannelCount);
+            signalData = new SignalData(channelCount, processedSamplesPerChannelCount, bitsPerSample);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount, bitsPerSample);
             averagedSignalData =
-                new SignalData(signalConfiguration.getVisibleChannelCount(), processedAveragedSamplesPerChannelCount);
+                new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount, bitsPerSample);
         }
 
         // pass channel count to native code
         JniUtils.setChannelCount(channelCount);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param bitsPerSample New number of bits per sample.
+     */
+    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
+        // update signal configuration
+        signalConfiguration.setBitsPerSample(bitsPerSample);
+
+        final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+
+        // reset buffers
+        signalData =
+            new SignalData(signalConfiguration.getChannelCount(), processedSamplesPerChannelCount, bitsPerSample);
+        visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount, bitsPerSample);
+        averagedSignalData =
+            new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount, bitsPerSample);
+
+        // pass bits per sample to native code
+        JniUtils.setBitsPerSample(bitsPerSample);
     }
 
     /**
@@ -269,17 +296,17 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Returns number of bits per sample of the current signal source.
+     */
+    int getBitsPerSample() {
+        return signalConfiguration.getBitsPerSample();
+    }
+
+    /**
      * Returns whether channel at specified {@code channelIndex} is visible or not.
      */
     boolean isChannelVisible(int channelIndex) {
         return signalConfiguration.isChannelVisible(channelIndex);
-    }
-
-    /**
-     * Returns currently selected channel.
-     */
-    int getSelectedChannel() {
-        return signalConfiguration.getSelectedChannel();
     }
 
     /**
@@ -293,12 +320,14 @@ public class SignalProcessor implements SignalSource.Processor {
             signalConfiguration.setChannelConfig(channelConfig);
 
             final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+            final int bitsPerSample = signalConfiguration.getBitsPerSample();
 
             // reset processing buffer
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount, bitsPerSample);
+            averagedSignalData =
+                new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount, bitsPerSample);
         }
     }
 
@@ -311,13 +340,15 @@ public class SignalProcessor implements SignalSource.Processor {
             signalConfiguration.setChannelVisible(channelIndex, true);
 
             final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+            final int bitsPerSample = signalConfiguration.getBitsPerSample();
 
             // reset processing buffer
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
             // reset buffer
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount, bitsPerSample);
+            averagedSignalData =
+                new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount, bitsPerSample);
         }
     }
 
@@ -333,14 +364,23 @@ public class SignalProcessor implements SignalSource.Processor {
             signalConfiguration.setChannelVisible(channelIndex, false);
 
             final int visibleChannelCount = signalConfiguration.getVisibleChannelCount();
+            final int bitsPerSample = signalConfiguration.getBitsPerSample();
 
             // reset processing buffer
             processingBuffer.resetAveragedSamplesBuffer(visibleChannelCount);
 
             // reset buffers
-            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount);
-            averagedSignalData = new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount);
+            visibleSignalData = new SignalData(visibleChannelCount, processedSamplesPerChannelCount, bitsPerSample);
+            averagedSignalData =
+                new SignalData(visibleChannelCount, processedAveragedSamplesPerChannelCount, bitsPerSample);
         }
+    }
+
+    /**
+     * Returns currently selected channel.
+     */
+    int getSelectedChannel() {
+        return signalConfiguration.getSelectedChannel();
     }
 
     /**
@@ -427,6 +467,26 @@ public class SignalProcessor implements SignalSource.Processor {
     }
 
     /**
+     * Sets current BYB board type.
+     */
+    void setBoardType(@SpikerBoxHardwareType int boardType) {
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setBoardType(boardType);
+        }
+    }
+
+    /**
+     * Sets current expansion board type.
+     */
+    void setExpansionBoardType(@ExpansionBoardType int expansionBoardType) {
+        synchronized (lock) {
+            // update signal configuration
+            signalConfiguration.setExpansionBoardType(expansionBoardType);
+        }
+    }
+
+    /**
      * A data source that will provide data to data processor and notify it when different events occur.
      */
     void setSignalSource(@NonNull AbstractSignalSource signalSource) {
@@ -443,9 +503,10 @@ public class SignalProcessor implements SignalSource.Processor {
 
         processingBuffer.clearAllBuffers();
 
-        // let's notify any interested party of the data source initial sample rate and channel count
+        // let's notify any interested party of the data source initial sample rate, channel count and bits/sample
         onSampleRateChanged(signalSource.getSampleRate());
         onChannelCountChanged(signalSource.getChannelCount());
+        onBitsPerSampleChanged(signalSource.getBitsPerSample());
         // reset to first channel
         setSelectedChannel(0);
 

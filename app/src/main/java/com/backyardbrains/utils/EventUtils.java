@@ -1,6 +1,6 @@
 package com.backyardbrains.utils;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Pair;
 import android.util.SparseArray;
 import java.io.BufferedReader;

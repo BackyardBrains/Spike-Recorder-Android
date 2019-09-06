@@ -1,9 +1,9 @@
 package com.backyardbrains.ui;
 
 import android.os.Bundle;
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,14 +53,14 @@ public abstract class BaseWaveformFragment extends BaseFragment {
         super.onStart();
         LOGD(TAG, "onStart()");
         waveform.resumeGL();
-        if (getContext() != null) renderer.onLoadSettings(getContext());
+        if (getContext() != null) renderer.onLoadSettings(getContext(), "onStart()");
     }
 
     @CallSuper @Override public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
         waveform.pauseGL();
-        if (getContext() != null) renderer.onSaveSettings(getContext());
+        if (getContext() != null) renderer.onSaveSettings(getContext(), "onStop()");
     }
 
     @Override public void onDestroy() {

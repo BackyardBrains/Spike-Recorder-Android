@@ -1,9 +1,6 @@
 package com.backyardbrains.ui;
 
 import android.os.Bundle;
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +10,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.afollestad.materialdialogs.GravityEnum;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
@@ -45,6 +45,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     private static final String ARG_FILE_PATH = "bb_file_path";
     private static final String INT_SAMPLE_RATE = "bb_sample_rate";
     private static final String INT_CHANNEL_COUNT = "bb_channel_count";
+    private static final String INT_BITS_PER_SAMPLE = "bb_bits_per_sample";
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_FFT_ON = "bb_fft_on";
     private static final String LONG_PLAYBACK_POSITION = "bb_playback_position";
@@ -73,6 +74,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     int sampleRate = AudioUtils.DEFAULT_SAMPLE_RATE;
     // Channel count that should be used for audio playback (by default 1)
     int channelCount = AudioUtils.DEFAULT_CHANNEL_COUNT;
+    // Number of bits per sample that should be used for audio playback (by default 16)
+    int bitsPerSample = AudioUtils.DEFAULT_BITS_PER_SAMPLE;
     // Whether signal triggering is turned on or off
     boolean thresholdOn;
     // Whether fft processing is turned on or off
@@ -91,7 +94,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         @Override public void run() {
             sbAudioProgress.setProgress(toFrames(progress));
             // avoid division by zero
-            if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate, channelCount);
+            if (updateProgressTimeLabel) updateProgressTime(progress, sampleRate, channelCount, bitsPerSample);
         }
 
         public void setProgress(int progress) {
@@ -196,6 +199,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (savedInstanceState != null) {
             sampleRate = savedInstanceState.getInt(INT_SAMPLE_RATE, AudioUtils.DEFAULT_SAMPLE_RATE);
             channelCount = savedInstanceState.getInt(INT_CHANNEL_COUNT, AudioUtils.DEFAULT_CHANNEL_COUNT);
+            bitsPerSample = savedInstanceState.getInt(INT_BITS_PER_SAMPLE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
             thresholdOn = savedInstanceState.getBoolean(BOOL_THRESHOLD_ON);
             fftOn = savedInstanceState.getBoolean(BOOL_FFT_ON);
             playbackPosition = savedInstanceState.getInt(LONG_PLAYBACK_POSITION, 0);
@@ -225,6 +229,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         outState.putInt(INT_SAMPLE_RATE, sampleRate);
         outState.putInt(INT_CHANNEL_COUNT, channelCount);
+        outState.putInt(INT_BITS_PER_SAMPLE, bitsPerSample);
         outState.putBoolean(BOOL_THRESHOLD_ON, thresholdOn);
         outState.putBoolean(BOOL_FFT_ON, fftOn);
         outState.putInt(LONG_PLAYBACK_POSITION, playbackPosition);
@@ -427,6 +432,7 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
 
         sampleRate = event.getSampleRate();
         channelCount = event.getChannelCount();
+        bitsPerSample = event.getBitsPerSample();
         if (event.getLength() > 0) { // we are starting playback, not resuming
             sbAudioProgress.setMax(toFrames((int) event.getLength()));
             EventBus.getDefault().removeStickyEvent(AudioPlaybackStartedEvent.class);
@@ -444,7 +450,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
         if (sbAudioProgress.getMax() == 0) sbAudioProgress.setMax(getLength());
 
         sbAudioProgress.setProgress((int) event.getProgress() / event.getChannelCount());
-        updateProgressTime((int) event.getProgress(), event.getSampleRate(), event.getChannelCount());
+        updateProgressTime((int) event.getProgress(), event.getSampleRate(), event.getChannelCount(),
+            event.getBitsPerSample());
     }
 
     @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
@@ -675,8 +682,8 @@ public class PlaybackScopeFragment extends BaseWaveformFragment {
     }
 
     // Updates progress time according to progress
-    void updateProgressTime(int progress, int sampleRate, int channelCount) {
-        playbackPosition = progress;
-        tvProgressTime.setText(WavUtils.formatWavProgress(progress, sampleRate, channelCount));
+    void updateProgressTime(int progress, int sampleRate, int channelCount, int bitsPerSample) {
+        playbackPosition = AudioUtils.getByteCount(progress, bitsPerSample);
+        tvProgressTime.setText(WavUtils.formatWavProgress(progress, sampleRate, channelCount, bitsPerSample));
     }
 }

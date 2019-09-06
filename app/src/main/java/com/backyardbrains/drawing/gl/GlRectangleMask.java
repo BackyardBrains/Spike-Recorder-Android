@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing.gl;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -8,13 +8,13 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class GlRectangleMask extends GlRectangle {
 
-    @Override public void draw(@NonNull GL10 gl, float w, float h, float[] color) {
+    @Override public void draw(@NonNull GL10 gl, float w, float h, float[] backgroundColor) {
         gl.glColorMask(false, false, false, false);
         gl.glDepthMask(false);
         gl.glStencilFunc(GL10.GL_ALWAYS, 1, 1);
         gl.glStencilOp(GL10.GL_REPLACE, GL10.GL_REPLACE, GL10.GL_REPLACE);
 
-        super.draw(gl, w, h, color);
+        super.draw(gl, w, h, backgroundColor);
 
         gl.glColorMask(true, true, true, true);
         gl.glDepthMask(true);

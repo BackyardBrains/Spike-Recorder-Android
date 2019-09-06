@@ -1,8 +1,8 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -19,10 +19,12 @@ public abstract class AbstractSignalSource implements SignalSource {
 
     private int sampleRate;
     private int channelCount;
+    private int bitsPerSample;
 
-    public AbstractSignalSource(int sampleRate, int channelCount) {
+    public AbstractSignalSource(int sampleRate, int channelCount, int bitsPerSample) {
         setSampleRate(sampleRate);
         setChannelCount(channelCount);
+        setBitsPerSample(bitsPerSample);
     }
 
     /**
@@ -35,7 +37,7 @@ public abstract class AbstractSignalSource implements SignalSource {
     /**
      * Sets sample rate for this signal source.
      */
-    protected void setSampleRate(int sampleRate) {
+    @CallSuper protected void setSampleRate(int sampleRate) {
         if (this.sampleRate != sampleRate) {
             LOGD(TAG, "setSampleRate(" + sampleRate + ")");
 
@@ -64,6 +66,27 @@ public abstract class AbstractSignalSource implements SignalSource {
             if (processor != null) processor.onChannelCountChanged(channelCount);
 
             this.channelCount = channelCount;
+        }
+    }
+
+    /**
+     * Returns bits per sample for this signal source;
+     */
+    public int getBitsPerSample() {
+        return bitsPerSample;
+    }
+
+    /**
+     * Sets number of bits per sample for this input source.
+     */
+    @CallSuper protected void setBitsPerSample(int bitsPerSample) {
+        if (this.bitsPerSample != bitsPerSample) {
+            LOGD(TAG, "setBitsPerSample(" + bitsPerSample + ")");
+
+            // inform interested parties what is the channel count of this sample source
+            if (processor != null) processor.onBitsPerSampleChanged(bitsPerSample);
+
+            this.bitsPerSample = bitsPerSample;
         }
     }
 

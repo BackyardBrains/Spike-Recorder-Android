@@ -1,6 +1,6 @@
 package com.backyardbrains.drawing.gl;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 

@@ -2,9 +2,9 @@ package com.backyardbrains.drawing.gl;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.Size;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
 import com.android.texample.GLText;
 import com.backyardbrains.utils.ViewUtils;
 import javax.microedition.khronos.opengles.GL10;

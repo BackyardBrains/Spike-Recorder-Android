@@ -34,7 +34,8 @@ namespace backyardbrains {
             allocateAverageSpikeData(tmpAvr, spikeTrainCount, bsc);
 
             int sampleIndex;
-            drwav_uint64 read, spikeIndexBatchHead;
+            drwav_uint64 read;
+            drwav_uint64 spikeIndexBatchHead;
             auto *samples = new drwav_int16[batchSpikeCount];
             for (int i = 0; i < spikeTrainCount; i++) {
                 for (int j = 0; j < spikeCounts[i]; j++) {
@@ -62,7 +63,9 @@ namespace backyardbrains {
             // close audio file
             drwav_close(wavPtr);
 
-            float min, max, divider;
+            float min;
+            float max;
+            float divider;
             auto *tmp = new float[batchSpikeCount];
             // divide sum of spikes with number of spikes and find max and min
             for (int i = 0; i < spikeTrainCount; i++) {
@@ -109,15 +112,13 @@ namespace backyardbrains {
                 }
                 min = fmin(tmpAvr[i].minStd, tmpAvr[i].minAverageSpike);
                 max = fmax(tmpAvr[i].maxStd, tmpAvr[i].maxAverageSpike);
-                for (int j = 0; j < batchSpikeCount; j++) {
-                    tmpAvr[i].normAverageSpike[j] = backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].averageSpike[j],
-                                                                                              min, max, 0.0f, 1.0f);
-                    tmpAvr[i].normTopSTDLine[j] = backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].topSTDLine[j],
-                                                                                            min, max, 0.0f, 1.0f);
-                    tmpAvr[i].normBottomSTDLine[j] = backyardbrains::utils::AnalysisUtils::map(
-                            tmpAvr[i].bottomSTDLine[j], min, max, 0.0f,
-                            1.0f);
-                }
+                int length = static_cast<int>(batchSpikeHalfCount);
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].averageSpike, tmpAvr[i].normAverageSpike, length,
+                                                          min, max, 0.0f, 1.0f);
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].topSTDLine, tmpAvr[i].normTopSTDLine, length, min,
+                                                          max, 0.0f, 1.0f);
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].bottomSTDLine, tmpAvr[i].normBottomSTDLine, length,
+                                                          min, max, 0.0f, 1.0f);
             }
             delete[] tmp;
 

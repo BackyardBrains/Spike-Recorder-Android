@@ -1,6 +1,6 @@
 package com.backyardbrains.utils;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public class GlUtils {
 
@@ -30,21 +30,6 @@ public class GlUtils {
         return new int[2];
     }
 
-    public static float[] getMinMax(@NonNull float[] values) {
-        if (values.length > 0) {
-            float min = Float.MAX_VALUE;
-            float max = Float.MIN_VALUE;
-            for (float value : values) {
-                if (min > value) min = value;
-                if (max < value) max = value;
-            }
-
-            return new float[] { min, max };
-        }
-
-        return new float[2];
-    }
-
     public static float[] normalize(@NonNull int[] values) {
         if (values.length > 0) {
             int len = values.length;
@@ -66,7 +51,8 @@ public class GlUtils {
     public static int[] calculateVAxisCountAndStep(int max, int maxVAxisValues) {
         int counter = 0;
         float divider, vAxisValuesCount;
-        while (true) {
+        // max divider can be 10^10
+        do {
             divider = (float) Math.pow(10, counter);
             vAxisValuesCount = max / divider; // divide by 10, 100, 1000 etc
             if (vAxisValuesCount < maxVAxisValues) {
@@ -84,10 +70,68 @@ public class GlUtils {
             }
 
             counter++;
-
-            if (counter > 10) break; // max divider can be 10^10
-        }
+        } while (counter <= 10);
 
         return new int[2];
+    }
+
+    public static float[] getMinMax(@NonNull float[] values) {
+        if (values.length > 0) {
+            float min = Float.MAX_VALUE;
+            float max = Float.MIN_VALUE;
+            for (float value : values) {
+                if (min > value) min = value;
+                if (max < value) max = value;
+            }
+
+            return new float[] { min, max };
+        }
+
+        return new float[2];
+    }
+
+    public static float[] normalize(@NonNull float[] values) {
+        if (values.length > 0) {
+            int len = values.length;
+            float[] minMax = getMinMax(values);
+            float max = minMax[MAX_VALUE];
+            if (max == 0) max = 1;// avoid division by zero
+
+            float[] result = new float[len];
+            for (int i = 0; i < len; i++) {
+                result[i] = values[i] / max;
+            }
+
+            return result;
+        }
+
+        return new float[0];
+    }
+
+    public static float[] calculateVAxisCountAndStep(float max, int maxVAxisValues) {
+        int counter = 0;
+        float divider, vAxisValuesCount;
+        // max divider can be 10^10
+        do {
+            divider = (float) Math.pow(10, counter);
+            vAxisValuesCount = max / divider; // divide by 10, 100, 1000 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new float[] { (int) vAxisValuesCount, divider };
+            }
+
+            vAxisValuesCount *= .5f; // divide by 20, 200, 200 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new float[] { (int) vAxisValuesCount, divider * 2f };
+            }
+
+            vAxisValuesCount *= .4f; // divide by 50, 500, 5000 etc
+            if (vAxisValuesCount < maxVAxisValues) {
+                return new float[] { (int) vAxisValuesCount, divider * 5f };
+            }
+
+            counter++;
+        } while (counter <= 10);
+
+        return new float[2];
     }
 }

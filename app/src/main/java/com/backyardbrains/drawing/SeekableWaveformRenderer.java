@@ -1,7 +1,7 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.R;
 import com.backyardbrains.analysis.RmsHelper;
 import com.backyardbrains.db.AnalysisDataSource;

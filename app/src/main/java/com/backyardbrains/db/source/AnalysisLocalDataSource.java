@@ -1,7 +1,7 @@
 package com.backyardbrains.db.source;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.backyardbrains.db.AnalysisDataSource;
 import com.backyardbrains.db.dao.SpikeAnalysisDao;
 import com.backyardbrains.db.dao.SpikeDao;

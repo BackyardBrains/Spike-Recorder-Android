@@ -1,6 +1,6 @@
 package com.backyardbrains.dsp;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.backyardbrains.utils.EventUtils;
 
 /**
@@ -14,6 +14,7 @@ public class SignalData {
 
     public int channelCount;
     public int maxSamplesPerChannel;
+    public int bitsPerSample;
 
     public short[][] samples;
     public int[] sampleCounts;
@@ -22,9 +23,10 @@ public class SignalData {
     public int eventCount;
     public long lastSampleIndex = -1;
 
-    public SignalData(int channelCount, int maxSamplesPerChannel) {
+    public SignalData(int channelCount, int maxSamplesPerChannel, int bitsPerSample) {
         this.channelCount = channelCount;
         this.maxSamplesPerChannel = maxSamplesPerChannel;
+        this.bitsPerSample = bitsPerSample;
 
         this.samples = new short[channelCount][];
         for (int i = 0; i < channelCount; i++) {
