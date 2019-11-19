@@ -2,6 +2,7 @@
 // Created by Tihomir Leka <tihomir at backyardbrains.com>
 //
 
+#include <tgmath.h>
 #include "AverageSpikeAnalysis.h"
 
 namespace backyardbrains {
@@ -112,12 +113,11 @@ namespace backyardbrains {
                 }
                 min = fmin(tmpAvr[i].minStd, tmpAvr[i].minAverageSpike);
                 max = fmax(tmpAvr[i].maxStd, tmpAvr[i].maxAverageSpike);
-                int length = static_cast<int>(batchSpikeHalfCount);
-                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].averageSpike, tmpAvr[i].normAverageSpike, length,
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].averageSpike, tmpAvr[i].normAverageSpike, batchSpikeCount,
                                                           min, max, 0.0f, 1.0f);
-                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].topSTDLine, tmpAvr[i].normTopSTDLine, length, min,
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].topSTDLine, tmpAvr[i].normTopSTDLine, batchSpikeCount, min,
                                                           max, 0.0f, 1.0f);
-                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].bottomSTDLine, tmpAvr[i].normBottomSTDLine, length,
+                backyardbrains::utils::AnalysisUtils::map(tmpAvr[i].bottomSTDLine, tmpAvr[i].normBottomSTDLine, batchSpikeCount,
                                                           min, max, 0.0f, 1.0f);
             }
             delete[] tmp;
