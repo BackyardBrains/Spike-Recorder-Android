@@ -20,10 +20,14 @@ namespace backyardbrains {
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "NEURONSB;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_MUSCLE_PRO =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "MUSCLESB;";
+        const std::string SampleStreamUtils::HARDWARE_TYPE_HUMANS =
+                SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HUMANSB;";
         const std::string SampleStreamUtils::SAMPLE_RATE_PREFIX = "MSF:";
         const std::string SampleStreamUtils::NUM_OF_CHANNELS_PREFIX = "MNC:";
         const std::string SampleStreamUtils::EVENT_PREFIX = "EVNT:";
         const std::string SampleStreamUtils::EXPANSION_BOARD_TYPE_PREFIX = "BRD:";
+
+        //TODO humans here
 
         bool SampleStreamUtils::isHardwareTypeMsg(std::string message) {
             return message.compare(0, HARDWARE_TYPE_PREFIX.length(), HARDWARE_TYPE_PREFIX) == 0;
@@ -34,6 +38,7 @@ namespace backyardbrains {
             if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str()) == 0) return MUSCLE_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
+            if (std::strcmp(HARDWARE_TYPE_HUMANS.c_str(), message.c_str()) == 0) return HUMANS_HARDWARE;
             if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO_HARDWARE;
             if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO_HARDWARE;
             return UNKNOWN_HARDWARE;

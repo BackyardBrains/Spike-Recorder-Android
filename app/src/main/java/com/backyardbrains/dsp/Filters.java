@@ -49,12 +49,15 @@ public class Filters {
     /**
      * Predefined filter configured for EMG.
      */
-    public static final BandFilter FILTER_BAND_MUSCLE = new BandFilter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
+    public static final BandFilter FILTER_BAND_MUSCLE =
+        new BandFilter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
     /**
      * Predefined filter configured for Neuron Pro.
      */
     public static final BandFilter FILTER_BAND_NEURON_PRO =
         new BandFilter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
+
+    //TODO 1 2500
     /**
      * Predefined notch filter that cuts-off 50Hz frequency
      */

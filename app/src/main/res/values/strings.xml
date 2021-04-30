@@ -84,6 +84,7 @@
     <string name="board_type_heart">Heart and Brain SpikerBox</string>
     <string name="board_type_muscle_pro">Muscle SpikerBox Pro</string>
     <string name="board_type_neuron_pro">Neuron SpikerBox Pro</string>
+    <string name="board_type_human_pro">Human SpikerBox Pro</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>

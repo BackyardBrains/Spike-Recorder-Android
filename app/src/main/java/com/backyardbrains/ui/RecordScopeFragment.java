@@ -4,10 +4,6 @@ import android.Manifest;
 import android.hardware.usb.UsbDevice;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.Size;
-import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +13,10 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
+import androidx.core.content.ContextCompat;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -431,6 +431,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case SpikerBoxHardwareType.NEURON_PRO:
                 spikerBoxBoard = getString(R.string.board_type_neuron_pro);
                 filter = Filters.FILTER_BAND_NEURON_PRO;
+                break;
+            case SpikerBoxHardwareType.HUMAN_PRO:
+                spikerBoxBoard = getString(R.string.board_type_human_pro);
+                //filter = Filters.FILTER_BAND_NEURON_PRO; //TODO
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:

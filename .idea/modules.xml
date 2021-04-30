@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Spike-Recorder-Android.iml" filepath="$PROJECT_DIR$/Spike-Recorder-Android.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Spike-Recorder-Android.iml" filepath="$PROJECT_DIR$/.idea/modules/Spike-Recorder-Android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/Spike-Recorder-Android.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/Spike-Recorder-Android.app.iml" />
     </modules>
   </component>
 </project>

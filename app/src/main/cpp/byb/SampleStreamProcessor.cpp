@@ -111,7 +111,7 @@ namespace backyardbrains {
                                 msb = msb & REMOVER;
                                 msb = msb << 7u;
                                 lsb = lsb & REMOVER;
-                                sample = (short) (((msb | lsb) - 512) * 30);
+                                sample = (short) (((msb | lsb) - 512) * 30); //TODO 2^14/2 bez 30
 
                                 // calculate average sample
                                 average = 0.0001 * sample + 0.9999 * average;
