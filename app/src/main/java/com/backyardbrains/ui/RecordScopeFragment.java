@@ -434,7 +434,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 break;
             case SpikerBoxHardwareType.HUMAN_PRO:
                 spikerBoxBoard = getString(R.string.board_type_human_pro);
-                //filter = Filters.FILTER_BAND_NEURON_PRO; //TODO
+                filter = Filters.FILTER_BAND_HUMAN_PRO;
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:

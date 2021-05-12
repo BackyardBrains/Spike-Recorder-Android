@@ -115,6 +115,8 @@ namespace backyardbrains {
             byte msb;
             // Average signal which we use to avoid signal offset
             double average;
+
+            int hardwareType = -1;
         };
     }
 }

@@ -87,6 +87,10 @@ namespace backyardbrains {
              */
             static int getExpansionBoardType(std::string message);
 
+            static int getResolution(int hardwareType);
+
+            static int getResolutionMultiplier(int hardwareType);
+
         private:
             // Hardware type SpikerBox reply message prefix.
             static const std::string HARDWARE_TYPE_PREFIX;

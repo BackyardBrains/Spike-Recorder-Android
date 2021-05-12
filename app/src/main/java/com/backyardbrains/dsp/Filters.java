@@ -30,6 +30,10 @@ public class Filters {
     private static final double FREQ_CUTOFF_50HZ = 50d;
     // 60Hz cut-off frequency
     private static final double FREQ_CUTOFF_60HZ = 60d;
+    // Low cut-off frequency for Human PRO
+    private static final double FREQ_LOW_CUTOFF_HUMAN_PRO = 1d;
+    // High cut-off frequency for Human PRO
+    private static final double FREQ_HIGH_CUTOFF_HUMAN_PRO = 2500d;
 
     /**
      * Predefined filter configured for EKG.
@@ -56,8 +60,11 @@ public class Filters {
      */
     public static final BandFilter FILTER_BAND_NEURON_PRO =
         new BandFilter(FREQ_LOW_CUTOFF_NEURON_PRO, FREQ_HIGH_CUTOFF_NEURON_PRO);
-
-    //TODO 1 2500
+    /**
+     * Predefined filter configured for Human Pro.
+     */
+    public static final BandFilter FILTER_BAND_HUMAN_PRO =
+        new BandFilter(FREQ_LOW_CUTOFF_HUMAN_PRO, FREQ_HIGH_CUTOFF_HUMAN_PRO);
     /**
      * Predefined notch filter that cuts-off 50Hz frequency
      */

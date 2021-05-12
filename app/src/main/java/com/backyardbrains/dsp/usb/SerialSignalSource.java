@@ -4,11 +4,14 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import androidx.annotation.NonNull;
 import com.backyardbrains.utils.SampleStreamUtils;
+import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import java.util.Locale;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import static com.backyardbrains.utils.SampleStreamUtils.SAMPLE_RATE_5000;
+import static com.backyardbrains.utils.SampleStreamUtils.SPIKER_BOX_PRO_CHANNEL_COUNT;
 
 /**
  * Implementation of {@link AbstractUsbSignalSource} capable of USB serial communication with BYB hardware.
@@ -132,6 +135,11 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
 
         usbBuffer = new SerialBuffer();
         serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
+
+        if (getHardwareType() == SpikerBoxHardwareType.HUMAN_PRO) {
+            setSampleRate(SAMPLE_RATE_5000);
+            setChannelCount(SPIKER_BOX_PRO_CHANNEL_COUNT);
+        }
     }
 
     /**
