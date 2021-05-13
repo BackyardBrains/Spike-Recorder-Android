@@ -3,7 +3,7 @@ package com.backyardbrains.dsp.audio;
 import android.media.MediaExtractor;
 import androidx.annotation.NonNull;
 import com.backyardbrains.utils.WavUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class WavAudioFile extends BaseAudioFile {
         try {
             raf = new RandomAccessFile(file, "rw");
         } catch (FileNotFoundException e) {
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
             return false;
         }
 
@@ -44,7 +44,7 @@ public class WavAudioFile extends BaseAudioFile {
             raf.write(WavUtils.writeHeader(file.length(), sampleRate, channelCount, encoding));
             raf.close();
         } catch (IOException e) {
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
             return false;
         } finally {
             raf.close();

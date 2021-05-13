@@ -19,7 +19,7 @@
 
 package com.backyardbrains.drawing;
 
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -50,10 +50,10 @@ public class DrawBuffer {
             System.arraycopy(buffer, len, buffer, 0, buffer.length - len);
             System.arraycopy(src, 0, buffer, buffer.length - len, len);
         } catch (Exception e) {
-            LOGD(TAG,
-                "Can't add incoming to buffer, it's larger then buffer - src.length=" + buffer.length + " srcPos=" + len
-                    + " dst.length=" + buffer.length + " dstPos=" + 0 + " length=" + (buffer.length - len));
-            Crashlytics.logException(e);
+            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length="
+                + buffer.length + " srcPos=" + len + " dst.length=" + buffer.length + " dstPos=" + 0
+                + " length=" + (buffer.length - len));
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
     }
 
@@ -62,9 +62,10 @@ public class DrawBuffer {
             System.arraycopy(buffer, off, dst, 0, len);
             return len;
         } catch (Exception e) {
-            LOGD(TAG, "Can't copy from buffer to destination - src.length=" + buffer.length + " srcPos=" + off
-                + " dst.length=" + dst.length + " dstPos=" + 0 + " length=" + len);
-            Crashlytics.logException(e);
+            LOGD(TAG,
+                "Can't copy from buffer to destination - src.length=" + buffer.length + " srcPos="
+                    + off + " dst.length=" + dst.length + " dstPos=" + 0 + " length=" + len);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
 
         return 0;

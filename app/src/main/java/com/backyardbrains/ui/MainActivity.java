@@ -9,18 +9,17 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
+import android.view.View;
+import android.widget.Toast;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import android.view.View;
-import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.backyardbrains.R;
@@ -43,8 +42,8 @@ import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ImportUtils;
 import com.backyardbrains.utils.ImportUtils.ImportResultCode;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.ContentViewEvent;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -87,6 +86,8 @@ public class MainActivity extends AppCompatActivity
     private static final int BYB_WRITE_STORAGE_PERM = 124;
     private static final int BYB_SETTINGS_SCREEN = 125;
 
+    private FirebaseAnalytics mFirebaseAnalytics;
+
     static {
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
     }
@@ -112,6 +113,8 @@ public class MainActivity extends AppCompatActivity
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         LOGD(TAG, "onCreate()");
+
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
@@ -226,21 +229,25 @@ public class MainActivity extends AppCompatActivity
                     fragName = RECORDING_OPTIONS_FRAGMENT;
                     break;
                 case RECORDING_DETAILS_VIEW:
-                    frag = RecordingDetailsFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
+                    frag = RecordingDetailsFragment.newInstance(
+                        args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = RECORDING_DETAILS_FRAGMENT;
                     break;
                 case RECORDING_ANALYSIS_VIEW:
-                    frag = RecordingAnalysisFragment.newInstance(args.length > 0 ? String.valueOf(args[0]) : null);
+                    frag = RecordingAnalysisFragment.newInstance(
+                        args.length > 0 ? String.valueOf(args[0]) : null);
                     fragName = RECORDING_ANALYSIS_FRAGMENT;
                     break;
             }
             // Log with Fabric Answers what view did the user opened
-            Answers.getInstance()
-                .logContentView(new ContentViewEvent().putContentName(fragName).putContentType("Screen View"));
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, fragName);
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle);
 
             setSelectedButton(fragType);
-            showFragment(frag, fragName, R.id.fragment_container, popExisting, false, R.anim.slide_in_right,
-                R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right);
+            showFragment(frag, fragName, R.id.fragment_container, popExisting, false,
+                R.anim.slide_in_right, R.anim.slide_out_left, R.anim.slide_in_left,
+                R.anim.slide_out_right);
         }
     }
 

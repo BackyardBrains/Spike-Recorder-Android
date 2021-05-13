@@ -19,7 +19,7 @@
 
 package com.backyardbrains.drawing;
 
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.Arrays;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -93,9 +93,11 @@ public class FftDrawBuffer {
                 }
             }
         } catch (Exception e) {
-            LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - src.length=" + windowCount + " srcPos="
-                + length + " dst.length=" + windowCount + " dstPos=" + 0 + " length=" + (windowCount - length));
-            Crashlytics.logException(e);
+            LOGD(TAG,
+                "Can't add incoming to buffer, it's larger then buffer - src.length=" + windowCount
+                    + " srcPos=" + length + " dst.length=" + windowCount + " dstPos=" + 0
+                    + " length=" + (windowCount - length));
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
     }
 

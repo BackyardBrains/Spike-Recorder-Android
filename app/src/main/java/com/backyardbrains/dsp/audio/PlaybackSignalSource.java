@@ -13,7 +13,7 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BufferUtils;
 import com.backyardbrains.utils.EventUtils;
 import com.backyardbrains.utils.JniUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -207,7 +207,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             } catch (IOException e) {
                 LOGE(TAG, e instanceof FileNotFoundException ? "Error loading file"
                     : "Error reading random access file stream", e);
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
 
                 PlaybackSignalSource.this.stop();
             }
@@ -291,7 +291,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                     if (raf != null) raf.seek(0);
                 } catch (IOException e) {
                     LOGE(TAG, "IOException while rewinding: " + e.toString());
-                    Crashlytics.logException(e);
+                    FirebaseCrashlytics.getInstance().recordException(e);
                 }
                 // update progress to 0 and trigger listener
                 progress.set(0);
@@ -313,7 +313,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
                 raf.close();
             } catch (IOException e) {
                 LOGE(TAG, "IOException while stopping random access file: " + e.toString());
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             } finally {
                 raf = null;
             }
@@ -490,7 +490,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             try {
                 playbackThread.seekToPosition();
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 LOGE(TAG, "Error reading random access file stream", e);
             }
         }
@@ -516,7 +516,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
             try {
                 playbackThread.readLast(buffer, len);
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 LOGE(TAG, "Error reading random access file stream", e);
             }
         }

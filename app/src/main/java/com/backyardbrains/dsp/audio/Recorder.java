@@ -26,7 +26,7 @@ import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -96,7 +96,7 @@ public class Recorder {
                     }
                 }
             } catch (IllegalStateException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
         }
 
@@ -110,7 +110,7 @@ public class Recorder {
             try {
                 outputStream = new FileOutputStream(audioFile);
             } catch (FileNotFoundException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 throw new IOException(
                     "Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
                     e);
@@ -213,7 +213,7 @@ public class Recorder {
 
                 if (events.size() > 0) saveEventFile();
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
         }
 
@@ -242,7 +242,7 @@ public class Recorder {
                 outputStream.flush();
                 outputStream.close();
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 throw new IOException(
                     "could not build OutputStream from events file: " + audioFile.getAbsolutePath(),
                     e);

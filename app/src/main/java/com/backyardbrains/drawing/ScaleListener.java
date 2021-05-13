@@ -19,9 +19,9 @@
 
 package com.backyardbrains.drawing;
 
-import androidx.annotation.Nullable;
 import android.view.ScaleGestureDetector;
-import com.crashlytics.android.Crashlytics;
+import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGE;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -81,12 +81,12 @@ public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureList
             return true;
         } catch (IllegalStateException e) {
             LOGE(TAG, "Got invalid values back from Scale listener!");
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
 
             return false;
         } catch (NullPointerException e) {
             LOGE(TAG, "NPE while monitoring scale.");
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
 
             return false;
         }

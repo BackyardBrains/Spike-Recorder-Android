@@ -16,7 +16,7 @@ import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.Arrays;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -275,7 +275,7 @@ public class SeekableWaveformRenderer extends WaveformRenderer {
                                         drawStartIndex, drawEndIndex, samplesToDraw, surfaceWidth);
                                 } catch (Exception e) {
                                     LOGE(TAG, e.getMessage());
-                                    Crashlytics.logException(e);
+                                    FirebaseCrashlytics.getInstance().recordException(e);
                                 }
                                 if (spikesDrawData[j].vertexCount > 0) {
                                     gl.glPushMatrix();

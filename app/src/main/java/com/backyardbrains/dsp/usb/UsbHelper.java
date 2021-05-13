@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -145,19 +145,25 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
                             if (usbDevice != null) usbDevice.checkHardwareType();
                         } else {
                             LOGD(TAG, "PORT NOT OPEN");
-                            Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
+                            FirebaseCrashlytics.getInstance()
+                                .recordException(
+                                    new RuntimeException("Failed to open USB communication port!"));
                         }
                     } else {
                         LOGD(TAG, "PORT IS NULL");
-                        Crashlytics.logException(new RuntimeException("Failed to create USB device!"));
+                        FirebaseCrashlytics.getInstance()
+                            .recordException(new RuntimeException("Failed to create USB device!"));
                     }
                 } else {
                     LOGD(TAG, "USB DEVICE OPEN FAILED");
-                    Crashlytics.logException(new RuntimeException("USB device open connection failed!"));
+                    FirebaseCrashlytics.getInstance()
+                        .recordException(
+                            new RuntimeException("USB device open connection failed!"));
                 }
             } else {
                 LOGD(TAG, "USB MANAGER NOT AVAILABLE");
-                Crashlytics.logException(new RuntimeException("USB Manager is not available!"));
+                FirebaseCrashlytics.getInstance()
+                    .recordException(new RuntimeException("USB Manager is not available!"));
             }
         }
     }
