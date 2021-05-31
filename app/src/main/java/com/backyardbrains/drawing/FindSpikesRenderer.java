@@ -1,8 +1,8 @@
 package com.backyardbrains.drawing;
 
+import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Size;
-import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlHLine;
 import com.backyardbrains.drawing.gl.GlHandle;
 import com.backyardbrains.drawing.gl.GlHandleDragHelper;
@@ -14,7 +14,7 @@ import com.backyardbrains.utils.ThresholdOrientation;
 import com.backyardbrains.utils.ViewUtils;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.backyardbrains.utils.LogUtils.LOGE;
@@ -172,7 +172,7 @@ public class FindSpikesRenderer extends SeekableWaveformRenderer {
                     fromSample, toSample, drawStartIndex, drawEndIndex, samplesToDraw, surfaceWidth);
             } catch (Exception e) {
                 LOGE(TAG, e.getMessage());
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
             // draw spikes
             if (spikesDrawData.vertexCount > 0) {

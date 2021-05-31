@@ -11,7 +11,7 @@ import com.backyardbrains.dsp.SignalSource;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.Map;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -116,21 +116,25 @@ class SpikerBoxDetector {
                             "Failed to open USB communication port!");
                     }
                     LOGD(TAG, "PORT NOT OPEN");
-                    Crashlytics.logException(new RuntimeException("Failed to open USB communication port!"));
+                    FirebaseCrashlytics.getInstance()
+                        .recordException(
+                            new RuntimeException("Failed to open USB communication port!"));
                 }
             } else {
                 if (listener != null) {
                     listener.onSpikerBoxDetectionError(device.getDeviceName(), "Failed to connect to USB device!");
                 }
                 LOGD(TAG, "PORT IS NULL");
-                Crashlytics.logException(new RuntimeException("Failed to connect to USB device!"));
+                FirebaseCrashlytics.getInstance()
+                    .recordException(new RuntimeException("Failed to connect to USB device!"));
             }
         } else {
             if (listener != null) {
                 listener.onSpikerBoxDetectionError(device.getDeviceName(), "Connected USB device is not supported!");
             }
             LOGD(TAG, "DEVICE NOT SUPPORTED");
-            Crashlytics.logException(new RuntimeException("Connected USB device is not supported!"));
+            FirebaseCrashlytics.getInstance()
+                .recordException(new RuntimeException("Connected USB device is not supported!"));
         }
     }
 

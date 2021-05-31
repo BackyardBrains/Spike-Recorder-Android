@@ -20,10 +20,10 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
+import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
-import android.view.MotionEvent;
 import com.backyardbrains.drawing.gl.GlAveragingTriggerLine;
 import com.backyardbrains.drawing.gl.GlDashedHLine;
 import com.backyardbrains.drawing.gl.GlEventMarker;
@@ -40,7 +40,7 @@ import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -362,7 +362,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             }
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
 
         // only process events if threshold is off
@@ -390,7 +390,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 drawSurfaceWidth, (int) fftSurfaceHeight, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
         //benchmark.end();
     }

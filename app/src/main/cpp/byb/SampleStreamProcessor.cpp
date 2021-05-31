@@ -111,7 +111,13 @@ namespace backyardbrains {
                                 msb = msb & REMOVER;
                                 msb = msb << 7u;
                                 lsb = lsb & REMOVER;
-                                sample = (short) (((msb | lsb) - 512) * 30);
+                                sample = (short) (((msb | lsb)
+                                                   -
+                                                   backyardbrains::utils::SampleStreamUtils::getResolution(
+                                                           hardwareType))
+                                                  *
+                                                  backyardbrains::utils::SampleStreamUtils::getResolutionMultiplier(
+                                                          hardwareType));
 
                                 // calculate average sample
                                 average = 0.0001 * sample + 0.9999 * average;
@@ -217,8 +223,8 @@ namespace backyardbrains {
             __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d", message.c_str(),
                                 sampleIndex);
             if (backyardbrains::utils::SampleStreamUtils::isHardwareTypeMsg(message)) {
-                listener->onSpikerBoxHardwareTypeDetected(
-                        backyardbrains::utils::SampleStreamUtils::getHardwareType(message));
+                hardwareType = backyardbrains::utils::SampleStreamUtils::getHardwareType(message);
+                listener->onSpikerBoxHardwareTypeDetected(hardwareType);
             } else if (backyardbrains::utils::SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
                 const int sampleRate = backyardbrains::utils::SampleStreamUtils::getMaxSampleRate(message);
                 const int channelCount = backyardbrains::utils::SampleStreamUtils::getChannelCount(message);

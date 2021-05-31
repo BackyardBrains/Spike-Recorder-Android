@@ -87,6 +87,10 @@ namespace backyardbrains {
              */
             static int getExpansionBoardType(std::string message);
 
+            static int getResolution(int hardwareType);
+
+            static int getResolutionMultiplier(int hardwareType);
+
         private:
             // Hardware type SpikerBox reply message prefix.
             static const std::string HARDWARE_TYPE_PREFIX;
@@ -102,6 +106,8 @@ namespace backyardbrains {
             static const std::string HARDWARE_TYPE_NEURON_PRO;
             // Muscle PRO SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_MUSCLE_PRO;
+            // Humans SpikerBox reply message for hardware type inquiry.
+            static const std::string HARDWARE_TYPE_HUMANS;
             // Sample rate SpikerBox reply message prefix
             static const std::string SAMPLE_RATE_PREFIX;
             // Number of channels SpikerBox reply message prefix
@@ -123,9 +129,11 @@ namespace backyardbrains {
             static const int MUSCLE_PRO_HARDWARE = 3;
             // SpikerBox Neuron PRO hardware type.
             static const int NEURON_PRO_HARDWARE = 4;
+            // SpikerBox Humans hardware type.
+            static const int HUMANS_HARDWARE = 5;
 
             // Sample rate used throughout the app.
-            static const int SAMPLE_RATE = 10000;
+            static const int SAMPLE_RATE = 10000;  //TODo sad je fizno proveri dal se negde cacka
         };
     }
 }

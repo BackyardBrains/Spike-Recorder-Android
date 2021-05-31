@@ -4,10 +4,6 @@ import android.Manifest;
 import android.hardware.usb.UsbDevice;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.Size;
-import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +13,10 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.Size;
+import androidx.core.content.ContextCompat;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
@@ -53,7 +53,7 @@ import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SettingsView;
 import com.backyardbrains.view.SlidingView;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.ArrayList;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -431,6 +431,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case SpikerBoxHardwareType.NEURON_PRO:
                 spikerBoxBoard = getString(R.string.board_type_neuron_pro);
                 filter = Filters.FILTER_BAND_NEURON_PRO;
+                break;
+            case SpikerBoxHardwareType.HUMAN_PRO:
+                spikerBoxBoard = getString(R.string.board_type_human_pro);
+                filter = Filters.FILTER_BAND_HUMAN_PRO;
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:
@@ -831,7 +835,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 try {
                     startUsb(getProcessingService(), deviceName);
                 } catch (IllegalArgumentException e) {
-                    Crashlytics.logException(e);
+                    FirebaseCrashlytics.getInstance().recordException(e);
                     if (getContext() != null) {
                         ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
                     }
@@ -851,7 +855,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             try {
                 getProcessingService().stopUsb();
             } catch (IllegalArgumentException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 if (getContext() != null) {
                     ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
                 }

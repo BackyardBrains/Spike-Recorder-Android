@@ -38,8 +38,8 @@ public class FilterSettingsView extends ConstraintLayout {
     private static final String TAG = makeLogTag(FilterSettingsView.class);
 
     static final BandFilter[] FILTERS = new BandFilter[] {
-        Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE, Filters.FILTER_BAND_PLANT,
-        Filters.FILTER_BAND_NEURON_PRO
+        Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE,
+        Filters.FILTER_BAND_PLANT, Filters.FILTER_BAND_NEURON_PRO, Filters.FILTER_BAND_HUMAN_PRO
     };
     private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
 
@@ -58,7 +58,7 @@ public class FilterSettingsView extends ConstraintLayout {
 
     @BindViews({
         R.id.btn_filter_heart, R.id.btn_filter_brain, R.id.btn_filter_muscle, R.id.btn_filter_plant,
-        R.id.btn_filter_neuro
+        R.id.btn_filter_neuro, R.id.btn_filter_human
     }) List<Button> btnPresets;
     @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
     @BindView(R.id.et_high_cut_off) EditText etHighCutOff;

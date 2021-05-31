@@ -56,7 +56,7 @@ import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.IOException;
 import org.greenrobot.eventbus.EventBus;
 
@@ -778,11 +778,12 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             // post that recording of audio has started
             EventBus.getDefault().post(new AudioRecordingStartedEvent());
         } catch (IllegalStateException e) {
-            Crashlytics.logException(e);
-            ViewUtils.toast(getApplicationContext(), "No SD Card is available. Recording is disabled");
+            FirebaseCrashlytics.getInstance().recordException(e);
+            ViewUtils.toast(getApplicationContext(),
+                "No SD Card is available. Recording is disabled");
             stopRecording();
         } catch (IOException e) {
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
             ViewUtils.toast(getApplicationContext(),
                 "Error occurred while trying to initiate recording. Please try again.");
             stopRecording();
@@ -856,7 +857,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                         signalProcessor.getBitsPerSample()));
             }
         } catch (Exception e) {
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
             LOGW(TAG, "Ignoring bytes received while not synced: " + e.getMessage());
         }
     }

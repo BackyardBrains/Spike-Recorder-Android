@@ -9,7 +9,7 @@ import android.provider.OpenableColumns;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class ImportUtils {
 
             return ImportResult.createResult(file);
         } catch (IOException e) {
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
 
             return ImportResult.createError(ImportResultCode.ERROR_SAVE);
         }
