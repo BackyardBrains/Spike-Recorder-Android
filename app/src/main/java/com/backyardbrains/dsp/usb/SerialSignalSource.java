@@ -49,7 +49,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     // CH340 Chinese boards Vendor ID
     private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
-    private static final int BAUD_RATE = 230400;
+    private static final int DEFAULT_BAUD_RATE = 230400;
+    private static final int HHI_BAUD_RATE = 500000;
 
     private static final String MSG_CONFIG_PREFIX = "conf ";
     private static final String MSG_SAMPLE_RATE = "s:%d;";
@@ -59,7 +60,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS;
 
     static {
-        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS = MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
+        MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS =
+            MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
             SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
@@ -204,7 +206,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     @Override public void startReadingStream() {
         // prepare serial usb device for communication
         if (serialDevice != null) {
-            serialDevice.setBaudRate(BAUD_RATE);
+            serialDevice.setBaudRate(HHI_BAUD_RATE);
             serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
             serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
             serialDevice.setParity(UsbSerialInterface.PARITY_NONE);

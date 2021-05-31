@@ -66,6 +66,11 @@ public class Filters {
     public static final BandFilter FILTER_BAND_HUMAN_PRO =
         new BandFilter(FREQ_LOW_CUTOFF_HUMAN_PRO, FREQ_HIGH_CUTOFF_HUMAN_PRO);
     /**
+     * Predefined filter configured for Human Pro.
+     */
+    public static final BandFilter FILTER_BAND_HHI_BOX =
+        new BandFilter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_HUMAN_PRO);
+    /**
      * Predefined notch filter that cuts-off 50Hz frequency
      */
     public static final NotchFilter FILTER_NOTCH_50HZ = new NotchFilter(FREQ_CUTOFF_50HZ);

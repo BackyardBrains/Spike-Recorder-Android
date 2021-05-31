@@ -62,6 +62,7 @@
     <string name="label_plant">Plant</string>
     <string name="label_neuron">Neuron</string>
     <string name="label_human">Human</string>
+    <string name="label_hhi">HHI</string>
     <string name="label_fft">FFT</string>
     <string name="label_custom_filter_cut_offs">Set band-pass filter cut-off frequency</string>
     <string name="label_custom_filter_low">Low</string>
@@ -86,6 +87,7 @@
     <string name="board_type_muscle_pro">Muscle SpikerBox Pro</string>
     <string name="board_type_neuron_pro">Neuron SpikerBox Pro</string>
     <string name="board_type_human_pro">Human SpikerBox Pro</string>
+    <string name="board_type_hhi_box">Human-Human Interface Box</string>
 
     <string name="stimulation">Configure Stimulation</string>
     <string name="mic_thread_running">BYB Mic Thread is receiving audio.</string>

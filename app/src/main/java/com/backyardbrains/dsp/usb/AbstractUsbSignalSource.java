@@ -124,6 +124,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
                 return SpikerBoxHardwareType.NEURON_PRO;
             } else if (pid == BYB_PID_HUMAN_SB_PRO) {
                 return SpikerBoxHardwareType.HUMAN_PRO;
+            } else if (pid == BYB_PID_HHI_BOX) {
+                return SpikerBoxHardwareType.HHI_BOX;
             }
         }
 

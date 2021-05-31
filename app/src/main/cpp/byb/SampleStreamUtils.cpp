@@ -23,6 +23,8 @@ namespace backyardbrains {
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "MUSCLESB;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_HUMANS =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HUMANSB;";
+        const std::string SampleStreamUtils::HARDWARE_TYPE_HHIBOX =
+                SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HHIBOX;";
         const std::string SampleStreamUtils::SAMPLE_RATE_PREFIX = "MSF:";
         const std::string SampleStreamUtils::NUM_OF_CHANNELS_PREFIX = "MNC:";
         const std::string SampleStreamUtils::EVENT_PREFIX = "EVNT:";
@@ -43,6 +45,8 @@ namespace backyardbrains {
                 return HEART_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HUMANS.c_str(), message.c_str()) == 0)
                 return HUMANS_HARDWARE;
+            if (std::strcmp(HARDWARE_TYPE_HHIBOX.c_str(), message.c_str()) == 0)
+                return HHI_HARDWARE;
             if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos)
                 return NEURON_PRO_HARDWARE;
             if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos)

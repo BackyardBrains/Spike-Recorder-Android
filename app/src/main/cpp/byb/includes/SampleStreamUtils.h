@@ -108,6 +108,8 @@ namespace backyardbrains {
             static const std::string HARDWARE_TYPE_MUSCLE_PRO;
             // Humans SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_HUMANS;
+            // Human -Human Interface
+            static const std::string HARDWARE_TYPE_HHIBOX;
             // Sample rate SpikerBox reply message prefix
             static const std::string SAMPLE_RATE_PREFIX;
             // Number of channels SpikerBox reply message prefix
@@ -131,9 +133,11 @@ namespace backyardbrains {
             static const int NEURON_PRO_HARDWARE = 4;
             // SpikerBox Humans hardware type.
             static const int HUMANS_HARDWARE = 5;
+            // SpikerBox Humans hardware type.
+            static const int HHI_HARDWARE = 6;
 
             // Sample rate used throughout the app.
-            static const int SAMPLE_RATE = 10000;  //TODo sad je fizno proveri dal se negde cacka
+            static const int SAMPLE_RATE = 10000;
         };
     }
 }

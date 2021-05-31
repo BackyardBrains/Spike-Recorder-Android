@@ -11,7 +11,7 @@ import java.lang.annotation.RetentionPolicy;
     SpikerBoxHardwareType.NONE, SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT,
     SpikerBoxHardwareType.MUSCLE, SpikerBoxHardwareType.HEART_AND_BRAIN,
     SpikerBoxHardwareType.MUSCLE_PRO, SpikerBoxHardwareType.NEURON_PRO,
-    SpikerBoxHardwareType.HUMAN_PRO
+    SpikerBoxHardwareType.HUMAN_PRO, SpikerBoxHardwareType.HHI_BOX
 }) public @interface SpikerBoxHardwareType {
 
     /**
@@ -53,4 +53,9 @@ import java.lang.annotation.RetentionPolicy;
      * SpikerBox Human PRO hardware type.
      */
     int HUMAN_PRO = 5;
+
+    /**
+     * HHI BOX hardware type.
+     */
+    int HHI_BOX = 6;
 }

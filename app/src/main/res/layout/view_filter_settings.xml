@@ -92,6 +92,19 @@
                 android:textSize="@dimen/font_size_8"
                 app:layout_constraintLeft_toRightOf="@+id/btn_filter_neuro"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/btn_filter_hhi_box"
+                android:layout_width="@dimen/min_button_tappable_h"
+                android:layout_height="@dimen/min_button_tappable_h"
+                android:layout_marginStart="@dimen/activity_vertical_margin_half"
+                android:background="@drawable/circle_gray_white"
+                android:fontFamily="@font/comic_book"
+                android:text="@string/label_hhi"
+                android:textColor="@color/black"
+                android:textSize="@dimen/font_size_8"
+                app:layout_constraintLeft_toRightOf="@+id/btn_filter_human"
+                app:layout_constraintTop_toTopOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </HorizontalScrollView>
 
