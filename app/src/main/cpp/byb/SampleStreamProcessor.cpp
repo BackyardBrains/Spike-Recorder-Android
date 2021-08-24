@@ -202,10 +202,19 @@ namespace backyardbrains {
 //            inDataPrevLength = length;
 
             bool avoidFilteringOfChannels = stopFilteringAfterChannelIndex >= 0;
+
             for (int i = 0; i < channelCount; i++) {
                 // apply additional filtering if necessary
-                if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex)
+                //TODO: Check is stopFilteringAfterChannelIndex variable properly updated after insert extension board
+                if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex) {
+
                     applyFilters(i, channels[i], sampleCounters[i]);
+                }
+                else if (!avoidFilteringOfChannels)
+                {
+                    applyFilters(i, channels[i], sampleCounters[i]);
+
+                }
                 outSamples[i] = new short[sampleCounters[i]];
                 std::copy(channels[i], channels[i] + sampleCounters[i], outSamples[i]);
                 outSampleCounts[i] = sampleCounters[i];
@@ -241,6 +250,8 @@ namespace backyardbrains {
         }
 
         void SampleStreamProcessor::updateProcessingParameters(int expansionBoardType) {
+            __android_log_print(ANDROID_LOG_DEBUG, typeid(*this).name(),"expansionBoardType %d", expansionBoardType);
+
             switch (expansionBoardType) {
                 default:
                 case backyardbrains::utils::SampleStreamUtils::NONE_BOARD_DETACHED:
