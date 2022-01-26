@@ -21,7 +21,7 @@ package com.backyardbrains.drawing;
 
 import androidx.annotation.NonNull;
 import com.backyardbrains.dsp.SignalConfiguration;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -90,7 +90,7 @@ public class MultichannelSignalDrawBuffer {
             LOGD(TAG, "Can't add incoming to buffer, it's larger then buffer - channel=" + channel + " src.length="
                 + tmpBuffer.length + " srcPos=" + length + " dst.length=" + tmpBuffer.length + " dstPos=" + 0
                 + " length=" + (tmpBuffer.length - length));
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
     }
 

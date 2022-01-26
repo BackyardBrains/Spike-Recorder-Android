@@ -25,7 +25,7 @@ import com.backyardbrains.utils.DateUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.util.Date;
 import org.greenrobot.eventbus.EventBus;
@@ -229,7 +229,7 @@ public class RecordingDetailsFragment extends BaseFragment {
                             if (!ef.renameTo(newEventsFile)) {
                                 BYBUtils.showAlert(getActivity(), getString(R.string.title_error),
                                     getString(R.string.error_message_files_events_rename));
-                                Crashlytics.logException(new Throwable(
+                                FirebaseCrashlytics.getInstance().recordException(new Throwable(
                                     "Renaming events file for the given recording "
                                         + oldFile.getPath() + " failed"));
                             }
@@ -240,7 +240,7 @@ public class RecordingDetailsFragment extends BaseFragment {
                         ViewUtils.toast(getContext(),
                             getString(R.string.error_message_files_rename));
                     }
-                    Crashlytics.logException(
+                    FirebaseCrashlytics.getInstance().recordException(
                         new Throwable("Renaming file " + oldFile.getPath() + " failed"));
                 }
             } else {
@@ -252,7 +252,7 @@ public class RecordingDetailsFragment extends BaseFragment {
             if (getContext() != null) {
                 ViewUtils.toast(getContext(), getString(R.string.error_message_files_no_file));
             }
-            Crashlytics.logException(new Throwable("File " + oldFile.getPath() + " doesn't exist"));
+            FirebaseCrashlytics.getInstance().recordException(new Throwable("File " + oldFile.getPath() + " doesn't exist"));
         }
 
         return true;

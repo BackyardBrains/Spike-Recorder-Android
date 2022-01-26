@@ -1,5 +1,7 @@
 package com.backyardbrains.dsp;
 
+import android.util.Log;
+import android.util.Pair;
 import androidx.annotation.NonNull;
 import com.backyardbrains.drawing.FftDrawBuffer;
 import com.backyardbrains.drawing.MultichannelSignalDrawBuffer;
@@ -7,6 +9,8 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.CircularFloatArrayBuffer;
 import com.backyardbrains.utils.CircularShortBuffer;
 import com.backyardbrains.utils.EventUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -28,6 +32,8 @@ public class ProcessingBuffer {
     private short[] samples = new short[SignalProcessor.MAX_PROCESSED_SAMPLES_COUNT];
     // Array of processed event indices
     private final int[] eventIndices;
+    // Array of processed event indices
+    private ArrayList<Integer> manualEventIndices;
     // Array of processed event names
     private final String[] eventNames;
     // Number of processed events
@@ -45,6 +51,7 @@ public class ProcessingBuffer {
         createSampleBuffers(AudioUtils.DEFAULT_CHANNEL_COUNT);
         createAveragedSamplesBuffer(AudioUtils.DEFAULT_CHANNEL_COUNT);
         eventIndices = new int[EventUtils.MAX_EVENT_COUNT];
+        manualEventIndices = new ArrayList<>();
         eventNames = new String[EventUtils.MAX_EVENT_COUNT];
         eventCount = 0;
         lastSampleIndex = 0;
@@ -149,14 +156,22 @@ public class ProcessingBuffer {
                 eventIndices[eventCounter] = baseIndex + signalData.eventIndices[i];
                 eventNames[eventCounter++] = signalData.eventNames[i];
             }
-            eventCount = eventCount - removeIndices + signalData.eventCount;
-
+            for (int manualEventIndex : manualEventIndices) {
+                eventIndices[eventCounter] = baseIndex+manualEventIndex;
+                eventNames[eventCounter++] = String.valueOf(manualEventIndex);
+            }
+            eventCount = eventCount - removeIndices + signalData.eventCount+ manualEventIndices.size();
+            manualEventIndices.clear();
             // save last sample index (playhead)
             lastSampleIndex = signalData.lastSampleIndex;
 
             // add fft data to buffer
             if (fftBuffer != null) fftBuffer.put(fftData.fft, 0, fftData.windowCount);
         }
+    }
+
+    public void addManualEvent(int event){
+        manualEventIndices.add(event);
     }
 
     /**

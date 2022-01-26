@@ -1,5 +1,6 @@
 package com.backyardbrains.utils;
 
+import android.content.Context;
 import android.os.Environment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,7 +16,7 @@ public class RecordingUtils {
     public static final String BYB_RECORDING_EXT = ".wav";
 
     // Holds BYB recordings directory.
-    private static final File BYB_DIRECTORY;
+    private static File BYB_DIRECTORY;
     // Name of the BYB recording folder
     private static final String BYB_DIRECTORY_NAME = "BackyardBrains";
     // Prefix for all internally recorded BYB recordings
@@ -31,11 +32,10 @@ public class RecordingUtils {
     // BYB events file extension
     private static final String BYB_EVENTS_EXT = ".txt";
 
-    static {
+
+    public static void setMainDirectory(Context context){
         BYB_DIRECTORY = new File(
-            Environment.getExternalStorageDirectory() + File.separator + BYB_DIRECTORY_NAME
-                + File.separator);
-        //noinspection ResultOfMethodCallIgnored
+            context.getExternalFilesDir(BYB_DIRECTORY_NAME) + File.separator);
         BYB_DIRECTORY.mkdir();
     }
 

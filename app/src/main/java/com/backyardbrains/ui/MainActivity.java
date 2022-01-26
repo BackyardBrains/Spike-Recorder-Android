@@ -9,10 +9,15 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import com.backyardbrains.dsp.ProcessingBuffer;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -43,8 +48,6 @@ import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ImportUtils;
 import com.backyardbrains.utils.ImportUtils.ImportResultCode;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.answers.Answers;
-import com.crashlytics.android.answers.ContentViewEvent;
 import java.util.List;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
@@ -117,6 +120,7 @@ public class MainActivity extends AppCompatActivity
         ButterKnife.bind(this);
 
         setupUI(savedInstanceState);
+
     }
 
     @Override public void onNewIntent(Intent intent) {
@@ -234,9 +238,6 @@ public class MainActivity extends AppCompatActivity
                     fragName = RECORDING_ANALYSIS_FRAGMENT;
                     break;
             }
-            // Log with Fabric Answers what view did the user opened
-            Answers.getInstance()
-                .logContentView(new ContentViewEvent().putContentName(fragName).putContentType("Screen View"));
 
             setSelectedButton(fragType);
             showFragment(frag, fragName, R.id.fragment_container, popExisting, false, R.anim.slide_in_right,
@@ -595,4 +596,67 @@ public class MainActivity extends AppCompatActivity
             analysisManager = null;
         }
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_1:
+            {
+                ProcessingBuffer.get().addManualEvent(1);
+                processingService.addManualEvent(1);
+                return true;
+            }
+            case KeyEvent.KEYCODE_2:
+            {
+                ProcessingBuffer.get().addManualEvent(2);
+                processingService.addManualEvent(2);
+                return true;
+            }
+            case KeyEvent.KEYCODE_3:
+            {
+                ProcessingBuffer.get().addManualEvent(3);
+                processingService.addManualEvent(3);
+                return true;
+            }
+            case KeyEvent.KEYCODE_4:
+            {
+                ProcessingBuffer.get().addManualEvent(4);
+                processingService.addManualEvent(4);
+                return true;
+            }
+            case KeyEvent.KEYCODE_5:
+            {
+                ProcessingBuffer.get().addManualEvent(5);
+                processingService.addManualEvent(5);
+                return true;
+            }
+            case KeyEvent.KEYCODE_6:
+            {
+                ProcessingBuffer.get().addManualEvent(6);
+                processingService.addManualEvent(6);
+                return true;
+            }
+            case KeyEvent.KEYCODE_7:
+            {
+                ProcessingBuffer.get().addManualEvent(7);
+                processingService.addManualEvent(7);
+                return true;
+            }
+            case KeyEvent.KEYCODE_8:
+            {
+                ProcessingBuffer.get().addManualEvent(8);
+                processingService.addManualEvent(8);
+                return true;
+            }
+            case KeyEvent.KEYCODE_9:
+            {
+                ProcessingBuffer.get().addManualEvent(9);
+                processingService.addManualEvent(9);
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
 }

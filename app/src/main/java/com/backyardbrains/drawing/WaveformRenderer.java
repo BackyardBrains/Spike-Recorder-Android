@@ -20,6 +20,7 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
@@ -40,7 +41,7 @@ import com.backyardbrains.utils.Formats;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -362,7 +363,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
             }
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
 
         // only process events if threshold is off
@@ -390,7 +391,7 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                 drawSurfaceWidth, (int) fftSurfaceHeight, fftScaleFactor);
         } catch (Exception e) {
             LOGE(TAG, e.getMessage());
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
         }
         //benchmark.end();
     }
@@ -474,9 +475,12 @@ public class WaveformRenderer extends BaseWaveformRenderer {
                     labelYOffset = prevLabelYOffset + rect.height + MARKER_LABEL_TOP_OFFSET;
                 }
 
+                float scale = 1f;
+                if(surfaceHeight<1000f) scale = 0.4f;
+
                 gl.glPushMatrix();
                 gl.glTranslatef(x, y, 0f);
-                glEventMarker.draw(gl, eventsDrawData.eventNames[i], labelYOffset, h, 1f, sy);
+                glEventMarker.draw(gl, eventsDrawData.eventNames[i], labelYOffset, h, scale, scale*sy);
                 gl.glPopMatrix();
 
                 if (i != 0) glEventMarker.getBorders(rect);

@@ -1,6 +1,7 @@
 package com.backyardbrains.drawing;
 
 import android.content.Context;
+import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -697,7 +698,6 @@ public abstract class BaseWaveformRenderer extends BaseRenderer
             if (surfaceSizeDirty) {
                 scaleY = surfaceHeight > 0 ? MAX_GL_VERTICAL_SIZE / surfaceHeight : 1f;
             }
-
             // draw on surface
             draw(gl, tmpSampleDrawBuffer.getBuffer(), signalDrawData, eventsDrawData, fftDrawData, selectedChannel,
                 surfaceWidth, surfaceHeight, glWindowWidth, tempWaveformScaleFactors, tempWaveformPositions,

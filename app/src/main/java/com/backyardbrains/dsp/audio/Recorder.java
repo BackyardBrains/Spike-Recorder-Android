@@ -20,13 +20,15 @@
 package com.backyardbrains.dsp.audio;
 
 import android.media.AudioTrack;
+import android.util.Log;
 import android.util.Pair;
 import androidx.annotation.NonNull;
+import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.RecordingUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -96,7 +98,7 @@ public class Recorder {
                     }
                 }
             } catch (IllegalStateException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
         }
 
@@ -110,7 +112,7 @@ public class Recorder {
             try {
                 outputStream = new FileOutputStream(audioFile);
             } catch (FileNotFoundException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 throw new IOException(
                     "Could not build OutputStream from audio file: " + audioFile.getAbsolutePath(),
                     e);
@@ -191,6 +193,15 @@ public class Recorder {
             }
         }
 
+        public void addManualEvent(int event){
+            boolean isRecording = recording.get();
+            if (isRecording) {
+                int frameCount = (int) AudioUtils.getFrameCount(audioFile.length(), channelCount,
+                    bitsPerSample);
+                events.add(new Pair<>(frameCount + event, String.valueOf(event)));
+            }
+        }
+
         /**
          * Returns current length of the recorded file.
          *
@@ -210,10 +221,9 @@ public class Recorder {
                 if (audioFile != null) {
                     WavAudioFile.save(audioFile, channelCount, sampleRate, AudioUtils.DEFAULT_ENCODING);
                 }
-
                 if (events.size() > 0) saveEventFile();
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
         }
 
@@ -242,7 +252,7 @@ public class Recorder {
                 outputStream.flush();
                 outputStream.close();
             } catch (IOException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 throw new IOException(
                     "could not build OutputStream from events file: " + audioFile.getAbsolutePath(),
                     e);
@@ -279,6 +289,10 @@ public class Recorder {
      */
     public void startRecording(int sampleRate, int visibleChannelCount) throws IOException {
         writeThread.startRecording(sampleRate, visibleChannelCount);
+    }
+
+    public void addManualEvent(int event){
+        writeThread.addManualEvent(event);
     }
 
     /**

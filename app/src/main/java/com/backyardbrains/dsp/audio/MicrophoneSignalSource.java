@@ -9,7 +9,7 @@ import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -57,7 +57,7 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
                 }
             } catch (Throwable e) {
                 LOGE(TAG, "Could not open audio source", e);
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             }
         }
     }
@@ -162,7 +162,7 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
                     LOGD(TAG, "Recorder resources released");
                 } catch (IllegalStateException e) {
                     LOGE(TAG, "Caught Illegal State Exception: " + e.toString());
-                    Crashlytics.logException(e);
+                    FirebaseCrashlytics.getInstance().recordException(e);
                 }
                 recorder = null;
             }

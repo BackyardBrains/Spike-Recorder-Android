@@ -53,7 +53,7 @@ import com.backyardbrains.utils.WavUtils;
 import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SettingsView;
 import com.backyardbrains.view.SlidingView;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.util.ArrayList;
 import java.util.List;
 import org.greenrobot.eventbus.Subscribe;
@@ -831,7 +831,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 try {
                     startUsb(getProcessingService(), deviceName);
                 } catch (IllegalArgumentException e) {
-                    Crashlytics.logException(e);
+                    FirebaseCrashlytics.getInstance().recordException(e);
                     if (getContext() != null) {
                         ViewUtils.toast(getContext(), "Error while connecting with device " + deviceName + "!");
                     }
@@ -851,7 +851,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             try {
                 getProcessingService().stopUsb();
             } catch (IllegalArgumentException e) {
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
                 if (getContext() != null) {
                     ViewUtils.toast(getContext(), "Error while disconnecting from currently connected device!");
                 }

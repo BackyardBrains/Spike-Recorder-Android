@@ -19,7 +19,7 @@ import com.backyardbrains.vo.AverageSpike;
 import com.backyardbrains.vo.EventTriggeredAverages;
 import com.backyardbrains.vo.SpikeIndexValue;
 import com.backyardbrains.vo.Threshold;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ public class AnalysisManager {
                     // post event that audio file analysis failed
                     EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
 
-                    Crashlytics.logException(new Throwable("Error while loading file during Find Spikes analysis"));
+                    FirebaseCrashlytics.getInstance().recordException(new Throwable("Error while loading file during Find Spikes analysis"));
                 }
             } else {
                 spikesAnalysisExists(filePath, false, spikeAnalysisCheckCallback);
@@ -86,7 +86,7 @@ public class AnalysisManager {
                 // post event that audio file analysis failed
                 EventBus.getDefault().post(new AnalysisDoneEvent(false, AnalysisType.FIND_SPIKES));
 
-                Crashlytics.logException(new Throwable("Error while loading file during Find Spikes analysis"));
+                FirebaseCrashlytics.getInstance().recordException(new Throwable("Error while loading file during Find Spikes analysis"));
             }
         }
     }
@@ -144,7 +144,7 @@ public class AnalysisManager {
             return load(new File(filePath));
         } catch (IOException e) {
             LOGE(TAG, "Error while loading " + filePath);
-            Crashlytics.logException(e);
+            FirebaseCrashlytics.getInstance().recordException(e);
             return false;
         }
     }
@@ -190,7 +190,7 @@ public class AnalysisManager {
                 LOGD(TAG, "RandomAccessFile closed");
             } catch (IOException e) {
                 LOGE(TAG, "IOException while stopping random access file: " + e.toString());
-                Crashlytics.logException(e);
+                FirebaseCrashlytics.getInstance().recordException(e);
             } finally {
                 audioFile = null;
             }

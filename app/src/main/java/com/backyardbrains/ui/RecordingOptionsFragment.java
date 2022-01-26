@@ -32,7 +32,7 @@ import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.RecordingUtils;
 import com.backyardbrains.utils.ViewUtils;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -253,7 +253,7 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                             if (!ef.delete()) {
                                 BYBUtils.showAlert(getActivity(), getString(R.string.title_error),
                                     getString(R.string.error_message_files_events_delete));
-                                Crashlytics.logException(new Throwable(
+                                FirebaseCrashlytics.getInstance().recordException(new Throwable(
                                     "Deleting events file for the given recording " + f.getPath()
                                         + " failed"));
                             }
@@ -267,7 +267,7 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                             ViewUtils.toast(getContext(),
                                 getString(R.string.error_message_files_delete));
                         }
-                        Crashlytics.logException(
+                        FirebaseCrashlytics.getInstance().recordException(
                             new Throwable("Deleting file " + f.getPath() + " failed"));
                     }
                 } else {
@@ -275,7 +275,7 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                         ViewUtils.toast(getContext(),
                             getString(R.string.error_message_files_no_file));
                     }
-                    Crashlytics.logException(
+                    FirebaseCrashlytics.getInstance().recordException(
                         new Throwable("File " + f.getPath() + " doesn't exist"));
                 }
 
@@ -350,7 +350,7 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                                             ViewUtils.toast(getContext(), getString(
                                                 R.string.error_message_files_convert_delete));
                                         }
-                                        Crashlytics.logException(new Throwable(
+                                        FirebaseCrashlytics.getInstance().recordException(new Throwable(
                                             "Deleting file " + f.getPath()
                                                 + " after conversion failed"));
                                     }
@@ -359,18 +359,18 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                                 } else {
                                     handler.post(() -> showInfo(null));
                                     handler.post(runnable);
-                                    Crashlytics.logException(new Throwable(
+                                    FirebaseCrashlytics.getInstance().recordException(new Throwable(
                                         "Converting " + f.getPath() + " to WAV failed"));
                                 }
                             } catch (IOException e) {
                                 handler.post(() -> showInfo(null));
                                 handler.post(runnable);
-                                Crashlytics.logException(
+                                FirebaseCrashlytics.getInstance().recordException(
                                     new Throwable("Converting " + f.getPath() + " to WAV failed"));
                             }
                         }).start(); // starts the thread by calling the run() method in its Runnable
                     } else {
-                        Crashlytics.logException(
+                        FirebaseCrashlytics.getInstance().recordException(
                             new Throwable("Converting " + f.getPath() + " to WAV failed"));
                     }
                 } else {
@@ -378,7 +378,7 @@ public class RecordingOptionsFragment extends BaseOptionsFragment
                         ViewUtils.toast(getContext(),
                             getString(R.string.error_message_files_no_file));
                     }
-                    Crashlytics.logException(
+                    FirebaseCrashlytics.getInstance().recordException(
                         new Throwable("File " + f.getPath() + " doesn't exist"));
                 }
             })
