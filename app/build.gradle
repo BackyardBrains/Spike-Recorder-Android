@@ -2,15 +2,15 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "com.backyardbrains"
         minSdkVersion 19
-        targetSdkVersion 29
-        versionCode 89
-        versionName '1.8.3.1'
-
+        targetSdkVersion 30
+        versionCode 90
+        versionName '1.8.4.0'
+        multiDexEnabled true
         externalNativeBuild {
             cmake {
                 // Pass arguments to CMake
@@ -154,6 +154,8 @@ dependencies {
 
     // benchmark
     implementation "com.github.T-Spoon:Benchit:$benchitVersion"
+
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
