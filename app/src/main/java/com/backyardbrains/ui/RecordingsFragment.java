@@ -29,6 +29,7 @@ import com.backyardbrains.view.EmptyRecyclerView;
 import com.backyardbrains.view.EmptyView;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,7 +299,11 @@ public class RecordingsFragment extends BaseFragment
                         retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
                 } catch (Exception ignored) {
                 } finally {
-                    retriever.release();
+                    try {
+                        retriever.release();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 tvFileDuration.setText(millis < 0 ? "UNKNOWN"
                     : WavUtils.formatWavLength(TimeUnit.MILLISECONDS.toSeconds(millis)));
