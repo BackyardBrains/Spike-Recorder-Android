@@ -156,7 +156,6 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:18.3.6'
     // benchmark
     implementation "com.github.T-Spoon:Benchit:v1.0.2"
-
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10") {
         exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib"
