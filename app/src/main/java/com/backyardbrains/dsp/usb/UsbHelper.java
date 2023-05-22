@@ -217,6 +217,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
      * Returns currently connected SpikerBox/SpikerShield device, or {@code null} if none is connected.
      */
     @Nullable public AbstractUsbSignalSource getUsbDevice() {
+
         return usbDevice;
     }
 

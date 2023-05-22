@@ -23,6 +23,9 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
 
     private static final String TAG = makeLogTag(HIDSignalSource.class);
 
+
+
+
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
@@ -163,7 +166,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         int pid = device.getProductId();
 
         return isHidDevice(device) && vid == BYB_VENDOR_ID && (pid == BYB_PID_MUSCLE_SB_PRO
-            || pid == BYB_PID_NEURON_SB_PRO);
+            || pid == BYB_PID_NEURON_SB_PRO || pid == BYB_HUMAN_SB_PRO_ID1);
     }
 
     /**
@@ -207,6 +210,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         // and check maximal sample rate and number of channels
         //write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
     }
+
 
     /**
      * {@inheritDoc}

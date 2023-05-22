@@ -39,7 +39,7 @@ public class JniUtils {
 
     public static native void setNotchFilter(float centerFreq);
 
-    public static native void processSampleStream(SignalData out, byte[] data, int length,
+    public static native void processSampleStream(int hardwareType,SignalData out, byte[] data, int length,
         AbstractUsbSignalSource sampleSource);
 
     public static native boolean isAudioStreamAmModulated();

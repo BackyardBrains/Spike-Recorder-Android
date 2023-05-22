@@ -57,7 +57,7 @@ Java_com_backyardbrains_utils_JniUtils_setBandFilter(JNIEnv *env, jclass type, j
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, jfloat centerFreq);
 JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type,jint hardwareType, jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject);
 JNIEXPORT jboolean JNICALL
 Java_com_backyardbrains_utils_JniUtils_isAudioStreamAmModulated(JNIEnv *env, jclass type);
@@ -240,6 +240,12 @@ public:
 
     void onSpikerBoxHardwareTypeDetected(int hardwareType) override {
         backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setHardwareType", "(I)V", hardwareType);
+    };
+    void onHumanSpikerBoardState(int boardState) override {
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setHumanSpikerBoardState", "(I)V", boardState);
+    };
+    void onHumanSpikerBoardAudioState(int boardState) override {
+        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj, "setHumanSpikerBoardAudioState", "(I)V", boardState);
     };
 
     void onMaxSampleRateAndNumOfChannelsReply(int maxSampleRate, int channelCount) override {
@@ -554,7 +560,7 @@ Java_com_backyardbrains_utils_JniUtils_setNotchFilter(JNIEnv *env, jclass type, 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type, jobject out, jbyteArray inBytes,
+Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass type,jint hardwareType,jobject out, jbyteArray inBytes,
                                                            jint length, jobject sampleSourceObject) {
     jint channelCount = env->GetIntField(out, sdChannelCountFid);
     auto samples = reinterpret_cast<jobjectArray>(env->GetObjectField(out, sdSamplesFid));
@@ -585,7 +591,7 @@ Java_com_backyardbrains_utils_JniUtils_processSampleStream(JNIEnv *env, jclass t
     auto *outEventNamesPtr = new std::string[eventCount];
     jint outEventCount;
     sampleStreamProcessor->process(uInBytesPtr, length, outSamplesPtr, outSampleCounts, outEventIndicesPtr,
-                                   outEventNamesPtr, outEventCount, channelCount);
+                                   outEventNamesPtr, outEventCount, channelCount,hardwareType);
 
     // if we did get some events create array of strings that represent event names and populate it
     for (int i = 0; i < outEventCount; i++) {

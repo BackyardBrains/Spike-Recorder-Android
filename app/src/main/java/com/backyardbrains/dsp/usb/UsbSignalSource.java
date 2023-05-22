@@ -15,6 +15,8 @@ public interface UsbSignalSource extends SignalSource {
     int BYB_VENDOR_ID = 0x2E73;
     // BYB Muscle SpikerBox Pro Product ID
     int BYB_PID_MUSCLE_SB_PRO = 0x1;
+    // BYB HUMAN SpikerBox Pro Product ID
+    int BYB_HUMAN_SB_PRO_ID1 = 0x0004;
     // BYB Neuron SpikerBox Pro Product ID
     int BYB_PID_NEURON_SB_PRO = 0x2;
 

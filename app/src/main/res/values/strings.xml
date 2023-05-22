@@ -82,6 +82,7 @@
     <string name="board_type_plant">Plant SpikerBox</string>
     <string name="board_type_muscle">Muscle SpikerBox</string>
     <string name="board_type_heart">Heart and Brain SpikerBox</string>
+    <string name="board_type_human">Human SpikerBox</string>
     <string name="board_type_muscle_pro">Muscle SpikerBox Pro</string>
     <string name="board_type_neuron_pro">Neuron SpikerBox Pro</string>
 

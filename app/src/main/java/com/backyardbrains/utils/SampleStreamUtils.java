@@ -43,6 +43,8 @@ public class SampleStreamUtils {
                 return "Neuron PRO SpikerBox";
             case SpikerBoxHardwareType.PLANT:
                 return "Plant SpikerBox";
+            case SpikerBoxHardwareType.HUMAN_PRO:
+                return "Human SpikerBox";
             default:
             case SpikerBoxHardwareType.UNKNOWN:
                 return "UNKNOWN";

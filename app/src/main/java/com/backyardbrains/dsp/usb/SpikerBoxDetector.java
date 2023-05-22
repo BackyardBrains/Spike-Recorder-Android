@@ -25,7 +25,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 class SpikerBoxDetector {
 
     private static final String TAG = makeLogTag(SpikerBoxDetector.class);
-
+private  int hardwareType=SpikerBoxHardwareType.UNKNOWN;
     private static final int MAX_ATTEMPTS = 10;
     private static final int BUFFER_SIZE = 10000;
 
@@ -88,7 +88,7 @@ class SpikerBoxDetector {
                         new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
 
                     @Override public void onDataReceived(@NonNull byte[] data, int length) {
-                        JniUtils.processSampleStream(signalData, data, length, usbDevice);
+                        JniUtils.processSampleStream(hardwareType,signalData, data, length, usbDevice);
                     }
 
                     @Override public void onSampleRateChanged(int sampleRate) {
@@ -102,6 +102,7 @@ class SpikerBoxDetector {
                 });
                 // For some devices we set hardware type on creation just by checking VID and PID
                 if (usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN && listener != null) {
+                    hardwareType= usbDevice.getHardwareType();;
                     listener.onSpikerBoxDetected(device, usbDevice.getHardwareType());
                     return;
                 }
@@ -147,6 +148,7 @@ class SpikerBoxDetector {
         @SpikerBoxHardwareType int hardwareType) {
         detectionThreadMap.remove(device.getDeviceName());
         // inform listener that we managed to detect the hardware type
+        this.hardwareType=hardwareType;
         if (listener != null) listener.onSpikerBoxDetected(device, hardwareType);
     }
 

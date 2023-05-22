@@ -2,10 +2,13 @@ package com.backyardbrains.dsp.usb;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
+
 import androidx.annotation.NonNull;
+
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
+
 import java.util.Locale;
 
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
@@ -57,14 +60,16 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
 
     static {
         MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS = MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
-            SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
+                SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
     //private ReadThread readThread;
     //private WriteThread writeThread;
 
-    @SuppressWarnings("WeakerAccess") UsbSerialDevice serialDevice;
-    @SuppressWarnings("WeakerAccess") final SerialBuffer usbBuffer;
+    @SuppressWarnings("WeakerAccess")
+    UsbSerialDevice serialDevice;
+    @SuppressWarnings("WeakerAccess")
+    final SerialBuffer usbBuffer;
 
     private UsbSerialInterface.UsbReadCallback readCallback = data -> {
         if (serialDevice != null) {
@@ -142,7 +147,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * @return BYB USB device interface configured for serial communication
      */
     public static AbstractUsbSignalSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection) {
+                                                          @NonNull UsbDeviceConnection connection) {
         return new SerialSignalSource(device, connection);
     }
 
@@ -152,23 +157,26 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
-        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || (vid == ARDUINO_VENDOR_ID_1
-            && isNotArduinoBootloader(pid)) || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
-            || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
+        return UsbSerialDevice.isSupported(device) &&
+                (vid == BYB_VENDOR_ID
+                        || (vid == ARDUINO_VENDOR_ID_1 && isNotArduinoBootloader(pid))
+                        || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
+                        || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
     }
 
     // Checks whether specified PID is Arduino bootloader PID
     private static boolean isNotArduinoBootloader(int pid) {
         return pid != ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
+                && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
+                && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
+                && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public boolean open() {
+    @Override
+    public boolean open() {
         boolean ret = serialDevice != null && serialDevice.open()/*serialDevice.syncOpen()*/;
         if (ret) {
             // restart the working thread if it has been killed before and  get and claim interface
@@ -184,7 +192,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void write(byte[] buffer) {
+    @Override
+    public void write(byte[] buffer) {
         //LOGD(TAG, "WRITE(" + buffer.length + ") -> " + Arrays.toString(buffer));
         //usbBuffer.putWriteBuffer(buffer);
         serialDevice.write(buffer);
@@ -193,7 +202,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void startReadingStream() {
+    @Override
+    public void startReadingStream() {
         // prepare serial usb device for communication
         if (serialDevice != null) {
             serialDevice.setBaudRate(BAUD_RATE);
@@ -213,7 +223,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void stopReadingStream() {
+    @Override
+    public void stopReadingStream() {
         //killReadThread();
         //killWriteThread();
         if (serialDevice != null) {
@@ -225,7 +236,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void checkHardwareType() {
+    @Override
+    public void checkHardwareType() {
         write(MSG_BOARD_TYPE_INQUIRY.getBytes());
     }
 
