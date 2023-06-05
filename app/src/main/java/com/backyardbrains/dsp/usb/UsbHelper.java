@@ -228,7 +228,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
      * @throws IllegalArgumentException if the device with specified {@code deviceName} is not connected.
      */
     public void requestPermission(@NonNull Context context, @NonNull String deviceName, boolean detection)
-        throws IllegalArgumentException {
+            throws IllegalArgumentException {
         final UsbDevice device = devicesMap.get(deviceName);
         if (device != null) {
             final Intent intent = new Intent(ACTION_USB_PERMISSION).putExtra(EXTRA_DETECTION, detection);

@@ -39,7 +39,7 @@ namespace backyardbrains {
             static constexpr int DEFAULT_BITS_PER_SAMPLE = 16;
 
             static constexpr uint CLEANER = 0xFF;
-            static constexpr uint REMOVER = 0x7F;
+            static constexpr uint REMOVER =  0x7F;
 
             // Max number of channels is 10
             static constexpr int MAX_CHANNELS = 10;

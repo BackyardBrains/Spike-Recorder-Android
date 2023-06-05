@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -120,14 +121,16 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     ImageButton ibtnRecord;
     @BindView(R.id.rel_human_spike)
     RelativeLayout relHumanSpike;
-    @BindView(R.id.tv_p300_unselected)
-    TextView tvp300UnSelected;
-    @BindView(R.id.tv_p300_selected)
-    TextView tvp300Selected;
-    @BindView(R.id.btn_audio)
-    ImageButton btnAudio;
+
     @BindView(R.id.tv_stop_recording)
     TextView tvStopRecording;
+
+    @BindView(R.id.ivVolume)
+    ImageView ivVolume;
+    @BindView(R.id.ivP300)
+    ImageView ivP300;
+
+
     @BindView(R.id.sb_averaged_sample_count)
     SeekBar sbAvgSamplesCount;
     @BindView(R.id.tv_averaged_sample_count)
@@ -428,8 +431,13 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             startMicrophone(getProcessingService());
         // setup fft view
         setupFftView();
+        hideP300Buttons();
         // setup USB button
         setupUsbButton();
+    }
+    private void hideP300Buttons(){
+        ivVolume.setVisibility(View.INVISIBLE);
+        relHumanSpike.setVisibility(View.INVISIBLE);
     }
 
     @SuppressWarnings("unused")
@@ -486,7 +494,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
         boardType = event.getHardwareType();
-        relHumanSpike.setVisibility(View.GONE);
+        relHumanSpike.setVisibility(View.INVISIBLE);
         BandFilter filter = null;
         switch (boardType) {
             case SpikerBoxHardwareType.HEART_AND_BRAIN:
@@ -512,7 +520,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case SpikerBoxHardwareType.HUMAN_PRO:
                 spikerBoxBoard = getString(R.string.board_type_human);
                 handleHumanSpikerBox();
-                filter = Filters.FILTER_BAND_HEART;
+                filter = Filters.FILTER_BAND_MUSCLE;
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:
@@ -548,6 +556,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case ExpansionBoardType.JOYSTICK:
                 expansionBoard = "JOYSTICK";
                 break;
+            case ExpansionBoardType.HUMAN:
+                expansionBoard = "HUMAN";
+                break;
             default:
             case ExpansionBoardType.NONE:
                 expansionBoard = "NONE";
@@ -563,11 +574,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         final @HumanSpikerBoardState int humanSpikerBoardAudioState = event.getHumanSpikerBoardAudioState();
         switch (humanSpikerBoardAudioState) {
             case HumanSpikerBoardState.ON:
-                setUpp300BoardState(true);
+                setUpp300AudioState(true);
                 break;
             default:
             case HumanSpikerBoardState.OFF:
-                setUpp300BoardState(false);
+                setUpp300AudioState(false);
                 break;
         }
 
@@ -579,11 +590,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         final @HumanSpikerBoardState int humanSpikerBoardState = event.getHumanSpikerBoardState();
         switch (humanSpikerBoardState) {
             case HumanSpikerBoardState.ON:
-                setUpp300AudioState(true);
+                setUpp300BoardState(true);
                 break;
             default:
             case HumanSpikerBoardState.OFF:
-                setUpp300AudioState(false);
+                setUpp300BoardState(false);
 
                 break;
         }
@@ -643,7 +654,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             }
 
         });
-        btnAudio.setOnClickListener(v -> {
+        ivVolume.setOnClickListener(v -> {
             if (getProcessingService() != null) getProcessingService().sendHSp300AudioCommand();
         });
         // stop record button
@@ -893,7 +904,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // setup select channel text view
         tvSelectChannel.setVisibility(
                 getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
-                        && fftOn ? View.VISIBLE : View.GONE);
+                        && fftOn ? View.VISIBLE : View.INVISIBLE);
         tvSelectChannel.setOnClickListener(selectChannelClickListener);
     }
 
@@ -940,6 +951,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         boolean disconnecting = usbDisconnecting();
         ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
         ibtnUsb.setImageResource(disconnecting ? 0 : R.drawable.ic_usb_black_24dp);
+
         setupUsbDisconnectingView(!disconnecting);
         if (getProcessingService() != null && getProcessingService().isUsbActiveInput() || disconnecting) {
             ibtnUsb.setBackgroundResource(R.drawable.circle_gray_white_active);
@@ -979,6 +991,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Triggers currently connected usb device to disconnect
     void disconnectFromDevice() {
+        if (getContext() != null) {
+            hideP300Buttons();
+        }
+
         if (getProcessingService() != null) {
             try {
                 getProcessingService().stopUsb();
@@ -1000,7 +1016,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void setupUsbDisconnectingView(boolean enable) {
         ibtnUsb.setEnabled(enable);
         ibtnUsb.setAlpha(enable ? 1f : .75f);
-        pbUsbDisconnecting.setVisibility(enable ? View.GONE : View.VISIBLE);
+        pbUsbDisconnecting.setVisibility(enable ? View.INVISIBLE : View.VISIBLE);
     }
 
     //==============================================
@@ -1009,22 +1025,23 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private void setUpp300BoardState(boolean show) {
         if (show) {
-            tvp300Selected.setVisibility(View.VISIBLE);
-            tvp300UnSelected.setVisibility(View.INVISIBLE);
+            ivP300.setImageResource(R.drawable.p300y);
+            ivVolume.setVisibility(View.VISIBLE);
         } else {
-            tvp300Selected.setVisibility(View.INVISIBLE);
-            tvp300UnSelected.setVisibility(View.VISIBLE);
-
+            ivVolume.setVisibility(View.INVISIBLE);
+            ivP300.setImageResource(R.drawable.p300);
         }
-        btnAudio.setColorFilter(null);
-        btnAudio.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+        ivVolume.setImageResource(R.drawable.volume);
+        if (getProcessingService() != null)
+            getProcessingService().sendHSSoundCommand();
+
     }
 
     private void setUpp300AudioState(boolean show) {
         if (show) {
-            btnAudio.setColorFilter(Color.RED, PorterDuff.Mode.SRC_ATOP);
+            ivVolume.setImageResource(R.drawable.volumey);
         } else {
-            btnAudio.setColorFilter(null);
+            ivVolume.setImageResource(R.drawable.volume);
         }
     }
     //==============================================

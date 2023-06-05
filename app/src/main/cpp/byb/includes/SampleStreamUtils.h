@@ -40,6 +40,7 @@ namespace backyardbrains {
             static const int ADDITIONAL_INPUTS_EXPANSION_BOARD = 1;
             // Hammer expansion board
             static const int HAMMER_EXPANSION_BOARD = 4;
+            static const int HUMAN_EXPANSION_BOARD = 6;
             // Joystick expansion board
             static const int JOYSTICK_EXPANSION_BOARD = 5;
 

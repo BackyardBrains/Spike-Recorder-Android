@@ -3,6 +3,7 @@ package com.backyardbrains.dsp.usb;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -151,7 +152,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         int vid = device.getVendorId();
         int pid = device.getProductId();
         if (vid == BYB_VENDOR_ID) {
-            if (pid == BYB_HUMAN_SB_PRO_ID1 ) {
+            if (pid == BYB_HUMAN_SB_PRO_ID1) {
                 return SpikerBoxHardwareType.HUMAN_PRO;
             } else if (pid == BYB_PID_MUSCLE_SB_PRO) {
                 return SpikerBoxHardwareType.MUSCLE_PRO;
@@ -306,7 +307,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     @Override
     public final void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
         //benchmark.start();
-
+        Log.d("hardwaretypee","hardwareType=="+hardwareType);
         JniUtils.processSampleStream(hardwareType, outData, inData, inDataLength, this);
         //benchmark.end();
     }
@@ -343,9 +344,12 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         if (this.hardwareType == hardwareType) return;
 
         LOGD(TAG, "HARDWARE TYPE: " + SampleStreamUtils.getSpikerBoxHardwareName(hardwareType));
-
+        if (hardwareType == SpikerBoxHardwareType.HUMAN_PRO) {
+            setChannelCount(2);
+            setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
+            setBitsPerSample(14);
+        }
         this.hardwareType = hardwareType;
-
         if (onSpikerBoxHardwareTypeDetectionListeners != null) {
             for (OnSpikerBoxHardwareTypeDetectionListener listener : onSpikerBoxHardwareTypeDetectionListeners) {
                 listener.onHardwareTypeDetected(hardwareType);

@@ -18,6 +18,8 @@ import org.greenrobot.essentials.io.CircularByteBuffer;
 import static com.backyardbrains.utils.LogUtils.LOGD;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
+import android.util.Log;
+
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
@@ -158,7 +160,7 @@ public class SignalProcessor implements SignalSource.Processor {
 
     private final AbstractUsbSignalSource.OnSpikerBoxHardwareTypeDetectionListener spikerBoxDetectionListener =
             hardwareType -> {
-                if (hardwareType == SpikerBoxHardwareType.NEURON_PRO || hardwareType == SpikerBoxHardwareType.MUSCLE_PRO) {
+                if (hardwareType == SpikerBoxHardwareType.HUMAN_PRO ||hardwareType == SpikerBoxHardwareType.NEURON_PRO || hardwareType == SpikerBoxHardwareType.MUSCLE_PRO) {
                     setChannelConfig(new boolean[]{true, false});
                 }
             };

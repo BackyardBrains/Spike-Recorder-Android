@@ -26,6 +26,8 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -326,11 +328,24 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     }
 
     public void sendHSp300StatusCommand() {
+        new Handler(Looper.getMainLooper()).postDelayed(
+                () -> {
+                    if (signalSource != null && signalSource.isUsb()) {
+                        AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+                        usbSignalSource.write(HS_P300.getBytes());
+
+                    }
+
+                }, 600);
+    }
+
+    public void sendHSSoundCommand() {
         if (signalSource != null && signalSource.isUsb()) {
             AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
-            usbSignalSource.write(HS_P300.getBytes());
             usbSignalSource.write(HS_SOUND_COMMAND.getBytes());
+
         }
+
     }
 
     public void sendHSp300StimulationCommand() {
@@ -341,8 +356,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             else
                 usbSignalSource.write(HS_STIMOFF_COMMAND.getBytes());
         }
-        new Handler(Looper.getMainLooper()).postDelayed(this::sendHSp300StatusCommand,500);
+        new Handler(Looper.getMainLooper()).postDelayed(this::sendHSp300StatusCommand, 500);
     }
+
     public void sendHSp300AudioCommand() {
         if (signalSource != null && signalSource.isUsb()) {
             AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
@@ -350,6 +366,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 usbSignalSource.write(HS_SOUND_ON_COMMAND.getBytes());
             else
                 usbSignalSource.write(HS_SOUND_OFF_COMMAND.getBytes());
+
+            usbSignalSource.write(HS_SOUND_COMMAND.getBytes());
+
         }
 
     }
@@ -631,6 +650,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             usbHelper = new UsbHelper(getApplicationContext(), new UsbHelper.UsbListener() {
                 @Override
                 public void onDeviceAttached(@NonNull String deviceName, @SpikerBoxHardwareType int hardwareType) {
+                    Toast.makeText(ProcessingService.this, "Device Attached", Toast.LENGTH_SHORT).show();
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(true));
                 }
 

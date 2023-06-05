@@ -29,7 +29,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
-    private static final String MSG_BOARD_INQUIRY = "board:;";
+     static final String MSG_BOARD_INQUIRY = "board:;";
     //private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
 
     private ReadThread readThread;

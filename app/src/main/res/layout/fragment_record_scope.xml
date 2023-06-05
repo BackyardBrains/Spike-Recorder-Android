@@ -88,50 +88,33 @@
         android:id="@+id/rel_human_spike"
         android:layout_width="@dimen/min_button_tappable_h"
         android:layout_height="@dimen/min_button_tappable_h"
-        android:visibility="gone"
         android:layout_marginTop="@dimen/activity_vertical_margin_quarter"
-        android:background="@drawable/circle_gray_white"
-        app:layout_constraintLeft_toLeftOf="@+id/btn_fft"
-        app:layout_constraintRight_toRightOf="@+id/btn_fft"
-        app:layout_constraintTop_toBottomOf="@+id/btn_fft">
+        android:padding="4dp"
+android:visibility="invisible"
+        app:layout_constraintStart_toEndOf="@+id/ibtn_avg_trigger_type"
+        app:layout_constraintTop_toBottomOf="@+id/ibtn_threshold">
 
-        <TextView
-            android:id="@+id/tv_p300_unselected"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="p300"
-android:textStyle="bold"
-            android:gravity="center"
-            android:background="@color/white"
-            android:textColor="@color/black"
-            android:textSize="15sp" />
-        <TextView
-            android:visibility="gone"
-            android:textStyle="bold"
+        <ImageView
+            android:id="@+id/ivP300"
+            android:layout_width="@dimen/min_button_tappable_h"
+            android:layout_height="@dimen/min_button_tappable_h"
+            android:src="@drawable/p300" />
 
-            android:id="@+id/tv_p300_selected"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="p300"
 
-            android:gravity="center"
-            android:background="@color/white"
-            android:textColor="@color/channel_2"
-            android:textSize="15sp" />
-    </RelativeLayout>
+        </RelativeLayout>
 
-    <ImageButton
-        android:id="@+id/btn_audio"
+    <ImageView
+        android:id="@+id/ivVolume"
         android:layout_width="@dimen/min_button_tappable_h"
         android:layout_height="@dimen/min_button_tappable_h"
         android:layout_marginTop="5dp"
         android:background="@drawable/circle_gray_white"
+        android:padding="4dp"
+        android:visibility="invisible"
+        android:src="@drawable/volume"
         app:layout_constraintLeft_toRightOf="@+id/rel_human_spike"
-        app:layout_constraintTop_toBottomOf="@+id/btn_fft"
-        app:srcCompat="@drawable/speaker"
-        android:visibility="gone"
-        tools:ignore="ContentDescription"
-/>
+        app:layout_constraintTop_toBottomOf="@+id/ibtn_threshold" />
+
 
     <SeekBar
         android:id="@+id/sb_averaged_sample_count"
