@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.Size;
 import androidx.core.content.ContextCompat;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -520,7 +521,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case SpikerBoxHardwareType.HUMAN_PRO:
                 spikerBoxBoard = getString(R.string.board_type_human);
                 handleHumanSpikerBox();
-                filter = Filters.FILTER_BAND_MUSCLE;
+                filter = Filters.FILTER_BAND_HUMAN;
                 break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:

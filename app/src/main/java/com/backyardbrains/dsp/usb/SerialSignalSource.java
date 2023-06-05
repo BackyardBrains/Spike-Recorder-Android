@@ -11,7 +11,6 @@ import com.felhr.usbserial.UsbSerialInterface;
 
 import java.util.Locale;
 
-import static com.backyardbrains.dsp.usb.HIDSignalSource.MSG_BOARD_INQUIRY;
 import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
@@ -185,8 +184,10 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      */
     @Override
     public void checkHardwareType() {
+        // check what hardware are connected to
+
         write(MSG_BOARD_TYPE_INQUIRY.getBytes());
-        write(MSG_BOARD_INQUIRY.getBytes());
+//        write(MSG_BOARD_INQUIRY.getBytes());
 
     }
 

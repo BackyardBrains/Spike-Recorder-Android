@@ -582,6 +582,8 @@ public class SignalProcessor implements SignalSource.Processor {
 
     @SuppressWarnings("WeakerAccess")
     void processData(@NonNull byte[] buffer, int length) {
+        try {
+
         synchronized (lock) {
             // process incoming signal
             //benchmark.start();
@@ -605,6 +607,10 @@ public class SignalProcessor implements SignalSource.Processor {
             // add to buffer
             processingBuffer.add(signalData, averagedSignalData, fft);
         }
+        }catch (Exception e){
+
+        }
+
     }
 
     // Set max number of samples that can bEe processed in normal processing, in threshold and in fft

@@ -62,8 +62,8 @@ public class EventTriggeredAverageOptionsDialog {
     @BindView(R.id.cb_compute_confidence_intervals) CheckBox cbComputeConfidenceIntervals;
     @BindView(R.id.sp_confidence_intervals_event) Spinner spConfidenceIntervalsEvent;
 
-    private final MaterialDialog optionsDialog= null;
-    private final ArrayAdapter<String> confidenceIntervalsEventAdapter = null;
+    private MaterialDialog optionsDialog= null;
+    private ArrayAdapter<String> confidenceIntervalsEventAdapter = null;
 
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private SparseBooleanArray selectedButtons = new SparseBooleanArray();
@@ -84,40 +84,40 @@ public class EventTriggeredAverageOptionsDialog {
     }
 
     public EventTriggeredAverageOptionsDialog(@NonNull Context context, @Nullable OnSelectOptionsListener listener) {
-//        final MaterialDialog.SingleButtonCallback positiveCallback = (dialog, which) -> {
-//            // at least one of the events needs to be selected
-//            if (selectedCount == 0) {
-//                ViewUtils.toast(context, context.getString(R.string.error_message_validation_event_selection));
-//                return;
-//            }
-//
-//            int counter = 0;
-//            int len = eventButtons.size();
-//            Button button;
-//            for (int i = 0; i < len; i++) {
-//                button = eventButtons.get(i);
-//                if (button.isEnabled() && selectedButtons.get(i)) eventNames[counter++] = (String) button.getTag();
-//            }
-//            if (listener != null) {
-//                final Options options = new Options();
-//                options.events = eventNames;
-//                options.eventCount = counter;
-//                options.removeNoiseIntervals = cbRemoveNoiseIntervals.isChecked();
-//                options.confidenceIntervalsEvent =
-//                    cbComputeConfidenceIntervals.isChecked() ? (String) spConfidenceIntervalsEvent.getSelectedItem()
-//                        : null;
-//                listener.onOptionsSelected(options);
-//            }
-//
-//            dialog.dismiss();
-//        };
-//
-//        optionsDialog =
-//            new MaterialDialog.Builder(context).customView(R.layout.view_event_triggered_average_analysis_options,
-//                false).positiveText(R.string.label_show).onPositive(positiveCallback).autoDismiss(false).build();
-//        confidenceIntervalsEventAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item);
-//
-//        setupUI(optionsDialog.getCustomView());
+        final MaterialDialog.SingleButtonCallback positiveCallback = (dialog, which) -> {
+            // at least one of the events needs to be selected
+            if (selectedCount == 0) {
+                ViewUtils.toast(context, context.getString(R.string.error_message_validation_event_selection));
+                return;
+            }
+
+            int counter = 0;
+            int len = eventButtons.size();
+            Button button;
+            for (int i = 0; i < len; i++) {
+                button = eventButtons.get(i);
+                if (button.isEnabled() && selectedButtons.get(i)) eventNames[counter++] = (String) button.getTag();
+            }
+            if (listener != null) {
+                final Options options = new Options();
+                options.events = eventNames;
+                options.eventCount = counter;
+                options.removeNoiseIntervals = cbRemoveNoiseIntervals.isChecked();
+                options.confidenceIntervalsEvent =
+                    cbComputeConfidenceIntervals.isChecked() ? (String) spConfidenceIntervalsEvent.getSelectedItem()
+                        : null;
+                listener.onOptionsSelected(options);
+            }
+
+            dialog.dismiss();
+        };
+
+        optionsDialog =
+            new MaterialDialog.Builder(context).customView(R.layout.view_event_triggered_average_analysis_options,
+                false).positiveText(R.string.label_show).onPositive(positiveCallback).autoDismiss(false).build();
+        confidenceIntervalsEventAdapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item);
+
+        setupUI(optionsDialog.getCustomView());
     }
 
     @SuppressWarnings("unused") @OnClick({

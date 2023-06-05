@@ -304,28 +304,61 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     public void sendHSFilterCommand(float low, float high, int boardType) {
         if (boardType == SpikerBoxHardwareType.HUMAN_PRO) {
             if (signalSource != null && signalSource.isUsb()) {
-                int selectedChannel = getSelectedChanel();
                 AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
-                if (selectedChannel == 1 || selectedChannel == 2) {
-                    byte[] command;
-                    if (low <= 70) {
-                        command = (GAIN_ON + selectedChannel + ";").getBytes();
-                    } else {
-                        command = (GAIN_OFF + selectedChannel + ";").getBytes();
-                    }
+                byte[] command;
+                if (high < 20) {
+                    command = (HPF_OFF + 1 + ";").getBytes();
                     usbSignalSource.write(command);
-
-                    if (high < 20) {
-                        command = (HPF_OFF + selectedChannel + ";").getBytes();
-                    } else {
-                        command = (HPF_ON + selectedChannel + ";").getBytes();
-                    }
+                    command = (HPF_OFF + 2 + ";").getBytes();
                     usbSignalSource.write(command);
-
+                } else {
+                    command = (HPF_ON + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (HPF_ON + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
                 }
+
+
+                if (low <= 70) {
+                    command = (GAIN_ON + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (GAIN_ON + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                } else {
+                    command = (GAIN_OFF + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (GAIN_OFF + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                }
+
             }
         }
     }
+//    public void sendHSFilterCommand(float low, float high, int boardType) {
+//        if (boardType == SpikerBoxHardwareType.HUMAN_PRO) {
+//            if (signalSource != null && signalSource.isUsb()) {
+//                AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+//                byte[] command;
+//                if (high < 20) {
+//                    command =  "hpfoff:2;hpfoff:1;".getBytes();
+//                    usbSignalSource.write(command);
+//                } else {
+//                    command =  "hpfon:2;hpfon:1;".getBytes();
+//                    usbSignalSource.write(command);
+//                }
+//
+//
+//                if (low <= 70) {
+//                    command = "gainon:1;gainon:2;".getBytes();
+//                    usbSignalSource.write(command);
+//                } else {
+//                    command = "gainoff:1;gainoff:2;".getBytes();
+//                    usbSignalSource.write(command);
+//                }
+//
+//            }
+//        }
+//    }
 
     public void sendHSp300StatusCommand() {
         new Handler(Looper.getMainLooper()).postDelayed(

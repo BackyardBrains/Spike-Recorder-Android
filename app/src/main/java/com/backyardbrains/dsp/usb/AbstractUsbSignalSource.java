@@ -307,7 +307,6 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     @Override
     public final void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
         //benchmark.start();
-        Log.d("hardwaretypee","hardwareType=="+hardwareType);
         JniUtils.processSampleStream(hardwareType, outData, inData, inDataLength, this);
         //benchmark.end();
     }
@@ -345,6 +344,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
 
         LOGD(TAG, "HARDWARE TYPE: " + SampleStreamUtils.getSpikerBoxHardwareName(hardwareType));
         if (hardwareType == SpikerBoxHardwareType.HUMAN_PRO) {
+
             setChannelCount(2);
             setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
             setBitsPerSample(14);

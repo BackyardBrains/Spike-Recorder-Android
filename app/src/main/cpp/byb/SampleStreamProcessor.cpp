@@ -63,12 +63,12 @@ namespace backyardbrains {
                     sampleIndex = sampleCounters[currentChannel] == 0 ? 0 :
                                   sampleCounters[currentChannel] - 1;
                     if (eventMessageIndex >=
-                            EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
+                        EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
                         auto *copy = new unsigned char[eventMessageIndex + 1];
                         std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                         copy[eventMessageIndex] = 0;
                         // let's process incoming message
-                       processEscapeSequenceMessage(copy, sampleIndex);
+                        processEscapeSequenceMessage(copy, sampleIndex, hardwareType);
 
                         delete[] copy;
                         reset();
@@ -79,7 +79,7 @@ namespace backyardbrains {
                             std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                             copy[eventMessageIndex] = 0;
                             // let's process incoming message
-                          processEscapeSequenceMessage(copy, sampleIndex);
+                            processEscapeSequenceMessage(copy, sampleIndex, hardwareType);
 
                             delete[] copy;
                             reset();
@@ -87,8 +87,7 @@ namespace backyardbrains {
                     } else {
                         eventMessage[eventMessageIndex++] = uc;
                     }
-                }
-                else {
+                } else {
                     if (ESCAPE_SEQUENCE_START[tmpIndex] == uc) {
                         tmpIndex++;
                         if (tmpIndex == ESCAPE_SEQUENCE_START_END_LENGTH) {
@@ -231,16 +230,16 @@ namespace backyardbrains {
         }
 
         int SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes,
-                                                                int sampleIndex) {
+                                                                int sampleIndex, int hardwareType) {
             // check if it's board type message
             std::string message = reinterpret_cast<char *>(messageBytes);
-            __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE ",
-                                message.c_str());
-            int hardwareType = -1;
+            __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d",
+                                message.c_str(),
+                                sampleIndex);
             if (backyardbrains::utils::SampleStreamUtils::isHardwareTypeMsg(message)) {
-                hardwareType = backyardbrains::utils::SampleStreamUtils::getHardwareType(message);
+                int type = backyardbrains::utils::SampleStreamUtils::getHardwareType(message);
                 listener->onSpikerBoxHardwareTypeDetected(
-                        hardwareType);
+                        type);
             } else if (backyardbrains::utils::SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(
                     message)) {
                 const int sampleRate = backyardbrains::utils::SampleStreamUtils::getMaxSampleRate(
@@ -257,7 +256,10 @@ namespace backyardbrains {
                 const int expansionBoardType = backyardbrains::utils::SampleStreamUtils::getExpansionBoardType(
                         message);
                 listener->onExpansionBoardTypeDetection(expansionBoardType);
-                updateProcessingParameters(expansionBoardType);
+                if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE !=
+                    hardwareType) {
+                    updateProcessingParameters(expansionBoardType);
+                }
             } else if (backyardbrains::utils::SampleStreamUtils::isHumanSpikerBoxType300(message)) {
                 const int boardState = backyardbrains::utils::SampleStreamUtils::getHumanSpikerBoxType300(
                         message);
@@ -275,7 +277,7 @@ namespace backyardbrains {
             switch (expansionBoardType) {
                 default:
                 case backyardbrains::utils::SampleStreamUtils::NONE_BOARD_DETACHED:
-                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT);
+                    setSampleRateAndChannelCount(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT);
                     stopFilteringAfterChannelIndex = -1;
                     break;
                 case backyardbrains::utils::SampleStreamUtils::ADDITIONAL_INPUTS_EXPANSION_BOARD:
