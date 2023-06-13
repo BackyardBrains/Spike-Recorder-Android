@@ -306,7 +306,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             if (signalSource != null && signalSource.isUsb()) {
                 AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
                 byte[] command;
-                if (high < 20) {
+                if (low < 20) {
                     command = (HPF_OFF + 1 + ";").getBytes();
                     usbSignalSource.write(command);
                     command = (HPF_OFF + 2 + ";").getBytes();
@@ -319,7 +319,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 }
 
 
-                if (low <= 70) {
+                if (high <= 70) {
                     command = (GAIN_ON + 1 + ";").getBytes();
                     usbSignalSource.write(command);
                     command = (GAIN_ON + 2 + ";").getBytes();
@@ -948,8 +948,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         } catch (IOException e) {
             e.printStackTrace();
             FirebaseCrashlytics.getInstance().recordException(e);
-            ViewUtils.toast(getApplicationContext(),
-                    "Error occurred while trying to initiate recording. Please try again.");
+            ViewUtils.toast(getApplicationContext(), "Error occurred while trying to initiate recording. Please try again.");
             stopRecording();
         }
     }
