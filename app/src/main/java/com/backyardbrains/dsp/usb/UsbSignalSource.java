@@ -19,6 +19,7 @@ public interface UsbSignalSource extends SignalSource {
     int BYB_HUMAN_SB_PRO_ID1 = 0x0004;
     // BYB Neuron SpikerBox Pro Product ID
     int BYB_PID_NEURON_SB_PRO = 0x2;
+    int BYB_HHIBOX_SB = 0x6015;
 
     /**
      * Opens usb communication port.

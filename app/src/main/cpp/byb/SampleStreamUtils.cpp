@@ -18,6 +18,8 @@ namespace backyardbrains {
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HBLEOSB;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_HUMAN =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HUMANSB;";
+        const std::string SampleStreamUtils::HARDWARE_TYPE_HHIBOX =
+                SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HHIBOX;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_NEURON_PRO =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "NEURONSB;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_MUSCLE_PRO =
@@ -39,6 +41,7 @@ namespace backyardbrains {
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HUMAN.c_str(), message.c_str()) == 0) return HUMAN_HARDWARE;
+            if (std::strcmp(HARDWARE_TYPE_HHIBOX.c_str(), message.c_str()) == 0) return HHIBOX_HARDWARE;
             if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO_HARDWARE;
             if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO_HARDWARE;
             return UNKNOWN_HARDWARE;

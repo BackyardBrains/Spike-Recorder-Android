@@ -166,7 +166,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         int pid = device.getProductId();
 
         return isHidDevice(device) && vid == BYB_VENDOR_ID && (pid == BYB_PID_MUSCLE_SB_PRO
-            || pid == BYB_PID_NEURON_SB_PRO || pid == BYB_HUMAN_SB_PRO_ID1);
+            || pid == BYB_PID_NEURON_SB_PRO || pid == BYB_HUMAN_SB_PRO_ID1 || pid == BYB_HHIBOX_SB);
     }
 
     /**
@@ -209,6 +209,12 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         write(MSG_START_STREAM.getBytes());
         // and check maximal sample rate and number of channels
         //write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
+    }
+
+    @Override
+    protected void startReadingStreamForOtherBox() {
+        write(MSG_START_STREAM.getBytes());
+
     }
 
 

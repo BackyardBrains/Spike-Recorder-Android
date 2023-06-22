@@ -552,6 +552,7 @@ public class PlaybackSignalSource extends AbstractSignalSource {
         }
     }
 
+
     /**
      * {@inheritDoc}
      */

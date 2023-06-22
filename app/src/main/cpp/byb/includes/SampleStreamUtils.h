@@ -117,6 +117,7 @@ namespace backyardbrains {
             // Heart & Brain SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_HEART_AND_BRAIN;
             static const std::string HARDWARE_TYPE_HUMAN;
+            static const std::string HARDWARE_TYPE_HHIBOX;
             // Neuron PRO SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_NEURON_PRO;
             // Muscle PRO SpikerBox reply message for hardware type inquiry.
@@ -146,6 +147,7 @@ namespace backyardbrains {
             static const int NEURON_PRO_HARDWARE = 4;
             // SpikerBox Neuron PRO hardware type.
             static const int HUMAN_HARDWARE = 5;
+            static const int HHIBOX_HARDWARE = 7;
 
             // Sample rate used throughout the app.
             static const int SAMPLE_RATE = 10000;

@@ -47,7 +47,7 @@ public class AudioUtils {
     /**
      * Default number of bits per sample.
      */
-    public static final int DEFAULT_BITS_PER_SAMPLE = 16;
+    public static final int DEFAULT_BITS_PER_SAMPLE = 10;
 
     /**
      * Default channel configuration that will be used for input audio source.

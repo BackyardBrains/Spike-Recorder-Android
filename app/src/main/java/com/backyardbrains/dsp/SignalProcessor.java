@@ -160,7 +160,7 @@ public class SignalProcessor implements SignalSource.Processor {
 
     private final AbstractUsbSignalSource.OnSpikerBoxHardwareTypeDetectionListener spikerBoxDetectionListener =
             hardwareType -> {
-                if (hardwareType == SpikerBoxHardwareType.HUMAN_PRO ||hardwareType == SpikerBoxHardwareType.NEURON_PRO || hardwareType == SpikerBoxHardwareType.MUSCLE_PRO) {
+                if (hardwareType == SpikerBoxHardwareType.HHIBOX||hardwareType == SpikerBoxHardwareType.HUMAN_PRO ||hardwareType == SpikerBoxHardwareType.NEURON_PRO || hardwareType == SpikerBoxHardwareType.MUSCLE_PRO) {
                     setChannelConfig(new boolean[]{true, false});
                 }
             };
@@ -584,29 +584,29 @@ public class SignalProcessor implements SignalSource.Processor {
     void processData(@NonNull byte[] buffer, int length) {
         try {
 
-        synchronized (lock) {
-            // process incoming signal
-            //benchmark.start();
-            signalSource.processIncomingData(signalData, buffer, length);
-            //benchmark.end();
-
-            if (visibleSignalData.channelCount > 0) { // only configure channels if there is at least one visible
-                final boolean signalAveraging = signalConfiguration.isSignalAveraging();
-                // configure channels of processed signal
-                signalData.copyReconfigured(visibleSignalData, signalConfiguration);
-                // average processed signal
-                JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
+            synchronized (lock) {
+                // process incoming signal
                 //benchmark.start();
-                if (!signalAveraging) JniUtils.processFft(fft, visibleSignalData);
+                signalSource.processIncomingData(signalData, buffer, length);
                 //benchmark.end();
 
-                // forward received samples to Processing Service
-                if (listener != null) listener.onDataProcessed(visibleSignalData);
-            }
+                if (visibleSignalData.channelCount > 0) { // only configure channels if there is at least one visible
+                    final boolean signalAveraging = signalConfiguration.isSignalAveraging();
+                    // configure channels of processed signal
+                    signalData.copyReconfigured(visibleSignalData, signalConfiguration);
+                    // average processed signal
+                    JniUtils.processThreshold(averagedSignalData, visibleSignalData, signalAveraging);
+                    //benchmark.start();
+                    if (!signalAveraging) JniUtils.processFft(fft, visibleSignalData);
+                    //benchmark.end();
 
-            // add to buffer
-            processingBuffer.add(signalData, averagedSignalData, fft);
-        }
+                    // forward received samples to Processing Service
+                    if (listener != null) listener.onDataProcessed(visibleSignalData);
+                }
+
+                // add to buffer
+                processingBuffer.add(signalData, averagedSignalData, fft);
+            }
         }catch (Exception e){
 
         }

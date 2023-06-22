@@ -105,6 +105,7 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
         }
     }
 
+
     /**
      * {@inheritDoc}
      */

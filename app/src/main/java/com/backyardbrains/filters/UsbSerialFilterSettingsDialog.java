@@ -32,6 +32,7 @@ public class UsbSerialFilterSettingsDialog extends FilterSettingsDialog {
         FILTERS[2] = Filters.FILTER_BAND_BRAIN;
         FILTERS[3] = Filters.FILTER_BAND_PLANT;
         FILTERS[4] = Filters.FILTER_BAND_HUMAN;
+        FILTERS[5] = Filters.FILTER_BAND_HHIBOX;
     }
 
     private static final double FREQ_MIN_CUT_OFF = 0d;

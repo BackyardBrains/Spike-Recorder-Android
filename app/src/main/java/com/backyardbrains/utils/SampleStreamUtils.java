@@ -45,6 +45,8 @@ public class SampleStreamUtils {
                 return "Plant SpikerBox";
             case SpikerBoxHardwareType.HUMAN_PRO:
                 return "Human SpikerBox";
+            case SpikerBoxHardwareType.HHIBOX:
+                return "HHIBOX SpikerBox";
             default:
             case SpikerBoxHardwareType.UNKNOWN:
                 return "UNKNOWN";
