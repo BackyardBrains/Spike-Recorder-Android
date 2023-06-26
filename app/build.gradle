@@ -10,7 +10,7 @@ android {
         versionCode 90
         versionName '1.8.4.0'
         multiDexEnabled true
-        ndkPath "/Users/brainxtechnologies/Downloads/android-ndk-r21e"
+        ndkPath "D:\\ndk\\android-ndk-r21e"
         externalNativeBuild {
             cmake {
                 // Pass arguments to CMake
