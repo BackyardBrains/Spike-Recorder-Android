@@ -29,6 +29,7 @@ namespace backyardbrains {
             virtual void onExpansionBoardTypeDetection(int expansionBoardType) = 0;
             virtual void onHumanSpikerBoardState(int boardState) = 0;
             virtual void onHumanSpikerBoardAudioState(int boardState) = 0;
+            virtual void onLogSaving(std::string logs) = 0;
         };
 
         class SampleStreamUtils {

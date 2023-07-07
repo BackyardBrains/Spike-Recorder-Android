@@ -20,21 +20,29 @@
 package com.backyardbrains;
 
 import android.app.Application;
+import android.content.Context;
+
 import com.backyardbrains.utils.RecordingUtils;
+
 import org.greenrobot.eventbus.EventBus;
 
 public class BybApplication extends Application {
 
-    @Override public void onCreate() {
+    private static Context context;
+    private static int count = 0;
+
+    @Override
+    public void onCreate() {
         super.onCreate();
 
         // initialize event bus
-        EventBus.builder()
-            .logNoSubscriberMessages(false)
-            .sendNoSubscriberEvent(false)
-            .throwSubscriberException(BuildConfig.DEBUG)
-            .installDefaultEventBus();
+        EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).throwSubscriberException(BuildConfig.DEBUG).installDefaultEventBus();
         RecordingUtils.setMainDirectory(this);
+    }
+
+    public static synchronized Context getContext() {
+        if (context == null) context = getContext();
+        return context;
     }
 
     public boolean isTouchSupported() {

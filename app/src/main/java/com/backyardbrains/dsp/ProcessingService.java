@@ -19,6 +19,10 @@
 
 package com.backyardbrains.dsp;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGW;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
@@ -26,7 +30,6 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -67,13 +70,9 @@ import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
-import java.io.IOException;
-
 import org.greenrobot.eventbus.EventBus;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGW;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import java.io.IOException;
 
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data to bound activities.

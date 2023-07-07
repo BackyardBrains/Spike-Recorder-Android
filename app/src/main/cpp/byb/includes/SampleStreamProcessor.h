@@ -115,6 +115,10 @@ namespace backyardbrains {
             byte msb;
             // Average signal which we use to avoid signal offset
             double average;
+
+            void writeLogsInFile(std::string string);
+
+            void readLogsFromFile();
         };
     }
 }

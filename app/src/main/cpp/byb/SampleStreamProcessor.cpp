@@ -4,6 +4,9 @@
 
 #include "SampleStreamProcessor.h"
 #include "SampleStreamUtils.h"
+#include <iostream>
+#include <fstream>
+#include <jni.h>
 
 namespace backyardbrains {
 
@@ -125,7 +128,7 @@ namespace backyardbrains {
 //                                    hardwareType) {
 //                                    sample = (short) (((msb | lsb) - 8192));
 //                                } else {
-                                    sample = (short) (((msb | lsb) - 512) * 30);
+                                sample = (short) (((msb | lsb) - 512) * 30);
 //                                }
 
                                 // calculate average sample
@@ -236,6 +239,17 @@ namespace backyardbrains {
             __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d",
                                 message.c_str(),
                                 sampleIndex);
+
+
+            std::string logMessage =
+                    "ESCAPE SEQUENCE MESSAGE " + message + " AT " + std::to_string(sampleIndex);
+
+//            listener->onLogSaving(logMessage);
+/*
+//            writeLogsInFile(logMessage);
+            readLogsFromFile();
+*/
+
             if (backyardbrains::utils::SampleStreamUtils::isHardwareTypeMsg(message)) {
                 int type = backyardbrains::utils::SampleStreamUtils::getHardwareType(message);
                 listener->onSpikerBoxHardwareTypeDetected(
@@ -259,7 +273,7 @@ namespace backyardbrains {
                 if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE ==
                     hardwareType || backyardbrains::utils::SampleStreamUtils::HHIBOX_HARDWARE ==
                                     hardwareType) {
-                }else{
+                } else {
                     updateProcessingParameters(expansionBoardType);
                 }
             } else if (backyardbrains::utils::SampleStreamUtils::isHumanSpikerBoxType300(message)) {
@@ -306,6 +320,52 @@ namespace backyardbrains {
             tmpIndex = 0;
             escapeSequenceIndex = 0;
             eventMessageIndex = 0;
+        }
+
+        void SampleStreamProcessor::writeLogsInFile(std::string logMessage) {
+            const char *externalStoragePath = getenv("EXTERNAL_STORAGE");
+
+            // Append the filename to the external storage path
+            std::string filePath = std::string(externalStoragePath) + "/my_app_logs.txt";
+
+            std::ofstream file(filePath, std::ios::app);
+
+            if (file.is_open()) {
+                // Write data to the file
+                file << logMessage << std::endl;
+
+                // Close the file
+                file.close();
+
+                __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", "Data written successfully.");
+            } else {
+                __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", "Unable to open the file.");
+            }
+        }
+
+        void SampleStreamProcessor::readLogsFromFile() {
+
+            const char *externalStoragePath = getenv("EXTERNAL_STORAGE");
+
+            // Append the filename to the external storage path
+            std::string filePath = std::string(externalStoragePath) + "/my_app_logs.txt";
+
+            std::ifstream file(filePath);
+
+            if (file.is_open()) {
+                std::string line;
+
+                // Read and print each line of the file
+                while (std::getline(file, line)) {
+                    std::cout << line << std::endl;
+                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", line.c_str());
+                }
+
+                // Close the file
+                file.close();
+            } else {
+                __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", "Unable to open the file.");
+            }
         }
     }
 }

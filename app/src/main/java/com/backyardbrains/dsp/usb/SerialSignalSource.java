@@ -1,5 +1,7 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 
@@ -10,8 +12,6 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.util.Locale;
-
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * Implementation of {@link AbstractUsbSignalSource} capable of USB serial communication with BYB hardware.
@@ -49,8 +49,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     // CH340 Chinese boards Vendor ID
     private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
-    private static final int BAUD_RATE = 230400;
-//    private static final int BAUD_RATE = 500000;
+    //    private static final int BAUD_RATE = 230400;
+    private static final int BAUD_RATE = 500000;
 
     private static final String MSG_CONFIG_PREFIX = "conf ";
     private static final String MSG_SAMPLE_RATE = "s:%d;";

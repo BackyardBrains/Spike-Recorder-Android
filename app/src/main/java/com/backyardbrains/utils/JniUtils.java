@@ -18,12 +18,14 @@ public class JniUtils {
 
     public static native void testPassByRef(short[] test);
 
+    public static native void callNativeMethod(String message);
+
     public static native int interleaveSignal(short[] out, SignalData in);
 
     public static native float rms(short[] in, int length);
 
     public static native void map(float[] out, float[] in, int length, float inMin, float inMax, float outMin,
-        float outMax);
+                                  float outMax);
 
     public static native void minMax(float[] out, float[] in, int length);
 
@@ -39,15 +41,15 @@ public class JniUtils {
 
     public static native void setNotchFilter(float centerFreq);
 
-    public static native void processSampleStream(int hardwareType,SignalData out, byte[] data, int length,
-        AbstractUsbSignalSource sampleSource);
+    public static native void processSampleStream(int hardwareType, SignalData out, byte[] data, int length,
+                                                  AbstractUsbSignalSource sampleSource);
 
     public static native boolean isAudioStreamAmModulated();
 
     public static native void processMicrophoneStream(SignalData out, byte[] data, int length);
 
     public static native void processPlaybackStream(SignalData signalData, byte[] data, int length, int[] eventIndices,
-        String[] eventNames, int eventCount, long fromSample, long toSample, int prependSamples);
+                                                    String[] eventNames, int eventCount, long fromSample, long toSample, int prependSamples);
 
     public static native int getAveragedSampleCount();
 
@@ -74,45 +76,45 @@ public class JniUtils {
     public static native void processFft(FftData out, SignalData in);
 
     public static native void prepareForSignalDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
-        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
-        int drawEndIndex, int drawSurfaceWidth);
+                                                      short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
+                                                      int drawEndIndex, int drawSurfaceWidth);
 
     public static native void prepareForThresholdDrawing(SignalDrawData outSignal, EventsDrawData outEvents,
-        short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
-        int drawEndIndex, int drawSurfaceWidth);
+                                                         short[][] inSignal, int inFrameCount, int[] inEventIndices, int inEventCount, int drawStartIndex,
+                                                         int drawEndIndex, int drawSurfaceWidth);
 
     public static native void prepareForFftDrawing(FftDrawData out, float[][] in, int drawStartIndex, int drawEndIndex,
-        float drawWidthMax, int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
+                                                   float drawWidthMax, int drawSurfaceWidth, int drawSurfaceHeight, float fftScaleFactor);
 
     public static native void prepareForSpikesDrawing(SpikesDrawData out, SpikeIndexValue[] in, float[] colorInRange,
-        float[] colorOutOfRange, int rangeStart, int rangeEnd, int sampleStartIndex, int sampleEndIndex,
-        int drawStartIndex, int drawEndIndex, int samplesToDraw, int drawSurfaceWidth);
+                                                      float[] colorOutOfRange, int rangeStart, int rangeEnd, int sampleStartIndex, int sampleEndIndex,
+                                                      int drawStartIndex, int drawEndIndex, int samplesToDraw, int drawSurfaceWidth);
 
     public static native int parseEvents(String filePath, float sampleRate, int[] eventIndices, String[] eventNames);
 
     public static native int checkEvents(String filePath, String[] eventNames);
 
     public static native void eventTriggeredAverageAnalysis(String filePath, String eventsFilePath, String[] events,
-        int eventCount, float[][][] averages, float[][][] normAverages, float[][] normMcAverages, float[][] normMcTop,
-        float[][] normMcBottom, float[][] minMax, int channelCount, int frameCount, boolean removeNoiseIntervals,
-        String confidenceIntervalsEvent);
+                                                            int eventCount, float[][][] averages, float[][][] normAverages, float[][] normMcAverages, float[][] normMcTop,
+                                                            float[][] normMcBottom, float[][] minMax, int channelCount, int frameCount, boolean removeNoiseIntervals,
+                                                            String confidenceIntervalsEvent);
 
     public static native int[][] findSpikes(String filePath, short[][] valuesPos, int[][] indicesPos,
-        float[][] timesPos, short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount,
-        int maxSpikes);
+                                            float[][] timesPos, short[][] valuesNeg, int[][] indicesNeg, float[][] timesNeg, int channelCount,
+                                            int maxSpikes);
 
     public static native void autocorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
-        int[][] analysis, int analysisBinCount);
+                                                      int[][] analysis, int analysisBinCount);
 
     public static native void isiAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
-        int[][] analysis, int analysisBinCount);
+                                          int[][] analysis, int analysisBinCount);
 
     public static native void crossCorrelationAnalysis(float[][] spikeTrains, int spikeTrainCount, int[] spikeCounts,
-        int[][] analysis, int analysisCount, int binCount);
+                                                       int[][] analysis, int analysisCount, int binCount);
 
     public static native void averageSpikeAnalysis(String filePath, int[][] trains, int trainCount, int[] spikeCounts,
-        float[][] averageSpike, float[][] normAverageSpike, float[][] normTopStdLine, float[][] normBottomStdLine,
-        int batchSpikeCount);
+                                                   float[][] averageSpike, float[][] normAverageSpike, float[][] normTopStdLine, float[][] normBottomStdLine,
+                                                   int batchSpikeCount);
 
     static {
         System.loadLibrary("byb-lib");

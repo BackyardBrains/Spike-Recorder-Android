@@ -1,5 +1,9 @@
 package com.backyardbrains.ui;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGI;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -9,30 +13,26 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.KeyEvent;
-import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
+import android.view.View;
+import android.widget.Toast;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
-import com.backyardbrains.dsp.ProcessingBuffer;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import android.view.View;
-import android.widget.Toast;
-import butterknife.BindView;
-import butterknife.ButterKnife;
+
 import com.backyardbrains.R;
 import com.backyardbrains.analysis.AnalysisConfig;
 import com.backyardbrains.analysis.AnalysisManager;
 import com.backyardbrains.analysis.AnalysisType;
 import com.backyardbrains.analysis.EventTriggeredAveragesConfig;
+import com.backyardbrains.dsp.ProcessingBuffer;
 import com.backyardbrains.dsp.ProcessingService;
 import com.backyardbrains.events.AnalyzeAudioFileEvent;
 import com.backyardbrains.events.AnalyzeEventTriggeredAveragesEvent;
@@ -48,18 +48,20 @@ import com.backyardbrains.utils.BYBUtils;
 import com.backyardbrains.utils.ImportUtils;
 import com.backyardbrains.utils.ImportUtils.ImportResultCode;
 import com.backyardbrains.utils.ViewUtils;
-import java.util.List;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.NoSubscriberEvent;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
-
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGI;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 public class MainActivity extends AppCompatActivity
     implements BaseFragment.ResourceProvider, EasyPermissions.PermissionCallbacks {
@@ -149,7 +151,8 @@ public class MainActivity extends AppCompatActivity
         if (!EventBus.getDefault().isRegistered(this)) EventBus.getDefault().register(this);
     }
 
-    @Override protected void onStop() {
+    @Override
+    protected void onStop() {
         LOGD(TAG, "onStop()");
 
         // unregister activity from event bus
@@ -161,18 +164,19 @@ public class MainActivity extends AppCompatActivity
         stop();
     }
 
-    @Override public void onWindowFocusChanged(boolean hasFocus) {
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
             // enables regular immersive sticky mode
             View decorView = getWindow().getDecorView();
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                // set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
+                    // set the content to appear under the system bars so that the
+                    // content doesn't resize when the system bars hide and show.
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    // Hide the nav bar and status bar
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
         }
     }
 
@@ -180,7 +184,8 @@ public class MainActivity extends AppCompatActivity
     //  OVERRIDES
     //==============================================
 
-    @Override public void onBackPressed() {
+    @Override
+    public void onBackPressed() {
         final int fragmentCount = getSupportFragmentManager().getBackStackEntryCount();
         final FragmentManager.BackStackEntry entry = getSupportFragmentManager().getBackStackEntryAt(fragmentCount - 1);
         final BaseFragment frag = (BaseFragment) getSupportFragmentManager().findFragmentByTag(entry.getName());
@@ -241,14 +246,15 @@ public class MainActivity extends AppCompatActivity
 
             setSelectedButton(fragType);
             showFragment(frag, fragName, R.id.fragment_container, popExisting, false, R.anim.slide_in_right,
-                R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right);
+                    R.anim.slide_out_left, R.anim.slide_in_left, R.anim.slide_out_right);
         }
     }
 
     public void showFragment(Fragment frag, String fragName, int fragContainer, boolean popExisting, boolean animate,
-        int animEnter, int animExit, int animPopEnter, int animPopExit) {
+                             int animEnter, int animExit, int animPopEnter, int animPopExit) {
         final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        if (animate) transaction.setCustomAnimations(animEnter, animExit, animPopEnter, animPopExit);
+        if (animate)
+            transaction.setCustomAnimations(animEnter, animExit, animPopEnter, animPopExit);
         final boolean popped = popFragment(fragName);
         if (popped && popExisting) getSupportFragmentManager().popBackStack();
         if (!popped || popExisting) {
@@ -310,56 +316,66 @@ public class MainActivity extends AppCompatActivity
     //  EVENT BUS
     //=================================================
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onPlayAudioFileEvent(PlayAudioFileEvent event) {
         loadFragment(PLAY_AUDIO_VIEW, false, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAnalyzeEventTriggeredAveragesEvent(AnalyzeEventTriggeredAveragesEvent event) {
         final AnalysisConfig config =
-            new EventTriggeredAveragesConfig(event.getFilePath(), AnalysisType.EVENT_TRIGGERED_AVERAGE,
-                event.getEvents(), event.isRemoveNoiseIntervals(), event.getConfidenceIntervalsEvent());
+                new EventTriggeredAveragesConfig(event.getFilePath(), AnalysisType.EVENT_TRIGGERED_AVERAGE,
+                        event.getEvents(), event.isRemoveNoiseIntervals(), event.getConfidenceIntervalsEvent());
         loadFragment(EVENT_TRIGGERED_AVERAGES_VIEW, false, config);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onFindSpikesEvent(FindSpikesEvent event) {
         loadFragment(FIND_SPIKES_VIEW, false, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAnalyzeAudioFileEvent(AnalyzeAudioFileEvent event) {
         final AnalysisConfig config = new AnalysisConfig(event.getFilePath(), event.getType());
         loadFragment(ANALYSIS_VIEW, false, config);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingsEvent(OpenRecordingsEvent event) {
         loadFragment(RECORDINGS_VIEW, false);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingOptionsEvent(OpenRecordingOptionsEvent event) {
         loadFragment(RECORDING_OPTIONS_VIEW, true, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingDetailsEvent(OpenRecordingDetailsEvent event) {
         loadFragment(RECORDING_DETAILS_VIEW, false, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOpenRecordingAnalysisEvent(OpenRecordingAnalysisEvent event) {
         loadFragment(RECORDING_ANALYSIS_VIEW, false, event.getFilePath());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onShowToastEvent(ShowToastEvent event) {
         ViewUtils.toast(this, event.getToast());
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNoSubscriberEvent(NoSubscriberEvent event) {
         // this is here to avoid EventBus exception
     }
@@ -377,7 +393,8 @@ public class MainActivity extends AppCompatActivity
         bottomMenu.setOnNavigationItemSelectedListener(bottomMenuListener);
     }
 
-    @SuppressLint("SwitchIntDef") private void showImportError(@ImportResultCode int result) {
+    @SuppressLint("SwitchIntDef")
+    private void showImportError(@ImportResultCode int result) {
         final @StringRes int stringRes;
         switch (result) {
             case ImportResultCode.ERROR_EXISTS:
@@ -445,46 +462,50 @@ public class MainActivity extends AppCompatActivity
     // RECORD_AUDIO PERMISSION
     //==============================================
 
-    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-        @NonNull int[] grantResults) {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+    @Override
+    public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
-    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
+    @Override
+    public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
-                .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.action_setting)
-                .setNegativeButton(R.string.action_cancel)
-                .setRequestCode(BYB_SETTINGS_SCREEN)
-                .build()
-                .show();
+                    .setTitle(R.string.title_settings_dialog)
+                    .setPositiveButton(R.string.action_setting)
+                    .setNegativeButton(R.string.action_cancel)
+                    .setRequestCode(BYB_SETTINGS_SCREEN)
+                    .build()
+                    .show();
         }
     }
 
-    @AfterPermissionGranted(BYB_WRITE_STORAGE_PERM) private void importRecording() {
+    @AfterPermissionGranted(BYB_WRITE_STORAGE_PERM)
+    private void importRecording() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             ImportUtils.ImportResult result =
-                ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
+                    ImportUtils.importRecording(getApplicationContext(), getIntent().getScheme(), getIntent().getData());
             // we don't need intent data anymore
             if (!result.isSuccessful()) {
                 showImportError(result.getCode());
             } else {
                 ViewUtils.toast(getApplicationContext(), getString(R.string.toast_import_successful),
-                    Toast.LENGTH_LONG);
+                        Toast.LENGTH_LONG);
                 loadFragment(RECORDINGS_VIEW, false);
                 loadFragment(RECORDING_OPTIONS_VIEW, false, result.getFile().getAbsolutePath());
             }
             setIntent(null);
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage_import),
-                BYB_WRITE_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                    BYB_WRITE_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
 
@@ -492,12 +513,13 @@ public class MainActivity extends AppCompatActivity
      * Requests {@link Manifest.permission#RECORD_AUDIO} permission if it's not already allowed and starts {@link
      * ProcessingService} and {@link AnalysisManager}.
      */
-    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM) private void start() {
+    @AfterPermissionGranted(BYB_RECORD_AUDIO_PERM)
+    private void start() {
         if (EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)) {
             startProcessingService();
         } else {
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_record_audio), BYB_RECORD_AUDIO_PERM,
-                Manifest.permission.RECORD_AUDIO);
+                    Manifest.permission.RECORD_AUDIO);
         }
     }
 
@@ -517,14 +539,18 @@ public class MainActivity extends AppCompatActivity
     /**
      * {@inheritDoc}
      */
-    @Nullable @Override public ProcessingService processingService() {
+    @Nullable
+    @Override
+    public ProcessingService processingService() {
         return processingService;
     }
 
     /**
      * {@inheritDoc}
      */
-    @Nullable @Override public AnalysisManager analysisManager() {
+    @Nullable
+    @Override
+    public AnalysisManager analysisManager() {
         return analysisManager;
     }
 
@@ -555,7 +581,8 @@ public class MainActivity extends AppCompatActivity
          * Saves a reference to the {@link ProcessingService} through which UI will be able to communication with part
          * of the application in charge of incoming signal processing.
          */
-        @Override public void onServiceConnected(ComponentName className, IBinder service) {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
             LOGD(TAG, "ProcessingService connected!");
             // we're bound to ProcessingService, cast the IBinder and get ProcessingService instance
             ProcessingService.ServiceBinder binder = (ProcessingService.ServiceBinder) service;
@@ -565,7 +592,8 @@ public class MainActivity extends AppCompatActivity
             EventBus.getDefault().post(new AudioServiceConnectionEvent(true));
         }
 
-        @Override public void onServiceDisconnected(ComponentName className) {
+        @Override
+        public void onServiceDisconnected(ComponentName className) {
             LOGD(TAG, "ProcessingService disconnected!");
 
             processingService = null;
@@ -601,56 +629,47 @@ public class MainActivity extends AppCompatActivity
     public boolean onKeyDown(int keyCode, KeyEvent event) {
 
         switch (keyCode) {
-            case KeyEvent.KEYCODE_1:
-            {
+            case KeyEvent.KEYCODE_1: {
                 ProcessingBuffer.get().addManualEvent(1);
                 processingService.addManualEvent(1);
                 return true;
             }
-            case KeyEvent.KEYCODE_2:
-            {
+            case KeyEvent.KEYCODE_2: {
                 ProcessingBuffer.get().addManualEvent(2);
                 processingService.addManualEvent(2);
                 return true;
             }
-            case KeyEvent.KEYCODE_3:
-            {
+            case KeyEvent.KEYCODE_3: {
                 ProcessingBuffer.get().addManualEvent(3);
                 processingService.addManualEvent(3);
                 return true;
             }
-            case KeyEvent.KEYCODE_4:
-            {
+            case KeyEvent.KEYCODE_4: {
                 ProcessingBuffer.get().addManualEvent(4);
                 processingService.addManualEvent(4);
                 return true;
             }
-            case KeyEvent.KEYCODE_5:
-            {
+            case KeyEvent.KEYCODE_5: {
                 ProcessingBuffer.get().addManualEvent(5);
                 processingService.addManualEvent(5);
                 return true;
             }
-            case KeyEvent.KEYCODE_6:
-            {
+            case KeyEvent.KEYCODE_6: {
                 ProcessingBuffer.get().addManualEvent(6);
                 processingService.addManualEvent(6);
                 return true;
             }
-            case KeyEvent.KEYCODE_7:
-            {
+            case KeyEvent.KEYCODE_7: {
                 ProcessingBuffer.get().addManualEvent(7);
                 processingService.addManualEvent(7);
                 return true;
             }
-            case KeyEvent.KEYCODE_8:
-            {
+            case KeyEvent.KEYCODE_8: {
                 ProcessingBuffer.get().addManualEvent(8);
                 processingService.addManualEvent(8);
                 return true;
             }
-            case KeyEvent.KEYCODE_9:
-            {
+            case KeyEvent.KEYCODE_9: {
                 ProcessingBuffer.get().addManualEvent(9);
                 processingService.addManualEvent(9);
                 return true;
