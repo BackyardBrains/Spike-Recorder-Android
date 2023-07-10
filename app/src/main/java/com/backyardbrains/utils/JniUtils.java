@@ -18,8 +18,6 @@ public class JniUtils {
 
     public static native void testPassByRef(short[] test);
 
-    public static native void callNativeMethod(String message);
-
     public static native int interleaveSignal(short[] out, SignalData in);
 
     public static native float rms(short[] in, int length);

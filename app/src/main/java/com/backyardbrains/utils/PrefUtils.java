@@ -120,13 +120,6 @@ public class PrefUtils {
         getSharedPreferences(context).edit().putFloat(constructPrefKey(clazz, PREF_FLOAT_THRESHOLD), threshold).apply();
     }
 
-    public static void setLogs(@NonNull Context context, String logs) {
-        SharedPreferences preferences = getSharedPreferences(context);
-        String savedLogs = preferences.getString("logs", "");
-        savedLogs = "==>" + logs;
-        preferences.edit().putString("logs", savedLogs).apply();
-    }
-
     /**
      * Integer indicating the number of sample sets that should be summed when averaging incoming signal.
      */

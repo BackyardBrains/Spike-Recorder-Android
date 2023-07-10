@@ -388,10 +388,6 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
         }
     }
 
-    void saveLogInSharedPreference(String logs) {
-        PrefUtils.setLogs(BybApplication.getContext(), logs);
-    }
-
     /**
      * Sets connected SpikerBox expansion board type for the input source.
      */

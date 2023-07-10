@@ -37,9 +37,6 @@ Java_com_backyardbrains_utils_JniUtils_helloTest(JNIEnv *env, jclass type);
 JNIEXPORT void JNICALL
 Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, jshortArray test);
 
-JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_callNativeMethod(JNIEnv *env, jclass obj, jstring message);
-
 JNIEXPORT
 jint JNICALL
 Java_com_backyardbrains_utils_JniUtils_interleaveSignal(JNIEnv *env, jclass type, jshortArray out,
@@ -328,12 +325,6 @@ public:
                                                      expansionBoardType);
     }
 
-    void onLogSaving(std::string logs) override {
-        backyardbrains::utils::JniHelper::invokeVoid(vm, sampleSourceObj,
-                                                     "saveLogInSharedPreference",
-                                                     "(Ljava/lang/String;)V", logs.c_str());
-    }
-
 private:
     jobject sampleSourceObj{};
 };
@@ -455,29 +446,6 @@ Java_com_backyardbrains_utils_JniUtils_testPassByRef(JNIEnv *env, jclass type, j
 
     // exception check
     exception_check(env);
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_backyardbrains_utils_JniUtils_callNativeMethod(JNIEnv *env, jclass obj,
-                                                        jstring message) {
-    // Convert jstring to const char* for C++ use
-    const char *messageChars = env->GetStringUTFChars(message, nullptr);
-
-    // Get the class of the Java object
-    jclass javaClass = env->GetObjectClass(obj);
-
-    // Find the method ID of the Java method you want to call
-    jmethodID methodID = env->GetMethodID(javaClass, "myMethod", "(Ljava/lang/String;)V");
-
-    if (methodID != nullptr) {
-        // Call the Java method with the string parameter
-        env->CallVoidMethod(obj, methodID, message);
-    } else {
-        std::cout << "Method not found" << std::endl;
-    }
-
-    // Release the converted string
-    env->ReleaseStringUTFChars(message, messageChars);
 }
 
 extern "C" JNIEXPORT jint JNICALL
