@@ -105,6 +105,15 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
         }
     }
 
+    @Override
+    public void startHHIB() {
+        if (readThread == null) {
+            // Start microphone in a thread
+            readThread = new ReadThread();
+            readThread.start();
+        }
+    }
+
 
     /**
      * {@inheritDoc}

@@ -50,7 +50,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
     //    private static final int BAUD_RATE = 230400;
-    private static final int BAUD_RATE = 500000;
+    private static final int BAUD_RATE = 230400;
+    private static final int BAUD_RATE_HHIB = 500000;
 
     private static final String MSG_CONFIG_PREFIX = "conf ";
     private static final String MSG_SAMPLE_RATE = "s:%d;";
@@ -157,6 +158,24 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
         // prepare serial usb device for communication
         if (serialDevice != null) {
             serialDevice.setBaudRate(BAUD_RATE);
+            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
+            serialDevice.read(readCallback, 1024);
+        }
+
+        // we don't actually start the stream, it's automatically stared after connection, but we should
+        // configure sample rate and num of channels at startup
+        write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+    }
+
+    @Override
+    public void startReadingStreamFromHHIB() {
+        // prepare serial usb device for communication
+        if (serialDevice != null) {
+            serialDevice.setBaudRate(BAUD_RATE_HHIB);
             serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
             serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
             serialDevice.setParity(UsbSerialInterface.PARITY_NONE);

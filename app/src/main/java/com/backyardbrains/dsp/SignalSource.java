@@ -2,6 +2,7 @@ package com.backyardbrains.dsp;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -13,9 +14,11 @@ public interface SignalSource {
     /**
      * Defines different sample source types.
      */
-    @Retention(RetentionPolicy.SOURCE) @IntDef({
-        Type.MICROPHONE, Type.USB, Type.FILE
-    }) @interface Type {
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            Type.MICROPHONE, Type.USB, Type.FILE
+    })
+    @interface Type {
         /**
          * Audio sample source.
          */
@@ -39,7 +42,7 @@ public interface SignalSource {
         /**
          * Called when new chunk of data from the sample source is available.
          *
-         * @param data The buffer that contains received data.
+         * @param data   The buffer that contains received data.
          * @param length The length of the received data.
          */
         void onDataReceived(@NonNull byte[] data, int length);
@@ -72,6 +75,8 @@ public interface SignalSource {
      * Starts reading sample source data and passing it to the set {@link Processor}.
      */
     void start();
+
+    void startHHIB();
 
     /**
      * Pauses reading sample source data.

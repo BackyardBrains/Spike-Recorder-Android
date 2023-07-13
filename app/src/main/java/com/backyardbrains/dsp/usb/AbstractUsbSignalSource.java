@@ -11,14 +11,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
 
-import com.backyardbrains.BybApplication;
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ExpansionBoardType;
 import com.backyardbrains.utils.HumanSpikerBoardState;
 import com.backyardbrains.utils.JniUtils;
-import com.backyardbrains.utils.PrefUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
@@ -174,6 +172,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      */
     protected abstract void startReadingStream();
 
+    protected abstract void startReadingStreamFromHHIB();
+
     /**
      * Stops reading data from usb endpoint.
      */
@@ -186,6 +186,12 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     public final void start() {
         LOGD(TAG, "start()");
         startReadingStream();
+    }
+
+    @Override
+    public void startHHIB() {
+        LOGD(TAG, "startHHIB()");
+        startReadingStreamFromHHIB();
     }
 
     /**

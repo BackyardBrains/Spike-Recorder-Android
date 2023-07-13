@@ -219,6 +219,11 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         //write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
     }
 
+    @Override
+    protected void startReadingStreamFromHHIB() {
+        write(MSG_START_STREAM.getBytes());
+    }
+
 
     /**
      * {@inheritDoc}

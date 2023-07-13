@@ -509,8 +509,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             signalSource = audioHelper.getAudioDevice();
             signalProcessor.setSignalSource(signalSource);
             signalSource.start();
-        }
 
+        }
         LOGD(TAG, "Microphone started");
     }
 
