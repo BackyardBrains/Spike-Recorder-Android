@@ -246,7 +246,7 @@ class SpikerBoxDetector {
                 }
 
                 if (usbDevice != null && usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
-                    // we managed to detect the hardware type
+                    // we managed to detect the hardware type (HHIB)
                     if (!canceled) {
                         deviceDetectionSuccess(usbDevice.getUsbDevice(), usbDevice.getHardwareType());
                         usbDevice.stop();
