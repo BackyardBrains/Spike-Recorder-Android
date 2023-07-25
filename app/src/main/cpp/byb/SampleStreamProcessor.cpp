@@ -124,12 +124,12 @@ namespace backyardbrains {
                                 msb = msb & REMOVER;
                                 msb = msb << 7u;
                                 lsb = lsb & REMOVER;
-//                                if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE ==
-//                                    hardwareType) {
-//                                    sample = (short) (((msb | lsb) - 8192));
-//                                } else {
+                                if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE ==
+                                    hardwareType) {
+                                    sample = (short) (((msb | lsb) - 8192));
+                                } else {
                                 sample = (short) (((msb | lsb) - 512) * 30);
-//                                }
+                                }
 
                                 // calculate average sample
                                 average = 0.0001 * sample + 0.9999 * average;
