@@ -6,6 +6,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -350,9 +351,10 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      */
     @SuppressWarnings("WeakerAccess")
     void setHardwareType(int hardwareType) {
-        setChannelCount(2);
+        /*setChannelCount(2);
         setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
-        setBitsPerSample(10);
+        setBitsPerSample(10);*/
+
         if (this.hardwareType == hardwareType) return;
 
         LOGD(TAG, "HARDWARE TYPE: " + SampleStreamUtils.getSpikerBoxHardwareName(hardwareType));
@@ -361,11 +363,16 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
             setChannelCount(2);
             setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
             setBitsPerSample(14);
+
+            Log.d("sample_rate", "" + SampleStreamUtils.SAMPLE_RATE_5000);
+
         }
         if (hardwareType == SpikerBoxHardwareType.HHIBOX) {
             setChannelCount(1);
             setSampleRate(SampleStreamUtils.DEFAULT_SAMPLE_RATE);
             setBitsPerSample(10);
+
+            Log.d("sample_rate", "" + SampleStreamUtils.DEFAULT_SAMPLE_RATE);
         }
         this.hardwareType = hardwareType;
         if (onSpikerBoxHardwareTypeDetectionListeners != null) {
