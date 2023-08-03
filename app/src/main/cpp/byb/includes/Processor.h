@@ -61,7 +61,7 @@ namespace backyardbrains {
             // Default channel count
             static constexpr int DEFAULT_CHANNEL_COUNT = 1;
             // Default number of bits  per sample
-            static constexpr int DEFAULT_BITS_PER_SAMPLE = 10;
+            static constexpr int DEFAULT_BITS_PER_SAMPLE = 16;
 
             void createFilters(float sampleRate, int channelCount);
 

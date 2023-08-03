@@ -38,12 +38,12 @@ public class Filters {
      * Predefined filter configured for EKG.
      */
     public static final BandFilter FILTER_BAND_HEART =
-        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
+            new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
     /**
      * Predefined filter configured for EEG.
      */
     public static final BandFilter FILTER_BAND_BRAIN =
-        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
+            new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
     /**
      * Predefined filter configured for Plant.
      */
