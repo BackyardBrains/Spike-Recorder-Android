@@ -151,7 +151,13 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
                         if (usbDevice.open()) {
                             if (listener != null) listener.onDataTransferStart();
 
-                            if (usbDevice != null) usbDevice.start();
+                            if (usbDevice != null) {
+                                if (usbDevice.getHardwareType() == SpikerBoxHardwareType.HHIBOX) {
+                                    usbDevice.startHHIB();
+                                } else {
+                                    usbDevice.start();
+                                }
+                            }
 
                             try {
                                 Thread.sleep(1000);
