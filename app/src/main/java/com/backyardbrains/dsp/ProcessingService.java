@@ -30,6 +30,7 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -638,6 +639,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
         // set current USB input source
         if (usbHelper.getUsbDevice() != null) {
+            Log.d("processing_service", "" + usbHelper.getUsbDevice().getHardwareType());
+
             if (usbHelper.getUsbDevice().getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
                 EventBus.getDefault()
                         .post(new SpikerBoxHardwareTypeDetectionEvent(usbHelper.getUsbDevice().getHardwareType()));
@@ -682,7 +685,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             usbHelper = new UsbHelper(getApplicationContext(), new UsbHelper.UsbListener() {
                 @Override
                 public void onDeviceAttached(@NonNull String deviceName, @SpikerBoxHardwareType int hardwareType) {
-                    Toast.makeText(ProcessingService.this, "Device Attached", Toast.LENGTH_SHORT).show();
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(ProcessingService.this, "Device Attached", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(true));
                 }
 

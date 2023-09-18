@@ -150,21 +150,24 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     static @SpikerBoxHardwareType int getHardwareType(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
+
+        Log.d("usb_pid", "" + pid);
+        Log.d("usb_vid", "" + vid);
+
         if (vid == BYB_VENDOR_ID) {
             if (pid == BYB_HUMAN_SB_PRO_ID1) {
                 return SpikerBoxHardwareType.HUMAN_PRO;
             }
-            if (pid == BYB_HHIBOX_SB) {
-                return SpikerBoxHardwareType.HHIBOX;
-            } else if (pid == BYB_PID_MUSCLE_SB_PRO) {
+            if (pid == BYB_PID_MUSCLE_SB_PRO) {
                 return SpikerBoxHardwareType.MUSCLE_PRO;
-            } else if (pid == BYB_PID_NEURON_SB_PRO) return SpikerBoxHardwareType.NEURON_PRO;
+            } else if (pid == BYB_PID_NEURON_SB_PRO) {
+                return SpikerBoxHardwareType.NEURON_PRO;
+            }
         } else if (vid == BYB_HHIBOX_VENDOR_ID) {
             if (pid == BYB_HHIBOX_SB) {
                 return SpikerBoxHardwareType.HHIBOX;
             }
         }
-
         return SpikerBoxHardwareType.UNKNOWN;
     }
 
