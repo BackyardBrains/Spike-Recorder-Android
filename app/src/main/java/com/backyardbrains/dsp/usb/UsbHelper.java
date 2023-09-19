@@ -95,8 +95,11 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
             if (usbDevice == null) {
                 // Retrieve the device from the UsbManager
                 UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
-                device = usbManager.getDeviceList().values().iterator().next();
-                //usbDevice = usbManager.getDeviceList().values().iterator().next();
+                Map<String, UsbDevice> deviceList = usbManager.getDeviceList();
+                if (!deviceList.isEmpty()) {
+                    device = usbManager.getDeviceList().values().iterator().next();
+                } else {
+                }
             }
 
             if (AbstractUsbSignalSource.isSupported(device)) {
@@ -325,8 +328,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         final List<UsbDevice> addedDevices = new ArrayList<>();
         final List<UsbDevice> removedDevices = new ArrayList<>();
         final List<UsbDevice> devices = new ArrayList<>(manager.getDeviceList().values());
-
         // find newly added devices
+
         for (UsbDevice device : devices) {
             if (AbstractUsbSignalSource.isSupported(device) && !devicesMap.containsKey(device.getDeviceName())) {
                 addedDevices.add(device);

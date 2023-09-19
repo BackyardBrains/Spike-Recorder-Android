@@ -22,6 +22,8 @@ public interface UsbSignalSource extends SignalSource {
     int BYB_PID_NEURON_SB_PRO = 0x2;
     int BYB_HHIBOX_SB = 0x6015;
 
+    String Human_Human_Interface = "Human Human Interface";
+
     /**
      * Opens usb communication port.
      */

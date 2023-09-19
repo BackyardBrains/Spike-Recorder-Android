@@ -21,6 +21,7 @@ import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -150,9 +151,11 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     static @SpikerBoxHardwareType int getHardwareType(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
+        String pName = device.getProductName();
 
         Log.d("usb_pid", "" + pid);
         Log.d("usb_vid", "" + vid);
+        Log.d("devices_name", pName);
 
         if (vid == BYB_VENDOR_ID) {
             if (pid == BYB_HUMAN_SB_PRO_ID1) {
@@ -163,10 +166,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
             } else if (pid == BYB_PID_NEURON_SB_PRO) {
                 return SpikerBoxHardwareType.NEURON_PRO;
             }
-        } else if (vid == BYB_HHIBOX_VENDOR_ID) {
-            if (pid == BYB_HHIBOX_SB) {
-                return SpikerBoxHardwareType.HHIBOX;
-            }
+        } else if (Objects.equals(pName, Human_Human_Interface)) {
+            return SpikerBoxHardwareType.HHIBOX;
         }
         return SpikerBoxHardwareType.UNKNOWN;
     }
