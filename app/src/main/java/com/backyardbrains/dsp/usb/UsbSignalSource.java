@@ -23,6 +23,7 @@ public interface UsbSignalSource extends SignalSource {
     int BYB_HHIBOX_SB = 0x6015;
 
     String Human_Human_Interface = "Human Human Interface";
+    String HHI_1v1 = "HHI 1v1";
 
     /**
      * Opens usb communication port.
