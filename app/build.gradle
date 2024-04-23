@@ -7,10 +7,9 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 19
         targetSdkVersion 33
-        versionCode 90
-        versionName '1.8.4.0'
+        versionCode 91
+        versionName '1.8.4.2'
         multiDexEnabled true
-        ndkPath "D:\\ndk\\android-ndk-r21e"
         externalNativeBuild {
             cmake {
                 // Pass arguments to CMake

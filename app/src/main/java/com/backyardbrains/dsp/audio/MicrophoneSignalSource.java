@@ -2,14 +2,19 @@ package com.backyardbrains.dsp.audio;
 
 import android.media.AudioRecord;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.backyardbrains.utils.LogUtils.LOGD;
@@ -21,7 +26,8 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  */
 public class MicrophoneSignalSource extends AbstractSignalSource {
 
-    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(MicrophoneSignalSource.class);
+    @SuppressWarnings("WeakerAccess")
+    static final String TAG = makeLogTag(MicrophoneSignalSource.class);
 
     /**
      * Thread used for reading audio from microphone.
@@ -37,7 +43,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
             working.set(true);
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             try {
                 // recorder not set
                 if (recorder == null) return;
@@ -51,11 +58,16 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
                 LOGD(TAG, "Recorder Started");
                 int read;
                 while (working.get() && recorder != null) {
-                    if ((read = recorder.read(buffer, 0, buffer.length)) > 0) {
-                        writeToBuffer(buffer, read);
+                    try {
+                        if ((read = recorder.read(buffer, 0, buffer.length)) > 0) {
+                            writeToBuffer(buffer, read);
+                        }
+
+                    } catch (Exception e) {
+
                     }
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGE(TAG, "Could not open audio source", e);
                 FirebaseCrashlytics.getInstance().recordException(e);
             }
@@ -65,28 +77,40 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     // Microphone thread
     private ReadThread readThread;
     // AudioRecord instance
-    @SuppressWarnings("WeakerAccess") AudioRecord recorder;
+    @SuppressWarnings("WeakerAccess")
+    AudioRecord recorder;
     // Flag that indicates whether thread should be running
-    @SuppressWarnings("WeakerAccess") AtomicBoolean working = new AtomicBoolean();
+    @SuppressWarnings("WeakerAccess")
+    AtomicBoolean working = new AtomicBoolean();
 
     private static final Object lock = new Object();
 
     MicrophoneSignalSource(@NonNull AudioRecord recorder) {
         super(recorder.getSampleRate(), recorder.getChannelCount(),
-            AudioUtils.getBitsPerSample(recorder.getAudioFormat()));
+                AudioUtils.getBitsPerSample(recorder.getAudioFormat()));
 
         this.recorder = recorder;
     }
 
-    @SuppressWarnings("WeakerAccess") @RequiresApi(api = Build.VERSION_CODES.M) AudioRecord updateRecorder(
-        @NonNull AudioRecord audioRecord) {
+    @SuppressWarnings("WeakerAccess")
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    AudioRecord updateRecorder(@NonNull AudioRecord audioRecord) {
         // release active AudioRecord
         requestStop();
-        // save new AudioRecord
+
+        long endTime = System.currentTimeMillis() + 1000;
+        while (System.currentTimeMillis() < endTime) {
+            try {
+                Thread.sleep(100);
+            } catch (Exception e) {
+            }
+        }
+
         recorder = audioRecord;
         // update sample rate and channel count
         setSampleRate(recorder.getSampleRate());
         setChannelCount(recorder.getChannelCount());
+
         // restart read thread
         readThread = new ReadThread();
         readThread.start();
@@ -97,7 +121,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public final void start() {
+    @Override
+    public final void start() {
         if (readThread == null) {
             // Start microphone in a thread
             readThread = new ReadThread();
@@ -118,7 +143,8 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void stop() {
+    @Override
+    public void stop() {
         if (readThread != null) {
             working.set(false);
             readThread = null;
@@ -135,20 +161,23 @@ public class MicrophoneSignalSource extends AbstractSignalSource {
     //        //EventBus.getDefault().post(new ShowToastEvent("PRESS BACK BUTTON!!!!"));
     //    });
 
-    @Override public void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
+    @Override
+    public void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
         //benchmark.start();
         JniUtils.processMicrophoneStream(outData, inData, inDataLength);
         //benchmark.end();
     }
 
-    @Override public int getType() {
+    @Override
+    public int getType() {
         return Type.MICROPHONE;
     }
 
     /**
      * Clean up {@link AudioRecord} resource before exiting thread.
      */
-    @SuppressWarnings("WeakerAccess") void requestStop() {
+    @SuppressWarnings("WeakerAccess")
+    void requestStop() {
         LOGD(TAG, "Requesting Recorder stop");
         if (recorder != null) {
             if (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
