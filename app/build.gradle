@@ -7,8 +7,8 @@ android {
         applicationId "com.backyardbrains"
         minSdkVersion 19
         targetSdkVersion 33
-        versionCode 91
-        versionName '1.8.4.2'
+        versionCode 92
+        versionName '1.9.0.1'
         multiDexEnabled true
         externalNativeBuild {
             cmake {
