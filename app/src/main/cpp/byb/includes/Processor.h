@@ -57,7 +57,7 @@ namespace backyardbrains {
             // Maximum cut-off frequency
             static constexpr float MAX_FILTER_CUT_OFF = 5000.0f;
             // Default sample rate we start with
-            static constexpr float DEFAULT_SAMPLE_RATE = 44100.0f;
+            static constexpr float DEFAULT_SAMPLE_RATE = 10000.0f;
             // Default channel count
             static constexpr int DEFAULT_CHANNEL_COUNT = 1;
             // Default number of bits  per sample

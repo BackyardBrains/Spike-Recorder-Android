@@ -10,7 +10,9 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.SOURCE) @IntDef({
     SpikerBoxHardwareType.NONE, SpikerBoxHardwareType.UNKNOWN, SpikerBoxHardwareType.PLANT,
     SpikerBoxHardwareType.MUSCLE, SpikerBoxHardwareType.HEART_AND_BRAIN, SpikerBoxHardwareType.MUSCLE_PRO,
-    SpikerBoxHardwareType.NEURON_PRO
+    SpikerBoxHardwareType.NEURON_PRO,
+    SpikerBoxHardwareType.HUMAN_PRO,
+    SpikerBoxHardwareType.HHIBOX
 }) public @interface SpikerBoxHardwareType {
 
     /**
@@ -47,4 +49,6 @@ import java.lang.annotation.RetentionPolicy;
      * SpikerBox Neuron PRO hardware type.
      */
     int NEURON_PRO = 4;
+    int HUMAN_PRO = 5;
+    int HHIBOX = 7;
 }

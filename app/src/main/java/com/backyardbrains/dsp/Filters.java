@@ -20,6 +20,9 @@ public class Filters {
     private static final double FREQ_HIGH_CUTOFF_PLANT = 10d;
     // Low cut-off frequency for EMG
     private static final double FREQ_LOW_CUTOFF_MUSCLE = 70d;
+    private static final double FREQ_LOW_CUTOFF_HUMAN = 0d;
+    private static final double FREQ_LOW_CUTOFF_HHIBOX = 1d;
+    private static final double FREQ_HIGH_CUTOFF_HHIBOX = 5000d;
     // High cut-off frequency for EMG
     private static final double FREQ_HIGH_CUTOFF_MUSCLE = 2499d;
     // Low cut-off frequency for Neuron PRO
@@ -35,12 +38,12 @@ public class Filters {
      * Predefined filter configured for EKG.
      */
     public static final BandFilter FILTER_BAND_HEART =
-        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
+            new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
     /**
      * Predefined filter configured for EEG.
      */
     public static final BandFilter FILTER_BAND_BRAIN =
-        new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_BRAIN);
+            new BandFilter(FREQ_LOW_CUTOFF_HEART_BRAIN_PLANT, FREQ_HIGH_CUTOFF_HEART);
     /**
      * Predefined filter configured for Plant.
      */
@@ -50,6 +53,8 @@ public class Filters {
      * Predefined filter configured for EMG.
      */
     public static final BandFilter FILTER_BAND_MUSCLE = new BandFilter(FREQ_LOW_CUTOFF_MUSCLE, FREQ_HIGH_CUTOFF_MUSCLE);
+    public static final BandFilter FILTER_BAND_HUMAN = new BandFilter(FREQ_LOW_CUTOFF_HUMAN, FREQ_HIGH_CUTOFF_MUSCLE);
+    public static final BandFilter FILTER_BAND_HHIBOX = new BandFilter(FREQ_LOW_CUTOFF_HHIBOX, FREQ_HIGH_CUTOFF_HHIBOX);
     /**
      * Predefined filter configured for Neuron Pro.
      */

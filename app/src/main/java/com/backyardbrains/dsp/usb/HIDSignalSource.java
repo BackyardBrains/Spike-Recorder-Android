@@ -1,18 +1,20 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGI;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbRequest;
+
 import androidx.annotation.NonNull;
+
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGI;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
 
 /**
  * Implementation of {@link AbstractUsbSignalSource} capable of USB HID communication with BYB hardware.
@@ -23,21 +25,25 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
 
     private static final String TAG = makeLogTag(HIDSignalSource.class);
 
+
     private static final String MSG_START_STREAM = "start:;";
     private static final String MSG_STOP_STREAM = "h:;";
     private static final String MSG_HARDWARE_INQUIRY = "?:;";
-    private static final String MSG_BOARD_INQUIRY = "board:;";
+    static final String MSG_BOARD_INQUIRY = "board:;";
     //private static final String MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS = "max:;";
 
     private ReadThread readThread;
     private WriteThread writeThread;
 
-    @SuppressWarnings("WeakerAccess") HIDBuffer usbBuffer;
-    @SuppressWarnings("WeakerAccess") UsbDeviceConnection connection;
+    @SuppressWarnings("WeakerAccess")
+    HIDBuffer usbBuffer;
+    @SuppressWarnings("WeakerAccess")
+    UsbDeviceConnection connection;
     private UsbInterface usbInterface;
     private UsbEndpoint inEndpoint;
     private UsbEndpoint outEndpoint;
-    @SuppressWarnings("WeakerAccess") int packetSize;
+    @SuppressWarnings("WeakerAccess")
+    int packetSize;
 
     /**
      * Thread used for reading data sent by connected USB device
@@ -49,11 +55,12 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
 
         private byte[] dataReceived = new byte[HIDBuffer.DEFAULT_READ_PAYLOAD_BUFFER_SIZE];
 
-        @Override public void run() {
+        @Override
+        public void run() {
             while (working.get()) {
                 if (inEndpoint != null) {
                     int numberBytes = connection.bulkTransfer(inEndpoint, usbBuffer.getReadBuffer(),
-                        HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
+                            HIDBuffer.DEFAULT_READ_BUFFER_SIZE, 0);
                     if (numberBytes > 0) {
                         numberBytes = usbBuffer.getDataReceived(dataReceived, numberBytes);
 
@@ -85,7 +92,8 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
             working = new AtomicBoolean(true);
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             while (working.get()) {
                 byte[] data = usbBuffer.getWriteBuffer();
                 if (data.length > 0) {
@@ -96,25 +104,25 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
 
                         byte[] arr = new byte[255];
                         arr[0] =
-                            HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
+                                HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
                         arr[1] = (byte) (arr.length
-                            - 2);       // MSP430 HID data block chunk of 253 bytes
+                                - 2);       // MSP430 HID data block chunk of 253 bytes
 
                         System.arraycopy(temp, 0, arr, 2, temp.length);
                         connection.bulkTransfer(outEndpoint, arr, arr.length,
-                            0);  // send data to device
+                                0);  // send data to device
                     }
 
                     // number of written bytes is less than 252
                     byte[] arr = new byte[data.length + 2];
                     arr[0] =
-                        HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
+                            HIDBuffer.TEXAS_INSTRUMENTS_VENDOR_ID;   // HID Report ID - vendor specific
                     arr[1] =
-                        (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
+                            (byte) (arr.length - 2);       // MSP430 HID data block chunk of 253 bytes
 
                     System.arraycopy(data, 0, arr, 2, data.length);
                     connection.bulkTransfer(outEndpoint, arr, arr.length,
-                        0);  // send data to device
+                            0);  // send data to device
                 }
             }
         }
@@ -147,7 +155,7 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
      * @return BYB USB device interface configured for HID communication
      */
     public static AbstractUsbSignalSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection) {
+                                                          @NonNull UsbDeviceConnection connection) {
         if (isSupported(device)) {
             return new HIDSignalSource(device, connection);
         } else {
@@ -163,13 +171,14 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         int pid = device.getProductId();
 
         return isHidDevice(device) && vid == BYB_VENDOR_ID && (pid == BYB_PID_MUSCLE_SB_PRO
-            || pid == BYB_PID_NEURON_SB_PRO);
+                || pid == BYB_PID_NEURON_SB_PRO || pid == BYB_HUMAN_SB_PRO_ID1 || pid == BYB_HHIBOX_SB);
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public boolean open() {
+    @Override
+    public boolean open() {
         boolean ret = openHID();
 
         if (ret) {
@@ -193,7 +202,8 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void write(byte[] buffer) {
+    @Override
+    public void write(byte[] buffer) {
         LOGD(TAG, "HID WRITE: " + new String(buffer));
         usbBuffer.putWriteBuffer(buffer);
     }
@@ -201,17 +211,25 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void startReadingStream() {
+    @Override
+    public void startReadingStream() {
         // start the sample stream
         write(MSG_START_STREAM.getBytes());
         // and check maximal sample rate and number of channels
         //write(MSG_SAMPLE_RATE_AND_NUM_OF_CHANNELS.getBytes());
     }
 
+    @Override
+    protected void startReadingStreamFromHHIB() {
+        write(MSG_START_STREAM.getBytes());
+    }
+
+
     /**
      * {@inheritDoc}
      */
-    @Override public void stopReadingStream() {
+    @Override
+    public void stopReadingStream() {
         // stop sample stream
         write(MSG_STOP_STREAM.getBytes());
         // and release the resources
@@ -221,7 +239,8 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void checkHardwareType() {
+    @Override
+    public void checkHardwareType() {
         // check what hardware are connected to
         write(MSG_HARDWARE_INQUIRY.getBytes());
         // and check whether there is an expansion board connected to that hardware
@@ -294,11 +313,11 @@ public class HIDSignalSource extends AbstractUsbSignalSource {
         for (int i = 0; i < endpointCount; i++) {
             UsbEndpoint endpoint = usbInterface.getEndpoint(i);
             if (endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_INT
-                && endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
+                    && endpoint.getDirection() == UsbConstants.USB_DIR_IN) {
                 inEndpoint = endpoint;
                 packetSize = inEndpoint.getMaxPacketSize();
             } else if (endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_INT
-                && endpoint.getDirection() == UsbConstants.USB_DIR_OUT) {
+                    && endpoint.getDirection() == UsbConstants.USB_DIR_OUT) {
                 outEndpoint = endpoint;
             }
         }

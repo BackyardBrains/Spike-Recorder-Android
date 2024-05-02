@@ -9,7 +9,8 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.SOURCE) @IntDef({
     ExpansionBoardType.NONE, ExpansionBoardType.ADDITIONAL_INPUTS, ExpansionBoardType.HAMMER,
-    ExpansionBoardType.JOYSTICK
+    ExpansionBoardType.JOYSTICK,
+    ExpansionBoardType.HUMAN
 }) public @interface ExpansionBoardType {
 
     /**
@@ -31,4 +32,5 @@ import java.lang.annotation.RetentionPolicy;
      * Joystick expansion board type.
      */
     int JOYSTICK = 5;
+    int HUMAN = 6;
 }

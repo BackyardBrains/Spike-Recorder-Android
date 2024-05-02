@@ -2,20 +2,19 @@ package com.backyardbrains.filters;
 
 import android.content.Context;
 import android.graphics.Color;
-import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
-import butterknife.BindColor;
-import butterknife.BindView;
-import butterknife.ButterKnife;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
 import com.backyardbrains.dsp.Filters;
@@ -25,30 +24,42 @@ import com.backyardbrains.utils.ViewUtils;
 import com.example.roman.thesimplerangebar.SimpleRangeBar;
 import com.example.roman.thesimplerangebar.SimpleRangeBarOnChangeListener;
 
+import butterknife.BindColor;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public abstract class FilterSettingsDialog {
 
-    @SuppressWarnings("WeakerAccess") static final BandFilter NO_FILTER =
-        new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
+    @SuppressWarnings("WeakerAccess")
+    static final BandFilter NO_FILTER =
+            new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
 
-    @BindView(R.id.et_low_cut_off) EditText etLowCutOff;
-    @BindView(R.id.et_high_cut_off) EditText etHighCutOff;
-    @BindView(R.id.rb_cut_offs) SimpleRangeBar srbCutOffs;
+    @BindView(R.id.et_low_cut_off)
+    EditText etLowCutOff;
+    @BindView(R.id.et_high_cut_off)
+    EditText etHighCutOff;
+    @BindView(R.id.rb_cut_offs)
+    SimpleRangeBar srbCutOffs;
 
     // Dialog for listing predefined filters
-    @SuppressWarnings("WeakerAccess") MaterialDialog filterSettingsDialog;
+    @SuppressWarnings("WeakerAccess")
+    MaterialDialog filterSettingsDialog;
     // Dialog for setting custom filter
-    @SuppressWarnings("WeakerAccess") MaterialDialog customFilterDialog;
+    @SuppressWarnings("WeakerAccess")
+    MaterialDialog customFilterDialog;
 
     private final SimpleRangeBarOnChangeListener rangeBarOnChangeListener = new SimpleRangeBarOnChangeListener() {
-        @Override public void leftThumbValueChanged(long value) {
+        @Override
+        public void leftThumbValueChanged(long value) {
             // we need to handle 0 separately
             setCutOffValue(etLowCutOff, value != 0 ? Math.round(thumbToCutOff(value)) : 0d);
         }
 
-        @Override public void rightThumbValueChanged(long value) {
+        @Override
+        public void rightThumbValueChanged(long value) {
             // we need to handle 0 separately
             setCutOffValue(etHighCutOff, value != 0 ? Math.round(thumbToCutOff(value)) : 0d);
         }
@@ -61,12 +72,15 @@ public abstract class FilterSettingsDialog {
         void onFilterSelected(@NonNull BandFilter filter);
     }
 
-    @SuppressWarnings("WeakerAccess") final FilterSelectionListener listener;
+    @SuppressWarnings("WeakerAccess")
+    final FilterSelectionListener listener;
     private final double minCutOffLog;
     private final double maxCutOffLog;
 
-    @SuppressWarnings("WeakerAccess") BandFilter customFilter;
-    @SuppressWarnings("WeakerAccess") BandFilter selectedFilter;
+    @SuppressWarnings("WeakerAccess")
+    BandFilter customFilter;
+    @SuppressWarnings("WeakerAccess")
+    BandFilter selectedFilter;
 
     FilterSettingsDialog(@NonNull Context context, @Nullable final FilterSelectionListener listener) {
         this.listener = listener;
@@ -75,18 +89,18 @@ public abstract class FilterSettingsDialog {
         this.customFilter = new BandFilter(getMinCutOff(), getMaxCutOff());
 
         filterSettingsDialog =
-            new MaterialDialog.Builder(context).adapter(new FiltersAdapter(context), new LinearLayoutManager(context))
-                .build();
+                new MaterialDialog.Builder(context).adapter(new FiltersAdapter(context), new LinearLayoutManager(context))
+                        .build();
 
         customFilterDialog = new MaterialDialog.Builder(context).
-            customView(R.layout.view_dialog_custom_filter, true).
-            positiveText(R.string.action_set).
-            negativeText(R.string.action_cancel).
-            onPositive((dialog, which) -> {
-                if (listener != null) listener.onFilterSelected(constructCustomFilter());
-            }).
-            cancelListener(dialogInterface -> filterSettingsDialog.show()).
-            build();
+                customView(R.layout.view_dialog_custom_filter, true).
+                positiveText(R.string.action_set).
+                negativeText(R.string.action_cancel).
+                onPositive((dialog, which) -> {
+                    if (listener != null) listener.onFilterSelected(constructCustomFilter());
+                }).
+                cancelListener(dialogInterface -> filterSettingsDialog.show()).
+                build();
 
         setupCustomFilterUI(customFilterDialog.getCustomView());
     }
@@ -126,12 +140,13 @@ public abstract class FilterSettingsDialog {
     }
 
     // Shows the custom filter dialog.
-    @SuppressWarnings("WeakerAccess") void showCustomFilterDialog() {
+    @SuppressWarnings("WeakerAccess")
+    void showCustomFilterDialog() {
         if (selectedFilter != null) {
             setCutOffValue(etLowCutOff, selectedFilter.getLowCutOffFrequency());
             setCutOffValue(etHighCutOff, selectedFilter.getHighCutOffFrequency());
             srbCutOffs.setThumbValues(cutOffToThumb(selectedFilter.getLowCutOffFrequency()),
-                cutOffToThumb(selectedFilter.getHighCutOffFrequency()));
+                    cutOffToThumb(selectedFilter.getHighCutOffFrequency()));
         }
         customFilterDialog.show();
     }
@@ -166,7 +181,8 @@ public abstract class FilterSettingsDialog {
     }
 
     // Validates currently set low cut-off frequency and updates range bar thumbs accordingly.
-    @SuppressWarnings("WeakerAccess") void updateLowCutOff() {
+    @SuppressWarnings("WeakerAccess")
+    void updateLowCutOff() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
@@ -181,13 +197,15 @@ public abstract class FilterSettingsDialog {
         updateUI(lowCutOff, highCutOff);
     }
 
-    @SuppressWarnings("WeakerAccess") void setCutOffValue(@NonNull EditText et, double cutOffValue) {
+    @SuppressWarnings("WeakerAccess")
+    void setCutOffValue(@NonNull EditText et, double cutOffValue) {
         et.setText(String.valueOf((int) cutOffValue));
         if (et.hasFocus()) et.setSelection(et.getText().length());
     }
 
     // Validates currently set high cut-off frequency and updates range bar thumbs accordingly.
-    @SuppressWarnings("WeakerAccess") void updateHighCutOff() {
+    @SuppressWarnings("WeakerAccess")
+    void updateHighCutOff() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
@@ -232,18 +250,20 @@ public abstract class FilterSettingsDialog {
     // Converts value from logarithmic scale to a corresponding range value
     private long cutOffToThumb(double cutOffValue) {
         return (long) (
-            ((Math.log(cutOffValue) - minCutOffLog) * (getMaxCutOff() - getMinCutOff()) / (maxCutOffLog - minCutOffLog))
-                + getMinCutOff());
+                ((Math.log(cutOffValue) - minCutOffLog) * (getMaxCutOff() - getMinCutOff()) / (maxCutOffLog - minCutOffLog))
+                        + getMinCutOff());
     }
 
     // Converts range value to a corresponding value withing logarithmic scale
-    @SuppressWarnings("WeakerAccess") double thumbToCutOff(long thumbValue) {
+    @SuppressWarnings("WeakerAccess")
+    double thumbToCutOff(long thumbValue) {
         return Math.exp(minCutOffLog + (thumbValue - getMinCutOff()) * (maxCutOffLog - minCutOffLog) / (getMaxCutOff()
-            - getMinCutOff()));
+                - getMinCutOff()));
     }
 
     // Returns a new Filter with cut-off values currently set inside input fields
-    @SuppressWarnings("WeakerAccess") BandFilter constructCustomFilter() {
+    @SuppressWarnings("WeakerAccess")
+    BandFilter constructCustomFilter() {
         String lowCutOffStr = etLowCutOff.getText().toString();
         String highCutOffStr = etHighCutOff.getText().toString();
         double lowCutOff = ApacheCommonsLang3Utils.isNotBlank(lowCutOffStr) ? Double.valueOf(lowCutOffStr) : 0d;
@@ -262,22 +282,29 @@ public abstract class FilterSettingsDialog {
             this.inflater = LayoutInflater.from(context);
         }
 
-        @NonNull @Override public FilterViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        @NonNull
+        @Override
+        public FilterViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new FilterViewHolder(inflater.inflate(R.layout.item_filter, parent, false));
         }
 
-        @Override public void onBindViewHolder(@NonNull FilterViewHolder holder, int position) {
+        @Override
+        public void onBindViewHolder(@NonNull FilterViewHolder holder, int position) {
             holder.setFilter(getFilter(position));
         }
 
-        @Override public int getItemCount() {
+        @Override
+        public int getItemCount() {
             return getFilters().length + 2; // for No filter and Custom filter
         }
 
         final class FilterViewHolder extends RecyclerView.ViewHolder {
 
-            @BindView(R.id.tv_filter_name) TextView tvFilterName;
-            @BindColor(R.color.orange) @ColorInt int selectedColor;
+            @BindView(R.id.tv_filter_name)
+            TextView tvFilterName;
+            @BindColor(R.color.orange)
+            @ColorInt
+            int selectedColor;
 
             BandFilter filter;
 
@@ -306,7 +333,7 @@ public abstract class FilterSettingsDialog {
 
                 tvFilterName.setText(getFilterName(getAdapterPosition()));
                 tvFilterName.setBackgroundColor(
-                    ObjectUtils.equals(filter, selectedFilter) ? selectedColor : Color.TRANSPARENT);
+                        ObjectUtils.equals(filter, selectedFilter) ? selectedColor : Color.TRANSPARENT);
             }
         }
 

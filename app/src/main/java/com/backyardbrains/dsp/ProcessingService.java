@@ -19,13 +19,23 @@
 
 package com.backyardbrains.dsp;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.LOGW;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.util.Log;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.backyardbrains.dsp.audio.AudioHelper;
 import com.backyardbrains.dsp.audio.PlaybackSignalSource;
 import com.backyardbrains.dsp.audio.Recorder;
@@ -42,6 +52,8 @@ import com.backyardbrains.events.AudioRecordingStartedEvent;
 import com.backyardbrains.events.AudioRecordingStoppedEvent;
 import com.backyardbrains.events.ExpansionBoardTypeDetectionEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
+import com.backyardbrains.events.SpikerBoxP300AudioDetectedEvent;
+import com.backyardbrains.events.SpikerBoxP300StateDetectedEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
@@ -52,17 +64,16 @@ import com.backyardbrains.ui.MainActivity;
 import com.backyardbrains.utils.ApacheCommonsLang3Utils;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ExpansionBoardType;
+import com.backyardbrains.utils.HumanSpikerBoardState;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SignalAveragingTriggerType;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.backyardbrains.utils.ViewUtils;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
-import java.io.IOException;
+
 import org.greenrobot.eventbus.EventBus;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.LOGW;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import java.io.IOException;
 
 /**
  * Manages a thread which monitors default audio input and pushes raw audio data to bound activities.
@@ -73,11 +84,22 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class ProcessingService extends Service implements SignalProcessor.OnProcessingListener {
 
     static final String TAG = makeLogTag(ProcessingService.class);
+    static final String HS_P300 = "p300?:;";
+    static final String HS_STIMON_COMMAND = "stimon:;";
+    static final String HS_STIMOFF_COMMAND = "stimoff:;";
+    static final String HS_SOUND_COMMAND = "sound?:;";
+    static final String HS_SOUND_ON_COMMAND = "sounon:;";
+    static final String HS_SOUND_OFF_COMMAND = "sounoff:;";
+    static final String GAIN_ON = "gainon:";
+    static final String GAIN_OFF = "gainoff:";
+    static final String HPF_ON = "hpfon:";
+    static final String HPF_OFF = "hpfoff:";
 
     private static final Filters FILTERS = new Filters();
 
     private final IBinder binder = new ServiceBinder();
-
+    private int humanSpikerBoardState = HumanSpikerBoardState.OFF;
+    private int humanSpikerAudioState = HumanSpikerBoardState.OFF;
     // Reference to data processor
     private final SignalProcessor signalProcessor;
 
@@ -105,6 +127,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         }
     }
 
+
     /**
      * Constructor
      */
@@ -119,7 +142,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * {@inheritDoc}
      */
-    @Override public void onCreate() {
+    @Override
+    public void onCreate() {
         super.onCreate();
         LOGD(TAG, "onCreate()");
 
@@ -139,7 +163,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * {@inheritDoc}
      */
-    @Override public void onDestroy() {
+    @Override
+    public void onDestroy() {
         created = false;
 
         LOGD(TAG, "onDestroy()");
@@ -164,11 +189,13 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      * @return binding reference to this object
      * @see Service#onBind(Intent)
      */
-    @Override public IBinder onBind(Intent intent) {
+    @Override
+    public IBinder onBind(Intent intent) {
         return binder;
     }
 
-    @Override public boolean onUnbind(Intent intent) {
+    @Override
+    public boolean onUnbind(Intent intent) {
         return super.onUnbind(intent);
     }
 
@@ -263,13 +290,120 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * Sets predefined band filters to be applied when processing incoming data.
      */
-    public void setBandFilter(@Nullable BandFilter filter) {
+    public void setBandFilter(@Nullable BandFilter filter, int boardType) {
         // pass filters to native code
         float low = (float) (filter != null ? filter.getLowCutOffFrequency() : -1f);
         float high = (float) (filter != null ? filter.getHighCutOffFrequency() : -1f);
         JniUtils.setBandFilter(low, high);
 
         FILTERS.setBandFilter(filter);
+        sendHSFilterCommand(low, high, boardType);
+
+    }
+
+    public void sendHSFilterCommand(float low, float high, int boardType) {
+        if (boardType == SpikerBoxHardwareType.HUMAN_PRO) {
+            if (signalSource != null && signalSource.isUsb()) {
+                AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+                byte[] command;
+                if (low < 20) {
+                    command = (HPF_OFF + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (HPF_OFF + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                } else {
+                    command = (HPF_ON + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (HPF_ON + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                }
+
+
+                if (high <= 70) {
+                    command = (GAIN_ON + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (GAIN_ON + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                } else {
+                    command = (GAIN_OFF + 1 + ";").getBytes();
+                    usbSignalSource.write(command);
+                    command = (GAIN_OFF + 2 + ";").getBytes();
+                    usbSignalSource.write(command);
+                }
+
+            }
+        }
+    }
+//    public void sendHSFilterCommand(float low, float high, int boardType) {
+//        if (boardType == SpikerBoxHardwareType.HUMAN_PRO) {
+//            if (signalSource != null && signalSource.isUsb()) {
+//                AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+//                byte[] command;
+//                if (high < 20) {
+//                    command =  "hpfoff:2;hpfoff:1;".getBytes();
+//                    usbSignalSource.write(command);
+//                } else {
+//                    command =  "hpfon:2;hpfon:1;".getBytes();
+//                    usbSignalSource.write(command);
+//                }
+//
+//
+//                if (low <= 70) {
+//                    command = "gainon:1;gainon:2;".getBytes();
+//                    usbSignalSource.write(command);
+//                } else {
+//                    command = "gainoff:1;gainoff:2;".getBytes();
+//                    usbSignalSource.write(command);
+//                }
+//
+//            }
+//        }
+//    }
+
+    public void sendHSp300StatusCommand() {
+        new Handler(Looper.getMainLooper()).postDelayed(
+                () -> {
+                    if (signalSource != null && signalSource.isUsb()) {
+                        AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+                        usbSignalSource.write(HS_P300.getBytes());
+
+                    }
+
+                }, 600);
+    }
+
+    public void sendHSSoundCommand() {
+        if (signalSource != null && signalSource.isUsb()) {
+            AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+            usbSignalSource.write(HS_SOUND_COMMAND.getBytes());
+
+        }
+
+    }
+
+    public void sendHSp300StimulationCommand() {
+        if (signalSource != null && signalSource.isUsb()) {
+            AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+            if (humanSpikerBoardState == HumanSpikerBoardState.OFF)
+                usbSignalSource.write(HS_STIMON_COMMAND.getBytes());
+            else
+                usbSignalSource.write(HS_STIMOFF_COMMAND.getBytes());
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(this::sendHSp300StatusCommand, 500);
+    }
+
+    public void sendHSp300AudioCommand() {
+        if (signalSource != null && signalSource.isUsb()) {
+            AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
+            if (humanSpikerAudioState == HumanSpikerBoardState.OFF)
+                usbSignalSource.write(HS_SOUND_ON_COMMAND.getBytes());
+            else
+                usbSignalSource.write(HS_SOUND_OFF_COMMAND.getBytes());
+
+            usbSignalSource.write(HS_SOUND_COMMAND.getBytes());
+
+        }
+
     }
 
     /**
@@ -307,7 +441,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
      *
      * @see SignalProcessor.OnProcessingListener#onDataProcessed(SignalData)
      */
-    @Override public void onDataProcessed(@NonNull SignalData signalData) {
+    @Override
+    public void onDataProcessed(@NonNull SignalData signalData) {
         record(signalData);
     }
 
@@ -375,8 +510,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             signalSource = audioHelper.getAudioDevice();
             signalProcessor.setSignalSource(signalSource);
             signalSource.start();
-        }
 
+        }
         LOGD(TAG, "Microphone started");
     }
 
@@ -439,6 +574,17 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         }
         updateSignalProcessorExpansionBoardType(expansionBoardType);
     };
+    private final AbstractUsbSignalSource.onHumanSpikerP300AudioStateListener onSpikerP300AudioStateListener =
+            humanSpikerAudioState -> {
+                this.humanSpikerAudioState = humanSpikerAudioState;
+                EventBus.getDefault().post(new SpikerBoxP300AudioDetectedEvent(humanSpikerAudioState));
+
+            };
+    private final AbstractUsbSignalSource.onHumanSpikerP300StateListener onHumanSpikerP300StateListener =
+            humanSpikerBoardState -> {
+                this.humanSpikerBoardState = humanSpikerBoardState;
+                EventBus.getDefault().post(new SpikerBoxP300StateDetectedEvent(humanSpikerBoardState));
+            };
 
     final OnUsbSignalSourceDisconnectListener usbSignalSourceDisconnectListener = () -> {
         usbDisconnecting = false;
@@ -480,7 +626,8 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
     /**
      * Temporary method that returns USB device under specified {@code index}.
      */
-    @Nullable public UsbDevice getDevice(int index) {
+    @Nullable
+    public UsbDevice getDevice(int index) {
         return usbHelper.getDevice(index);
     }
 
@@ -492,13 +639,18 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
         // set current USB input source
         if (usbHelper.getUsbDevice() != null) {
+            Log.d("processing_service", "" + usbHelper.getUsbDevice().getHardwareType());
+
             if (usbHelper.getUsbDevice().getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
                 EventBus.getDefault()
-                    .post(new SpikerBoxHardwareTypeDetectionEvent(usbHelper.getUsbDevice().getHardwareType()));
+                        .post(new SpikerBoxHardwareTypeDetectionEvent(usbHelper.getUsbDevice().getHardwareType()));
                 updateSignalProcessorBoardType(usbHelper.getUsbDevice().getHardwareType());
             } else {
                 usbHelper.getUsbDevice().addOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
             }
+            usbHelper.getUsbDevice().addOnHumanSpikerP300AudioStateListener(onSpikerP300AudioStateListener);
+            usbHelper.getUsbDevice().addOnHumanSpikerBoxp300State(onHumanSpikerP300StateListener);
+
             usbHelper.getUsbDevice().addOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
             usbHelper.getUsbDevice().setOnUsbSignalSourceDisconnectListener(usbSignalSourceDisconnectListener);
             signalSource = usbHelper.getUsbDevice();
@@ -517,6 +669,9 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             AbstractUsbSignalSource usbSignalSource = (AbstractUsbSignalSource) signalSource;
             usbSignalSource.removeOnSpikerBoxHardwareTypeDetectionListener(spikerBoxDetectionListener);
             usbSignalSource.removeOnExpansionBoardTypeDetectionListener(expansionBoardDetectionListener);
+            usbSignalSource.removeOnHumanSpikerBoxp300State(onHumanSpikerP300StateListener);
+            usbSignalSource.removeOnHumanSpikerP300AudioStateListener(onSpikerP300AudioStateListener);
+
             if (!usbSignalSource.isDisconnecting()) signalSource.stop();
             signalSource = null;
         }
@@ -530,29 +685,41 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             usbHelper = new UsbHelper(getApplicationContext(), new UsbHelper.UsbListener() {
                 @Override
                 public void onDeviceAttached(@NonNull String deviceName, @SpikerBoxHardwareType int hardwareType) {
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(ProcessingService.this, "Device Attached", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(true));
                 }
 
-                @Override public void onDeviceDetached(@NonNull String deviceName) {
+                @Override
+                public void onDeviceDetached(@NonNull String deviceName) {
                     EventBus.getDefault().post(new UsbDeviceConnectionEvent(false));
                 }
 
-                @Override public void onPermissionGranted() {
+                @Override
+                public void onPermissionGranted() {
                     EventBus.getDefault().post(new UsbPermissionEvent(true));
                 }
 
-                @Override public void onPermissionDenied() {
+                @Override
+                public void onPermissionDenied() {
                     EventBus.getDefault().post(new UsbPermissionEvent(false));
                 }
 
-                @Override public void onDataTransferStart() {
+                @Override
+                public void onDataTransferStart() {
                     LOGD(TAG, "onDataTransferStart()");
                     turnOnUsb();
 
                     EventBus.getDefault().post(new UsbCommunicationEvent(true));
                 }
 
-                @Override public void onDataTransferEnd() {
+                @Override
+                public void onDataTransferEnd() {
                     LOGD(TAG, "onDataTransferEnd()");
                     turnOffUsb();
 
@@ -698,7 +865,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
     private void turnOffPlayback() {
         LOGD(TAG,
-            "turnOffPlayback() - playbackSampleSource " + (signalSource != null ? "not null (stopping)" : "null"));
+                "turnOffPlayback() - playbackSampleSource " + (signalSource != null ? "not null (stopping)" : "null"));
 
         // remove current USB input source
         if (signalSource != null && signalSource.isFile()) {
@@ -723,18 +890,20 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
 
                     final AudioPlaybackProgressEvent progressEvent = new AudioPlaybackProgressEvent();
 
-                    @Override public void onStart(long length, int sampleRate, int channelCount, int bitsPerSample) {
+                    @Override
+                    public void onStart(long length, int sampleRate, int channelCount, int bitsPerSample) {
                         // post event that audio playback has started, but post a sticky event
                         // because the view might sill not be initialized
                         EventBus.getDefault()
-                            .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length, bitsPerSample),
-                                sampleRate, channelCount, bitsPerSample));
+                                .postSticky(new AudioPlaybackStartedEvent(AudioUtils.getSampleCount(length, bitsPerSample),
+                                        sampleRate, channelCount, bitsPerSample));
                     }
 
-                    @Override public void onResume(int sampleRate, int channelCount, int bitsPerSample) {
+                    @Override
+                    public void onResume(int sampleRate, int channelCount, int bitsPerSample) {
                         // post event that audio playback has started
                         EventBus.getDefault()
-                            .post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount, bitsPerSample));
+                                .post(new AudioPlaybackStartedEvent(-1, sampleRate, channelCount, bitsPerSample));
                     }
 
                     @Override
@@ -746,12 +915,14 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                         EventBus.getDefault().post(progressEvent);
                     }
 
-                    @Override public void onPause() {
+                    @Override
+                    public void onPause() {
                         // post event that audio playback has started
                         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(false));
                     }
 
-                    @Override public void onStop() {
+                    @Override
+                    public void onStop() {
                         // post event that audio playback has started
                         EventBus.getDefault().post(new AudioPlaybackStoppedEvent(true));
                     }
@@ -785,8 +956,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         } catch (IOException e) {
             e.printStackTrace();
             FirebaseCrashlytics.getInstance().recordException(e);
-            ViewUtils.toast(getApplicationContext(),
-                "Error occurred while trying to initiate recording. Please try again.");
+            ViewUtils.toast(getApplicationContext(), "Error occurred while trying to initiate recording. Please try again.");
             stopRecording();
         }
     }
@@ -822,7 +992,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
             } else {
                 if (!recorder.isPlaying()) {
                     recorder.startPlaying(signalProcessor.getSampleRate(), signalProcessor.getChannelCount(),
-                        signalProcessor.getBitsPerSample());
+                            signalProcessor.getBitsPerSample());
                 }
             }
         }
@@ -852,10 +1022,10 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
                 // recorder can be set to null if stopRecording() is called between this and previous line
                 // post current recording progress
                 EventBus.getDefault()
-                    .post(new AudioRecordingProgressEvent(
-                        AudioUtils.getSampleCount(recorder.getAudioLength(), signalProcessor.getBitsPerSample()),
-                        signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount(),
-                        signalProcessor.getBitsPerSample()));
+                        .post(new AudioRecordingProgressEvent(
+                                AudioUtils.getSampleCount(recorder.getAudioLength(), signalProcessor.getBitsPerSample()),
+                                signalProcessor.getSampleRate(), signalProcessor.getVisibleChannelCount(),
+                                signalProcessor.getBitsPerSample()));
             }
         } catch (Exception e) {
             FirebaseCrashlytics.getInstance().recordException(e);
@@ -863,7 +1033,7 @@ public class ProcessingService extends Service implements SignalProcessor.OnProc
         }
     }
 
-    public void addManualEvent(int event){
+    public void addManualEvent(int event) {
         recorder.addManualEvent(event);
     }
 }

@@ -1,25 +1,34 @@
 package com.backyardbrains.ui;
 
 import android.Manifest;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.hardware.usb.UsbDevice;
 import android.os.Build;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
 import androidx.core.content.ContextCompat;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+
 import com.afollestad.materialdialogs.GravityEnum;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.backyardbrains.R;
@@ -35,6 +44,8 @@ import com.backyardbrains.events.AudioServiceConnectionEvent;
 import com.backyardbrains.events.ExpansionBoardTypeDetectionEvent;
 import com.backyardbrains.events.HeartbeatEvent;
 import com.backyardbrains.events.SpikerBoxHardwareTypeDetectionEvent;
+import com.backyardbrains.events.SpikerBoxP300AudioDetectedEvent;
+import com.backyardbrains.events.SpikerBoxP300StateDetectedEvent;
 import com.backyardbrains.events.UsbCommunicationEvent;
 import com.backyardbrains.events.UsbDeviceConnectionEvent;
 import com.backyardbrains.events.UsbPermissionEvent;
@@ -43,6 +54,7 @@ import com.backyardbrains.filters.BandFilter;
 import com.backyardbrains.filters.FilterSettingsDialog;
 import com.backyardbrains.filters.NotchFilter;
 import com.backyardbrains.utils.ExpansionBoardType;
+import com.backyardbrains.utils.HumanSpikerBoardState;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.ObjectUtils;
 import com.backyardbrains.utils.PrefUtils;
@@ -54,10 +66,13 @@ import com.backyardbrains.view.HeartbeatView;
 import com.backyardbrains.view.SettingsView;
 import com.backyardbrains.view.SlidingView;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.AppSettingsDialog;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -71,6 +86,7 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 public class RecordScopeFragment extends BaseWaveformFragment implements EasyPermissions.PermissionCallbacks {
 
     private static final String TAG = makeLogTag(RecordScopeFragment.class);
+    String spikerBoxBoard = null;
 
     private static final int BYB_SETTINGS_SCREEN = 121;
     private static final int BYB_WRITE_EXTERNAL_STORAGE_PERM = 122;
@@ -83,22 +99,49 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private static final String BOOL_THRESHOLD_ON = "bb_threshold_on";
     private static final String BOOL_SETTINGS_ON = "bb_settings_on";
     private static final String BOOL_FFT_ON = "bb_fft_on";
+    @SpikerBoxHardwareType
+    int boardType = SpikerBoxHardwareType.NONE;
 
-    @BindView(R.id.ibtn_settings) ImageButton ibtnSettings;
-    @BindView(R.id.v_settings) SettingsView vSettings;
-    @BindView(R.id.ibtn_threshold) ImageButton ibtnThreshold;
-    @BindView(R.id.btn_fft) Button btnFft;
-    @BindView(R.id.tv_select_channel) TextView tvSelectChannel;
-    @BindView(R.id.ibtn_avg_trigger_type) ImageButton ibtnAvgTriggerType;
-    @BindView(R.id.ibtn_usb) ImageButton ibtnUsb;
-    @BindView(R.id.pb_usb_disconnecting) ProgressBar pbUsbDisconnecting;
-    @BindView(R.id.ibtn_record) ImageButton ibtnRecord;
-    @BindView(R.id.tv_stop_recording) TextView tvStopRecording;
-    @BindView(R.id.sb_averaged_sample_count) SeekBar sbAvgSamplesCount;
-    @BindView(R.id.tv_averaged_sample_count) TextView tvAvgSamplesCount;
-    @BindView(R.id.tb_sound) ToggleButton tbSound;
-    @BindView(R.id.hv_heartbeat) HeartbeatView vHeartbeat;
-    @BindView(R.id.tv_beats_per_minute) TextView tvBeatsPerMinute;
+    @BindView(R.id.ibtn_settings)
+    ImageButton ibtnSettings;
+    @BindView(R.id.v_settings)
+    SettingsView vSettings;
+    @BindView(R.id.ibtn_threshold)
+    ImageButton ibtnThreshold;
+    @BindView(R.id.btn_fft)
+    Button btnFft;
+    @BindView(R.id.tv_select_channel)
+    TextView tvSelectChannel;
+    @BindView(R.id.ibtn_avg_trigger_type)
+    ImageButton ibtnAvgTriggerType;
+    @BindView(R.id.ibtn_usb)
+    ImageButton ibtnUsb;
+    @BindView(R.id.pb_usb_disconnecting)
+    ProgressBar pbUsbDisconnecting;
+    @BindView(R.id.ibtn_record)
+    ImageButton ibtnRecord;
+    @BindView(R.id.rel_human_spike)
+    RelativeLayout relHumanSpike;
+
+    @BindView(R.id.tv_stop_recording)
+    TextView tvStopRecording;
+
+    @BindView(R.id.ivVolume)
+    ImageView ivVolume;
+    @BindView(R.id.ivP300)
+    ImageView ivP300;
+
+
+    @BindView(R.id.sb_averaged_sample_count)
+    SeekBar sbAvgSamplesCount;
+    @BindView(R.id.tv_averaged_sample_count)
+    TextView tvAvgSamplesCount;
+    @BindView(R.id.tb_sound)
+    ToggleButton tbSound;
+    @BindView(R.id.hv_heartbeat)
+    HeartbeatView vHeartbeat;
+    @BindView(R.id.tv_beats_per_minute)
+    TextView tvBeatsPerMinute;
 
     private FilterSettingsDialog filterSettingsDialog;
     private SlidingView stopRecButton;
@@ -121,33 +164,40 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //private final FilterSettingsDialog.FilterSelectionListener filterSelectionListener = this::setBandFilter;
 
     private final SettingsView.OnSettingChangeListener settingChangeListener =
-        new SettingsView.OnSettingChangeListener() {
-            @Override public void onSpeakersMuteChanged(boolean mute) {
-                setMuteSpeakers(mute);
-            }
+            new SettingsView.OnSettingChangeListener() {
+                @Override
+                public void onSpeakersMuteChanged(boolean mute) {
+                    setMuteSpeakers(mute);
+                }
 
-            @Override public void onBandFilterChanged(@Nullable BandFilter filter) {
-                setBandFilter(filter);
-            }
+                @Override
+                public void onBandFilterChanged(@Nullable BandFilter filter) {
+                    setBandFilter(filter);
+                }
 
-            @Override public void onNotchFilterChanged(@Nullable NotchFilter filter) {
-                setNotchFilter(filter);
-            }
+                @Override
+                public void onNotchFilterChanged(@Nullable NotchFilter filter) {
+                    setNotchFilter(filter);
+                }
 
-            @Override public void onChannelColorChanged(int channelIndex, @Size(4) float[] color) {
-                setChannelColor(color, channelIndex);
-            }
+                @Override
+                public void onChannelColorChanged(int channelIndex, @Size(4) float[] color) {
+                    setChannelColor(color, channelIndex);
+                }
 
-            @Override public void onChannelShown(int channelIndex, float[] color) {
-                showChannel(channelIndex, color);
-            }
+                @Override
+                public void onChannelShown(int channelIndex, float[] color) {
+                    showChannel(channelIndex, color);
+                }
 
-            @Override public void onChannelHidden(int channelIndex) {
-                hideChannel(channelIndex);
-            }
-        };
+                @Override
+                public void onChannelHidden(int channelIndex) {
+                    hideChannel(channelIndex);
+                }
+            };
 
     private final View.OnClickListener settingsClickListener = v -> {
+
         toggleSettings();
         setupSettingsView();
     };
@@ -176,44 +226,49 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private final View.OnClickListener selectChannelClickListener = v -> openChannelsDialog();
 
     private final SeekBar.OnSeekBarChangeListener averagedSampleCountChangeListener =
-        new SeekBar.OnSeekBarChangeListener() {
+            new SeekBar.OnSeekBarChangeListener() {
 
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {
-                // average sample count has changed
-                int averagedSampleCount = seekBar.getProgress() > 0 ? seekBar.getProgress() : 1;
-                PrefUtils.setAveragedSampleCount(seekBar.getContext(), BaseWaveformFragment.class, averagedSampleCount);
-                JniUtils.setAveragedSampleCount(averagedSampleCount);
-            }
-
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // minimum sample count is 1
-                if (progress <= 0) progress = 1;
-
-                // update count label
-                if (tvAvgSamplesCount != null) {
-                    tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    // average sample count has changed
+                    int averagedSampleCount = seekBar.getProgress() > 0 ? seekBar.getProgress() : 1;
+                    PrefUtils.setAveragedSampleCount(seekBar.getContext(), BaseWaveformFragment.class, averagedSampleCount);
+                    JniUtils.setAveragedSampleCount(averagedSampleCount);
                 }
-            }
-        };
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                }
+
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    // minimum sample count is 1
+                    if (progress <= 0) progress = 1;
+
+                    // update count label
+                    if (tvAvgSamplesCount != null) {
+                        tvAvgSamplesCount.setText(String.format(getString(R.string.label_n_times), progress));
+                    }
+                }
+            };
 
     private final View.OnClickListener changeAveragingTriggerTypeOnClickListener =
-        v -> openAveragingTriggerTypeDialog();
+            v -> openAveragingTriggerTypeDialog();
 
     //==============================================
     // LIFECYCLE IMPLEMENTATIONS
     //==============================================
 
-    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         stringBuilder = new StringBuilder(getString(R.string.tap_to_stop_recording));
         tapToStopLength = stringBuilder.length();
     }
 
-    @Override public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
         if (savedInstanceState != null) {
@@ -223,7 +278,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         }
     }
 
-    @Override public void onStart() {
+    @Override
+    public void onStart() {
         super.onStart();
         LOGD(TAG, "onStart()");
 
@@ -231,14 +287,16 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getProcessingService() != null) startActiveInput(getProcessingService());
     }
 
-    @Override public void onResume() {
+    @Override
+    public void onResume() {
         super.onResume();
         LOGD(TAG, "onResume()");
 
         setupRecordingButtons(false);
     }
 
-    @Override public void onStop() {
+    @Override
+    public void onStop() {
         super.onStop();
         LOGD(TAG, "onStop()");
 
@@ -246,7 +304,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         if (getProcessingService() != null) getProcessingService().stopActiveInputSource();
     }
 
-    @Override public void onSaveInstanceState(@NonNull Bundle outState) {
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
         outState.putBoolean(BOOL_SETTINGS_ON, settingsOn);
@@ -254,7 +313,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         outState.putBoolean(BOOL_FFT_ON, fftOn);
     }
 
-    @Override public void onDestroyView() {
+    @Override
+    public void onDestroyView() {
         super.onDestroyView();
         LOGD(TAG, "onDestroyView()");
         // remove listener in case animation finishes after view has been unbind
@@ -267,8 +327,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //  ABSTRACT METHODS IMPLEMENTATIONS
     //==============================================
 
-    @Override protected View createView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
-        @Nullable Bundle savedInstanceState) {
+    @Override
+    protected View createView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
+                              @Nullable Bundle savedInstanceState) {
         LOGD(TAG, "createView()");
 
         final View view = inflater.inflate(R.layout.fragment_record_scope, container, false);
@@ -284,7 +345,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         return view;
     }
 
-    @Override protected BaseWaveformRenderer createRenderer() {
+    @Override
+    protected BaseWaveformRenderer createRenderer() {
         final WaveformRenderer renderer = new WaveformRenderer(this);
         renderer.setOnWaveformSelectionListener(index -> {
             if (getProcessingService() != null) getProcessingService().setSelectedChannel(index);
@@ -292,11 +354,13 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         return renderer;
     }
 
-    @Override protected boolean isBackable() {
+    @Override
+    protected boolean isBackable() {
         return false;
     }
 
-    @Override protected WaveformRenderer getRenderer() {
+    @Override
+    protected WaveformRenderer getRenderer() {
         return (WaveformRenderer) super.getRenderer();
     }
 
@@ -320,7 +384,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     //  EVENT BUS
     //==============================================
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioServiceConnectionEvent(AudioServiceConnectionEvent event) {
         // this will setup signal source and averaging if we are coming from background
         if (getProcessingService() != null) startActiveInput(getProcessingService());
@@ -337,36 +402,47 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         updateBpmUI();
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStartedEvent(AudioRecordingStartedEvent event) {
         setupRecordingButtons(true);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingProgressEvent(AudioRecordingProgressEvent event) {
         stringBuilder.delete(tapToStopLength, stringBuilder.length());
         stringBuilder.append(
-            WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate(), event.getChannelCount(),
-                event.getBitsPerSample()));
+                WavUtils.formatWavProgress((int) event.getProgress(), event.getSampleRate(), event.getChannelCount(),
+                        event.getBitsPerSample()));
         tvStopRecording.setText(stringBuilder);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAudioRecordingStoppedEvent(AudioRecordingStoppedEvent event) {
         setupRecordingButtons(true);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbDeviceConnectionEvent(UsbDeviceConnectionEvent event) {
         // usb is detached, we should start listening to microphone again
-        if (!event.isConnected() && getProcessingService() != null) startMicrophone(getProcessingService());
+        if (!event.isConnected() && getProcessingService() != null)
+            startMicrophone(getProcessingService());
         // setup fft view
         setupFftView();
+        hideP300Buttons();
         // setup USB button
         setupUsbButton();
     }
+    private void hideP300Buttons(){
+        ivVolume.setVisibility(View.INVISIBLE);
+        relHumanSpike.setVisibility(View.INVISIBLE);
+    }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbPermissionEvent(UsbPermissionEvent event) {
         if (!event.isGranted()) {
             if (getContext() != null) {
@@ -380,7 +456,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupUsbButton();
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbCommunicationEvent(UsbCommunicationEvent event) {
         if (!event.isStarted()) {
             if (getProcessingService() != null) startMicrophone(getProcessingService());
@@ -398,7 +475,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         updateBpmUI();
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUsbSignalSourceDisconnectEvent(UsbSignalSourceDisconnectEvent event) {
         // setup fft view
         setupFftView();
@@ -406,10 +484,18 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         setupUsbButton();
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    private void handleHumanSpikerBox() {
+        relHumanSpike.setVisibility(View.VISIBLE);
+        if (getProcessingService() != null)
+            getProcessingService().sendHSp300StatusCommand();
+
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSpikerBoxBoardTypeDetectionEvent(SpikerBoxHardwareTypeDetectionEvent event) {
-        final @SpikerBoxHardwareType int boardType = event.getHardwareType();
-        final String spikerBoxBoard;
+        boardType = event.getHardwareType();
+        relHumanSpike.setVisibility(View.INVISIBLE);
         BandFilter filter = null;
         switch (boardType) {
             case SpikerBoxHardwareType.HEART_AND_BRAIN:
@@ -432,6 +518,15 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 spikerBoxBoard = getString(R.string.board_type_neuron_pro);
                 filter = Filters.FILTER_BAND_NEURON_PRO;
                 break;
+            case SpikerBoxHardwareType.HUMAN_PRO:
+                spikerBoxBoard = getString(R.string.board_type_human);
+                handleHumanSpikerBox();
+                filter = Filters.FILTER_BAND_HUMAN;
+                break;
+            case SpikerBoxHardwareType.HHIBOX:
+                spikerBoxBoard = getString(R.string.board_type_hhibox);
+                filter = Filters.FILTER_BAND_HHIBOX;
+                break;
             default:
             case SpikerBoxHardwareType.UNKNOWN:
             case SpikerBoxHardwareType.NONE:
@@ -442,15 +537,17 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         LOGD(TAG, "BOARD DETECTED: " + spikerBoxBoard);
 
         // preset filter for the connected board
-        if (getProcessingService() != null && filter != null) getProcessingService().setBandFilter(filter);
+        if (getProcessingService() != null && filter != null)
+            getProcessingService().setBandFilter(filter, boardType);
         // show what boar is connected in toast
         if (getActivity() != null) {
             ViewUtils.customToast(getActivity(),
-                String.format(getString(R.string.template_connected_to_board), spikerBoxBoard));
+                    String.format(getString(R.string.template_connected_to_board), spikerBoxBoard));
         }
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onExpansionBoardTypeDetectionEvent(ExpansionBoardTypeDetectionEvent event) {
         final @ExpansionBoardType int expansionBoardType = event.getExpansionBoardType();
         final String expansionBoard;
@@ -464,6 +561,9 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             case ExpansionBoardType.JOYSTICK:
                 expansionBoard = "JOYSTICK";
                 break;
+            case ExpansionBoardType.HUMAN:
+                expansionBoard = "HUMAN";
+                break;
             default:
             case ExpansionBoardType.NONE:
                 expansionBoard = "NONE";
@@ -473,7 +573,40 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         LOGD(TAG, "EXPANSION BOARD DETECTED: " + expansionBoard);
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSpikerBoxP300AudioDetectedEvent(SpikerBoxP300AudioDetectedEvent event) {
+        final @HumanSpikerBoardState int humanSpikerBoardAudioState = event.getHumanSpikerBoardAudioState();
+        switch (humanSpikerBoardAudioState) {
+            case HumanSpikerBoardState.ON:
+                setUpp300AudioState(true);
+                break;
+            default:
+            case HumanSpikerBoardState.OFF:
+                setUpp300AudioState(false);
+                break;
+        }
+
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSpikerBoxP300StateDetectedEvent(SpikerBoxP300StateDetectedEvent event) {
+        final @HumanSpikerBoardState int humanSpikerBoardState = event.getHumanSpikerBoardState();
+        switch (humanSpikerBoardState) {
+            case HumanSpikerBoardState.ON:
+                setUpp300BoardState(true);
+                break;
+            default:
+            case HumanSpikerBoardState.OFF:
+                setUpp300BoardState(false);
+
+                break;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onAmModulationDetectionEvent(AmModulationDetectionEvent event) {
         // filters dialog is opened and AM modulation just ended, close it
         if (!event.isStart() && filterSettingsDialog != null) {
@@ -484,10 +617,11 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         updateBpmUI();
     }
 
-    @SuppressWarnings("unused") @Subscribe(threadMode = ThreadMode.MAIN)
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onHeartbeatEvent(HeartbeatEvent event) {
         tvBeatsPerMinute.setText(
-            String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
+                String.format(getString(R.string.template_beats_per_minute), event.getBeatsPerMinute()));
         if (event.getBeatsPerMinute() > 0) {
             vHeartbeat.beep();
         } else {
@@ -512,10 +646,22 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // for pre-21 SDK we need to tint the progress bar programmatically (post-21 SDK will do it through styles)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             ViewUtils.tintDrawable(pbUsbDisconnecting.getIndeterminateDrawable(),
-                ContextCompat.getColor(pbUsbDisconnecting.getContext(), R.color.black));
+                    ContextCompat.getColor(pbUsbDisconnecting.getContext(), R.color.black));
         }
         // record button
-        ibtnRecord.setOnClickListener(v -> startRecording());
+        ibtnRecord.setOnClickListener(v ->
+                startRecording()
+        );
+        relHumanSpike.setOnClickListener(v -> {
+
+            if (getProcessingService() != null) {
+                getProcessingService().sendHSp300StimulationCommand();
+            }
+
+        });
+        ivVolume.setOnClickListener(v -> {
+            if (getProcessingService() != null) getProcessingService().sendHSp300AudioCommand();
+        });
         // stop record button
         stopRecButton = new SlidingView(tvStopRecording, null/*recordAnimationListener*/);
         tvStopRecording.setOnClickListener(v -> {
@@ -544,12 +690,12 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
             if (getProcessingService() != null) {
                 vSettings.setupMuteSpeakers(getProcessingService().isMuteSpeakers());
                 vSettings.setupFilters(
-                    getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter()
-                        : new BandFilter(),
-                    getProcessingService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
-                        : Filters.FREQ_HIGH_MAX_CUT_OFF,
-                    getProcessingService().getNotchFilter() != null ? getProcessingService().getNotchFilter()
-                        : new NotchFilter());
+                        getProcessingService().getBandFilter() != null ? getProcessingService().getBandFilter()
+                                : new BandFilter(),
+                        getProcessingService().isAmModulationDetected() ? Filters.FREQ_LOW_MAX_CUT_OFF
+                                : Filters.FREQ_HIGH_MAX_CUT_OFF,
+                        getProcessingService().getNotchFilter() != null ? getProcessingService().getNotchFilter()
+                                : new NotchFilter());
                 vSettings.setupChannels(getProcessingService().getChannelCount(), getRenderer().getChannelColors());
             }
             vSettings.setVisibility(View.VISIBLE);
@@ -574,7 +720,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Sets a band filter that should be applied while processing incoming data
     void setBandFilter(@Nullable BandFilter filter) {
-        if (getProcessingService() != null) getProcessingService().setBandFilter(filter);
+        if (getProcessingService() != null) getProcessingService().setBandFilter(filter, boardType);
 
         // update BPM UI
         updateBpmUI();
@@ -708,18 +854,19 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     void openAveragingTriggerTypeDialog() {
         if (getContext() != null) {
             MaterialDialog averagingTriggerTypeDialog =
-                new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
-                    .itemsCallback((dialog, itemView, position, text) -> setTriggerType(
-                        position == 0 ? SignalAveragingTriggerType.THRESHOLD
-                            : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position))
-                    .build();
+                    new MaterialDialog.Builder(getContext()).items(R.array.options_averaging_trigger_type)
+                            .itemsCallback((dialog, itemView, position, text) -> setTriggerType(
+                                    position == 0 ? SignalAveragingTriggerType.THRESHOLD
+                                            : position == 10 ? SignalAveragingTriggerType.ALL_EVENTS : position))
+                            .build();
             averagingTriggerTypeDialog.show();
         }
     }
 
     // Sets the specified trigger type as the preferred averaging trigger type
     void setTriggerType(@SignalAveragingTriggerType int triggerType) {
-        if (getProcessingService() != null) getProcessingService().setSignalAveragingTriggerType(triggerType);
+        if (getProcessingService() != null)
+            getProcessingService().setSignalAveragingTriggerType(triggerType);
 
         setupThresholdHandleAndAveragingTriggerTypeButtons();
     }
@@ -746,8 +893,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         // BPM should be shown if either usb is active input source or we are in AM modulation,
         // and if current filter is default EKG filter
         return getProcessingService() != null && thresholdOn && (getProcessingService().isUsbActiveInput()
-            || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(
-            getProcessingService().getBandFilter(), Filters.FILTER_BAND_HEART);
+                || getProcessingService().isAmModulationDetected()) && ObjectUtils.equals(
+                getProcessingService().getBandFilter(), Filters.FILTER_BAND_HEART);
     }
 
     //==============================================
@@ -761,8 +908,8 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         btnFft.setOnClickListener(fftClickListener);
         // setup select channel text view
         tvSelectChannel.setVisibility(
-            getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
-                && fftOn ? View.VISIBLE : View.GONE);
+                getProcessingService() != null && getProcessingService().getVisibleChannelCount() > 1 && !thresholdOn
+                        && fftOn ? View.VISIBLE : View.INVISIBLE);
         tvSelectChannel.setOnClickListener(selectChannelClickListener);
     }
 
@@ -788,13 +935,14 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
                 }
             }
             final MaterialDialog channelsDialog = new MaterialDialog.Builder(getContext()).items(CHANNEL_NAMES)
-                .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
-                    if (getProcessingService() != null) getProcessingService().setSelectedChannel(which);
-                    return true;
-                })
-                .alwaysCallSingleChoiceCallback()
-                .itemsGravity(GravityEnum.CENTER)
-                .build();
+                    .itemsCallbackSingleChoice(selectedChannel, (dialog, itemView, which, text) -> {
+                        if (getProcessingService() != null)
+                            getProcessingService().setSelectedChannel(which);
+                        return true;
+                    })
+                    .alwaysCallSingleChoiceCallback()
+                    .itemsGravity(GravityEnum.CENTER)
+                    .build();
             channelsDialog.show();
         }
     }
@@ -808,6 +956,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
         boolean disconnecting = usbDisconnecting();
         ibtnUsb.setVisibility(usbDetected() ? View.VISIBLE : View.GONE);
         ibtnUsb.setImageResource(disconnecting ? 0 : R.drawable.ic_usb_black_24dp);
+
         setupUsbDisconnectingView(!disconnecting);
         if (getProcessingService() != null && getProcessingService().isUsbActiveInput() || disconnecting) {
             ibtnUsb.setBackgroundResource(R.drawable.circle_gray_white_active);
@@ -847,6 +996,10 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     // Triggers currently connected usb device to disconnect
     void disconnectFromDevice() {
+        if (getContext() != null) {
+            hideP300Buttons();
+        }
+
         if (getProcessingService() != null) {
             try {
                 getProcessingService().stopUsb();
@@ -868,9 +1021,34 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     private void setupUsbDisconnectingView(boolean enable) {
         ibtnUsb.setEnabled(enable);
         ibtnUsb.setAlpha(enable ? 1f : .75f);
-        pbUsbDisconnecting.setVisibility(enable ? View.GONE : View.VISIBLE);
+        pbUsbDisconnecting.setVisibility(enable ? View.INVISIBLE : View.VISIBLE);
     }
 
+    //==============================================
+    // Human SpikerBox
+    //==============================================
+
+    private void setUpp300BoardState(boolean show) {
+        if (show) {
+            ivP300.setImageResource(R.drawable.p300y);
+            ivVolume.setVisibility(View.VISIBLE);
+        } else {
+            ivVolume.setVisibility(View.INVISIBLE);
+            ivP300.setImageResource(R.drawable.p300);
+        }
+        ivVolume.setImageResource(R.drawable.volume);
+        if (getProcessingService() != null)
+            getProcessingService().sendHSSoundCommand();
+
+    }
+
+    private void setUpp300AudioState(boolean show) {
+        if (show) {
+            ivVolume.setImageResource(R.drawable.volumey);
+        } else {
+            ivVolume.setImageResource(R.drawable.volume);
+        }
+    }
     //==============================================
     // RECORDING
     //==============================================
@@ -905,7 +1083,7 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
 
     private void startMicrophone(@NonNull ProcessingService processingService) {
         processingService.startMicrophone();
-        processingService.setBandFilter(new BandFilter());
+        processingService.setBandFilter(new BandFilter(), boardType);
     }
 
     private void startUsb(@NonNull ProcessingService processingService, @NonNull String deviceName) {
@@ -916,37 +1094,41 @@ public class RecordScopeFragment extends BaseWaveformFragment implements EasyPer
     // WRITE_EXTERNAL_STORAGE PERMISSION
     //==============================================
 
-    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-        @NonNull int[] grantResults) {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
-    @Override public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
+    @Override
+    public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsGranted:" + requestCode + ":" + perms.size());
     }
 
-    @Override public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
+    @Override
+    public void onPermissionsDenied(int requestCode, @NonNull List<String> perms) {
         LOGD(TAG, "onPermissionsDenied:" + requestCode + ":" + perms.size());
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             new AppSettingsDialog.Builder(this).setRationale(R.string.rationale_ask_again)
-                .setTitle(R.string.title_settings_dialog)
-                .setPositiveButton(R.string.action_setting)
-                .setNegativeButton(R.string.action_cancel)
-                .setRequestCode(BYB_SETTINGS_SCREEN)
-                .build()
-                .show();
+                    .setTitle(R.string.title_settings_dialog)
+                    .setPositiveButton(R.string.action_setting)
+                    .setNegativeButton(R.string.action_cancel)
+                    .setRequestCode(BYB_SETTINGS_SCREEN)
+                    .build()
+                    .show();
         }
     }
 
-    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM) void startRecording() {
+    @AfterPermissionGranted(BYB_WRITE_EXTERNAL_STORAGE_PERM)
+    void startRecording() {
         if (getContext() != null && EasyPermissions.hasPermissions(getContext(),
-            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             if (getProcessingService() != null) getProcessingService().startRecording();
         } else {
             // Request one permission
             EasyPermissions.requestPermissions(this, getString(R.string.rationale_write_external_storage_record),
-                BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                    BYB_WRITE_EXTERNAL_STORAGE_PERM, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
     }
 }

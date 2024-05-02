@@ -3,6 +3,7 @@ package com.backyardbrains.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -32,23 +33,23 @@ public class PrefUtils {
     private static final String PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE = "_gl_window_horizontal_size";
 
     public static float getGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
-        @NonNull String boardName) {
+                                                  @NonNull String boardName) {
         try {
             return getSharedPreferences(context).getFloat(
-                constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
-                GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+                    constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
+                    GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
         } catch (Exception ex) {
             return getSharedPreferences(context).getInt(
-                constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
-                (int) GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
+                    constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName),
+                    (int) GlUtils.DEFAULT_GL_WINDOW_HORIZONTAL_SIZE);
         }
     }
 
     public static void setGlWindowHorizontalSize(@NonNull Context context, @NonNull Class clazz,
-        @NonNull String boardName, float glWindowHorizontalSize) {
+                                                 @NonNull String boardName, float glWindowHorizontalSize) {
         getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName), glWindowHorizontalSize)
-            .apply();
+                .putFloat(constructPrefKey(clazz, PREF_FLOAT_GL_WINDOW_HORIZONTAL_SIZE, boardName), glWindowHorizontalSize)
+                .apply();
     }
 
     /**
@@ -57,23 +58,23 @@ public class PrefUtils {
     private static final String PREF_FLOAT_WAVEFORM_SCALE_FACTOR = "_gl_waveform_scale_factor";
 
     public static float getWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz,
-        @NonNull String boardName) {
+                                               @NonNull String boardName) {
         try {
             return getSharedPreferences(context).getFloat(
-                constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
-                GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
+                    constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
+                    GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
         } catch (Exception ex) {
             return getSharedPreferences(context).getInt(
-                constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
-                (int) GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
+                    constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName),
+                    (int) GlUtils.DEFAULT_WAVEFORM_SCALE_FACTOR);
         }
     }
 
     public static void setWaveformScaleFactor(@NonNull Context context, @NonNull Class clazz, @NonNull String boardName,
-        float glWindowVerticalSize) {
+                                              float glWindowVerticalSize) {
         getSharedPreferences(context).edit()
-            .putFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName), glWindowVerticalSize)
-            .apply();
+                .putFloat(constructPrefKey(clazz, PREF_FLOAT_WAVEFORM_SCALE_FACTOR, boardName), glWindowVerticalSize)
+                .apply();
     }
 
     /**
@@ -87,8 +88,8 @@ public class PrefUtils {
 
     public static void setViewportWidth(@NonNull Context context, @NonNull Class clazz, int viewportWidth) {
         getSharedPreferences(context).edit()
-            .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_WIDTH), viewportWidth)
-            .apply();
+                .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_WIDTH), viewportWidth)
+                .apply();
     }
 
     /**
@@ -102,8 +103,8 @@ public class PrefUtils {
 
     public static void setViewportHeight(@NonNull Context context, @NonNull Class clazz, int viewportHeight) {
         getSharedPreferences(context).edit()
-            .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_HEIGHT), viewportHeight)
-            .apply();
+                .putInt(constructPrefKey(clazz, PREF_INT_VIEWPORT_HEIGHT), viewportHeight)
+                .apply();
     }
 
     /**
@@ -130,8 +131,8 @@ public class PrefUtils {
 
     public static void setAveragedSampleCount(@NonNull Context context, @NonNull Class clazz, int averagedSampleCount) {
         getSharedPreferences(context).edit()
-            .putInt(constructPrefKey(clazz, PREF_INT_AVERAGED_SAMPLE_COUNT), averagedSampleCount)
-            .apply();
+                .putInt(constructPrefKey(clazz, PREF_INT_AVERAGED_SAMPLE_COUNT), averagedSampleCount)
+                .apply();
     }
 
     /**

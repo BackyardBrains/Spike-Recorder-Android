@@ -62,8 +62,8 @@ public class EventTriggeredAverageOptionsDialog {
     @BindView(R.id.cb_compute_confidence_intervals) CheckBox cbComputeConfidenceIntervals;
     @BindView(R.id.sp_confidence_intervals_event) Spinner spConfidenceIntervalsEvent;
 
-    private final MaterialDialog optionsDialog;
-    private final ArrayAdapter<String> confidenceIntervalsEventAdapter;
+    private MaterialDialog optionsDialog= null;
+    private ArrayAdapter<String> confidenceIntervalsEventAdapter = null;
 
     private String[] eventNames = new String[EventUtils.MAX_EVENT_COUNT];
     private SparseBooleanArray selectedButtons = new SparseBooleanArray();

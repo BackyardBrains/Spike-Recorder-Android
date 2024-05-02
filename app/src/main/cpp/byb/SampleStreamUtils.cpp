@@ -16,6 +16,10 @@ namespace backyardbrains {
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HEARTSS;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_HEART_AND_BRAIN =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HBLEOSB;";
+        const std::string SampleStreamUtils::HARDWARE_TYPE_HUMAN =
+                SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HUMANSB;";
+        const std::string SampleStreamUtils::HARDWARE_TYPE_HHIBOX =
+                SampleStreamUtils::HARDWARE_TYPE_PREFIX + "HHIBOX;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_NEURON_PRO =
                 SampleStreamUtils::HARDWARE_TYPE_PREFIX + "NEURONSB;";
         const std::string SampleStreamUtils::HARDWARE_TYPE_MUSCLE_PRO =
@@ -23,6 +27,8 @@ namespace backyardbrains {
         const std::string SampleStreamUtils::SAMPLE_RATE_PREFIX = "MSF:";
         const std::string SampleStreamUtils::NUM_OF_CHANNELS_PREFIX = "MNC:";
         const std::string SampleStreamUtils::EVENT_PREFIX = "EVNT:";
+        const std::string SampleStreamUtils::EVENT_P300 = "p300:";
+        const std::string SampleStreamUtils::EVENT_P300_AUDIO = "sound:";
         const std::string SampleStreamUtils::EXPANSION_BOARD_TYPE_PREFIX = "BRD:";
 
         bool SampleStreamUtils::isHardwareTypeMsg(std::string message) {
@@ -34,6 +40,8 @@ namespace backyardbrains {
             if (std::strcmp(HARDWARE_TYPE_MUSCLE.c_str(), message.c_str()) == 0) return MUSCLE_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN_6CH.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
             if (std::strcmp(HARDWARE_TYPE_HEART_AND_BRAIN.c_str(), message.c_str()) == 0) return HEART_HARDWARE;
+            if (std::strcmp(HARDWARE_TYPE_HUMAN.c_str(), message.c_str()) == 0) return HUMAN_HARDWARE;
+            if (std::strcmp(HARDWARE_TYPE_HHIBOX.c_str(), message.c_str()) == 0) return HHIBOX_HARDWARE;
             if (message.find(HARDWARE_TYPE_NEURON_PRO) != std::string::npos) return NEURON_PRO_HARDWARE;
             if (message.find(HARDWARE_TYPE_MUSCLE_PRO) != std::string::npos) return MUSCLE_PRO_HARDWARE;
             return UNKNOWN_HARDWARE;
@@ -77,6 +85,28 @@ namespace backyardbrains {
 
         int SampleStreamUtils::getExpansionBoardType(std::string message) {
             message = message.replace(0, EXPANSION_BOARD_TYPE_PREFIX.length(), "");
+            size_t found = message.find(';');
+            if (found == std::string::npos) return std::stoi(message);
+            message = message.replace(found, message.length() - found, "");
+            return std::stoi(message);
+        }
+        bool SampleStreamUtils::isHumanSpikerBoxType300(std::string message) {
+            return message.compare(0, EVENT_P300.length(), EVENT_P300) == 0;
+        }
+
+        int SampleStreamUtils::getHumanSpikerBoxType300(std::string message) {
+            message = message.replace(0, EVENT_P300.length(), "");
+            size_t found = message.find(';');
+            if (found == std::string::npos) return std::stoi(message);
+            message = message.replace(found, message.length() - found, "");
+            return std::stoi(message);
+        }
+        bool SampleStreamUtils::isHumanSpikerBoxType300Audio(std::string message) {
+            return message.compare(0, EVENT_P300_AUDIO.length(), EVENT_P300_AUDIO) == 0;
+        }
+
+        int SampleStreamUtils::getHumanSpikerBoxType300Audio(std::string message) {
+            message = message.replace(0, EVENT_P300_AUDIO.length(), "");
             size_t found = message.find(';');
             if (found == std::string::npos) return std::stoi(message);
             message = message.replace(found, message.length() - found, "");

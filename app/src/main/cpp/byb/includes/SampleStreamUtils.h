@@ -27,6 +27,9 @@ namespace backyardbrains {
              * Triggered when SpikerBox sends expansion board type message when one is connected.
              */
             virtual void onExpansionBoardTypeDetection(int expansionBoardType) = 0;
+            virtual void onHumanSpikerBoardState(int boardState) = 0;
+            virtual void onHumanSpikerBoardAudioState(int boardState) = 0;
+    //        virtual void onLogSaving(std::string logs) = 0;
         };
 
         class SampleStreamUtils {
@@ -38,6 +41,7 @@ namespace backyardbrains {
             static const int ADDITIONAL_INPUTS_EXPANSION_BOARD = 1;
             // Hammer expansion board
             static const int HAMMER_EXPANSION_BOARD = 4;
+            static const int HUMAN_EXPANSION_BOARD = 6;
             // Joystick expansion board
             static const int JOYSTICK_EXPANSION_BOARD = 5;
 
@@ -86,8 +90,23 @@ namespace backyardbrains {
              * Parses specified SpikerBox {@code message} and returns SpikerBox expansion board type.
              */
             static int getExpansionBoardType(std::string message);
+            /**
+             * Whether specified {@code message} sent by SpikerBox is HumanSpikerBox .
+             */
 
-        private:
+            /**
+             * Whether specified {@code message} sent by SpikerBox is p300 board type message.
+             */
+            static bool isHumanSpikerBoxType300(std::string message);
+            static bool isHumanSpikerBoxType300Audio(std::string message);
+
+            /**
+             * Parses specified SpikerBox {@code message} and returns SpikerBox p300 state.
+             */
+            static int getHumanSpikerBoxType300(std::string message);
+            static int getHumanSpikerBoxType300Audio(std::string message);
+
+        public:
             // Hardware type SpikerBox reply message prefix.
             static const std::string HARDWARE_TYPE_PREFIX;
             // Plant SpikerBox reply message for hardware type inquiry.
@@ -98,6 +117,8 @@ namespace backyardbrains {
             static const std::string HARDWARE_TYPE_HEART_AND_BRAIN_6CH;
             // Heart & Brain SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_HEART_AND_BRAIN;
+            static const std::string HARDWARE_TYPE_HUMAN;
+            static const std::string HARDWARE_TYPE_HHIBOX;
             // Neuron PRO SpikerBox reply message for hardware type inquiry.
             static const std::string HARDWARE_TYPE_NEURON_PRO;
             // Muscle PRO SpikerBox reply message for hardware type inquiry.
@@ -108,6 +129,8 @@ namespace backyardbrains {
             static const std::string NUM_OF_CHANNELS_PREFIX;
             // Event message prefix
             static const std::string EVENT_PREFIX;
+            static const std::string EVENT_P300;
+            static const std::string EVENT_P300_AUDIO;
             // Expansion board connection message prefix
             static const std::string EXPANSION_BOARD_TYPE_PREFIX;
 
@@ -123,6 +146,9 @@ namespace backyardbrains {
             static const int MUSCLE_PRO_HARDWARE = 3;
             // SpikerBox Neuron PRO hardware type.
             static const int NEURON_PRO_HARDWARE = 4;
+            // SpikerBox Neuron PRO hardware type.
+            static const int HUMAN_HARDWARE = 5;
+            static const int HHIBOX_HARDWARE = 7;
 
             // Sample rate used throughout the app.
             static const int SAMPLE_RATE = 10000;

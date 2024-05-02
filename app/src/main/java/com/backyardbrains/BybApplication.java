@@ -20,20 +20,19 @@
 package com.backyardbrains;
 
 import android.app.Application;
+
 import com.backyardbrains.utils.RecordingUtils;
+
 import org.greenrobot.eventbus.EventBus;
 
 public class BybApplication extends Application {
 
-    @Override public void onCreate() {
+    @Override
+    public void onCreate() {
         super.onCreate();
 
         // initialize event bus
-        EventBus.builder()
-            .logNoSubscriberMessages(false)
-            .sendNoSubscriberEvent(false)
-            .throwSubscriberException(BuildConfig.DEBUG)
-            .installDefaultEventBus();
+        EventBus.builder().logNoSubscriberMessages(false).sendNoSubscriberEvent(false).throwSubscriberException(BuildConfig.DEBUG).installDefaultEventBus();
         RecordingUtils.setMainDirectory(this);
     }
 

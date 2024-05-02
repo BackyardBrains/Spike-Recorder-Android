@@ -1,21 +1,24 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
+
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.dsp.SignalSource;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
-import java.util.Map;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import java.util.Map;
 
 /**
  * Helper class used for detection of hardware type of the connected USB device.
@@ -25,8 +28,9 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
 class SpikerBoxDetector {
 
     private static final String TAG = makeLogTag(SpikerBoxDetector.class);
-
+    private int hardwareType = SpikerBoxHardwareType.UNKNOWN;
     private static final int MAX_ATTEMPTS = 10;
+    private static final int MAX_ATTEMPTS_HHIB = 10;
     private static final int BUFFER_SIZE = 10000;
 
     private final Map<String, DetectionThread> detectionThreadMap = new ArrayMap<>();
@@ -85,23 +89,29 @@ class SpikerBoxDetector {
                 usbDevice.setProcessor(new SignalSource.Processor() {
 
                     private SignalData signalData =
-                        new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
+                            new SignalData(usbDevice.getChannelCount(), BUFFER_SIZE, AudioUtils.DEFAULT_BITS_PER_SAMPLE);
 
-                    @Override public void onDataReceived(@NonNull byte[] data, int length) {
-                        JniUtils.processSampleStream(signalData, data, length, usbDevice);
+                    @Override
+                    public void onDataReceived(@NonNull byte[] data, int length) {
+                        JniUtils.processSampleStream(hardwareType, signalData, data, length, usbDevice);
                     }
 
-                    @Override public void onSampleRateChanged(int sampleRate) {
+                    @Override
+                    public void onSampleRateChanged(int sampleRate) {
                     }
 
-                    @Override public void onChannelCountChanged(int channelCount) {
+                    @Override
+                    public void onChannelCountChanged(int channelCount) {
                     }
 
-                    @Override public void onBitsPerSampleChanged(int bitsPerSample) {
+                    @Override
+                    public void onBitsPerSampleChanged(int bitsPerSample) {
                     }
                 });
                 // For some devices we set hardware type on creation just by checking VID and PID
                 if (usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN && listener != null) {
+                    hardwareType = usbDevice.getHardwareType();
+                    ;
                     listener.onSpikerBoxDetected(device, usbDevice.getHardwareType());
                     return;
                 }
@@ -113,7 +123,7 @@ class SpikerBoxDetector {
                 } else {
                     if (listener != null) {
                         listener.onSpikerBoxDetectionError(device.getDeviceName(),
-                            "Failed to open USB communication port!");
+                                "Failed to open USB communication port!");
                     }
                     LOGD(TAG, "PORT NOT OPEN");
                     FirebaseCrashlytics.getInstance().recordException(new RuntimeException("Failed to open USB communication port!"));
@@ -143,15 +153,18 @@ class SpikerBoxDetector {
     }
 
     // Informs listener that the hardware type of the connected usb device was detected.
-    @SuppressWarnings("WeakerAccess") void deviceDetectionSuccess(@NonNull UsbDevice device,
-        @SpikerBoxHardwareType int hardwareType) {
+    @SuppressWarnings("WeakerAccess")
+    void deviceDetectionSuccess(@NonNull UsbDevice device,
+                                @SpikerBoxHardwareType int hardwareType) {
         detectionThreadMap.remove(device.getDeviceName());
         // inform listener that we managed to detect the hardware type
+        this.hardwareType = hardwareType;
         if (listener != null) listener.onSpikerBoxDetected(device, hardwareType);
     }
 
     // Informs listener that the hardware type of the connected usb device couldn't be detected.
-    @SuppressWarnings("WeakerAccess") void deviceDetectionFailure(@NonNull UsbDevice device) {
+    @SuppressWarnings("WeakerAccess")
+    void deviceDetectionFailure(@NonNull UsbDevice device) {
         detectionThreadMap.remove(device.getDeviceName());
         // inform listener that we couldn't detect the hardware type
         if (listener != null) listener.onSpikerBoxDetectionFailure(device);
@@ -166,6 +179,7 @@ class SpikerBoxDetector {
         private final String TAG = makeLogTag(DetectionThread.class);
 
         private boolean working = true;
+        private boolean detectingHHIB = true;
         private boolean canceled = false;
         private int counter = 0;
 
@@ -183,10 +197,13 @@ class SpikerBoxDetector {
             working = false;
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
+
             if (usbDevice != null) usbDevice.start();
 
             while (working) {
+
                 if (!canceled && usbDevice != null) {
                     usbDevice.checkHardwareType();
                     LOGD(TAG, counter + ". DETECTION ATTEMPT FOR DEVICE: " + usbDevice.getUsbDevice().getDeviceName());
@@ -208,6 +225,37 @@ class SpikerBoxDetector {
                 }
 
                 if (++counter > MAX_ATTEMPTS) working = false;
+            }
+
+            counter = 0;
+            if (usbDevice != null) {
+                usbDevice.stop();
+                usbDevice.startHHIB();
+            }
+
+            while (detectingHHIB) {
+
+                if (!canceled && usbDevice != null) {
+                    usbDevice.checkHardwareType();
+                    LOGD(TAG, counter + ". DETECTION ATTEMPT FOR DEVICE: " + usbDevice.getUsbDevice().getDeviceName());
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (usbDevice != null && usbDevice.getHardwareType() != SpikerBoxHardwareType.UNKNOWN) {
+                    // we managed to detect the hardware type (HHIB)
+                    if (!canceled) {
+                        deviceDetectionSuccess(usbDevice.getUsbDevice(), usbDevice.getHardwareType());
+                        usbDevice.stop();
+                        usbDevice = null;
+                    }
+                    return;
+                }
+
+                if (++counter > MAX_ATTEMPTS_HHIB) detectingHHIB = false;
             }
 
             // we couldn't detect the SpikerBox hardware type so inform listener about the failure

@@ -13,10 +13,17 @@ public interface UsbSignalSource extends SignalSource {
 
     // BYB Vendor ID
     int BYB_VENDOR_ID = 0x2E73;
+    int BYB_HHIBOX_VENDOR_ID = 0x0403;
     // BYB Muscle SpikerBox Pro Product ID
     int BYB_PID_MUSCLE_SB_PRO = 0x1;
+    // BYB HUMAN SpikerBox Pro Product ID
+    int BYB_HUMAN_SB_PRO_ID1 = 0x0004;
     // BYB Neuron SpikerBox Pro Product ID
     int BYB_PID_NEURON_SB_PRO = 0x2;
+    int BYB_HHIBOX_SB = 0x6015;
+
+    String Human_Human_Interface = "Human Human Interface";
+    String HHI_1v1 = "HHI 1v1";
 
     /**
      * Opens usb communication port.

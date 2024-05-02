@@ -1,29 +1,18 @@
 package com.backyardbrains.utils;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
-import android.media.MediaCodec;
-import android.media.MediaCodecList;
-import android.media.MediaExtractor;
-import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.media.SoundPool;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import androidx.annotation.Nullable;
 
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
@@ -43,7 +32,7 @@ public class AudioUtils {
     /**
      * Default channel config that will be used for input audio source.
      */
-    public static final boolean[] DEFAULT_CHANNEL_CONFIG = new boolean[] { true };
+    public static final boolean[] DEFAULT_CHANNEL_CONFIG = new boolean[]{true};
     /**
      * Default number of bits per sample.
      */
@@ -67,11 +56,11 @@ public class AudioUtils {
     static {
         // in buffer size
         int inBufferSize =
-            AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK,
-                DEFAULT_ENCODING);
+                AudioRecord.getMinBufferSize(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK,
+                        DEFAULT_ENCODING);
         DEFAULT_IN_BUFFER_SIZE =
-            inBufferSize == AudioRecord.ERROR || inBufferSize == AudioRecord.ERROR_BAD_VALUE ?
-                DEFAULT_SAMPLE_RATE * 2 : inBufferSize * BUFFER_SIZE_FACTOR;
+                inBufferSize == AudioRecord.ERROR || inBufferSize == AudioRecord.ERROR_BAD_VALUE ?
+                        DEFAULT_SAMPLE_RATE * 2 : inBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**
@@ -85,19 +74,19 @@ public class AudioUtils {
         int encoding = getEncoding(bitsPerSample);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return new AudioTrack.Builder().setAudioAttributes(
-                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build())
-                .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(channelMask)
-                    .build())
-                .setBufferSizeInBytes(outBufferSize)
-                .build();
+                            new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                    .build())
+                    .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(channelMask)
+                            .build())
+                    .setBufferSizeInBytes(outBufferSize)
+                    .build();
         } else {
             //noinspection deprecation
             return new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelMask, encoding,
-                outBufferSize, AudioTrack.MODE_STREAM);
+                    outBufferSize, AudioTrack.MODE_STREAM);
         }
     }
 
@@ -107,42 +96,44 @@ public class AudioUtils {
     public static int getOutBufferSize(int sampleRate, int channelCount, int bitsPerSample) {
         // out buffer size
         final int outBufferSize =
-            AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount),
-                getEncoding(bitsPerSample));
+                AudioTrack.getMinBufferSize(sampleRate, getChannelMask(channelCount),
+                        getEncoding(bitsPerSample));
         return outBufferSize == AudioTrack.ERROR || outBufferSize == AudioTrack.ERROR_BAD_VALUE ?
-            sampleRate * 2 : outBufferSize * BUFFER_SIZE_FACTOR;
+                sampleRate * 2 : outBufferSize * BUFFER_SIZE_FACTOR;
     }
 
     /**
      * Creates and returns configured {@link AudioRecord} for recording audio files with default
      * configuration.
      */
-    @Nullable public static AudioRecord createAudioRecord() {
+    @Nullable
+    public static AudioRecord createAudioRecord() {
         return createAudioRecord(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_IN_MASK, DEFAULT_ENCODING,
-            DEFAULT_IN_BUFFER_SIZE);
+                DEFAULT_IN_BUFFER_SIZE);
     }
 
     /**
      * Creates and returns configured {@link AudioRecord} for recording audio files.
      */
-    @Nullable public static AudioRecord createAudioRecord(int sampleRate, int channelMask,
-        int encoding, int inBufferSize) {
+    @Nullable
+    public static AudioRecord createAudioRecord(int sampleRate, int channelMask,
+                                                int encoding, int inBufferSize) {
         LOGD(TAG, "Create new AudioRecorder");
         AudioRecord ar = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 ar = new AudioRecord.Builder().setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-                    .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
-                        .setSampleRate(sampleRate)
-                        .setChannelMask(channelMask)
-                        .build())
-                    .setBufferSizeInBytes(inBufferSize)
-                    .build();
+                        .setAudioFormat(new AudioFormat.Builder().setEncoding(encoding)
+                                .setSampleRate(sampleRate)
+                                .setChannelMask(channelMask)
+                                .build())
+                        .setBufferSizeInBytes(inBufferSize)
+                        .build();
             } catch (Exception ignored) {
             }
         } else {
             ar = new AudioRecord(MediaRecorder.AudioSource.DEFAULT, sampleRate, channelMask,
-                encoding, inBufferSize);
+                    encoding, inBufferSize);
         }
 
         return ar;
@@ -154,12 +145,12 @@ public class AudioUtils {
     public static SoundPool createSoundPool() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return new SoundPool.Builder().setMaxStreams(1)
-                .setAudioAttributes(new AudioAttributes.Builder().setUsage(
-                    AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setLegacyStreamType(AudioManager.STREAM_RING)
-                    .build())
-                .build();
+                    .setAudioAttributes(new AudioAttributes.Builder().setUsage(
+                                    AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .setLegacyStreamType(AudioManager.STREAM_RING)
+                            .build())
+                    .build();
         } else {
             //noinspection deprecation
             return new SoundPool(1, AudioManager.STREAM_RING, 0);
@@ -191,7 +182,7 @@ public class AudioUtils {
      * Returns number of bits per sample depending on the specified {@code audioFormat}.
      *
      * @param audioFormat Audio format, currently one of {@link AudioFormat#ENCODING_PCM_8BIT}, {@link
-     * AudioFormat#ENCODING_PCM_16BIT} or {@link AudioFormat#ENCODING_PCM_FLOAT} is supported.
+     *                    AudioFormat#ENCODING_PCM_16BIT} or {@link AudioFormat#ENCODING_PCM_FLOAT} is supported.
      */
     public static int getBitsPerSample(int audioFormat) {
         switch (audioFormat) {
@@ -238,7 +229,7 @@ public class AudioUtils {
                 return AudioFormat.CHANNEL_OUT_5POINT1 | AudioFormat.CHANNEL_OUT_BACK_CENTER;
             case 8:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                    ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND : AudioFormat.CHANNEL_OUT_7POINT1;
+                        ? AudioFormat.CHANNEL_OUT_7POINT1_SURROUND : AudioFormat.CHANNEL_OUT_7POINT1;
         }
     }
 }

@@ -1,5 +1,8 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,26 +11,27 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
+
 import com.backyardbrains.utils.SpikerBoxHardwareType;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
-
 /**
  * @author Tihomir Leka <tihomir at backyardbrains.com>
  */
 public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener {
 
-    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(UsbHelper.class);
+    @SuppressWarnings("WeakerAccess")
+    static final String TAG = makeLogTag(UsbHelper.class);
 
     private static final String ACTION_USB_PERMISSION = "com.backyardbrains.dsp.usb.USB_PERMISSION";
     private static final String EXTRA_DETECTION = "com.backyardbrains.extra.DETECTION";
@@ -48,7 +52,7 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         /**
          * Called when new supported usb device is attached.
          *
-         * @param deviceName Name of the connected usb device.
+         * @param deviceName   Name of the connected usb device.
          * @param hardwareType Type of the connected usb device hardware. One of {@link SpikerBoxHardwareType}.
          */
         void onDeviceAttached(@NonNull String deviceName, @SpikerBoxHardwareType int hardwareType);
@@ -85,11 +89,26 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     private final BroadcastReceiver usbConnectionReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            final UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+            UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+            // If the device is null, it means it's not available in the intent extras.
+            if (usbDevice == null) {
+                // Retrieve the device from the UsbManager
+                UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+                Map<String, UsbDevice> deviceList = usbManager.getDeviceList();
+                if (!deviceList.isEmpty()) {
+                    device = usbManager.getDeviceList().values().iterator().next();
+                } else {
+                }
+            }
+
             if (AbstractUsbSignalSource.isSupported(device)) {
                 if (ACTION_USB_PERMISSION.equals(action)) {
                     boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-                    if (granted) {
+                    UsbManager usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+                    boolean permissionGranted = usbManager.hasPermission(device);
+
+                    if (granted || permissionGranted) {
                         // check should we do detection or start the communication
                         boolean detection = intent.getBooleanExtra(EXTRA_DETECTION, true);
                         if (!detection) { // we already detected the hardware type
@@ -125,7 +144,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
             this.device = device;
         }
 
-        @Override public void run() {
+        @Override
+        public void run() {
             if (manager != null) {
                 final UsbDeviceConnection connection = manager.openDevice(device);
                 if (connection != null) {
@@ -134,7 +154,13 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
                         if (usbDevice.open()) {
                             if (listener != null) listener.onDataTransferStart();
 
-                            if (usbDevice != null) usbDevice.start();
+                            if (usbDevice != null) {
+                                if (usbDevice.getHardwareType() == SpikerBoxHardwareType.HHIBOX) {
+                                    usbDevice.startHHIB();
+                                } else {
+                                    usbDevice.start();
+                                }
+                            }
 
                             try {
                                 Thread.sleep(1000);
@@ -162,13 +188,18 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         }
     }
 
-    @SuppressWarnings("WeakerAccess") final UsbManager manager;
-    @SuppressWarnings("WeakerAccess") final SpikerBoxDetector detector;
-    @SuppressWarnings("WeakerAccess") final UsbListener listener;
+    @SuppressWarnings("WeakerAccess")
+    final UsbManager manager;
+    @SuppressWarnings("WeakerAccess")
+    final SpikerBoxDetector detector;
+    @SuppressWarnings("WeakerAccess")
+    final UsbListener listener;
 
-    @SuppressWarnings("WeakerAccess") AbstractUsbSignalSource usbDevice;
+    @SuppressWarnings("WeakerAccess")
+    AbstractUsbSignalSource usbDevice;
 
-    @SuppressWarnings("WeakerAccess") CommunicationThread communicationThread;
+    @SuppressWarnings("WeakerAccess")
+    CommunicationThread communicationThread;
 
     private final List<UsbDevice> devices = new ArrayList<>();
     private final Map<String, UsbDevice> devicesMap = new HashMap<>();
@@ -200,7 +231,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
      * Returns USB device for the specified {@code index} or {@code null} if there are no connected devices or index is
      * out of range.
      */
-    @Nullable public UsbDevice getDevice(int index) {
+    @Nullable
+    public UsbDevice getDevice(int index) {
         if (index < 0 || index >= devices.size()) return null;
 
         return devices.get(index);
@@ -216,7 +248,9 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     /**
      * Returns currently connected SpikerBox/SpikerShield device, or {@code null} if none is connected.
      */
-    @Nullable public AbstractUsbSignalSource getUsbDevice() {
+    @Nullable
+    public AbstractUsbSignalSource getUsbDevice() {
+
         return usbDevice;
     }
 
@@ -227,11 +261,12 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
      * @throws IllegalArgumentException if the device with specified {@code deviceName} is not connected.
      */
     public void requestPermission(@NonNull Context context, @NonNull String deviceName, boolean detection)
-        throws IllegalArgumentException {
+            throws IllegalArgumentException {
         final UsbDevice device = devicesMap.get(deviceName);
         if (device != null) {
             final Intent intent = new Intent(ACTION_USB_PERMISSION).putExtra(EXTRA_DETECTION, detection);
-            final PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+//            final PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            final PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
             manager.requestPermission(device, pi);
 
@@ -259,12 +294,14 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     // IMPLEMENTATION OF OnSpikerBoxDetectionListener INTERFACE
     //==========================================================
 
-    @Override public void onSpikerBoxDetected(@NonNull UsbDevice device, @SpikerBoxHardwareType int hardwareType) {
+    @Override
+    public void onSpikerBoxDetected(@NonNull UsbDevice device, @SpikerBoxHardwareType int hardwareType) {
         // inform listener that attached device has been detected and it's ready for communication
         if (listener != null) listener.onDeviceAttached(device.getDeviceName(), hardwareType);
     }
 
-    @Override public void onSpikerBoxDetectionFailure(@NonNull UsbDevice device) {
+    @Override
+    public void onSpikerBoxDetectionFailure(@NonNull UsbDevice device) {
         // we couldn't detect the hardware type of the connected usb device
         // so remove device from local collections
         removeDevice(device);
@@ -272,7 +309,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
         if (listener != null) listener.onDeviceDetached(device.getDeviceName());
     }
 
-    @Override public void onSpikerBoxDetectionError(@NonNull String deviceName, @NonNull String reason) {
+    @Override
+    public void onSpikerBoxDetectionError(@NonNull String deviceName, @NonNull String reason) {
         // remove device from local collections
         final UsbDevice device = devicesMap.get(deviceName);
         if (device != null) removeDevice(device);
@@ -285,12 +323,13 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     //==========================================================
 
     // Refreshes the connected devices list with only supported (serial and HID) ones.
-    @SuppressWarnings("WeakerAccess") void refreshDevices(@NonNull Context context) {
+    @SuppressWarnings("WeakerAccess")
+    void refreshDevices(@NonNull Context context) {
         final List<UsbDevice> addedDevices = new ArrayList<>();
         final List<UsbDevice> removedDevices = new ArrayList<>();
         final List<UsbDevice> devices = new ArrayList<>(manager.getDeviceList().values());
-
         // find newly added devices
+
         for (UsbDevice device : devices) {
             if (AbstractUsbSignalSource.isSupported(device) && !devicesMap.containsKey(device.getDeviceName())) {
                 addedDevices.add(device);
@@ -338,7 +377,8 @@ public class UsbHelper implements SpikerBoxDetector.OnSpikerBoxDetectionListener
     }
 
     // Removes specified device from local collections
-    @SuppressWarnings("WeakerAccess") void removeDevice(@NonNull UsbDevice device) {
+    @SuppressWarnings("WeakerAccess")
+    void removeDevice(@NonNull UsbDevice device) {
         this.devicesMap.remove(device.getDeviceName());
         this.devices.remove(device);
     }

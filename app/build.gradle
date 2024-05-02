@@ -2,14 +2,13 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 30
-
+    compileSdkVersion 33
     defaultConfig {
         applicationId "com.backyardbrains"
         minSdkVersion 19
-        targetSdkVersion 30
-        versionCode 90
-        versionName '1.8.4.0'
+        targetSdkVersion 33
+        versionCode 92
+        versionName '1.9.0.1'
         multiDexEnabled true
         externalNativeBuild {
             cmake {
@@ -29,8 +28,8 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments =
-                    [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
-                        toString()]
+                        [eventBusIndex: 'com.backyardbrains.SpikeRecorderBusIndex', "room.schemaLocation": "$projectDir/schemas".
+                                toString()]
             }
         }
     }
@@ -59,13 +58,19 @@ android {
             dimension 'devProd'
             minSdkVersion 21
             resConfigs "en", "xxhdpi,xhdpi"
-            ndk.abiFilters 'armeabi-v7a', 'arm64-v8a','x86'
+            ndk.abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
         }
     }
 
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+    allprojects {
+        repositories {
+            maven { url "https://jitpack.io" }
+            maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         }
     }
 
@@ -101,61 +106,68 @@ ext {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.10"
     // androidX
-    implementation "androidx.core:core:$androidXCoreVersion"
-    implementation "androidx.appcompat:appcompat:$androidXCoreVersion"
-    implementation "androidx.media:media:$androidXMediaVersion"
-    implementation "androidx.legacy:legacy-support-v4:$androidXLegacySupportV4Version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraintLayoutVersion"
-    implementation "androidx.room:room-runtime:$roomVersion"
-    annotationProcessor "androidx.room:room-compiler:$roomVersion"
+    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation "androidx.media:media:1.6.0"
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation "androidx.room:room-runtime:2.5.1"
+    implementation 'androidx.test.ext:junit:1.1.5'
+    annotationProcessor "androidx.room:room-compiler:2.5.1"
 
     // material design
-    implementation "com.google.android.material:material:$materialDesignVersion"
+    implementation 'com.google.android.material:material:1.8.0'
 
     // debug db
-    debugImplementation 'com.amitshekhar.android:debug-db:1.0.4'
 
     // view binding
-    implementation "com.jakewharton:butterknife:$butterknifeVersion"
-    annotationProcessor "com.jakewharton:butterknife-compiler:$butterknifeVersion"
+    implementation "com.jakewharton:butterknife:10.2.3"
+    annotationProcessor "com.jakewharton:butterknife-compiler:10.2.3"
 
     // material dialogs
-    implementation "com.afollestad.material-dialogs:core:$materialDialogsVersion"
+    implementation "com.afollestad.material-dialogs:core:0.9.6.0"
 
     // range bar
-    implementation "com.github.recklessracoon:SimpleRangeBar-Android:$simpleRangeBarVersion"
+    implementation "com.github.recklessracoon:SimpleRangeBar-Android:0.1.1"
 
     // permissions
-    implementation "pub.devrel:easypermissions:$easyPermissionsVersion"
+    implementation "pub.devrel:easypermissions:3.0.0"
 
     // event bus
-    implementation "org.greenrobot:eventbus:$eventBusVersion"
-    annotationProcessor "org.greenrobot:eventbus-annotation-processor:$eventBusAnnotationProcessorVersion"
+    implementation "org.greenrobot:eventbus:3.2.0"
+    annotationProcessor "org.greenrobot:eventbus-annotation-processor:3.2.0"
 
     // utils
-    implementation "org.greenrobot:essentials:$essentialsVersion"
+    implementation 'org.greenrobot:essentials:3.1.0'
 
     // serial communication
-    //    implementation "com.github.felHR85:UsbSerial:$usbSerialVersion"
-    //    implementation project(path: ':usbserial', configuration: 'default')
-    implementation(name: 'usbserial-6.1.0-release', ext: 'aar')
+    implementation files('libs/usbserial-6.1.0-release.aar')
     // next 2 lines load dependencies that are used by UsbSerial module (aar doesn't transfer dependencies)
     implementation 'com.annimon:stream:1.2.1'
-    implementation 'com.squareup.okio:okio:2.1.0'
+    implementation 'com.squareup.okio:okio:3.0.0-alpha.1'
 
     // signal filtering
-    implementation "org.apache.commons:commons-math3:$commonsMathVersion"
+    implementation "org.apache.commons:commons-math3:3.6.1"
 
     // firebase & crashlytics
-    implementation 'com.google.firebase:firebase-analytics:20.0.2'
-    implementation 'com.google.firebase:firebase-crashlytics:17.0.0'
-
+    implementation 'com.google.firebase:firebase-analytics:21.2.1'
+    implementation 'com.google.firebase:firebase-crashlytics:18.3.6'
     // benchmark
-    implementation "com.github.T-Spoon:Benchit:$benchitVersion"
-
+    implementation "com.github.T-Spoon:Benchit:v1.0.2"
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10") {
+        exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib"
+    }
+
 }
 
 apply plugin: 'com.google.gms.google-services'
+
+configurations.all {
+    resolutionStrategy {
+        force "org.jetbrains.kotlin:kotlin-stdlib:1.8.10"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10"
+    }
+}

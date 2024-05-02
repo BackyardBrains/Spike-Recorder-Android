@@ -39,7 +39,7 @@ public class FilterSettingsView extends ConstraintLayout {
 
     static final BandFilter[] FILTERS = new BandFilter[] {
         Filters.FILTER_BAND_HEART, Filters.FILTER_BAND_BRAIN, Filters.FILTER_BAND_MUSCLE, Filters.FILTER_BAND_PLANT,
-        Filters.FILTER_BAND_NEURON_PRO
+        Filters.FILTER_BAND_NEURON_PRO,  Filters.FILTER_BAND_HUMAN,
     };
     private static final BandFilter NO_FILTER = new BandFilter(Filters.FREQ_NO_CUT_OFF, Filters.FREQ_NO_CUT_OFF);
 

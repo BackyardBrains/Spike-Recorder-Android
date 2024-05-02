@@ -1,14 +1,17 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
+
 import androidx.annotation.NonNull;
+
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-import java.util.Locale;
 
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import java.util.Locale;
 
 /**
  * Implementation of {@link AbstractUsbSignalSource} capable of USB serial communication with BYB hardware.
@@ -46,7 +49,9 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     // CH340 Chinese boards Vendor ID
     private static final int CH340_VENDOR_ID = 0x1A86; // 6790
 
+    //    private static final int BAUD_RATE = 230400;
     private static final int BAUD_RATE = 230400;
+    private static final int BAUD_RATE_HHIB = 500000;
 
     private static final String MSG_CONFIG_PREFIX = "conf ";
     private static final String MSG_SAMPLE_RATE = "s:%d;";
@@ -57,14 +62,16 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
 
     static {
         MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS = MSG_CONFIG_PREFIX + String.format(Locale.getDefault(), MSG_SAMPLE_RATE,
-            SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
+                SampleStreamUtils.DEFAULT_SAMPLE_RATE) + String.format(Locale.getDefault(), MSG_CHANNELS, 1) + "\n";
     }
 
     //private ReadThread readThread;
     //private WriteThread writeThread;
 
-    @SuppressWarnings("WeakerAccess") UsbSerialDevice serialDevice;
-    @SuppressWarnings("WeakerAccess") final SerialBuffer usbBuffer;
+    @SuppressWarnings("WeakerAccess")
+    UsbSerialDevice serialDevice;
+    @SuppressWarnings("WeakerAccess")
+    final SerialBuffer usbBuffer;
 
     private UsbSerialInterface.UsbReadCallback readCallback = data -> {
         if (serialDevice != null) {
@@ -75,58 +82,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
         }
     };
 
-    /**
-     * Thread used for reading data sent by connected USB device
-     */
-    //protected class ReadThread extends Thread {
-    //
-    //    private AtomicBoolean working = new AtomicBoolean(true);
-    //
-    //    private final byte[] dataReceived = new byte[SerialBuffer.DEFAULT_READ_BUFFER_SIZE];
-    //
-    //    @Override public void run() {
-    //        while (working.get()) {
-    //            if (serialDevice != null) {
-    //                int numberBytes = serialDevice.syncRead(usbBuffer.getReadBuffer(), 64);
-    //                LOGD(TAG, "READ(" + numberBytes + ") -> " + Arrays.toString(
-    //                    Arrays.copyOfRange(usbBuffer.getReadBuffer(), 0, numberBytes)));
-    //                if (numberBytes > 0) {
-    //                    usbBuffer.getDataReceived(dataReceived, numberBytes);
-    //
-    //                    writeToBuffer(dataReceived, numberBytes);
-    //                }
-    //            }
-    //        }
-    //    }
-    //
-    //    void stopReadThread() {
-    //        working.set(false);
-    //    }
-    //}
 
-    /**
-     * Thread used for writing data to connected USB device.
-     */
-    //protected class WriteThread extends Thread {
-    //
-    //    private AtomicBoolean working = new AtomicBoolean(true);
-    //
-    //    @Override public void run() {
-    //        while (working.get()) {
-    //            if (serialDevice != null) {
-    //                byte[] data = usbBuffer.getWriteBuffer();
-    //                LOGD(TAG, "WRITE(" + data.length + ") -> " + Arrays.toString(data));
-    //                if (data.length > 0) {
-    //                    serialDevice.syncWrite(data, 64);
-    //                }
-    //            }
-    //        }
-    //    }
-    //
-    //    void stopWriteThread() {
-    //        working.set(false);
-    //    }
-    //}
     private SerialSignalSource(@NonNull UsbDevice device, @NonNull UsbDeviceConnection connection) {
         super(device);
 
@@ -142,7 +98,7 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
      * @return BYB USB device interface configured for serial communication
      */
     public static AbstractUsbSignalSource createUsbDevice(@NonNull UsbDevice device,
-        @NonNull UsbDeviceConnection connection) {
+                                                          @NonNull UsbDeviceConnection connection) {
         return new SerialSignalSource(device, connection);
     }
 
@@ -152,23 +108,26 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     public static boolean isSupported(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
-        return UsbSerialDevice.isSupported(device) && (vid == BYB_VENDOR_ID || (vid == ARDUINO_VENDOR_ID_1
-            && isNotArduinoBootloader(pid)) || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
-            || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
+        return UsbSerialDevice.isSupported(device) &&
+                (vid == BYB_VENDOR_ID
+                        || (vid == ARDUINO_VENDOR_ID_1 && isNotArduinoBootloader(pid))
+                        || (vid == ARDUINO_VENDOR_ID_2 && isNotArduinoBootloader(pid))
+                        || vid == FTDI_VENDOR_ID || vid == CH340_VENDOR_ID);
     }
 
     // Checks whether specified PID is Arduino bootloader PID
     private static boolean isNotArduinoBootloader(int pid) {
         return pid != ARDUINO_LEONARDO_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_MICRO_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
-            && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
+                && pid != ARDUINO_ROBOT_CONTROL_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ROBOT_MOTOR_BOOTLOADER_PRODUCT_ID
+                && pid != ARDUINO_MICRO_ADK_REV3_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_EXPLORA_BOOTLOADER_PRODUCT_ID
+                && pid != ARDUINO_YUN_BOOTLOADER_PRODUCT_ID && pid != ARDUINO_ZERO_PRO_BOOTLOADER_PRODUCT_ID;
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public boolean open() {
+    @Override
+    public boolean open() {
         boolean ret = serialDevice != null && serialDevice.open()/*serialDevice.syncOpen()*/;
         if (ret) {
             // restart the working thread if it has been killed before and  get and claim interface
@@ -184,7 +143,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void write(byte[] buffer) {
+    @Override
+    public void write(byte[] buffer) {
         //LOGD(TAG, "WRITE(" + buffer.length + ") -> " + Arrays.toString(buffer));
         //usbBuffer.putWriteBuffer(buffer);
         serialDevice.write(buffer);
@@ -193,7 +153,8 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void startReadingStream() {
+    @Override
+    public void startReadingStream() {
         // prepare serial usb device for communication
         if (serialDevice != null) {
             serialDevice.setBaudRate(BAUD_RATE);
@@ -210,14 +171,30 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
         write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
     }
 
+    @Override
+    public void startReadingStreamFromHHIB() {
+        // prepare serial usb device for communication
+        if (serialDevice != null) {
+            serialDevice.setBaudRate(BAUD_RATE_HHIB);
+            serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
+            serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
+            serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
+            serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+
+            serialDevice.read(readCallback, 1024);
+        }
+
+        // we don't actually start the stream, it's automatically stared after connection, but we should
+        // configure sample rate and num of channels at startup
+        write(MSG_CONFIG_SAMPLE_RATE_AND_CHANNELS.getBytes());
+    }
+
     /**
      * {@inheritDoc}
      */
-    @Override public void stopReadingStream() {
-        //killReadThread();
-        //killWriteThread();
+    @Override
+    public void stopReadingStream() {
         if (serialDevice != null) {
-            //serialDevice.syncClose();
             serialDevice.close();
         }
     }
@@ -225,40 +202,14 @@ public class SerialSignalSource extends AbstractUsbSignalSource {
     /**
      * {@inheritDoc}
      */
-    @Override public void checkHardwareType() {
+    @Override
+    public void checkHardwareType() {
+        // check what hardware are connected to
+
         write(MSG_BOARD_TYPE_INQUIRY.getBytes());
+//        write(MSG_BOARD_INQUIRY.getBytes());
+
     }
 
-    // Kill readThread. This must be called when closing a device.
-    //private void killReadThread() {
-    //    if (readThread != null) {
-    //        readThread.stopReadThread();
-    //        readThread = null;
-    //    }
-    //}
 
-    // Restart readThread if it has been killed before
-    //private void restartReadThread() {
-    //    if (readThread == null) {
-    //        readThread = new ReadThread();
-    //        readThread.start();
-    //    }
-    //}
-
-    // Kill writeThread. This must be called when closing a device.
-    //private void killWriteThread() {
-    //    if (writeThread != null) {
-    //        writeThread.stopWriteThread();
-    //        writeThread = null;
-    //        usbBuffer.resetWriteBuffer();
-    //    }
-    //}
-
-    // Restart writeThread if it has been killed before
-    //private void restartWriteThread() {
-    //    if (writeThread == null) {
-    //        writeThread = new WriteThread();
-    //        writeThread.start();
-    //    }
-    //}
 }

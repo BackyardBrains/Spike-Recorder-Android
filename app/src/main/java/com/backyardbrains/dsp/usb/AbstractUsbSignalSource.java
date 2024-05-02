@@ -1,22 +1,28 @@
 package com.backyardbrains.dsp.usb;
 
+import static com.backyardbrains.utils.LogUtils.LOGD;
+import static com.backyardbrains.utils.LogUtils.makeLogTag;
+
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.os.AsyncTask;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
+
 import com.backyardbrains.dsp.AbstractSignalSource;
 import com.backyardbrains.dsp.SignalData;
 import com.backyardbrains.utils.AudioUtils;
 import com.backyardbrains.utils.ExpansionBoardType;
+import com.backyardbrains.utils.HumanSpikerBoardState;
 import com.backyardbrains.utils.JniUtils;
 import com.backyardbrains.utils.SampleStreamUtils;
 import com.backyardbrains.utils.SpikerBoxHardwareType;
-import java.util.Set;
 
-import static com.backyardbrains.utils.LogUtils.LOGD;
-import static com.backyardbrains.utils.LogUtils.makeLogTag;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Wrapper for {@link UsbDevice} class. Device can only be one of supported BYB usb devices.
@@ -25,7 +31,8 @@ import static com.backyardbrains.utils.LogUtils.makeLogTag;
  */
 public abstract class AbstractUsbSignalSource extends AbstractSignalSource implements UsbSignalSource {
 
-    @SuppressWarnings("WeakerAccess") static final String TAG = makeLogTag(AbstractUsbSignalSource.class);
+    @SuppressWarnings("WeakerAccess")
+    static final String TAG = makeLogTag(AbstractUsbSignalSource.class);
 
     private final UsbDevice device;
 
@@ -54,6 +61,30 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     }
 
     /**
+     * Interface definition for a callback to be invoked when human spikerBox board state is detected .
+     */
+    public interface onHumanSpikerP300StateListener {
+        /**
+         * Called when human spikerBox board state is detected.
+         *
+         * @param humanSpikerBoardState Type of the state.
+         */
+        void onHumanSpikerP300StateDetected(@HumanSpikerBoardState int humanSpikerBoardState);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when human spikerBox audio state is detected .
+     */
+    public interface onHumanSpikerP300AudioStateListener {
+        /**
+         * Called when human spikerBox audio state is detected.
+         *
+         * @param humanSpikerAudioState Type of the state.
+         */
+        void onHumanSpikerP300AudioStateDetected(@HumanSpikerBoardState int humanSpikerAudioState);
+    }
+
+    /**
      * Interface definition for a callback to be invoked when usb signal source is disconnected.
      */
     public interface OnUsbSignalSourceDisconnectListener {
@@ -65,16 +96,19 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
 
     private Set<OnSpikerBoxHardwareTypeDetectionListener> onSpikerBoxHardwareTypeDetectionListeners;
     private Set<OnExpansionBoardTypeDetectionListener> onOnExpansionBoardTypeDetectionListeners;
+    private Set<onHumanSpikerP300StateListener> onHumanSpikerP300StateDetectionListener;
+    private Set<onHumanSpikerP300AudioStateListener> onHumanSpikerP300AudioStateListener;
     private OnUsbSignalSourceDisconnectListener onUsbSignalSourceDisconnectListener;
 
     private @SpikerBoxHardwareType int hardwareType = SpikerBoxHardwareType.UNKNOWN;
     private @ExpansionBoardType int expansionBoardType = ExpansionBoardType.NONE;
+    private @HumanSpikerBoardState int humanSpikerBoardp300State = HumanSpikerBoardState.OFF;
+    private @HumanSpikerBoardState int humanSpikerBoardpAudioState = HumanSpikerBoardState.OFF;
 
     private boolean disconnecting;
 
     AbstractUsbSignalSource(@NonNull UsbDevice device) {
-        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT,
-            AudioUtils.getBitsPerSample(AudioUtils.DEFAULT_BITS_PER_SAMPLE));
+        super(SampleStreamUtils.DEFAULT_SAMPLE_RATE, AudioUtils.DEFAULT_CHANNEL_COUNT, AudioUtils.getBitsPerSample(AudioUtils.DEFAULT_BITS_PER_SAMPLE));
 
         this.device = device;
 
@@ -117,12 +151,24 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     static @SpikerBoxHardwareType int getHardwareType(@NonNull UsbDevice device) {
         int vid = device.getVendorId();
         int pid = device.getProductId();
+        String pName = device.getProductName();
+
+        Log.d("usb_pid", "" + pid);
+        Log.d("usb_vid", "" + vid);
+        Log.d("devices_name", pName);
+
         if (vid == BYB_VENDOR_ID) {
+            if (pid == BYB_HUMAN_SB_PRO_ID1) {
+                return SpikerBoxHardwareType.HUMAN_PRO;
+            }
             if (pid == BYB_PID_MUSCLE_SB_PRO) {
                 return SpikerBoxHardwareType.MUSCLE_PRO;
-            } else if (pid == BYB_PID_NEURON_SB_PRO) return SpikerBoxHardwareType.NEURON_PRO;
+            } else if (pid == BYB_PID_NEURON_SB_PRO) {
+                return SpikerBoxHardwareType.NEURON_PRO;
+            }
+        } else if (Objects.equals(pName, Human_Human_Interface) || Objects.equals(pName, HHI_1v1)) { // names of same device
+            return SpikerBoxHardwareType.HHIBOX;
         }
-
         return SpikerBoxHardwareType.UNKNOWN;
     }
 
@@ -130,6 +176,8 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      * Starts reading data from the usb endpoint.
      */
     protected abstract void startReadingStream();
+
+    protected abstract void startReadingStreamFromHHIB();
 
     /**
      * Stops reading data from usb endpoint.
@@ -139,21 +187,30 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * {@inheritDoc}
      */
-    @Override public final void start() {
+    @Override
+    public final void start() {
         LOGD(TAG, "start()");
         startReadingStream();
+    }
+
+    @Override
+    public void startHHIB() {
+        LOGD(TAG, "startHHIB()");
+        startReadingStreamFromHHIB();
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public final void stop() {
+    @Override
+    public final void stop() {
         disconnecting = true;
         AsyncTask.THREAD_POOL_EXECUTOR.execute(() -> {
             stopReadingStream();
             disconnecting = false;
 
-            if (onUsbSignalSourceDisconnectListener != null) onUsbSignalSourceDisconnectListener.onDisconnected();
+            if (onUsbSignalSourceDisconnectListener != null)
+                onUsbSignalSourceDisconnectListener.onDisconnected();
         });
     }
 
@@ -162,8 +219,7 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      *
      * @param listener the listener to be added to the current set of listeners.
      */
-    public void addOnSpikerBoxHardwareTypeDetectionListener(
-        @NonNull OnSpikerBoxHardwareTypeDetectionListener listener) {
+    public void addOnSpikerBoxHardwareTypeDetectionListener(@NonNull OnSpikerBoxHardwareTypeDetectionListener listener) {
         if (onSpikerBoxHardwareTypeDetectionListeners == null) {
             onSpikerBoxHardwareTypeDetectionListeners = new ArraySet<>();
         }
@@ -177,11 +233,11 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
      *
      * @param listener the listener to be removed from the current set of listeners.
      */
-    public void removeOnSpikerBoxHardwareTypeDetectionListener(
-        @NonNull OnSpikerBoxHardwareTypeDetectionListener listener) {
+    public void removeOnSpikerBoxHardwareTypeDetectionListener(@NonNull OnSpikerBoxHardwareTypeDetectionListener listener) {
         if (onSpikerBoxHardwareTypeDetectionListeners == null) return;
         onSpikerBoxHardwareTypeDetectionListeners.remove(listener);
-        if (onSpikerBoxHardwareTypeDetectionListeners.size() == 0) onSpikerBoxHardwareTypeDetectionListeners = null;
+        if (onSpikerBoxHardwareTypeDetectionListeners.size() == 0)
+            onSpikerBoxHardwareTypeDetectionListeners = null;
     }
 
     /**
@@ -206,8 +262,45 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     public void removeOnExpansionBoardTypeDetectionListener(@NonNull OnExpansionBoardTypeDetectionListener listener) {
         if (onOnExpansionBoardTypeDetectionListeners == null) return;
         onOnExpansionBoardTypeDetectionListeners.remove(listener);
-        if (onOnExpansionBoardTypeDetectionListeners.size() == 0) onOnExpansionBoardTypeDetectionListeners = null;
+        if (onOnExpansionBoardTypeDetectionListeners.size() == 0)
+            onOnExpansionBoardTypeDetectionListeners = null;
     }
+
+    /**
+     * Adds a listener to the set of listeners to be invoked when connected human board state is detected.
+     *
+     * @param listener the listener to be added to the current set of listeners.
+     */
+    public void addOnHumanSpikerBoxp300State(@NonNull onHumanSpikerP300StateListener listener) {
+        if (onHumanSpikerP300StateDetectionListener == null) {
+            onHumanSpikerP300StateDetectionListener = new ArraySet<>();
+        }
+        onHumanSpikerP300StateDetectionListener.add(listener);
+        listener.onHumanSpikerP300StateDetected(humanSpikerBoardp300State);
+    }
+
+    public void removeOnHumanSpikerBoxp300State(@NonNull onHumanSpikerP300StateListener listener) {
+        if (onHumanSpikerP300StateDetectionListener == null) return;
+        onHumanSpikerP300StateDetectionListener.remove(listener);
+        if (onHumanSpikerP300StateDetectionListener.size() == 0)
+            onHumanSpikerP300StateDetectionListener = null;
+    }
+
+    public void addOnHumanSpikerP300AudioStateListener(@NonNull onHumanSpikerP300AudioStateListener listener) {
+        if (onHumanSpikerP300AudioStateListener == null) {
+            onHumanSpikerP300AudioStateListener = new ArraySet<>();
+        }
+        onHumanSpikerP300AudioStateListener.add(listener);
+        listener.onHumanSpikerP300AudioStateDetected(humanSpikerBoardpAudioState);
+    }
+
+    public void removeOnHumanSpikerP300AudioStateListener(@NonNull onHumanSpikerP300AudioStateListener listener) {
+        if (onHumanSpikerP300AudioStateListener == null) return;
+        onHumanSpikerP300AudioStateListener.remove(listener);
+        if (onHumanSpikerP300AudioStateListener.size() == 0)
+            onHumanSpikerP300AudioStateListener = null;
+    }
+
 
     /**
      * Sets a listener to be invoked when usb signal source is disconnected.
@@ -226,47 +319,88 @@ public abstract class AbstractUsbSignalSource extends AbstractSignalSource imple
     /**
      * {@inheritDoc}
      */
-    @Override public final void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
+    @Override
+    public final void processIncomingData(@NonNull SignalData outData, byte[] inData, int inDataLength) {
         //benchmark.start();
-
-        JniUtils.processSampleStream(outData, inData, inDataLength, this);
+        JniUtils.processSampleStream(hardwareType, outData, inData, inDataLength, this);
         //benchmark.end();
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public final int getType() {
+    @Override
+    public final int getType() {
         return Type.USB;
     }
 
     /**
      * Returns wrapped {@link UsbDevice}.
      */
-    @Override public UsbDevice getUsbDevice() {
+    @Override
+    public UsbDevice getUsbDevice() {
         return device;
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override public @SpikerBoxHardwareType int getHardwareType() {
+    @Override
+    public @SpikerBoxHardwareType int getHardwareType() {
         return hardwareType;
     }
 
     /**
      * Sets SpikerBox hardware type for the input source.
      */
-    @SuppressWarnings("WeakerAccess") void setHardwareType(int hardwareType) {
+    @SuppressWarnings("WeakerAccess")
+    void setHardwareType(int hardwareType) {
+        /*setChannelCount(2);
+        setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
+        setBitsPerSample(10);*/
+
         if (this.hardwareType == hardwareType) return;
 
         LOGD(TAG, "HARDWARE TYPE: " + SampleStreamUtils.getSpikerBoxHardwareName(hardwareType));
+        if (hardwareType == SpikerBoxHardwareType.HUMAN_PRO) {
 
+            setChannelCount(2);
+            setSampleRate(SampleStreamUtils.SAMPLE_RATE_5000);
+            setBitsPerSample(14);
+
+            Log.d("sample_rate", "" + SampleStreamUtils.SAMPLE_RATE_5000);
+
+        }
+        if (hardwareType == SpikerBoxHardwareType.HHIBOX) {
+            setChannelCount(1);
+            setSampleRate(SampleStreamUtils.DEFAULT_SAMPLE_RATE);
+            setBitsPerSample(10);
+
+            Log.d("sample_rate", "" + SampleStreamUtils.DEFAULT_SAMPLE_RATE);
+        }
         this.hardwareType = hardwareType;
-
         if (onSpikerBoxHardwareTypeDetectionListeners != null) {
             for (OnSpikerBoxHardwareTypeDetectionListener listener : onSpikerBoxHardwareTypeDetectionListeners) {
                 listener.onHardwareTypeDetected(hardwareType);
+            }
+        }
+    }
+
+    void setHumanSpikerBoardState(int humanSpikerBoardp300State) {
+        this.humanSpikerBoardp300State = humanSpikerBoardp300State;
+        if (onHumanSpikerP300StateDetectionListener != null) {
+            for (onHumanSpikerP300StateListener listener : onHumanSpikerP300StateDetectionListener) {
+                listener.onHumanSpikerP300StateDetected(humanSpikerBoardp300State);
+            }
+        }
+    }
+
+    void setHumanSpikerBoardAudioState(int humanSpikerBoardpAudioState) {
+        this.humanSpikerBoardpAudioState = humanSpikerBoardpAudioState;
+
+        if (onHumanSpikerP300AudioStateListener != null) {
+            for (onHumanSpikerP300AudioStateListener listener : onHumanSpikerP300AudioStateListener) {
+                listener.onHumanSpikerP300AudioStateDetected(humanSpikerBoardpAudioState);
             }
         }
     }

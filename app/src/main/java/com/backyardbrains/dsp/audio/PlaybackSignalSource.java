@@ -552,6 +552,16 @@ public class PlaybackSignalSource extends AbstractSignalSource {
         }
     }
 
+    @Override
+    public void startHHIB() {
+        if (playbackThread == null) {
+            // Start playback in a thread
+            playbackThread = new ReadThread(filePath, autoPlay, position);
+            playbackThread.start();
+        }
+    }
+
+
     /**
      * {@inheritDoc}
      */

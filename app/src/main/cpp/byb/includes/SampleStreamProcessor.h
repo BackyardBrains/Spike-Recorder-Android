@@ -26,7 +26,7 @@ namespace backyardbrains {
             void
             process(const unsigned char *inData, int length, short **outSamples, int *outSampleCounts,
                     int *outEventIndices,
-                    std::string *outEventLabels, int &outEventCount, int channelCount);
+                    std::string *outEventLabels, int &outEventCount, int channelCount,int hardwareType);
 
         private:
             static const char *TAG;
@@ -39,7 +39,7 @@ namespace backyardbrains {
             static constexpr int DEFAULT_BITS_PER_SAMPLE = 16;
 
             static constexpr uint CLEANER = 0xFF;
-            static constexpr uint REMOVER = 0x7F;
+            static constexpr uint REMOVER =  0x7F;
 
             // Max number of channels is 10
             static constexpr int MAX_CHANNELS = 10;
@@ -66,7 +66,7 @@ namespace backyardbrains {
             typedef unsigned int byte;
 
             // Processes escape sequence message and triggers appropriate listener
-            void processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex);
+            int processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex, int i);
 
             // Updates channel count and sample rate depending on the specified board type
             void updateProcessingParameters(int expansionBoardType);
@@ -115,6 +115,10 @@ namespace backyardbrains {
             byte msb;
             // Average signal which we use to avoid signal offset
             double average;
+
+            void writeLogsInFile(std::string string);
+
+            void readLogsFromFile();
         };
     }
 }

@@ -3,6 +3,10 @@
 //
 
 #include "SampleStreamProcessor.h"
+#include "SampleStreamUtils.h"
+#include <iostream>
+#include <fstream>
+#include <jni.h>
 
 namespace backyardbrains {
 
@@ -10,10 +14,13 @@ namespace backyardbrains {
 
         const char *SampleStreamProcessor::TAG = "SampleStreamProcessor";
 
-        const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01, 0x01, 0x80, 0xFF};
-        const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01, 0x81, 0xFF};
+        const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_START[] = {0xFF, 0xFF, 0x01,
+                                                                              0x01, 0x80, 0xFF};
+        const unsigned char SampleStreamProcessor::ESCAPE_SEQUENCE_END[] = {0xFF, 0xFF, 0x01, 0x01,
+                                                                            0x81, 0xFF};
 
-        SampleStreamProcessor::SampleStreamProcessor(backyardbrains::utils::OnEventListenerListener *listener)
+        SampleStreamProcessor::SampleStreamProcessor(
+                backyardbrains::utils::OnEventListenerListener *listener)
                 : Processor(DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_BITS_PER_SAMPLE) {
             SampleStreamProcessor::listener = listener;
         }
@@ -21,13 +28,16 @@ namespace backyardbrains {
         SampleStreamProcessor::~SampleStreamProcessor() = default;
 
 
-        void
-        SampleStreamProcessor::process(const unsigned char *inData, const int length, short **outSamples,
-                                       int *outSampleCounts, int *outEventIndices, std::string *outEventLabels,
-                                       int &outEventCount, const int channelCount) {
+        void SampleStreamProcessor::process(const unsigned char *inData, const int length,
+                                            short **outSamples,
+                                            int *outSampleCounts, int *outEventIndices,
+                                            std::string *outEventLabels,
+                                            int &outEventCount, const int channelCount,
+                                            int hardwareType) {
 //            batchCounter++;
 
-            if (prevChannelCount != channelCount) { // number of channels changed during processing of previous batch
+            if (prevChannelCount !=
+                channelCount) { // number of channels changed during processing of previous batch
                 frameStarted = false;
                 sampleStarted = false;
                 currentChannel = 0;
@@ -53,13 +63,15 @@ namespace backyardbrains {
                 escapeSequence[escapeSequenceIndex++] = uc;
 
                 if (insideEscapeSequence) { // we are inside escape sequence
-                    sampleIndex = sampleCounters[currentChannel] == 0 ? 0 : sampleCounters[currentChannel] - 1;
-                    if (eventMessageIndex >= EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
+                    sampleIndex = sampleCounters[currentChannel] == 0 ? 0 :
+                                  sampleCounters[currentChannel] - 1;
+                    if (eventMessageIndex >=
+                        EVENT_MESSAGE_LENGTH) { // event message shouldn't be longer then 64 bytes
                         auto *copy = new unsigned char[eventMessageIndex + 1];
                         std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                         copy[eventMessageIndex] = 0;
                         // let's process incoming message
-                        processEscapeSequenceMessage(copy, sampleIndex);
+                        processEscapeSequenceMessage(copy, sampleIndex, hardwareType);
 
                         delete[] copy;
                         reset();
@@ -70,7 +82,7 @@ namespace backyardbrains {
                             std::copy(eventMessage, eventMessage + eventMessageIndex, copy);
                             copy[eventMessageIndex] = 0;
                             // let's process incoming message
-                            processEscapeSequenceMessage(copy, sampleIndex);
+                            processEscapeSequenceMessage(copy, sampleIndex, hardwareType);
 
                             delete[] copy;
                             reset();
@@ -100,7 +112,8 @@ namespace backyardbrains {
 
                                 // if less significant byte is also grater then 127 drop whole frame
                                 if (lsb > 127) {
-                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "LSB > 127! DROP WHOLE FRAME!");
+                                    __android_log_print(ANDROID_LOG_DEBUG, TAG,
+                                                        "LSB > 127! DROP WHOLE FRAME!");
                                     frameStarted = false;
                                     sampleStarted = false;
                                     currentChannel = 0;
@@ -111,7 +124,12 @@ namespace backyardbrains {
                                 msb = msb & REMOVER;
                                 msb = msb << 7u;
                                 lsb = lsb & REMOVER;
+                                if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE ==
+                                    hardwareType) {
+                                    sample = (short) (((msb | lsb) - 8192));
+                                } else {
                                 sample = (short) (((msb | lsb) - 512) * 30);
+                                }
 
                                 // calculate average sample
                                 average = 0.0001 * sample + 0.9999 * average;
@@ -146,7 +164,8 @@ namespace backyardbrains {
                                 frameStarted = true;
                                 sampleStarted = true;
                             } else {
-                                __android_log_print(ANDROID_LOG_DEBUG, TAG, "MSB < 128 AT FRAME START! DROP!");
+                                __android_log_print(ANDROID_LOG_DEBUG, TAG,
+                                                    "MSB < 128 AT FRAME START! DROP!");
 //                                if (batchCounter > 100 && !batchPrinted) {
 //                                    __android_log_print(ANDROID_LOG_DEBUG, TAG, "PREV BATCH: (%d)", inDataPrevLength);
 //                                    char tmp[6];
@@ -198,8 +217,10 @@ namespace backyardbrains {
             bool avoidFilteringOfChannels = stopFilteringAfterChannelIndex >= 0;
             for (int i = 0; i < channelCount; i++) {
                 // apply additional filtering if necessary
-                if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex)
+                if (avoidFilteringOfChannels && i <= stopFilteringAfterChannelIndex) {
                     applyFilters(i, channels[i], sampleCounters[i]);
+                }
+
                 outSamples[i] = new short[sampleCounters[i]];
                 std::copy(channels[i], channels[i] + sampleCounters[i], outSamples[i]);
                 outSampleCounts[i] = sampleCounters[i];
@@ -211,27 +232,57 @@ namespace backyardbrains {
             prevChannelCount = channelCount;
         }
 
-        void SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes, int sampleIndex) {
+        int SampleStreamProcessor::processEscapeSequenceMessage(unsigned char *messageBytes,
+                                                                int sampleIndex, int hardwareType) {
             // check if it's board type message
             std::string message = reinterpret_cast<char *>(messageBytes);
-            __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d", message.c_str(),
+            __android_log_print(ANDROID_LOG_DEBUG, TAG, "ESCAPE SEQUENCE MESSAGE %s AT %d",
+                                message.c_str(),
                                 sampleIndex);
+
+            std::string logMessage =
+                    "ESCAPE SEQUENCE MESSAGE " + message + " AT " + std::to_string(sampleIndex);
+
             if (backyardbrains::utils::SampleStreamUtils::isHardwareTypeMsg(message)) {
+                int type = backyardbrains::utils::SampleStreamUtils::getHardwareType(message);
+                __android_log_print(ANDROID_LOG_DEBUG, "HARD_CPP", "Hardware typpe %d ",
+                                    type);
+
                 listener->onSpikerBoxHardwareTypeDetected(
-                        backyardbrains::utils::SampleStreamUtils::getHardwareType(message));
-            } else if (backyardbrains::utils::SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(message)) {
-                const int sampleRate = backyardbrains::utils::SampleStreamUtils::getMaxSampleRate(message);
-                const int channelCount = backyardbrains::utils::SampleStreamUtils::getChannelCount(message);
+                        type);
+            } else if (backyardbrains::utils::SampleStreamUtils::isSampleRateAndNumOfChannelsMsg(
+                    message)) {
+                const int sampleRate = backyardbrains::utils::SampleStreamUtils::getMaxSampleRate(
+                        message);
+                const int channelCount = backyardbrains::utils::SampleStreamUtils::getChannelCount(
+                        message);
                 listener->onMaxSampleRateAndNumOfChannelsReply(sampleRate, channelCount);
                 setSampleRateAndChannelCount(sampleRate, channelCount);
             } else if (backyardbrains::utils::SampleStreamUtils::isEventMsg(message)) {
                 eventIndices[eventCounter] = sampleIndex;
-                eventLabels[eventCounter++] = backyardbrains::utils::SampleStreamUtils::getEventNumber(message);
+                eventLabels[eventCounter++] = backyardbrains::utils::SampleStreamUtils::getEventNumber(
+                        message);
             } else if (backyardbrains::utils::SampleStreamUtils::isExpansionBoardTypeMsg(message)) {
-                const int expansionBoardType = backyardbrains::utils::SampleStreamUtils::getExpansionBoardType(message);
+                const int expansionBoardType = backyardbrains::utils::SampleStreamUtils::getExpansionBoardType(
+                        message);
                 listener->onExpansionBoardTypeDetection(expansionBoardType);
-                updateProcessingParameters(expansionBoardType);
+                if (backyardbrains::utils::SampleStreamUtils::HUMAN_HARDWARE ==
+                    hardwareType || backyardbrains::utils::SampleStreamUtils::HHIBOX_HARDWARE ==
+                                    hardwareType) {
+                } else {
+                    updateProcessingParameters(expansionBoardType);
+                }
+            } else if (backyardbrains::utils::SampleStreamUtils::isHumanSpikerBoxType300(message)) {
+                const int boardState = backyardbrains::utils::SampleStreamUtils::getHumanSpikerBoxType300(
+                        message);
+                listener->onHumanSpikerBoardState(boardState);
+            } else if (backyardbrains::utils::SampleStreamUtils::isHumanSpikerBoxType300Audio(
+                    message)) {
+                const int audioState = backyardbrains::utils::SampleStreamUtils::getHumanSpikerBoxType300Audio(
+                        message);
+                listener->onHumanSpikerBoardAudioState(audioState);
             }
+            return hardwareType;
         }
 
         void SampleStreamProcessor::updateProcessingParameters(int expansionBoardType) {
@@ -242,12 +293,19 @@ namespace backyardbrains {
                     stopFilteringAfterChannelIndex = -1;
                     break;
                 case backyardbrains::utils::SampleStreamUtils::ADDITIONAL_INPUTS_EXPANSION_BOARD:
-                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, ADDITIONAL_INPUTS_CHANNEL_COUNT);
+                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE,
+                                                 ADDITIONAL_INPUTS_CHANNEL_COUNT);
+                    stopFilteringAfterChannelIndex = 1;
+                    break;
+                case backyardbrains::utils::SampleStreamUtils::HUMAN_EXPANSION_BOARD:
+                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE,
+                                                 DEFAULT_CHANNEL_COUNT);
                     stopFilteringAfterChannelIndex = 1;
                     break;
                 case backyardbrains::utils::SampleStreamUtils::HAMMER_EXPANSION_BOARD:
                 case backyardbrains::utils::SampleStreamUtils::JOYSTICK_EXPANSION_BOARD:
-                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE, HAMMER_JOYSTICK_CHANNEL_COUNT);
+                    setSampleRateAndChannelCount(EXPANSION_BOARDS_SAMPLE_RATE,
+                                                 HAMMER_JOYSTICK_CHANNEL_COUNT);
                     stopFilteringAfterChannelIndex = 1;
                     break;
             }

@@ -15,6 +15,8 @@ public final class BoardNames {
     private static final String EB_ADDITIONAL_INPUTS = "_EB_ADDITIONAL_INPUTS";
     private static final String EB_HAMMER = "_EB_HAMMER";
     private static final String EB_JOYSTICK = "_EB_JOYSTICK";
+    private static final String EB_HUMAN = "_EB_HUMAN";
+    private static final String EB_HHIBOX = "_EB_HHIBOX";
 
     public static String toBoardName(@SpikerBoxHardwareType int boardType) {
         switch (boardType) {
@@ -31,6 +33,10 @@ public final class BoardNames {
                 return B_NONE;
             case SpikerBoxHardwareType.PLANT:
                 return B_PLANT;
+            case SpikerBoxHardwareType.HUMAN_PRO:
+                return EB_HUMAN;
+            case SpikerBoxHardwareType.HHIBOX:
+                return EB_HHIBOX;
             case SpikerBoxHardwareType.UNKNOWN:
                 return B_UNKNOWN;
         }
@@ -44,6 +50,8 @@ public final class BoardNames {
                 return EB_HAMMER;
             case ExpansionBoardType.JOYSTICK:
                 return EB_JOYSTICK;
+            case ExpansionBoardType.HUMAN:
+                return EB_HUMAN;
             default:
             case ExpansionBoardType.NONE:
                 return EB_NONE;
